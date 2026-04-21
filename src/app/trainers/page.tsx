@@ -55,9 +55,15 @@ function TrainersContent() {
     finally { setDeleting(null); }
   }
 
-  const S = (k: string) => (e: React.ChangeEvent<any>) => setForm((f: any) => ({...f, [k]: e.target.value}));
-  const fmt = (n:any) => '₹'+(Number(n)||0).toLocaleString('en-IN',{maximumFractionDigits:0});
-
+ function S(k: string) {
+  return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setForm((f: any) => ({
+      ...f,
+      [k]: e.target.value,
+    }));
+  };
+}
+ const fmt = (n:any) => '₹' + (isNaN(Number(n)) ? 0 : Number(n)).toLocaleString('en-IN', { maximumFractionDigits: 0 });
   return (
     <div className="app-layout">
       <Sidebar />
@@ -79,7 +85,7 @@ function TrainersContent() {
           ) : (
             <div style={{display:'grid',gap:'1rem',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))'}}>
               {trainers.map(t => (
-                <div key={t.id} className="card card-hover" style={{opacity:deleting===t.id?.0.4:1}}>
+                <div key={t.id} className="card card-hover" style={{ opacity: deleting === t.id ? 0.4 : 1 }}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1rem'}}>
                     <div style={{display:'flex',gap:10,alignItems:'center'}}>
                       <div style={{
@@ -88,14 +94,14 @@ function TrainersContent() {
                         display:'flex',alignItems:'center',justifyContent:'center',
                         fontSize:16,fontWeight:700,color:'#fff',
                       }}>
-                        {t.name.split(' ').map((w:string)=>w[0]).join('').slice(0,2).toUpperCase()}
+                        (t.name || '').split(' ').map((w:string)=>w[0]).join('').slice(0,2).toUpperCase()
                       </div>
                       <div>
                         <div style={{fontWeight:700,fontSize:15}}>{t.name}</div>
                         <div className="text-muted text-sm">{t.role||'Personal Trainer'}</div>
                       </div>
                     </div>
-                    <span className={`badge badge-${t.status}`}>{t.status}</span>
+                    <span className={`badge badge-${t.status || 'active'}`}>{t.status || 'active'}</span>
                   </div>
 
                   {t.specialization && (
@@ -122,7 +128,7 @@ function TrainersContent() {
 
                   <div style={{display:'flex',gap:'.5rem',marginTop:'.5rem'}}>
                     <button onClick={() => openEdit(t)} className="btn btn-ghost btn-sm" style={{flex:1}}>✏️ Edit</button>
-                    <button onClick={() => del(t.id, t.name)} className="btn btn-danger btn-sm" disabled={deleting===t.id}>🗑️</button>
+                    <button onClick={() => del(t.id, t.name)} className="btn btn-danger btn-sm" disabled={deleting === t.id && deleting !== null}
                   </div>
                 </div>
               ))}
