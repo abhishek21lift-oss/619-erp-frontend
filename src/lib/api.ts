@@ -83,7 +83,7 @@ export interface Client {
   trainer_id?: string; trainer_name?: string;
   pt_start_date?: string; pt_end_date?: string; package_type?: string;
   base_amount: number; discount: number; final_amount: number;
-  paid_amount: number; balance_amount: number;
+  paid_amount: number; balance_amount: number;address?: string;
   payment_method?: string; payment_date?: string;
   status: 'active'|'expired'|'frozen'; weight?: number; notes?: string;
   created_at: string;
