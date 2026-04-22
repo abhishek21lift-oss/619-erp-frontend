@@ -5,11 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import { api, Trainer } from '@/lib/api';
 
 export default function TrainersPage() {
-  return (
-    <Guard role="admin">
-      <TrainersContent />
-    </Guard>
-  );
+  return <TrainersContent />;
 }
 
 function TrainersContent() {
