@@ -116,7 +116,7 @@ export default function CommandPalette() {
         id: 'mem-' + c.id,
         label: name,
         sub: c.mobile ? `+${c.country_code || '91'} ${c.mobile}` : (c.email || ''),
-        icon: '👤',
+        icon: '◉',
         href: `/clients/${c.id}`,
         group: 'Members',
       };
@@ -185,25 +185,25 @@ export default function CommandPalette() {
         onMouseDown={e => e.stopPropagation()}
       >
         <div className="cmdk-input-wrap">
-          <span className="cmdk-icon">⌘</span>
+          <span className="cmdk-icon">⌕</span>
           <input
             ref={inputRef}
             className="cmdk-input"
-            placeholder="Search members, jump to pages, run actions…"
+            placeholder="Search members, jump to pages, run actions"
             value={q}
             onChange={e => setQ(e.target.value)}
             autoComplete="off"
             spellCheck={false}
           />
-          {memberLoading && <span className="cmdk-spinner">⏳</span>}
+          {memberLoading && <span className="cmdk-spinner">…</span>}
           <kbd className="cmdk-kbd">esc</kbd>
         </div>
 
         <div className="cmdk-list" ref={listRef}>
           {results.length === 0 && (
             <div className="cmdk-empty">
-              <div style={{ fontSize: 28, marginBottom: 8 }}>🤔</div>
-              <div>No matches for "{q}"</div>
+              <div style={{ fontSize: 22, marginBottom: 8, opacity: 0.55 }}>○</div>
+              <div>No matches for &quot;{q}&quot;</div>
             </div>
           )}
           {Object.entries(grouped).map(([groupName, items]) => (

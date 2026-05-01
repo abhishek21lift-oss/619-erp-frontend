@@ -24,11 +24,16 @@ function readCollapsedGroups(): Record<string, boolean> {
   try {
     const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
     return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 }
+
 function writeCollapsedGroups(state: Record<string, boolean>) {
   if (typeof window === 'undefined') return;
-  try { localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify(state)); } catch {}
+  try {
+    localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify(state));
+  } catch {}
 }
 
 export default function Sidebar() {
@@ -36,17 +41,16 @@ export default function Sidebar() {
   const path = usePathname();
   const router = useRouter();
 
-  const [drawerOpen, setDrawerOpen]   = useState(false);    // mobile drawer
-  const [collapsed, setCollapsed]     = useState(false);    // desktop rail
-  const [favorites, setFavorites]     = useState<string[]>([]);
-  const [groupState, setGroupState]   = useState<Record<string, boolean>>({});
-  const [hydrated, setHydrated]       = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [groupState, setGroupState] = useState<Record<string, boolean>>({});
+  const [hydrated, setHydrated] = useState(false);
 
-  const isAdmin   = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
   const isTrainer = user?.role === 'trainer';
-  const isMember  = user?.role === 'member';
+  const isMember = user?.role === 'member';
 
-  // ── Hydrate persisted prefs after mount (avoid SSR mismatch) ──
   useEffect(() => {
     setCollapsed(readSidebarCollapsed());
     setFavorites(readFavorites(user?.id));
@@ -54,28 +58,32 @@ export default function Sidebar() {
     setHydrated(true);
   }, [user?.id]);
 
-  // Close drawer on route change
-  useEffect(() => { setDrawerOpen(false); }, [path]);
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [path]);
 
-  // Lock body scroll when mobile drawer open
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [drawerOpen]);
 
-  // Sync sidebar-w CSS variable when collapsed (so .page-main margin-left adapts)
   useEffect(() => {
     if (!hydrated || typeof document === 'undefined') return;
     document.documentElement.style.setProperty(
       '--sidebar-w',
-      collapsed ? '76px' : '260px'
+      collapsed ? '70px' : '248px',
     );
     document.documentElement.dataset.sidebar = collapsed ? 'collapsed' : 'expanded';
   }, [collapsed, hydrated]);
 
-  // ── Helpers ──
   const initials = (user?.name || 'U')
-    .split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   const isActive = (href: string) => {
     const cleanHref = href.split('?')[0];
@@ -93,7 +101,7 @@ export default function Sidebar() {
   const favItems = useMemo(() => {
     const all = allNavItems();
     return favorites
-      .map(href => all.find(i => i.href === href))
+      .map((href) => all.find((i) => i.href === href))
       .filter((i): i is NonNullable<typeof i> => !!i && visibleForRole(i));
   }, [favorites, user?.role]);
 
@@ -117,23 +125,27 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* ── Mobile hamburger ── */}
       <button
         className="mobile-menu-btn"
         onClick={() => setDrawerOpen(true)}
         aria-label="Open navigation menu"
       >
-        <span /><span /><span />
+        <span />
+        <span />
+        <span />
       </button>
 
       {drawerOpen && (
-        <div className="sidebar-overlay" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
+        <div
+          className="sidebar-overlay"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
       )}
 
       <aside
         className={`sidebar v2${drawerOpen ? ' sidebar-open' : ''}${collapsed ? ' sidebar-collapsed' : ''}`}
       >
-        {/* Mobile close */}
         <button
           className="sidebar-close"
           onClick={() => setDrawerOpen(false)}
@@ -142,9 +154,8 @@ export default function Sidebar() {
           ✕
         </button>
 
-        {/* ── Header ── */}
         <div className="sidebar-header">
-          <BrandLogo size={collapsed ? 32 : 40} showText={!collapsed} textPosition="right" />
+          <BrandLogo size={collapsed ? 30 : 34} showText={!collapsed} textPosition="right" />
           <button
             type="button"
             className="sidebar-collapse-btn"
@@ -156,33 +167,36 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* ── Pinned Favorites ── */}
         {hydrated && favItems.length > 0 && !collapsed && (
           <>
-            <div className="nav-section">⭐ Pinned</div>
-            {favItems.map(it => (
-              <NavRow
-                key={'fav-' + it.href}
-                item={it}
-                isActive={isActive(it.href)}
-                isFav
-                onToggleFav={handleToggleFavorite}
-                onClick={() => setDrawerOpen(false)}
-              />
-            ))}
-            <div className="divider" />
+            <div className="nav-section" style={{ paddingTop: '0.85rem' }}>★ Pinned</div>
+            <div style={{ padding: '0 0.65rem' }}>
+              {favItems.map((it) => (
+                <NavRow
+                  key={'fav-' + it.href}
+                  item={it}
+                  isActive={isActive(it.href)}
+                  isFav
+                  onToggleFav={handleToggleFavorite}
+                  onClick={() => setDrawerOpen(false)}
+                />
+              ))}
+            </div>
+            <div style={{ padding: '0 0.65rem' }}><div className="divider" /></div>
           </>
         )}
 
-        {/* ── Grouped Nav ── */}
         <nav className="sidebar-nav" aria-label="Main navigation">
-          {NAV_GROUPS.map(group => {
+          {NAV_GROUPS.map((group) => {
             const visibleItems = group.items.filter(visibleForRole);
             if (visibleItems.length === 0) return null;
             const groupCollapsed = !!groupState[group.id];
 
             return (
-              <div key={group.id} className={`nav-group${groupCollapsed ? ' is-collapsed' : ''}`}>
+              <div
+                key={group.id}
+                className={`nav-group${groupCollapsed ? ' is-collapsed' : ''}`}
+              >
                 {!collapsed && (
                   <button
                     type="button"
@@ -197,7 +211,7 @@ export default function Sidebar() {
                 )}
                 {(collapsed || !groupCollapsed) && (
                   <div className="nav-group-items">
-                    {visibleItems.map(it => (
+                    {visibleItems.map((it) => (
                       <NavRow
                         key={it.href}
                         item={it}
@@ -225,15 +239,14 @@ export default function Sidebar() {
           />
         </nav>
 
-        {/* ── Footer ── */}
         <div className="sidebar-footer">
           <div className="user-card">
             <div className="user-avatar">{initials}</div>
             {!collapsed && (
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div className="user-name truncate">{user?.name}</div>
                 <div className="user-role">
-                  {isAdmin ? '👑 Admin' : isTrainer ? '🏋️ Trainer' : isMember ? '🧑 Member' : '👤 User'}
+                  {isAdmin ? 'Owner' : isTrainer ? 'Coach' : isMember ? 'Athlete' : 'User'}
                 </div>
               </div>
             )}
@@ -242,7 +255,10 @@ export default function Sidebar() {
             <button
               className="btn btn-ghost w-full btn-sm"
               style={{ justifyContent: 'center' }}
-              onClick={() => { logout(); router.replace('/login'); }}
+              onClick={() => {
+                logout();
+                router.replace('/login');
+              }}
             >
               Sign out
             </button>
@@ -253,9 +269,6 @@ export default function Sidebar() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// One nav row — used for groups, favorites and settings.
-// ─────────────────────────────────────────────────────────────
 function NavRow({
   item,
   isActive,
@@ -285,7 +298,7 @@ function NavRow({
           type="button"
           className={`nav-pin${isFav ? ' is-fav' : ''}`}
           aria-label={isFav ? 'Unpin from favorites' : 'Pin to favorites'}
-          onClick={e => onToggleFav(item.href, e)}
+          onClick={(e) => onToggleFav(item.href, e)}
           tabIndex={-1}
         >
           {isFav ? '★' : '☆'}

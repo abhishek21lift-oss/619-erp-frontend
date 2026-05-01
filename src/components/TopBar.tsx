@@ -1,5 +1,4 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Breadcrumbs from './Breadcrumbs';
@@ -18,31 +17,43 @@ type Props = {
 
 function todayString() {
   return new Date().toLocaleDateString('en-IN', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   });
 }
 
 function greet(name?: string) {
   const h = new Date().getHours();
   const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  return `${g}, ${name?.split(' ')[0] || 'there'} 👋`;
+  return `${g}, ${name?.split(' ')[0] || 'Coach'}`;
 }
 
 export default function TopBar({ title, subtitle, actions, hideBreadcrumbs }: Props) {
   const { user } = useAuth();
   const router = useRouter();
-  const isMac = typeof navigator !== 'undefined' && navigator.platform.toLowerCase().includes('mac');
+  const isMac =
+    typeof navigator !== 'undefined' && navigator.platform.toLowerCase().includes('mac');
 
-  // Listen to a custom event for opening the palette (so anyone can open it
-  // without importing the component).
   function openPalette() {
-    window.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac, bubbles: true,
-    }));
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'k',
+        code: 'KeyK',
+        metaKey: isMac,
+        ctrlKey: !isMac,
+        bubbles: true,
+      }),
+    );
   }
 
   const initials = (user?.name || 'U')
-    .split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="topbar v2">
@@ -61,8 +72,8 @@ export default function TopBar({ title, subtitle, actions, hideBreadcrumbs }: Pr
           onClick={openPalette}
           aria-label="Open search (Cmd+K)"
         >
-          <span aria-hidden>🔍</span>
-          <span className="topbar-search-text">Search anything…</span>
+          <span aria-hidden style={{ opacity: 0.75 }}>⌕</span>
+          <span className="topbar-search-text">Search anything</span>
           <kbd className="topbar-kbd">{isMac ? '⌘' : 'Ctrl'}</kbd>
           <kbd className="topbar-kbd">K</kbd>
         </button>
