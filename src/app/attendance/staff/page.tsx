@@ -1,26 +1,27 @@
 'use client';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState, useMemo } from 'react';
 import Guard from '@/components/Guard';
 import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
-import { useAuth } from '@/lib/auth-context';
-import { api, Client, Attendance } from '@/lib/api';
+import { api, Trainer, Attendance } from '@/lib/api';
 
-export default function AttendancePage() {
+/**
+ * Staff (trainer/coach) attendance — the missing piece that was causing
+ * "unable to mark staff attendance". Mirrors the member attendance flow
+ * but stores rows under type='trainer' so reports keep working.
+ */
+export default function StaffAttendancePage() {
   return (
     <Guard>
-      <AttendanceContent />
+      <Inner />
     </Guard>
   );
 }
 
-function AttendanceContent() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+function Inner() {
   const today = new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(today);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [staff, setStaff] = useState<Trainer[]>([]);
   const [records, setRecords] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -29,44 +30,56 @@ function AttendanceContent() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
+    let alive = true;
     setLoading(true);
+    setError('');
     Promise.all([
-      api.clients.list({ status: 'active' }),
-      api.attendance.list({ date, type: 'client' }),
+      api.trainers.list(),
+      api.attendance.list({ date, type: 'trainer' }),
     ])
-      .then(([c, a]) => {
-        setClients(c);
-        setRecords(a);
+      .then(([t, a]) => {
+        if (!alive) return;
+        setStaff(t);
+        setRecords(Array.isArray(a) ? a : []);
       })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .catch((e) => alive && setError(e.message || 'Failed to load staff'))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
   }, [date]);
 
-  async function mark(client: Client, status: string) {
-    setSaving(client.id);
+  async function mark(t: Trainer, status: string) {
+    setError('');
+    setSaving(t.id);
     try {
+      const checkIn = new Date().toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
       await api.attendance.mark({
-        type: 'client',
-        ref_id: client.id,
-        ref_name: client.name,
-        trainer_id: client.trainer_id,
-        trainer_name: client.trainer_name,
+        type: 'trainer',
+        ref_id: t.id,
+        ref_name: t.name,
+        trainer_id: t.id,
+        trainer_name: t.name,
         date,
         status,
+        check_in: status === 'absent' ? null : checkIn,
       });
-      const updated = await api.attendance.list({ date, type: 'client' });
-      setRecords(updated);
-      setSuccess(`Marked ${client.name} as ${status}`);
+      const updated = await api.attendance.list({ date, type: 'trainer' });
+      setRecords(Array.isArray(updated) ? updated : []);
+      setSuccess(`Marked ${t.name} as ${status}`);
       setTimeout(() => setSuccess(''), 1800);
     } catch (e: any) {
-      setError(e.message);
+      setError(e.message || 'Could not save attendance.');
     } finally {
       setSaving(null);
     }
   }
 
-  function getRecord(clientId: string) {
-    return records.find((r) => r.ref_id === clientId);
+  function getRecord(staffId: string) {
+    return records.find((r) => r.ref_id === staffId);
   }
 
   const STATUS_BTN = [
@@ -75,43 +88,45 @@ function AttendanceContent() {
     { status: 'late', label: 'L', color: 'var(--warning)', bg: 'var(--warning-bg)' },
   ];
 
-  const filtered = clients.filter(
-    (c) =>
-      !search ||
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.mobile || '').includes(search) ||
-      (c.client_id || '').includes(search),
-  );
+  const filtered = useMemo(() => {
+    if (!search) return staff;
+    const s = search.toLowerCase();
+    return staff.filter(
+      (t) =>
+        t.name.toLowerCase().includes(s) ||
+        (t.mobile || '').includes(search) ||
+        (t.role || '').toLowerCase().includes(s),
+    );
+  }, [staff, search]);
 
   const summary = {
     present: records.filter((r) => r.status === 'present').length,
     absent: records.filter((r) => r.status === 'absent').length,
     late: records.filter((r) => r.status === 'late').length,
-    unmarked: clients.length - records.length,
+    unmarked: staff.length - records.length,
   };
+
+  async function markAllPresent() {
+    for (const t of filtered) {
+      if (!getRecord(t.id)) await mark(t, 'present');
+    }
+  }
 
   return (
     <div className="app-layout">
       <Sidebar />
       <div className="page-main">
         <TopBar
-          title="Member Attendance"
+          title="Staff Attendance"
           subtitle={date === today ? 'Today' : date}
           actions={
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {isAdmin && (
-                <Link href="/attendance/staff" className="btn btn-ghost btn-sm">
-                  Staff →
-                </Link>
-              )}
-              <input
-                className="input"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                style={{ maxWidth: 170 }}
-              />
-            </div>
+            <input
+              className="input"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={{ maxWidth: 170 }}
+            />
           }
         />
 
@@ -174,21 +189,17 @@ function AttendanceContent() {
             >
               <input
                 className="input"
-                placeholder="Search member"
+                placeholder="Search staff"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{ maxWidth: 280 }}
               />
-              <div className="text-muted text-sm">{filtered.length} members</div>
-              {date === today && (
+              <div className="text-muted text-sm">{filtered.length} staff</div>
+              {date === today && filtered.length > 0 && (
                 <button
                   className="btn btn-success btn-sm"
                   style={{ marginLeft: 'auto' }}
-                  onClick={async () => {
-                    for (const c of filtered) {
-                      if (!getRecord(c.id)) await mark(c, 'present');
-                    }
-                  }}
+                  onClick={markAllPresent}
                 >
                   ✓ Mark All Present
                 </button>
@@ -197,60 +208,45 @@ function AttendanceContent() {
 
             <div className="table-wrap">
               {loading ? (
-                <div
-                  style={{
-                    padding: '3rem',
-                    textAlign: 'center',
-                    color: 'var(--muted)',
-                  }}
-                >
+                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
                   Loading…
                 </div>
               ) : filtered.length === 0 ? (
-                <div
-                  style={{
-                    padding: '3rem',
-                    textAlign: 'center',
-                    color: 'var(--muted)',
-                  }}
-                >
-                  No active members found
+                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
+                  No staff found. Add coaches in the Training section first.
                 </div>
               ) : (
                 <table>
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Member</th>
-                      <th>Coach</th>
-                      <th>Plan</th>
+                      <th>Staff</th>
+                      <th>Role</th>
+                      <th>Mobile</th>
                       <th style={{ textAlign: 'center' }}>Attendance</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((c) => {
-                      const rec = getRecord(c.id);
+                    {filtered.map((t) => {
+                      const rec = getRecord(t.id);
                       return (
-                        <tr key={c.id}>
-                          <td>
-                            <span className="id-chip">{c.client_id || '—'}</span>
-                          </td>
-                          <td style={{ fontWeight: 600 }}>{c.name}</td>
-                          <td className="text-muted">{c.trainer_name || '—'}</td>
-                          <td className="text-muted">{c.package_type || '—'}</td>
+                        <tr key={t.id}>
+                          <td style={{ fontWeight: 600 }}>{t.name}</td>
+                          <td className="text-muted">{t.role || 'Coach'}</td>
+                          <td className="text-muted tabular">{t.mobile || '—'}</td>
                           <td>
                             <div
                               style={{
                                 display: 'flex',
                                 gap: 6,
                                 justifyContent: 'center',
+                                alignItems: 'center',
                               }}
                             >
                               {STATUS_BTN.map(({ status, label, color, bg }) => (
                                 <button
                                   key={status}
-                                  onClick={() => mark(c, status)}
-                                  disabled={saving === c.id}
+                                  onClick={() => mark(t, status)}
+                                  disabled={saving === t.id}
                                   style={{
                                     width: 32,
                                     height: 32,
@@ -260,25 +256,22 @@ function AttendanceContent() {
                                     fontWeight: 700,
                                     fontSize: 12,
                                     transition: 'all .15s',
-                                    background: rec?.status === status ? bg : 'var(--bg-3)',
+                                    background: rec?.status === status ? bg : '#ffffff',
                                     color: rec?.status === status ? color : 'var(--muted)',
                                     borderColor:
                                       rec?.status === status ? color : 'var(--line-2)',
                                     fontFamily: 'inherit',
                                   }}
                                 >
-                                  {saving === c.id ? '…' : label}
+                                  {saving === t.id ? '…' : label}
                                 </button>
                               ))}
-                              {rec && (
+                              {rec && rec.check_in && (
                                 <span
                                   className="text-muted text-xs tabular"
-                                  style={{
-                                    alignSelf: 'center',
-                                    marginLeft: 4,
-                                  }}
+                                  style={{ marginLeft: 4 }}
                                 >
-                                  {rec.check_in || ''}
+                                  {rec.check_in}
                                 </span>
                               )}
                             </div>

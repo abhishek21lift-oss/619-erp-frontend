@@ -8,12 +8,23 @@ type Props = {
 };
 
 /**
- * BrandLogo — 619 Fitness Studio mark.
- * Tries multiple casings of /logo so it works on case-sensitive filesystems
- * (Vercel/Linux). Falls back to a sharp red "619" tile if no asset is found.
+ * BrandLogo — 619 FITNESS STUDIO mark.
+ * Wraps the logo in a soft white tile with a crimson ring so it
+ * reads clearly on the light theme. Falls back to a "619" tile.
  */
-export default function BrandLogo({ size = 40, showText = false, textPosition = 'right' }: Props) {
-  const candidates = ['/logo.PNG', '/logo.png', '/logo.jpg', '/logo.jpeg', '/logo.svg', '/logo.webp'];
+export default function BrandLogo({
+  size = 40,
+  showText = false,
+  textPosition = 'right',
+}: Props) {
+  const candidates = [
+    '/logo.PNG',
+    '/logo.png',
+    '/logo.jpg',
+    '/logo.jpeg',
+    '/logo.svg',
+    '/logo.webp',
+  ];
   const [idx, setIdx] = useState(0);
   const [failed, setFailed] = useState(false);
 
@@ -26,7 +37,7 @@ export default function BrandLogo({ size = 40, showText = false, textPosition = 
 
   const Mark = failed ? (
     <div
-      aria-label="619 Fitness Studio"
+      aria-label="619 FITNESS STUDIO"
       style={{
         width: size,
         height: size,
@@ -35,40 +46,45 @@ export default function BrandLogo({ size = 40, showText = false, textPosition = 
         alignItems: 'center',
         justifyContent: 'center',
         background:
-          'conic-gradient(from 220deg at 60% 40%, var(--brand-hi), var(--aurora-violet), var(--aurora-pink), var(--brand-hi))',
+          'linear-gradient(135deg, var(--brand-hi) 0%, var(--brand-lo) 100%)',
         color: '#ffffff',
         fontWeight: 800,
-        fontSize: Math.round(size * 0.36),
-        letterSpacing: '-0.03em',
+        fontSize: Math.round(size * 0.34),
+        letterSpacing: '-0.02em',
         boxShadow:
-          '0 8px 24px var(--brand-glow), inset 0 1px 0 rgba(255,255,255,0.30), 0 0 0 1px rgba(255,255,255,0.12) inset',
+          '0 6px 20px var(--brand-glow), inset 0 1px 0 rgba(255,255,255,0.40)',
         flexShrink: 0,
         fontFeatureSettings: '"tnum"',
-        textShadow: '0 1px 0 rgba(0,0,0,0.30)',
       }}
     >
       619
     </div>
   ) : (
     <div
-      className="brand-logo-wrap"
       style={{
         width: size,
         height: size,
         borderRadius: radius,
-        padding: Math.round(size * 0.12),
+        padding: Math.round(size * 0.10),
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#ffffff',
+        border: '1px solid rgba(225, 29, 72, 0.18)',
+        boxShadow:
+          '0 6px 18px rgba(225, 29, 72, 0.18), 0 1px 2px rgba(15,23,42,0.06)',
+        flexShrink: 0,
       }}
     >
       <img
         src={candidates[idx]}
-        alt="619 Fitness Studio"
+        alt="619 FITNESS STUDIO"
         onError={onError}
         style={{
           width: '100%',
           height: '100%',
           objectFit: 'contain',
           display: 'block',
-          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))',
         }}
       />
     </div>
@@ -90,14 +106,11 @@ export default function BrandLogo({ size = 40, showText = false, textPosition = 
         style={{
           fontSize: isBelow ? 22 : 16,
           fontWeight: 800,
-          letterSpacing: '-0.028em',
-          background: 'linear-gradient(135deg, #ffffff 0%, var(--brand-hi) 80%)',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          letterSpacing: '-0.02em',
+          color: 'var(--text)',
         }}
       >
-        619 Fitness
+        619 FITNESS STUDIO
       </div>
       <div
         style={{
@@ -109,7 +122,7 @@ export default function BrandLogo({ size = 40, showText = false, textPosition = 
           marginTop: isBelow ? 6 : 5,
         }}
       >
-        Aurora Studio
+        Premium Strength Studio
       </div>
     </div>
   );

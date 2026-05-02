@@ -4,8 +4,8 @@ import CommandPalette from '@/components/CommandPalette';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: '619 Fitness — Aurora Operating System',
-  description: '619 Fitness — Train heavy. Run light. The aurora-grade operating system for serious gyms.',
+  title: '619 FITNESS STUDIO — Operating System',
+  description: '619 FITNESS STUDIO — Train heavy. Run light. The classy operating system for serious gyms.',
   icons: { icon: '/logo.PNG' },
 };
 
@@ -15,8 +15,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Mobile-first viewport */}
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#0c0a24" />
-        <meta name="color-scheme" content="dark" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="color-scheme" content="light" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

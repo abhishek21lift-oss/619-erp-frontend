@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   NAV_GROUPS,
   SETTINGS_ITEM,
+  DASHBOARD_ITEM,
   allNavItems,
   type NavItem,
 } from '@/lib/nav-config';
@@ -187,6 +188,18 @@ export default function Sidebar() {
         )}
 
         <nav className="sidebar-nav" aria-label="Main navigation">
+          {/* Top-level Dashboard (replaces the old "Home" group) */}
+          <div style={{ padding: '0 0.65rem', marginBottom: 6 }}>
+            <NavRow
+              item={DASHBOARD_ITEM}
+              isActive={isActive(DASHBOARD_ITEM.href)}
+              collapsed={collapsed}
+              isFav={favorites.includes(DASHBOARD_ITEM.href)}
+              onToggleFav={handleToggleFavorite}
+              onClick={() => setDrawerOpen(false)}
+            />
+          </div>
+
           {NAV_GROUPS.map((group) => {
             const visibleItems = group.items.filter(visibleForRole);
             if (visibleItems.length === 0) return null;

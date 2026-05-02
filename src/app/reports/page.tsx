@@ -664,11 +664,11 @@ function StaffAttendanceView() {
           {rangeDays} day{rangeDays !== 1 ? 's' : ''} · {trainers.length} staff
         </div>
         <a
-          href="/attendance"
+          href="/attendance/staff"
           className="btn btn-ghost btn-sm"
           style={{ marginLeft: 'auto' }}
         >
-          Mark attendance →
+          Mark staff attendance →
         </a>
       </div>
 

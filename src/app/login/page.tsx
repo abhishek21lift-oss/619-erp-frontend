@@ -53,99 +53,75 @@ export default function LoginPage() {
 
   return (
     <div className="login-shell">
-      {/* Drifting aurora orbs */}
+      {/* Soft accent halos for the light theme */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
         <div
           style={{
             position: 'absolute',
             top: '-15%',
             left: '-10%',
-            width: 560,
-            height: 560,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(255, 45, 85, 0.32) 0%, transparent 65%)',
-            animation: 'float 9s ease-in-out infinite',
-            filter: 'blur(20px)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: '-5%',
-            right: '-12%',
-            width: 620,
-            height: 620,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(124, 58, 237, 0.32) 0%, transparent 65%)',
-            animation: 'float 11s ease-in-out infinite 2s',
-            filter: 'blur(20px)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-18%',
-            right: '-8%',
             width: 520,
             height: 520,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(34, 211, 238, 0.22) 0%, transparent 65%)',
-            animation: 'float 10s ease-in-out infinite 1s',
-            filter: 'blur(20px)',
+              'radial-gradient(circle, rgba(225, 29, 72, 0.10) 0%, transparent 65%)',
+            filter: 'blur(40px)',
           }}
         />
         <div
           style={{
             position: 'absolute',
-            bottom: '-14%',
-            left: '-6%',
-            width: 460,
-            height: 460,
+            bottom: '-15%',
+            right: '-8%',
+            width: 540,
+            height: 540,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(236, 72, 153, 0.20) 0%, transparent 65%)',
-            animation: 'float 13s ease-in-out infinite 3s',
-            filter: 'blur(20px)',
+              'radial-gradient(circle, rgba(124, 58, 237, 0.10) 0%, transparent 65%)',
+            filter: 'blur(40px)',
           }}
         />
       </div>
 
-      <div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }} className="fade-up">
+      <div
+        style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}
+        className="fade-up"
+      >
         {/* Brand */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            marginBottom: '2rem',
+            marginBottom: '1.75rem',
           }}
         >
-          <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
+          <div style={{ position: 'relative', marginBottom: '1.1rem' }}>
             <div
               style={{
                 position: 'absolute',
-                inset: -10,
+                inset: -14,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, var(--brand-glow) 0%, transparent 70%)',
-                animation: 'pulse-glow 2.5s ease-in-out infinite',
-                filter: 'blur(8px)',
+                background:
+                  'radial-gradient(circle, rgba(225, 29, 72, 0.15) 0%, transparent 70%)',
+                filter: 'blur(10px)',
               }}
             />
-            <BrandLogo size={92} />
+            {/* Larger, well-padded logo tile so the gym mark reads clearly */}
+            <BrandLogo size={108} />
           </div>
 
           <div
-            className="display"
             style={{
-              fontSize: 30,
-              marginBottom: 8,
+              fontSize: 28,
+              fontWeight: 800,
+              letterSpacing: '-0.02em',
+              color: 'var(--text)',
               textAlign: 'center',
+              marginBottom: 8,
             }}
           >
-            619 Fitness Studio
+            619 FITNESS STUDIO
           </div>
 
           <div
@@ -164,15 +140,17 @@ export default function LoginPage() {
               style={{
                 height: 1,
                 width: 32,
-                background: 'linear-gradient(90deg, transparent, var(--brand-hi))',
+                background:
+                  'linear-gradient(90deg, transparent, var(--brand))',
               }}
             />
-            <span>Aurora Operating System</span>
+            <span>Premium Strength Studio</span>
             <div
               style={{
                 height: 1,
                 width: 32,
-                background: 'linear-gradient(90deg, var(--brand-hi), transparent)',
+                background:
+                  'linear-gradient(90deg, var(--brand), transparent)',
               }}
             />
           </div>
@@ -254,7 +232,14 @@ export default function LoginPage() {
                   Signing in
                 </span>
               ) : (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, letterSpacing: '0.4px' }}>
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    letterSpacing: '0.4px',
+                  }}
+                >
                   Sign In
                   <span style={{ fontSize: 16 }}>→</span>
                 </span>

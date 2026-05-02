@@ -1,7 +1,7 @@
 // src/lib/nav-config.ts
 // Single source of truth for navigation. Sidebar, breadcrumbs and the
-// command palette all consume this. IA principle: 7 top-level groups
-// organised by job-to-be-done, not DB tables. Two-tier max.
+// command palette all consume this. IA principle: groups organised by
+// job-to-be-done, with a top-level Dashboard.
 
 export type NavItem = {
   href: string;
@@ -22,22 +22,26 @@ export type NavGroup = {
   items: NavItem[];
 };
 
+/**
+ * The single Dashboard link is rendered ABOVE the groups (no "Home" header).
+ * Sidebar.tsx renders this first, then the groups below.
+ */
+export const DASHBOARD_ITEM: NavItem = {
+  href: '/dashboard',
+  label: 'Dashboard',
+  icon: '▦',
+};
+
 export const NAV_GROUPS: NavGroup[] = [
-  {
-    id: 'home',
-    label: 'Home',
-    icon: '◆',
-    items: [{ href: '/dashboard', label: 'Overview', icon: '▦' }],
-  },
   {
     id: 'sales',
     label: 'Sales',
     icon: '◇',
     items: [
-      { href: '/clients?segment=lead', label: 'Lead Inbox', icon: '↘', role: 'admin' },
-      { href: '/clients/new', label: 'Add Enquiry', icon: '+' },
-      { href: '/reports?view=conversion', label: 'Conversion Funnel', icon: '▼', role: 'admin' },
-      { href: '/reports?view=sources', label: 'Lead Sources', icon: '◎', role: 'admin' },
+      { href: '/sales/leads', label: 'Lead Inbox', icon: '↘', role: 'admin' },
+      { href: '/sales/enquiry', label: 'Add Enquiry', icon: '+' },
+      { href: '/sales/funnel', label: 'Conversion Funnel', icon: '▼', role: 'admin' },
+      { href: '/sales/sources', label: 'Lead Sources', icon: '◎', role: 'admin' },
     ],
   },
   {
@@ -46,10 +50,10 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: '◉',
     items: [
       { href: '/clients', label: 'All Members', icon: '◉' },
-      { href: '/clients?segment=active', label: 'Active', icon: '✓' },
-      { href: '/clients?segment=expiring', label: 'Expiring Soon', icon: '⚠' },
-      { href: '/clients?segment=expired', label: 'Lapsed', icon: '◐' },
-      { href: '/clients?segment=birthdays', label: 'Birthdays', icon: '✦' },
+      { href: '/members/active', label: 'Active', icon: '✓' },
+      { href: '/members/expiring', label: 'Expiring Soon', icon: '⚠' },
+      { href: '/members/lapsed', label: 'Lapsed', icon: '◐' },
+      { href: '/members/birthdays', label: 'Birthdays', icon: '✦' },
       { href: '/clients/new', label: 'Add Member', icon: '+' },
       { href: '/clients/[id]', label: 'Member Profile', icon: '◉', hidden: true, matchPrefix: '/clients/' },
     ],
@@ -61,7 +65,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/trainers', label: 'Coaches', icon: '⚒', role: 'admin' },
       { href: '/trainer/dashboard', label: 'Coach Dashboard', icon: '▤', role: 'trainer' },
-      { href: '/reports?view=transformations', label: 'Transformations', icon: '↑', role: 'admin' },
+      { href: '/training/transformations', label: 'Transformations', icon: '↑', role: 'admin' },
       { href: '/trainers/[id]', label: 'Coach Profile', icon: '⚒', hidden: true, matchPrefix: '/trainers/' },
     ],
   },
@@ -70,9 +74,9 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Operations',
     icon: '⚙',
     items: [
-      { href: '/attendance', label: 'Attendance', icon: '◧' },
-      { href: '/reports?view=staff', label: 'Staff Attendance', icon: '✦', role: 'admin' },
-      { href: '/reports?view=leaderboard', label: 'Check-in Leaderboard', icon: '★' },
+      { href: '/attendance', label: 'Member Attendance', icon: '◧' },
+      { href: '/attendance/staff', label: 'Staff Attendance', icon: '✦', role: 'admin' },
+      { href: '/operations/leaderboard', label: 'Check-in Leaderboard', icon: '★' },
     ],
   },
   {
@@ -82,10 +86,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/payments', label: 'Payments', icon: '◈' },
       { href: '/plans', label: 'Plans & Pricing', icon: '◆' },
-      { href: '/reports?view=dues', label: 'Outstanding Dues', icon: '◔' },
-      { href: '/reports?view=collection', label: 'Collection', icon: '↗', role: 'admin' },
-      { href: '/reports?view=pl', label: 'Profit & Loss', icon: '⊞', role: 'admin' },
-      { href: '/reports?view=forecast', label: 'Revenue Forecast', icon: '◌', role: 'admin' },
+      { href: '/finance/dues', label: 'Outstanding Dues', icon: '◔' },
+      { href: '/finance/collection', label: 'Collection', icon: '↗', role: 'admin' },
+      { href: '/finance/pl', label: 'Profit & Loss', icon: '⊞', role: 'admin' },
+      { href: '/finance/forecast', label: 'Revenue Forecast', icon: '◌', role: 'admin' },
     ],
   },
   {
@@ -94,9 +98,9 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: '↗',
     items: [
       { href: '/reports', label: 'All Reports', icon: '↗' },
-      { href: '/reports?view=traffic', label: 'Footfall Traffic', icon: '⇋', role: 'admin' },
-      { href: '/reports?view=renewal', label: 'Renewal Analysis', icon: '↻', role: 'admin' },
-      { href: '/reports?view=sessions', label: 'Session Utilisation', icon: '◔' },
+      { href: '/insights/traffic', label: 'Footfall Traffic', icon: '⇋', role: 'admin' },
+      { href: '/insights/renewal', label: 'Renewal Analysis', icon: '↻', role: 'admin' },
+      { href: '/insights/sessions', label: 'Session Utilisation', icon: '◔' },
     ],
   },
 ];
@@ -109,6 +113,8 @@ export const SETTINGS_ITEM: NavItem = {
 
 export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: string }> {
   const out: Array<NavItem & { groupId: string; groupLabel: string }> = [];
+  // Dashboard first (no group header)
+  out.push({ ...DASHBOARD_ITEM, groupId: 'dashboard', groupLabel: 'Dashboard' });
   for (const g of NAV_GROUPS) {
     for (const it of g.items) {
       out.push({ ...it, groupId: g.id, groupLabel: g.label });
