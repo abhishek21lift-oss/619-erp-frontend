@@ -34,14 +34,17 @@ export default function BrandLogo({ size = 40, showText = false, textPosition = 
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-lo) 100%)',
+        background:
+          'conic-gradient(from 220deg at 60% 40%, var(--brand-hi), var(--aurora-violet), var(--aurora-pink), var(--brand-hi))',
         color: '#ffffff',
         fontWeight: 800,
         fontSize: Math.round(size * 0.36),
         letterSpacing: '-0.03em',
-        boxShadow: '0 6px 20px var(--brand-glow), inset 0 1px 0 rgba(255,255,255,0.20)',
+        boxShadow:
+          '0 8px 24px var(--brand-glow), inset 0 1px 0 rgba(255,255,255,0.30), 0 0 0 1px rgba(255,255,255,0.12) inset',
         flexShrink: 0,
         fontFeatureSettings: '"tnum"',
+        textShadow: '0 1px 0 rgba(0,0,0,0.30)',
       }}
     >
       619
@@ -88,7 +91,10 @@ export default function BrandLogo({ size = 40, showText = false, textPosition = 
           fontSize: isBelow ? 22 : 16,
           fontWeight: 800,
           letterSpacing: '-0.028em',
-          color: 'var(--text)',
+          background: 'linear-gradient(135deg, #ffffff 0%, var(--brand-hi) 80%)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
         }}
       >
         619 Fitness
@@ -103,7 +109,7 @@ export default function BrandLogo({ size = 40, showText = false, textPosition = 
           marginTop: isBelow ? 6 : 5,
         }}
       >
-        Iron Studio
+        Aurora Studio
       </div>
     </div>
   );

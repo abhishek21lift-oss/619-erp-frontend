@@ -53,19 +53,20 @@ export default function LoginPage() {
 
   return (
     <div className="login-shell">
-      {/* Ambient orbs — subtle on dark */}
+      {/* Drifting aurora orbs */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
         <div
           style={{
             position: 'absolute',
             top: '-15%',
             left: '-10%',
-            width: 540,
-            height: 540,
+            width: 560,
+            height: 560,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(239, 45, 60, 0.22) 0%, transparent 65%)',
+              'radial-gradient(circle, rgba(255, 45, 85, 0.32) 0%, transparent 65%)',
             animation: 'float 9s ease-in-out infinite',
+            filter: 'blur(20px)',
           }}
         />
         <div
@@ -73,25 +74,41 @@ export default function LoginPage() {
             position: 'absolute',
             top: '-5%',
             right: '-12%',
-            width: 600,
-            height: 600,
+            width: 620,
+            height: 620,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(255, 138, 28, 0.15) 0%, transparent 65%)',
+              'radial-gradient(circle, rgba(124, 58, 237, 0.32) 0%, transparent 65%)',
             animation: 'float 11s ease-in-out infinite 2s',
+            filter: 'blur(20px)',
           }}
         />
         <div
           style={{
             position: 'absolute',
-            bottom: '-15%',
+            bottom: '-18%',
             right: '-8%',
-            width: 500,
-            height: 500,
+            width: 520,
+            height: 520,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle, rgba(168, 85, 247, 0.10) 0%, transparent 65%)',
+              'radial-gradient(circle, rgba(34, 211, 238, 0.22) 0%, transparent 65%)',
             animation: 'float 10s ease-in-out infinite 1s',
+            filter: 'blur(20px)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '-14%',
+            left: '-6%',
+            width: 460,
+            height: 460,
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle, rgba(236, 72, 153, 0.20) 0%, transparent 65%)',
+            animation: 'float 13s ease-in-out infinite 3s',
+            filter: 'blur(20px)',
           }}
         />
       </div>
@@ -121,12 +138,10 @@ export default function LoginPage() {
           </div>
 
           <div
+            className="display"
             style={{
-              fontSize: 26,
-              fontWeight: 800,
-              letterSpacing: '-0.034em',
-              color: 'var(--text)',
-              marginBottom: 6,
+              fontSize: 30,
+              marginBottom: 8,
               textAlign: 'center',
             }}
           >
@@ -149,15 +164,15 @@ export default function LoginPage() {
               style={{
                 height: 1,
                 width: 32,
-                background: 'linear-gradient(90deg, transparent, var(--brand))',
+                background: 'linear-gradient(90deg, transparent, var(--brand-hi))',
               }}
             />
-            <span>Iron Operating System</span>
+            <span>Aurora Operating System</span>
             <div
               style={{
                 height: 1,
                 width: 32,
-                background: 'linear-gradient(90deg, var(--brand), transparent)',
+                background: 'linear-gradient(90deg, var(--brand-hi), transparent)',
               }}
             />
           </div>

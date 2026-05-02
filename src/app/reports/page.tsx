@@ -560,7 +560,8 @@ function StaffAttendanceView() {
     setLoading(true);
     setError('');
     Promise.all([
-      api.attendance.list({ from, to, type: 'staff' }) as Promise<any[]>,
+      // Backend stores staff/coach attendance under type='trainer' (not 'staff')
+      api.attendance.list({ from, to, type: 'trainer' }) as Promise<any[]>,
       api.trainers.list(),
     ])
       .then(([recs, t]) => {
