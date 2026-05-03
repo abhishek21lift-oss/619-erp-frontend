@@ -5,6 +5,7 @@ import Guard from '@/components/Guard';
 import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { api, Client } from '@/lib/api';
+import { fmtDate } from '@/lib/format';
 
 type Segment = 'active' | 'expiring' | 'lapsed' | 'birthdays';
 
@@ -142,14 +143,14 @@ function Inner({ segment }: { segment: Segment }) {
                   <tbody>
                     {visible.map((c) => (
                       <tr key={c.id}>
-                        <td><span className="id-chip">{c.client_id || '—'}</span></td>
+                        <td><span className="id-chip">{c.member_code || c.client_id || '—'}</span></td>
                         <td style={{ fontWeight: 600 }}>
                           <Link href={`/clients/${c.id}`}>{c.name}</Link>
                         </td>
                         <td className="text-muted tabular">{c.mobile || '—'}</td>
                         <td className="text-muted">{c.trainer_name || '—'}</td>
                         <td className="text-muted">{c.package_type || '—'}</td>
-                        <td className="text-muted tabular">{c.pt_end_date || '—'}</td>
+                        <td className="text-muted tabular">{fmtDate(c.pt_end_date)}</td>
                         <td>
                           <span className={`badge badge-${c.status || 'member'}`}>
                             {c.status || '—'}

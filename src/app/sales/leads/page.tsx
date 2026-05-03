@@ -5,6 +5,7 @@ import Guard from '@/components/Guard';
 import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { api, Client } from '@/lib/api';
+import { fmtDate } from '@/lib/format';
 
 export default function LeadInboxPage() {
   return (

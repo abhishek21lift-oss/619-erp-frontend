@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { memberWhatsAppMessage, whatsappHref } from '@/lib/whatsapp';
 
 export default function ClientsPage() {
   return (
@@ -242,7 +243,19 @@ function ClientsContent() {
                               {c.name}
                             </Link>
                           </td>
-                          <td className="text-muted tabular">{c.mobile || '—'}</td>
+                          <td className="text-muted tabular">
+                            {c.mobile ? (
+                              <a
+                                href={whatsappHref(c.mobile, memberWhatsAppMessage(c), c.country_code)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="wa-inline-link"
+                                title="Open WhatsApp"
+                              >
+                                {c.mobile}
+                              </a>
+                            ) : '—'}
+                          </td>
                           {isAdmin && (
                             <td className="text-muted">{c.trainer_name || '—'}</td>
                           )}
@@ -302,6 +315,17 @@ function ClientsContent() {
                               >
                                 ✎
                               </Link>
+                              {c.mobile && (
+                                <a
+                                  href={whatsappHref(c.mobile, memberWhatsAppMessage(c), c.country_code)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-whatsapp btn-icon btn-sm"
+                                  title="WhatsApp"
+                                >
+                                  WA
+                                </a>
+                              )}
                               {isAdmin && (
                                 <button
                                   onClick={() => del(c.id, c.name)}

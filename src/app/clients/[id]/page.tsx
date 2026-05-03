@@ -6,6 +6,7 @@ import Guard from '@/components/Guard';
 import Sidebar from '@/components/Sidebar';
 import { api, Client, Trainer } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { memberWhatsAppMessage, whatsappHref } from '@/lib/whatsapp';
 
 export default function ClientDetailPage({ params }: { params: { id: string } }) {
   return <Guard><ClientDetail id={params.id} /></Guard>;
@@ -26,6 +27,7 @@ function ClientDetail({ id }: { id: string }) {
   const [success, setSuccess] = useState('');
   const [form, setForm]       = useState<any>({});
   const [activeTab, setActiveTab] = useState<Tab>('information');
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const isAdmin = user?.role === 'admin';
 
   // Modal states
@@ -163,6 +165,62 @@ function ClientDetail({ id }: { id: string }) {
     });
   }
 
+  function openWhatsApp() {
+    const href = whatsappHref(client?.mobile, memberWhatsAppMessage(client), client?.country_code);
+    if (!href) {
+      setError('Add a mobile number before sending WhatsApp.');
+      return;
+    }
+    window.open(href, '_blank', 'noopener,noreferrer');
+  }
+
+  async function updatePhoto(photoUrl: string) {
+    if (!photoUrl) return;
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const res = await api.clients.update(id, { ...form, photo_url: photoUrl });
+      setClient(res.client); setForm(res.client);
+      setSuccess('Member photo updated.');
+      setTimeout(() => setSuccess(''), 2500);
+    } catch (e: any) { setError(e.message); }
+    finally { setSaving(false); }
+  }
+
+  async function removePhoto() {
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const res = await api.clients.update(id, { ...form, photo_url: '' });
+      setClient(res.client); setForm(res.client);
+      setSuccess('Member photo removed.');
+      setTimeout(() => setSuccess(''), 2500);
+    } catch (e: any) { setError(e.message); }
+    finally { setSaving(false); }
+  }
+
+  function promptPhotoUrl() {
+    const url = window.prompt('Paste image URL for this member', form.photo_url || client?.photo_url || '');
+    if (url === null) return;
+    updatePhoto(url.trim());
+  }
+
+  function handlePhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file.');
+      return;
+    }
+    if (file.size > 1_500_000) {
+      setError('Please choose an image smaller than 1.5 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => updatePhoto(String(reader.result || ''));
+    reader.onerror = () => setError('Could not read the selected image.');
+    reader.readAsDataURL(file);
+  }
+
   const fmt = (n: number) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
   if (loading) return (
@@ -256,7 +314,44 @@ function ClientDetail({ id }: { id: string }) {
                     ? <img src={client.photo_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : initials}
                 </div>
-                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '3px 10px' }}>📷 Add a photo</button>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoFile}
+                  style={{ display: 'none' }}
+                />
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    style={{ fontSize: 11, padding: '3px 10px' }}
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={saving}
+                  >
+                    Upload photo
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: 11, padding: '3px 10px' }}
+                    onClick={promptPhotoUrl}
+                    disabled={saving}
+                  >
+                    URL
+                  </button>
+                  {client.photo_url && (
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      style={{ fontSize: 11, padding: '3px 10px' }}
+                      onClick={removePhoto}
+                      disabled={saving}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
                 <span className={`badge badge-${client.status}`} style={{ fontSize: 11 }}>{(client.status || 'active').toUpperCase()}</span>
               </div>
 
@@ -288,8 +383,13 @@ function ClientDetail({ id }: { id: string }) {
                     ✅ Check In
                   </button>
                   <button className="btn btn-ghost btn-sm">🔔 Send Notification</button>
-                  <button className="btn btn-ghost btn-sm" style={{ background: 'rgba(37,211,102,.15)', borderColor: '#25D366', color: '#25D366' }}>
-                    💬 Send WhatsApp
+                  <button
+                    type="button"
+                    className="btn btn-whatsapp btn-sm"
+                    onClick={openWhatsApp}
+                    disabled={!client.mobile}
+                  >
+                    WhatsApp
                   </button>
                   <button className="btn btn-ghost btn-sm" onClick={() => { setActiveTab('followup'); }}>📞 Follow Up History</button>
                 </div>
