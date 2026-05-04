@@ -97,6 +97,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/collection', label: 'Collection', icon: '↗', role: 'admin' },
       { href: '/finance/pl', label: 'Profit & Loss', icon: '⊞', role: 'admin' },
       { href: '/finance/forecast', label: 'Revenue Forecast', icon: '◌', role: 'admin' },
+      { href: '/finance/trainer-revenue', label: 'Trainer Revenue', icon: '🎯', role: 'admin' },
     ],
   },
   {
