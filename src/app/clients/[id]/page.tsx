@@ -222,6 +222,29 @@ function ClientDetail({ id }: { id: string }) {
     reader.readAsDataURL(file);
   }
 
+  async function enrollFingerprint() {
+    const defaultCode = form.biometric_code || client?.biometric_code || client?.client_id || client?.member_code || '';
+    const code = window.prompt('Enter biometric device code for this member', defaultCode);
+    if (code === null) return;
+    const biometricCode = code.trim();
+    if (!biometricCode) {
+      setError('Biometric code is required.');
+      return;
+    }
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const res = await api.clients.update(id, {
+        ...form,
+        biometric_code: biometricCode,
+        biometric_added: true,
+      });
+      setClient(res.client); setForm(res.client);
+      setSuccess(`Fingerprint enrolled with code ${biometricCode}.`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (e: any) { setError(e.message); }
+    finally { setSaving(false); }
+  }
+
   const fmt = (n: number) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
   if (loading) return (

@@ -159,7 +159,7 @@ export default function Sidebar() {
           <BrandLogo size={collapsed ? 30 : 34} showText={!collapsed} textPosition="right" />
           <button
             type="button"
-            className="sidebar-collapse-btn"
+            className="sidebar-collapse-btn sidebar-reopen-btn"
             onClick={toggleCollapse}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand' : 'Collapse'}
