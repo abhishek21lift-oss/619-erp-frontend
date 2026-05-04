@@ -84,6 +84,7 @@ export type Client = {
   notes?: string;
   photo_url?: string;
   biometric_added?: boolean;
+  biometric_code?: string;
   app_installed?: boolean;
 };
 
@@ -96,6 +97,8 @@ export type Trainer = {
   salary?: number;
   incentive_rate?: number;
   status?: string;
+  biometric_added?: boolean;
+  biometric_code?: string;
 };
 
 export type Payment = {
@@ -297,6 +300,12 @@ export const api = {
 
     mark: (data: any) =>
       req('/api/attendance', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    biometric: (data: { biometric_code: string; type?: 'client' | 'trainer' }) =>
+      req<{ message: string; attendance: Attendance; person: { id: string; name: string; type: string } }>('/api/attendance/biometric', {
         method: 'POST',
         body: JSON.stringify(data),
       }),

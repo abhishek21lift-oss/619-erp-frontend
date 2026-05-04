@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { api, DashSummary } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { fmtDate } from '@/lib/format';
 
 export default function DashboardPage() {
   return (
@@ -486,7 +487,7 @@ function DashContent() {
                               {isAdmin && (
                                 <td className="text-muted">{p.trainer_name || '—'}</td>
                               )}
-                              <td className="text-muted">{p.date}</td>
+                              <td className="text-muted">{fmtDate(p.date)}</td>
                             </tr>
                           ))}
                         </tbody>

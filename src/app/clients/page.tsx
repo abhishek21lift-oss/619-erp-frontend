@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { fmtDate } from '@/lib/format';
 import { memberWhatsAppMessage, whatsappHref } from '@/lib/whatsapp';
 
 export default function ClientsPage() {
@@ -271,7 +272,7 @@ function ClientsContent() {
                               }}
                               className="tabular"
                             >
-                              {c.pt_end_date || '—'}
+                              {fmtDate(c.pt_end_date)}
                               {soonExpiring && (
                                 <span style={{ marginLeft: 6, fontSize: 11 }}>
                                   · {daysLeft}d

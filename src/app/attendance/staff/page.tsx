@@ -28,6 +28,8 @@ function Inner() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [search, setSearch] = useState('');
+  const [bioCode, setBioCode] = useState('');
+  const [bioSaving, setBioSaving] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -112,6 +114,24 @@ function Inner() {
     }
   }
 
+  async function biometricCheckIn() {
+    if (!bioCode.trim()) return;
+    setBioSaving(true);
+    setError('');
+    try {
+      const res = await api.attendance.biometric({ biometric_code: bioCode.trim(), type: 'trainer' });
+      const updated = await api.attendance.list({ date, type: 'trainer' });
+      setRecords(Array.isArray(updated) ? updated : []);
+      setSuccess(res.message);
+      setBioCode('');
+      setTimeout(() => setSuccess(''), 2200);
+    } catch (e: any) {
+      setError(e.message || 'Biometric check-in failed');
+    } finally {
+      setBioSaving(false);
+    }
+  }
+
   return (
     <div className="app-layout">
       <Sidebar />
@@ -133,6 +153,26 @@ function Inner() {
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
+
+          <form
+            className="card mb-3"
+            style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}
+            onSubmit={(e) => { e.preventDefault(); biometricCheckIn(); }}
+          >
+            <div style={{ fontWeight: 800, color: 'var(--text)' }}>Staff Biometric</div>
+            <input
+              className="input"
+              placeholder="Scan fingerprint / enter staff code"
+              value={bioCode}
+              onChange={(e) => setBioCode(e.target.value)}
+              style={{ maxWidth: 320 }}
+              autoComplete="off"
+            />
+            <button className="btn btn-primary btn-sm" disabled={bioSaving || !bioCode.trim()}>
+              {bioSaving ? 'Checking...' : 'Check In'}
+            </button>
+            <span className="text-muted text-sm">Device can POST code to /api/attendance/biometric</span>
+          </form>
 
           <div
             className="kpi-grid mb-3"

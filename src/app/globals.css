@@ -2410,6 +2410,7 @@ tbody tr:hover { background: #fff7df !important; }
   color: #111827 !important;
 }
 .alert { border-radius: 3px !important; }
+.alert-banner-cta { display: none !important; }
 
 @media (max-width: 768px) {
   .topbar,

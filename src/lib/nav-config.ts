@@ -71,7 +71,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'operations',
-    label: 'Operations',
+    label: 'Attendance',
     icon: '⚙',
     items: [
       { href: '/attendance', label: 'Member Attendance', icon: '◧' },
@@ -80,12 +80,19 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: 'memberships',
+    label: 'Memberships',
+    icon: 'M',
+    items: [
+      { href: '/memberships/subscriptions', label: 'Subscriptions', icon: 'S' },
+    ],
+  },
+  {
     id: 'finance',
     label: 'Finance',
     icon: '₹',
     items: [
       { href: '/payments', label: 'Payments', icon: '◈' },
-      { href: '/plans', label: 'Plans & Pricing', icon: '◆' },
       { href: '/finance/dues', label: 'Outstanding Dues', icon: '◔' },
       { href: '/finance/collection', label: 'Collection', icon: '↗', role: 'admin' },
       { href: '/finance/pl', label: 'Profit & Loss', icon: '⊞', role: 'admin' },

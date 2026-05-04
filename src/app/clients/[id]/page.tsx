@@ -6,6 +6,7 @@ import Guard from '@/components/Guard';
 import Sidebar from '@/components/Sidebar';
 import { api, Client, Trainer } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { fmtDate } from '@/lib/format';
 import { memberWhatsAppMessage, whatsappHref } from '@/lib/whatsapp';
 
 export default function ClientDetailPage({ params }: { params: { id: string } }) {
@@ -436,9 +437,10 @@ function ClientDetail({ id }: { id: string }) {
                   <InfoRow icon="📱" val={client.mobile ? `+91 ${client.mobile}` : 'Add mobile'} muted={!client.mobile} />
                   {client.alt_mobile && <InfoRow icon="📱" val={`+91 ${client.alt_mobile}`} />}
                   <InfoRow icon="📧" val={client.email || 'Add email'} muted={!client.email} />
-                  <InfoRow icon="🎂" val={client.dob || 'Add DOB'} muted={!client.dob} />
-                  {memberSince && <InfoRow icon="📅" val={`Date Of Joining: ${String(memberSince).split('T')[0]}`} />}
+                  <InfoRow icon="🎂" val={client.dob ? fmtDate(client.dob) : 'Add DOB'} muted={!client.dob} />
+                  {memberSince && <InfoRow icon="📅" val={`Date Of Joining: ${fmtDate(memberSince)}`} />}
                   <InfoRow icon="🆔" val={`Member Code : ${client.member_code || '—'}`} mono />
+                  <InfoRow icon="ID" val={`Biometric Code : ${client.biometric_code || client.client_id || '—'}`} mono />
                   {client.reference_no && <InfoRow icon="🔗" val={`Ref No. : ${client.reference_no}`} />}
                   <InfoRow icon="👤" val={`Client Rep : ${user?.name || '—'}`} />
                   {client.emergency_no && <InfoRow icon="🚨" val={`Emergency No : ${client.emergency_no}`} />}
@@ -484,9 +486,9 @@ function ClientDetail({ id }: { id: string }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {/* KPI tiles */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '.75rem' }}>
-                    <KpiTile label="Member Since" val={memberSince ? String(memberSince).split('T')[0] : '—'} sub={memberDays !== null ? `${memberDays} days` : ''} />
+                    <KpiTile label="Member Since" val={memberSince ? fmtDate(memberSince) : '—'} sub={memberDays !== null ? `${memberDays} days` : ''} />
                     <KpiTile label="Total Paid" val={fmt(totalPaid)} color="var(--success)" sub={`${payments.length} payment(s)`} />
-                    <KpiTile label="Package" val={client.package_type || '—'} sub={client.pt_end_date ? `Ends ${client.pt_end_date}` : ''} />
+                    <KpiTile label="Package" val={client.package_type || '—'} sub={client.pt_end_date ? `Ends ${fmtDate(client.pt_end_date)}` : ''} />
                     <KpiTile label="Balance Due" val={client.balance_amount > 0 ? fmt(client.balance_amount) : '₹0'} color={client.balance_amount > 0 ? 'var(--danger)' : 'var(--success)'} />
                   </div>
 
@@ -593,15 +595,15 @@ function ClientDetail({ id }: { id: string }) {
                   <div className="card">
                     <div className="card-title" style={{ marginBottom: '1rem' }}>🗓️ Membership Timeline</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '.85rem' }}>
-                      {memberSince && <TimelineRow icon="🎉" title="Joined the studio" date={String(memberSince).split('T')[0]} />}
-                      {client.pt_start_date && <TimelineRow icon="🏋️" title={`Started ${client.package_type || 'membership'}`} date={String(client.pt_start_date).split('T')[0]} />}
+                      {memberSince && <TimelineRow icon="🎉" title="Joined the studio" date={fmtDate(memberSince)} />}
+                      {client.pt_start_date && <TimelineRow icon="🏋️" title={`Started ${client.package_type || 'membership'}`} date={fmtDate(client.pt_start_date)} />}
                       {payments.slice().reverse().map((p: any) => (
-                        <TimelineRow key={p.id} icon="💳" title={`Payment of ${fmt(p.amount)} via ${p.method}`} date={p.date} />
+                        <TimelineRow key={p.id} icon="💳" title={`Payment of ${fmt(p.amount)} via ${p.method}`} date={fmtDate(p.date)} />
                       ))}
                       {renewals.slice().reverse().map((r: any) => (
-                        <TimelineRow key={r.id} icon="🔄" title={`Renewed: ${r.old_package || '—'} → ${r.new_package} (${fmt(r.amount)})`} date={r.renewed_on || String(r.created_at || '').split('T')[0]} />
+                        <TimelineRow key={r.id} icon="🔄" title={`Renewed: ${r.old_package || '—'} → ${r.new_package} (${fmt(r.amount)})`} date={fmtDate(r.renewed_on || r.created_at)} />
                       ))}
-                      {client.pt_end_date && <TimelineRow icon={client.status === 'expired' ? '🏁' : '⏳'} title={client.status === 'expired' ? 'Membership expired' : 'Membership expires'} date={client.pt_end_date} />}
+                      {client.pt_end_date && <TimelineRow icon={client.status === 'expired' ? '🏁' : '⏳'} title={client.status === 'expired' ? 'Membership expired' : 'Membership expires'} date={fmtDate(client.pt_end_date)} />}
                     </div>
                   </div>
                 </div>
@@ -654,7 +656,7 @@ function ClientDetail({ id }: { id: string }) {
                                 <td><span className="mono text-muted text-xs">{p.receipt_no || '—'}</span></td>
                                 <td style={{ fontWeight: 700, color: 'var(--success)' }}>{fmt(p.amount)}</td>
                                 <td><span className={`badge badge-${(p.method || 'cash').toLowerCase()}`}>{p.method}</span></td>
-                                <td className="text-muted">{p.date}</td>
+                                <td className="text-muted">{fmtDate(p.date)}</td>
                                 <td className="text-muted text-sm">{p.notes || '—'}</td>
                               </tr>
                             ))}
@@ -674,10 +676,10 @@ function ClientDetail({ id }: { id: string }) {
                           <tbody>
                             {renewals.map((r: any) => (
                               <tr key={r.id}>
-                                <td className="text-muted">{r.renewed_on || String(r.created_at || '').split('T')[0]}</td>
+                                <td className="text-muted">{fmtDate(r.renewed_on || r.created_at)}</td>
                                 <td>{r.old_package || '—'}</td>
                                 <td style={{ fontWeight: 600 }}>{r.new_package}</td>
-                                <td className="text-muted">{r.new_end_date}</td>
+                                <td className="text-muted">{fmtDate(r.new_end_date)}</td>
                                 <td style={{ fontWeight: 700, color: 'var(--success)' }}>{fmt(r.amount)}</td>
                                 <td><span className={`badge badge-${(r.payment_method || 'cash').toLowerCase()}`}>{r.payment_method}</span></td>
                               </tr>
@@ -706,7 +708,7 @@ function ClientDetail({ id }: { id: string }) {
                         <tbody>
                           {attendance.map((a: any) => (
                             <tr key={a.id}>
-                              <td>{a.date}</td>
+                              <td>{fmtDate(a.date)}</td>
                               <td className="text-muted">{a.check_in || '—'}</td>
                               <td><span className="badge badge-active">{a.status || 'present'}</span></td>
                             </tr>
@@ -736,7 +738,7 @@ function ClientDetail({ id }: { id: string }) {
                         <tbody>
                           {workouts.map((w: any) => (
                             <tr key={w.id}>
-                              <td>{w.date}</td>
+                              <td>{fmtDate(w.date)}</td>
                               <td style={{ fontWeight: 600 }}>{w.exercise || '—'}</td>
                               <td>{w.sets || '—'}</td>
                               <td>{w.reps || '—'}</td>
@@ -995,7 +997,7 @@ function ClientDetail({ id }: { id: string }) {
                 <div><label>Reason</label><input className="input" value={actionForm.reason || ''} onChange={e => setActionForm((f: any) => ({ ...f, reason: e.target.value }))} /></div>
               </div>
             )}
-            {(actionModal === 'combo' || actionModal === 'pt_assign') && (
+            {(actionModal === 'combo' || actionModal === 'pt_assign' || actionModal === 'pt_renew') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
                 <div><label>Start Date</label><input className="input" type="date" value={actionForm.pt_start_date || today} onChange={e => setActionForm((f: any) => ({ ...f, pt_start_date: e.target.value }))} /></div>
                 <div><label>End Date</label><input className="input" type="date" value={actionForm.pt_end_date || ''} onChange={e => setActionForm((f: any) => ({ ...f, pt_end_date: e.target.value }))} /></div>
@@ -1125,3 +1127,4 @@ function TimelineRow({ icon, title, date }: { icon: string; title: string; date:
     </div>
   );
 }
+
