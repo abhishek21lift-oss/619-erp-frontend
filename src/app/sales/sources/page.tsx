@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
 
 export default function LeadSourcesPage() {
@@ -53,28 +52,8 @@ function Inner() {
   const totalConverted = breakdown.reduce((s, r) => s + r.converted, 0);
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Lead Sources"
-          subtitle="Which channels are bringing real members through the door"
-        />
-        <div className="page-content fade-up">
-          {error && <div className="alert alert-error">{error}</div>}
-
-          <div
-            className="kpi-grid mb-3"
-            style={{ gridTemplateColumns: 'repeat(3,1fr)' }}
-          >
-            <Kpi label="Total Leads" value={totalLeads} color="var(--brand)" />
-            <Kpi label="Converted" value={totalConverted} color="var(--success)" />
-            <Kpi
-              label="Top Source"
-              value={breakdown[0]?.source || '—'}
-              color="var(--info)"
-            />
-          </div>
 
           <div className="card" style={{ padding: 0 }}>
             <div className="table-wrap">
@@ -136,9 +115,8 @@ function Inner() {
               )}
             </div>
           </div>
-        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 
 const HOURS = ['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22'];
@@ -57,31 +56,8 @@ function Inner() {
   const peakHour = byHour.reduce((b, h) => (h.count > b.count ? h : b), byHour[0]);
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Footfall Traffic"
-          subtitle="When the gym is busiest, by hour of day"
-          actions={
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                className="input"
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                style={{ maxWidth: 160 }}
-              />
-              <input
-                className="input"
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                style={{ maxWidth: 160 }}
-              />
-            </div>
-          }
-        />
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -159,7 +135,7 @@ function Inner() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

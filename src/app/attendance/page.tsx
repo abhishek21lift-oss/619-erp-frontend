@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import { api, Client, Attendance } from '@/lib/api';
 
@@ -111,30 +110,8 @@ function AttendanceContent() {
   };
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Member Attendance"
-          subtitle={date === today ? 'Today' : date}
-          actions={
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {isAdmin && (
-                <Link href="/attendance/staff" className="btn btn-ghost btn-sm">
-                  Staff →
-                </Link>
-              )}
-              <input
-                className="input"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                style={{ maxWidth: 170 }}
-              />
-            </div>
-          }
-        />
-
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
@@ -345,6 +322,6 @@ function AttendanceContent() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

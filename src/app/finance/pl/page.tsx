@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 
 export default function ProfitAndLossPage() {
@@ -53,38 +52,8 @@ function Inner() {
   }, [monthly, trainers, overheads]);
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Profit & Loss"
-          subtitle="A simple P&L view — revenue minus payroll & overheads"
-          actions={
-            <select
-              className="input select"
-              value={year}
-              onChange={(e) => setYear(parseInt(e.target.value))}
-              style={{ maxWidth: 110 }}
-            >
-              {[2023, 2024, 2025, 2026, 2027].map((y) => (
-                <option key={y}>{y}</option>
-              ))}
-            </select>
-          }
-        />
-        <div className="page-content fade-up">
-          {error && <div className="alert alert-error">{error}</div>}
-
-          <div className="kpi-grid mb-3" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
-            <Stat label="Revenue" value={fmt(totals.revenue)} color="var(--success)" />
-            <Stat label="Payroll (12m est)" value={fmt(totals.annualSalary)} color="var(--warning)" />
-            <Stat label="Other Overheads" value={fmt(overheads)} color="var(--info)" />
-            <Stat
-              label={totals.profit >= 0 ? `Profit (${totals.margin}%)` : 'Loss'}
-              value={fmt(Math.abs(totals.profit))}
-              color={totals.profit >= 0 ? 'var(--success)' : 'var(--danger)'}
-            />
-          </div>
 
           <div className="card mb-3">
             <div className="card-title">Adjust Overheads</div>
@@ -155,9 +124,8 @@ function Inner() {
               )}
             </div>
           </div>
-        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

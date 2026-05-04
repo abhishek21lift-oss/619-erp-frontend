@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Trainer, Attendance } from '@/lib/api';
 
 /**
@@ -133,23 +132,8 @@ function Inner() {
   }
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Staff Attendance"
-          subtitle={date === today ? 'Today' : date}
-          actions={
-            <input
-              className="input"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              style={{ maxWidth: 170 }}
-            />
-          }
-        />
-
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
@@ -338,6 +322,6 @@ function Inner() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

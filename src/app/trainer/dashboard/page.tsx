@@ -6,8 +6,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 
 type Earnings = { base: number; incentive: number; total: number; month: string };
@@ -62,14 +61,8 @@ function TrainerInner() {
     '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Coach Dashboard"
-          subtitle={`Welcome back, ${user?.name?.split(' ')[0] || 'Coach'}`}
-          hideBreadcrumbs
-        />
 
         <div className="page-content fade-up">
           {/* Earnings hero */}
@@ -530,7 +523,7 @@ function TrainerInner() {
           )}
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

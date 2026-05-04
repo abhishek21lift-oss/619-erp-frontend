@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 
@@ -82,18 +81,8 @@ function Inner({ segment }: { segment: Segment }) {
   const meta = TITLES[segment];
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title={meta.title}
-          subtitle={meta.sub}
-          actions={
-            <Link href="/clients/new" className="btn btn-primary btn-sm">
-              + Add Member
-            </Link>
-          }
-        />
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -165,6 +154,6 @@ function Inner({ segment }: { segment: Segment }) {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

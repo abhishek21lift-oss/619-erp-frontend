@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 
 export default function CollectionPage() {
@@ -52,37 +51,8 @@ function Inner() {
   const avg = total / Math.max(fullYear.filter((m) => m.revenue > 0).length, 1);
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Collection"
-          subtitle="Money in the door, month by month"
-          actions={
-            <select
-              className="input select"
-              value={year}
-              onChange={(e) => setYear(parseInt(e.target.value))}
-              style={{ maxWidth: 110 }}
-            >
-              {[2023, 2024, 2025, 2026, 2027].map((y) => (
-                <option key={y}>{y}</option>
-              ))}
-            </select>
-          }
-        />
-        <div className="page-content fade-up">
-          {error && <div className="alert alert-error">{error}</div>}
-
-          <div className="kpi-grid mb-3" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
-            <Stat label={`Collected · ${year}`} value={fmt(total)} color="var(--brand)" />
-            <Stat label="Avg / Month" value={fmt(avg)} color="var(--info)" />
-            <Stat
-              label="Best Month"
-              value={fullYear.reduce((b, m) => (m.revenue > b.revenue ? m : b), fullYear[0])?.month || '—'}
-              color="var(--success)"
-            />
-          </div>
 
           <div className="card" style={{ padding: 0 }}>
             <div className="table-wrap">
@@ -122,9 +92,8 @@ function Inner() {
               )}
             </div>
           </div>
-        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

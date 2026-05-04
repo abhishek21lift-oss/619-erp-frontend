@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
+import AppShell from '@/components/AppShell';
 import { api, Trainer } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -172,8 +172,7 @@ function NewClientForm() {
     setF(p => ({ ...p, [k]: e.target.value }));
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
         <div className="topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -492,7 +491,7 @@ function NewClientForm() {
           </form>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

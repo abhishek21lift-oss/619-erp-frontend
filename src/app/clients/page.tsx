@@ -2,8 +2,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { fmtDate } from '@/lib/format';
@@ -121,19 +120,8 @@ function ClientsContent() {
   ];
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Members"
-          subtitle={`${visible.length} of ${clients.length} on the roster`}
-          actions={
-            <Link href="/clients/new" className="btn btn-primary btn-sm">
-              + Add Member
-            </Link>
-          }
-        />
-
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -353,6 +341,6 @@ function ClientsContent() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

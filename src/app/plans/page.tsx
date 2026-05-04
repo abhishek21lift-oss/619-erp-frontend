@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect, FormEvent } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 
 export default function PlansPage() {
   return (
@@ -236,27 +235,8 @@ function PlansContent() {
   };
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Plans & Pricing"
-          subtitle="Configure pricing for gym & personal training"
-          actions={
-            <>
-              <button className="btn btn-ghost btn-sm" onClick={resetDefaults}>
-                ↺ Reset
-              </button>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => setCreating('Membership')}
-              >
-                + New Plan
-              </button>
-            </>
-          }
-        />
-
         <div className="page-content fade-up">
           {success && <div className="alert alert-success">✓ {success}</div>}
 
@@ -552,7 +532,7 @@ function PlansContent() {
           }}
         />
       )}
-    </div>
+    </AppShell>
   );
 }
 

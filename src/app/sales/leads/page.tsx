@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 
@@ -69,19 +68,8 @@ function Inner() {
   };
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Lead Inbox"
-          subtitle="Walk-ins, calls and online enquiries waiting for follow-up"
-          actions={
-            <Link href="/sales/enquiry" className="btn btn-primary btn-sm">
-              + Add Enquiry
-            </Link>
-          }
-        />
-
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -161,7 +149,7 @@ function Inner() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -62,25 +61,8 @@ function Inner() {
   const projectedYearTotal = realisedTotal + forecastRest;
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Revenue Forecast"
-          subtitle={`Projection for ${year}, based on the months you've already booked`}
-        />
-        <div className="page-content fade-up">
-          {error && <div className="alert alert-error">{error}</div>}
-
-          <div className="kpi-grid mb-3" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
-            <Stat label="Realised YTD" value={fmt(realisedTotal)} color="var(--success)" />
-            <Stat label="Forecast Remainder" value={fmt(forecastRest)} color="var(--info)" />
-            <Stat
-              label={`Projected ${year}`}
-              value={fmt(projectedYearTotal)}
-              color="var(--brand)"
-            />
-          </div>
 
           <div className="card" style={{ padding: 0 }}>
             <div className="table-wrap">
@@ -116,9 +98,8 @@ function Inner() {
               )}
             </div>
           </div>
-        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
 import { fmtDate, fmtMoney } from '@/lib/format';
 
@@ -36,30 +35,26 @@ function SubscriptionsContent() {
   }, [clients, search]);
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Subscriptions"
-          subtitle={`${rows.length} active or historical membership subscriptions`}
-          actions={<Link href="/plans" className="btn btn-primary btn-sm">Existing Plans</Link>}
-        />
-
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
-          <div className="card" style={{ padding: 0 }}>
-            <div style={{ padding: '0.85rem 1.4rem', borderBottom: '1px solid var(--line)', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+            <h2 style={{ fontWeight: 700, fontSize: 20, margin: 0 }}>Subscriptions</h2>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span className="text-muted text-sm">{rows.length} subscriptions</span>
               <input
                 className="input"
-                placeholder="Search member, code, mobile"
+                placeholder="Search member…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{ maxWidth: 320 }}
+                style={{ maxWidth: 220 }}
               />
-              <span className="text-muted text-sm">{rows.length} subscriptions</span>
             </div>
+          </div>
 
+          <div className="card" style={{ padding: 0 }}>
             <div className="table-wrap">
               {loading ? (
                 <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>Loading subscriptions...</div>
@@ -99,6 +94,6 @@ function SubscriptionsContent() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

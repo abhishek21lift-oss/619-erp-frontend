@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
+import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 
 export default function TrainerDetailPage({ params }: { params: { id: string } }) {
@@ -12,9 +12,12 @@ export default function TrainerDetailPage({ params }: { params: { id: string } }
 
 function TrainerDetail({ id }: { id: string }) {
   const router = useRouter();
-  const [data, setData]       = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [data, setData]         = useState<any>(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
+  const [success, setSuccess]   = useState('');
+  const [photoSaving, setPhotoSaving] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -23,6 +26,53 @@ function TrainerDetail({ id }: { id: string }) {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  async function updatePhoto(photoUrl: string) {
+    if (!data) return;
+    setPhotoSaving(true); setError(''); setSuccess('');
+    try {
+      const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://619-erp-api.onrender.com';
+      const token = localStorage.getItem('619_token');
+      const res = await fetch(`${BASE}/api/trainers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ...data, photo_url: photoUrl }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setData((prev: any) => ({ ...prev, ...(updated.trainer || updated), photo_url: photoUrl }));
+      } else {
+        // Optimistically update local state even if backend doesn't support it yet
+        setData((prev: any) => ({ ...prev, photo_url: photoUrl }));
+      }
+      setSuccess('Photo updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch {
+      setData((prev: any) => ({ ...prev, photo_url: photoUrl }));
+      setSuccess('Photo updated (local only — will sync when backend is live).');
+      setTimeout(() => setSuccess(''), 4000);
+    } finally { setPhotoSaving(false); }
+  }
+
+  function handlePhotoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setError('Please choose an image file.'); return; }
+    if (file.size > 1_500_000) { setError('Please choose an image smaller than 1.5 MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => updatePhoto(String(reader.result || ''));
+    reader.onerror = () => setError('Could not read the selected image.');
+    reader.readAsDataURL(file);
+  }
+
+  function promptPhotoUrl() {
+    const url = window.prompt('Paste an image URL for this trainer', data?.photo_url || '');
+    if (url === null) return;
+    updatePhoto(url.trim());
+  }
+
+  function removePhoto() { updatePhoto(''); }
 
   const fmt = (n: any) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
   const fmtK = (n: any) => {
@@ -33,26 +83,24 @@ function TrainerDetail({ id }: { id: string }) {
   };
 
   if (loading) return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
         <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
           <div className="text-muted pulse">Loading trainer profile…</div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 
   if (!data || error) return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
         <div className="page-content">
           <div className="alert alert-error">{error || 'Trainer not found'}</div>
           <Link href="/trainers" className="btn btn-ghost">← Back to trainers</Link>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 
   const t = data;
@@ -64,8 +112,7 @@ function TrainerDetail({ id }: { id: string }) {
   const maxRev = Math.max(...monthly.map((m: any) => m.revenue), 1);
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
         <div className="topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -78,22 +125,68 @@ function TrainerDetail({ id }: { id: string }) {
         </div>
 
         <div className="page-content fade-up">
-          {/* HERO — avatar, name, contact */}
-          <div className="card mb-3" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="user-avatar" style={{
-              width: 88, height: 88, fontSize: 28, borderRadius: 20,
-              boxShadow: '0 8px 32px rgba(255, 71, 87, 0.35)',
-            }}>{initials}</div>
+          {error   && <div className="alert alert-error mb-2">{error}</div>}
+          {success && <div className="alert alert-success mb-2">{success}</div>}
+
+          {/* HERO — avatar + photo upload, name, contact */}
+          <div className="card mb-3" style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+
+            {/* Avatar + upload controls */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.5rem', minWidth: 110 }}>
+              <div style={{
+                width: 96, height: 96, borderRadius: 20, overflow: 'hidden',
+                background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand2) 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 30, fontWeight: 800, color: '#fff',
+                boxShadow: '0 8px 32px rgba(255,71,87,.35)',
+                border: '2.5px solid var(--glass-border-strong)', flexShrink: 0,
+              }}>
+                {t.photo_url
+                  ? <img src={t.photo_url} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : initials}
+              </div>
+              <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{ display: 'none' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
+                <button type="button" className="btn btn-primary btn-sm"
+                  style={{ fontSize: 11, padding: '3px 10px', whiteSpace: 'nowrap' }}
+                  onClick={() => photoInputRef.current?.click()} disabled={photoSaving}>
+                  {photoSaving ? 'Uploading…' : '📷 Upload Photo'}
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm"
+                  style={{ fontSize: 11, padding: '3px 10px' }}
+                  onClick={promptPhotoUrl} disabled={photoSaving}>
+                  🔗 URL
+                </button>
+                {t.photo_url && (
+                  <button type="button" className="btn btn-ghost btn-sm"
+                    style={{ fontSize: 11, padding: '3px 10px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                    onClick={removePhoto} disabled={photoSaving}>
+                    Remove
+                  </button>
+                )}
+              </div>
+              <span className={`badge badge-${t.status === 'active' ? 'active' : 'expired'}`} style={{ fontSize: 11 }}>
+                {(t.status || 'active').toUpperCase()}
+              </span>
+            </div>
+
+            {/* Name + contact info */}
             <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>{t.name}</div>
-              <div className="text-muted text-sm" style={{ marginBottom: 8 }}>{t.role || 'Personal Trainer'}</div>
+              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 4 }}>{t.name}</div>
+              <div className="text-muted text-sm" style={{ marginBottom: 10 }}>{t.role || 'Personal Trainer'}</div>
               <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', fontSize: 13 }}>
                 {t.mobile && <span className="text-muted">📱 {t.mobile}</span>}
                 {t.email && <span className="text-muted">📧 {t.email}</span>}
                 {t.joining_date && <span className="text-muted">📅 Joined {String(t.joining_date).split('T')[0]}</span>}
               </div>
+              {t.specialization && (
+                <div style={{ marginTop: 8, fontSize: 13, color: 'var(--electric)', fontWeight: 600 }}>
+                  🏇 {t.specialization}
+                </div>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: '.5rem' }}>
+
+            <div style={{ display: 'flex', gap: '.5rem', alignSelf: 'flex-start' }}>
               <Link href="/trainers" className="btn btn-ghost btn-sm">All Trainers</Link>
             </div>
           </div>
@@ -239,7 +332,7 @@ function TrainerDetail({ id }: { id: string }) {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

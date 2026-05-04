@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, User, Trainer } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
@@ -155,13 +154,8 @@ function SettingsContent() {
     : [['password', 'Change Password']];
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Settings"
-          subtitle={isAdmin ? 'Manage accounts & security' : 'Account security'}
-        />
 
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">⚠ {error}</div>}
@@ -568,7 +562,7 @@ function SettingsContent() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   );
 }
 

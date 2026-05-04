@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
 
 export default function RenewalAnalysisPage() {
@@ -64,13 +63,8 @@ function Inner() {
   }, [clients]);
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Renewal Analysis"
-          subtitle="How well memberships convert into renewals"
-        />
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -140,7 +134,7 @@ function Inner() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

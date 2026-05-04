@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, FormEvent } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Payment, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
@@ -98,18 +97,8 @@ function PaymentsContent() {
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Payments"
-          subtitle={`Today ${fmt(todayRevenue)} · Shown ${fmt(totalRevenue)}`}
-          actions={
-            <button className="btn btn-primary btn-sm" onClick={() => setShowForm(!showForm)}>
-              {showForm ? '✕ Cancel' : '+ Record Payment'}
-            </button>
-          }
-        />
 
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
@@ -353,6 +342,6 @@ function PaymentsContent() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

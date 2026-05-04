@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 
 export default function OutstandingDuesPage() {
@@ -51,13 +50,8 @@ function Inner() {
   );
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Outstanding Dues"
-          subtitle="Members with unpaid balances — chase them this week"
-        />
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -145,6 +139,6 @@ function Inner() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

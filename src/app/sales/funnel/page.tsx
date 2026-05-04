@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
 
 export default function ConversionFunnelPage() {
@@ -57,13 +56,8 @@ function Inner() {
   const convRate = lead + conv > 0 ? Math.round((conv / (lead + conv)) * 100) : 0;
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Conversion Funnel"
-          subtitle="Where prospects fall off — and where to push harder"
-        />
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
@@ -111,7 +105,7 @@ function Inner() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

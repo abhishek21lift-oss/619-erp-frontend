@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Guard from '@/components/Guard';
-import Sidebar from '@/components/Sidebar';
-import TopBar from '@/components/TopBar';
+import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
@@ -78,27 +77,8 @@ function ReportsContent() {
   });
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppShell>
       <div className="page-main">
-        <TopBar
-          title="Reports"
-          subtitle="Analytics & financial overview"
-          actions={
-            tab === 'monthly' ? (
-              <select
-                className="input select"
-                value={year}
-                onChange={(e) => setYear(parseInt(e.target.value))}
-                style={{ maxWidth: 110 }}
-              >
-                {[2023, 2024, 2025, 2026, 2027].map((y) => (
-                  <option key={y}>{y}</option>
-                ))}
-              </select>
-            ) : null
-          }
-        />
 
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
@@ -536,7 +516,7 @@ function ReportsContent() {
           )}
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 
