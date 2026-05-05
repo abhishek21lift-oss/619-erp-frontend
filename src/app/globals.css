@@ -3177,13 +3177,8 @@ tbody tr:hover { background: #fff7df !important; }
    ====================================================================== */
 
 /* ── Shell layout ────────────────────────────────────────────────────── */
-.shell-root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: var(--bg-1);
-}
-.shell-main {
+/* OLD top-nav shell-root removed — superseded by Premium Sidebar layout below */
+.shell-main-legacy {
   flex: 1;
   overflow-x: hidden;
 }
@@ -4810,9 +4805,9 @@ tfoot td {
 /* Reset the earlier margin-left attempt so it no longer conflicts */
 .shell-body {
   margin-left: 0 !important;
-  width: 0 !important;          /* let flex-grow:1 handle width */
+  width: auto !important;
   max-width: none !important;
-  flex: 1 1 0% !important;
+  flex: 1 1 auto !important;
   min-width: 0 !important;
   overflow: hidden;
 }
@@ -4820,4 +4815,125 @@ tfoot td {
 /* Mobile: sidebar slides off-screen as drawer — spacer collapses to 0 */
 @media (max-width: 768px) {
   .shell-spacer { width: 0 !important; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   FINAL LAYOUT MASTER OVERRIDE
+   Placed last so it beats every earlier .shell-* rule.
+   Root = row flex. Spacer = real child matching sidebar width.
+   Body = fill remaining space, never constrained to half.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1. Root: always a horizontal row on desktop */
+html body .shell-root {
+  display: flex !important;
+  flex-direction: row !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* 2. Spacer: mirrors the fixed sidebar width */
+html body .shell-spacer {
+  width: var(--sidebar-w, 248px) !important;
+  flex: 0 0 var(--sidebar-w, 248px) !important;
+  flex-shrink: 0 !important;
+  min-width: 0 !important;
+  transition: width 0.28s cubic-bezier(.4,0,.2,1),
+              flex-basis 0.28s cubic-bezier(.4,0,.2,1) !important;
+  pointer-events: none !important;
+}
+[data-sidebar="collapsed"] html body .shell-spacer,
+html body [data-sidebar="collapsed"] .shell-spacer {
+  width: 70px !important;
+  flex-basis: 70px !important;
+}
+
+/* 3. Body: takes ALL remaining width — no width cap, no margin tricks */
+html body .shell-body {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* 4. Main content area: fills height, scrolls vertically */
+html body .shell-main {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 5. Mobile: sidebar hides as overlay drawer — spacer becomes 0 */
+@media (max-width: 768px) {
+  html body .shell-root {
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+  html body .shell-spacer {
+    width: 0 !important;
+    flex-basis: 0 !important;
+  }
+  html body .shell-body {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   619 FITNESS STUDIO — Brand Highlight in Sidebar
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Sidebar header: give it a premium gradient band */
+.sidebar.v2 .sidebar-header {
+  background: linear-gradient(135deg, #0a0e1a 0%, #0f1629 60%, #1a0a1a 100%) !important;
+  border-bottom: 1px solid rgba(225, 29, 72, 0.25) !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+/* Glow line under the header */
+.sidebar.v2 .sidebar-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 16px; right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(225,29,72,.6), rgba(124,58,237,.6), transparent);
+  border-radius: 1px;
+}
+
+/* Brand name: big, bold, gradient text */
+.brand-619-name {
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.04em !important;
+  background: linear-gradient(135deg, #ff6b6b 0%, #e11d48 40%, #a855f7 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  line-height: 1.1 !important;
+  text-shadow: none !important;
+}
+/* Tagline under brand name */
+.brand-619-tag {
+  font-size: 8.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 2.5px !important;
+  text-transform: uppercase !important;
+  color: rgba(255,255,255,.38) !important;
+  -webkit-text-fill-color: rgba(255,255,255,.38) !important;
+  margin-top: 3px !important;
+  line-height: 1 !important;
+}
+
+/* Collapsed state: just the logo mark, no text overflow */
+.sidebar.sidebar-collapsed .brand-619-name,
+.sidebar.sidebar-collapsed .brand-619-tag {
+  display: none !important;
 }

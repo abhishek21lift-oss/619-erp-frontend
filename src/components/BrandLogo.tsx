@@ -9,8 +9,7 @@ type Props = {
 
 /**
  * BrandLogo — 619 FITNESS STUDIO mark.
- * Wraps the logo in a soft white tile with a crimson ring so it
- * reads clearly on the light theme. Falls back to a "619" tile.
+ * Falls back to a gradient "619" tile if logo file not found.
  */
 export default function BrandLogo({
   size = 40,
@@ -70,9 +69,9 @@ export default function BrandLogo({
         alignItems: 'center',
         justifyContent: 'center',
         background: '#ffffff',
-        border: '1px solid rgba(225, 29, 72, 0.18)',
+        border: '2px solid rgba(225, 29, 72, 0.35)',
         boxShadow:
-          '0 6px 18px rgba(225, 29, 72, 0.18), 0 1px 2px rgba(15,23,42,0.06)',
+          '0 0 16px rgba(225, 29, 72, 0.30), 0 2px 8px rgba(15,23,42,0.15)',
         flexShrink: 0,
       }}
     >
@@ -102,26 +101,10 @@ export default function BrandLogo({
         lineHeight: 1,
       }}
     >
-      <div
-        style={{
-          fontSize: isBelow ? 22 : 16,
-          fontWeight: 800,
-          letterSpacing: '-0.02em',
-          color: 'var(--text)',
-        }}
-      >
+      <div className="brand-619-name">
         619 FITNESS STUDIO
       </div>
-      <div
-        style={{
-          fontSize: isBelow ? 10 : 9,
-          color: 'var(--muted)',
-          letterSpacing: isBelow ? '2.6px' : '2px',
-          textTransform: 'uppercase',
-          fontWeight: 700,
-          marginTop: isBelow ? 6 : 5,
-        }}
-      >
+      <div className="brand-619-tag">
         Premium Strength Studio
       </div>
     </div>
