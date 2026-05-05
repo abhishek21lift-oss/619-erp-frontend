@@ -5,10 +5,11 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
 
 export default function UpgradePage() { return <Guard><Inner /></Guard>; }
 
-const PLANS = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly'];
+// Plans loaded dynamically from localStorage via usePlans()
 const PLAN_ORDER: Record<string,number> = { Monthly:1, Quarterly:2, 'Half Yearly':3, Yearly:4 };
 
 function Inner() {
@@ -20,11 +21,28 @@ function Inner() {
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState({ package_type: 'Yearly', amount: '', start_date: '', end_date: '', reason: '' });
 
+  const [memPlans, setMemPlans] = useState<{name:string;order:number;final:number}[]>([]);
+
   useEffect(() => {
     api.clients.get(id).then(setClient).catch(console.error).finally(() => setLoading(false));
+    const stored = getStoredPlans();
+    const ORDER: Record<string,number> = { Monthly:1, Quarterly:2, 'Half Yearly':3, Yearly:4 };
+    const mp = stored.filter(p => p.kind === 'Membership').map((p, i) => ({
+      name: p.name, final: p.final_amount,
+      order: ORDER[p.duration] ?? i + 1
+    }));
+    setMemPlans(mp.length > 0 ? mp : [
+      {name:'Monthly',order:1,final:2500},{name:'Quarterly',order:2,final:6500},
+      {name:'Half Yearly',order:3,final:11500},{name:'Yearly',order:4,final:20000}
+    ]);
   }, [id]);
 
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
+
+  function handleUpgradePlanSelect(planName: string) {
+    const plan = memPlans.find(p => p.name === planName);
+    setForm(f => ({ ...f, package_type: planName, amount: plan ? String(plan.final) : f.amount }));
+  }
 
   const totalAmount = parseFloat(form.amount) || 0;
 
@@ -38,7 +56,8 @@ function Inner() {
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem' }}>Loading…</div></AppShell>;
   const initials = (client?.name || 'C').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-  const upgradePlans = PLANS.filter(p => (PLAN_ORDER[p] || 0) > (PLAN_ORDER[client?.package_type] || 0));
+  const clientPlanOrder = memPlans.find(p => p.name === client?.package_type)?.order ?? 0;
+  const upgradePlans = memPlans.filter(p => p.order > clientPlanOrder);
 
   return (
     <AppShell>
@@ -61,9 +80,9 @@ function Inner() {
               <div className="ptf-row-2">
                 <div className="ptf-field">
                   <label className="ptf-label">Upgrade To Plan <span className="req">*</span></label>
-                  <select className="ptf-select" value={form.package_type} onChange={e => set('package_type', e.target.value)} required>
+                  <select className="ptf-select" value={form.package_type} onChange={e => handleUpgradePlanSelect(e.target.value)} required>
                     <option value="">Select Plan</option>
-                    {(upgradePlans.length > 0 ? upgradePlans : PLANS).map(p => <option key={p}>{p}</option>)}
+                    {(upgradePlans.length > 0 ? upgradePlans : memPlans).map(p => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                   </select>
                 </div>
                 <div className="ptf-field">

@@ -2,6 +2,11 @@
 import { useState, useEffect, FormEvent } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import {
+  StoredPlan, PlanKind, PlanDuration,
+  DURATIONS, DEFAULT_PLANS, PLANS_KEY,
+  getStoredPlans, savePlans,
+} from '@/lib/plans';
 
 export default function PlansPage() {
   return (
@@ -11,165 +16,21 @@ export default function PlansPage() {
   );
 }
 
-type Duration = 'Monthly' | 'Quarterly' | 'Half Yearly' | 'Yearly';
-type Plan = {
-  id: string;
-  kind: 'Membership' | 'PT';
-  name: string;
-  duration: Duration;
-  base_amount: number;
-  discount: number;
-  final_amount: number;
-  sessions_per_week?: number;
-  features: string[];
-  popular?: boolean;
-};
-
-const STORAGE_KEY = '619_plans_v1';
-const DURATIONS: Duration[] = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly'];
-
-const DEFAULT_PLANS: Plan[] = [
-  {
-    id: 'm-monthly',
-    kind: 'Membership',
-    name: 'Monthly Membership',
-    duration: 'Monthly',
-    base_amount: 2500,
-    discount: 0,
-    final_amount: 2500,
-    features: ['Full gym access', 'Locker facility', 'Free trial class'],
-  },
-  {
-    id: 'm-qrt',
-    kind: 'Membership',
-    name: 'Quarterly Membership',
-    duration: 'Quarterly',
-    base_amount: 7000,
-    discount: 500,
-    final_amount: 6500,
-    popular: true,
-    features: [
-      'Full gym access',
-      'Locker',
-      '1 Body composition test',
-      'Free diet consult',
-    ],
-  },
-  {
-    id: 'm-half',
-    kind: 'Membership',
-    name: 'Half-Yearly Membership',
-    duration: 'Half Yearly',
-    base_amount: 13000,
-    discount: 1500,
-    final_amount: 11500,
-    features: [
-      'Full gym access',
-      'Locker',
-      'Body composition test',
-      'Free diet consult',
-      'Group class access',
-    ],
-  },
-  {
-    id: 'm-year',
-    kind: 'Membership',
-    name: 'Annual Membership',
-    duration: 'Yearly',
-    base_amount: 24000,
-    discount: 4000,
-    final_amount: 20000,
-    features: [
-      'Full gym access',
-      'Personal locker',
-      'Quarterly body comp tests',
-      'Diet plan',
-      'All group classes',
-      'Friend bring-a-day pass',
-    ],
-  },
-  {
-    id: 'pt-monthly',
-    kind: 'PT',
-    name: 'PT Monthly',
-    duration: 'Monthly',
-    base_amount: 6000,
-    discount: 0,
-    final_amount: 6000,
-    sessions_per_week: 3,
-    features: [
-      '12 PT sessions / month',
-      'Personalised workout plan',
-      'Form & technique correction',
-    ],
-  },
-  {
-    id: 'pt-qrt',
-    kind: 'PT',
-    name: 'PT Quarterly',
-    duration: 'Quarterly',
-    base_amount: 16500,
-    discount: 1500,
-    final_amount: 15000,
-    sessions_per_week: 3,
-    popular: true,
-    features: [
-      '36 PT sessions',
-      'Personalised plan',
-      'Diet consultation',
-      'Progress photos',
-    ],
-  },
-  {
-    id: 'pt-half',
-    kind: 'PT',
-    name: 'PT Half-Yearly',
-    duration: 'Half Yearly',
-    base_amount: 30000,
-    discount: 4000,
-    final_amount: 26000,
-    sessions_per_week: 3,
-    features: [
-      '72 PT sessions',
-      'Custom workout plan',
-      'Detailed diet plan',
-      'Body comp tests',
-      'Free supplements consult',
-    ],
-  },
-  {
-    id: 'pt-year',
-    kind: 'PT',
-    name: 'PT Annual',
-    duration: 'Yearly',
-    base_amount: 55000,
-    discount: 10000,
-    final_amount: 45000,
-    sessions_per_week: 3,
-    features: [
-      '144+ PT sessions',
-      'Premium plan & diet',
-      'Quarterly body comp tests',
-      'Supplements consult',
-      'Priority slot booking',
-    ],
-  },
-];
 
 function PlansContent() {
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<StoredPlan[]>([]);
   const [tab, setTab] = useState<'all' | 'Membership' | 'PT'>('all');
-  const [editing, setEditing] = useState<Plan | null>(null);
+  const [editing, setEditing] = useState<StoredPlan | null>(null);
   const [creating, setCreating] = useState<'Membership' | 'PT' | null>(null);
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(PLANS_KEY);
       if (raw) setPlans(JSON.parse(raw));
       else {
         setPlans(DEFAULT_PLANS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_PLANS));
+        localStorage.setItem(PLANS_KEY, JSON.stringify(DEFAULT_PLANS));
       }
     } catch {
       setPlans(DEFAULT_PLANS);
@@ -179,7 +40,7 @@ function PlansContent() {
   useEffect(() => {
     if (plans.length > 0) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+        localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
       } catch {}
     }
   }, [plans]);
@@ -473,7 +334,7 @@ function PlansContent() {
                     </div>
                   )}
                   <ul className="plan-features">
-                    {p.features.slice(0, 5).map((f, i) => (
+                    {p.features.slice(0, 5).map((f: string, i: number) => (
                       <li key={i}>{f}</li>
                     ))}
                   </ul>
@@ -505,9 +366,9 @@ function PlansContent() {
           initial={
             editing || {
               id: 'p-' + Date.now(),
-              kind: creating || 'Membership',
+              kind: (creating || 'Membership') as PlanKind,
               name: '',
-              duration: 'Monthly',
+              duration: 'Monthly' as PlanDuration,
               base_amount: 0,
               discount: 0,
               final_amount: 0,
@@ -541,14 +402,14 @@ function PlanModal({
   onClose,
   onSave,
 }: {
-  initial: Plan;
+  initial: StoredPlan;
   onClose: () => void;
-  onSave: (p: Plan) => void;
+  onSave: (p: StoredPlan) => void;
 }) {
-  const [p, setP] = useState<Plan>(initial);
+  const [p, setP] = useState<StoredPlan>(initial);
   const [featuresText, setFeaturesText] = useState(initial.features.join('\n'));
 
-  function set<K extends keyof Plan>(k: K, v: Plan[K]) {
+  function set<K extends keyof StoredPlan>(k: K, v: StoredPlan[K]) {
     setP((prev) => ({ ...prev, [k]: v }));
   }
 
@@ -597,7 +458,7 @@ function PlanModal({
               <select
                 className="input select"
                 value={p.kind}
-                onChange={(e) => set('kind', e.target.value as Plan['kind'])}
+                onChange={(e) => set('kind', e.target.value as PlanKind)}
               >
                 <option value="Membership">Gym Membership</option>
                 <option value="PT">Personal Training</option>
@@ -608,7 +469,7 @@ function PlanModal({
               <select
                 className="input select"
                 value={p.duration}
-                onChange={(e) => set('duration', e.target.value as Duration)}
+                onChange={(e) => set('duration', e.target.value as PlanDuration)}
               >
                 {DURATIONS.map((d) => (
                   <option key={d}>{d}</option>

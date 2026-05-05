@@ -5,10 +5,11 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
 
 export default function DowngradePage() { return <Guard><Inner /></Guard>; }
 
-const PLANS = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly'];
+// Plans loaded dynamically from localStorage via usePlans()
 
 function Inner() {
   const { id } = useParams<{ id: string }>();
@@ -19,9 +20,25 @@ function Inner() {
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState({ package_type: '', amount: '', reason: '' });
 
+  const [memPlans, setMemPlans] = useState<{name:string;order:number;final:number}[]>([]);
+
   useEffect(() => {
     api.clients.get(id).then((c: any) => { setClient(c); setForm(f => ({ ...f, package_type: c?.package_type || '' })); }).catch(console.error).finally(() => setLoading(false));
+    const stored = getStoredPlans();
+    const ORDER: Record<string,number> = { Monthly:1, Quarterly:2, 'Half Yearly':3, Yearly:4 };
+    const mp = stored.filter(p => p.kind === 'Membership').map((p, i) => ({
+      name: p.name, final: p.final_amount, order: ORDER[p.duration] ?? i + 1
+    }));
+    setMemPlans(mp.length > 0 ? mp : [
+      {name:'Monthly',order:1,final:2500},{name:'Quarterly',order:2,final:6500},
+      {name:'Half Yearly',order:3,final:11500},{name:'Yearly',order:4,final:20000}
+    ]);
   }, [id]);
+
+  function handleDowngradePlanSelect(planName: string) {
+    const plan = memPlans.find(p => p.name === planName);
+    setForm(f => ({ ...f, package_type: planName, amount: plan ? String(plan.final) : f.amount }));
+  }
 
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -57,9 +74,9 @@ function Inner() {
               <div className="ptf-row-2">
                 <div className="ptf-field">
                   <label className="ptf-label">New (Lower) Plan <span className="req">*</span></label>
-                  <select className="ptf-select" value={form.package_type} onChange={e => set('package_type', e.target.value)} required>
+                  <select className="ptf-select" value={form.package_type} onChange={e => handleDowngradePlanSelect(e.target.value)} required>
                     <option value="">Select Plan</option>
-                    {PLANS.map(p => <option key={p}>{p}</option>)}
+                    {memPlans.map(p => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                   </select>
                 </div>
                 <div className="ptf-field">

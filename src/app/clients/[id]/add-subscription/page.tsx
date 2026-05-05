@@ -5,12 +5,13 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
 
 export default function AddSubscriptionPage() {
   return <Guard><Inner /></Guard>;
 }
 
-const PLANS = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly'];
+// Plans loaded dynamically from localStorage via usePlans()
 
 interface PlanRow {
   id: number;
@@ -34,6 +35,25 @@ function Inner() {
   const [error, setError] = useState('');
 
   const [groupId, setGroupId] = useState('');
+  const [memPlans, setMemPlans] = useState<{name:string;base:number;final:number}[]>([]);
+
+  useEffect(() => {
+    const stored = getStoredPlans();
+    const mp = stored.filter(p => p.kind === 'Membership').map(p => ({ name: p.name, base: p.base_amount, final: p.final_amount }));
+    setMemPlans(mp.length > 0 ? mp : [
+      {name:'Monthly',base:2500,final:2500},{name:'Quarterly',base:7000,final:6500},
+      {name:'Half Yearly',base:13000,final:11500},{name:'Yearly',base:24000,final:20000}
+    ]);
+  }, []);
+
+  function handlePlanSelect(rowId: number, planName: string) {
+    const plan = memPlans.find(p => p.name === planName);
+    setPlanRows(r => r.map(x => x.id === rowId ? {
+      ...x, plan: planName,
+      basePrice: plan ? String(plan.base) : x.basePrice,
+      sellingPrice: plan ? String(plan.final) : x.sellingPrice,
+    } : x));
+  }
   const [planRows, setPlanRows] = useState<PlanRow[]>([
     { id: 1, plan: '', startDate: '', endDate: '', basePrice: '', sellingPrice: '', coupon: '' }
   ]);
@@ -136,9 +156,9 @@ function Inner() {
                         <tr key={row.id}>
                           <td className="ptf-plan-num">{i + 1}</td>
                           <td>
-                            <select className="ptf-select" value={row.plan} onChange={(e) => updateRow(row.id, 'plan', e.target.value)} required>
-                              <option value="">Select Membership</option>
-                              {PLANS.map((p) => <option key={p}>{p}</option>)}
+                            <select className="ptf-select" value={row.plan} onChange={(e) => handlePlanSelect(row.id, e.target.value)} required>
+                              <option value="">Select Membership Plan</option>
+                              {memPlans.map((p) => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                             </select>
                           </td>
                           <td><input type="date" className="ptf-input" value={row.startDate} onChange={(e) => updateRow(row.id, 'startDate', e.target.value)} required /></td>

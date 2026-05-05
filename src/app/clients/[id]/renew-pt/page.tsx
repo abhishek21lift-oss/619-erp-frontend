@@ -5,12 +5,13 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { getStoredPlans } from '@/lib/plans';
 
 export default function RenewPTPage() {
   return <Guard><Inner /></Guard>;
 }
 
-const PT_PLANS = ['PT', '3 months', '6 months', '12 months'];
+// PT plans loaded dynamically from localStorage
 
 function Inner() {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,7 @@ function Inner() {
 
   const [client, setClient] = useState<any>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
+  const [ptPlans, setPtPlans] = useState<{name:string;final:number}[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
@@ -101,7 +103,7 @@ function Inner() {
                   <label className="ptf-label">Select Renew Membership <span className="req">*</span></label>
                   <select className="ptf-select" value={form.renew_plan} onChange={(e) => set('renew_plan', e.target.value)} required>
                     <option value="">Select Membership Plan to Renew</option>
-                    {PT_PLANS.map((p) => <option key={p}>{p}</option>)}
+                    {ptPlans.map((p) => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                   </select>
                 </div>
 
@@ -110,7 +112,7 @@ function Inner() {
                     <label className="ptf-label">Select Membership <span className="req">*</span></label>
                     <select className="ptf-select" value={form.membership} onChange={(e) => set('membership', e.target.value)} required>
                       <option value="">Select Membership</option>
-                      {PT_PLANS.map((p) => <option key={p}>{p}</option>)}
+                      {ptPlans.map((p) => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                     </select>
                   </div>
                   <div className="ptf-field">

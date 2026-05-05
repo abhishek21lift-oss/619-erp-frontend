@@ -5,16 +5,18 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { getStoredPlans } from '@/lib/plans';
 
 export default function ComboPage() { return <Guard><Inner /></Guard>; }
 
-const COMBO_PLANS = ['Half Yearly', 'Yearly', 'Quarterly'];
+// Combo plans loaded dynamically
 
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [client, setClient] = useState<any>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
+  const [comboPlans, setComboPlans] = useState<{name:string;final:number}[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
@@ -62,7 +64,7 @@ function Inner() {
                 <div className="ptf-field">
                   <label className="ptf-label">Combo Plan <span className="req">*</span></label>
                   <select className="ptf-select" value={form.package_type} onChange={e => set('package_type', e.target.value)} required>
-                    {COMBO_PLANS.map(p => <option key={p}>{p}</option>)}
+                    {comboPlans.map(p => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                   </select>
                 </div>
                 <div className="ptf-field">
