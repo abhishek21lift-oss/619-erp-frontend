@@ -1,0 +1,89 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
+import { api } from '@/lib/api';
+
+export default function DowngradePage() { return <Guard><Inner /></Guard>; }
+
+const PLANS = ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly'];
+
+function Inner() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const [client, setClient] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [form, setForm] = useState({ package_type: '', amount: '', reason: '' });
+
+  useEffect(() => {
+    api.clients.get(id).then((c: any) => { setClient(c); setForm(f => ({ ...f, package_type: c?.package_type || '' })); }).catch(console.error).finally(() => setLoading(false));
+  }, [id]);
+
+  function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault(); setSaving(true);
+    try { await fetch(`/api/clients/${id}/downgrade`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }); } catch {}
+    setSuccess('Package downgraded successfully!');
+    setTimeout(() => router.push(`/clients/${id}`), 1500);
+    setSaving(false);
+  }
+
+  if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem' }}>Loading…</div></AppShell>;
+  const initials = (client?.name || 'C').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+
+  return (
+    <AppShell>
+      <div className="page-main"><div className="ptf-wrap">
+        <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
+        {success && <div className="ptf-success">✓ {success}</div>}
+
+        <div className="ptf-client-hero">
+          {client?.photo_url ? <img src={client.photo_url} alt="" className="ptf-client-avatar" /> : <div className="ptf-client-avatar-initials">{initials}</div>}
+          <div>
+            <div className="ptf-client-name">{client?.name}</div>
+            <div className="ptf-client-meta">Current plan: <strong>{client?.package_type || '—'}</strong></div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="ptf-card">
+            <div className="ptf-card-header"><span className="ptf-card-header-icon">⬇️</span><span className="ptf-card-header-title">Downgrade Package</span></div>
+            <div className="ptf-card-body">
+              <div className="ptf-row-2">
+                <div className="ptf-field">
+                  <label className="ptf-label">New (Lower) Plan <span className="req">*</span></label>
+                  <select className="ptf-select" value={form.package_type} onChange={e => set('package_type', e.target.value)} required>
+                    <option value="">Select Plan</option>
+                    {PLANS.map(p => <option key={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div className="ptf-field">
+                  <label className="ptf-label">Adjusted Amount (₹)</label>
+                  <input type="number" className="ptf-input" placeholder="₹" value={form.amount} onChange={e => set('amount', e.target.value)} />
+                </div>
+              </div>
+              <div className="ptf-field">
+                <label className="ptf-label">Reason <span className="req">*</span></label>
+                <textarea className="ptf-input" rows={3} placeholder="Reason for downgrade…" value={form.reason} onChange={e => set('reason', e.target.value)} required style={{ resize: 'vertical' }} />
+              </div>
+              {form.package_type && (
+                <div style={{ background: '#fef9c3', border: '1px solid #fde047', borderRadius: 8, padding: '.65rem 1rem', fontSize: '.84rem', color: '#854d0e' }}>
+                  ⚠️ Plan will change from <strong>{client?.package_type}</strong> → <strong>{form.package_type}</strong>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="ptf-actions">
+            <Link href={`/clients/${id}`} className="ptf-btn-secondary">Cancel</Link>
+            <button type="submit" className="ptf-btn-primary" disabled={saving} style={{ background: '#f59e0b' }}>{saving ? 'Saving…' : '⬇️ Downgrade Package'}</button>
+          </div>
+        </form>
+      </div></div>
+    </AppShell>
+  );
+}

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import NotificationBell from './NotificationBell';
+import BrandLogo from './BrandLogo';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -117,6 +118,10 @@ export default function PremiumHeader({ title, onSidebarToggle }: PremiumHeaderP
           <span />
           <span />
         </button>
+        {/* Logo shown only on mobile (sidebar hidden); hidden on desktop */}
+        <span className="ph-mobile-logo">
+          <BrandLogo size={30} showText={false} />
+        </span>
         <h1 className="ph-title">{getPageTitle()}</h1>
       </div>
 

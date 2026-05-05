@@ -4578,3 +4578,246 @@ tfoot td {
   color: var(--text-tertiary);
 }
 
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIDEBAR OVERLAP FIX
+   The sidebar is position:fixed — shell-body must carry margin-left
+   equal to the sidebar width so content is never hidden behind it.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell-body {
+  margin-left: var(--sidebar-w, 248px) !important;
+  transition: margin-left 0.28s cubic-bezier(.4,0,.2,1) !important;
+  width: calc(100% - var(--sidebar-w, 248px)) !important;
+  max-width: calc(100% - var(--sidebar-w, 248px)) !important;
+}
+
+/* When sidebar collapses to 70px */
+[data-sidebar="collapsed"] .shell-body {
+  margin-left: 70px !important;
+  width: calc(100% - 70px) !important;
+  max-width: calc(100% - 70px) !important;
+}
+
+/* Mobile — sidebar slides off-screen, no margin needed */
+@media (max-width: 768px) {
+  .shell-body {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ph-mobile-logo: hidden on desktop (sidebar already shows logo), shown on mobile */
+.ph-mobile-logo { display: none; }
+@media (max-width: 768px) {
+  .ph-mobile-logo { display: flex; align-items: center; margin-right: 6px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   PT ACTION FORM PAGES  (add-subscription, assign-pt, renew-pt, etc.)
+   ══════════════════════════════════════════════════════════════════════ */
+.ptf-wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.ptf-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-tertiary, var(--muted));
+  text-decoration: none;
+  margin-bottom: 1.2rem;
+  padding: .35rem .6rem;
+  border-radius: 6px;
+  transition: background .15s, color .15s;
+}
+.ptf-back-btn:hover { background: var(--bg-3, #f3f4f6); color: var(--text-primary); }
+
+/* Client hero card */
+.ptf-client-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-soft, var(--line));
+  border-radius: 12px;
+  padding: 1.1rem 1.4rem;
+  margin-bottom: 1.5rem;
+}
+.ptf-client-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.ptf-client-avatar-initials {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent, #e11d48), #7c3aed);
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ptf-client-name { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
+.ptf-client-meta { font-size: .82rem; color: var(--text-tertiary, var(--muted)); margin-top: 3px; }
+
+/* Form card sections */
+.ptf-card {
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-soft, var(--line));
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+.ptf-card-header {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .85rem 1.25rem;
+  border-bottom: 1px solid var(--border-soft, var(--line));
+  background: var(--bg-page, #f7f8fa);
+}
+.ptf-card-header-icon { font-size: 1.1rem; }
+.ptf-card-header-title { font-size: .88rem; font-weight: 700; color: var(--text-primary); }
+.ptf-card-body { padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: .85rem; }
+
+/* Two-column row inside form */
+.ptf-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .85rem;
+}
+@media (max-width: 540px) { .ptf-row-2 { grid-template-columns: 1fr; } }
+
+/* Labels / inputs */
+.ptf-field { display: flex; flex-direction: column; gap: .35rem; }
+.ptf-label { font-size: .76rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-tertiary, var(--muted)); }
+.ptf-label .req { color: var(--accent, #e11d48); margin-left: 2px; }
+.ptf-input, .ptf-select {
+  border: 1.5px solid var(--border-soft, var(--line));
+  border-radius: 8px;
+  padding: .55rem .75rem;
+  font-size: .88rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-surface, #fff);
+  transition: border-color .15s, box-shadow .15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.ptf-input:focus, .ptf-select:focus {
+  outline: none;
+  border-color: var(--accent, #e11d48);
+  box-shadow: 0 0 0 3px rgba(225,29,72,.1);
+}
+.ptf-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2.2rem; }
+
+/* Multi-select hint */
+.ptf-hint { font-size: .72rem; color: var(--text-tertiary, var(--muted)); margin-top: 2px; }
+
+/* Payment breakdown table */
+.ptf-breakdown {
+  background: var(--bg-page, #f7f8fa);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ptf-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .55rem .9rem;
+  border-bottom: 1px solid var(--border-soft, var(--line));
+  font-size: .84rem;
+}
+.ptf-breakdown-row:last-child { border-bottom: none; }
+.ptf-breakdown-row.total {
+  background: var(--bg-surface, #fff);
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--accent, #e11d48);
+  border-top: 2px solid var(--border-soft, var(--line));
+}
+.ptf-breakdown-val { font-weight: 600; font-family: 'tabular', monospace; }
+
+/* Action buttons */
+.ptf-actions {
+  display: flex;
+  gap: .85rem;
+  justify-content: flex-end;
+  padding-top: .5rem;
+}
+.ptf-btn-primary {
+  background: var(--accent, #e11d48);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: .65rem 1.4rem;
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.ptf-btn-primary:hover { background: #be123c; transform: translateY(-1px); }
+.ptf-btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.ptf-btn-secondary {
+  background: var(--bg-page, #f3f4f6);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-soft, var(--line));
+  border-radius: 8px;
+  padding: .65rem 1.2rem;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .15s;
+  display: inline-flex;
+  align-items: center;
+}
+.ptf-btn-secondary:hover { background: var(--bg-3, #e5e7eb); }
+
+/* Plan rows (multi-plan table like YDL) */
+.ptf-plan-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+.ptf-plan-table th { padding: .4rem .75rem; text-align: left; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--bg-page,#f7f8fa); border-bottom: 1px solid var(--line); }
+.ptf-plan-table td { padding: .55rem .75rem; vertical-align: middle; border-bottom: 1px solid var(--line); }
+.ptf-plan-table tr:last-child td { border-bottom: none; }
+.ptf-plan-num { width: 28px; color: var(--muted); font-weight: 600; }
+
+/* Success banner */
+.ptf-success { background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: .75rem 1rem; color: #15803d; font-size: .86rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   SHELL SPACER  — definitive sidebar-offset fix (replaces margin-left)
+   The spacer is a real flex child whose width mirrors the fixed sidebar,
+   so shell-body never needs margin-left tricks.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell-spacer {
+  width: var(--sidebar-w, 248px);
+  flex-shrink: 0;
+  transition: width 0.28s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+[data-sidebar="collapsed"] .shell-spacer { width: 70px; }
+
+/* Reset the earlier margin-left attempt so it no longer conflicts */
+.shell-body {
+  margin-left: 0 !important;
+  width: 0 !important;          /* let flex-grow:1 handle width */
+  max-width: none !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  overflow: hidden;
+}
+
+/* Mobile: sidebar slides off-screen as drawer — spacer collapses to 0 */
+@media (max-width: 768px) {
+  .shell-spacer { width: 0 !important; }
+}

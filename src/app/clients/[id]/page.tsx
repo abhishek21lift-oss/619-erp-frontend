@@ -466,18 +466,18 @@ function ClientDetail({ id }: { id: string }) {
                 <span style={{ fontSize: 16 }}>⚡</span> Membership Actions
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem' }}>
-                <ActionBtn label="❄️ Freeze" color="blue" onClick={() => { setActionModal('freeze'); setActionForm({ from: today, until: '', reason: '' }); }} />
-                <ActionBtn label="📅 Extension" color="blue" onClick={() => { setActionModal('extension'); setActionForm({ days: '7', reason: '' }); }} />
-                <ActionBtn label="⬇️ DownGrade" color="blue" onClick={() => { setActionModal('downgrade'); setActionForm({ package_type: client.package_type, amount: '', reason: '' }); }} />
-                <ActionBtn label="🔀 Transfer" color="blue" onClick={() => { setActionModal('transfer'); setActionForm({ trainer_id: '', reason: '' }); }} />
-                <ActionBtn label="⬆️ Upgrade" color="blue" onClick={() => { setActionModal('upgrade'); setActionForm({ package_type: 'Yearly', amount: '', reason: '' }); }} />
-                <ActionBtn label="🎁 Upgrade To Combo Offer" color="blue" onClick={() => { setActionModal('combo'); setActionForm({ package_type: 'Half Yearly', amount: '' }); }} />
-                <ActionBtn label="🏋️ Assign Personal Training" color="blue" onClick={() => { setActionModal('pt_assign'); setActionForm({ trainer_id: client.trainer_id || '', pt_start_date: today, pt_end_date: '', amount: '' }); }} />
-                <ActionBtn label="🔄 Renew Personal Training" color="teal" onClick={() => { setActionModal('pt_renew'); setActionForm({ pt_start_date: today, pt_end_date: '', amount: '' }); }} />
-                <ActionBtn label="🎯 Book a free Trial" color="teal" onClick={() => { setActionModal('trial'); setActionForm({ date: today, notes: '' }); }} />
-                <ActionBtn label="➕ Add Subscription" color="green" onClick={openRenew} />
-                <ActionBtn label="🔄 Renew Subscription" color="green" onClick={openRenew} />
-                <ActionBtn label="🎁 Assign Combo Offer" color="green" onClick={() => { setActionModal('combo'); setActionForm({ package_type: 'Half Yearly', amount: '' }); }} />
+                <ActionBtn label="❄️ Freeze" color="blue" onClick={() => router.push(`/clients/${client.id}/freeze`)} />
+                <ActionBtn label="📅 Extension" color="blue" onClick={() => router.push(`/clients/${client.id}/extension`)} />
+                <ActionBtn label="⬇️ DownGrade" color="blue" onClick={() => router.push(`/clients/${client.id}/downgrade`)} />
+                <ActionBtn label="🔀 Transfer" color="blue" onClick={() => router.push(`/clients/${client.id}/transfer`)} />
+                <ActionBtn label="⬆️ Upgrade" color="blue" onClick={() => router.push(`/clients/${client.id}/upgrade`)} />
+                <ActionBtn label="🎁 Upgrade To Combo Offer" color="blue" onClick={() => router.push(`/clients/${client.id}/combo`)} />
+                <ActionBtn label="🏋️ Assign Personal Training" color="blue" onClick={() => router.push(`/clients/${client.id}/assign-pt`)} />
+                <ActionBtn label="🔄 Renew Personal Training" color="teal" onClick={() => router.push(`/clients/${client.id}/renew-pt`)} />
+                <ActionBtn label="🎯 Book a free Trial" color="teal" onClick={() => router.push(`/clients/${client.id}/trial`)} />
+                <ActionBtn label="➕ Add Subscription" color="green" onClick={() => router.push(`/clients/${client.id}/add-subscription`)} />
+                <ActionBtn label="🔄 Renew Subscription" color="green" onClick={() => router.push(`/clients/${client.id}/renew-subscription`)} />
+                <ActionBtn label="🎁 Assign Combo Offer" color="green" onClick={() => router.push(`/clients/${client.id}/combo`)} />
               </div>
             </div>
           </div>
@@ -675,7 +675,7 @@ function ClientDetail({ id }: { id: string }) {
                   <div className="card" style={{ padding: 0 }}>
                     <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div className="card-title" style={{ marginBottom: 0 }}>📋 Subscriptions</div>
-                      <button className="btn btn-primary btn-sm" onClick={openRenew}>+ Add Subscription</button>
+                      <button className="btn btn-primary btn-sm" onClick={() => router.push(`/clients/${client.id}/add-subscription`)}>+ Add Subscription</button>
                     </div>
                     {subscriptions.length === 0 ? (
                       <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }}>No subscriptions found</div>
