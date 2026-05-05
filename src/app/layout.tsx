@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AuthProvider } from '@/lib/auth-context';
+import { ToastProvider } from '@/lib/toast';
 import CommandPalette from '@/components/CommandPalette';
 import './globals.css';
 
@@ -29,8 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AuthProvider>
-          {children}
-          <CommandPalette />
+          <ToastProvider>
+            {children}
+            <CommandPalette />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

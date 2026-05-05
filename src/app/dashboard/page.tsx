@@ -6,6 +6,27 @@ import AppShell from '@/components/AppShell';
 import { api, DashSummary, Trainer, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { fmtDate } from '@/lib/format';
+import { SkeletonKpi, Skeleton } from '@/components/Skeleton';
+import {
+  TrendingUp,
+  CheckCircle2,
+  Clock,
+  UserPlus,
+  RefreshCw,
+  ArrowUpCircle,
+  Scan,
+  Users,
+  UserCheck,
+  UserX,
+  Dumbbell,
+  ExternalLink,
+  Plus,
+  Zap,
+  Receipt,
+  MessageSquare,
+  QrCode,
+  TrendingDown,
+} from 'lucide-react';
 
 export default function DashboardPage() {
   return (
@@ -130,106 +151,175 @@ function DashContent() {
   const trainerStats = isAdmin ? computeTrainerStats(trainers, clients) : [];
 
   const quickBtns = [
-    { label: '+ Add Enquiry',       href: '/sales/enquiry',   cls: 'qb-outline' },
-    { label: '⚡ Quick Billing',    href: '/payments?new=1',  cls: 'qb-dark'    },
-    { label: '🧾 Receipts',         href: '/payments',        cls: 'qb-blue'    },
-    { label: '↺ Quick Follow Up',  href: '/sales/leads',     cls: 'qb-green'   },
-    { label: '📱 QR Codes',         href: '/settings',        cls: 'qb-teal'    },
+    { label: 'Add Enquiry',      href: '/sales/enquiry',  Icon: Plus,        cls: 'qb-outline' },
+    { label: 'Quick Billing',    href: '/payments?new=1', Icon: Zap,         cls: 'qb-dark'    },
+    { label: 'Receipts',         href: '/payments',       Icon: Receipt,     cls: 'qb-blue'    },
+    { label: 'Follow Up',        href: '/sales/leads',    Icon: MessageSquare, cls: 'qb-green'  },
+    { label: 'Face Check-in',    href: '/checkin',        Icon: Scan,        cls: 'qb-red'     },
   ];
 
   return (
     <AppShell>
-      <div className="ydl-dash">
+      <div className="page-main page-enter">
+        <div className="page-content">
 
-        {/* ── Date filter tabs ── */}
-        <div className="ydl-period-bar">
-          {PERIOD_TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`ydl-period-tab${period === t.id ? ' active' : ''}`}
-              onClick={() => setPeriod(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+          {/* ── Period tabs ── */}
+          <div className="period-bar">
+            {PERIOD_TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`period-tab${period === t.id ? ' active' : ''}`}
+                onClick={() => setPeriod(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
 
-        {loading ? (
-          <DashSkeleton />
-        ) : d ? (
-          <>
-            <div className="ydl-dash-body">
+          {loading ? (
+            <DashSkeleton />
+          ) : d ? (
+            <>
+              {/* ── KPI Grid Row 1 (3 cols) ── */}
+              <div className="kpi-grid kpi-grid-3">
+                <KpiCard
+                  label="TODAY'S SALE"
+                  value={fmtK(d.revenue?.today ?? d.revenue?.month ?? 0)}
+                  icon={TrendingUp}
+                  gradient="linear-gradient(135deg, #f97316 0%, #fb923c 100%)"
+                  href="/payments"
+                />
+                <KpiCard
+                  label="COLLECTED PAYMENTS"
+                  value={fmtK(d.revenue?.month ?? 0)}
+                  icon={CheckCircle2}
+                  gradient="linear-gradient(135deg, #22c55e 0%, #86efac 100%)"
+                  href="/finance/collection"
+                />
+                <KpiCard
+                  label="PENDING PAYMENTS"
+                  value={fmtK(d.total_dues ?? 0)}
+                  icon={Clock}
+                  gradient="linear-gradient(135deg, #eab308 0%, #facc15 100%)"
+                  href="/finance/dues"
+                />
+              </div>
 
-              {/* ── Left column ── */}
-              <div className="ydl-dash-left">
+              {/* ── KPI Grid Row 2 (4 cols) ── */}
+              <div className="kpi-grid kpi-grid-4">
+                <KpiCard
+                  label="NEW CLIENTS"
+                  value={String(d.clients?.new_this_month ?? 0)}
+                  icon={UserPlus}
+                  gradient="linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)"
+                  href="/clients/new"
+                />
+                <KpiCard
+                  label="RENEWALS"
+                  value={String(d.expiring_soon ?? 0)}
+                  icon={RefreshCw}
+                  gradient="linear-gradient(135deg, #8b5cf6 0%, #c4b5fd 100%)"
+                  href="/members/expiring"
+                />
+                <KpiCard
+                  label="UPGRADE"
+                  value="0"
+                  icon={ArrowUpCircle}
+                  gradient="linear-gradient(135deg, #ec4899 0%, #f472b6 100%)"
+                  href="/memberships/subscriptions"
+                />
+                <KpiCard
+                  label="CHECK-INS"
+                  value={String(d.attendance_today ?? 0)}
+                  icon={Scan}
+                  gradient="linear-gradient(135deg, #ef4444 0%, #fca5a5 100%)"
+                  href="/attendance"
+                />
+              </div>
 
-                {/* KPI row 1 */}
-                <div className="ydl-kpi-row ydl-kpi-row-3">
-                  <YdlKpi label="TODAY'S SALE"       value={fmtK(d.revenue?.today ?? d.revenue?.month ?? 0)} icon="🧾" tone="orange" href="/payments"           />
-                  <YdlKpi label="COLLECTED PAYMENTS" value={fmtK(d.revenue?.month ?? 0)}                     icon="✔"  tone="green"  href="/finance/collection"  />
-                  <YdlKpi label="PENDING PAYMENTS"   value={fmtK(d.total_dues ?? 0)}                         icon="⏳" tone="amber"  href="/finance/dues"         />
+              {/* ── Client Stats Row ── */}
+              <div className="client-stats-row">
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)' }}>
+                    <Users size={20} color="#fff" strokeWidth={1.5} />
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-value">{d.clients?.total ?? 0}</div>
+                    <div className="stat-label">TOTAL CLIENTS</div>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}>
+                    <UserCheck size={20} color="#fff" strokeWidth={1.5} />
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-value">{d.clients?.active ?? 0}</div>
+                    <div className="stat-label">ACTIVE CLIENTS</div>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}>
+                    <UserX size={20} color="#fff" strokeWidth={1.5} />
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-value">{d.clients?.expired ?? 0}</div>
+                    <div className="stat-label">INACTIVE CLIENTS</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Summary Panel & Recent Payments ── */}
+              <div className="summary-wrapper">
+                {/* Left: Summary */}
+                <div className="summary-panel">
+                  <div className="summary-title">Summary</div>
+                  <div className="summary-list">
+                    <SummaryRow
+                      label="Expired Subscriptions"
+                      value={d.clients?.expired ?? 0}
+                      href="/members/lapsed"
+                      tone="red"
+                    />
+                    <SummaryRow
+                      label="Subscriptions About to Expire"
+                      value={d.expiring_soon ?? 0}
+                      href="/members/expiring"
+                      tone="amber"
+                    />
+                    <SummaryRow
+                      label="Active PT Subscriptions"
+                      value={d.active_pt_clients ?? trainerStats.reduce((s: number, t: any) => s + (t.activePtClients ?? 0), 0)}
+                      href="/memberships/subscriptions"
+                      tone="green"
+                    />
+                    <SummaryRow
+                      label="Pending Renewals"
+                      value={d.pending_renewals ?? d.expiring_soon ?? 0}
+                      href="/members/expiring"
+                      tone="orange"
+                    />
+                    <SummaryRow
+                      label="Client Birthdays"
+                      value={d.birthdays_today ?? 0}
+                      href="/members/birthdays"
+                    />
+                    <SummaryRow
+                      label="Client Anniversaries"
+                      value={d.anniversaries_today ?? 0}
+                      href="/members/birthdays"
+                    />
+                  </div>
                 </div>
 
-                {/* KPI row 2 */}
-                <div className="ydl-kpi-row ydl-kpi-row-4">
-                  <YdlKpi label="NEW CLIENTS" value={String(d.clients?.new_this_month ?? 0)} icon="👥" tone="blue"   href="/clients/new"              />
-                  <YdlKpi label="RENEWALS"    value={String(d.expiring_soon ?? 0)}            icon="↻"  tone="green"  href="/members/expiring"          />
-                  <YdlKpi label="UPGRADE"     value="0"                                       icon="⬆"  tone="purple" href="/memberships/subscriptions" />
-                  <YdlKpi label="CHECK-INS"   value={String(d.attendance_today ?? 0)}         icon="📍" tone="red"    href="/attendance"                />
-                </div>
-
-                {/* Client stat row */}
-                <div className="ydl-client-stats">
-                  <div className="ydl-client-stat">
-                    <span className="ydl-cs-icon ydl-cs-total">👤</span>
-                    <span className="ydl-cs-num">{d.clients?.total ?? 0}</span>
-                    <span className="ydl-cs-label">Total Clients</span>
-                  </div>
-                  <div className="ydl-client-stat">
-                    <span className="ydl-cs-icon ydl-cs-active">👤</span>
-                    <span className="ydl-cs-num ydl-cs-active-num">{d.clients?.active ?? 0}</span>
-                    <span className="ydl-cs-label">Active Clients</span>
-                  </div>
-                  <div className="ydl-client-stat">
-                    <span className="ydl-cs-icon ydl-cs-inactive">👤</span>
-                    <span className="ydl-cs-num ydl-cs-inactive-num">{d.clients?.expired ?? 0}</span>
-                    <span className="ydl-cs-label">Inactive Clients</span>
-                  </div>
-                </div>
-
-                {/* Enquiry stats row */}
-                <div className="ydl-enquiry-row">
-                  <div className="ydl-enq-stat">
-                    <span className="ydl-enq-icon">ℹ</span>
-                    <span className="ydl-enq-num">0</span>
-                    <span className="ydl-enq-label">Total Enquiries</span>
-                  </div>
-                  <div className="ydl-enq-stat">
-                    <span className="ydl-enq-icon ydl-enq-open">○</span>
-                    <span className="ydl-enq-num">0</span>
-                    <span className="ydl-enq-label">Open Enquiries</span>
-                  </div>
-                  <div className="ydl-enq-stat">
-                    <span className="ydl-enq-icon ydl-enq-converted">✔</span>
-                    <span className="ydl-enq-num">0</span>
-                    <span className="ydl-enq-label">Converted Enquiries</span>
-                  </div>
-                  <div className="ydl-enq-stat">
-                    <span className="ydl-enq-icon ydl-enq-lost">✗</span>
-                    <span className="ydl-enq-num">0</span>
-                    <span className="ydl-enq-label">Lost Enquiries</span>
-                  </div>
-                </div>
-
-                {/* Recent payments table */}
+                {/* Right: Recent Payments Table */}
                 {isAdmin && (d.recent_payments?.length ?? 0) > 0 && (
-                  <div className="ydl-panel">
-                    <div className="ydl-panel-hdr">
+                  <div className="recent-payments-panel">
+                    <div className="panel-header">
                       <span>Recent Payments</span>
-                      <Link href="/payments" className="ydl-panel-link">View all &rarr;</Link>
+                      <Link href="/payments" className="panel-link">View all</Link>
                     </div>
                     <div className="table-wrap">
                       <table>
@@ -255,37 +345,95 @@ function DashContent() {
                 )}
               </div>
 
-              {/* ── Right: Summary panel ── */}
-              <div className="ydl-summary-panel">
-                <div className="ydl-summary-title">Summary.</div>
-                <div className="ydl-summary-list">
-                  <SummaryRow label="Expired Subscriptions"         value={d.clients?.expired ?? 0}          href="/members/lapsed"            tone="red"    />
-                  <SummaryRow label="Subscriptions About to Expire" value={d.expiring_soon ?? 0}            href="/members/expiring"          tone="amber"  />
-                  <SummaryRow label="Active PT Subscriptions"       value={d.active_pt_clients ?? trainerStats.reduce((s: number, t: any) => s + (t.activePtClients ?? 0), 0)} href="/memberships/subscriptions" tone="green"  />
-                  <SummaryRow label="Pending Renewals"              value={d.pending_renewals ?? d.expiring_soon ?? 0} href="/members/expiring" tone="orange" />
-                  <SummaryRow label="Client Birthdays"              value={d.birthdays_today ?? 0}          href="/members/birthdays"                       />
-                  <SummaryRow label="Client Anniversaries"          value={d.anniversaries_today ?? 0}      href="/members/birthdays"                       />
-                </div>
-              </div>
-            </div>
+              {/* ── Trainer Performance Section (admin only) ── */}
+              {isAdmin && trainerStats.length > 0 && (
+                <TrainerPerformanceSection stats={trainerStats} />
+              )}
+            </>
+          ) : null}
 
-            {/* ── Trainer Performance Section (admin only) ── */}
-            {isAdmin && trainerStats.length > 0 && (
-              <TrainerPerformanceSection stats={trainerStats} />
-            )}
-          </>
-        ) : null}
-
-        {/* ── Quick action buttons ── */}
-        <div className="ydl-quick-btns">
-          {quickBtns.map((b) => (
-            <Link key={b.href + b.label} href={b.href} className={`ydl-qb ${b.cls}`}>
-              {b.label}
-            </Link>
-          ))}
+          {/* ── Quick Action Buttons ── */}
+          <div className="quick-actions">
+            {quickBtns.map((b) => (
+              <Link key={b.href + b.label} href={b.href} className={`quick-btn ${b.cls}`} title={b.label}>
+                <b.Icon size={18} strokeWidth={2} />
+                <span>{b.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </AppShell>
+  );
+}
+
+/* ─── KPI Card Component ────────────────────────────────── */
+function KpiCard({
+  label,
+  value,
+  icon: Icon,
+  gradient,
+  href,
+}: {
+  label: string;
+  value: string;
+  icon: React.ComponentType<any>;
+  gradient: string;
+  href?: string;
+}) {
+  const inner = (
+    <div className="kpi-card lift" style={{ '--kpi-gradient': gradient } as any}>
+      <div className="kpi-card-header">
+        <span className="kpi-card-label">{label}</span>
+        <div className="kpi-card-icon" style={{ background: gradient }}>
+          <Icon size={18} strokeWidth={2} color="#fff" />
+        </div>
+      </div>
+      <div className="kpi-card-value">{value}</div>
+      {href && (
+        <div className="kpi-card-footer">
+          View details
+          <ExternalLink size={12} style={{ marginLeft: 4 }} />
+        </div>
+      )}
+    </div>
+  );
+  return href ? (
+    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
+      {inner}
+    </Link>
+  ) : (
+    inner
+  );
+}
+
+/* ─── Summary Row Component ────────────────────────────── */
+function SummaryRow({
+  label,
+  value,
+  href,
+  tone,
+}: {
+  label: string;
+  value: number;
+  href?: string;
+  tone?: string;
+}) {
+  const inner = (
+    <div className="summary-row">
+      <span className="summary-label">{label}</span>
+      <div className="summary-value-wrapper">
+        {tone && <div className={`tone-dot tone-${tone}`} />}
+        <span className={`summary-value${tone ? ' summary-' + tone : ''}`}>{value}</span>
+      </div>
+    </div>
+  );
+  return href ? (
+    <Link href={href} style={{ textDecoration: 'none' }}>
+      {inner}
+    </Link>
+  ) : (
+    inner
   );
 }
 
@@ -303,14 +451,17 @@ function TrainerPerformanceSection({ stats }: { stats: TrainerStat[] }) {
       {/* Section header */}
       <div className="tp-header">
         <div className="tp-header-left">
-          <span className="tp-header-icon">🏋️</span>
+          <div className="tp-header-icon">
+            <Dumbbell size={24} strokeWidth={2} />
+          </div>
           <div>
             <div className="tp-header-title">Trainer Performance</div>
-            <div className="tp-header-sub">Monthly PT revenue &amp; incentive breakdown</div>
+            <div className="tp-header-sub">Monthly PT revenue & incentive breakdown</div>
           </div>
         </div>
         <Link href="/finance/trainer-revenue" className="tp-header-link">
-          Full Report →
+          Full Report
+          <ExternalLink size={14} />
         </Link>
       </div>
 
@@ -395,70 +546,30 @@ function TrainerCard({ stat }: { stat: TrainerStat }) {
         </div>
         <span className="tp-bar-label">
           {isHigh
-            ? '✓ Above ₹50K threshold'
-            : `₹${Math.round((PT_THRESHOLD - monthlyPtRev) / 1000)}K to 50% incentive`}
+            ? 'Above 50K threshold'
+            : `${Math.round((PT_THRESHOLD - monthlyPtRev) / 1000)}K to 50% incentive`}
         </span>
       </div>
     </Link>
   );
 }
 
-/* ─── Sub-components ──────────────────────────────────── */
-
-function YdlKpi({
-  label, value, icon, tone, href,
-}: {
-  label: string; value: string; icon: string; tone: string; href?: string;
-}) {
-  const body = (
-    <div className={`ydl-kpi ydl-kpi-${tone}`}>
-      <div className="ydl-kpi-top">
-        <div className="ydl-kpi-label">{label}</div>
-        <div className={`ydl-kpi-icon ydl-kpi-icon-${tone}`}>{icon}</div>
-      </div>
-      <div className="ydl-kpi-value">{value}</div>
-      {href && <div className="ydl-kpi-link">View More</div>}
-    </div>
-  );
-  return href ? (
-    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>{body}</Link>
-  ) : body;
-}
-
-function SummaryRow({
-  label, value, href, tone,
-}: {
-  label: string; value: number; href?: string; tone?: string;
-}) {
-  const inner = (
-    <div className="ydl-sum-row">
-      <span className="ydl-sum-label">{label}</span>
-      <span className={`ydl-sum-val${tone ? ' ydl-sum-' + tone : ''}`}>{value}</span>
-    </div>
-  );
-  return href ? (
-    <Link href={href} style={{ textDecoration: 'none' }}>{inner}</Link>
-  ) : inner;
-}
-
+/* ─── Dashboard Skeleton ──────────────────────────────── */
 function DashSkeleton() {
   return (
-    <div className="ydl-dash-body">
-      <div className="ydl-dash-left">
-        <div className="ydl-kpi-row ydl-kpi-row-3">
-          {[0,1,2].map((i) => <div key={i} className="ydl-kpi skeleton" style={{ height: 90 }} />)}
-        </div>
-        <div className="ydl-kpi-row ydl-kpi-row-4">
-          {[0,1,2,3].map((i) => <div key={i} className="ydl-kpi skeleton" style={{ height: 80 }} />)}
-        </div>
-        <div className="ydl-client-stats">
-          {[0,1,2].map((i) => <div key={i} className="ydl-client-stat skeleton" style={{ height: 70, borderRadius: 8 }} />)}
-        </div>
+    <div>
+      <div className="kpi-grid kpi-grid-3" style={{ marginBottom: '1rem' }}>
+        {[0,1,2].map(i => <SkeletonKpi key={i} />)}
       </div>
-      <div className="ydl-summary-panel">
-        <div className="skeleton" style={{ height: 24, width: '60%', marginBottom: 16 }} />
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="skeleton" style={{ height: 18, marginBottom: 10, borderRadius: 4 }} />
+      <div className="kpi-grid kpi-grid-4" style={{ marginBottom: '1rem' }}>
+        {[0,1,2,3].map(i => <SkeletonKpi key={i} />)}
+      </div>
+      <div className="client-stats-row">
+        {[0,1,2].map(i => (
+          <div key={i} className="sk-kpi">
+            <Skeleton height={14} width="50%" style={{ marginBottom: 8 }} />
+            <Skeleton height={28} width="40%" />
+          </div>
         ))}
       </div>
     </div>

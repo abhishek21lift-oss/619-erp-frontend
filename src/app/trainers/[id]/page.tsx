@@ -1,10 +1,12 @@
 'use client';
+import React from 'react';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { Camera, User, Phone, Mail, Briefcase, Calendar, TrendingUp, Users, CheckCircle2, IndianRupee, Edit2, Trash2, Upload, RefreshCw } from 'lucide-react';
 
 export default function TrainerDetailPage({ params }: { params: { id: string } }) {
   return <Guard role="admin"><TrainerDetail id={params.id} /></Guard>;
@@ -17,15 +19,37 @@ function TrainerDetail({ id }: { id: string }) {
   const [error, setError]       = useState('');
   const [success, setSuccess]   = useState('');
   const [photoSaving, setPhotoSaving] = useState(false);
+  const [assignedClients, setAssignedClients] = useState<any[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setLoading(true);
     api.trainers.get(id)
-      .then(d => setData(d))
+      .then((d: any) => {
+        setData(d);
+        // Load cached photo if no photo_url in backend data
+        const cachedPhoto = localStorage.getItem(`trainer_photo_${id}`);
+        if (cachedPhoto && !d.photo_url) {
+          setData((prev: any) => ({ ...prev, photo_url: cachedPhoto }));
+        }
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Fetch assigned clients for stats
+  useEffect(() => {
+    if (!data) return;
+    setStatsLoading(true);
+    api.clients.list({ limit: 500 })
+      .then((all: any) => {
+        const list = Array.isArray(all) ? all : (all?.clients ?? []);
+        setAssignedClients(list.filter((c: any) => c.trainer_id === id));
+      })
+      .catch(() => {})
+      .finally(() => setStatsLoading(false));
+  }, [data, id]);
 
   async function updatePhoto(photoUrl: string) {
     if (!data) return;
@@ -45,10 +69,22 @@ function TrainerDetail({ id }: { id: string }) {
         // Optimistically update local state even if backend doesn't support it yet
         setData((prev: any) => ({ ...prev, photo_url: photoUrl }));
       }
+      // Persist to localStorage
+      if (photoUrl) {
+        localStorage.setItem(`trainer_photo_${id}`, photoUrl);
+      } else {
+        localStorage.removeItem(`trainer_photo_${id}`);
+      }
       setSuccess('Photo updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch {
       setData((prev: any) => ({ ...prev, photo_url: photoUrl }));
+      // Still persist even on error
+      if (photoUrl) {
+        localStorage.setItem(`trainer_photo_${id}`, photoUrl);
+      } else {
+        localStorage.removeItem(`trainer_photo_${id}`);
+      }
       setSuccess('Photo updated (local only — will sync when backend is live).');
       setTimeout(() => setSuccess(''), 4000);
     } finally { setPhotoSaving(false); }
@@ -81,6 +117,16 @@ function TrainerDetail({ id }: { id: string }) {
     if (v >= 1000)   return '₹' + (v / 1000).toFixed(1) + 'K';
     return '₹' + v.toLocaleString('en-IN');
   };
+
+  // Compute stats from assigned clients
+  const today = new Date();
+  const activePtClients = assignedClients.filter(c =>
+    c.status === 'active' && c.pt_end_date && new Date(c.pt_end_date) >= today
+  ).length;
+  const thisMonthRev = assignedClients
+    .filter(c => c.pt_end_date && new Date(c.pt_end_date) >= today)
+    .reduce((sum, c) => sum + (Number(c.final_amount) || 0), 0);
+  const incentiveRate = thisMonthRev >= 50000 ? 50 : 40;
 
   if (loading) return (
     <AppShell>
@@ -128,76 +174,74 @@ function TrainerDetail({ id }: { id: string }) {
           {error   && <div className="alert alert-error mb-2">{error}</div>}
           {success && <div className="alert alert-success mb-2">{success}</div>}
 
-          {/* HERO — avatar + photo upload, name, contact */}
-          <div className="card mb-3" style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-
-            {/* Avatar + upload controls */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.5rem', minWidth: 110 }}>
-              <div style={{
-                width: 96, height: 96, borderRadius: 20, overflow: 'hidden',
-                background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand2) 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 30, fontWeight: 800, color: '#fff',
-                boxShadow: '0 8px 32px rgba(255,71,87,.35)',
-                border: '2.5px solid var(--glass-border-strong)', flexShrink: 0,
-              }}>
+          {/* PREMIUM PROFILE HEADER */}
+          <div className="trainer-profile-header">
+            <div className="trainer-profile-banner" />
+            <div className="trainer-profile-header-content">
+              <div className="trainer-profile-photo-wrap">
                 {t.photo_url
-                  ? <img src={t.photo_url} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : initials}
-              </div>
-              <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{ display: 'none' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                <button type="button" className="btn btn-primary btn-sm"
-                  style={{ fontSize: 11, padding: '3px 10px', whiteSpace: 'nowrap' }}
-                  onClick={() => photoInputRef.current?.click()} disabled={photoSaving}>
-                  {photoSaving ? 'Uploading…' : '📷 Upload Photo'}
-                </button>
-                <button type="button" className="btn btn-ghost btn-sm"
-                  style={{ fontSize: 11, padding: '3px 10px' }}
-                  onClick={promptPhotoUrl} disabled={photoSaving}>
-                  🔗 URL
-                </button>
-                {t.photo_url && (
-                  <button type="button" className="btn btn-ghost btn-sm"
-                    style={{ fontSize: 11, padding: '3px 10px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                    onClick={removePhoto} disabled={photoSaving}>
-                    Remove
+                  ? <img src={t.photo_url} alt={t.name} className="trainer-profile-img" />
+                  : <div className="trainer-profile-initials">{initials}</div>
+                }
+                <div className="trainer-profile-photo-actions">
+                  <button
+                    onClick={() => photoInputRef.current?.click()}
+                    className="trainer-photo-btn"
+                    title="Upload photo"
+                    disabled={photoSaving}
+                  >
+                    <Camera size={14} />
                   </button>
-                )}
-              </div>
-              <span className={`badge badge-${t.status === 'active' ? 'active' : 'expired'}`} style={{ fontSize: 11 }}>
-                {(t.status || 'active').toUpperCase()}
-              </span>
-            </div>
-
-            {/* Name + contact info */}
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 4 }}>{t.name}</div>
-              <div className="text-muted text-sm" style={{ marginBottom: 10 }}>{t.role || 'Personal Trainer'}</div>
-              <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', fontSize: 13 }}>
-                {t.mobile && <span className="text-muted">📱 {t.mobile}</span>}
-                {t.email && <span className="text-muted">📧 {t.email}</span>}
-                {t.joining_date && <span className="text-muted">📅 Joined {String(t.joining_date).split('T')[0]}</span>}
-              </div>
-              {t.specialization && (
-                <div style={{ marginTop: 8, fontSize: 13, color: 'var(--electric)', fontWeight: 600 }}>
-                  🏇 {t.specialization}
+                  {data.photo_url && (
+                    <button
+                      onClick={removePhoto}
+                      className="trainer-photo-btn trainer-photo-btn-danger"
+                      title="Remove"
+                      disabled={photoSaving}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
-              )}
+              </div>
+              <div className="trainer-profile-meta">
+                <h1 className="trainer-profile-name">{data.name}</h1>
+                <p className="trainer-profile-role">{data.role || data.specialization || 'Trainer'}</p>
+                <div className="trainer-profile-tags">
+                  {data.status && <span className={`badge badge-${data.status}`}>{data.status}</span>}
+                  {data.specialization && <span className="tag">{data.specialization}</span>}
+                </div>
+              </div>
             </div>
-
-            <div style={{ display: 'flex', gap: '.5rem', alignSelf: 'flex-start' }}>
-              <Link href="/trainers" className="btn btn-ghost btn-sm">All Trainers</Link>
+            {/* Stats row */}
+            <div className="trainer-stats-row">
+              <div className="trainer-stat">
+                <div className="trainer-stat-value">{activePtClients}</div>
+                <div className="trainer-stat-label">Active Clients</div>
+              </div>
+              <div className="trainer-stat">
+                <div className="trainer-stat-value">{fmtK(thisMonthRev)}</div>
+                <div className="trainer-stat-label">This Month</div>
+              </div>
+              <div className="trainer-stat">
+                <div className="trainer-stat-value">{incentiveRate}%</div>
+                <div className="trainer-stat-label">Incentive Rate</div>
+              </div>
+              <div className="trainer-stat">
+                <div className="trainer-stat-value">{assignedClients.length}</div>
+                <div className="trainer-stat-label">Total Assigned</div>
+              </div>
             </div>
           </div>
 
+          <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoFile} style={{ display: 'none' }} />
+
           {/* KPI ROW */}
           <div className="kpi-grid mb-3">
-            <KpiCard color="green" icon="👥" label="Active Clients" value={String(stats.active_clients ?? 0)} sub={`${stats.total_clients ?? 0} total enrolled`} />
-            <KpiCard color="red"   icon="💰" label="Month Revenue"  value={fmtK(stats.month_revenue)} sub="This calendar month" />
-            <KpiCard color="purple" icon="🎯" label="Month Incentive" value={fmtK(stats.month_incentive)} sub={`@ ${Math.round((t.incentive_rate || 0.5) * 100)}% rate`} />
-            <KpiCard color="blue"  icon="🏆" label="Lifetime Revenue" value={fmtK(stats.lifetime_revenue)} sub="All-time collected" />
-            <KpiCard color="yellow" icon="⚠️" label="Total Dues"    value={fmtK(stats.total_dues)} sub="Outstanding from clients" />
+            <KpiCard color="green" icon={<Users size={20} />} label="Active Clients" value={String(activePtClients)} sub={`${assignedClients.length} total enrolled`} />
+            <KpiCard color="red"   icon={<IndianRupee size={20} />} label="Month Revenue"  value={fmtK(thisMonthRev)} sub="This calendar month" />
+            <KpiCard color="purple" icon={<TrendingUp size={20} />} label="Month Incentive" value={fmtK(thisMonthRev * incentiveRate / 100)} sub={`@ ${incentiveRate}% rate`} />
+            <KpiCard color="blue"  icon={<CheckCircle2 size={20} />} label="Lifetime Revenue" value={fmtK(assignedClients.reduce((s,c) => s+(Number(c.final_amount)||0),0))} sub="All-time enrolled" />
           </div>
 
           {/* 6-month revenue trend */}
@@ -221,26 +265,48 @@ function TrainerDetail({ id }: { id: string }) {
             </div>
           )}
 
+          {/* ASSIGNED CLIENTS MINI-LIST */}
+          {assignedClients.length > 0 && (
+            <div className="card" style={{ marginBottom: '1.5rem', padding: 0 }}>
+              <div className="card-header-row">
+                <span className="card-title"><Users size={16}/> Assigned Clients ({assignedClients.length})</span>
+                <Link href="/clients" className="link-sm">View all →</Link>
+              </div>
+              <div className="trainer-client-list">
+                {assignedClients.slice(0, 8).map((c: any) => (
+                  <Link key={c.id} href={`/clients/${c.id}`} className="trainer-client-row">
+                    <div className="trainer-client-avatar">{c.name?.slice(0,2).toUpperCase()}</div>
+                    <div className="trainer-client-info">
+                      <div className="trainer-client-name">{c.name}</div>
+                      <div className="trainer-client-plan">{c.package_type || 'No plan'}</div>
+                    </div>
+                    <span className={`badge badge-${c.status}`}>{c.status}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* PERSONAL + EMPLOYMENT INFO */}
           <div style={{ display: 'grid', gap: '1.25rem', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: '1.5rem' }}>
             <div className="card">
               <div className="card-title">Personal Details</div>
-              <InfoRow label="📱 Mobile"        value={t.mobile} />
-              <InfoRow label="📧 Email"         value={t.email} />
-              <InfoRow label="🎂 Date of Birth" value={t.dob ? String(t.dob).split('T')[0] : null} />
-              <InfoRow label="⚥ Gender"        value={t.gender} />
-              <InfoRow label="📍 Address"       value={t.address} />
+              <InfoRow label={<><Phone size={14} /> Mobile</>} value={t.mobile} />
+              <InfoRow label={<><Mail size={14} /> Email</>} value={t.email} />
+              <InfoRow label={<><Calendar size={14} /> Date of Birth</>} value={t.dob ? String(t.dob).split('T')[0] : null} />
+              <InfoRow label={<><User size={14} /> Gender</>} value={t.gender} />
+              <InfoRow label={<>📍 Address</>} value={t.address} />
             </div>
 
             <div className="card">
               <div className="card-title">Employment</div>
-              <InfoRow label="🏷️ Role"            value={t.role} />
-              <InfoRow label="📅 Joining Date"     value={t.joining_date ? String(t.joining_date).split('T')[0] : null} />
-              <InfoRow label="💵 Salary"           value={t.salary ? fmt(t.salary) : null} />
-              <InfoRow label="🎯 Incentive Rate"   value={t.incentive_rate ? Math.round(t.incentive_rate * 100) + '%' : null} />
-              <InfoRow label="💼 Specialization"   value={t.specialization} />
-              <InfoRow label="🎓 Certifications"   value={t.certifications} />
-              {t.notes && <InfoRow label="📋 Notes" value={t.notes} />}
+              <InfoRow label={<><Briefcase size={14} /> Role</>} value={t.role} />
+              <InfoRow label={<><Calendar size={14} /> Joining Date</>} value={t.joining_date ? String(t.joining_date).split('T')[0] : null} />
+              <InfoRow label={<><IndianRupee size={14} /> Salary</>} value={t.salary ? fmt(t.salary) : null} />
+              <InfoRow label={<><TrendingUp size={14} /> Incentive Rate</>} value={t.incentive_rate ? Math.round(t.incentive_rate * 100) + '%' : null} />
+              <InfoRow label={<>🎯 Specialization</>} value={t.specialization} />
+              <InfoRow label={<>🎓 Certifications</>} value={t.certifications} />
+              {t.notes && <InfoRow label={<>📋 Notes</>} value={t.notes} />}
             </div>
           </div>
 
@@ -325,34 +391,51 @@ function TrainerDetail({ id }: { id: string }) {
                         <td style={{ textAlign: 'right', color: 'var(--purple)', fontWeight: 600 }}>{fmt(p.incentive_amt)}</td>
                       </tr>
                     ))}
+                  
                   </tbody>
                 </table>
               </div>
             )}
           </div>
+
         </div>
       </div>
     </AppShell>
   );
 }
 
-function KpiCard({ color, icon, label, value, sub }: { color: string; icon: string; label: string; value: string; sub: string }) {
+/* ─── Local helper components ───────────────────────────── */
+
+function KpiCard({ color, icon, label, value, sub }: {
+  color: string; icon: React.ReactNode; label: string; value: string; sub?: string;
+}) {
+  const gradients: Record<string,string> = {
+    green:  'linear-gradient(135deg,#22c55e,#86efac)',
+    red:    'linear-gradient(135deg,#ef4444,#fca5a5)',
+    purple: 'linear-gradient(135deg,#a855f7,#c084fc)',
+    blue:   'linear-gradient(135deg,#3b82f6,#93c5fd)',
+    amber:  'linear-gradient(135deg,#f59e0b,#fcd34d)',
+  };
+  const gradient = gradients[color] || gradients.blue;
   return (
-    <div className={`kpi-card ${color}`}>
-      <div className={`kpi-icon ${color}`}>{icon}</div>
-      <div className="kpi-label">{label}</div>
-      <div className={`kpi-value ${color}`}>{value}</div>
-      <div className="kpi-sub">{sub}</div>
+    <div className="kpi-card" style={{ '--kpi-gradient': gradient } as React.CSSProperties}>
+      <div className="kpi-card-header">
+        <span className="kpi-card-label">{label}</span>
+        <div className="kpi-card-icon" style={{ background: gradient }}>{icon}</div>
+      </div>
+      <div className="kpi-card-value">{value}</div>
+      {sub && <div className="kpi-card-footer">{sub}</div>}
     </div>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: any }) {
+function InfoRow({ label, value }: { label: React.ReactNode; value?: string | null }) {
   if (!value) return null;
   return (
-    <div style={{ display: 'flex', gap: '1rem', padding: '0.5rem 0', borderBottom: '1px solid var(--glass-border)', fontSize: 13.5 }}>
-      <span className="text-muted" style={{ minWidth: 140 }}>{label}</span>
-      <span style={{ fontWeight: 500 }}>{value}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.55rem 0', borderBottom: '1px solid var(--border-soft,#e2e8f0)', fontSize: '0.875rem' }}>
+      <span style={{ color: 'var(--text-secondary,#64748b)', display: 'flex', alignItems: 'center', gap: 5, minWidth: 140 }}>{label}</span>
+      <span style={{ color: 'var(--text-primary,#0f172a)', fontWeight: 500, flex: 1 }}>{value}</span>
     </div>
   );
 }
+

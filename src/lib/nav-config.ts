@@ -74,6 +74,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Attendance',
     icon: '⚙',
     items: [
+      { href: '/checkin', label: 'Check-In', icon: '◎' },
       { href: '/attendance', label: 'Member Attendance', icon: '◧' },
       { href: '/attendance/staff', label: 'Staff Attendance', icon: '✦', role: 'admin' },
       { href: '/operations/leaderboard', label: 'Check-in Leaderboard', icon: '★' },
