@@ -259,16 +259,12 @@ function DashContent() {
               <div className="ydl-summary-panel">
                 <div className="ydl-summary-title">Summary.</div>
                 <div className="ydl-summary-list">
-                  <SummaryRow label="Follow-Ups"                    value={0}                      href="/sales/leads"               />
-                  <SummaryRow label="Appointments"                  value={0}                      href="/attendance"                />
-                  <SummaryRow label="Classes"                       value={0}                      href="/attendance"                />
-                  <SummaryRow label="Expired Subscriptions"         value={d.clients?.expired ?? 0} href="/members/lapsed"   tone="red"    />
-                  <SummaryRow label="Subscriptions About to Expire" value={d.expiring_soon ?? 0}   href="/members/expiring" tone="amber"  />
-                  <SummaryRow label="Active PT Subscriptions"       value={trainerStats.reduce((s, t) => s + t.activePtClients, 0)} href="/memberships/subscriptions" tone="green"  />
-                  <SummaryRow label="Expired PT Subscriptions"      value={0}                      href="/memberships/subscriptions" tone="red"    />
-                  <SummaryRow label="Pending Renewals"              value={d.expiring_soon ?? 0}   href="/members/expiring" tone="orange" />
-                  <SummaryRow label="Client Birthdays"              value={0}                      href="/members/birthdays"         />
-                  <SummaryRow label="Client Anniversaries"          value={0}                      href="/members/birthdays"         />
+                  <SummaryRow label="Expired Subscriptions"         value={d.clients?.expired ?? 0}          href="/members/lapsed"            tone="red"    />
+                  <SummaryRow label="Subscriptions About to Expire" value={d.expiring_soon ?? 0}            href="/members/expiring"          tone="amber"  />
+                  <SummaryRow label="Active PT Subscriptions"       value={d.active_pt_clients ?? trainerStats.reduce((s: number, t: any) => s + (t.activePtClients ?? 0), 0)} href="/memberships/subscriptions" tone="green"  />
+                  <SummaryRow label="Pending Renewals"              value={d.pending_renewals ?? d.expiring_soon ?? 0} href="/members/expiring" tone="orange" />
+                  <SummaryRow label="Client Birthdays"              value={d.birthdays_today ?? 0}          href="/members/birthdays"                       />
+                  <SummaryRow label="Client Anniversaries"          value={d.anniversaries_today ?? 0}      href="/members/birthdays"                       />
                 </div>
               </div>
             </div>

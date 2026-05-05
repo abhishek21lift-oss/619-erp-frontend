@@ -587,13 +587,11 @@ h3 { font-size: 17px; line-height: 1.3; }
 .page-main {
   flex: 1; min-width: 0;
   display: flex; flex-direction: column;
-  margin-left: var(--sidebar-w);
-  transition: margin-left 0.28s var(--ease);
+  /* margin-left removed — shell-spacer handles sidebar offset */
 }
 .page-content {
   flex: 1;
   padding: 1.6rem 2rem 3rem;
-  max-width: 1480px;
   width: 100%;
 }
 
@@ -3928,7 +3926,7 @@ tbody tr:hover { background: #fff7df !important; }
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  transition: margin-left 0.3s ease;
+  /* transition: margin-left 0.3s ease; — removed, using shell-spacer approach */
 }
 .shell-main {
   flex: 1;
@@ -4575,32 +4573,12 @@ tfoot td {
 
 
 /* ══════════════════════════════════════════════════════════════════════
-   SIDEBAR OVERLAP FIX
-   The sidebar is position:fixed — shell-body must carry margin-left
-   equal to the sidebar width so content is never hidden behind it.
+   SIDEBAR OVERLAP FIX  — DEPRECATED
+   The margin-left approach is replaced by the shell-spacer ghost div in AppShell.
+   shell-spacer (248px flex sibling) handles the sidebar offset.
+   All overrides are now in the "FINAL LAYOUT MASTER OVERRIDE" block below.
    ══════════════════════════════════════════════════════════════════════ */
-.shell-body {
-  margin-left: var(--sidebar-w, 248px) !important;
-  transition: margin-left 0.28s cubic-bezier(.4,0,.2,1) !important;
-  width: calc(100% - var(--sidebar-w, 248px)) !important;
-  max-width: calc(100% - var(--sidebar-w, 248px)) !important;
-}
-
-/* When sidebar collapses to 70px */
-[data-sidebar="collapsed"] .shell-body {
-  margin-left: 70px !important;
-  width: calc(100% - 70px) !important;
-  max-width: calc(100% - 70px) !important;
-}
-
-/* Mobile — sidebar slides off-screen, no margin needed */
-@media (max-width: 768px) {
-  .shell-body {
-    margin-left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-}
+/* neutralised — kept as empty placeholder */
 
 /* ph-mobile-logo: hidden on desktop (sidebar already shows logo), shown on mobile */
 .ph-mobile-logo { display: none; }
@@ -4853,12 +4831,15 @@ html body [data-sidebar="collapsed"] .shell-spacer {
 /* 3. Body: takes ALL remaining width — no width cap, no margin tricks */
 html body .shell-body {
   flex: 1 1 auto !important;
+  width: 100% !important;
   min-width: 0 !important;
   max-width: 100% !important;
   margin-left: 0 !important;
+  margin-right: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
+  position: relative !important;
 }
 
 /* 4. Main content area: fills height, scrolls vertically */
@@ -4936,4 +4917,53 @@ html body .shell-main {
 .sidebar.sidebar-collapsed .brand-619-name,
 .sidebar.sidebar-collapsed .brand-619-tag {
   display: none !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   PAGE-MAIN / PAGE-CONTENT  FINAL MASTER OVERRIDE
+   Ensures every page fills the full available width inside shell-body.
+   No margin-left — the shell-spacer handles sidebar offset.
+   ══════════════════════════════════════════════════════════════════════ */
+
+html body .page-main {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-x: hidden !important;
+  background: var(--bg-page) !important;
+  box-sizing: border-box !important;
+}
+
+html body .page-content {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 1.5rem !important;
+}
+
+/* Collapsed sidebar: page-main still full width */
+[data-sidebar="collapsed"] html body .page-main,
+html body [data-sidebar="collapsed"] .page-main {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+
+/* Mobile: full width always */
+@media (max-width: 768px) {
+  html body .page-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  html body .page-content {
+    padding: 1rem !important;
+  }
 }
