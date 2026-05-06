@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { use, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
@@ -9,8 +9,13 @@ import { useAuth } from '@/lib/auth-context';
 import { fmtDate } from '@/lib/format';
 import { memberWhatsAppMessage, whatsappHref } from '@/lib/whatsapp';
 
-export default function ClientDetailPage({ params }: { params: { id: string } }) {
-  return <Guard><ClientDetail id={params.id} /></Guard>;
+// Next.js 15+ made dynamic route `params` a Promise. In a client component we
+// must unwrap it with React's `use()` hook — accessing `params.id` directly
+// would yield `undefined`, which then hits /api/clients/undefined and surfaces
+// as a "Client not found" error in the UI.
+export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  return <Guard><ClientDetail id={id} /></Guard>;
 }
 
 type Tab = 'information' | 'subscriptions' | 'attendance' | 'workout' | 'followup' | 'documents' | 'referrals';

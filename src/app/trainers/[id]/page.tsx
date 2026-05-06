@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { use } from 'react';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -8,8 +8,12 @@ import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { Camera, User, Phone, Mail, Briefcase, Calendar, TrendingUp, Users, CheckCircle2, IndianRupee, Edit2, Trash2, Upload, RefreshCw } from 'lucide-react';
 
-export default function TrainerDetailPage({ params }: { params: { id: string } }) {
-  return <Guard role="admin"><TrainerDetail id={params.id} /></Guard>;
+// Next.js 15+ made dynamic route `params` a Promise — must be unwrapped with
+// React.use() in client components. Reading `params.id` directly yields
+// `undefined` and triggers a spurious "not found" against /api/trainers/undefined.
+export default function TrainerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  return <Guard role="admin"><TrainerDetail id={id} /></Guard>;
 }
 
 function TrainerDetail({ id }: { id: string }) {
