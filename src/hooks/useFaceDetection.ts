@@ -139,7 +139,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
               const scaleY = canvasEl.height / (videoEl.videoHeight || 480);
               ctx.strokeStyle = '#ef4444';
               ctx.lineWidth = 2;
-              detections.forEach(d => {
+              detections.forEach((d: any) => {
                 const b = d.detection.box;
                 ctx.strokeRect(b.x * scaleX, b.y * scaleY, b.width * scaleX, b.height * scaleY);
               });

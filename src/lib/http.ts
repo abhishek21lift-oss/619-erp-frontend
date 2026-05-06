@@ -24,7 +24,6 @@ if (
   !process.env.NEXT_PUBLIC_API_URL &&
   window.location.hostname !== 'localhost'
 ) {
-  // eslint-disable-next-line no-console
   console.warn(
     '[http] NEXT_PUBLIC_API_URL is not set — falling back to localhost. ' +
       'Set it in your Vercel project settings to point at your real backend.',

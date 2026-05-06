@@ -258,7 +258,6 @@ function CheckInContent() {
         window.speechSynthesis.cancel();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -270,7 +269,6 @@ function CheckInContent() {
       handleDetection
     );
     return () => detection.stopDetectionLoop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera.status, detection.modelStatus, handleDetection]);
 
   async function manualCheckIn(client: any) {

@@ -57,7 +57,6 @@ function NewClientForm() {
     setF(p => ({ ...p, pt_end_date: computeEndDate(p.pt_start_date || today, p.package_type) }));
     // load any previously-imported sheet from localStorage
     setSheetCache(getSheetCache());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Sheet-import / auto-fill state ───────────────────────── */
@@ -105,7 +104,6 @@ function NewClientForm() {
       lastLookupMobile.current = m;
       applyMember(hit);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [f.mobile, sheetCache]);
 
   // when first_name changes, offer name suggestions if mobile is empty

@@ -62,7 +62,6 @@ export function useAsync<T>(
       cancelled = true;
       ctrl.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);
 
   const refetch = useCallback(() => setTick((n) => n + 1), []);

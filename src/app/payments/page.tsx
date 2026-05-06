@@ -55,7 +55,6 @@ function PaymentsContent() {
   };
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterFrom, filterTo]);
 
   async function handleAdd(e: FormEvent) {
