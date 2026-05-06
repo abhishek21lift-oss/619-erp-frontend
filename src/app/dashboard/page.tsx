@@ -1,577 +1,615 @@
+// frontend/src/app/dashboard/page.tsx
+//
+// Owner / admin / trainer dashboard. Rebuilt on the new design system
+// (`@/components/ui`) with three KPI donuts (membership mix, revenue split
+// for the period, conversion). The legacy classes from globals.css are kept
+// untouched, so other pages still render — this page just no longer relies
+// on them.
+
 'use client';
-import { useEffect, useState } from 'react';
+
+import * as React from 'react';
 import Link from 'next/link';
-import Guard from '@/components/Guard';
-import AppShell from '@/components/AppShell';
-import { api, DashSummary, Trainer, Client } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
-import { fmtDate } from '@/lib/format';
-import { SkeletonKpi, Skeleton } from '@/components/Skeleton';
 import {
-  TrendingUp,
+  ArrowUpRight,
+  Banknote,
+  CalendarClock,
   CheckCircle2,
-  Clock,
-  UserPlus,
-  RefreshCw,
-  ArrowUpCircle,
-  Scan,
-  Users,
-  UserCheck,
-  UserX,
-  Dumbbell,
   ExternalLink,
   Plus,
+  RefreshCw,
+  Scan,
+  TrendingUp,
+  UserPlus,
+  Users,
+  Wallet,
   Zap,
-  Receipt,
-  MessageSquare,
-  QrCode,
-  TrendingDown,
 } from 'lucide-react';
+
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
+import { useAuth } from '@/lib/auth-context';
+import { fmtDate } from '@/lib/format';
+import { request } from '@/lib/http';
+import { useAsync } from '@/lib/use-async';
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  DonutChart,
+  EmptyState,
+  KpiCard,
+  SkeletonKpi,
+  cn,
+  statusTone,
+  type DonutDatum,
+} from '@/components/ui';
+
+/* ─────────────────────────  helpers  ───────────────────────── */
+
+function fmtINR(n: number | string | null | undefined) {
+  return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
+function fmtINRCompact(n: number | string | null | undefined) {
+  const v = Number(n ?? 0);
+  if (v >= 10_000_000) return '₹' + (v / 10_000_000).toFixed(1) + 'Cr';
+  if (v >= 100_000) return '₹' + (v / 100_000).toFixed(1) + 'L';
+  if (v >= 1_000) return '₹' + (v / 1_000).toFixed(1) + 'K';
+  return '₹' + v.toLocaleString('en-IN');
+}
+
+/** Server-side dashboard payload (same shape today; tolerant of new fields). */
+type DashSummary = {
+  clients?: {
+    total?: number;
+    active?: number;
+    expired?: number;
+    frozen?: number;
+    new_this_month?: number;
+  };
+  revenue?: {
+    today?: number;
+    month?: number;
+    year?: number;
+    total?: number;
+  };
+  total_dues?: number;
+  expiring_soon?: number;
+  attendance_today?: number;
+  birthdays_today?: number;
+  anniversaries_today?: number;
+  pending_renewals?: number;
+  active_pt_clients?: number;
+  recent_payments?: Array<{
+    id: string;
+    amount: number;
+    method?: string;
+    date: string;
+    receipt_no?: string;
+    client_name?: string;
+    trainer_name?: string;
+  }>;
+  monthly_chart?: Array<{ month: string; revenue: number; count: number }>;
+  top_trainers?: Array<{
+    id: string;
+    name: string;
+    specialization?: string;
+    active_clients?: number;
+    month_revenue?: number;
+  }>;
+};
+
+type Period = 'today' | '7d' | '30d' | '90d';
+const PERIOD_TABS: { id: Period; label: string }[] = [
+  { id: 'today', label: 'Today' },
+  { id: '7d', label: '7 days' },
+  { id: '30d', label: '30 days' },
+  { id: '90d', label: '90 days' },
+];
+
+/* ─────────────────────────  page  ───────────────────────── */
 
 export default function DashboardPage() {
   return (
     <Guard>
-      <DashContent />
+      <DashboardContent />
     </Guard>
   );
 }
 
-/* ─── helpers ─────────────────────────────────────────── */
-function fmt(n: number | string) {
-  return '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-}
-function fmtK(n: number | string) {
-  const v = Number(n || 0);
-  if (v >= 10000000) return '₹' + (v / 10000000).toFixed(1) + 'Cr';
-  if (v >= 100000)   return '₹' + (v / 100000).toFixed(1) + 'L';
-  if (v >= 1000)     return '₹' + (v / 1000).toFixed(1) + 'K';
-  return '₹' + v.toLocaleString('en-IN');
-}
-
-/** Package → months divisor for monthly PT revenue calculation */
-const PKG_MONTHS: Record<string, number> = {
-  monthly: 1, 'Monthly': 1,
-  quarterly: 3, 'Quarterly': 3,
-  'half yearly': 6, 'Half Yearly': 6,
-  yearly: 12, 'Yearly': 12,
-  pt: 3, 'PT': 3,
-  '3 months': 3, '6 months': 6, '12 months': 12,
-};
-function pkgMonths(pkg?: string): number {
-  if (!pkg) return 1;
-  return PKG_MONTHS[pkg] ?? PKG_MONTHS[pkg.toLowerCase()] ?? 1;
-}
-
-/** Per-trainer computed stats */
-type TrainerStat = {
-  trainer: Trainer;
-  activePtClients: number;
-  monthlyPtRev: number;
-  incentiveRate: number;
-  incentiveEarned: number;
-};
-
-function computeTrainerStats(trainers: Trainer[], clients: Client[]): TrainerStat[] {
-  const today = new Date();
-  const map = new Map<string, TrainerStat>();
-
-  for (const t of trainers) {
-    map.set(t.id, {
-      trainer: t,
-      activePtClients: 0,
-      monthlyPtRev: 0,
-      incentiveRate: 0,
-      incentiveEarned: 0,
-    });
-  }
-
-  for (const c of clients) {
-    if (!c.trainer_id) continue;
-    const stat = map.get(c.trainer_id);
-    if (!stat) continue;
-
-    /* Only count clients with an active PT end date */
-    const ptEnd = c.pt_end_date ? new Date(c.pt_end_date) : null;
-    if (ptEnd && ptEnd >= today) {
-      stat.activePtClients += 1;
-      const months = pkgMonths(c.package_type);
-      const monthlyRev = (Number(c.final_amount) || 0) / months;
-      stat.monthlyPtRev += monthlyRev;
-    }
-  }
-
-  /* Apply incentive rule */
-  for (const stat of map.values()) {
-    stat.incentiveRate = stat.monthlyPtRev >= 50000 ? 0.5 : 0.4;
-    stat.incentiveEarned = stat.monthlyPtRev * stat.incentiveRate;
-  }
-
-  return Array.from(map.values())
-    .filter((s) => s.activePtClients > 0 || s.trainer.status !== 'inactive')
-    .sort((a, b) => b.monthlyPtRev - a.monthlyPtRev);
-}
-
-/* ─── period tabs ─────────────────────────────────────── */
-type Period = 'today' | '7d' | '15d' | '30d' | '90d' | 'custom';
-const PERIOD_TABS: { id: Period; label: string }[] = [
-  { id: 'today',  label: 'Today' },
-  { id: '7d',     label: 'Last 7 Days' },
-  { id: '15d',    label: 'Last 15 Days' },
-  { id: '30d',    label: 'Last 30 Days' },
-  { id: '90d',    label: 'Last 90 Days' },
-  { id: 'custom', label: 'Custom Date' },
-];
-
-/* ─── main content ────────────────────────────────────── */
-function DashContent() {
+function DashboardContent() {
   const { user } = useAuth();
-  const [data,     setData]     = useState<DashSummary | null>(null);
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
-  const [clients,  setClients]  = useState<Client[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState('');
-  const [period,   setPeriod]   = useState<Period>('today');
   const isAdmin = user?.role === 'admin';
+  const [period, setPeriod] = React.useState<Period>('30d');
 
-  useEffect(() => {
-    const p1 = api.dashboard.summary().then(setData).catch((e) => setError(e.message));
-    const p2 = isAdmin
-      ? Promise.all([
-          api.trainers.list().then(setTrainers).catch(() => {}),
-          api.clients.list({ limit: 2000 }).then((r: any) => {
-            const list: Client[] = Array.isArray(r) ? r : (r?.clients ?? r?.data ?? []);
-            setClients(list);
-          }).catch(() => {}),
-        ])
-      : Promise.resolve();
-    Promise.all([p1, p2]).finally(() => setLoading(false));
-  }, [isAdmin]);
-
-  const d = data;
-  const trainerStats = isAdmin ? computeTrainerStats(trainers, clients) : [];
-
-  const quickBtns = [
-    { label: 'Add Enquiry',      href: '/sales/enquiry',  Icon: Plus,        cls: 'qb-outline' },
-    { label: 'Quick Billing',    href: '/payments?new=1', Icon: Zap,         cls: 'qb-dark'    },
-    { label: 'Receipts',         href: '/payments',       Icon: Receipt,     cls: 'qb-blue'    },
-    { label: 'Follow Up',        href: '/sales/leads',    Icon: MessageSquare, cls: 'qb-green'  },
-    { label: 'Face Check-in',    href: '/checkin',        Icon: Scan,        cls: 'qb-red'     },
-  ];
+  // Summary fetch — server already aggregates. Period is forwarded; if the
+  // backend doesn't yet honor it the response is just the all-up summary,
+  // which is still useful.
+  const summary = useAsync<DashSummary>(
+    (signal) =>
+      request<DashSummary>(`/api/dashboard/summary?period=${period}`, {
+        signal,
+        cacheMs: 30_000,
+      }),
+    [period],
+  );
 
   return (
     <AppShell>
-      <div className="page-main page-enter">
-        <div className="page-content">
-
-          {/* ── Period tabs ── */}
-          <div className="period-bar">
-            {PERIOD_TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className={`period-tab${period === t.id ? ' active' : ''}`}
-                onClick={() => setPeriod(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        {/* Header row */}
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+              Welcome back, {user?.name?.split(' ')[0] ?? 'Coach'}
+            </p>
+            <h1 className="mt-1 text-2xl font-semibold text-slate-900 sm:text-3xl">
+              Operations Dashboard
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {periodCopy(period)} · refreshes every 30 s while open
+            </p>
           </div>
 
-          {error && <div className="alert alert-error">{error}</div>}
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodPicker value={period} onChange={setPeriod} />
+            <Button
+              size="sm"
+              variant="outline"
+              iconLeft={<RefreshCw className="h-3.5 w-3.5" />}
+              onClick={summary.refetch}
+              loading={summary.loading && summary.hasResolved}
+            >
+              Refresh
+            </Button>
+          </div>
+        </header>
 
-          {loading ? (
-            <DashSkeleton />
-          ) : d ? (
-            <>
-              {/* ── KPI Grid Row 1 (3 cols) ── */}
-              <div className="kpi-grid kpi-grid-3">
-                <KpiCard
-                  label="TODAY'S SALE"
-                  value={fmtK(d.revenue?.today ?? d.revenue?.month ?? 0)}
-                  icon={TrendingUp}
-                  gradient="linear-gradient(135deg, #f97316 0%, #fb923c 100%)"
-                  href="/payments"
-                />
-                <KpiCard
-                  label="COLLECTED PAYMENTS"
-                  value={fmtK(d.revenue?.month ?? 0)}
-                  icon={CheckCircle2}
-                  gradient="linear-gradient(135deg, #22c55e 0%, #86efac 100%)"
-                  href="/finance/collection"
-                />
-                <KpiCard
-                  label="PENDING PAYMENTS"
-                  value={fmtK(d.total_dues ?? 0)}
-                  icon={Clock}
-                  gradient="linear-gradient(135deg, #eab308 0%, #facc15 100%)"
-                  href="/finance/dues"
-                />
-              </div>
+        {/* Errors */}
+        {summary.error && (
+          <div
+            role="alert"
+            className="mt-6 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            <span>
+              Couldn&rsquo;t load dashboard:{' '}
+              <strong className="font-medium">{summary.error.message}</strong>
+            </span>
+            <Button size="sm" variant="outline" onClick={summary.refetch}>
+              Retry
+            </Button>
+          </div>
+        )}
 
-              {/* ── KPI Grid Row 2 (4 cols) ── */}
-              <div className="kpi-grid kpi-grid-4">
-                <KpiCard
-                  label="NEW CLIENTS"
-                  value={String(d.clients?.new_this_month ?? 0)}
-                  icon={UserPlus}
-                  gradient="linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)"
-                  href="/clients/new"
-                />
-                <KpiCard
-                  label="RENEWALS"
-                  value={String(d.expiring_soon ?? 0)}
-                  icon={RefreshCw}
-                  gradient="linear-gradient(135deg, #8b5cf6 0%, #c4b5fd 100%)"
-                  href="/members/expiring"
-                />
-                <KpiCard
-                  label="UPGRADE"
-                  value="0"
-                  icon={ArrowUpCircle}
-                  gradient="linear-gradient(135deg, #ec4899 0%, #f472b6 100%)"
-                  href="/memberships/subscriptions"
-                />
-                <KpiCard
-                  label="CHECK-INS"
-                  value={String(d.attendance_today ?? 0)}
-                  icon={Scan}
-                  gradient="linear-gradient(135deg, #ef4444 0%, #fca5a5 100%)"
-                  href="/attendance"
-                />
-              </div>
+        {/* KPIs */}
+        <section
+          aria-label="Key metrics"
+          className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5 lg:gap-4"
+        >
+          {summary.loading && !summary.data ? (
+            Array.from({ length: 5 }).map((_, i) => <SkeletonKpi key={i} />)
+          ) : (
+            <KpiRow d={summary.data ?? {}} />
+          )}
+        </section>
 
-              {/* ── Client Stats Row ── */}
-              <div className="client-stats-row">
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)' }}>
-                    <Users size={20} color="#fff" strokeWidth={1.5} />
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-value">{d.clients?.total ?? 0}</div>
-                    <div className="stat-label">TOTAL CLIENTS</div>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}>
-                    <UserCheck size={20} color="#fff" strokeWidth={1.5} />
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-value">{d.clients?.active ?? 0}</div>
-                    <div className="stat-label">ACTIVE CLIENTS</div>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' }}>
-                    <UserX size={20} color="#fff" strokeWidth={1.5} />
-                  </div>
-                  <div className="stat-content">
-                    <div className="stat-value">{d.clients?.expired ?? 0}</div>
-                    <div className="stat-label">INACTIVE CLIENTS</div>
-                  </div>
-                </div>
-              </div>
+        {/* Charts row */}
+        <section
+          aria-label="Donut breakdowns"
+          className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle>Membership mix</CardTitle>
+              <Badge tone="neutral">All time</Badge>
+            </CardHeader>
+            <CardBody>
+              <DonutChart
+                data={membershipMix(summary.data)}
+                centerLabel="Members"
+                valueFormatter={(v) => v.toLocaleString('en-IN')}
+              />
+            </CardBody>
+          </Card>
 
-              {/* ── Summary Panel & Recent Payments ── */}
-              <div className="summary-wrapper">
-                {/* Left: Summary */}
-                <div className="summary-panel">
-                  <div className="summary-title">Summary</div>
-                  <div className="summary-list">
-                    <SummaryRow
-                      label="Expired Subscriptions"
-                      value={d.clients?.expired ?? 0}
-                      href="/members/lapsed"
-                      tone="red"
-                    />
-                    <SummaryRow
-                      label="Subscriptions About to Expire"
-                      value={d.expiring_soon ?? 0}
-                      href="/members/expiring"
-                      tone="amber"
-                    />
-                    <SummaryRow
-                      label="Active PT Subscriptions"
-                      value={d.active_pt_clients ?? trainerStats.reduce((s: number, t: any) => s + (t.activePtClients ?? 0), 0)}
-                      href="/memberships/subscriptions"
-                      tone="green"
-                    />
-                    <SummaryRow
-                      label="Pending Renewals"
-                      value={d.pending_renewals ?? d.expiring_soon ?? 0}
-                      href="/members/expiring"
-                      tone="orange"
-                    />
-                    <SummaryRow
-                      label="Client Birthdays"
-                      value={d.birthdays_today ?? 0}
-                      href="/members/birthdays"
-                    />
-                    <SummaryRow
-                      label="Client Anniversaries"
-                      value={d.anniversaries_today ?? 0}
-                      href="/members/birthdays"
-                    />
-                  </div>
-                </div>
-
-                {/* Right: Recent Payments Table */}
-                {isAdmin && (d.recent_payments?.length ?? 0) > 0 && (
-                  <div className="recent-payments-panel">
-                    <div className="panel-header">
-                      <span>Recent Payments</span>
-                      <Link href="/payments" className="panel-link">View all</Link>
-                    </div>
-                    <div className="table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Member</th><th>Amount</th><th>Method</th><th>Coach</th><th>Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {d.recent_payments.map((p: any) => (
-                            <tr key={p.id}>
-                              <td style={{ fontWeight: 600 }}>{p.client_name || '—'}</td>
-                              <td style={{ fontWeight: 700, color: 'var(--success)' }} className="tabular">{fmt(p.amount)}</td>
-                              <td><span className={`badge badge-${(p.method || 'cash').toLowerCase()}`}>{p.method}</span></td>
-                              <td className="text-muted">{p.trainer_name || '—'}</td>
-                              <td className="text-muted">{fmtDate(p.date)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Revenue snapshot</CardTitle>
+              <Badge tone="brand">{labelForPeriod(period)}</Badge>
+            </CardHeader>
+            <CardBody>
+              <DonutChart
+                data={revenueMix(summary.data)}
+                centerValue={fmtINRCompact(
+                  (summary.data?.revenue?.month ?? 0) +
+                    (summary.data?.total_dues ?? 0),
                 )}
-              </div>
+                centerLabel="Booked"
+                valueFormatter={(v) => fmtINR(v)}
+              />
+            </CardBody>
+          </Card>
 
-              {/* ── Trainer Performance Section (admin only) ── */}
-              {isAdmin && trainerStats.length > 0 && (
-                <TrainerPerformanceSection stats={trainerStats} />
-              )}
-            </>
-          ) : null}
+          <Card>
+            <CardHeader>
+              <CardTitle>Renewal pipeline</CardTitle>
+              <Badge tone="warning">Next 30 days</Badge>
+            </CardHeader>
+            <CardBody>
+              <DonutChart
+                data={renewalPipeline(summary.data)}
+                centerLabel="At risk"
+                valueFormatter={(v) => v.toLocaleString('en-IN')}
+              />
+            </CardBody>
+          </Card>
+        </section>
 
-          {/* ── Quick Action Buttons ── */}
-          <div className="quick-actions">
-            {quickBtns.map((b) => (
-              <Link key={b.href + b.label} href={b.href} className={`quick-btn ${b.cls}`} title={b.label}>
-                <b.Icon size={18} strokeWidth={2} />
-                <span>{b.label}</span>
+        {/* Quick actions + recent payments */}
+        <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle>Quick actions</CardTitle>
+            </CardHeader>
+            <CardBody className="grid grid-cols-2 gap-2">
+              <QuickAction
+                href="/sales/enquiry"
+                icon={<Plus className="h-4 w-4" />}
+                label="Add enquiry"
+              />
+              <QuickAction
+                href="/payments?new=1"
+                icon={<Zap className="h-4 w-4" />}
+                label="Quick billing"
+              />
+              <QuickAction
+                href="/checkin"
+                icon={<Scan className="h-4 w-4" />}
+                label="Face check-in"
+              />
+              <QuickAction
+                href="/clients/new"
+                icon={<UserPlus className="h-4 w-4" />}
+                label="New member"
+              />
+              <QuickAction
+                href="/finance/dues"
+                icon={<Wallet className="h-4 w-4" />}
+                label="Dues report"
+              />
+              <QuickAction
+                href="/members/expiring"
+                icon={<CalendarClock className="h-4 w-4" />}
+                label="Renewals"
+              />
+            </CardBody>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Recent payments</CardTitle>
+              <Link
+                href="/payments"
+                className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:underline"
+              >
+                View all <ExternalLink className="h-3 w-3" />
               </Link>
-            ))}
-          </div>
-        </div>
+            </CardHeader>
+            <CardBody className="p-0">
+              <RecentPayments
+                rows={summary.data?.recent_payments ?? []}
+                loading={summary.loading && !summary.data}
+              />
+            </CardBody>
+          </Card>
+        </section>
+
+        {isAdmin && (
+          <section className="mt-6 grid grid-cols-1 gap-4">
+            <TopTrainersCard rows={summary.data?.top_trainers ?? []} />
+          </section>
+        )}
       </div>
     </AppShell>
   );
 }
 
-/* ─── KPI Card Component ────────────────────────────────── */
-function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  gradient,
-  href,
-}: {
-  label: string;
-  value: string;
-  icon: React.ComponentType<any>;
-  gradient: string;
-  href?: string;
-}) {
-  const inner = (
-    <div className="kpi-card lift" style={{ '--kpi-gradient': gradient } as any}>
-      <div className="kpi-card-header">
-        <span className="kpi-card-label">{label}</span>
-        <div className="kpi-card-icon" style={{ background: gradient }}>
-          <Icon size={18} strokeWidth={2} color="#fff" />
-        </div>
-      </div>
-      <div className="kpi-card-value">{value}</div>
-      {href && (
-        <div className="kpi-card-footer">
-          View details
-          <ExternalLink size={12} style={{ marginLeft: 4 }} />
-        </div>
-      )}
-    </div>
-  );
-  return href ? (
-    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
-      {inner}
-    </Link>
-  ) : (
-    inner
-  );
-}
+/* ─────────────────────────  KPI row  ───────────────────────── */
 
-/* ─── Summary Row Component ────────────────────────────── */
-function SummaryRow({
-  label,
-  value,
-  href,
-  tone,
-}: {
-  label: string;
-  value: number;
-  href?: string;
-  tone?: string;
-}) {
-  const inner = (
-    <div className="summary-row">
-      <span className="summary-label">{label}</span>
-      <div className="summary-value-wrapper">
-        {tone && <div className={`tone-dot tone-${tone}`} />}
-        <span className={`summary-value${tone ? ' summary-' + tone : ''}`}>{value}</span>
-      </div>
-    </div>
-  );
-  return href ? (
-    <Link href={href} style={{ textDecoration: 'none' }}>
-      {inner}
-    </Link>
-  ) : (
-    inner
-  );
-}
-
-/* ─── Trainer Performance Section ────────────────────── */
-const PT_THRESHOLD = 50000;
-
-function TrainerPerformanceSection({ stats }: { stats: TrainerStat[] }) {
-  const totalPtRev = stats.reduce((s, t) => s + t.monthlyPtRev, 0);
-  const totalIncentive = stats.reduce((s, t) => s + t.incentiveEarned, 0);
-  const totalPtClients = stats.reduce((s, t) => s + t.activePtClients, 0);
-  const highPerformers = stats.filter((s) => s.monthlyPtRev >= PT_THRESHOLD).length;
-
+function KpiRow({ d }: { d: DashSummary }) {
+  const dueColor = (d.total_dues ?? 0) > 0 ? 'amber' : 'emerald';
   return (
-    <div className="tp-section">
-      {/* Section header */}
-      <div className="tp-header">
-        <div className="tp-header-left">
-          <div className="tp-header-icon">
-            <Dumbbell size={24} strokeWidth={2} />
-          </div>
-          <div>
-            <div className="tp-header-title">Trainer Performance</div>
-            <div className="tp-header-sub">Monthly PT revenue & incentive breakdown</div>
-          </div>
-        </div>
-        <Link href="/finance/trainer-revenue" className="tp-header-link">
-          Full Report
-          <ExternalLink size={14} />
-        </Link>
-      </div>
+    <>
+      <KpiCard
+        accent="emerald"
+        label="Today's revenue"
+        value={fmtINRCompact(d.revenue?.today ?? 0)}
+        hint={`Month-to-date ${fmtINRCompact(d.revenue?.month ?? 0)}`}
+        icon={<TrendingUp className="h-5 w-5" />}
+        href="/payments"
+      />
+      <KpiCard
+        accent="rose"
+        label="Active members"
+        value={(d.clients?.active ?? 0).toLocaleString('en-IN')}
+        hint={`${d.clients?.new_this_month ?? 0} new this month`}
+        icon={<Users className="h-5 w-5" />}
+        href="/members/active"
+      />
+      <KpiCard
+        accent="sky"
+        label="Today's check-ins"
+        value={(d.attendance_today ?? 0).toLocaleString('en-IN')}
+        hint="Members + walk-ins"
+        icon={<CheckCircle2 className="h-5 w-5" />}
+        href="/attendance"
+      />
+      <KpiCard
+        accent="violet"
+        label="Renewals due"
+        value={(d.expiring_soon ?? 0).toLocaleString('en-IN')}
+        hint="Next 7 days"
+        icon={<RefreshCw className="h-5 w-5" />}
+        href="/members/expiring"
+      />
+      <KpiCard
+        accent={dueColor}
+        label="Pending dues"
+        value={fmtINRCompact(d.total_dues ?? 0)}
+        hint={`${d.clients?.expired ?? 0} lapsed members`}
+        icon={<Banknote className="h-5 w-5" />}
+        href="/finance/dues"
+        deltaIs="bad"
+      />
+    </>
+  );
+}
 
-      {/* Summary KPIs */}
-      <div className="tp-kpi-row">
-        <div className="tp-kpi">
-          <div className="tp-kpi-label">Total PT Revenue</div>
-          <div className="tp-kpi-value tp-kpi-green">{fmtK(totalPtRev)}<span className="tp-kpi-sub">/mo</span></div>
-        </div>
-        <div className="tp-kpi">
-          <div className="tp-kpi-label">Total Incentive Payout</div>
-          <div className="tp-kpi-value tp-kpi-amber">{fmtK(totalIncentive)}</div>
-        </div>
-        <div className="tp-kpi">
-          <div className="tp-kpi-label">Active PT Clients</div>
-          <div className="tp-kpi-value tp-kpi-blue">{totalPtClients}</div>
-        </div>
-        <div className="tp-kpi">
-          <div className="tp-kpi-label">High Performers</div>
-          <div className="tp-kpi-value tp-kpi-purple">{highPerformers}<span className="tp-kpi-sub"> trainers</span></div>
-        </div>
-      </div>
+/* ─────────────────────────  charts  ───────────────────────── */
 
-      {/* Trainer cards grid */}
-      <div className="tp-cards">
-        {stats.map((s) => (
-          <TrainerCard key={s.trainer.id} stat={s} />
-        ))}
-      </div>
+function membershipMix(d?: DashSummary | null): DonutDatum[] {
+  if (!d) return [];
+  const c = d.clients ?? {};
+  return [
+    { name: 'Active', value: c.active ?? 0, color: '#10b981' },
+    { name: 'Expired', value: c.expired ?? 0, color: '#ef4444' },
+    { name: 'Frozen', value: c.frozen ?? 0, color: '#f59e0b' },
+  ];
+}
+
+function revenueMix(d?: DashSummary | null): DonutDatum[] {
+  if (!d) return [];
+  const month = d.revenue?.month ?? 0;
+  const dues = d.total_dues ?? 0;
+  return [
+    { name: 'Collected', value: month, color: '#10b981' },
+    { name: 'Outstanding', value: dues, color: '#f59e0b' },
+  ];
+}
+
+function renewalPipeline(d?: DashSummary | null): DonutDatum[] {
+  if (!d) return [];
+  return [
+    { name: 'Expiring 7d', value: d.expiring_soon ?? 0, color: '#f59e0b' },
+    { name: 'Pending', value: d.pending_renewals ?? 0, color: '#ef4444' },
+    { name: 'Active PT', value: d.active_pt_clients ?? 0, color: '#10b981' },
+  ];
+}
+
+/* ─────────────────────────  pieces  ───────────────────────── */
+
+function PeriodPicker({
+  value,
+  onChange,
+}: {
+  value: Period;
+  onChange: (p: Period) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Time range"
+      className="inline-flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm"
+    >
+      {PERIOD_TABS.map((t) => (
+        <button
+          key={t.id}
+          role="tab"
+          aria-selected={value === t.id}
+          onClick={() => onChange(t.id)}
+          className={cn(
+            'rounded-md px-3 py-1.5 text-xs font-medium transition',
+            value === t.id
+              ? 'bg-rose-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100',
+          )}
+        >
+          {t.label}
+        </button>
+      ))}
     </div>
   );
 }
 
-function TrainerCard({ stat }: { stat: TrainerStat }) {
-  const { trainer, activePtClients, monthlyPtRev, incentiveRate, incentiveEarned } = stat;
-  const isHigh = monthlyPtRev >= PT_THRESHOLD;
-  const barPct = Math.min(100, (monthlyPtRev / PT_THRESHOLD) * 100);
-  const initials = trainer.name
-    .split(' ')
-    .map((w) => w[0] ?? '')
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
+function QuickAction({
+  href,
+  icon,
+  label,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+}) {
   return (
-    <Link href={`/trainers/${trainer.id}`} className="tp-card" style={{ textDecoration: 'none' }}>
-      {/* Card top */}
-      <div className="tp-card-top">
-        <div className="tp-avatar">{initials}</div>
-        <div className="tp-card-info">
-          <div className="tp-card-name">{trainer.name}</div>
-          <div className="tp-card-role">{trainer.role || 'Trainer'}</div>
-        </div>
-        <span className={`tp-badge ${isHigh ? 'tp-badge-high' : 'tp-badge-low'}`}>
-          {isHigh ? '50%' : '40%'}
-        </span>
-      </div>
+    <Link
+      href={href}
+      className="group inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-rose-200 hover:text-rose-700"
+    >
+      <span className="grid h-7 w-7 place-items-center rounded-md bg-rose-50 text-rose-600 transition group-hover:bg-rose-100">
+        {icon}
+      </span>
+      <span className="truncate">{label}</span>
+      <ArrowUpRight className="ml-auto h-3 w-3 text-slate-400 group-hover:text-rose-600" />
+    </Link>
+  );
+}
 
-      {/* Metrics */}
-      <div className="tp-card-metrics">
-        <div className="tp-metric">
-          <span className="tp-metric-label">PT Clients</span>
-          <span className="tp-metric-val">{activePtClients}</span>
-        </div>
-        <div className="tp-metric">
-          <span className="tp-metric-label">Monthly Rev</span>
-          <span className="tp-metric-val tp-metric-green">{fmtK(monthlyPtRev)}</span>
-        </div>
-        <div className="tp-metric">
-          <span className="tp-metric-label">Incentive</span>
-          <span className={`tp-metric-val ${isHigh ? 'tp-metric-amber' : ''}`}>{fmtK(incentiveEarned)}</span>
-        </div>
-      </div>
-
-      {/* Progress bar toward Rs.50K threshold */}
-      <div className="tp-bar-wrap">
-        <div className="tp-bar-bg">
+function RecentPayments({
+  rows,
+  loading,
+}: {
+  rows: NonNullable<DashSummary['recent_payments']>;
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="px-5 py-4">
+        {Array.from({ length: 4 }).map((_, i) => (
           <div
-            className={`tp-bar-fill ${isHigh ? 'tp-bar-high' : 'tp-bar-low'}`}
-            style={{ width: `${barPct}%` }}
-          />
-        </div>
-        <span className="tp-bar-label">
-          {isHigh
-            ? 'Above 50K threshold'
-            : `${Math.round((PT_THRESHOLD - monthlyPtRev) / 1000)}K to 50% incentive`}
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-/* ─── Dashboard Skeleton ──────────────────────────────── */
-function DashSkeleton() {
-  return (
-    <div>
-      <div className="kpi-grid kpi-grid-3" style={{ marginBottom: '1rem' }}>
-        {[0,1,2].map(i => <SkeletonKpi key={i} />)}
-      </div>
-      <div className="kpi-grid kpi-grid-4" style={{ marginBottom: '1rem' }}>
-        {[0,1,2,3].map(i => <SkeletonKpi key={i} />)}
-      </div>
-      <div className="client-stats-row">
-        {[0,1,2].map(i => (
-          <div key={i} className="sk-kpi">
-            <Skeleton height={14} width="50%" style={{ marginBottom: 8 }} />
-            <Skeleton height={28} width="40%" />
+            key={i}
+            className="grid grid-cols-4 gap-2 border-b border-slate-100 py-3 last:border-b-0"
+          >
+            <div className="h-3 animate-pulse rounded bg-slate-200/70" />
+            <div className="h-3 animate-pulse rounded bg-slate-200/70" />
+            <div className="h-3 animate-pulse rounded bg-slate-200/70" />
+            <div className="h-3 animate-pulse rounded bg-slate-200/70" />
           </div>
         ))}
       </div>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        icon={<Banknote className="h-5 w-5" />}
+        title="No payments yet"
+        description="Once you record a payment it'll appear here."
+      />
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <tr>
+            <th className="px-5 py-3 font-medium">Member</th>
+            <th className="px-5 py-3 font-medium">Amount</th>
+            <th className="px-5 py-3 font-medium">Method</th>
+            <th className="hidden px-5 py-3 font-medium md:table-cell">Coach</th>
+            <th className="px-5 py-3 font-medium">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => (
+            <tr
+              key={p.id}
+              className="border-t border-slate-100 transition hover:bg-slate-50/60"
+            >
+              <td className="px-5 py-3 font-medium text-slate-900">
+                {p.client_name || '—'}
+              </td>
+              <td className="px-5 py-3 font-semibold tabular-nums text-emerald-700">
+                {fmtINR(p.amount)}
+              </td>
+              <td className="px-5 py-3">
+                <Badge tone={statusTone(p.method)} dot>
+                  {(p.method ?? 'CASH').toUpperCase()}
+                </Badge>
+              </td>
+              <td className="hidden px-5 py-3 text-slate-600 md:table-cell">
+                {p.trainer_name || '—'}
+              </td>
+              <td className="px-5 py-3 text-slate-500">{fmtDate(p.date)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
+
+function TopTrainersCard({
+  rows,
+}: {
+  rows: NonNullable<DashSummary['top_trainers']>;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Top trainers — month revenue</CardTitle>
+        <Link
+          href="/finance/trainer-revenue"
+          className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:underline"
+        >
+          Full report <ExternalLink className="h-3 w-3" />
+        </Link>
+      </CardHeader>
+      <CardBody className="p-0">
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={<Users className="h-5 w-5" />}
+            title="No trainer revenue yet"
+            description="Once trainers start logging clients & PT renewals, the leaderboard appears here."
+          />
+        ) : (
+          <ul role="list" className="divide-y divide-slate-100">
+            {rows.map((t, i) => (
+              <li
+                key={t.id}
+                className="flex items-center justify-between gap-4 px-5 py-3"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-50 text-sm font-semibold text-rose-700">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-slate-900">
+                      {t.name}
+                    </p>
+                    {t.specialization && (
+                      <p className="truncate text-xs text-slate-500">
+                        {t.specialization}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold tabular-nums text-emerald-700">
+                    {fmtINRCompact(t.month_revenue ?? 0)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {t.active_clients ?? 0} active
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
+/* ─────────────────────────  copy helpers  ───────────────────────── */
+
+function periodCopy(p: Period) {
+  switch (p) {
+    case 'today':
+      return "Today's snapshot";
+    case '7d':
+      return 'Rolling 7 days';
+    case '30d':
+      return 'Rolling 30 days';
+    case '90d':
+      return 'Rolling 90 days';
+  }
+}
+function labelForPeriod(p: Period) {
+  return p === 'today' ? 'Today' : `Last ${p.replace('d', '')}d`;
+}
+

@@ -94,3 +94,35 @@ export function fmtMoney(n: number | string | null | undefined): string {
 export function todayDDMM(): string {
   return toDDMMYYYY(new Date());
 }
+
+/**
+ * Simple date-only formatter — strips the time portion off ISO/Date inputs.
+ *
+ * Use when you want a plain YYYY-MM-DD string with no localization
+ * (e.g. for backend payloads, log lines, or filenames).
+ *
+ *   formatDate("2026-05-06T00:00:00.000Z") → "2026-05-06"
+ *   formatDate(new Date())                 → "2026-05-06"
+ *
+ * For UI rendering prefer `fmtDate` (DD-MM-YYYY) or `formatDateLocal`
+ * (browser locale).
+ */
+export function formatDate(value?: string | Date | null): string {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().split('T')[0];
+}
+
+/**
+ * Localized date formatter — uses the browser's default locale.
+ *
+ *   formatDateLocal("2026-05-06T00:00:00.000Z") → "5/6/2026" (en-US)
+ *                                                or "06/05/2026" (en-IN)
+ */
+export function formatDateLocal(value?: string | Date | null): string {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString();
+}
