@@ -1,8 +1,11 @@
 // src/lib/api.ts
 
+// NEXT_PUBLIC_API_URL must be set on Vercel and in .env.local. The fallback
+// is localhost so a missing env var fails fast in development with a clear
+// error rather than 404-ing against a placeholder URL that doesn't exist.
 const BASE =
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://619-erp-api.onrender.com';
+  'http://localhost:5000';
 
 // ================= TYPES =================
 

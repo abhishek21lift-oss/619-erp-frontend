@@ -13,8 +13,23 @@
 // Intentionally framework-free: import from a hook, a server action, or
 // directly inside an effect.
 
+// Fall back to localhost when the env var is missing instead of a dead
+// placeholder URL — it's much easier to debug "fetch refused on
+// localhost:5000" than "404 Not Found from a domain that doesn't exist".
 const BASE =
-  process.env.NEXT_PUBLIC_API_URL || 'https://619-erp-api.onrender.com';
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+if (
+  typeof window !== 'undefined' &&
+  !process.env.NEXT_PUBLIC_API_URL &&
+  window.location.hostname !== 'localhost'
+) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[http] NEXT_PUBLIC_API_URL is not set — falling back to localhost. ' +
+      'Set it in your Vercel project settings to point at your real backend.',
+  );
+}
 
 // ──────────────────────────────────────────────────────────────────────
 //  ApiError
