@@ -102,7 +102,51 @@ export type Attendance = {
   check_in?: string;
 };
 
-export type DashSummary = any;
+// Mirror of the dashboard summary endpoint shape. Kept loose-typed
+// (everything optional) because individual fields can be missing or zero
+// when there's no data for a period — defensive UI code should still
+// render gracefully instead of throwing on undefined access.
+export interface DashSummary {
+  period?: 'today' | '7d' | '30d' | '90d';
+  clients?: {
+    total?: number;
+    active?: number;
+    expired?: number;
+    frozen?: number;
+    new_this_month?: number;
+  };
+  revenue?: {
+    today?: number;
+    month?: number;
+    year?: number;
+    total?: number;
+    period?: number;
+  };
+  expiring_soon?: number;
+  total_dues?: number;
+  attendance_today?: number;
+  birthdays_today?: number;
+  anniversaries_today?: number;
+  pending_renewals?: number;
+  active_pt_clients?: number;
+  recent_payments?: Array<{
+    id: string;
+    amount: number;
+    method?: string;
+    date: string;
+    receipt_no?: string;
+    client_name?: string;
+    trainer_name?: string;
+  }>;
+  monthly_chart?: Array<{ month: string; revenue: number; count: number }>;
+  top_trainers?: Array<{
+    id: string;
+    name: string;
+    specialization?: string;
+    active_clients?: number;
+    month_revenue?: number;
+  }>;
+}
 
 export type FaceCheckInResponse = {
   success: boolean;

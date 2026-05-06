@@ -65,11 +65,27 @@ export class ApiError extends Error {
 
 // ──────────────────────────────────────────────────────────────────────
 //  Cache + in-flight dedup
+//  Bounded LRU — Map preserves insertion order, so we evict the oldest
+//  entry when we hit the cap. Without this the cache grows unbounded over
+//  hours-long sessions and contributes to the "memory grows over time"
+//  bug reports.
 // ──────────────────────────────────────────────────────────────────────
 type CacheEntry<T> = { value: T; expiresAt: number };
 
+const CACHE_MAX_ENTRIES = 200;
 const cache = new Map<string, CacheEntry<unknown>>();
 const inflight = new Map<string, Promise<unknown>>();
+
+function cacheSetBounded(key: string, entry: CacheEntry<unknown>) {
+  // Re-insert (delete + set) to bump the LRU position.
+  if (cache.has(key)) cache.delete(key);
+  cache.set(key, entry);
+  while (cache.size > CACHE_MAX_ENTRIES) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
+}
 
 function token(): string | null {
   if (typeof window === 'undefined') return null;
@@ -140,7 +156,7 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   const result = await exec;
 
   if (isGet && opts.cacheMs) {
-    cache.set(cacheKey, { value: result, expiresAt: Date.now() + opts.cacheMs });
+    cacheSetBounded(cacheKey, { value: result, expiresAt: Date.now() + opts.cacheMs });
   }
 
   return result;

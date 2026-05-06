@@ -470,6 +470,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     setMounted(true);
+    // SECURITY MIGRATION: prior versions stored the user's password
+    // (base64-encoded) in localStorage to enable biometric "auto-login".
+    // That's a credential-theft vector. Sweep it on first paint of the
+    // login page so any existing user upgrading their JS bundle has the
+    // legacy entry removed before we ever touch it.
+    try { localStorage.removeItem('619_bio_pass'); } catch { /* ignore */ }
+
     const supported = isBiometricSupported();
     setBioSupported(supported);
     const creds = getStoredCreds();
@@ -494,31 +501,34 @@ export default function LoginPage() {
     setError('');
     try {
       const ok = await authenticateWithBiometric();
-      if (ok) {
-        setBioStatus('success');
-        const stored = localStorage.getItem('619_bio_pass');
-        if (stored) {
-          setLoading(true);
-          try {
-            await login(bioUser.email, atob(stored));
-            router.replace('/dashboard');
-          } catch {
-            setBioStatus('error');
-            setError('Biometric verified but login failed. Please use your password.');
-            setBioMode(false);
-          } finally {
-            setLoading(false);
-          }
-        } else {
-          setBioStatus('error');
-          setError('No stored credentials. Please sign in with password first.');
-          setBioMode(false);
-        }
-      } else {
+      if (!ok) {
         setBioStatus('error');
         setError('Biometric verification failed. Try again or use your password.');
         setTimeout(() => setBioStatus('idle'), 2000);
+        return;
       }
+
+      // ── SECURITY: never replay a stored password from localStorage ──
+      // Biometric only "unlocks" an existing valid JWT session. If the
+      // session has been wiped or expired, fall back to password auth.
+      // A future hardening step is to make biometric exchange a
+      // server-issued challenge for a short-lived refresh token.
+      const existingToken =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('619_token')
+          : null;
+      if (!existingToken) {
+        setBioStatus('error');
+        setError(
+          'Your session has expired. Please sign in once with your password — biometric will work again after that.',
+        );
+        setBioMode(false);
+        setTimeout(() => setBioStatus('idle'), 2500);
+        return;
+      }
+
+      setBioStatus('success');
+      router.replace('/dashboard');
     } catch {
       setBioStatus('error');
       setError('Biometric authentication error.');
@@ -526,7 +536,7 @@ export default function LoginPage() {
     } finally {
       setBioScanning(false);
     }
-  }, [bioRegistered, bioUser, login, router]);
+  }, [bioRegistered, bioUser, router]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -565,8 +575,16 @@ export default function LoginPage() {
       user.name || user.email,
     );
     if (ok) {
-      localStorage.setItem('619_bio_user', JSON.stringify({ email: email.trim(), name: user.name || '' }));
-      localStorage.setItem('619_bio_pass', btoa(password));
+      // SECURITY: store ONLY the public-key handle + the user's email/name.
+      // We never persist the password — biometric login simply unlocks a
+      // session that already exists locally (the JWT in localStorage).
+      localStorage.setItem(
+        '619_bio_user',
+        JSON.stringify({ email: email.trim(), name: user.name || '' }),
+      );
+      // Belt-and-braces: clear any legacy plaintext-password cache that an
+      // older version of this page may have written.
+      localStorage.removeItem('619_bio_pass');
       setBioRegistered(true);
       setBioUser({ email: email.trim(), name: user.name || email.trim() });
     }
@@ -577,7 +595,7 @@ export default function LoginPage() {
   function removeBiometric() {
     localStorage.removeItem(CRED_STORE_KEY);
     localStorage.removeItem('619_bio_user');
-    localStorage.removeItem('619_bio_pass');
+    localStorage.removeItem('619_bio_pass'); // legacy, in case it was stored
     setBioRegistered(false);
     setBioUser(null);
     setBioMode(false);

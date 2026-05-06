@@ -39,14 +39,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <AuthProvider>
-          <ToastProvider>
-            <ErrorBoundary>
+        {/*
+         * ErrorBoundary is outermost so a throw from AuthProvider's
+         * effect (e.g. a stale localStorage payload that fails JSON.parse)
+         * still renders the fallback instead of a blank page.
+         */}
+        <ErrorBoundary>
+          <AuthProvider>
+            <ToastProvider>
               {children}
               <CommandPalette />
-            </ErrorBoundary>
-          </ToastProvider>
-        </AuthProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
