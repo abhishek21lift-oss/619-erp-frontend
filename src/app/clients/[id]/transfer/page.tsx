@@ -5,17 +5,20 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 export default function TransferPage() { return <Guard><Inner /></Guard>; }
 
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
   const [client, setClient] = useState<any>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ trainer_id: '', reason: '' });
 
   useEffect(() => {
@@ -27,12 +30,25 @@ function Inner() {
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true);
-    try { await fetch(`/api/clients/${id}/transfer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }); } catch {}
-    const newTrainer = trainers.find(t => t.id === form.trainer_id);
-    setSuccess(`Member transferred to ${newTrainer?.name || 'new trainer'}!`);
-    setTimeout(() => router.push(`/clients/${id}`), 1500);
-    setSaving(false);
+    e.preventDefault();
+    setError(''); setSuccess('');
+    if (!form.trainer_id) { const m = 'Pick a new trainer'; setError(m); toast.error(m); return; }
+    setSaving(true);
+    try {
+      const result = await api.clients.transfer(id, {
+        new_trainer_id: form.trainer_id,
+        reason: form.reason || null,
+      });
+      const newTrainer = trainers.find(t => t.id === form.trainer_id);
+      const m = result?.message || `Member transferred to ${newTrainer?.name || 'new trainer'}!`;
+      setSuccess(m); toast.success(m);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const m = err?.message || 'Failed to transfer member';
+      setError(m); toast.error(m);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem' }}>Loading…</div></AppShell>;
@@ -45,6 +61,7 @@ function Inner() {
       <div className="page-main"><div className="ptf-wrap">
         <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
         {success && <div className="ptf-success">✓ {success}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <div className="ptf-client-hero">
           {client?.photo_url ? <img src={client.photo_url} alt="" className="ptf-client-avatar" /> : <div className="ptf-client-avatar-initials">{initials}</div>}

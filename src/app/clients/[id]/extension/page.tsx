@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
 
 export default function ExtensionPage() { return <Guard><Inner /></Guard>; }
@@ -12,10 +13,12 @@ export default function ExtensionPage() { return <Guard><Inner /></Guard>; }
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ days: '7', reason: '' });
 
   useEffect(() => {
@@ -25,14 +28,25 @@ function Inner() {
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true);
+    e.preventDefault();
+    setError(''); setSuccess('');
+    const days = parseInt(form.days);
+    if (!Number.isFinite(days) || days <= 0) {
+      const m = 'Days must be a positive number';
+      setError(m); toast.error(m); return;
+    }
+    setSaving(true);
     try {
-      const res = await fetch(`/api/clients/${id}/extension`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-      if (!res.ok) throw new Error('');
-    } catch {}
-    setSuccess(`Membership extended by ${form.days} days!`);
-    setTimeout(() => router.push(`/clients/${id}`), 1500);
-    setSaving(false);
+      const result = await api.clients.extension(id, { days, reason: form.reason || null });
+      const m = result?.message || `Membership extended by ${days} days!`;
+      setSuccess(m); toast.success(m);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const m = err?.message || 'Failed to extend membership';
+      setError(m); toast.error(m);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem', color: 'var(--muted)' }}>Loading…</div></AppShell>;
@@ -49,6 +63,7 @@ function Inner() {
       <div className="page-main"><div className="ptf-wrap">
         <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
         {success && <div className="ptf-success">✓ {success}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <div className="ptf-client-hero">
           {client?.photo_url ? <img src={client.photo_url} alt="" className="ptf-client-avatar" /> : <div className="ptf-client-avatar-initials">{initials}</div>}

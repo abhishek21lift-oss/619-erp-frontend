@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { getStoredPlans } from '@/lib/plans';
 import { computeEndDate, toInputDate } from '@/lib/format';
 
@@ -17,6 +18,7 @@ export default function RenewPTPage() {
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [client, setClient] = useState<any>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
@@ -83,18 +85,35 @@ function Inner() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(''); setSuccess('');
+    if (!form.start_date || !form.end_date) {
+      const m = 'PT start and end dates are required';
+      setError(m); toast.error(m); return;
+    }
+    if (new Date(form.end_date) <= new Date(form.start_date)) {
+      const m = 'End date must be after start date';
+      setError(m); toast.error(m); return;
+    }
     setSaving(true);
     try {
-      await fetch(`/api/clients/${id}/renew-pt`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+      const result = await api.clients.renewPt(id, {
+        trainer_id: form.trainer_id || null,
+        pt_start_date: form.start_date,
+        pt_end_date: form.end_date,
+        membership_plan: form.renew_plan || form.membership || null,
+        amount: parseFloat(form.selling_price) || 0,
+        payment_method: 'CASH',
+        notes: null,
       });
-      setSuccess('Personal Training renewed successfully!');
-      setTimeout(() => router.push(`/clients/${id}`), 1600);
-    } catch {
-      setSuccess('PT renewal saved locally. Will sync when backend is live.');
-      setTimeout(() => router.push(`/clients/${id}`), 1600);
-    } finally { setSaving(false); }
+      const m = result?.message || 'Personal Training renewed successfully!';
+      setSuccess(m); toast.success(m);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const m = err?.message || 'Failed to renew PT';
+      setError(m); toast.error(m);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem', color: 'var(--muted)' }}>Loading…</div></AppShell>;

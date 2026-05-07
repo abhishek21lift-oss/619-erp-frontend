@@ -50,12 +50,6 @@ function NewClientForm() {
     weight: '',
   });
 
-  useEffect(() => {
-    api.trainers.list().then(setTrainers).catch(console.error);
-    // load any previously-imported sheet from localStorage
-    setSheetCache(getSheetCache());
-  }, []);
-
   /* ── Sheet-import / auto-fill state ───────────────────────── */
   const [sheetCache, setSheetCache] = useState<SheetCache | null>(null);
   const [sheetBusy, setSheetBusy]   = useState(false);
@@ -64,6 +58,12 @@ function NewClientForm() {
   const [nameSuggestions, setNameSuggestions] = useState<SheetMember[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastLookupMobile = useRef<string>('');
+
+  useEffect(() => {
+    api.trainers.list().then(setTrainers).catch(console.error);
+    // load any previously-imported sheet from localStorage
+    setSheetCache(getSheetCache());
+  }, []);
 
   async function handleSheetUpload(file: File) {
     setSheetBusy(true); setSheetError('');

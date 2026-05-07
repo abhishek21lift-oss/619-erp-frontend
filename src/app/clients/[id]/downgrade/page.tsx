@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
 
 export default function DowngradePage() { return <Guard><Inner /></Guard>; }
@@ -14,10 +15,12 @@ export default function DowngradePage() { return <Guard><Inner /></Guard>; }
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ package_type: '', amount: '', reason: '' });
 
   const [memPlans, setMemPlans] = useState<{name:string;order:number;final:number}[]>([]);
@@ -43,11 +46,26 @@ function Inner() {
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true);
-    try { await fetch(`/api/clients/${id}/downgrade`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }); } catch {}
-    setSuccess('Package downgraded successfully!');
-    setTimeout(() => router.push(`/clients/${id}`), 1500);
-    setSaving(false);
+    e.preventDefault();
+    setError(''); setSuccess('');
+    if (!form.package_type) { const m = 'Pick a target plan'; setError(m); toast.error(m); return; }
+    if (!form.reason)       { const m = 'Reason is required for downgrades'; setError(m); toast.error(m); return; }
+    setSaving(true);
+    try {
+      const result = await api.clients.downgrade(id, {
+        package_type: form.package_type,
+        amount: parseFloat(form.amount) || 0,
+        reason: form.reason,
+      });
+      const m = result?.message || 'Package downgraded successfully!';
+      setSuccess(m); toast.success(m);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const m = err?.message || 'Failed to downgrade package';
+      setError(m); toast.error(m);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem' }}>Loading…</div></AppShell>;
@@ -58,6 +76,7 @@ function Inner() {
       <div className="page-main"><div className="ptf-wrap">
         <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
         {success && <div className="ptf-success">✓ {success}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <div className="ptf-client-hero">
           {client?.photo_url ? <img src={client.photo_url} alt="" className="ptf-client-avatar" /> : <div className="ptf-client-avatar-initials">{initials}</div>}

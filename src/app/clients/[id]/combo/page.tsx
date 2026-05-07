@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { getStoredPlans } from '@/lib/plans';
 import { computeEndDate, toInputDate } from '@/lib/format';
 
@@ -15,12 +16,14 @@ export default function ComboPage() { return <Guard><Inner /></Guard>; }
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
   const [client, setClient] = useState<any>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
   const [comboPlans, setComboPlans] = useState<{name:string;final:number}[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ package_type: 'Half Yearly', trainer_id: '', amount: '', start_date: '', end_date: '', notes: '' });
 
   useEffect(() => {
@@ -44,11 +47,28 @@ function Inner() {
   const total = parseFloat(form.amount) || 0;
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true);
-    try { await fetch(`/api/clients/${id}/combo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }); } catch {}
-    setSuccess('Combo offer applied successfully!');
-    setTimeout(() => router.push(`/clients/${id}`), 1500);
-    setSaving(false);
+    e.preventDefault();
+    setError(''); setSuccess('');
+    if (!form.package_type) { const m = 'Pick a combo plan'; setError(m); toast.error(m); return; }
+    setSaving(true);
+    try {
+      const result = await api.clients.combo(id, {
+        combo_plan: form.package_type,
+        trainer_id: form.trainer_id || null,
+        amount: parseFloat(form.amount) || 0,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+        notes: form.notes || null,
+      });
+      const m = result?.message || 'Combo offer applied successfully!';
+      setSuccess(m); toast.success(m);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const m = err?.message || 'Failed to apply combo offer';
+      setError(m); toast.error(m);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem' }}>Loading…</div></AppShell>;
@@ -59,6 +79,7 @@ function Inner() {
       <div className="page-main"><div className="ptf-wrap">
         <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
         {success && <div className="ptf-success">✓ {success}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <div className="ptf-client-hero">
           {client?.photo_url ? <img src={client.photo_url} alt="" className="ptf-client-avatar" /> : <div className="ptf-client-avatar-initials">{initials}</div>}

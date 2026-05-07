@@ -262,6 +262,67 @@ export const api = {
       }),
     delete: (id: string) =>
       req<{ message: string }>(`/api/clients/${id}`, { method: 'DELETE' }),
+
+    // ── Membership action endpoints ─────────────────────────────────
+    // All routes are mounted under `/api/clients/:id/<action>` and
+    // implemented in backend/src/routes/client-actions.js. Going through
+    // req() guarantees auth headers, JSON parsing, 401 redirects, and
+    // proper rejection on 4xx / 5xx — which raw fetch() does not do.
+    addSubscription: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/add-subscription`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    renewSubscription: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/renew-subscription`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    freeze: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/freeze`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    extension: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/extension`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    upgrade: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/upgrade`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    downgrade: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/downgrade`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    transfer: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/transfer`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    combo: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/combo`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    trial: (id: string, data: any) =>
+      req<{ message: string }>(`/api/clients/${id}/trial`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    assignPt: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/assign-pt`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    renewPt: (id: string, data: any) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/renew-pt`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   trainers: {

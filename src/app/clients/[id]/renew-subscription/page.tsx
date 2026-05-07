@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
 import { computeEndDate, toInputDate } from '@/lib/format';
 
@@ -27,6 +28,7 @@ interface PlanRow {
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -102,18 +104,50 @@ function Inner() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(''); setSuccess('');
+    if (planRows.length === 0) {
+      const m = 'Add at least one plan row';
+      setError(m); toast.error(m); return;
+    }
+    for (let i = 0; i < planRows.length; i++) {
+      const r = planRows[i];
+      const n = i + 1;
+      if (!r.plan)        { const m = `Row ${n}: pick a plan`; setError(m); toast.error(m); return; }
+      if (!r.startDate)   { const m = `Row ${n}: start date is required`; setError(m); toast.error(m); return; }
+      if (!r.endDate)     { const m = `Row ${n}: end date is required`; setError(m); toast.error(m); return; }
+      if (new Date(r.endDate) <= new Date(r.startDate)) {
+        const m = `Row ${n}: end date must be after start date`;
+        setError(m); toast.error(m); return;
+      }
+      if (!(parseFloat(r.sellingPrice) > 0)) {
+        const m = `Row ${n}: selling price is required`;
+        setError(m); toast.error(m); return;
+      }
+    }
     setSaving(true);
     try {
-      await fetch(`/api/clients/${id}/renew-subscription`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ renew_plan: renewPlan, plan_rows: planRows, group_id: groupId }),
+      const result = await api.clients.renewSubscription(id, {
+        renew_plan: renewPlan || planRows[0].plan,
+        plan_rows: planRows.map((r) => ({
+          plan: r.plan,
+          startDate: r.startDate,
+          endDate: r.endDate,
+          basePrice: parseFloat(r.basePrice) || 0,
+          sellingPrice: parseFloat(r.sellingPrice) || 0,
+          coupon: r.coupon || null,
+        })),
+        group_id: groupId || null,
+        payment_method: 'CASH',
       });
-      setSuccess('Subscription renewed successfully!');
-      setTimeout(() => router.push(`/clients/${id}`), 1600);
-    } catch {
-      setSuccess('Renewal saved locally. Will sync when backend is live.');
-      setTimeout(() => router.push(`/clients/${id}`), 1600);
-    } finally { setSaving(false); }
+      const m = result?.message || 'Subscription renewed successfully!';
+      setSuccess(m); toast.success(m);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const m = err?.message || 'Failed to renew subscription';
+      setError(m); toast.error(m);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem', color: 'var(--muted)' }}>Loading…</div></AppShell>;

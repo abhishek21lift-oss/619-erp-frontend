@@ -5,8 +5,10 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
 import { computeEndDate, toInputDate } from '@/lib/format';
+import { validatePlanRows } from '@/lib/validators/subscription';
 
 export default function AddSubscriptionPage() {
   return <Guard><Inner /></Guard>;
@@ -27,6 +29,7 @@ interface PlanRow {
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [client, setClient] = useState<any>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
@@ -34,6 +37,7 @@ function Inner() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'BANK'>('CASH');
 
   const [groupId, setGroupId] = useState('');
   const [memPlans, setMemPlans] = useState<{name:string;base:number;final:number}[]>([]);
@@ -105,21 +109,46 @@ function Inner() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError('');
+    setSuccess('');
+
+    // Shared validator (lib/validators/subscription) — same rules also run
+    // on the backend so this is purely a UX shortcut.
+    const { error: validationError } = validatePlanRows(planRows);
+    if (validationError) {
+      setError(validationError);
+      toast.error(validationError);
+      return;
+    }
+
+    setSaving(true);
     try {
-      // Try API; gracefully handle 404 backend
-      const body = { plan_rows: planRows, group_id: groupId };
-      await fetch(`/api/clients/${id}/add-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      setSuccess('Subscription added successfully!');
-      setTimeout(() => router.push(`/clients/${id}`), 1600);
-    } catch {
-      setSuccess('Subscription saved locally. Will sync when backend is live.');
-      setTimeout(() => router.push(`/clients/${id}`), 1600);
+      const body = {
+        plan_rows: planRows.map((r) => ({
+          plan: r.plan,
+          startDate: r.startDate,
+          endDate: r.endDate,
+          basePrice: parseFloat(r.basePrice) || 0,
+          sellingPrice: parseFloat(r.sellingPrice) || 0,
+          coupon: r.coupon || null,
+        })),
+        group_id: groupId || null,
+        payment_method: paymentMethod,
+      };
+
+      // Goes through req() → adds NEXT_PUBLIC_API_URL, attaches the JWT,
+      // throws on non-2xx, and redirects to /login on 401. None of which
+      // raw fetch() did before — that's why every submit silently "worked".
+      const result = await api.clients.addSubscription(id, body);
+
+      const msg = result?.message || 'Subscription added successfully!';
+      setSuccess(msg);
+      toast.success(msg);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to add subscription. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -218,22 +247,40 @@ function Inner() {
               </div>
             </div>
 
-            {/* Payment breakdown */}
+            {/* Payment method + breakdown */}
             <div className="ptf-card">
               <div className="ptf-card-header">
                 <span className="ptf-card-header-icon">₹</span>
                 <span className="ptf-card-header-title">Payment Breakdown</span>
               </div>
               <div className="ptf-card-body">
-                <div className="ptf-breakdown">
-                  <div className="ptf-breakdown-row"><span>MRP</span><span className="ptf-breakdown-val">₹ {planRows.reduce((s, r) => s + (parseFloat(r.basePrice) || 0), 0).toLocaleString('en-IN')}</span></div>
-                  <div className="ptf-breakdown-row"><span>Discount</span><span className="ptf-breakdown-val">₹ 0</span></div>
-                  <div className="ptf-breakdown-row"><span>Net Sales Amount</span><span className="ptf-breakdown-val">₹ {totalAmount.toLocaleString('en-IN')}</span></div>
-                  <div className="ptf-breakdown-row"><span>Coupon Applied</span><span className="ptf-breakdown-val">₹ 0</span></div>
-                  <div className="ptf-breakdown-row"><span>—CGST @</span><span className="ptf-breakdown-val">₹ 0</span></div>
-                  <div className="ptf-breakdown-row"><span>—SGST @</span><span className="ptf-breakdown-val">₹ 0</span></div>
-                  <div className="ptf-breakdown-row total"><span>Total Amount to be Paid</span><span>₹ {totalAmount.toLocaleString('en-IN')}</span></div>
+                <div className="ptf-field" style={{ marginBottom: '0.75rem' }}>
+                  <label className="ptf-label">Payment Method</label>
+                  <select
+                    className="ptf-select"
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}
+                  >
+                    <option value="CASH">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CARD">Card</option>
+                    <option value="BANK">Bank transfer</option>
+                  </select>
                 </div>
+
+                {(() => {
+                  const mrp = planRows.reduce((s, r) => s + (parseFloat(r.basePrice) || 0), 0);
+                  const net = totalAmount;
+                  const discount = Math.max(0, mrp - net);
+                  return (
+                    <div className="ptf-breakdown">
+                      <div className="ptf-breakdown-row"><span>MRP</span><span className="ptf-breakdown-val">₹ {mrp.toLocaleString('en-IN')}</span></div>
+                      <div className="ptf-breakdown-row"><span>Discount</span><span className="ptf-breakdown-val">₹ {discount.toLocaleString('en-IN')}</span></div>
+                      <div className="ptf-breakdown-row"><span>Net Sales Amount</span><span className="ptf-breakdown-val">₹ {net.toLocaleString('en-IN')}</span></div>
+                      <div className="ptf-breakdown-row total"><span>Total Amount to be Paid</span><span>₹ {net.toLocaleString('en-IN')}</span></div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

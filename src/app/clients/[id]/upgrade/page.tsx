@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
 import { computeEndDate, toInputDate } from '@/lib/format';
 
@@ -16,10 +17,12 @@ const PLAN_ORDER: Record<string,number> = { Monthly:1, Quarterly:2, 'Half Yearly
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const [form, setForm] = useState({ package_type: 'Yearly', amount: '', start_date: '', end_date: '', reason: '' });
 
   const [memPlans, setMemPlans] = useState<{name:string;order:number;final:number}[]>([]);
@@ -61,11 +64,27 @@ function Inner() {
   const totalAmount = parseFloat(form.amount) || 0;
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true);
-    try { await fetch(`/api/clients/${id}/upgrade`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }); } catch {}
-    setSuccess(`Package upgraded to ${form.package_type}!`);
-    setTimeout(() => router.push(`/clients/${id}`), 1500);
-    setSaving(false);
+    e.preventDefault();
+    setError(''); setSuccess('');
+    if (!form.package_type) { const m = 'Pick a target plan'; setError(m); toast.error(m); return; }
+    setSaving(true);
+    try {
+      const result = await api.clients.upgrade(id, {
+        package_type: form.package_type,
+        amount: parseFloat(form.amount) || 0,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+        reason: form.reason || null,
+      });
+      const m = result?.message || `Package upgraded to ${form.package_type}!`;
+      setSuccess(m); toast.success(m);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const m = err?.message || 'Failed to upgrade package';
+      setError(m); toast.error(m);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem' }}>Loading…</div></AppShell>;
@@ -78,6 +97,7 @@ function Inner() {
       <div className="page-main"><div className="ptf-wrap">
         <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
         {success && <div className="ptf-success">✓ {success}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <div className="ptf-client-hero">
           {client?.photo_url ? <img src={client.photo_url} alt="" className="ptf-client-avatar" /> : <div className="ptf-client-avatar-initials">{initials}</div>}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 export default function TrialPage() { return <Guard><Inner /></Guard>; }
 
@@ -13,11 +14,13 @@ const TIME_SLOTS = ['6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '5:0
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
   const [client, setClient] = useState<any>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState({ date: today, time_slot: '', trainer_id: '', focus_area: '', notes: '' });
 
@@ -30,11 +33,27 @@ function Inner() {
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true);
-    try { await fetch(`/api/clients/${id}/trial`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }); } catch {}
-    setSuccess('Free trial session booked!');
-    setTimeout(() => router.push(`/clients/${id}`), 1500);
-    setSaving(false);
+    e.preventDefault();
+    setError(''); setSuccess('');
+    if (!form.date) { const m = 'Trial date is required'; setError(m); toast.error(m); return; }
+    setSaving(true);
+    try {
+      const result = await api.clients.trial(id, {
+        trial_date: form.date,
+        time_slot: form.time_slot || null,
+        trainer_id: form.trainer_id || null,
+        focus_area: form.focus_area || null,
+        notes: form.notes || null,
+      });
+      const m = result?.message || 'Free trial session booked!';
+      setSuccess(m); toast.success(m);
+      setTimeout(() => router.push(`/clients/${id}`), 900);
+    } catch (err: any) {
+      const m = err?.message || 'Failed to book trial';
+      setError(m); toast.error(m);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem' }}>Loading…</div></AppShell>;
@@ -45,6 +64,7 @@ function Inner() {
       <div className="page-main"><div className="ptf-wrap">
         <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
         {success && <div className="ptf-success">✓ {success}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <div className="ptf-client-hero">
           {client?.photo_url ? <img src={client.photo_url} alt="" className="ptf-client-avatar" /> : <div className="ptf-client-avatar-initials">{initials}</div>}
