@@ -5303,10 +5303,83 @@ html body [data-sidebar="collapsed"] .page-main {
 .checkin-history-time { font-size: 0.75rem; color: var(--text-secondary); }
 .checkin-badge-success { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 600; color: #22c55e; background: #dcfce7; border-radius: 20px; padding: 3px 8px; }
 .checkin-badge-manual { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 600; color: #3b82f6; background: #dbeafe; border-radius: 20px; padding: 3px 8px; }
+.checkin-badge-failed { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 600; color: #ef4444; background: #fee2e2; border-radius: 20px; padding: 3px 8px; }
 .btn-block { width: 100%; justify-content: center; }
 .btn-link { background: none; border: none; cursor: pointer; font-size: 0.8rem; color: var(--accent,#e11d48); padding: 0; }
 .spin { animation: spinIcon 1s linear infinite; }
 @keyframes spinIcon { to { transform: rotate(360deg); } }
+
+/* ── CHECK-IN polish: bigger camera, scanning ring, frosted result ── */
+.checkin-camera-panel {
+  background: linear-gradient(160deg, var(--bg-surface, #fff) 0%, rgba(99,102,241,0.04) 100%);
+  border: 1px solid var(--border-soft, #e2e8f0);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(15,23,42,0.06);
+}
+.checkin-camera-header {
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.75rem !important;
+  color: var(--text-secondary, #64748b);
+}
+/* Larger viewport on desktop */
+.checkin-viewport { aspect-ratio: 4 / 3; min-height: 420px; }
+/* Subtle scanning ring + line while scanning */
+.checkin-camera-panel::before {
+  content: '';
+  display: none;
+}
+.checkin-scan-ring {
+  position: absolute; inset: 12px;
+  border-radius: 12px;
+  pointer-events: none;
+  background:
+    linear-gradient(transparent 0%, transparent 49%, rgba(99,102,241,0.55) 50%, transparent 51%) 0 0 / 100% 200% no-repeat;
+  animation: checkin-scan 2.4s ease-in-out infinite;
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+@keyframes checkin-scan {
+  0%   { background-position-y: -100%; }
+  100% { background-position-y: 200%; }
+}
+.checkin-reticle {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.checkin-reticle-shape {
+  width: 58%;
+  aspect-ratio: 3 / 4;
+  border: 2px dashed rgba(255,255,255,0.4);
+  border-radius: 50% / 40%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.18);
+  transition: border-color .2s, box-shadow .2s;
+}
+.checkin-reticle-shape.is-success { border-color: rgba(34,197,94,0.85); box-shadow: 0 0 0 9999px rgba(0,0,0,0.05), 0 0 60px rgba(34,197,94,0.5); }
+.checkin-reticle-shape.is-error { border-color: rgba(239,68,68,0.85); box-shadow: 0 0 0 9999px rgba(0,0,0,0.05), 0 0 60px rgba(239,68,68,0.5); }
+
+.checkin-result-card {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0.85rem 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid;
+  backdrop-filter: blur(6px);
+}
+.checkin-result-photo {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.checkin-result-body { flex: 1; min-width: 0; }
+.checkin-result-msg { color: var(--text-secondary); font-size: 0.78rem; }
+
+.checkin-history { padding: 0.25rem 0; }
+.checkin-history-row { transition: background .15s; }
+.checkin-history-row:hover { background: var(--bg-elevated, #f8fafc); }
+@media (min-width: 1280px) { .checkin-layout { grid-template-columns: 1fr 420px; } }
   display: flex;
   align-items: center;
   justify-content: center;

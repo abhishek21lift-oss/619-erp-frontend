@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import FaceEnrollModal from '@/components/FaceEnrollModal';
 import { api, Client, Trainer } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { fmtDate } from '@/lib/format';
@@ -35,6 +36,7 @@ function ClientDetail({ id }: { id: string }) {
   const [activeTab, setActiveTab] = useState<Tab>('information');
   const photoInputRef = useRef<HTMLInputElement>(null);
   const isAdmin = user?.role === 'admin';
+  const [faceEnrollOpen, setFaceEnrollOpen] = useState(false);
 
   // Modal states
   const [actionModal, setActionModal] = useState<string | null>(null);
@@ -419,6 +421,21 @@ function ClientDetail({ id }: { id: string }) {
                   )}
                 </div>
                 <span className={`badge badge-${client.status}`} style={{ fontSize: 11 }}>{(client.status || 'active').toUpperCase()}</span>
+                {/* Face enrollment — staff click this to capture the member's
+                    face descriptor used by /checkin face recognition. */}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  style={{
+                    fontSize: 11, padding: '3px 10px',
+                    borderColor: client.face_enrolled_at ? 'var(--success)' : 'var(--brand)',
+                    color: client.face_enrolled_at ? 'var(--success)' : 'var(--brand)',
+                  }}
+                  onClick={() => setFaceEnrollOpen(true)}
+                  title={client.face_enrolled_at ? 'Face enrolled — click to re-capture' : 'Enroll face for check-in'}
+                >
+                  {client.face_enrolled_at ? '✓ Face enrolled' : '📷 Enroll face'}
+                </button>
               </div>
 
               {/* Name + quick info */}
@@ -862,7 +879,7 @@ function ClientDetail({ id }: { id: string }) {
                               <td className="text-muted text-sm">{fu.reminder_date ? new Date(fu.reminder_date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</td>
                               <td className="text-sm" style={{ maxWidth: 220 }}>
                                 <div>{fu.comments || '—'}</div>
-                                {fu.expected_date && <div className="text-muted" style={{ fontSize: 11 }}>Expected date: {fu.expected_date}</div>}
+                                {fu.expected_date && <div className="text-muted" style={{ fontSize: 11 }}>Expected date: {fmtDate(fu.expected_date)}</div>}
                                 {fu.expected_amount && <div className="text-muted" style={{ fontSize: 11 }}>Expected amount: ₹{fu.expected_amount}</div>}
                               </td>
                               <td>
@@ -1128,6 +1145,14 @@ function ClientDetail({ id }: { id: string }) {
           </form>
         </div>
       )}
+
+      <FaceEnrollModal
+        open={faceEnrollOpen}
+        clientId={id}
+        clientName={client?.name}
+        onClose={() => setFaceEnrollOpen(false)}
+        onEnrolled={() => setClient((c: any) => c ? { ...c, face_enrolled_at: new Date().toISOString() } : c)}
+      />
     </AppShell>
   );
 }

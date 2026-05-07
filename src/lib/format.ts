@@ -126,3 +126,49 @@ export function formatDateLocal(value?: string | Date | null): string {
   if (Number.isNaN(d.getTime())) return '';
   return d.toLocaleDateString();
 }
+
+/**
+ * Single source of truth for plan-name → duration-in-days mapping.
+ * Used by every subscription form so end-date auto-fill stays consistent
+ * across Add / Renew / Upgrade / Downgrade / PT-Assign / PT-Renew / Combo.
+ *
+ * Pattern matching on the plan name is intentionally fuzzy so a stored
+ * plan called "PT Half-Yearly", "PT - Half Yearly" or "Half Yearly Membership"
+ * all resolve to 180 days.
+ */
+const DURATION_DAYS: Record<string, number> = {
+  monthly: 30,
+  quarterly: 90,
+  'half yearly': 180,
+  'half-yearly': 180,
+  halfyearly: 180,
+  yearly: 365,
+  annual: 365,
+  pt: 90,
+};
+
+export function planDurationDays(planName?: string | null): number {
+  if (!planName) return 0;
+  const k = planName.toLowerCase();
+  // longest-key-first so "half yearly" wins over "yearly"
+  const keys = Object.keys(DURATION_DAYS).sort((a, b) => b.length - a.length);
+  for (const key of keys) {
+    if (k.includes(key)) return DURATION_DAYS[key];
+  }
+  return 0;
+}
+
+/**
+ * Compute an end date from a start date + plan name. Returns YYYY-MM-DD
+ * (suitable for <input type="date">). Falls back to '' when the inputs
+ * can't be resolved.
+ */
+export function computeEndDate(startDate?: string | Date | null, planName?: string | null): string {
+  const start = toInputDate(startDate);
+  const days = planDurationDays(planName);
+  if (!start || !days) return '';
+  const d = new Date(start);
+  if (Number.isNaN(d.getTime())) return '';
+  d.setDate(d.getDate() + days);
+  return toInputDate(d);
+}

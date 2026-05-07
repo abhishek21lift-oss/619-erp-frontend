@@ -69,6 +69,7 @@ export type Client = {
   biometric_added?: boolean;
   biometric_code?: string;
   app_installed?: boolean;
+  face_enrolled_at?: string;
 };
 
 export type Trainer = {

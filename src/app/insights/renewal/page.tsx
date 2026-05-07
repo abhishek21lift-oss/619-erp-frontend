@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
+import { fmtDate } from '@/lib/format';
 
 export default function RenewalAnalysisPage() {
   return (
@@ -109,7 +110,7 @@ function Inner() {
                           <td style={{ fontWeight: 600 }}>{c.name}</td>
                           <td className="text-muted">{c.package_type || '—'}</td>
                           <td className="text-muted">{c.trainer_name || '—'}</td>
-                          <td className="text-muted tabular">{c.pt_end_date}</td>
+                          <td className="text-muted tabular">{fmtDate(c.pt_end_date)}</td>
                           <td
                             className="tabular"
                             style={{

@@ -19,8 +19,11 @@ function NewClientForm() {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState('');
-  const today = new Date().toISOString().split('T')[0];
 
+  // Membership/payment fields are intentionally NOT collected here any more —
+  // they live in the member profile's "Add Subscription" tab. We keep the
+  // backend contract identical (it accepts these as null) so this is a
+  // pure UI change, no migrations needed.
   const [f, setF] = useState({
     first_name: '', last_name: '',
     email: '',
@@ -41,11 +44,6 @@ function NewClientForm() {
     country: 'India',
     pincode: '',
     anniversary: '',
-    pt_start_date: today,
-    pt_end_date: '',
-    package_type: 'Half Yearly',
-    base_amount: '', discount: '0', final_amount: '', paid_amount: '',
-    payment_method: 'CASH', payment_date: today,
     notes: '', status: 'active',
     emergency_no: '',
     interested_in: '',
@@ -54,7 +52,6 @@ function NewClientForm() {
 
   useEffect(() => {
     api.trainers.list().then(setTrainers).catch(console.error);
-    setF(p => ({ ...p, pt_end_date: computeEndDate(p.pt_start_date || today, p.package_type) }));
     // load any previously-imported sheet from localStorage
     setSheetCache(getSheetCache());
   }, []);
@@ -87,11 +84,6 @@ function NewClientForm() {
     setF(merged);
     setFilledFields(filled);
     setNameSuggestions([]);
-    if (filled.includes('pt_start_date') || filled.includes('package_type'))
-      setF(p => ({
-        ...merged,
-        pt_end_date: merged.pt_end_date || computeEndDate(merged.pt_start_date || today, merged.package_type),
-      }));
   }
 
   // when mobile changes, try to auto-fill
@@ -115,35 +107,6 @@ function NewClientForm() {
   }, [f.first_name, f.last_name, f.mobile, sheetCache]);
 
 
-  function computeEndDate(start: string, pkg: string): string {
-    const durations: Record<string, number> = {
-      'Monthly': 30, 'Quarterly': 90, 'Half Yearly': 180, 'Yearly': 365,
-      'PT': 90,
-      'PT - Monthly': 30, 'PT - Quarterly': 90, 'PT - Half Yearly': 180, 'PT - Yearly': 365,
-    };
-    if (!start) return '';
-    const d = new Date(start);
-    if (isNaN(d.getTime())) return '';
-    d.setDate(d.getDate() + (durations[pkg] || 90));
-    return d.toISOString().split('T')[0];
-  }
-
-  function handleAmt(k: string, v: string) {
-    const next = { ...f, [k]: v };
-    const base = parseFloat(next.base_amount) || 0;
-    const disc = parseFloat(next.discount) || 0;
-    next.final_amount = String(Math.max(0, base - disc));
-    setF(next);
-  }
-
-  function handlePackage(pkg: string) {
-    setF(p => ({ ...p, package_type: pkg, pt_end_date: computeEndDate(p.pt_start_date || today, pkg) }));
-  }
-
-  function handleStartDate(newStart: string) {
-    setF(p => ({ ...p, pt_start_date: newStart, pt_end_date: computeEndDate(newStart || today, p.package_type) }));
-  }
-
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!f.first_name.trim()) return setError('First name is required');
@@ -151,17 +114,17 @@ function NewClientForm() {
     try {
       const fullName = [f.first_name, f.last_name].filter(Boolean).join(' ');
       const trainer = trainers.find(t => t.id === f.trainer_id);
-      await api.clients.create({
+      const created = await api.clients.create({
         ...f,
         name: fullName,
         trainer_name: trainer?.name || '',
-        base_amount: parseFloat(f.base_amount) || 0,
-        discount: parseFloat(f.discount) || 0,
-        final_amount: parseFloat(f.final_amount) || 0,
-        paid_amount: parseFloat(f.paid_amount) || 0,
         weight: parseFloat(f.weight) || undefined,
       });
-      router.push('/clients');
+      // Drop the user straight onto the new member's profile so they can
+      // assign a subscription right away — that's now the only path to
+      // create a membership.
+      const newId = (created as any)?.client?.id;
+      router.push(newId ? `/clients/${newId}/add-subscription` : '/clients');
     } catch (e: any) { setError(e.message); }
     finally { setSaving(false); }
   }
@@ -406,70 +369,19 @@ function NewClientForm() {
                 </FormGroup>
               </div>
 
-              {/* ── MEMBERSHIP SECTION ── */}
-              <div className="card">
-                <div className="card-title" style={{ marginBottom: '1.5rem', fontSize: 16 }}>🏋️ Membership Details</div>
-                <div className="form-row form-row-2">
+              {/* Membership + Payment sections live on the member's
+                  profile under "Add Subscription" now — keeps onboarding
+                  to two short steps instead of one long form. */}
+              <div className="card" style={{ background: 'var(--bg-page,#f8fafc)', borderStyle: 'dashed' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+                  <span style={{ fontSize: 22 }}>💡</span>
                   <div>
-                    <label>Package Type</label>
-                    <select className="input select" value={f.package_type} onChange={e => handlePackage(e.target.value)}>
-                      {['Monthly', 'Quarterly', 'Half Yearly', 'Yearly', 'PT - Monthly', 'PT - Quarterly', 'PT - Half Yearly', 'PT - Yearly'].map(p => <option key={p}>{p}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label>Status</label>
-                    <select className="input select" value={f.status} onChange={S('status')}>
-                      <option>active</option><option>frozen</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label>Start Date</label>
-                    <input className="input" type="date" value={f.pt_start_date} onChange={e => handleStartDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <label>End Date</label>
-                    <input className="input" type="date" value={f.pt_end_date} onChange={S('pt_end_date')} />
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>Plan & payment moved</div>
+                    <div style={{ fontSize: 13, color: 'var(--text2)' }}>
+                      After saving, you'll land on this member's profile where you can pick a plan, set start/end dates and record the payment under <b>Add Subscription</b>.
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* ── PAYMENT SECTION ── */}
-              <div className="card">
-                <div className="card-title" style={{ marginBottom: '1.5rem', fontSize: 16 }}>💳 Payment Details</div>
-                <div className="form-row form-row-4">
-                  <div>
-                    <label>Base Amount (₹)</label>
-                    <input className="input" type="number" value={f.base_amount} onChange={e => handleAmt('base_amount', e.target.value)} />
-                  </div>
-                  <div>
-                    <label>Discount (₹)</label>
-                    <input className="input" type="number" value={f.discount} onChange={e => handleAmt('discount', e.target.value)} />
-                  </div>
-                  <div>
-                    <label>Final Amount (₹)</label>
-                    <input className="input" type="number" value={f.final_amount} onChange={S('final_amount')}
-                      style={{ borderColor: 'var(--brand)', color: 'var(--brand2)', fontWeight: 700 }} />
-                  </div>
-                  <div>
-                    <label>Amount Paid Today (₹)</label>
-                    <input className="input" type="number" value={f.paid_amount} onChange={S('paid_amount')} />
-                  </div>
-                  <div>
-                    <label>Payment Method</label>
-                    <select className="input select" value={f.payment_method} onChange={S('payment_method')}>
-                      <option>CASH</option><option>UPI</option><option>CARD</option><option>BANK_TRANSFER</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label>Payment Date</label>
-                    <input className="input" type="date" value={f.payment_date} onChange={S('payment_date')} />
-                  </div>
-                </div>
-                {f.final_amount && f.paid_amount && parseFloat(f.final_amount) > parseFloat(f.paid_amount) && (
-                  <div className="alert alert-warning mt-1">
-                    ⚠️ Balance due: ₹{(parseFloat(f.final_amount) - parseFloat(f.paid_amount)).toLocaleString('en-IN')}
-                  </div>
-                )}
               </div>
 
               {/* Notes */}

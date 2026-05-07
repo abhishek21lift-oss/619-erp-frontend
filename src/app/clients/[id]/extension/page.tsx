@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { fmtDate } from '@/lib/format';
 
 export default function ExtensionPage() { return <Guard><Inner /></Guard>; }
 
@@ -36,7 +37,12 @@ function Inner() {
 
   if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem', color: 'var(--muted)' }}>Loading…</div></AppShell>;
   const initials = (client?.name || 'C').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-  const newEndDate = client?.end_date ? new Date(new Date(client.end_date).getTime() + parseInt(form.days || '0') * 86400000).toLocaleDateString('en-IN') : '—';
+  // The clients table stores the membership end as `pt_end_date`. The original
+  // code referenced `end_date` which is always undefined and gave "—" forever.
+  const currentEnd = client?.pt_end_date || client?.end_date;
+  const newEndDate = currentEnd
+    ? fmtDate(new Date(new Date(currentEnd).getTime() + parseInt(form.days || '0') * 86400000))
+    : '—';
 
   return (
     <AppShell>
@@ -48,7 +54,7 @@ function Inner() {
           {client?.photo_url ? <img src={client.photo_url} alt="" className="ptf-client-avatar" /> : <div className="ptf-client-avatar-initials">{initials}</div>}
           <div>
             <div className="ptf-client-name">{client?.name}</div>
-            <div className="ptf-client-meta">📞 {client?.mobile || '—'} • Current end date: <strong>{client?.end_date ? new Date(client.end_date).toLocaleDateString('en-IN') : '—'}</strong></div>
+            <div className="ptf-client-meta">📞 {client?.mobile || '—'} • Current end date: <strong>{fmtDate(currentEnd)}</strong></div>
           </div>
         </div>
 

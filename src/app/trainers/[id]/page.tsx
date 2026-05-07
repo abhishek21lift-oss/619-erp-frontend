@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { fmtDate } from '@/lib/format';
 import { Camera, User, Phone, Mail, Briefcase, Calendar, TrendingUp, Users, CheckCircle2, IndianRupee, Edit2, Trash2, Upload, RefreshCw } from 'lucide-react';
 
 // Next.js 15+ made dynamic route `params` a Promise — must be unwrapped with
@@ -348,7 +349,7 @@ function TrainerDetail({ id }: { id: string }) {
                         </td>
                         <td className="text-muted">{c.mobile || '—'}</td>
                         <td>{c.package_type || '—'}</td>
-                        <td className="text-muted">{c.pt_end_date || '—'}</td>
+                        <td className="text-muted">{fmtDate(c.pt_end_date)}</td>
                         <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 600 }}>{fmt(c.paid_amount)}</td>
                         <td style={{ textAlign: 'right', color: c.balance_amount > 0 ? 'var(--danger)' : 'var(--muted)', fontWeight: c.balance_amount > 0 ? 700 : 400 }}>
                           {c.balance_amount > 0 ? fmt(c.balance_amount) : '✓'}
@@ -391,7 +392,7 @@ function TrainerDetail({ id }: { id: string }) {
                         <td style={{ fontWeight: 600 }}>{p.client_name || '—'}</td>
                         <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{fmt(p.amount)}</td>
                         <td><span className={`badge badge-${(p.method || 'cash').toLowerCase()}`}>{p.method}</span></td>
-                        <td className="text-muted">{p.date}</td>
+                        <td className="text-muted">{fmtDate(p.date)}</td>
                         <td style={{ textAlign: 'right', color: 'var(--purple)', fontWeight: 600 }}>{fmt(p.incentive_amt)}</td>
                       </tr>
                     ))}

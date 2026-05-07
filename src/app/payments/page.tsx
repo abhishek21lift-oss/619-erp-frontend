@@ -4,6 +4,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api, Payment, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { fmtDate } from '@/lib/format';
 
 export default function PaymentsPage() {
   return (
@@ -316,7 +317,7 @@ function PaymentsContent() {
                             {(p as any).trainer_name_full || '—'}
                           </td>
                         )}
-                        <td className="text-muted tabular">{p.date}</td>
+                        <td className="text-muted tabular">{fmtDate(p.date)}</td>
                         <td className="text-muted text-sm">{p.notes || '—'}</td>
                         <td>
                           {isAdmin && (

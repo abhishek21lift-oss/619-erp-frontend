@@ -6,6 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
+import { computeEndDate, toInputDate } from '@/lib/format';
 
 export default function UpgradePage() { return <Guard><Inner /></Guard>; }
 
@@ -41,7 +42,20 @@ function Inner() {
 
   function handleUpgradePlanSelect(planName: string) {
     const plan = memPlans.find(p => p.name === planName);
-    setForm(f => ({ ...f, package_type: planName, amount: plan ? String(plan.final) : f.amount }));
+    setForm(f => {
+      const start = f.start_date || toInputDate(new Date());
+      return {
+        ...f,
+        package_type: planName,
+        start_date: start,
+        end_date: computeEndDate(start, planName),
+        amount: plan ? String(plan.final) : f.amount,
+      };
+    });
+  }
+
+  function handleStartDate(newStart: string) {
+    setForm(f => ({ ...f, start_date: newStart, end_date: computeEndDate(newStart, f.package_type) }));
   }
 
   const totalAmount = parseFloat(form.amount) || 0;
@@ -93,7 +107,7 @@ function Inner() {
               <div className="ptf-row-2">
                 <div className="ptf-field">
                   <label className="ptf-label">Start Date</label>
-                  <input type="date" className="ptf-input" value={form.start_date} onChange={e => set('start_date', e.target.value)} />
+                  <input type="date" className="ptf-input" value={form.start_date} onChange={e => handleStartDate(e.target.value)} />
                 </div>
                 <div className="ptf-field">
                   <label className="ptf-label">End Date</label>

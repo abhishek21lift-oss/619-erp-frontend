@@ -6,6 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
+import { computeEndDate, toInputDate } from '@/lib/format';
 
 export default function RenewSubscriptionPage() {
   return <Guard><Inner /></Guard>;
@@ -46,14 +47,34 @@ function Inner() {
     ]);
   }, []);
 
+  // Default the first start date to the day the previous membership ends,
+  // or today if no prior end date — this is what staff almost always want
+  // when renewing.
+  const defaultStart = toInputDate(client?.pt_end_date) || toInputDate(new Date());
+
   function handlePlanSelect(rowId: number, planName: string) {
     const plan = memPlans.find(p => p.name === planName);
-    setPlanRows(r => r.map(x => x.id === rowId ? {
-      ...x, plan: planName,
-      basePrice: plan ? String(plan.base) : x.basePrice,
-      sellingPrice: plan ? String(plan.final) : x.sellingPrice,
-    } : x));
+    setPlanRows(r => r.map(x => {
+      if (x.id !== rowId) return x;
+      const start = x.startDate || defaultStart;
+      return {
+        ...x,
+        plan: planName,
+        startDate: start,
+        endDate: computeEndDate(start, planName),
+        basePrice: plan ? String(plan.base) : x.basePrice,
+        sellingPrice: plan ? String(plan.final) : x.sellingPrice,
+      };
+    }));
   }
+
+  function handleStartDateChange(rowId: number, newStart: string) {
+    setPlanRows(r => r.map(x => x.id === rowId
+      ? { ...x, startDate: newStart, endDate: computeEndDate(newStart, x.plan) }
+      : x
+    ));
+  }
+
   const [planRows, setPlanRows] = useState<PlanRow[]>([
     { id: 1, plan: '', startDate: '', endDate: '', basePrice: '', sellingPrice: '', coupon: '' }
   ]);
@@ -159,7 +180,7 @@ function Inner() {
                               {memPlans.map((p) => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                             </select>
                           </td>
-                          <td><input type="date" className="ptf-input" value={row.startDate} onChange={(e) => updateRow(row.id, 'startDate', e.target.value)} required /></td>
+                          <td><input type="date" className="ptf-input" value={row.startDate} onChange={(e) => handleStartDateChange(row.id, e.target.value)} required /></td>
                           <td><input type="date" className="ptf-input" value={row.endDate} onChange={(e) => updateRow(row.id, 'endDate', e.target.value)} /></td>
                           <td><input type="number" className="ptf-input" placeholder="₹" value={row.basePrice} onChange={(e) => updateRow(row.id, 'basePrice', e.target.value)} /></td>
                           <td><input type="number" className="ptf-input" placeholder="₹" value={row.sellingPrice} onChange={(e) => updateRow(row.id, 'sellingPrice', e.target.value)} required /></td>

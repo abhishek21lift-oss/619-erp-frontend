@@ -6,6 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { getStoredPlans } from '@/lib/plans';
+import { computeEndDate, toInputDate } from '@/lib/format';
 
 export default function ComboPage() { return <Guard><Inner /></Guard>; }
 
@@ -29,6 +30,17 @@ function Inner() {
   }, [id]);
 
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
+
+  function handlePlanSelect(planName: string) {
+    setForm(f => {
+      const start = f.start_date || toInputDate(new Date());
+      return { ...f, package_type: planName, start_date: start, end_date: computeEndDate(start, planName) };
+    });
+  }
+  function handleStartDate(newStart: string) {
+    setForm(f => ({ ...f, start_date: newStart, end_date: computeEndDate(newStart, f.package_type) }));
+  }
+
   const total = parseFloat(form.amount) || 0;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -63,7 +75,7 @@ function Inner() {
               <div className="ptf-row-2">
                 <div className="ptf-field">
                   <label className="ptf-label">Combo Plan <span className="req">*</span></label>
-                  <select className="ptf-select" value={form.package_type} onChange={e => set('package_type', e.target.value)} required>
+                  <select className="ptf-select" value={form.package_type} onChange={e => handlePlanSelect(e.target.value)} required>
                     {comboPlans.map(p => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                   </select>
                 </div>
@@ -78,7 +90,7 @@ function Inner() {
               <div className="ptf-row-2">
                 <div className="ptf-field">
                   <label className="ptf-label">Start Date <span className="req">*</span></label>
-                  <input type="date" className="ptf-input" value={form.start_date} onChange={e => set('start_date', e.target.value)} required />
+                  <input type="date" className="ptf-input" value={form.start_date} onChange={e => handleStartDate(e.target.value)} required />
                 </div>
                 <div className="ptf-field">
                   <label className="ptf-label">End Date</label>

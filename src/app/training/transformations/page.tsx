@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
+import { fmtDate } from '@/lib/format';
 
 export default function TransformationsPage() {
   return <Guard><Inner /></Guard>;
@@ -69,7 +70,7 @@ function Inner() {
                         <td style={{ fontWeight:600 }}>{c.name}</td>
                         <td className="text-muted">{c.trainer_name || '—'}</td>
                         <td className="text-muted tabular">{c.weight ? `${c.weight} kg` : '—'}</td>
-                        <td className="text-muted tabular">{c.joining_date || c.pt_start_date || '—'}</td>
+                        <td className="text-muted tabular">{fmtDate(c.joining_date || c.pt_start_date)}</td>
                         <td><Link href={`/clients/${c.id}`} className="btn btn-ghost btn-sm">Log progress →</Link></td>
                       </tr>
                     ))}

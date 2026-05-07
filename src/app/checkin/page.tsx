@@ -367,6 +367,8 @@ function CheckInContent() {
                 frameColor={sc.color}
                 overlayColor={overlayColor}
                 overlayOpacity={overlayOpacity}
+                resultTone={isSuccess ? 'success' : isError ? 'error' : null}
+                showScan={state === 'ready' || state === 'liveness' || state === 'recognizing'}
               />
 
               <div

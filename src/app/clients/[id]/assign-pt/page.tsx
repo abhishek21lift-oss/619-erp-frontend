@@ -6,6 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { getStoredPlans } from '@/lib/plans';
+import { computeEndDate, toInputDate } from '@/lib/format';
 
 export default function AssignPTPage() {
   return <Guard><Inner /></Guard>;
@@ -19,7 +20,7 @@ function Inner() {
 
   const [client, setClient] = useState<any>(null);
   const [trainers, setTrainers] = useState<any[]>([]);
-  const [ptPlans, setPtPlans] = useState<{name:string;final:number}[]>([]);
+  const [ptPlans, setPtPlans] = useState<{name:string;base:number;final:number}[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
@@ -43,10 +44,41 @@ function Inner() {
       .then(([c, t]) => { setClient(c); setTrainers(Array.isArray(t) ? t : []); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+    // Pull PT plans from the shared store so this page stays in sync with
+    // the Plans admin page. Falls back to sensible defaults below.
+    const stored = getStoredPlans();
+    const pt = stored.filter(p => p.kind === 'PT')
+      .map(p => ({ name: p.name, base: p.base_amount, final: p.final_amount }));
+    setPtPlans(pt.length > 0 ? pt : [
+      { name: 'PT Monthly', base: 6000, final: 6000 },
+      { name: 'PT Quarterly', base: 16500, final: 15000 },
+      { name: 'PT Half-Yearly', base: 30000, final: 26000 },
+      { name: 'PT Annual', base: 55000, final: 45000 },
+    ]);
   }, [id]);
 
   function set(field: string, value: string | string[]) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function handlePlanSelect(planName: string) {
+    const plan = ptPlans.find(p => p.name === planName);
+    setForm(f => {
+      const start = f.start_date || toInputDate(new Date());
+      return {
+        ...f,
+        membership_plan: planName,
+        start_date: start,
+        end_date: computeEndDate(start, planName),
+        // Pre-fill prices but don't clobber a value the user already typed.
+        base_price: f.base_price || (plan ? String(plan.base) : ''),
+        selling_price: f.selling_price || (plan ? String(plan.final) : ''),
+      };
+    });
+  }
+
+  function handleStartDate(newStart: string) {
+    setForm(f => ({ ...f, start_date: newStart, end_date: computeEndDate(newStart, f.membership_plan) }));
   }
 
   const totalAmount = parseFloat(form.selling_price) || 0;
@@ -103,7 +135,7 @@ function Inner() {
                 <div className="ptf-row-2">
                   <div className="ptf-field">
                     <label className="ptf-label">Select Membership Plan <span className="req">*</span></label>
-                    <select className="ptf-select" value={form.membership_plan} onChange={(e) => set('membership_plan', e.target.value)} required>
+                    <select className="ptf-select" value={form.membership_plan} onChange={(e) => handlePlanSelect(e.target.value)} required>
                       <option value="">Select Membership Plan</option>
                       {ptPlans.map((p) => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
                     </select>
@@ -149,7 +181,7 @@ function Inner() {
                 <div className="ptf-row-2">
                   <div className="ptf-field">
                     <label className="ptf-label">Start Date <span className="req">*</span></label>
-                    <input type="date" className="ptf-input" value={form.start_date} onChange={(e) => set('start_date', e.target.value)} required />
+                    <input type="date" className="ptf-input" value={form.start_date} onChange={(e) => handleStartDate(e.target.value)} required />
                   </div>
                   <div className="ptf-field">
                     <label className="ptf-label">End Date</label>

@@ -131,7 +131,7 @@ function Inner() {
                         <td className="text-muted tabular">{c.mobile || '—'}</td>
                         <td className="text-muted">{c.interested_in || '—'}</td>
                         <td className="text-muted">{c.reference_no || 'Walk-in'}</td>
-                        <td className="text-muted tabular">{c.joining_date || '—'}</td>
+                        <td className="text-muted tabular">{c.joining_date ? fmtDate(c.joining_date) : '—'}</td>
                         <td>
                           <Link
                             href={`/clients/${c.id}`}

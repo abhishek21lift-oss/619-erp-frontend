@@ -15,6 +15,10 @@ interface CameraFeedProps {
   /** 0-1 opacity for the result overlay (green/red flash) */
   overlayColor?: string;
   overlayOpacity?: number;
+  /** When set, the soft oval reticle glows green/red to mirror the result */
+  resultTone?: 'success' | 'error' | null;
+  /** Show the gentle scan-line sweep — turn off after a result */
+  showScan?: boolean;
 }
 
 export default function CameraFeed({
@@ -24,6 +28,8 @@ export default function CameraFeed({
   frameColor = '#6366f1',
   overlayColor = 'transparent',
   overlayOpacity = 0,
+  resultTone = null,
+  showScan = true,
 }: CameraFeedProps) {
   return (
     <div className="cf-viewport">
@@ -55,15 +61,22 @@ export default function CameraFeed({
           />
           {/* Animated corner brackets */}
           <svg className="cf-frame" viewBox="0 0 320 240" preserveAspectRatio="none">
-            {/* Top-left */}
             <path d="M24,60 L24,24 L60,24"  fill="none" stroke={frameColor} strokeWidth="3.5" strokeLinecap="round" />
-            {/* Top-right */}
             <path d="M260,24 L296,24 L296,60" fill="none" stroke={frameColor} strokeWidth="3.5" strokeLinecap="round" />
-            {/* Bottom-left */}
             <path d="M24,180 L24,216 L60,216" fill="none" stroke={frameColor} strokeWidth="3.5" strokeLinecap="round" />
-            {/* Bottom-right */}
             <path d="M296,180 L296,216 L260,216" fill="none" stroke={frameColor} strokeWidth="3.5" strokeLinecap="round" />
           </svg>
+          {/* Soft oval reticle — guides users to centre their face */}
+          <div className="checkin-reticle">
+            <div
+              className={
+                'checkin-reticle-shape' +
+                (resultTone === 'success' ? ' is-success' : resultTone === 'error' ? ' is-error' : '')
+              }
+            />
+          </div>
+          {/* Subtle vertical scan line — feels alive while idle/scanning */}
+          {showScan && resultTone === null && <div className="checkin-scan-ring" />}
         </>
       ) : (
         <div className="cf-placeholder">
