@@ -6,6 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import FaceEnrollModal from '@/components/FaceEnrollModal';
 import { api, Client, Trainer } from '@/lib/api';
+import { request } from '@/lib/http';
 import { useAuth } from '@/lib/auth-context';
 import { fmtDate } from '@/lib/format';
 import { memberWhatsAppMessage, whatsappHref } from '@/lib/whatsapp';
@@ -125,16 +126,20 @@ function ClientDetail({ id }: { id: string }) {
   async function submitAction(actionType: string) {
     setActionSaving(true); setError('');
     try {
-      const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://619-erp-api.onrender.com';
-      const token = localStorage.getItem('619_token');
-      const res = await fetch(`${BASE}/api/clients/${id}/${actionType}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(actionForm),
-      });
-
-      // Handle cases where endpoint isn't implemented yet — show success locally
-      if (res.status === 404 || res.status === 405) {
+      try {
+        const data = await request<any>(`/api/clients/${id}/${actionType}`, {
+          method: 'POST',
+          body: actionForm,
+          retries: 1,
+        });
+        if (data.client) { setClient(data.client); setForm(data.client); }
+        setActionModal(null); setActionForm({});
+        setSuccess('Action completed successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+        return;
+      } catch (err: any) {
+        // Handle cases where endpoint isn't implemented yet — show success locally
+        if (err?.status === 404 || err?.status === 405) {
         // Apply local state changes for common actions so UI still feels responsive
         const localUpdates: Record<string, Partial<any>> = {
           freeze:    { status: 'frozen' },
@@ -162,13 +167,8 @@ function ClientDetail({ id }: { id: string }) {
         setTimeout(() => setSuccess(''), 4000);
         return;
       }
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `Action failed (${res.status})`);
-      if (data.client) { setClient(data.client); setForm(data.client); }
-      setActionModal(null); setActionForm({});
-      setSuccess(`Action completed successfully!`);
-      setTimeout(() => setSuccess(''), 3000);
+        throw err;
+      }
     } catch (e: any) {
       // Network errors — still close modal and show a helpful message
       if (e instanceof TypeError && e.message.includes('fetch')) {
@@ -183,15 +183,11 @@ function ClientDetail({ id }: { id: string }) {
   async function submitFollowUp() {
     setFuSaving(true); setError('');
     try {
-      const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://619-erp-api.onrender.com';
-      const token = localStorage.getItem('619_token');
-      const res = await fetch(`${BASE}/api/clients/${id}/follow-ups`, {
+      await request(`/api/clients/${id}/follow-ups`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...fuForm, followup_date: new Date().toISOString(), added_by: user?.name || user?.email }),
+        body: { ...fuForm, followup_date: new Date().toISOString(), added_by: user?.name || user?.email },
+        retries: 1,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to add follow-up');
       // Refresh client data
       const updated = await api.clients.get(id);
       setClient(updated); setForm(updated);

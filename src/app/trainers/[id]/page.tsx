@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { request } from '@/lib/http';
 import { fmtDate } from '@/lib/format';
 import { Camera, User, Phone, Mail, Briefcase, Calendar, TrendingUp, Users, CheckCircle2, IndianRupee, Edit2, Trash2, Upload, RefreshCw } from 'lucide-react';
 
@@ -60,20 +61,12 @@ function TrainerDetail({ id }: { id: string }) {
     if (!data) return;
     setPhotoSaving(true); setError(''); setSuccess('');
     try {
-      const BASE = process.env.NEXT_PUBLIC_API_URL || 'https://619-erp-api.onrender.com';
-      const token = localStorage.getItem('619_token');
-      const res = await fetch(`${BASE}/api/trainers/${id}`, {
+      const updated = await request<any>(`/api/trainers/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...data, photo_url: photoUrl }),
+        body: { ...data, photo_url: photoUrl },
+        retries: 1,
       });
-      if (res.ok) {
-        const updated = await res.json();
-        setData((prev: any) => ({ ...prev, ...(updated.trainer || updated), photo_url: photoUrl }));
-      } else {
-        // Optimistically update local state even if backend doesn't support it yet
-        setData((prev: any) => ({ ...prev, photo_url: photoUrl }));
-      }
+      setData((prev: any) => ({ ...prev, ...(updated.trainer || updated), photo_url: photoUrl }));
       // Persist to localStorage
       if (photoUrl) {
         localStorage.setItem(`trainer_photo_${id}`, photoUrl);
