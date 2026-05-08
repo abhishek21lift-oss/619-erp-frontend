@@ -3,19 +3,16 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-
-type AppRole = 'admin' | 'trainer' | 'member' | 'manager';
+import type { Role } from '@/lib/types';
 
 interface Props {
   children: React.ReactNode;
-  role?: AppRole;
+  role?: Role;
 }
 
 export default function Guard({ children, role }: Props) {
   const { user, loading } = useAuth();
   const router = useRouter();
-
-  const userRole = user?.role as AppRole | undefined;
 
   useEffect(() => {
     if (loading) return;
@@ -25,10 +22,10 @@ export default function Guard({ children, role }: Props) {
       return;
     }
 
-    if (role && userRole !== role) {
+    if (role && user.role !== role) {
       router.replace('/dashboard');
     }
-  }, [user, loading, role, userRole, router]);
+  }, [user, loading, role, router]);
 
   if (loading) {
     return (
@@ -83,7 +80,7 @@ export default function Guard({ children, role }: Props) {
     );
   }
 
-  if (!user || (role && userRole !== role)) {
+  if (!user || (role && user.role !== role)) {
     return null;
   }
 
