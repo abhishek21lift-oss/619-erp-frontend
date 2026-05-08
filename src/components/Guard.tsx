@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import type { Role } from '@/lib/types';
+
+type Role = 'admin' | 'trainer' | 'member' | 'manager';
 
 interface Props {
   children: React.ReactNode;
