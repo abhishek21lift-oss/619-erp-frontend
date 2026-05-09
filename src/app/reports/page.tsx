@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -643,13 +644,13 @@ function StaffAttendanceView() {
         >
           {rangeDays} day{rangeDays !== 1 ? 's' : ''} · {trainers.length} staff
         </div>
-        <a
+        <Link
           href="/attendance/staff"
           className="btn btn-ghost btn-sm"
           style={{ marginLeft: 'auto' }}
         >
           Mark staff attendance →
-        </a>
+        </Link>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
