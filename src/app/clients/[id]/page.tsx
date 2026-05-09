@@ -153,8 +153,8 @@ function ClientDetail({ id }: { id: string }) {
           upgrade:   { package_type: actionForm.package_type },
           downgrade: { package_type: actionForm.package_type },
           transfer:  { trainer_id: actionForm.trainer_id, trainer_name: trainers.find((t) => t.id === actionForm.trainer_id)?.name || '' },
-          'pt-assign': { trainer_id: actionForm.trainer_id, pt_start_date: actionForm.pt_start_date, pt_end_date: actionForm.pt_end_date },
-          'pt-renew':  { pt_start_date: actionForm.pt_start_date, pt_end_date: actionForm.pt_end_date },
+          'assign-pt': { trainer_id: actionForm.trainer_id, pt_start_date: actionForm.pt_start_date, pt_end_date: actionForm.pt_end_date },
+          'renew-pt':  { pt_start_date: actionForm.pt_start_date, pt_end_date: actionForm.pt_end_date },
           'check-in':  {},
           combo:       { package_type: actionForm.package_type || client?.package_type },
           trial:       {},
@@ -1099,8 +1099,8 @@ function ClientDetail({ id }: { id: string }) {
               <button className="btn btn-primary" style={{ flex: 1 }} disabled={actionSaving}
                 onClick={() => submitAction(
                   actionModal === 'check-in' ? 'check-in' :
-                  actionModal === 'pt_assign' ? 'pt-assign' :
-                  actionModal === 'pt_renew' ? 'pt-renew' :
+                  actionModal === 'pt_assign' ? 'assign-pt' :
+                  actionModal === 'pt_renew' ? 'renew-pt' :
                   actionModal
                 )}>
                 {actionSaving ? 'Processing…' : 'Confirm'}
