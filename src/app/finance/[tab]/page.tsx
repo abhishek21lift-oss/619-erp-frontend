@@ -14,7 +14,7 @@ export default function FinanceTabPage({ params }: { params: Promise<{ tab: stri
   return (
     <RoutePlaceholderPage
       title={title}
-      description="This finance tab has been created and linked from the sidebar."
+      description="Review finance workflows, approvals, and export-ready operating records."
       role="admin"
     />
   );

@@ -18,7 +18,7 @@ export default function EngagementTabPage({ params }: { params: Promise<{ tab: s
   return (
     <RoutePlaceholderPage
       title={title}
-      description="This engagement tab has been scaffolded and is available in the sidebar."
+      description="Coordinate campaigns, audience segments, balances, and community workflows."
       role={tab === 'balance' ? 'admin' : undefined}
     />
   );

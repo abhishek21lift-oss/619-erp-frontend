@@ -13,7 +13,7 @@ export default function TrainingTabPage({ params }: { params: Promise<{ tab: str
   return (
     <RoutePlaceholderPage
       title={title}
-      description="This training tab has been added and is ready for data wiring."
+      description="Monitor coaching goals, weekly targets, and performance review actions."
       role="admin"
     />
   );

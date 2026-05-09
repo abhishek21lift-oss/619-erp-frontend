@@ -13,7 +13,7 @@ export default function MembersTabPage({ params }: { params: Promise<{ tab: stri
   return (
     <RoutePlaceholderPage
       title={title}
-      description="This members tab is now connected and can be implemented without sidebar changes."
+      description="Manage member referral activity, rewards, and pending conversion follow-ups."
     />
   );
 }

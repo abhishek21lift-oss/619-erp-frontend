@@ -14,7 +14,7 @@ export default function InsightsTabPage({ params }: { params: Promise<{ tab: str
   return (
     <RoutePlaceholderPage
       title={title}
-      description="This insights tab is now connected and ready for dashboard widgets."
+      description="Review analytics snapshots, trends, and export-ready decision metrics."
       role="admin"
     />
   );

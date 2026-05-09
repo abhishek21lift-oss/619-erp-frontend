@@ -21,7 +21,7 @@ export default function SettingsTabPage({ params }: { params: Promise<{ tab: str
   return (
     <RoutePlaceholderPage
       title={title}
-      description="This settings tab now resolves correctly from the sidebar."
+      description="Configure branch operations, access, branding, billing, and studio defaults."
       role="admin"
     />
   );

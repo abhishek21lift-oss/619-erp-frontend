@@ -13,7 +13,7 @@ export default function MembershipsTabPage({ params }: { params: Promise<{ tab: 
   return (
     <RoutePlaceholderPage
       title={title}
-      description="This memberships tab is now available from the sidebar."
+      description="Manage plan catalog operations, membership rules, and billing readiness."
       role={tab === 'plans' ? 'admin' : undefined}
     />
   );
