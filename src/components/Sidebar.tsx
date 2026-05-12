@@ -19,51 +19,85 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Fuse from 'fuse.js';
-import {
-  // Nav icons
-  LayoutDashboard, TrendingUp, Users, Dumbbell, ScanFace,
-  CreditCard, IndianRupee, LineChart, Megaphone, Settings,
-  // Item icons
-  Inbox, PlusCircle, Filter, PieChart,
-  UserCheck, CalendarClock, UserX, Cake, UserPlus, User,
-  UserCog, LayoutGrid, CalendarOff, Sparkles,
-  ClipboardList, ClipboardCheck, Trophy,
-  Layers, RefreshCw, CalendarDays,
-  Wallet, AlertCircle, ArrowUpRight, BarChart3, Award,
-  FileBarChart, Activity, RefreshCcw, Clock,
-  Bell, MessageCircle, Send, Tag, Star,
-  Building2, ShieldCheck, Fingerprint, Receipt, Palette,
-  // UI controls
-  ChevronRight, Search, LogOut, PanelLeftClose, PanelLeftOpen,
-  Dumbbell as DumbbellIcon,
-} from 'lucide-react';
-
-import { useAuth } from '@/lib/auth-context';
-import {
-  NAV_GROUPS, SETTINGS_GROUP, DASHBOARD_ITEM,
-  allNavItems, isVisibleForRole,
-  type NavItem,
-} from '@/lib/nav-config';
+import type { LucideIcon } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────
 // Icon map: Lucide name → component
 // ─────────────────────────────────────────────────────────────────────
-const ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  LayoutDashboard, TrendingUp, Users, Dumbbell, ScanFace,
-  CreditCard, IndianRupee, LineChart, Megaphone, Settings,
-  Inbox, PlusCircle, Filter, PieChart,
-  UserCheck, CalendarClock, UserX, Cake, UserPlus, User,
-  UserCog, LayoutGrid, CalendarOff, Sparkles,
-  ClipboardList, ClipboardCheck, Trophy,
-  Layers, RefreshCw, CalendarDays,
-  Wallet, AlertCircle, ArrowUpRight, BarChart3, Award,
-  FileBarChart, Activity, RefreshCcw, Clock,
-  Bell, MessageCircle, Send, Tag, Star,
-  Building2, ShieldCheck, Fingerprint, Receipt, Palette,
+
+const ICONS: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  TrendingUp,
+  Users,
+  Dumbbell,
+  ScanFace,
+
+  CreditCard,
+  IndianRupee,
+  LineChart,
+  Megaphone,
+  Settings,
+
+  Inbox,
+  PlusCircle,
+  Filter,
+  PieChart,
+
+  UserCheck,
+  CalendarClock,
+  UserX,
+  Cake,
+  UserPlus,
+  User,
+
+  UserCog,
+  LayoutGrid,
+  CalendarOff,
+  Sparkles,
+
+  ClipboardList,
+  ClipboardCheck,
+  Trophy,
+
+  Layers,
+  RefreshCw,
+  CalendarDays,
+
+  Wallet,
+  AlertCircle,
+  ArrowUpRight,
+  BarChart3,
+  Award,
+
+  FileBarChart,
+  Activity,
+ RefreshCcw,
+  Clock,
+
+  Bell,
+  MessageCircle,
+  Send,
+  Tag,
+  Star,
+
+  Building2,
+  ShieldCheck,
+  Fingerprint,
+  Receipt,
+  Palette,
 };
-function Icon({ name, size = 15 }: { name: string; size?: number }) {
+
+function Icon({
+  name,
+  size = 15,
+}: {
+  name: string;
+  size?: string | number;
+}) {
   const C = ICONS[name];
+
   return C ? <C size={size} /> : null;
+
 }
 
 // ─────────────────────────────────────────────────────────────────────
