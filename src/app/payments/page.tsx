@@ -121,13 +121,8 @@ function RecordPaymentModal({
     if (!form.client_id || !form.amount) { setError('Member and Amount are required.'); return; }
     setSaving(true); setError('');
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const res = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...form, amount: parseFloat(form.amount) }),
-      });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || `HTTP ${res.status}`); }
+      const newPay = await api.payments.create({ ...form, amount: parseFloat(form.amount as any) });
+      void newPay; // result available if needed
       onSaved();
     } catch (e: any) {
       setError(e.message || 'Failed to record payment.');
