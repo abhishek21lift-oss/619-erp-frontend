@@ -293,12 +293,7 @@ function PaymentsContent() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const res = await fetch(`/api/payments/${deleteTarget.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await api.payments.delete(String(deleteTarget.id));
       setPayments((prev) => prev.filter((p) => p.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (e: any) {

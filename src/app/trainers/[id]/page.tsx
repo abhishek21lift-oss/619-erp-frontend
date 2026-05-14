@@ -102,13 +102,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   async function handleDelete() {
     setDeleting(true);
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const res = await fetch(`/api/trainers/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      router.push('/trainers');
+      await api.trainers.delete(id);
     } catch (e: any) {
       alert(`Failed: ${e.message}`);
       setDeleting(false);

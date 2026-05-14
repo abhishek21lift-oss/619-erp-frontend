@@ -437,6 +437,23 @@ export const api = {
       req<any[]>(`/api/checkin/logs${qs(params)}`),
   },
 
+  plans: {
+    list: (p?: { kind?: string; active?: string }) =>
+      req<any[]>(`/api/plans${qs(p)}`),
+    create: (data: any) =>
+      req<{ message: string; plan: any }>('/api/plans', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: any) =>
+      req<{ message: string; plan: any }>(`/api/plans/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      req<{ message: string }>(`/api/plans/${id}`, { method: 'DELETE' }),
+  },
+
   reports: {
     monthly: (year?: number) =>
       req<any[]>(`/api/reports/monthly${year ? `?year=${year}` : ''}`),

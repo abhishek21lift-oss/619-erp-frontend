@@ -144,13 +144,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   async function handleDelete() {
     setDeleting(true);
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const res = await fetch(`/api/clients/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      router.push('/clients');
+      await api.clients.delete(id);
     } catch (e: any) {
       alert(`Delete failed: ${e.message}`);
       setDeleting(false);
