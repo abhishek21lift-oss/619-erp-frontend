@@ -8,6 +8,7 @@ import { use, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
+import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -113,22 +114,22 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       const headers = { Authorization: `Bearer ${token}` };
 
       const [cRes, aRes, pRes] = await Promise.allSettled([
-        fetch(`/api/clients/${id}`, { headers }),
-        fetch(`/api/clients/${id}/attendance`, { headers }),
-        fetch(`/api/clients/${id}/payments`, { headers }),
+        api.clients.get(id),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/clients/${id}/attendance`, { headers }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/clients/${id}/payments`, { headers }),
       ]);
 
-      if (cRes.status === 'fulfilled' && cRes.value.ok) {
-        setClient(await cRes.value.json());
+      if (cRes.status === 'fulfilled') {
+        setClient(cRes.value as any);
       } else {
         throw new Error('Member not found');
       }
-      if (aRes.status === 'fulfilled' && aRes.value.ok) {
-        const d = await aRes.value.json();
+      if (aRes.status === 'fulfilled' && (aRes.value as Response).ok) {
+        const d = await (aRes.value as Response).json();
         setAttendance(Array.isArray(d) ? d : (d.logs ?? []));
       }
-      if (pRes.status === 'fulfilled' && pRes.value.ok) {
-        const d = await pRes.value.json();
+      if (pRes.status === 'fulfilled' && (pRes.value as Response).ok) {
+        const d = await (pRes.value as Response).json();
         setPayments(Array.isArray(d) ? d : (d.payments ?? []));
       }
     } catch (e: any) {

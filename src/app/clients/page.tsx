@@ -16,6 +16,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
+import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -26,23 +27,19 @@ import {
 } from 'lucide-react';
 
 /* ─── Types ─────────────────────────────────────────────── */
-interface Client {
-  id: number;
-  name: string;
-  email?: string;
-  phone?: string;
-  status: 'active' | 'expired' | 'frozen' | 'pending';
-  membership_plan?: string;
-  expiry_date?: string;
-  balance_due?: number;
+// Re-use the api Client type, extended with local display aliases
+import type { Client as ApiClient } from '@/lib/api';
+type Client = ApiClient & {
+  // Map field aliases for display
+  phone?: string;       // alias for mobile
+  membership_plan?: string; // alias for package_type
+  expiry_date?: string; // alias for pt_end_date
+  balance_due?: number; // alias for balance_amount
   face_enrolled?: boolean;
-  dob?: string;
-  join_date?: string;
-  trainer_name?: string;
-}
+};
 
 type Segment = 'all' | 'active' | 'expired' | 'frozen' | 'dues' | 'expiring' | 'birthdays';
-type SortKey = 'name' | 'status' | 'expiry_date' | 'balance_due' | 'join_date';
+type SortKey = 'name' | 'status' | 'expiry_date' | 'balance_due' | 'joining_date';
 type SortDir = 'asc' | 'desc';
 
 /* ─── Constants ─────────────────────────────────────────── */
@@ -92,7 +89,7 @@ function exportCSV(clients: Client[]) {
     c.id, c.name, c.email ?? '', c.phone ?? '',
     c.status, c.membership_plan ?? '',
     c.expiry_date ?? '', c.balance_due ?? 0,
-    c.face_enrolled ? 'Yes' : 'No', c.join_date ?? '',
+    c.face_enrolled ? 'Yes' : 'No', c.joining_date ?? '',
   ]);
   const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
@@ -104,7 +101,7 @@ function exportCSV(clients: Client[]) {
 }
 
 /* ─── Status Badge ──────────────────────────────────────── */
-function StatusBadge({ status }: { status: Client['status'] }) {
+function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     active: 'badge-success', expired: 'badge-danger',
     frozen: 'badge-info', pending: 'badge-warning',
@@ -237,11 +234,8 @@ export default function ClientsPage() {
   const fetchClients = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const res = await fetch('/api/clients', { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setClients(Array.isArray(data) ? data : (data.clients ?? []));
+      const data = await api.clients.list();
+      setClients(Array.isArray(data) ? data : []);
     } catch (e: any) {
       setError(e.message || 'Failed to load clients.');
     } finally {
@@ -287,10 +281,10 @@ export default function ClientsPage() {
       let va: string | number = '';
       let vb: string | number = '';
       if (sortKey === 'name')         { va = a.name; vb = b.name; }
-      if (sortKey === 'status')       { va = a.status; vb = b.status; }
-      if (sortKey === 'expiry_date')  { va = a.expiry_date ?? ''; vb = b.expiry_date ?? ''; }
-      if (sortKey === 'balance_due')  { va = a.balance_due ?? 0; vb = b.balance_due ?? 0; }
-      if (sortKey === 'join_date')    { va = a.join_date ?? ''; vb = b.join_date ?? ''; }
+      if (sortKey === 'status')       { va = a.status ?? ''; vb = b.status ?? ''; }
+      if (sortKey === 'expiry_date')  { va = a.pt_end_date ?? a.expiry_date ?? ''; vb = b.pt_end_date ?? b.expiry_date ?? ''; }
+      if (sortKey === 'balance_due')  { va = a.balance_amount ?? a.balance_due ?? 0; vb = b.balance_amount ?? b.balance_due ?? 0; }
+      if (sortKey === 'joining_date')    { va = a.joining_date ?? ''; vb = b.joining_date ?? ''; }
       if (va < vb) return sortDir === 'asc' ? -1 : 1;
       if (va > vb) return sortDir === 'asc' ? 1 : -1;
       return 0;
@@ -322,12 +316,7 @@ export default function ClientsPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const res = await fetch(`/api/clients/${deleteTarget.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await api.clients.delete(String(deleteTarget.id));
       setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (e: any) {
@@ -427,8 +416,8 @@ export default function ClientsPage() {
                     <th onClick={() => toggleSort('balance_due')} style={{ cursor: 'pointer', userSelect: 'none' }}>
                       Balance <SortIcon k="balance_due" />
                     </th>
-                    <th onClick={() => toggleSort('join_date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                      Joined <SortIcon k="join_date" />
+                    <th onClick={() => toggleSort('joining_date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                      Joined <SortIcon k="joining_date" />
                     </th>
                     <th style={{ width: 40 }} />
                   </tr>
@@ -479,7 +468,7 @@ export default function ClientsPage() {
                               </a>
                             ) : '—'}
                           </td>
-                          <td><StatusBadge status={c.status} /></td>
+                          <td><StatusBadge status={c.status ?? 'active'} /></td>
                           <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
                             {c.membership_plan ?? '—'}
                           </td>
@@ -503,7 +492,7 @@ export default function ClientsPage() {
                             )}
                           </td>
                           <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                            {fmtDate(c.join_date)}
+                            {fmtDate(c.joining_date)}
                           </td>
                           <td onClick={(e) => e.stopPropagation()}>
                             <RowMenu client={c} onDelete={setDeleteTarget} />

@@ -7,6 +7,7 @@ import React, { use, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
+import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -78,17 +79,15 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   const fetchData = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const headers = { Authorization: `Bearer ${token}` };
       const [tRes, mRes] = await Promise.allSettled([
-        fetch(`/api/trainers/${id}`, { headers }),
-        fetch(`/api/trainers/${id}/members`, { headers }),
+        api.trainers.get(id),
+        api.clients.list({ trainer_id: id }),
       ]);
-      if (tRes.status === 'fulfilled' && tRes.value.ok) {
-        setTrainer(await tRes.value.json());
+      if (tRes.status === 'fulfilled') {
+        setTrainer(tRes.value as any);
       } else throw new Error('Trainer not found');
-      if (mRes.status === 'fulfilled' && mRes.value.ok) {
-        const d = await mRes.value.json();
+      if (mRes.status === 'fulfilled') {
+        const d = mRes.value as any;
         setMembers(Array.isArray(d) ? d : (d.members ?? []));
       }
     } catch (e: any) {

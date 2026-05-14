@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
+import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 
@@ -48,13 +49,8 @@ function TrainerInner() {
   const [clients] = useState<ClientCard[]>(mockClients);
 
   useEffect(() => {
-    // Real impl: fetch /api/v1/dashboard/trainer
-    fetch('/api/dashboard/summary')
-      .then((r) => r.json())
-      .then(() => {
-        /* hydrate */
-      })
-      .catch(() => {});
+    // Load real dashboard summary
+    api.dashboard.summary().catch(() => {});
   }, []);
 
   const fmt = (n: number) =>

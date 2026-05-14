@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
+import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -17,13 +18,13 @@ import {
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface Trainer {
-  id: number;
+  id: string;
   name: string;
   email?: string;
   phone?: string;
   specialization?: string;
   member_count?: number;
-  status: 'active' | 'inactive';
+  status?: string;
   join_date?: string;
   photo_url?: string;
 }
@@ -210,11 +211,8 @@ export default function TrainersPage() {
   const fetchTrainers = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const res = await fetch('/api/trainers', { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setTrainers(Array.isArray(data) ? data : (data.trainers ?? []));
+      const data = await api.trainers.list();
+      setTrainers(Array.isArray(data) ? data : []);
     } catch (e: any) {
       setError(e.message || 'Failed to load trainers.');
     } finally {
@@ -239,11 +237,7 @@ export default function TrainersPage() {
     setDeleting(true);
     try {
       const token = localStorage.getItem('619_token') ?? '';
-      const res = await fetch(`/api/trainers/${deleteTarget.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await api.trainers.delete(String(deleteTarget.id));
       setTrainers((prev) => prev.filter((t) => t.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (e: any) {

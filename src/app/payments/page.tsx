@@ -11,6 +11,7 @@
  */
 import { useEffect, useState, useCallback, useRef, useMemo, FormEvent } from 'react';
 import Guard from '@/components/Guard';
+import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -233,23 +234,21 @@ function PaymentsContent() {
   const fetchAll = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const token = localStorage.getItem('619_token') ?? '';
-      const headers = { Authorization: `Bearer ${token}` };
       const params = new URLSearchParams();
       if (filterFrom) params.set('from', filterFrom);
       if (filterTo)   params.set('to', filterTo);
 
       const [pRes, cRes] = await Promise.allSettled([
-        fetch(`/api/payments?${params}`, { headers }),
-        fetch('/api/clients', { headers }),
+        api.payments.list(Object.fromEntries(new URLSearchParams(params))),
+        api.clients.list(),
       ]);
 
-      if (pRes.status === 'fulfilled' && pRes.value.ok) {
-        const d = await pRes.value.json();
+      if (pRes.status === 'fulfilled') {
+        const d = pRes.value as any;
         setPayments(Array.isArray(d) ? d : (d.payments ?? []));
       }
-      if (cRes.status === 'fulfilled' && cRes.value.ok) {
-        const d = await cRes.value.json();
+      if (cRes.status === 'fulfilled') {
+        const d = cRes.value as any;
         setClients(Array.isArray(d) ? d : (d.clients ?? []));
       }
     } catch (e: any) {

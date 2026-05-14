@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Guard from '@/components/Guard';
+import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -122,10 +123,8 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
   const fetchMonthly = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const res = await fetch(`/api/reports/monthly?year=${year}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const d = await res.json();
-      setMonthly(Array.isArray(d) ? d : (d.data ?? []));
+      const data = await api.reports.monthly(typeof year === 'number' ? year : parseInt(String(year)));
+      setMonthly(Array.isArray(data) ? data : []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, [year]);
 
@@ -243,10 +242,8 @@ function DuesTab() {
   const fetchDues = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const res = await fetch('/api/reports/dues', { headers: authHeaders() });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const d = await res.json();
-      setDues(Array.isArray(d) ? d : (d.data ?? []));
+      const data = await api.reports.dues();
+      setDues(Array.isArray(data) ? data : []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, []);
 
@@ -329,10 +326,8 @@ function TrainerSummaryTab() {
   const fetch_ = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const res = await fetch('/api/reports/trainers', { headers: authHeaders() });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const d = await res.json();
-      setTrainers(Array.isArray(d) ? d : (d.data ?? []));
+      const data = await api.reports.trainerSummary();
+      setTrainers(Array.isArray(data) ? data : []);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, []);
 

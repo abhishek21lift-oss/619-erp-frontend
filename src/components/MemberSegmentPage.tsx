@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { api } from '@/lib/api';
 import {
   Search, RefreshCw, MessageCircle, Eye, Users,
   Grid3x3, List, Cake, Clock, UserX, CheckCircle,
@@ -16,12 +17,12 @@ import {
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface Client {
-  id: number;
+  id: string;
   name: string;
   email?: string;
   phone?: string;
   mobile?: string;
-  status: 'active' | 'expired' | 'frozen' | 'pending';
+  status?: string;
   membership_plan?: string;
   package_type?: string;
   expiry_date?: string;
@@ -224,10 +225,8 @@ function Inner({ segment }: { segment: Segment }) {
     try {
       const token = localStorage.getItem('619_token') ?? '';
       // Fetch all clients; filter client-side for segment precision
-      const res = await fetch('/api/clients', { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setClients(Array.isArray(data) ? data : (data.clients ?? []));
+      const data = await api.clients.list();
+      setClients(Array.isArray(data) ? data : []);
     } catch (e: any) {
       setError(e.message || 'Failed to load members.');
     } finally {
@@ -391,7 +390,7 @@ function Inner({ segment }: { segment: Segment }) {
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</div>
                             {phone && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{phone}</div>}
                           </td>
-                          <td><StatusBadge status={c.status} /></td>
+                          <td><StatusBadge status={c.status ?? "active"} /></td>
                           <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{getPlan(c) ?? '—'}</td>
                           <td style={{ fontSize: 13, color: expiry ? expiryColor(days) : 'var(--text-muted)', fontWeight: days <= 7 ? 600 : 400 }}>
                             {expiry ? fmtDate(expiry) : '—'}
