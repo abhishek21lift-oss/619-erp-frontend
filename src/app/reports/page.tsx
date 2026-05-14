@@ -411,16 +411,14 @@ function StaffTab() {
     try {
       const headers = authHeaders();
       const [rRes, tRes] = await Promise.allSettled([
-        fetch(`/api/attendance?from=${from}&to=${to}&type=trainer`, { headers }),
-        fetch('/api/trainers', { headers }),
+        api.attendance.list({ from, to, type: 'trainer' }),
+        api.trainers.list(),
       ]);
-      if (rRes.status === 'fulfilled' && rRes.value.ok) {
-        const d = await rRes.value.json();
-        setRecords(Array.isArray(d) ? d : (d.logs ?? []));
+      if (rRes.status === 'fulfilled') {
+        setRecords(Array.isArray(rRes.value) ? rRes.value : []);
       }
-      if (tRes.status === 'fulfilled' && tRes.value.ok) {
-        const d = await tRes.value.json();
-        setTrainers(Array.isArray(d) ? d : (d.trainers ?? []));
+      if (tRes.status === 'fulfilled') {
+        setTrainers(Array.isArray(tRes.value) ? tRes.value : []);
       }
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   }, [from, to]);
