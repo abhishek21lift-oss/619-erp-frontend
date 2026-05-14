@@ -452,8 +452,21 @@ export default function ClientsPage() {
                           onClick={() => router.push(`/clients/${c.id}`)}
                         >
                           <td>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</div>
-                            {c.email && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.email}</div>}
+                            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                              <div style={{ width:34, height:34, borderRadius:'50%', flexShrink:0, overflow:'hidden',
+                                background:'var(--brand-soft)', color:'var(--brand)',
+                                display:'flex', alignItems:'center', justifyContent:'center',
+                                fontSize:12, fontWeight:700 }}>
+                                {c.photo_url
+                                  ? <img src={c.photo_url} alt={c.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                                  : (c.name||'?').split(' ').map((w:string)=>w[0]).join('').slice(0,2).toUpperCase()
+                                }
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</div>
+                                {c.email && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.email}</div>}
+                              </div>
+                            </div>
                           </td>
                           <td>
                             {c.phone ? (

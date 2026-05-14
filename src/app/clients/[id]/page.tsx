@@ -11,15 +11,17 @@ import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
+import Image from 'next/image';
 import {
   ArrowLeft, User, Phone, Mail, Calendar, CreditCard, Activity,
   ScanFace, RefreshCw, Snowflake, Trash2, Edit2, MessageCircle,
-  CheckCircle, XCircle, Clock, AlertCircle, Dumbbell,
+  CheckCircle, XCircle, Clock, AlertCircle, Dumbbell, Camera, Upload,
 } from 'lucide-react';
+import FaceEnrollModal from '@/components/FaceEnrollModal';
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface ClientDetail {
-  id: number;
+  id: string;
   name: string;
   email?: string;
   phone?: string;
@@ -31,6 +33,8 @@ interface ClientDetail {
   expiry_date?: string;
   balance_due?: number;
   face_enrolled?: boolean;
+  face_enrolled_at?: string;
+  mobile?: string;
   join_date?: string;
   trainer_name?: string;
   emergency_contact?: string;
@@ -39,7 +43,7 @@ interface ClientDetail {
 }
 
 interface AttendanceLog {
-  id: number;
+  id: string;
   date: string;
   check_in_time: string;
   check_out_time?: string;
@@ -47,7 +51,7 @@ interface AttendanceLog {
 }
 
 interface PaymentLog {
-  id: number;
+  id: string;
   date: string;
   amount: number;
   plan: string;
@@ -106,6 +110,25 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'payments'>('overview');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting]   = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [enrollOpen, setEnrollOpen] = useState(false);
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const dataUrl = reader.result as string;
+        await api.clients.uploadPhoto(id, dataUrl);
+        setClient((c: any) => c ? { ...c, photo_url: dataUrl } : c);
+      } catch (err: any) { alert("Photo upload failed: " + err.message); }
+      finally { setPhotoUploading(false); }
+    };
+    reader.readAsDataURL(file);
+  }
+
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError('');
@@ -153,7 +176,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
   const whatsappHref = () => {
     if (!client?.phone) return '#';
-    const n = client.phone.replace(/\D/g, '');
+    const n = client.mobile || (client as any).phone.replace(/\D/g, '');
     const num = n.startsWith('91') ? n : `91${n}`;
     const msg = encodeURIComponent(`Hi ${client.name}, this is a message from 619 Fitness Studio.`);
     return `https://wa.me/${num}?text=${msg}`;
@@ -210,14 +233,30 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           {/* ── Profile header card ── */}
           <div className="card" style={{ padding: 24, marginBottom: 16 }}>
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              {/* Avatar */}
-              <div style={{
-                width: 72, height: 72, borderRadius: '50%', flexShrink: 0,
-                background: 'var(--gradient-brand, linear-gradient(135deg,#dc2626,#b91c1c))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 26, fontWeight: 700, color: '#fff',
-              }}>
-                {client.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+              {/* Avatar with photo upload */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{
+                  width: 80, height: 80, borderRadius: '50%', overflow: 'hidden',
+                  background: 'var(--gradient-brand, linear-gradient(135deg,#dc2626,#b91c1c))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 28, fontWeight: 700, color: '#fff', border: '3px solid var(--bg-card)',
+                  boxShadow: 'var(--shadow)',
+                }}>
+                  {client.photo_url
+                    ? <img src={client.photo_url} alt={client.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                    : client.name.split(' ').map((w:string) => w[0]).join('').slice(0, 2).toUpperCase()
+                  }
+                </div>
+                <label style={{
+                  position:'absolute',bottom:0,right:0,width:24,height:24,borderRadius:'50%',
+                  background:'var(--brand)',color:'#fff',display:'flex',alignItems:'center',
+                  justifyContent:'center',cursor:'pointer',boxShadow:'var(--shadow-sm)',
+                  border:'2px solid var(--bg-card)',
+                }} title="Upload photo">
+                  <Camera size={11}/>
+                  <input type="file" accept="image/*" style={{display:'none'}} onChange={handlePhotoUpload}/>
+                </label>
+                {photoUploading && <div style={{position:'absolute',inset:0,borderRadius:'50%',background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}}><RefreshCw size={16} color="#fff" style={{animation:'spin 0.9s linear infinite'}}/></div>}
               </div>
 
               {/* Name / meta */}
@@ -232,9 +271,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
-                  {client.phone && (
+                  {client.mobile || (client as any).phone && (
                     <span style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Phone size={12} /> {client.phone}
+                      <Phone size={12} /> {client.mobile || (client as any).phone}
                     </span>
                   )}
                   {client.email && (
@@ -265,7 +304,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
               {/* Action buttons */}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {client.phone && (
+                {client.mobile || (client as any).phone && (
                   <a href={whatsappHref()} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
                     <MessageCircle size={13} /> WhatsApp
                   </a>
@@ -273,9 +312,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 <Link href={`/clients/${id}/renew`} className="btn btn-outline btn-sm">
                   <RefreshCw size={13} /> Renew
                 </Link>
-                <Link href={`/checkin?enroll=${id}`} className="btn btn-outline btn-sm">
-                  <ScanFace size={13} /> Enroll Face
-                </Link>
+                <button className="btn btn-outline btn-sm" onClick={()=>setEnrollOpen(true)}>
+                  <ScanFace size={13} /> {client.face_enrolled_at ? "Re-enroll Face" : "Enroll Face"}
+                </button>
                 {isAdmin && (
                   <Link href={`/clients/${id}/edit`} className="btn btn-outline btn-sm">
                     <Edit2 size={13} /> Edit
@@ -315,7 +354,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <InfoRow label="Date of Birth" value={fmtDate(client.dob)} />
                   <InfoRow label="Gender" value={client.gender} />
-                  <InfoRow label="Phone" value={client.phone} />
+                  <InfoRow label="Phone" value={client.mobile || (client as any).phone} />
                   <InfoRow label="Email" value={client.email} />
                   <div style={{ gridColumn: '1/-1' }}>
                     <InfoRow label="Address" value={client.address} />
@@ -474,6 +513,20 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </div>
           )}
         </div>
+
+        {/* ── Face Enroll Modal ── */}
+        {enrollOpen && (
+          <FaceEnrollModal
+            clientId={id}
+            clientName={client.name}
+            open={enrollOpen}
+            onClose={() => setEnrollOpen(false)}
+            onEnrolled={() => {
+              setEnrollOpen(false);
+              setClient((c: any) => c ? { ...c, face_enrolled: true, face_enrolled_at: new Date().toISOString() } : c);
+            }}
+          />
+        )}
 
         {/* ── Delete Confirmation Modal ── */}
         {deleteConfirm && (

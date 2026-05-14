@@ -312,6 +312,11 @@ export const api = {
       }),
     delete: (id: string) =>
       req<{ message: string }>(`/api/clients/${id}`, { method: 'DELETE' }),
+    uploadPhoto: (id: string, photo_url: string) =>
+      req<{ message: string; photo_url: string }>(`/api/clients/${id}/photo`, {
+        method: 'POST',
+        body: JSON.stringify({ photo_url }),
+      }),
 
     // ── Membership action endpoints ─────────────────────────────────
     // All routes are mounted under `/api/clients/:id/<action>` and

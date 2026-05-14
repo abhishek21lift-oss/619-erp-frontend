@@ -13,6 +13,7 @@ import React, {
 } from 'react';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import Fuse from 'fuse.js';
 
@@ -400,7 +401,7 @@ export default function Sidebar({
           {/* Header */}
 
           <div className="sidebar-header">
-            <div className="sidebar-logo">619</div>
+            <div className="sidebar-logo"><Image src="/619-logo.png" alt="619 Fitness" width={36} height={36} style={{ objectFit: "contain", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.3))" }} /></div>
 
             <div className="sidebar-brand">
               <div className="sidebar-brand-name">

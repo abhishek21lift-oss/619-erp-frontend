@@ -5,9 +5,10 @@
  * proper validation, loading state, and error display.
  */
 import { useState, FormEvent, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { Eye, EyeOff, Lock, Mail, Dumbbell } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, login, loading } = useAuth();
@@ -77,7 +78,7 @@ export default function LoginPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             marginBottom: 16,
           }}>
-            <Dumbbell size={26} color="#fff" />
+            
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.5px', margin: 0 }}>
             619 Fitness Studio

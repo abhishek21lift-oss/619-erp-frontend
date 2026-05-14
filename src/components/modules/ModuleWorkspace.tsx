@@ -451,7 +451,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                               <td>{record.owner}</td>
                               <td><StatusPill status={record.status} /></td>
                               <td><PriorityPill priority={record.priority} /></td>
-                              <td className="tabular font-bold">INR {Number(record.amount || 0).toLocaleString('en-IN')}</td>
+                              <td className="tabular font-bold">₹{Number(record.amount || 0).toLocaleString('en-IN')}</td>
                               <td className="tabular text-slate-600">{record.dueDate}</td>
                               <td>{record.channel}</td>
                               <td>
