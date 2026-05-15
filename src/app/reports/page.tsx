@@ -65,7 +65,7 @@ function RevenueBarChart({ data, maxVal }: { data: { month: string; revenue: num
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, padding: '0 4px' }}>
-        {data.map((m, i) => {
+        {(data ?? []).map((m, i) => {
           const pct = maxVal > 0 ? Math.max((m.revenue / maxVal) * 100, m.revenue > 0 ? 4 : 0) : 0;
           return (
             <div
@@ -104,7 +104,7 @@ function RevenueBarChart({ data, maxVal }: { data: { month: string; revenue: num
         })}
       </div>
       <div style={{ display: 'flex', gap: 6, marginTop: 8, padding: '0 4px' }}>
-        {data.map((m, i) => (
+        {(data ?? []).map((m, i) => (
           <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
             {m.month}
           </div>
@@ -368,7 +368,7 @@ function TrainerSummaryTab() {
                   </div>
                 </td></tr>
               ) : (
-                trainers.map((t: any) => (
+                (trainers ?? []).map((t: any) => (
                   <tr key={t.id}>
                     <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</td>
                     <td style={{ color: 'var(--success)', fontWeight: 600 }}>{t.active_clients}</td>
