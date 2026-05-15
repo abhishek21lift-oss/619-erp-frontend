@@ -23,12 +23,10 @@ export default function AppShell({ children, title }: AppShellProps) {
   }, []);
 
   return (
-    <div className="shell-root">
+    <div className="min-h-screen bg-[#f5f7fb]">
+      <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
-      <div className="shell-body">
-        <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
-        <main className="shell-main">{children}</main>
-      </div>
+      <main className="mx-auto w-full max-w-[1600px] px-4 pb-8 pt-24 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 }
