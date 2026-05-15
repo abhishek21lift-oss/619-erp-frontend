@@ -30,13 +30,17 @@ interface ClientDetail {
   address?: string;
   status: 'active' | 'expired' | 'frozen' | 'pending';
   membership_plan?: string;
+  package_type?: string;
   expiry_date?: string;
+  pt_end_date?: string;
   balance_due?: number;
   face_enrolled?: boolean;
   face_enrolled_at?: string;
   mobile?: string;
   join_date?: string;
+  joining_date?: string;
   trainer_name?: string;
+  trainer_full_name?: string;
   emergency_contact?: string;
   notes?: string;
   photo_url?: string;
@@ -213,7 +217,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     );
   }
 
-  const days = daysUntil(client.expiry_date);
+  const membershipPlan = client.membership_plan || client.package_type;
+  const joinDate = client.join_date || client.joining_date;
+  const expiryDate = client.expiry_date || client.pt_end_date;
+  const assignedTrainer = client.trainer_name || client.trainer_full_name;
+  const days = daysUntil(expiryDate);
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
   return (
@@ -281,9 +289,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                       <Mail size={12} /> {client.email}
                     </span>
                   )}
-                  {client.membership_plan && (
+                  {membershipPlan && (
                     <span style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Dumbbell size={12} /> {client.membership_plan}
+                      <Dumbbell size={12} /> {membershipPlan}
                     </span>
                   )}
                 </div>
@@ -292,12 +300,12 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 {client.status === 'active' && days <= 30 && (
                   <div className="alert alert-warning" style={{ marginTop: 10, padding: '6px 12px', fontSize: 12 }}>
                     <Clock size={12} />
-                    Membership expires in {days} day{days !== 1 ? 's' : ''} — {fmtDate(client.expiry_date)}
+                    Membership expires in {days} day{days !== 1 ? 's' : ''} — {fmtDate(expiryDate)}
                   </div>
                 )}
                 {client.status === 'expired' && (
                   <div className="alert alert-danger" style={{ marginTop: 10, padding: '6px 12px', fontSize: 12 }}>
-                    <XCircle size={12} /> Membership expired on {fmtDate(client.expiry_date)}
+                    <XCircle size={12} /> Membership expired on {fmtDate(expiryDate)}
                   </div>
                 )}
               </div>
@@ -371,11 +379,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   <CreditCard size={14} /> Membership
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <InfoRow label="Plan" value={client.membership_plan} />
+                  <InfoRow label="Plan" value={membershipPlan} />
                   <InfoRow label="Status" value={<StatusBadge status={client.status} />} />
-                  <InfoRow label="Join Date" value={fmtDate(client.join_date)} />
-                  <InfoRow label="Expiry Date" value={fmtDate(client.expiry_date)} />
-                  <InfoRow label="Assigned Trainer" value={client.trainer_name} />
+                  <InfoRow label="Join Date" value={fmtDate(joinDate)} />
+                  <InfoRow label="Expiry Date" value={fmtDate(expiryDate)} />
+                  <InfoRow label="Assigned Trainer" value={assignedTrainer} />
                   <InfoRow label="Balance Due" value={
                     (client.balance_due ?? 0) > 0
                       ? <span style={{ color: 'var(--danger)', fontWeight: 600 }}>₹{client.balance_due?.toLocaleString('en-IN')}</span>
