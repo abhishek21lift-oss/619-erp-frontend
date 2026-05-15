@@ -97,7 +97,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">{pageTitle}</h1>
         </div>
 
-        <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-visible xl:flex">
+        <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-visible lg:flex">
           {topGroups.map((group) => {
             const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
             const opened = openMenu === group.id;
@@ -143,7 +143,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           })}
         </nav>
 
-        <div className="hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2 shadow-sm md:flex md:min-w-[260px] lg:min-w-[320px]">
+        <div className="hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2 shadow-sm xl:flex xl:min-w-[260px] 2xl:min-w-[320px]">
           <button
             className="flex w-full items-center gap-2 text-sm text-slate-500"
             onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
