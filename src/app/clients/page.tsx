@@ -456,7 +456,7 @@ export default function ClientsPage() {
                     <th onClick={() => toggleSort('joining_date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
                       Joined <SortIcon k="joining_date" sortKey={sortKey} sortDir={sortDir} />
                     </th>
-                    <th style={{ width: 40 }} />
+                    <th style={{ minWidth: 320 }}>Quick Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -545,7 +545,7 @@ export default function ClientsPage() {
                             {fmtDate(c.joining_date)}
                           </td>
                           <td onClick={(e) => e.stopPropagation()}>
-                            <div style={{ display: 'grid', gap: 8, justifyItems: 'end' }}>
+                            <div style={{ display: 'grid', gap: 8, minWidth: 300, justifyItems: 'start' }}>
                               <QuickMemberActions client={c} />
                               <RowMenu client={c} onDelete={setDeleteTarget} />
                             </div>
