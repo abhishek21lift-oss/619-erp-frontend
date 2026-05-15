@@ -91,7 +91,7 @@ function whatsappHref(phone?: string, name?: string) {
 
 function exportCSV(clients: Client[]) {
   const headers = ['ID', 'Name', 'Email', 'Phone', 'Status', 'Plan', 'Expiry', 'Balance Due', 'Face Enrolled', 'Join Date'];
-  const rows = clients.map((c) => [
+  const rows = (clients ?? []).map((c) => [
     c.id, c.name, c.email ?? '', c.phone ?? '',
     c.status, c.membership_plan ?? '',
     c.expiry_date ?? '', c.balance_due ?? 0,
