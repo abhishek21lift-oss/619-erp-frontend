@@ -209,6 +209,7 @@ function DashboardContent() {
             <CardBody>
               <DonutChart
                 data={membershipMix(summary.data)}
+                centerValue={correctedMembershipTotal(summary.data)}
                 centerLabel="Members"
                 valueFormatter={(v) => v.toLocaleString('en-IN')}
               />
@@ -241,6 +242,7 @@ function DashboardContent() {
             <CardBody>
               <DonutChart
                 data={renewalPipeline(summary.data)}
+                centerValue={correctedRenewalTotal(summary.data)}
                 centerLabel="At risk"
                 valueFormatter={(v) => v.toLocaleString('en-IN')}
               />
@@ -321,7 +323,13 @@ function DashboardContent() {
 
 function KpiRow({ d }: { d: DashSummary }) {
   const dueColor = (d.total_dues ?? 0) > 0 ? 'amber' : 'emerald';
-  const correctedActiveMembers = Math.max(0, (d.clients?.active ?? 0) - (d.top_trainers?.length ?? 0));
+  const trainerCount = d.top_trainers?.length ?? 0;
+  const rawActiveMembers = d.clients?.active ?? 0;
+  const rawTotalMembers = d.clients?.total ?? 0;
+  const rawNewThisMonth = d.clients?.new_this_month ?? 0;
+  const correctedActiveMembers = rawTotalMembers === 0 && trainerCount > 0 ? 0 : Math.max(0, rawActiveMembers - trainerCount);
+  const correctedTotalMembers = rawTotalMembers === trainerCount ? 0 : Math.max(0, rawTotalMembers - trainerCount);
+  const correctedNewThisMonth = rawTotalMembers === 0 && trainerCount > 0 ? 0 : Math.max(0, rawNewThisMonth - trainerCount);
   return (
     <>
       <KpiCard
@@ -614,3 +622,18 @@ function labelForPeriod(p: Period) {
   return p === 'today' ? 'Today' : `Last ${p.replace('d', '')}d`;
 }
 
+
+function correctedMembershipTotal(d?: DashSummary) {
+  const trainerCount = d?.top_trainers?.length ?? 0;
+  const totalMembers = d?.clients?.total ?? 0;
+  if (totalMembers === 0 && trainerCount > 0) return '0';
+  return Math.max(0, totalMembers - trainerCount).toLocaleString('en-IN');
+}
+
+function correctedRenewalTotal(d?: DashSummary) {
+  const trainerCount = d?.top_trainers?.length ?? 0;
+  const totalMembers = d?.clients?.total ?? 0;
+  if (totalMembers === 0 && trainerCount > 0) return '0';
+  const total = (d?.pending_renewals ?? 0) + (d?.active_pt_clients ?? 0);
+  return total.toLocaleString('en-IN');
+}
