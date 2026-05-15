@@ -266,6 +266,26 @@ const qs = (p?: object) =>
 // ================= API =================
 
 export const api = {
+  admin: {
+    importDatabase: async (file: File) => {
+      const t = token();
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${BASE}/api/admin/import-database`, {
+        method: 'POST',
+        headers: { ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({ error: 'Bad response' }));
+      if (res.status === 401) {
+        handleAuthFailure();
+        throw new Error(data.error || 'Session expired, please log in again');
+      }
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      return data;
+    },
+  },
+
   auth: {
     login: (email: string, password: string) =>
       req<{ token: string; user: User }>('/api/auth/login', {
