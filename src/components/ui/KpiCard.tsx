@@ -1,8 +1,9 @@
 // frontend/src/components/ui/KpiCard.tsx
 //
-// The "big number" tile used across every dashboard. Optional delta arrow,
-// trend sparkline, accent stripe at the top. Designed to be readable on
-// mobile (single column) and desktop (3-up / 4-up grid).
+// PREMIUM KPI CARD — Colorful gradient backgrounds, glassmorphic icon,
+// animated shimmer, deep glow shadow. Each accent has its own vibrant theme.
+//
+// Designed to look like premium SaaS dashboards (Linear, Stripe, Vercel).
 
 'use client';
 
@@ -20,14 +21,57 @@ type Accent =
   | 'orange'
   | 'slate';
 
-const ACCENTS: Record<Accent, { stripe: string; iconBg: string; iconFg: string }> = {
-  rose:    { stripe: 'from-rose-500 to-pink-500',       iconBg: 'bg-rose-50',    iconFg: 'text-rose-600' },
-  emerald: { stripe: 'from-emerald-500 to-teal-500',    iconBg: 'bg-emerald-50', iconFg: 'text-emerald-600' },
-  amber:   { stripe: 'from-amber-500 to-yellow-500',    iconBg: 'bg-amber-50',   iconFg: 'text-amber-600' },
-  sky:     { stripe: 'from-sky-500 to-blue-500',        iconBg: 'bg-sky-50',     iconFg: 'text-sky-600' },
-  violet:  { stripe: 'from-violet-500 to-fuchsia-500',  iconBg: 'bg-violet-50',  iconFg: 'text-violet-600' },
-  orange:  { stripe: 'from-orange-500 to-red-500',      iconBg: 'bg-orange-50',  iconFg: 'text-orange-600' },
-  slate:   { stripe: 'from-slate-400 to-slate-500',     iconBg: 'bg-slate-50',   iconFg: 'text-slate-600' },
+const ACCENTS: Record<
+  Accent,
+  {
+    bg: string;        // full gradient background
+    glow: string;      // shadow glow color
+    iconBg: string;    // glassmorphic icon background
+    decorative: string; // decorative blob color
+  }
+> = {
+  rose: {
+    bg: 'bg-gradient-to-br from-rose-500 via-pink-500 to-red-500',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(244,63,94,0.45)]',
+    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
+    decorative: 'bg-rose-300/30',
+  },
+  emerald: {
+    bg: 'bg-gradient-to-br from-emerald-500 via-teal-500 to-green-600',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)]',
+    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
+    decorative: 'bg-emerald-300/30',
+  },
+  amber: {
+    bg: 'bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-500',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(245,158,11,0.45)]',
+    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
+    decorative: 'bg-amber-300/30',
+  },
+  sky: {
+    bg: 'bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(14,165,233,0.45)]',
+    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
+    decorative: 'bg-sky-300/30',
+  },
+  violet: {
+    bg: 'bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]',
+    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
+    decorative: 'bg-violet-300/30',
+  },
+  orange: {
+    bg: 'bg-gradient-to-br from-orange-500 via-red-500 to-rose-600',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(249,115,22,0.45)]',
+    iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
+    decorative: 'bg-orange-300/30',
+  },
+  slate: {
+    bg: 'bg-gradient-to-br from-slate-700 via-slate-800 to-zinc-900',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(71,85,105,0.5)]',
+    iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25',
+    decorative: 'bg-slate-400/20',
+  },
 };
 
 export interface KpiCardProps {
@@ -37,7 +81,7 @@ export interface KpiCardProps {
   hint?: React.ReactNode;
   /** % delta vs previous period. Positive = up arrow, negative = down arrow. */
   delta?: number;
-  /** When delta is positive, "good" means green up arrow. Set to "bad" to invert (e.g. churn going up is bad). */
+  /** When delta is positive, "good" means green up arrow. Set to "bad" to invert. */
   deltaIs?: 'good' | 'bad';
   icon?: React.ReactNode;
   accent?: Accent;
@@ -64,49 +108,81 @@ export function KpiCard({
   const inner = (
     <article
       className={cn(
-        'group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition',
-        href && 'hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-rose-300',
+        // Base
+        'group relative overflow-hidden rounded-2xl p-5 text-white transition-all duration-300',
+        // Vibrant gradient background
+        tone.bg,
+        // Glow shadow
+        tone.glow,
+        // Hover lift
+        href && 'cursor-pointer hover:-translate-y-1 hover:shadow-2xl focus-within:ring-2 focus-within:ring-white/50',
         className,
       )}
     >
-      {/* Accent stripe */}
+      {/* Decorative top-right blob (large soft circle) */}
       <div
         className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r',
-          tone.stripe,
+          'pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full blur-2xl',
+          tone.decorative,
         )}
+        aria-hidden
+      />
+      {/* Decorative bottom-left blob */}
+      <div
+        className={cn(
+          'pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full blur-3xl opacity-50',
+          tone.decorative,
+        )}
+        aria-hidden
       />
 
-      <div className="flex items-start justify-between gap-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-          {label}
-        </p>
-        {icon && (
-          <span
-            className={cn(
-              'grid h-9 w-9 place-items-center rounded-xl',
-              tone.iconBg,
-              tone.iconFg,
+      {/* Animated shimmer overlay (only on hover) */}
+      <div
+        className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
+        aria-hidden
+      />
+
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Header: label + icon */}
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">
+            {label}
+          </p>
+          {icon && (
+            <span
+              className={cn(
+                'grid h-10 w-10 place-items-center rounded-xl text-white shadow-inner',
+                tone.iconBg,
+              )}
+              aria-hidden
+            >
+              {icon}
+            </span>
+          )}
+        </div>
+
+        {/* Big value + delta */}
+        <div className="mt-3 flex items-end justify-between gap-3">
+          <p className="truncate text-3xl font-bold tabular-nums tracking-tight text-white drop-shadow-sm sm:text-[2rem]">
+            {loading ? (
+              <span className="inline-block h-8 w-28 animate-pulse rounded bg-white/30" />
+            ) : (
+              value
             )}
-            aria-hidden
-          >
-            {icon}
-          </span>
+          </p>
+          {typeof delta === 'number' && Number.isFinite(delta) && (
+            <DeltaPill delta={delta} deltaIs={deltaIs} />
+          )}
+        </div>
+
+        {/* Hint line */}
+        {hint && (
+          <p className="mt-2 truncate text-xs font-medium text-white/80">
+            {hint}
+          </p>
         )}
       </div>
-
-      <div className="mt-2 flex items-end justify-between gap-3">
-        <p className="truncate text-2xl font-semibold tabular-nums text-slate-900 sm:text-3xl">
-          {loading ? <span className="inline-block h-7 w-24 animate-pulse rounded bg-slate-200/70" /> : value}
-        </p>
-        {typeof delta === 'number' && Number.isFinite(delta) && (
-          <DeltaPill delta={delta} deltaIs={deltaIs} />
-        )}
-      </div>
-
-      {hint && (
-        <p className="mt-2 truncate text-xs text-slate-500">{hint}</p>
-      )}
     </article>
   );
 
@@ -120,16 +196,15 @@ export function KpiCard({
 
 function DeltaPill({ delta, deltaIs }: { delta: number; deltaIs: 'good' | 'bad' }) {
   const positive = delta >= 0;
-  // Business semantics: when "good" means up, positive delta is green.
   const isGreen = deltaIs === 'good' ? positive : !positive;
   const Icon = positive ? ArrowUpRight : ArrowDownRight;
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold',
+        'inline-flex flex-shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold backdrop-blur-md ring-1',
         isGreen
-          ? 'bg-emerald-50 text-emerald-700'
-          : 'bg-red-50 text-red-700',
+          ? 'bg-emerald-400/30 text-white ring-emerald-200/50'
+          : 'bg-red-400/30 text-white ring-red-200/50',
       )}
       aria-label={`Change ${positive ? 'up' : 'down'} ${Math.abs(delta).toFixed(1)} percent`}
     >
