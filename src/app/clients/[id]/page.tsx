@@ -487,7 +487,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                       </tr>
                     </thead>
                     <tbody>
-                      {payments.map((p) => (
+                      {(payments ?? []).map((p) => (
                         <tr key={p.id}>
                           <td style={{ fontWeight: 500 }}>{fmtDate(p.date)}</td>
                           <td>{p.plan}</td>
