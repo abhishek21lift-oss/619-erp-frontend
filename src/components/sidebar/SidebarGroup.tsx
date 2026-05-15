@@ -10,7 +10,7 @@ export default function SidebarGroup({ group }: any) {
       </h3>
 
       <div className="space-y-1">
-        {group.(items ?? []).map((item: any) => (
+        {(group.items ?? []).map((item: any) => (
           <SidebarItem key={item.href} item={item} />
         ))}
       </div>
