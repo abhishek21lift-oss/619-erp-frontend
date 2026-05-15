@@ -61,7 +61,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   const navItem = findItemByPath(pathname);
   const pageTitle = navItem?.label ?? 'Page';
-  const initials = '61';
 
   const topGroups = useMemo(() => {
     const visibleGroups = NAV_GROUPS.map((group) => ({
@@ -178,7 +177,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               aria-label="Account menu"
               aria-expanded={openMenu === 'account'}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 text-sm font-bold text-white shadow-[0_10px_20px_rgba(109,40,217,0.28)]">{initials}</span>
               <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm">
                 <img src="/logo.png" alt="619 Fitness Studio logo" className="h-full w-full object-cover" />
               </span>
