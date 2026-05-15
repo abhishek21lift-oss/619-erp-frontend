@@ -38,10 +38,6 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    try {
-      setLoading(True)
-    except NameError:
-      pass
     setLoading(true);
     try {
       await api.auth.changePassword(currentPassword, newPassword);
