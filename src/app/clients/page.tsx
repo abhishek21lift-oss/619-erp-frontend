@@ -23,7 +23,7 @@ import {
   Search, UserPlus, Download, MoreHorizontal, Eye, CreditCard,
   RefreshCw, Snowflake, ScanFace, Trash2, MessageCircle,
   ChevronLeft, ChevronRight, Users, CheckCircle, XCircle,
-  AlertCircle, DollarSign, Clock, Cake,
+  AlertCircle, DollarSign, Clock, Cake, Dumbbell, Repeat, MoveRight, ArrowRightLeft,
 } from 'lucide-react';
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -153,6 +153,18 @@ function RowMenu({ client, onDelete }: { client: Client; onDelete: (c: Client) =
           </button>
           <button className="dropdown-item" onClick={() => go(`/clients/${client.id}/renew`)}>
             <RefreshCw size={13} /> Renew membership
+          </button>
+          <button className="dropdown-item" onClick={() => go(`/clients/${client.id}/assign-pt`)}>
+            <Dumbbell size={13} /> Assign personal training
+          </button>
+          <button className="dropdown-item" onClick={() => go(`/clients/${client.id}/renew-pt`)}>
+            <Repeat size={13} /> Renew personal training
+          </button>
+          <button className="dropdown-item" onClick={() => go(`/clients/${client.id}/extension`)}>
+            <MoveRight size={13} /> Extension
+          </button>
+          <button className="dropdown-item" onClick={() => go(`/clients/${client.id}/transfer`)}>
+            <ArrowRightLeft size={13} /> Transfer
           </button>
           <button className="dropdown-item" onClick={() => go(`/clients/${client.id}/freeze`)}>
             <Snowflake size={13} /> Freeze membership
