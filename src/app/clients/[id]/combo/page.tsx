@@ -104,7 +104,7 @@ function Inner() {
                   <label className="ptf-label">Assign Trainer <span className="req">*</span></label>
                   <select className="ptf-select" value={form.trainer_id} onChange={e => set('trainer_id', e.target.value)} required>
                     <option value="">Select Trainer</option>
-                    {trainers.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    {(trainers ?? []).map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
               </div>
