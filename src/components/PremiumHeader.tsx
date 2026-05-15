@@ -75,7 +75,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-      <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <button
           className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:hidden"
           onClick={onMenuClick}
@@ -89,7 +89,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">{pageTitle}</h1>
         </div>
 
-        <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-visible lg:flex">
+        <nav className="hidden min-w-0 items-center justify-start gap-1 overflow-x-auto overflow-y-visible lg:flex">
           {topGroups.map((group) => {
             const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
             const opened = openMenu === group.id;
@@ -134,7 +134,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           })}
         </nav>
 
-        <div className="hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2 shadow-sm xl:flex xl:min-w-[260px] 2xl:min-w-[320px]">
+        <div className="hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2 shadow-sm 2xl:flex 2xl:min-w-[280px]">
           <button
             className="flex w-full items-center gap-2 text-sm text-slate-500"
             onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
@@ -145,7 +145,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           </button>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md" onClick={toggleTheme} aria-label="Toggle theme">
             {hydrated ? (theme === 'light' ? <Moon size={18} /> : <Sun size={18} />) : <span style={{ width: 18 }} />}
           </button>
