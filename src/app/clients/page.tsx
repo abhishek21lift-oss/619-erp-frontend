@@ -199,6 +199,28 @@ function RowMenu({ client, onDelete }: { client: Client; onDelete: (c: Client) =
   );
 }
 
+
+function QuickMemberActions({ client }: { client: Client }) {
+  const router = useRouter();
+  const go = (path: string) => router.push(path);
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); go(`/clients/${client.id}/assign-pt`); }}>
+        <Dumbbell size={12} /> Assign PT
+      </button>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); go(`/clients/${client.id}/renew-pt`); }}>
+        <Repeat size={12} /> Renew PT
+      </button>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); go(`/clients/${client.id}/extension`); }}>
+        <MoveRight size={12} /> Extension
+      </button>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); go(`/clients/${client.id}/transfer`); }}>
+        <ArrowRightLeft size={12} /> Transfer
+      </button>
+    </div>
+  );
+}
+
 /* ─── Skeleton Row ──────────────────────────────────────── */
 function SkeletonRow() {
   return (
@@ -523,7 +545,10 @@ export default function ClientsPage() {
                             {fmtDate(c.joining_date)}
                           </td>
                           <td onClick={(e) => e.stopPropagation()}>
-                            <RowMenu client={c} onDelete={setDeleteTarget} />
+                            <div style={{ display: 'grid', gap: 8, justifyItems: 'end' }}>
+                              <QuickMemberActions client={c} />
+                              <RowMenu client={c} onDelete={setDeleteTarget} />
+                            </div>
                           </td>
                         </tr>
                       );
