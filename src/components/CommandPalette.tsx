@@ -93,7 +93,7 @@ export default function CommandPalette() {
     const items = allNavItems()
       .filter(i => !i.hidden)
       .filter(i => !i.role || i.role === user?.role);
-    const navResults: Result[] = items.map(i => ({
+    const navResults: Result[] = (items ?? []).map(i => ({
       id: 'nav-' + i.href,
       label: i.label,
       sub: i.groupLabel,
@@ -214,7 +214,7 @@ export default function CommandPalette() {
           {Object.entries(grouped).map(([groupName, items]) => (
             <div key={groupName} className="cmdk-group">
               <div className="cmdk-group-label">{groupName}</div>
-              {items.map(r => {
+              {(items ?? []).map(r => {
                 const idx = runningIdx++;
                 const isActive = idx === activeIdx;
                 return (
