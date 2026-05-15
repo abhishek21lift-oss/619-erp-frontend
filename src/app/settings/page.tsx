@@ -284,7 +284,7 @@ function SettingsContent() {
                         onChange={S('trainer_id')}
                       >
                         <option value="">— Not linked —</option>
-                        {trainers.map((t) => (
+                        {(trainers ?? []).map((t) => (
                           <option key={t.id} value={t.id}>
                             {t.name}
                           </option>
