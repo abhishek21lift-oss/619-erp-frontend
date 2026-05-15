@@ -8,7 +8,7 @@
  *  - FaceLandmark68Net (for blink detection EAR)
  *  - FaceRecognitionNet (128-D descriptor for matching)
  *
- * Models are served from /public/models/ or CDN fallback.
+ * Models are served from /models with a GitHub raw fallback for production reliability.
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
@@ -64,7 +64,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
       // Try local models first, then CDN fallback
       const URLS_TO_TRY = [
         MODEL_URL,
-        'https://justadudewhohacks.github.io/face-api.js/models',
+        'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights',
       ];
 
       let loaded = false;
