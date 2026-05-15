@@ -24,7 +24,6 @@ function apiBase() {
   const isPlaceholder = /your-619-api\.onrender\.com/i.test(trimmed);
 
   if (isPlaceholder && typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    console.warn('[http] NEXT_PUBLIC_API_URL is still the placeholder Render URL. Falling back to localhost:5000.');
     return DEFAULT_API_BASE;
   }
 
@@ -48,10 +47,6 @@ if (
   !process.env.NEXT_PUBLIC_API_URL &&
   window.location.hostname !== 'localhost'
 ) {
-  console.warn(
-    '[http] NEXT_PUBLIC_API_URL is not set — falling back to localhost. ' +
-      'Set it in your Vercel project settings to point at your real backend.',
-  );
 }
 
 // ──────────────────────────────────────────────────────────────────────
