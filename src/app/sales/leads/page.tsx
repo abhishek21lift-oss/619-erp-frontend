@@ -125,7 +125,7 @@ function Inner() {
                     </tr>
                   </thead>
                   <tbody>
-                    {leads.map((c) => (
+                    {(leads ?? []).map((c) => (
                       <tr key={c.id}>
                         <td style={{ fontWeight: 600 }}>{c.name}</td>
                         <td className="text-muted tabular">{c.mobile || '—'}</td>
