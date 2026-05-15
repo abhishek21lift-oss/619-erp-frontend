@@ -299,7 +299,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                       </tr>
                     </thead>
                     <tbody>
-                      {members.map((m) => (
+                      {(members ?? []).map((m) => (
                         <tr key={m.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/clients/${m.id}`)}>
                           <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{m.name}</td>
                           <td><StatusBadge status={m.status} /></td>
