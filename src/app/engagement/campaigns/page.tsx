@@ -83,7 +83,7 @@ function CampaignContent() {
         )}
         {/* Campaign cards */}
         <div style={{display:'grid',gap:12}}>
-          {campaigns.map(c=>{
+          {(campaigns ?? []).map(c=>{
             const openRate=c.sent>0?((c.opened/c.sent)*100).toFixed(0):'—';
             const convR=c.sent>0?((c.converted/c.sent)*100).toFixed(1):'—';
             return (
