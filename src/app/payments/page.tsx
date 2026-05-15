@@ -146,7 +146,7 @@ function RecordPaymentModal({
               <label className="form-label">Member *</label>
               <select className="input" value={form.client_id} onChange={S('client_id')} required>
                 <option value="">Select member…</option>
-                {clients.map((c) => {
+                {(clients ?? []).map((c) => {
                   const due = Number(c.balance_due ?? c.balance_amount ?? 0);
                   return (
                     <option key={c.id} value={c.id}>
