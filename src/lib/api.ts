@@ -11,7 +11,6 @@ function apiBase() {
   const isPlaceholder = /your-619-api\.onrender\.com/i.test(trimmed);
 
   if (isPlaceholder && typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    console.warn('[api] NEXT_PUBLIC_API_URL is still the placeholder Render URL. Falling back to localhost:5000.');
     return DEFAULT_API_BASE;
   }
 
