@@ -623,14 +623,14 @@ function labelForPeriod(p: Period) {
 }
 
 
-function correctedMembershipTotal(d?: DashSummary) {
+function correctedMembershipTotal(d?: DashSummary | null) {
   const trainerCount = d?.top_trainers?.length ?? 0;
   const totalMembers = d?.clients?.total ?? 0;
   if (totalMembers === 0 && trainerCount > 0) return '0';
   return Math.max(0, totalMembers - trainerCount).toLocaleString('en-IN');
 }
 
-function correctedRenewalTotal(d?: DashSummary) {
+function correctedRenewalTotal(d?: DashSummary | null) {
   const trainerCount = d?.top_trainers?.length ?? 0;
   const totalMembers = d?.clients?.total ?? 0;
   if (totalMembers === 0 && trainerCount > 0) return '0';
