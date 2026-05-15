@@ -53,6 +53,7 @@ function CheckInContent() {
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const cooldownRef = useRef<number>(0);
   const autoRetryRef= useRef<ReturnType<typeof setTimeout>>();
+  const retryFnRef = useRef<() => void>(() => {});
 
   const [state,      setState]      = useState<CheckInState>('idle');
   const [statusMsg,  setStatusMsg]  = useState('Starting…');
@@ -121,7 +122,7 @@ function CheckInContent() {
       speak('Network error');
     }
     clearTimeout(autoRetryRef.current);
-    autoRetryRef.current = setTimeout(() => retry(), 6000);
+    autoRetryRef.current = setTimeout(() => retryFnRef.current(), 6000);
   }, [speak, pushRecent]); // eslint-disable-line
 
   // Detection callback
@@ -145,6 +146,9 @@ function CheckInContent() {
     setState(camera.status === 'active' ? 'ready' : 'idle');
     setStatusMsg(camera.status === 'active' ? 'Position your face in the guide' : 'Starting camera…');
   }, [antiSpoof, camera.status]);
+
+  // Keep ref in sync so runRecognition's setTimeout can call latest retry
+  useEffect(() => { retryFnRef.current = retry; }, [retry]);
 
   // Init
   useEffect(() => {

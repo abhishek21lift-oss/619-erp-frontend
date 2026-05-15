@@ -236,7 +236,6 @@ export default function TrainersPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const token = localStorage.getItem('619_token') ?? '';
       await api.trainers.delete(String(deleteTarget.id));
       setTrainers((prev) => prev.filter((t) => t.id !== deleteTarget.id));
       setDeleteTarget(null);

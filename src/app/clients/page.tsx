@@ -40,6 +40,12 @@ type Client = ApiClient & {
 
 type Segment = 'all' | 'active' | 'expired' | 'frozen' | 'dues' | 'expiring' | 'birthdays';
 type SortKey = 'name' | 'status' | 'expiry_date' | 'balance_due' | 'joining_date';
+
+
+function SortIcon({ k, sortKey, sortDir }: { k: SortKey; sortKey: SortKey; sortDir: 'asc' | 'desc' }) {
+  if (sortKey !== k) return <span style={{ opacity: 0.3 }}>↕</span>;
+  return <span>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+}
 type SortDir = 'asc' | 'desc';
 
 /* ─── Constants ─────────────────────────────────────────── */
@@ -306,10 +312,7 @@ export default function ClientsPage() {
     else { setSortKey(key); setSortDir('asc'); }
   }
 
-  function SortIcon({ k }: { k: SortKey }) {
-    if (sortKey !== k) return <span style={{ opacity: 0.3 }}>↕</span>;
-    return <span>{sortDir === 'asc' ? '↑' : '↓'}</span>;
-  }
+
 
   /* ── Delete ── */
   async function confirmDelete() {
@@ -403,21 +406,21 @@ export default function ClientsPage() {
                 <thead>
                   <tr>
                     <th onClick={() => toggleSort('name')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                      Name <SortIcon k="name" />
+                      Name <SortIcon k="name" sortKey={sortKey} sortDir={sortDir} />
                     </th>
                     <th>Phone</th>
                     <th onClick={() => toggleSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                      Status <SortIcon k="status" />
+                      Status <SortIcon k="status" sortKey={sortKey} sortDir={sortDir} />
                     </th>
                     <th>Plan</th>
                     <th onClick={() => toggleSort('expiry_date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                      Expiry <SortIcon k="expiry_date" />
+                      Expiry <SortIcon k="expiry_date" sortKey={sortKey} sortDir={sortDir} />
                     </th>
                     <th onClick={() => toggleSort('balance_due')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                      Balance <SortIcon k="balance_due" />
+                      Balance <SortIcon k="balance_due" sortKey={sortKey} sortDir={sortDir} />
                     </th>
                     <th onClick={() => toggleSort('joining_date')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                      Joined <SortIcon k="joining_date" />
+                      Joined <SortIcon k="joining_date" sortKey={sortKey} sortDir={sortDir} />
                     </th>
                     <th style={{ width: 40 }} />
                   </tr>

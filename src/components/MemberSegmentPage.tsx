@@ -223,7 +223,6 @@ function Inner({ segment }: { segment: Segment }) {
   const fetchClients = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const token = localStorage.getItem('619_token') ?? '';
       // Fetch all clients; filter client-side for segment precision
       const data = await api.clients.list();
       setClients(Array.isArray(data) ? data : []);
