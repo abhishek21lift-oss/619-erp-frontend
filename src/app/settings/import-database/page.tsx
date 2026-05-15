@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
-import { DatabaseBackup, FileSpreadsheet, UploadCloud } from 'lucide-react';
+import { DatabaseBackup, Download, FileSpreadsheet, UploadCloud } from 'lucide-react';
 
 export default function ImportDatabasePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -69,10 +69,14 @@ export default function ImportDatabasePage() {
               {error && <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</div>}
               {success && <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{success}</div>}
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <button type="button" onClick={handleImport} disabled={loading} className="inline-flex items-center justify-center rounded-2xl bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-brand)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60">
                   {loading ? 'Importing...' : 'Import Database'}
                 </button>
+                <a href="/templates/import-database-template.csv" download className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-subtle)]">
+                  <Download size={16} />
+                  Download Template
+                </a>
               </div>
             </div>
 
@@ -85,6 +89,7 @@ export default function ImportDatabasePage() {
                 <li>- Use Excel or CSV file exported from another software.</li>
                 <li>- Keep column names clean and structured before upload.</li>
                 <li>- Recommended for admin-only migration or bulk setup.</li>
+                <li>- Download the sample template before preparing your data.</li>
                 <li>- Backend endpoint required: /api/admin/import-database</li>
               </ul>
             </div>
