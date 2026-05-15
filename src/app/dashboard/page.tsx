@@ -505,7 +505,7 @@ function RecentPayments({
           </tr>
         </thead>
         <tbody>
-          {rows.map((p) => (
+          {(rows ?? []).map((p) => (
             <tr
               key={p.id}
               className="border-t border-slate-100 transition hover:bg-slate-50/60"
@@ -558,7 +558,7 @@ function TopTrainersCard({
           />
         ) : (
           <ul role="list" className="divide-y divide-slate-100">
-            {rows.map((t, i) => (
+            {(rows ?? []).map((t, i) => (
               <li
                 key={t.id}
                 className="flex items-center justify-between gap-4 px-5 py-3"
