@@ -97,7 +97,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/plans',                     label: 'Plans & Pricing',  icon: 'Layers',       role: 'admin' },
       { href: '/memberships/subscriptions', label: 'Subscriptions',    icon: 'RefreshCw' },
-      { href: '/appointments',              label: 'Appointments',     icon: 'CalendarDays', isNew: true },
+      { href: '/appointments',              label: 'Appointments',     icon: 'CalendarDays' },
     ],
   },
   {
@@ -129,11 +129,11 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Engagement',
     icon: 'Megaphone',
     items: [
-      { href: '/engagement/notifications', label: 'Notifications',   icon: 'Bell',         isNew: true },
-      { href: '/engagement/whatsapp',      label: 'WhatsApp',        icon: 'MessageCircle',isNew: true },
-      { href: '/engagement/campaigns',     label: 'Campaigns',       icon: 'Send',         role: 'admin', isNew: true },
-      { href: '/engagement/offers',        label: 'Offers & Promos', icon: 'Tag',          role: 'admin', isNew: true },
-      { href: '/engagement/feedback',      label: 'Feedback',        icon: 'Star',         role: 'admin', isNew: true },
+      { href: '/engagement/notifications', label: 'Notifications',   icon: 'Bell' },
+      { href: '/engagement/whatsapp',      label: 'WhatsApp',        icon: 'MessageCircle' },
+      { href: '/engagement/campaigns',     label: 'Campaigns',       icon: 'Send',         role: 'admin' },
+      { href: '/engagement/offers',        label: 'Offers & Promos', icon: 'Tag',          role: 'admin' },
+      { href: '/engagement/feedback',      label: 'Feedback',        icon: 'Star',         role: 'admin' },
     ],
   },
 ];
@@ -147,11 +147,11 @@ export const SETTINGS_GROUP: NavGroup = {
   icon: 'Settings',
   items: [
     { href: '/settings',           label: 'General',          icon: 'Settings' },
-    { href: '/settings/branches',  label: 'Branches',         icon: 'Building2',   role: 'admin', isNew: true },
-    { href: '/settings/staff',     label: 'Staff & Access',   icon: 'ShieldCheck', role: 'admin', isNew: true },
-    { href: '/settings/biometric', label: 'Biometric & Face', icon: 'Fingerprint', role: 'admin', isNew: true },
-    { href: '/settings/billing',   label: 'GST / Invoice',    icon: 'Receipt',     role: 'admin', isNew: true },
-    { href: '/settings/branding',  label: 'Branding',         icon: 'Palette',     role: 'admin', isNew: true },
+    { href: '/settings/branches',  label: 'Branches',         icon: 'Building2',   role: 'admin' },
+    { href: '/settings/staff',     label: 'Staff & Access',   icon: 'ShieldCheck', role: 'admin' },
+    { href: '/settings/biometric', label: 'Biometric & Face', icon: 'Fingerprint', role: 'admin' },
+    { href: '/settings/billing',   label: 'GST / Invoice',    icon: 'Receipt',     role: 'admin' },
+    { href: '/settings/branding',  label: 'Branding',         icon: 'Palette',     role: 'admin' },
   ],
 };
 
