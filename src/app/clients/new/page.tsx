@@ -68,19 +68,40 @@ function NewClientForm() {
     if (!editId) return;
     api.clients.get(editId).then((c: any) => {
       // Pre-fill form fields with existing client data
-      setF((prev: any) => (({
-        ...f,
-        name: c.name || '',
-        mobile: c.mobile || '',
-        email: c.email || '',
-        gender: c.gender || '',
-        dob: c.dob?.slice(0,10) || '',
-        address: c.address || '',
-        trainer_id: c.trainer_id || '',
-        notes: c.notes || '',
-        weight: c.weight || '',
-        status: c.status || 'active',
-      })));
+      setF((prev: any) => {
+        const parts = String(c.name || '').trim().split(/\s+/).filter(Boolean);
+        return {
+          ...prev,
+          first_name: c.first_name || parts[0] || '',
+          last_name: c.last_name || parts.slice(1).join(' ') || '',
+          email: c.email || '',
+          country_code: c.country_code || '+91',
+          mobile: c.mobile || '',
+          is_mobile_redacted: Boolean(c.is_mobile_redacted),
+          alt_country_code: c.alt_country_code || '+91',
+          alt_mobile: c.alt_mobile || '',
+          dob: c.dob?.slice(0,10) || '',
+          gender: c.gender || '',
+          reference_no: c.reference_no || '',
+          aadhaar_no: c.aadhaar_no || '',
+          pan_no: c.pan_no || '',
+          gst_no: c.gst_no || '',
+          company_name: c.company_name || '',
+          trainer_id: c.trainer_id || '',
+          address: c.address || '',
+          street: c.street || '',
+          city: c.city || '',
+          state: c.state || '',
+          country: c.country || 'India',
+          pincode: c.pincode || '',
+          anniversary: c.anniversary?.slice(0,10) || '',
+          notes: c.notes || '',
+          status: c.status || 'active',
+          emergency_no: c.emergency_no || c.emergency_contact || '',
+          interested_in: c.interested_in || '',
+          weight: c.weight != null ? String(c.weight) : '',
+        };
+      });
     }).catch(console.error);
   }, [editId]);
 
@@ -139,17 +160,14 @@ function NewClientForm() {
     try {
       const fullName = [f.first_name, f.last_name].filter(Boolean).join(' ');
       const trainer = trainers.find(t => t.id === f.trainer_id);
-      const created = await api.clients.create({
+      const created = isEditMode ? await api.clients.update(editId!, {
         ...f,
         name: fullName,
         trainer_name: trainer?.name || '',
         weight: parseFloat(f.weight) || undefined,
       });
-      // Drop the user straight onto the new member's profile so they can
-      // assign a subscription right away — that's now the only path to
-      // create a membership.
-      const newId = (created as any)?.client?.id;
-      router.push(newId ? `/clients/${newId}/add-subscription` : '/clients');
+      const savedId = (created as any)?.client?.id || editId;
+      router.push(savedId ? `/clients/${savedId}` : '/clients');
     } catch (e: any) { setError(e.message); }
     finally { setSaving(false); }
   }
@@ -164,12 +182,12 @@ function NewClientForm() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <button onClick={() => router.back()} className="btn btn-ghost btn-sm">←</button>
             <div>
-              <div className="topbar-title">Add New Member</div>
-              <div className="topbar-sub">Fill in the member details below</div>
+              <div className="topbar-title">{isEditMode ? 'Edit Member' : 'Add New Member'}</div>
+              <div className="topbar-sub">{isEditMode ? 'Update the member details below' : 'Fill in the member details below'}</div>
             </div>
           </div>
           <button type="submit" form="member-form" className="btn btn-primary" disabled={saving}>
-            {saving ? 'Saving…' : '💾 Save Member'}
+{saving ? 'Saving…' : (isEditMode ? '💾 Update Member' : '💾 Save Member')}
           </button>
         </div>
 
@@ -418,7 +436,7 @@ function NewClientForm() {
 
               <div style={{ display: 'flex', gap: '.75rem' }}>
                 <button type="submit" className="btn btn-primary btn-lg" disabled={saving}>
-                  {saving ? 'Saving…' : '💾 Save Member'}
+      {saving ? 'Saving…' : (isEditMode ? '💾 Update Member' : '💾 Save Member')}
                 </button>
                 <button type="button" className="btn btn-ghost btn-lg" onClick={() => router.back()}>Cancel</button>
               </div>
