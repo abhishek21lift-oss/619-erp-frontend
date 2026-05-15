@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, findItemByPath, isVisibleForRole } from '@/lib/nav-config';
-import { Menu, Moon, Sun, Bell, ChevronDown } from 'lucide-react';
+import { Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut } from 'lucide-react';
 import { cn } from '@/components/ui';
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function PremiumHeader({ onMenuClick }: Props) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -61,7 +61,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   const navItem = findItemByPath(pathname);
   const pageTitle = navItem?.label ?? 'Page';
-  const initials = (user?.name || 'U').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  const initials = '61';
 
   const topGroups = useMemo(() => {
     const visibleGroups = NAV_GROUPS.map((group) => ({
@@ -80,6 +80,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   }, [user?.role]);
 
   const toggleMenu = (id: string) => setOpenMenu((current) => (current === id ? null : id));
+
+  const handleResetPassword = () => {
+    setOpenMenu(null);
+    router.push('/settings/staff');
+  };
+
+  const handleLogout = () => {
+    setOpenMenu(null);
+    logout();
+    router.push('/login');
+  };
 
   return (
     <header className="fixed inset-x-0 top-0 z-[100] border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
@@ -159,14 +170,43 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             <Bell size={18} />
             <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
-          <button type="button" onClick={() => router.push('/settings')} className="inline-flex items-center gap-3 rounded-2xl border border-white/70 bg-white/80 px-2.5 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" aria-label="Account settings">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 text-sm font-bold text-white shadow-[0_10px_20px_rgba(109,40,217,0.28)]">{initials}</span>
-            <span className="hidden text-left md:block">
-              <span className="block max-w-[140px] truncate text-sm font-semibold text-slate-900">{user?.name ?? 'Account'}</span>
-              <span className="block text-xs text-slate-500">{user?.role ?? 'member'}</span>
-            </span>
-            <ChevronDown size={16} className="hidden text-slate-400 md:block" />
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleMenu('account')}
+              className="inline-flex items-center gap-3 rounded-2xl border border-white/70 bg-white/80 px-2.5 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              aria-label="Account menu"
+              aria-expanded={openMenu === 'account'}
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 text-sm font-bold text-white shadow-[0_10px_20px_rgba(109,40,217,0.28)]">{initials}</span>
+              <span className="hidden text-left md:block">
+                <span className="block max-w-[180px] truncate text-sm font-semibold text-slate-900">619 FITNESS STUDIO</span>
+                <span className="block text-xs text-slate-500">admin</span>
+              </span>
+              <ChevronDown size={16} className={cn('hidden text-slate-400 md:block transition-transform', openMenu === 'account' && 'rotate-180')} />
+            </button>
+
+            {openMenu === 'account' && (
+              <div className="absolute right-0 top-[calc(100%+12px)] z-[120] min-w-[220px] rounded-[22px] border border-white/70 bg-white/95 p-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  <KeyRound size={16} />
+                  <span>Reset Password</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                >
+                  <LogOut size={16} />
+                  <span>Log Out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
