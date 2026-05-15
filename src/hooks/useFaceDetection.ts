@@ -77,9 +77,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
           ]);
           loaded = true;
           break;
-        } catch (urlErr) {
-          console.warn('[FaceDetection] Failed to load from', url, urlErr);
-        }
+        } catch (urlErr) { /* urlErr handled */ }
       }
 
       if (!loaded) throw new Error('Could not load models from any source');
@@ -209,7 +207,6 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         } catch (err) {
           // Silent — log only in dev
           if (process.env.NODE_ENV === 'development') {
-            console.warn('[FaceDetection] Frame error:', err);
           }
         } finally {
           processingRef.current = false;
