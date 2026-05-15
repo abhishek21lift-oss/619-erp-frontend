@@ -321,6 +321,7 @@ function DashboardContent() {
 
 function KpiRow({ d }: { d: DashSummary }) {
   const dueColor = (d.total_dues ?? 0) > 0 ? 'amber' : 'emerald';
+  const correctedActiveMembers = Math.max(0, (d.clients?.active ?? 0) - (d.top_trainers?.length ?? 0));
   return (
     <>
       <KpiCard
