@@ -160,12 +160,15 @@ function NewClientForm() {
     try {
       const fullName = [f.first_name, f.last_name].filter(Boolean).join(' ');
       const trainer = trainers.find(t => t.id === f.trainer_id);
-      const created = isEditMode ? await api.clients.update(editId!, {
+      const payload = {
         ...f,
         name: fullName,
         trainer_name: trainer?.name || '',
         weight: parseFloat(f.weight) || undefined,
-      });
+      };
+      const created = isEditMode
+        ? await api.clients.update(editId!, payload)
+        : await api.clients.create(payload);
       const savedId = (created as any)?.client?.id || editId;
       router.push(savedId ? `/clients/${savedId}` : '/clients');
     } catch (e: any) { setError(e.message); }
