@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo , useRef } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -22,6 +22,8 @@ function Inner() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
     let alive = true;
     api.reports
       .dues()
@@ -31,6 +33,7 @@ function Inner() {
     return () => {
       alive = false;
     };
+    return () => controller.abort();
   }, []);
 
   const filtered = useMemo(() => {
