@@ -163,7 +163,7 @@ function Inner() {
                     <label className="ptf-label">Assign Trainer <span className="req">*</span></label>
                     <select className="ptf-select" value={form.trainer_id} onChange={(e) => set('trainer_id', e.target.value)} required>
                       <option value="">Select Trainer</option>
-                      {trainers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      {(trainers ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -176,7 +176,7 @@ function Inner() {
                     value={form.secondary_trainer_ids}
                     onChange={(e) => set('secondary_trainer_ids', Array.from(e.target.selectedOptions, (o) => o.value))}
                   >
-                    {trainers.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.biometric_code || t.id})</option>)}
+                    {(trainers ?? []).map((t) => <option key={t.id} value={t.id}>{t.name} ({t.biometric_code || t.id})</option>)}
                   </select>
                   <span className="ptf-hint">Hold down 'Control' or 'Command' on Mac to select more than one.</span>
                 </div>
