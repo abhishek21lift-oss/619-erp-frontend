@@ -370,7 +370,7 @@ function TrainerInner() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
               }}
             >
-              {clients.map((c) => {
+              {(clients ?? []).map((c) => {
                 const initials = c.name
                   .split(' ')
                   .map((w) => w[0])
