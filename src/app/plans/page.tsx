@@ -205,7 +205,7 @@ function PlansContent() {
       const data = await api.plans.list();
       if (Array.isArray(data) && data.length > 0) {
         // Normalize API shape to StoredPlan shape
-        setPlans(data.map((p: any) => ({
+        setPlans((data ?? []).map((p: any) => ({
           id: p.id,
           kind: (p.kind || 'Membership') as PlanKind,
           name: p.name,
