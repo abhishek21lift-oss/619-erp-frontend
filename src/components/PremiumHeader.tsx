@@ -1,36 +1,24 @@
+
 'use client';
-/**
- * TopBar (PremiumHeader)
- *
- * Sticky glassmorphic top bar with:
- *  • Mobile hamburger (triggers Sidebar drawer)
- *  • Breadcrumb / page title (auto-resolved from pathname)
- *  • ⌘K shortcut to fire the command palette
- *  • Dark/light mode toggle (persisted)
- *  • Notification bell
- *  • User avatar (click → settings)
- */
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DASHBOARD_ITEM, NAV_GROUPS, findItemByPath, isVisibleForRole } from '@/lib/nav-config';
-import { Menu, Moon, Sun, Bell, Settings, ChevronDown } from 'lucide-react';
+import { Menu, Moon, Sun, Bell, ChevronDown } from 'lucide-react';
 
 interface Props {
-  /** Propagated up from AppShell to toggle mobile drawer */
   onMenuClick?: () => void;
 }
 
 export default function PremiumHeader({ onMenuClick }: Props) {
   const { user } = useAuth();
-  const router   = useRouter();
+  const router = useRouter();
   const pathname = usePathname();
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hydrated, setHydrated] = useState(false);
 
-  // ── Theme init ─────────────────────────────────────────────────────
   useEffect(() => {
     try {
       const saved = (localStorage.getItem('619_theme') as 'light' | 'dark') ?? 'light';
@@ -48,7 +36,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     try { localStorage.setItem('619_theme', next); } catch {}
   };
 
-  // ── ⌘K → command palette ─────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -57,7 +44,24 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       }
     };
     window.addEventListener('keydown', handler);
-  
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const navItem = findItemByPath(pathname);
+  const pageTitle = navItem?.label ?? 'Page';
+
+  const initials = (user?.name || 'U')
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const topItems = [DASHBOARD_ITEM, ...NAV_GROUPS.flatMap((g) => g.items ?? [])]
+    .filter((item, idx, arr) => arr.findIndex((x) => x.href === item.href) === idx)
+    .filter((item) => isVisibleForRole(item, user?.role) && !item.hidden)
+    .slice(0, 8);
+
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-white/60 bg-white/78 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
       <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
