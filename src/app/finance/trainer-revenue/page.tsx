@@ -89,7 +89,7 @@ function Inner() {
       byTrainer.get(tid)!.push(c);
     });
 
-    const metrics: TrainerData[] = trainers.map((t: any) => {
+    const metrics: TrainerData[] = (trainers ?? []).map((t: any) => {
       const tc = byTrainer.get(t.id) || [];
       let monthlyRevenue = 0;
       tc.forEach((c: any) => {
@@ -298,7 +298,7 @@ function ClientMonthSection({ label, clients, accent }: { label: string; clients
               </tr>
             </thead>
             <tbody>
-              {clients.map((c: any) => (
+              {(clients ?? []).map((c: any) => (
                 <tr key={c.id} style={{ borderTop: '1px solid var(--line)' }}>
                   <td style={{ padding: '.5rem 1.2rem', fontWeight: 600 }}>{c.name || c.client_name || 'Unknown'}</td>
                   <td style={{ padding: '.5rem .75rem', textAlign: 'right', color: 'var(--muted)' }}>{c.package_type || '—'}</td>
