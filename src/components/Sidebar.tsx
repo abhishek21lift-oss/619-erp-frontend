@@ -264,9 +264,7 @@ export default function Sidebar({
   // ─────────────────────────────────────────────────────────────────
 
   const visibleItems = useMemo(() => {
-    return allNavItems().filter(
-      (i) => isVisibleForRole(i, user?.role) && !i.hidden
-    );
+    return allNavItems().filter((i) => i.href !== '/dashboard' && isVisibleForRole(i, user?.role) && !i.hidden);
   }, [user?.role]);
 
   const fuse = useMemo(() => {

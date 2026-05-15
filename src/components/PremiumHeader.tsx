@@ -1,11 +1,12 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { DASHBOARD_ITEM, NAV_GROUPS, findItemByPath, isVisibleForRole } from '@/lib/nav-config';
+import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, findItemByPath, isVisibleForRole } from '@/lib/nav-config';
 import { Menu, Moon, Sun, Bell, ChevronDown } from 'lucide-react';
+import { cn } from '@/components/ui';
 
 interface Props {
   onMenuClick?: () => void;
@@ -15,9 +16,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hydrated, setHydrated] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     try {
@@ -42,28 +44,45 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('619-cmd-palette'));
       }
+      if (e.key === 'Escape') setOpenMenu(null);
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  useEffect(() => setOpenMenu(null), [pathname]);
+
   const navItem = findItemByPath(pathname);
   const pageTitle = navItem?.label ?? 'Page';
+  const initials = (user?.name || 'U').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-  const initials = (user?.name || 'U')
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const topGroups = useMemo(() => {
+    const visibleGroups = NAV_GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
+    })).filter((group) => group.items.length > 0);
+    const visibleSettings = {
+      ...SETTINGS_GROUP,
+      items: SETTINGS_GROUP.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
+    };
+    return [
+      { id: 'dashboard', label: 'Dashboard', items: [DASHBOARD_ITEM] },
+      ...visibleGroups,
+      ...(visibleSettings.items.length ? [{ id: visibleSettings.id, label: visibleSettings.label, items: visibleSettings.items }] : []),
+    ];
+  }, [user?.role]);
 
-  const topItems = [DASHBOARD_ITEM, ...NAV_GROUPS.flatMap((g) => g.items ?? [])]
-    .filter((item, idx, arr) => arr.findIndex((x) => x.href === item.href) === idx)
-    .filter((item) => isVisibleForRole(item, user?.role) && !item.hidden)
-    .slice(0, 8);
+  const openNow = (id: string) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpenMenu(id);
+  };
+  const closeSoon = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpenMenu(null), 120);
+  };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/60 bg-white/78 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
       <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <button
           className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:hidden"
@@ -78,19 +97,48 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">{pageTitle}</h1>
         </div>
 
-        <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex">
-          {topItems.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-visible xl:flex">
+          {topGroups.map((group) => {
+            const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+            const opened = openMenu === group.id;
             return (
-              <button
-                key={item.href}
-                onClick={() => router.push(item.href)}
-                className={active
-                  ? 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(109,40,217,0.25)]'
-                  : 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 hover:shadow-sm'}
+              <div
+                key={group.id}
+                className="relative"
+                onMouseEnter={() => openNow(group.id)}
+                onMouseLeave={closeSoon}
               >
-                <span>{item.label}</span>
-              </button>
+                <button
+                  onClick={() => group.items.length === 1 ? router.push(group.items[0].href) : setOpenMenu(opened ? null : group.id)}
+                  className={active
+                    ? 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(109,40,217,0.25)]'
+                    : 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 hover:shadow-sm'}
+                  aria-expanded={opened}
+                >
+                  <span>{group.label}</span>
+                  {group.items.length > 1 && <ChevronDown size={15} className={cn('transition-transform', opened && 'rotate-180')} />}
+                </button>
+
+                {group.items.length > 1 && opened && (
+                  <div className="absolute left-0 top-[calc(100%+12px)] z-50 min-w-[240px] rounded-[22px] border border-white/70 bg-white/95 p-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+                    {group.items.map((item) => {
+                      const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                      return (
+                        <button
+                          key={item.href}
+                          onClick={() => router.push(item.href)}
+                          className={itemActive
+                            ? 'flex w-full items-center justify-between rounded-2xl bg-violet-50 px-3 py-2.5 text-left text-sm font-semibold text-violet-700'
+                            : 'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50'}
+                        >
+                          <span>{item.label}</span>
+                          {item.isNew && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">New</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
