@@ -26,7 +26,7 @@ export default function AppShell({ children, title }: AppShellProps) {
     <div className="min-h-screen bg-[var(--bg-canvas)]">
       <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
-      <main className="mx-auto w-full max-w-[1600px] px-4 pb-8 pt-24 sm:px-6 lg:px-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1600px] px-4 pb-8 pt-[144px] sm:px-6 sm:pt-[152px] lg:px-8 lg:pt-[164px]">{children}</main>
     </div>
   );
 }
