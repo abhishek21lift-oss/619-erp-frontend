@@ -218,7 +218,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   }
 
   const membershipPlan = client.membership_plan || client.package_type;
-  const joinDate = client.join_date || client.joining_date;
+  const joinDate = client.join_date || client.joining_date || (client as any).pt_start_date || (client as any).created_at;
   const expiryDate = client.expiry_date || client.pt_end_date;
   const assignedTrainer = client.trainer_name || client.trainer_full_name;
   const days = daysUntil(expiryDate);
