@@ -296,7 +296,7 @@ body {
   border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 .sidebar-header {
   display: flex;

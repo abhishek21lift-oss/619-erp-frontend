@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, FormEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -16,6 +17,9 @@ export default function NewClientPage() { return <Guard><NewClientForm /></Guard
 function NewClientForm() {
   const router = useRouter();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
+  const isEditMode = Boolean(editId);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState('');
@@ -58,6 +62,27 @@ function NewClientForm() {
   const [nameSuggestions, setNameSuggestions] = useState<SheetMember[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastLookupMobile = useRef<string>('');
+
+  // Load client data when in edit mode
+  useEffect(() => {
+    if (!editId) return;
+    api.clients.get(editId).then((c: any) => {
+      // Pre-fill form fields with existing client data
+      setF((prev: any) => (({
+        ...f,
+        name: c.name || '',
+        mobile: c.mobile || '',
+        email: c.email || '',
+        gender: c.gender || '',
+        dob: c.dob?.slice(0,10) || '',
+        address: c.address || '',
+        trainer_id: c.trainer_id || '',
+        notes: c.notes || '',
+        weight: c.weight || '',
+        status: c.status || 'active',
+      })));
+    }).catch(console.error);
+  }, [editId]);
 
   useEffect(() => {
     api.trainers.list().then(setTrainers).catch(console.error);

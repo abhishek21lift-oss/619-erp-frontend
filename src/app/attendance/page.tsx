@@ -237,9 +237,8 @@ function AttendanceContent() {
                 <table>
                   <thead>
                     <tr>
-                      <th>ID</th>
+                      <th style={{width:80}}>ID</th>
                       <th>Member</th>
-                      <th>Coach</th>
                       <th>Plan</th>
                       <th style={{ textAlign: 'center' }}>Attendance</th>
                     </tr>
@@ -249,12 +248,23 @@ function AttendanceContent() {
                       const rec = getRecord(c.id);
                       return (
                         <tr key={c.id}>
-                          <td>
-                            <span className="id-chip">{c.client_id || '—'}</span>
+                          <td style={{width:80}}>
+                            <span style={{fontSize:11,fontWeight:700,padding:'2px 7px',borderRadius:6,background:'var(--bg-subtle)',color:'var(--text-muted)',fontFamily:'monospace'}}>{c.client_id || '—'}</span>
                           </td>
-                          <td style={{ fontWeight: 600 }}>{c.name}</td>
-                          <td className="text-muted">{c.trainer_name || '—'}</td>
-                          <td className="text-muted">{c.package_type || '—'}</td>
+                          <td>
+                            <div style={{display:'flex',alignItems:'center',gap:10}}>
+                              <div style={{width:34,height:34,borderRadius:'50%',flexShrink:0,overflow:'hidden',background:'var(--brand-soft)',color:'var(--brand)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700}}>
+                                {(c as any).photo_url ? <img src={(c as any).photo_url} alt={c.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : (c.name||'?').split(' ').map((w:string)=>w[0]).join('').slice(0,2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div style={{fontWeight:600,fontSize:13,color:'var(--text-primary)'}}>{c.name}</div>
+                                <div style={{fontSize:11,color:'var(--text-muted)'}}>{c.trainer_name ? `Coach: ${c.trainer_name}` : '—'}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{color:'var(--text-muted)',fontSize:12}}>
+                            <span style={{background:'var(--bg-subtle)',padding:'3px 8px',borderRadius:6,whiteSpace:'nowrap'}}>{c.package_type || '—'}</span>
+                          </td>
                           <td>
                             <div
                               style={{
@@ -269,9 +279,9 @@ function AttendanceContent() {
                                   onClick={() => mark(c, status)}
                                   disabled={saving === c.id}
                                   style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 7,
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 8,
                                     border: '1px solid',
                                     cursor: 'pointer',
                                     fontWeight: 700,

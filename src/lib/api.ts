@@ -338,6 +338,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    unfreeze: (id: string, notes?: string) =>
+      req<{ message: string; client: Client }>(`/api/clients/${id}/unfreeze`, {
+        method: 'POST',
+        body: JSON.stringify({ notes }),
+      }),
     extension: (id: string, data: any) =>
       req<{ message: string; client: Client }>(`/api/clients/${id}/extension`, {
         method: 'POST',

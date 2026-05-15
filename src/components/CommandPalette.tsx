@@ -43,7 +43,7 @@ export default function CommandPalette() {
   const listRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  // ── Open / close hotkey ──
+  // ── Open / close hotkey + custom event from topbar button ──
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       const isMod = e.metaKey || e.ctrlKey;
@@ -54,8 +54,13 @@ export default function CommandPalette() {
         setOpen(false);
       }
     }
+    function openPalette() { setOpen(true); }
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener('619-cmd-palette', openPalette);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      window.removeEventListener('619-cmd-palette', openPalette);
+    };
   }, [open]);
 
   // Reset state on open / close

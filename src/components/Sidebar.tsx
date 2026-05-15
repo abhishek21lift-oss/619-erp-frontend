@@ -404,12 +404,11 @@ export default function Sidebar({
             <div className="sidebar-logo"><Image src="/619-logo.png" alt="619 Fitness" width={36} height={36} style={{ objectFit: "contain", filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.3))" }} /></div>
 
             <div className="sidebar-brand">
-              <div className="sidebar-brand-name">
-                619 Fitness
+              <div className="sidebar-brand-name" style={{letterSpacing:"0.03em"}}>
+                619 FITNESS
               </div>
-
-              <div className="sidebar-brand-sub">
-                Operating System
+              <div className="sidebar-brand-sub" style={{letterSpacing:"0.08em",fontSize:9,fontWeight:700}}>
+                STUDIO
               </div>
             </div>
 
@@ -435,6 +434,9 @@ export default function Sidebar({
               <PanelLeftOpen size={13} />
             </button>
           )}
+
+          {/* Scrollable nav area */}
+          <div className="sidebar-nav">
 
           {/* Search */}
 
@@ -538,6 +540,8 @@ export default function Sidebar({
               </div>
             );
           })}
+
+          </div>{/* end sidebar-nav */}
 
           {/* Footer */}
 

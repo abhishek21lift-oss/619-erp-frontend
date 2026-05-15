@@ -309,14 +309,14 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                     <MessageCircle size={13} /> WhatsApp
                   </a>
                 )}
-                <Link href={`/clients/${id}/renew`} className="btn btn-outline btn-sm">
+                <Link href={`/clients/${id}/renew-subscription`} className="btn btn-outline btn-sm">
                   <RefreshCw size={13} /> Renew
                 </Link>
                 <button className="btn btn-outline btn-sm" onClick={()=>setEnrollOpen(true)}>
                   <ScanFace size={13} /> {client.face_enrolled_at ? "Re-enroll Face" : "Enroll Face"}
                 </button>
                 {isAdmin && (
-                  <Link href={`/clients/${id}/edit`} className="btn btn-outline btn-sm">
+                  <Link href={`/clients/new?edit=${id}`} className="btn btn-outline btn-sm">
                     <Edit2 size={13} /> Edit
                   </Link>
                 )}
@@ -383,7 +383,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   } />
                 </div>
                 <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-                  <Link href={`/clients/${id}/subscription/new`} className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
+                  <Link href={`/clients/${id}/add-subscription`} className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
                     <CreditCard size={13} /> Add Subscription
                   </Link>
                   <Link href={`/clients/${id}/freeze`} className="btn btn-outline btn-sm">

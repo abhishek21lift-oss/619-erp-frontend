@@ -244,8 +244,6 @@ function Inner() {
                   <thead>
                     <tr>
                       <th>Staff</th>
-                      <th>Role</th>
-                      <th>Mobile</th>
                       <th style={{ textAlign: 'center' }}>Attendance</th>
                     </tr>
                   </thead>
@@ -254,9 +252,17 @@ function Inner() {
                       const rec = getRecord(t.id);
                       return (
                         <tr key={t.id}>
-                          <td style={{ fontWeight: 600 }}>{t.name}</td>
-                          <td className="text-muted">{t.role || 'Coach'}</td>
-                          <td className="text-muted tabular">{t.mobile || '—'}</td>
+                          <td>
+                            <div style={{display:'flex',alignItems:'center',gap:10}}>
+                              <div style={{width:36,height:36,borderRadius:'50%',flexShrink:0,background:'linear-gradient(135deg,#dc2626,#b91c1c)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700}}>
+                                {(t.name||'?').split(' ').map((w:string)=>w[0]).join('').slice(0,2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div style={{fontWeight:600,fontSize:13}}>{t.name}</div>
+                                <div style={{fontSize:11,color:'var(--text-muted)'}}>{t.role || 'Coach'} {t.mobile ? `· ${t.mobile}` : ''}</div>
+                              </div>
+                            </div>
+                          </td>
                           <td>
                             <div
                               style={{

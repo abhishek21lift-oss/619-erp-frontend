@@ -61,17 +61,33 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     try {
       const faceapi = await getFaceApi();
 
-      // Load all three models concurrently
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-      ]);
+      // Try local models first, then CDN fallback
+      const URLS_TO_TRY = [
+        MODEL_URL,
+        'https://justadudewhohacks.github.io/face-api.js/models',
+      ];
+
+      let loaded = false;
+      for (const url of URLS_TO_TRY) {
+        try {
+          await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(url),
+            faceapi.nets.faceLandmark68Net.loadFromUri(url),
+            faceapi.nets.faceRecognitionNet.loadFromUri(url),
+          ]);
+          loaded = true;
+          break;
+        } catch (urlErr) {
+          console.warn('[FaceDetection] Failed to load from', url, urlErr);
+        }
+      }
+
+      if (!loaded) throw new Error('Could not load models from any source');
 
       setModelStatus('ready');
       return true;
     } catch (err: any) {
-      const msg = 'Failed to load face recognition models. Check /public/models/ folder.';
+      const msg = 'Could not load face recognition models. Ensure camera permission is granted and try again.';
       setModelError(msg);
       setModelStatus('error');
       console.error('[FaceDetection] Model load error:', err);
