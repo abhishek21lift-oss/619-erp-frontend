@@ -49,9 +49,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       if (e.key === 'Escape') setOpenMenu(null);
     };
     const clickAway = (e: MouseEvent) => {
-      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
-        setOpenMenu(null);
-      }
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) setOpenMenu(null);
     };
     window.addEventListener('keydown', handler);
     document.addEventListener('mousedown', clickAway);
@@ -61,9 +59,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     };
   }, []);
 
-  useEffect(() => {
-    setOpenMenu(null);
-  }, [pathname]);
+  useEffect(() => setOpenMenu(null), [pathname]);
 
   const navItem = findItemByPath(pathname);
   const pageTitle = navItem?.label ?? 'Page';
@@ -82,15 +78,11 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     return [
       { id: 'dashboard', label: 'Dashboard', items: [DASHBOARD_ITEM] },
       ...visibleGroups,
-      ...(visibleSettings.items.length
-        ? [{ id: visibleSettings.id, label: visibleSettings.label, items: visibleSettings.items }]
-        : []),
+      ...(visibleSettings.items.length ? [{ id: visibleSettings.id, label: visibleSettings.label, items: visibleSettings.items }] : []),
     ];
   }, [user?.role]);
 
-  const toggleMenu = (id: string) => {
-    setOpenMenu((current) => (current === id ? null : id));
-  };
+  const toggleMenu = (id: string) => setOpenMenu((current) => (current === id ? null : id));
 
   const handleResetPassword = () => {
     setOpenMenu(null);
@@ -135,12 +127,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   aria-expanded={opened}
                 >
                   <span>{group.label}</span>
-                  {group.items.length > 1 ? (
-                    <ChevronDown size={15} className={cn('transition-transform', opened && 'rotate-180')} />
-                  ) : null}
+                  {group.items.length > 1 && <ChevronDown size={15} className={cn('transition-transform', opened && 'rotate-180')} />}
                 </button>
 
-                {group.items.length > 1 && opened ? (
+                {group.items.length > 1 && opened && (
                   <div className="absolute left-0 top-[calc(100%+12px)] z-[120] min-w-[240px] rounded-[22px] border border-white/70 bg-white/95 p-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-xl">
                     {group.items.map((item) => {
                       const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -154,14 +144,12 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                             : 'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50'}
                         >
                           <span>{item.label}</span>
-                          {item.isNew ? (
-                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">New</span>
-                          ) : null}
+                          {item.isNew && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">New</span>}
                         </button>
                       );
                     })}
                   </div>
-                ) : null}
+                )}
               </div>
             );
           })}
@@ -205,7 +193,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 <ChevronDown size={16} className={cn('hidden text-slate-400 md:block transition-transform', openMenu === 'account' && 'rotate-180')} />
               </button>
 
-              {openMenu === 'account' ? (
+              {openMenu === 'account' && (
                 <div className="absolute right-0 top-[calc(100%+12px)] z-[120] min-w-[220px] rounded-[22px] border border-white/70 bg-white/95 p-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-xl">
                   <button
                     type="button"
@@ -215,7 +203,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                     <KeyRound size={16} />
                     <span>Reset Password</span>
                   </button>
-
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -225,7 +212,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                     <span>Log Out</span>
                   </button>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
 
