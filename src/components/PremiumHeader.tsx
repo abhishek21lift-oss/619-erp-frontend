@@ -106,6 +106,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         <div className="min-w-0 shrink-0 pr-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">619 Fitness Studio</div>
           <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">{pageTitle}</h1>
+          <div className="mt-3 hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2 shadow-sm lg:flex lg:min-w-[220px] xl:min-w-[260px]">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 text-sm text-slate-500"
+              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
+              title="Search — ⌘K"
+            >
+              <span className="truncate">Search for pages, members, payments…</span>
+              <kbd className="ml-auto rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">⌘K</kbd>
+            </button>
+          </div>
         </div>
 
         <nav className="relative z-[110] hidden min-w-0 flex-1 flex-wrap items-center gap-2 overflow-visible lg:flex">
@@ -152,17 +163,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
-          <div className="hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2 shadow-sm lg:flex lg:min-w-[220px] xl:min-w-[260px] 2xl:min-w-[320px]">
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 text-sm text-slate-500"
-              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-              title="Search — ⌘K"
-            >
-              <span className="truncate">Search for pages, members, payments…</span>
-              <kbd className="ml-auto rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">⌘K</kbd>
-            </button>
-          </div>
           <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md" onClick={toggleTheme} aria-label="Toggle theme">
             {hydrated ? (theme === 'light' ? <Moon size={18} /> : <Sun size={18} />) : <span style={{ width: 18 }} />}
           </button>
