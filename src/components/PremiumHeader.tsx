@@ -16,6 +16,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const headerRef = useRef<HTMLDivElement | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hydrated, setHydrated] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -45,8 +46,15 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       }
       if (e.key === 'Escape') setOpenMenu(null);
     };
+    const clickAway = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) setOpenMenu(null);
+    };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    document.addEventListener('mousedown', clickAway);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      document.removeEventListener('mousedown', clickAway);
+    };
   }, []);
 
   useEffect(() => setOpenMenu(null), [pathname]);
@@ -74,32 +82,29 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   const toggleMenu = (id: string) => setOpenMenu((current) => (current === id ? null : id));
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-visible px-4 py-3 sm:px-6 lg:px-8">
+    <header className="fixed inset-x-0 top-0 z-[100] border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+      <div ref={headerRef} className="mx-auto flex w-full max-w-[1600px] items-center gap-3 overflow-visible px-4 py-3 sm:px-6 lg:px-8">
         <button
-          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:hidden"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:hidden"
           onClick={onMenuClick}
           aria-label="Open navigation"
         >
           <Menu size={18} />
         </button>
 
-        <div className="min-w-0 pr-2">
+        <div className="min-w-0 shrink-0 pr-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">619 Fitness Studio</div>
           <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">{pageTitle}</h1>
         </div>
 
-        <nav className="relative z-50 hidden min-w-0 items-center justify-start gap-1 overflow-x-auto overflow-y-visible lg:flex">
+        <nav className="relative z-[110] hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-visible lg:flex">
           {topGroups.map((group) => {
             const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
             const opened = openMenu === group.id;
             return (
-              <div
-                key={group.id}
-                className="relative"
-
-              >
+              <div key={group.id} className="relative shrink-0">
                 <button
+                  type="button"
                   onClick={() => group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id)}
                   className={active
                     ? 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(109,40,217,0.25)]'
@@ -111,11 +116,12 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 </button>
 
                 {group.items.length > 1 && opened && (
-                  <div className="absolute left-0 top-[calc(100%+12px)] z-50 min-w-[240px] rounded-[22px] border border-white/70 bg-white/95 p-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+                  <div className="absolute left-0 top-[calc(100%+12px)] z-[120] min-w-[240px] rounded-[22px] border border-white/70 bg-white/95 p-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-xl">
                     {group.items.map((item) => {
                       const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                       return (
                         <button
+                          type="button"
                           key={item.href}
                           onClick={() => router.push(item.href)}
                           className={itemActive
@@ -136,6 +142,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
         <div className="hidden items-center gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2 shadow-sm 2xl:flex 2xl:min-w-[280px]">
           <button
+            type="button"
             className="flex w-full items-center gap-2 text-sm text-slate-500"
             onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
             title="Search — ⌘K"
@@ -145,15 +152,15 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           </button>
         </div>
 
-        <div className="flex items-center justify-end gap-2">
-          <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md" onClick={toggleTheme} aria-label="Toggle theme">
+        <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
+          <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md" onClick={toggleTheme} aria-label="Toggle theme">
             {hydrated ? (theme === 'light' ? <Moon size={18} /> : <Sun size={18} />) : <span style={{ width: 18 }} />}
           </button>
-          <button className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md" aria-label="Notifications">
+          <button type="button" className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md" aria-label="Notifications">
             <Bell size={18} />
             <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
-          <button onClick={() => router.push('/settings')} className="inline-flex items-center gap-3 rounded-2xl border border-white/70 bg-white/80 px-2.5 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" aria-label="Account settings">
+          <button type="button" onClick={() => router.push('/settings')} className="inline-flex items-center gap-3 rounded-2xl border border-white/70 bg-white/80 px-2.5 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" aria-label="Account settings">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 text-sm font-bold text-white shadow-[0_10px_20px_rgba(109,40,217,0.28)]">{initials}</span>
             <span className="hidden text-left md:block">
               <span className="block max-w-[140px] truncate text-sm font-semibold text-slate-900">{user?.name ?? 'Account'}</span>
