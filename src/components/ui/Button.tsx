@@ -31,11 +31,11 @@ type Size = 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    'bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800 focus-visible:ring-rose-500',
+    'bg-gradient-to-r from-violet-600 via-fuchsia-600 to-purple-600 text-white shadow-[0_12px_24px_rgba(109,40,217,0.26)] hover:shadow-[0_18px_32px_rgba(109,40,217,0.34)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-violet-500',
   secondary:
-    'bg-slate-100 text-slate-900 hover:bg-slate-200 active:bg-slate-300 focus-visible:ring-slate-400',
+    'bg-white/88 text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/80 hover:bg-white hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-slate-400',
   outline:
-    'border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-rose-500',
+    'border border-white/70 bg-white/80 text-slate-800 shadow-[0_8px_18px_rgba(15,23,42,0.04)] backdrop-blur-xl hover:bg-white hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-violet-500',
   ghost:
     'bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-slate-400',
   danger:
