@@ -19,7 +19,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hydrated, setHydrated] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     try {
@@ -72,14 +71,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     ];
   }, [user?.role]);
 
-  const openNow = (id: string) => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpenMenu(id);
-  };
-  const closeSoon = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpenMenu(null), 120);
-  };
+  const toggleMenu = (id: string) => setOpenMenu((current) => (current === id ? null : id));
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
@@ -105,11 +97,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               <div
                 key={group.id}
                 className="relative"
-                onMouseEnter={() => openNow(group.id)}
-                onMouseLeave={closeSoon}
+
               >
                 <button
-                  onClick={() => group.items.length === 1 ? router.push(group.items[0].href) : setOpenMenu(opened ? null : group.id)}
+                  onClick={() => group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id)}
                   className={active
                     ? 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(109,40,217,0.25)]'
                     : 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 hover:shadow-sm'}
