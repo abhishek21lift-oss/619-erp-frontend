@@ -83,7 +83,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   const handleResetPassword = () => {
     setOpenMenu(null);
-    router.push('/settings/staff');
+    router.push('/reset-password');
   };
 
   const handleLogout = () => {
