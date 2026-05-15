@@ -373,6 +373,7 @@ export default function Sidebar({
 
   const wrapCls = [
     'shell-sidebar',
+    'md:hidden',
     collapsed ? 'collapsed' : '',
     mobileOpen ? 'drawer-open' : '',
   ]
@@ -466,13 +467,6 @@ export default function Sidebar({
               )}
             </div>
           )}
-
-          {/* Dashboard */}
-
-          {isVisibleForRole(
-            DASHBOARD_ITEM,
-            user?.role
-          ) && renderItem(DASHBOARD_ITEM, 0)}
 
           {/* Groups */}
 
