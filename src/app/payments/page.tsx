@@ -64,7 +64,7 @@ function isoMonthStart() {
 
 function exportCSV(payments: Payment[]) {
   const headers = ['Receipt', 'Member', 'Amount', 'Method', 'Date', 'Notes'];
-  const rows = payments.map((p) => [p.receipt_no ?? '', p.client_name ?? '', p.amount, p.method, p.date, p.notes ?? '']);
+  const rows = (payments ?? []).map((p) => [p.receipt_no ?? '', p.client_name ?? '', p.amount, p.method, p.date, p.notes ?? '']);
   const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
