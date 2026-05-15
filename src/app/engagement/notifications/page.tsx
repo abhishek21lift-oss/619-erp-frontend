@@ -89,7 +89,7 @@ function NContent() {
         {/* History */}
         <div className="card" style={{overflow:'hidden'}}>
           <div style={{padding:'14px 16px',borderBottom:'1px solid var(--border)',fontWeight:700,fontSize:14,display:'flex',alignItems:'center',gap:8}}><MessageSquare size={14}/> Notification History ({items.length})</div>
-          {items.map(n=>(
+          {(items ?? []).map(n=>(
             <div key={n.id} style={{display:'flex',gap:14,padding:'16px',borderBottom:'1px solid var(--border)',alignItems:'flex-start'}}>
               <div style={{width:42,height:42,borderRadius:12,background:`${typeColor(n.type)}18`,color:typeColor(n.type),display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:20}}>
                 {n.type.includes('Birthday')?'🎂':n.type.includes('Expiry')?'⚠️':n.type.includes('Due')?'💳':n.type.includes('Anniversary')?'🎉':'📢'}
