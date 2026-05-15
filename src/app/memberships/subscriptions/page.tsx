@@ -189,7 +189,7 @@ function SubscriptionsContent() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((c) => (
+                      {(rows ?? []).map((c) => (
                         <tr key={c.id}>
                           <td><span className="id-chip">{c.client_id || c.member_code || '-'}</span></td>
                           <td><Link href={`/clients/${c.id}`} style={{ color: 'var(--text)', fontWeight: 700, textDecoration: 'none' }}>{c.name}</Link></td>
