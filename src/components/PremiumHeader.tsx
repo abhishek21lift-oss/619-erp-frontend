@@ -179,11 +179,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               aria-expanded={openMenu === 'account'}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 text-sm font-bold text-white shadow-[0_10px_20px_rgba(109,40,217,0.28)]">{initials}</span>
-              <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm">
-                <img src="/logo.png" alt="619 Fitness Studio logo" className="h-full w-full object-cover" />
-              </span>
               <span className="hidden text-left md:block">
-                <span className="block max-w-[220px] truncate text-sm font-bold uppercase tracking-[0.08em] text-slate-900">619 FITNESS STUDIO</span>
+                <span className="block max-w-[180px] truncate text-sm font-semibold text-slate-900">619 FITNESS STUDIO</span>
                 <span className="block text-xs text-slate-500">admin</span>
               </span>
               <ChevronDown size={16} className={cn('hidden text-slate-400 md:block transition-transform', openMenu === 'account' && 'rotate-180')} />
