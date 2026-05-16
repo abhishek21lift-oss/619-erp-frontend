@@ -38,7 +38,7 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [state, setState] = useState<State>('loading');
-  const [statusMsg, setStatusMsg] = useState('Loading face models…');
+  const [statusMsg, setStatusMsg] = useState('Initializing face recognition…');
   const [samples, setSamples] = useState<Float32Array[]>([]);
   const [error, setError] = useState('');
   const samplesRef = useRef<Float32Array[]>([]);
@@ -52,7 +52,7 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
     samplesRef.current = [];
     setError('');
     setState('loading');
-    setStatusMsg('Loading face models…');
+    setStatusMsg('Initializing face recognition…');
     if (captureTimerRef.current) window.clearTimeout(captureTimerRef.current);
     requestInFlightRef.current = false;
   }, [open]);
@@ -66,7 +66,7 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
       if (cancelled) return;
       if (!ok) {
         setState('error');
-        setError('Could not load face recognition models');
+        setError('Face recognition unavailable on this device');
         return;
       }
       setStatusMsg('Starting camera…');
