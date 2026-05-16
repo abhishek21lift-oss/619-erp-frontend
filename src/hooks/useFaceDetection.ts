@@ -8,7 +8,7 @@
  *  - FaceLandmark68Net (for blink detection EAR)
  *  - FaceRecognitionNet (128-D descriptor for matching)
  *
- * Models are served from /models with a GitHub raw fallback for production reliability.
+ * Models are served from /models. Remote raw GitHub fallbacks are unreliable in production because of CORS/content-type issues, so we keep loading local static assets only.
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
@@ -61,31 +61,16 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     try {
       const faceapi = await getFaceApi();
 
-      // Try local models first, then CDN fallback
-      const URLS_TO_TRY = [
-        MODEL_URL,
-        'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights',
-      ];
-
-      let loaded = false;
-      for (const url of URLS_TO_TRY) {
-        try {
-          await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(url),
-            faceapi.nets.faceLandmark68Net.loadFromUri(url),
-            faceapi.nets.faceRecognitionNet.loadFromUri(url),
-          ]);
-          loaded = true;
-          break;
-        } catch (urlErr) { /* urlErr handled */ }
-      }
-
-      if (!loaded) throw new Error('Could not load models from any source');
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      ]);
 
       setModelStatus('ready');
       return true;
     } catch (err: any) {
-      const msg = 'Could not load face recognition models. Ensure camera permission is granted and try again.';
+      const msg = 'Could not load face recognition models from /models. Check that the static model files are deployed and try again.';
       setModelError(msg);
       setModelStatus('error');
       console.error('[FaceDetection] Model load error:', err);
