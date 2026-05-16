@@ -7,3 +7,9 @@ out/
 *.tsbuildinfo
 .DS_Store
 .vercel/
+
+!public/models/
+!public/models/**
+!public/face-models/
+!public/face-models/**
+!*.bin
