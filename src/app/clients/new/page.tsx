@@ -126,7 +126,7 @@ function NewClientForm() {
   return (
     <AppShell>
       <div className="page-main member-lux-shell">
-        <style jsx>{`
+        <style>{`
           .member-lux-shell {
             background:
               radial-gradient(circle at top right, rgba(59,130,246,.10), transparent 28%),
@@ -468,7 +468,7 @@ function NewClientForm() {
               flex-direction: column;
             }
           }
-        `}</style>
+        `}} />
         <section className="member-lux-hero fade-up">
           <div className="member-lux-hero-grid">
             <div className="member-lux-top">
