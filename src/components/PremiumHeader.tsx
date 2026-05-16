@@ -122,12 +122,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   type="button"
                   onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
                   className={active
-                    ? 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(109,40,217,0.25)]'
-                    : 'inline-flex items-center gap-2 whitespace-nowrap rounded-2xl px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 hover:shadow-sm'}
+                    ? 'inline-flex min-h-[52px] max-w-[140px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(109,40,217,0.25)]'
+                    : 'inline-flex min-h-[52px] max-w-[140px] items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 hover:shadow-sm'}
                   aria-expanded={opened}
                 >
-                  <span>{group.label}</span>
-                  {group.items.length > 1 && <ChevronDown size={15} className={cn('transition-transform', opened && 'rotate-180')} />}
+                  <span
+                    className="line-clamp-2 max-w-[96px] text-center break-words leading-4"
+                    title={group.label}
+                  >
+                    {group.label}
+                  </span>
+                  {group.items.length > 1 && <ChevronDown size={15} className={cn('shrink-0 transition-transform', opened && 'rotate-180')} />}
                 </button>
 
                 {group.items.length > 1 && opened && (
