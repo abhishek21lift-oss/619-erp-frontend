@@ -6,7 +6,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
 
-const LOCAL_MODEL_URL = '/models';
+const LOCAL_MODEL_URL = '/face-models';
 const MODEL_SOURCES = [
   LOCAL_MODEL_URL,
   'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js-models@master',
