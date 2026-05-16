@@ -131,9 +131,11 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
       await api.checkin.enroll(clientId, avg);
       setState('success');
       setStatusMsg('Face enrolled successfully');
+      camera.stop();
       onEnrolled?.();
     } catch (e: any) {
       setState('error');
+      setStatusMsg('Enrollment failed');
       setError(e?.message || 'Failed to save face descriptor');
     }
   }, [clientId, onEnrolled]);
@@ -249,6 +251,7 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
             }}>
               <CheckCircle2 size={42} />
               <div style={{ fontWeight: 700 }}>Face enrolled</div>
+              <div style={{ fontSize: 13 }}>You can close this window now.</div>
             </div>
           )}
           {state === 'error' && (
