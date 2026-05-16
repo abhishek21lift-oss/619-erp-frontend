@@ -101,13 +101,23 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
         setStatusMsg('Only one face at a time, please');
         return;
       }
-      if (!d.descriptor) return;
+      if (!d.descriptor) {
+        setStatusMsg('Face detected, but descriptor not ready yet');
+        return;
+      }
+      if (state === 'capturing') return;
 
-      // Capture this sample
+      setState('capturing');
+      setStatusMsg(`Captured ${samplesRef.current.length + 1}/${SAMPLES_REQUIRED} — keep holding still`);
       samplesRef.current = [...samplesRef.current, d.descriptor];
       setSamples([...samplesRef.current]);
-      setState('capturing');
-      setStatusMsg(`Captured ${samplesRef.current.length}/${SAMPLES_REQUIRED} — keep holding still`);
+
+      if (samplesRef.current.length < SAMPLES_REQUIRED) {
+        setTimeout(() => {
+          setState('ready');
+          setStatusMsg('Hold still for the next sample');
+        }, 700);
+      }
     });
 
     return () => detection.stopDetectionLoop();
