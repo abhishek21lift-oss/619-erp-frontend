@@ -117,7 +117,7 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
         setStatusMsg('Face detected, but descriptor not ready yet');
         return;
       }
-      if (state === 'capturing' || state === 'saving') return;
+      if (state === 'capturing') return;
 
       setState('capturing');
       setStatusMsg(`Captured ${samplesRef.current.length + 1}/${SAMPLES_REQUIRED} — keep holding still`);
