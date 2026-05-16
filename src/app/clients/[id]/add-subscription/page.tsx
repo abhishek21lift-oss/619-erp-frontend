@@ -247,7 +247,6 @@ function Inner() {
                   </div>
                 </div>
               </div>
-            </div>
 
             {/* Payment method + breakdown */}
             <div className="ptf-card">
