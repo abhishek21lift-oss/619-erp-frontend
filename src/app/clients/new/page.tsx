@@ -1,16 +1,11 @@
 'use client';
-import { useState, useEffect, useRef, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api, Trainer } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import {
-  importSheetFile, getSheetCache, clearSheetCache,
-  lookupByMobile, searchByName, mergeEmptyOnly,
-  type SheetCache, type SheetMember,
-} from '@/lib/sheet-import';
 
 export default function NewClientPage() { return <Guard><NewClientForm /></Guard>; }
 
@@ -53,15 +48,6 @@ function NewClientForm() {
     interested_in: '',
     weight: '',
   });
-
-  /* ── Sheet-import / auto-fill state ───────────────────────── */
-  const [sheetCache, setSheetCache] = useState<SheetCache | null>(null);
-  const [sheetBusy, setSheetBusy]   = useState(false);
-  const [sheetError, setSheetError] = useState('');
-  const [filledFields, setFilledFields] = useState<string[]>([]);
-  const [nameSuggestions, setNameSuggestions] = useState<SheetMember[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const lastLookupMobile = useRef<string>('');
 
   // Load client data when in edit mode
   useEffect(() => {
@@ -107,50 +93,9 @@ function NewClientForm() {
 
   useEffect(() => {
     api.trainers.list().then(setTrainers).catch(console.error);
-    // load any previously-imported sheet from localStorage
-    setSheetCache(getSheetCache());
   }, []);
 
-  async function handleSheetUpload(file: File) {
-    setSheetBusy(true); setSheetError('');
-    try {
-      const c = await importSheetFile(file);
-      setSheetCache(c);
-      if (c.rowCount === 0)
-        setSheetError('No recognisable rows found. Make sure the sheet has columns like Name, Mobile, Email, etc.');
-    } catch (e: any) {
-      setSheetError(e?.message || 'Could not read this file.');
-    } finally {
-      setSheetBusy(false);
-    }
-  }
 
-  function applyMember(m: SheetMember) {
-    const { merged, filledFields: filled } = mergeEmptyOnly(f, m);
-    setF(merged);
-    setFilledFields(filled);
-    setNameSuggestions([]);
-  }
-
-  // when mobile changes, try to auto-fill
-  useEffect(() => {
-    const m = (f.mobile || '').replace(/\D/g, '').slice(-10);
-    if (m.length !== 10 || m === lastLookupMobile.current) return;
-    if (!sheetCache) return;
-    const hit = lookupByMobile(m);
-    if (hit) {
-      lastLookupMobile.current = m;
-      applyMember(hit);
-    }
-  }, [f.mobile, sheetCache]);
-
-  // when first_name changes, offer name suggestions if mobile is empty
-  useEffect(() => {
-    if (!sheetCache) { setNameSuggestions([]); return; }
-    if (f.mobile && f.mobile.length >= 6) { setNameSuggestions([]); return; }
-    const q = (f.first_name + ' ' + f.last_name).trim();
-    setNameSuggestions(q.length >= 2 ? searchByName(q, 6) : []);
-  }, [f.first_name, f.last_name, f.mobile, sheetCache]);
 
 
   async function submit(e: FormEvent) {
@@ -180,19 +125,372 @@ function NewClientForm() {
 
   return (
     <AppShell>
-      <div className="page-main">
-        <div className="topbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button onClick={() => router.back()} className="btn btn-ghost btn-sm">←</button>
-            <div>
-              <div className="topbar-title">{isEditMode ? 'Edit Member' : 'Add New Member'}</div>
-              <div className="topbar-sub">{isEditMode ? 'Update the member details below' : 'Fill in the member details below'}</div>
+      <div className="page-main member-lux-shell">
+        <style jsx>{`
+          .member-lux-shell {
+            background:
+              radial-gradient(circle at top right, rgba(59,130,246,.10), transparent 28%),
+              radial-gradient(circle at left 20%, rgba(16,185,129,.10), transparent 26%),
+              linear-gradient(180deg, rgba(248,250,252,1) 0%, rgba(241,245,249,1) 100%);
+          }
+          .member-lux-hero {
+            position: relative;
+            overflow: hidden;
+            border-radius: 30px;
+            padding: 28px;
+            margin-bottom: 22px;
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 46%, #0f766e 100%);
+            color: #fff;
+            box-shadow: 0 24px 56px rgba(15,23,42,.18);
+          }
+          .member-lux-hero::before,
+          .member-lux-hero::after {
+            content: '';
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+            opacity: .34;
+            filter: blur(8px);
+          }
+          .member-lux-hero::before {
+            width: 220px;
+            height: 220px;
+            right: -40px;
+            top: -60px;
+            background: rgba(255,255,255,.14);
+          }
+          .member-lux-hero::after {
+            width: 180px;
+            height: 180px;
+            left: 40%;
+            bottom: -90px;
+            background: rgba(34,211,238,.18);
+          }
+          .member-lux-hero-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 18px;
+          }
+          .member-lux-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+          }
+          .member-lux-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,.18);
+            background: rgba(255,255,255,.12);
+            font-size: 12px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            font-weight: 800;
+          }
+          .member-lux-title {
+            margin: 14px 0 10px;
+            font-size: clamp(2rem, 3vw, 3.2rem);
+            line-height: 1.02;
+            letter-spacing: -.04em;
+            font-weight: 900;
+          }
+          .member-lux-copy {
+            margin: 0;
+            max-width: 64ch;
+            color: rgba(255,255,255,.82);
+            line-height: 1.7;
+            font-size: 15px;
+          }
+          .member-lux-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+          }
+          .member-lux-metric {
+            min-width: 150px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(255,255,255,.10);
+            border: 1px solid rgba(255,255,255,.16);
+          }
+          .member-lux-metric strong {
+            display: block;
+            font-size: 18px;
+          }
+          .member-lux-metric span {
+            font-size: 12px;
+            color: rgba(255,255,255,.76);
+          }
+          .member-lux-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+          }
+          .member-lux-btn,
+          .member-lux-btn-secondary {
+            min-height: 48px;
+            padding: 0 18px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 800;
+            border: 1px solid transparent;
+            transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+          }
+          .member-lux-btn {
+            background: linear-gradient(135deg, #f97316, #ef4444 52%, #ec4899);
+            color: #fff;
+            box-shadow: 0 18px 32px rgba(239,68,68,.26);
+          }
+          .member-lux-btn-secondary {
+            background: rgba(255,255,255,.10);
+            color: #fff;
+            border-color: rgba(255,255,255,.16);
+          }
+          .member-lux-btn:hover,
+          .member-lux-btn-secondary:hover {
+            transform: translateY(-1px);
+          }
+          .member-section-card {
+            border-radius: 26px;
+            padding: 24px;
+            background: rgba(255,255,255,.82);
+            border: 1px solid rgba(255,255,255,.68);
+            box-shadow: 0 16px 40px rgba(15,23,42,.07);
+            backdrop-filter: blur(16px);
+          }
+          .member-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+          }
+          .member-section-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+          }
+          .member-section-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(79,70,229,.16), rgba(16,185,129,.14));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+            font-size: 20px;
+          }
+          .member-section-title {
+            margin: 0;
+            font-size: 18px;
+            line-height: 1.15;
+            font-weight: 800;
+            letter-spacing: -.02em;
+            color: var(--text);
+          }
+          .member-section-copy {
+            margin: 6px 0 0;
+            font-size: 13px;
+            line-height: 1.65;
+            color: var(--text2);
+            max-width: 58ch;
+          }
+          .member-section-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: 999px;
+            background: rgba(59,130,246,.10);
+            color: #1d4ed8;
+            font-size: 12px;
+            font-weight: 800;
+          }
+          .member-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px 18px;
+          }
+          .member-form-grid > div {
+            margin-bottom: 0 !important;
+          }
+          .member-form-grid .member-span-2 {
+            grid-column: 1 / -1;
+          }
+          .member-form-grid .input,
+          .member-form-grid .select {
+            min-height: 48px;
+            border-radius: 16px;
+            border: 1px solid rgba(15,23,42,.08);
+            background: rgba(248,250,252,.92);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.74);
+          }
+          .member-form-grid .input:focus,
+          .member-form-grid .select:focus {
+            border-color: rgba(99,102,241,.36);
+            box-shadow: 0 0 0 4px rgba(99,102,241,.10);
+          }
+          @media (max-width: 768px) {
+            .member-section-card {
+              border-radius: 22px;
+              padding: 20px;
+            }
+            .member-form-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+          .member-info-card {
+            border-radius: 24px;
+            padding: 20px 22px;
+            background: linear-gradient(135deg, rgba(249,115,22,.10), rgba(236,72,153,.08));
+            border: 1px solid rgba(249,115,22,.18);
+            box-shadow: 0 14px 32px rgba(249,115,22,.08);
+          }
+          .member-info-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+          }
+          .member-info-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,.55);
+            font-size: 20px;
+            flex-shrink: 0;
+          }
+          .member-info-title {
+            margin: 0 0 4px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #9a3412;
+          }
+          .member-info-copy {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #7c2d12;
+            max-width: 64ch;
+          }
+          .member-notes-card textarea.input {
+            min-height: 120px;
+            border-radius: 18px;
+            border: 1px solid rgba(15,23,42,.08);
+            background: rgba(248,250,252,.92);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.74);
+          }
+          .member-bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 20px;
+            border-radius: 24px;
+            background: rgba(255,255,255,.84);
+            border: 1px solid rgba(255,255,255,.72);
+            box-shadow: 0 18px 40px rgba(15,23,42,.07);
+            backdrop-filter: blur(14px);
+            flex-wrap: wrap;
+          }
+          .member-bottom-copy strong {
+            display: block;
+            font-size: 15px;
+            letter-spacing: -.02em;
+            color: var(--text);
+          }
+          .member-bottom-copy span {
+            display: block;
+            margin-top: 4px;
+            font-size: 13px;
+            color: var(--text2);
+          }
+          .member-bottom-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+          }
+          .member-bottom-secondary,
+          .member-bottom-primary {
+            min-height: 48px;
+            padding: 0 18px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 800;
+          }
+          .member-bottom-secondary {
+            background: rgba(248,250,252,.95);
+            border: 1px solid rgba(15,23,42,.08);
+            color: var(--text);
+          }
+          .member-bottom-primary {
+            border: none;
+            color: #fff;
+            background: linear-gradient(135deg, #4f46e5, #2563eb 55%, #0f766e);
+            box-shadow: 0 18px 32px rgba(37,99,235,.24);
+          }
+          @media (max-width: 768px) {
+            .member-bottom-bar {
+              border-radius: 22px;
+            }
+            .member-bottom-actions {
+              width: 100%;
+            }
+            .member-bottom-actions > * {
+              flex: 1;
+            }
+          }
+          @media (max-width: 768px) {
+            .member-lux-hero {
+              border-radius: 24px;
+              padding: 22px;
+            }
+            .member-lux-top {
+              flex-direction: column;
+              align-items: stretch;
+            }
+            .member-lux-actions > * {
+              flex: 1;
+            }
+            .member-lux-metrics {
+              flex-direction: column;
+            }
+          }
+        `}</style>
+        <section className="member-lux-hero fade-up">
+          <div className="member-lux-hero-grid">
+            <div className="member-lux-top">
+              <div>
+                <span className="member-lux-badge">619 Fitness Studio Member Intake</span>
+                <h1 className="member-lux-title">{isEditMode ? 'Edit Member Profile' : 'Add New Member'}</h1>
+                <p className="member-lux-copy">Premium intake flow with cleaner spacing, better visual hierarchy, and a modern gym-style dashboard experience for fast front-desk onboarding.</p>
+              </div>
+              <div className="member-lux-actions">
+                <button type="button" onClick={() => router.back()} className="member-lux-btn-secondary">Back</button>
+                <button type="submit" form="member-form" className="member-lux-btn" disabled={saving}>
+                  {saving ? 'Saving…' : (isEditMode ? 'Update Member' : 'Save Member')}
+                </button>
+              </div>
+            </div>
+            <div className="member-lux-metrics">
+              <div className="member-lux-metric"><strong>{f.first_name ? 'Active' : 'Draft'}</strong><span>member profile state</span></div>
+              <div className="member-lux-metric"><strong>{trainers.filter(t => t.status === 'active').length}</strong><span>active trainers available</span></div>
+              <div className="member-lux-metric"><strong>{isEditMode ? 'Update mode' : 'New onboarding'}</strong><span>workflow context</span></div>
             </div>
           </div>
-          <button type="submit" form="member-form" className="btn btn-primary" disabled={saving}>
-{saving ? 'Saving…' : (isEditMode ? '💾 Update Member' : '💾 Save Member')}
-          </button>
-        </div>
+        </section>
 
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
@@ -200,75 +498,23 @@ function NewClientForm() {
           <form id="member-form" onSubmit={submit}>
             <div style={{ display: 'grid', gap: '1.25rem' }}>
 
-              {/* ── SHEET-IMPORT / AUTO-FILL ── */}
-              <div className="card" style={{ borderColor: 'var(--brand)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '.75rem' }}>
-                  <div>
-                    <div className="card-title" style={{ fontSize: 16, marginBottom: 4 }}>
-                      📄 Auto-fill from your sheet
-                    </div>
-                    <div style={{ fontSize: 13, color: 'var(--text2)' }}>
-                      {sheetCache
-                        ? <>Using <b>{sheetCache.fileName}</b> — {sheetCache.rowCount} members loaded.
-                            Type a 10-digit mobile below and matching details will fill in automatically.</>
-                        : <>Upload your Google Sheet (export as <code>.xlsx</code> or <code>.csv</code>).
-                            Then typing a known mobile number will fill the form automatically.</>}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      style={{ display: 'none' }}
-                      onChange={e => { const file = e.target.files?.[0]; if (file) handleSheetUpload(file); e.target.value = ''; }}
-                    />
-                    <button type="button" className="btn btn-primary btn-sm"
-                      disabled={sheetBusy}
-                      onClick={() => fileInputRef.current?.click()}>
-                      {sheetBusy ? 'Reading…' : (sheetCache ? '🔄 Re-import sheet' : '📥 Import sheet')}
-                    </button>
-                    {sheetCache && (
-                      <button type="button" className="btn btn-ghost btn-sm"
-                        onClick={() => { clearSheetCache(); setSheetCache(null); setFilledFields([]); }}>
-                        Clear
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {sheetError && <div className="alert alert-error mt-1">{sheetError}</div>}
-                {filledFields.length > 0 && (
-                  <div className="alert alert-success mt-1" style={{ fontSize: 13 }}>
-                    ✨ Auto-filled {filledFields.length} field{filledFields.length === 1 ? '' : 's'} from sheet:
-                    {' '}{filledFields.join(', ')}
-                  </div>
-                )}
-                {nameSuggestions.length > 0 && (
-                  <div style={{ marginTop: '.75rem' }}>
-                    <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: '.35rem' }}>
-                      Matches in sheet — click to fill:
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>
-                      {nameSuggestions.map((m, i) => (
-                        <button key={i} type="button" className="btn btn-ghost btn-sm"
-                          onClick={() => applyMember(m)}
-                          style={{ textAlign: 'left' }}>
-                          {m.name || `${m.first_name || ''} ${m.last_name || ''}`.trim()}
-                          {m.mobile && <span style={{ color: 'var(--text2)', marginLeft: 6 }}>· {m.mobile}</span>}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {/* ── MEMBER SECTION ── */}
-              <div className="card">
-                <div className="card-title" style={{ marginBottom: '1.5rem', fontSize: 16 }}>👤 Member</div>
+              <div className="card member-section-card">
+                <div className="member-section-head">
+                  <div className="member-section-title-wrap">
+                    <span className="member-section-icon">👤</span>
+                    <div>
+                      <div className="member-section-title">Member Information</div>
+                      <div className="member-section-copy">Primary profile, contact, identity, and coaching details organized for a cleaner premium onboarding flow.</div>
+                    </div>
+                  </div>
+                  <div className="member-section-chip">Core Profile</div>
+                </div>
+                <div className="member-form-grid">
 
                 {/* Name */}
                 <FormGroup label="Member Name" required>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
+                  <div className="member-span-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
                     <input className="input" placeholder="First name" value={f.first_name} onChange={S('first_name')} required />
                     <input className="input" placeholder="Last name" value={f.last_name} onChange={S('last_name')} />
                   </div>
@@ -387,11 +633,22 @@ function NewClientForm() {
                 <FormGroup label="Interested In">
                   <input className="input" placeholder="e.g. Weight Loss, Muscle Gain, Yoga" value={f.interested_in} onChange={S('interested_in')} />
                 </FormGroup>
+                </div>
               </div>
 
               {/* ── ADDRESS SECTION ── */}
-              <div className="card">
-                <div className="card-title" style={{ marginBottom: '1.5rem', fontSize: 16 }}>📍 Address</div>
+              <div className="card member-section-card">
+                <div className="member-section-head">
+                  <div className="member-section-title-wrap">
+                    <span className="member-section-icon">📍</span>
+                    <div>
+                      <div className="member-section-title">Address Details</div>
+                      <div className="member-section-copy">Capture billing and location details in the same visual language as the member profile experience.</div>
+                    </div>
+                  </div>
+                  <div className="member-section-chip">Address</div>
+                </div>
+                <div className="member-form-grid">
 
                 <FormGroup label="Address">
                   <input className="input" placeholder="Flat No., Building name" value={f.address} onChange={S('address')} style={{ marginBottom: '.5rem' }} />
@@ -413,17 +670,18 @@ function NewClientForm() {
                 <FormGroup label="Pincode">
                   <input className="input" value={f.pincode} onChange={S('pincode')} />
                 </FormGroup>
+                </div>
               </div>
 
               {/* Membership + Payment sections live on the member's
                   profile under "Add Subscription" now — keeps onboarding
                   to two short steps instead of one long form. */}
-              <div className="card" style={{ background: 'var(--bg-page,#f8fafc)', borderStyle: 'dashed' }}>
+              <div className="member-info-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-                  <span style={{ fontSize: 22 }}>💡</span>
+                  <span className="member-info-icon">💡</span>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>Plan & payment moved</div>
-                    <div style={{ fontSize: 13, color: 'var(--text2)' }}>
+                    <div className="member-info-title">Plan & payment moved</div>
+                    <div className="member-info-copy">
                       After saving, you'll land on this member's profile where you can pick a plan, set start/end dates and record the payment under <b>Add Subscription</b>.
                     </div>
                   </div>
@@ -438,11 +696,11 @@ function NewClientForm() {
               </div>
 
               <div style={{ display: 'flex', gap: '.75rem' }}>
-                <button type="submit" className="btn btn-primary btn-lg" disabled={saving}>
+                <button type="submit" className="member-bottom-primary" disabled={saving}>
       {saving ? 'Saving…' : (isEditMode ? '💾 Update Member' : '💾 Save Member')}
                 </button>
                 <button type="button" className="btn btn-ghost btn-lg" onClick={() => router.back()}>Cancel</button>
-              </div>
+              </div></div>
             </div>
           </form>
         </div>
