@@ -375,17 +375,26 @@ export default function ClientsPage() {
               <h1 className="page-title">Members</h1>
               <p className="page-subtitle">{kpis.total.toLocaleString()} total members</p>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button
-                className="btn btn-outline btn-sm"
-                onClick={() => exportCSV(filtered)}
-                title="Export filtered list as CSV"
-              >
-                <Download size={14} /> Export CSV
-              </button>
-              <Link href="/clients/new" className="btn btn-primary btn-sm">
-                <UserPlus size={14} /> Add Member
-              </Link>
+            <div style={{ display: 'grid', gap: 8, justifyItems: 'end' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => exportCSV(filtered)}
+                  title="Export filtered list as CSV"
+                >
+                  <Download size={14} /> Export CSV
+                </button>
+                <Link href="/clients/new" className="btn btn-primary btn-sm">
+                  <UserPlus size={14} /> Add Member
+                </Link>
+              </div>
+              <div className="card" style={{ padding: '10px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', maxWidth: 720 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>Available member actions:</span>
+                <span className="badge badge-secondary">Assign personal training</span>
+                <span className="badge badge-secondary">Renew personal training</span>
+                <span className="badge badge-secondary">Extension</span>
+                <span className="badge badge-secondary">Transfer</span>
+              </div>
             </div>
           </div>
 
