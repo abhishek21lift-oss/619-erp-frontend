@@ -53,9 +53,9 @@ const portalTabs: { key: PtTab; label: string }[] = [
 ];
 
 const packageRows = [
-  { name: '12 Session Shred', type: 'Session Pack', fee: '₹18,000', duration: '30 days', freeze: '2 holds', status: 'Popular' },
-  { name: 'Monthly Premium PT', type: 'Monthly Plan', fee: '₹14,500', duration: '1 month', freeze: '1 hold', status: 'Active' },
-  { name: 'Elite Transformation 24', type: 'Premium Coaching', fee: '₹36,000', duration: '60 days', freeze: '3 holds', status: 'Flagship' },
+  { name: '12 Session Shred', type: 'Session Pack', fee: '\u20b918,000', duration: '30 days', freeze: '2 holds', status: 'Popular' },
+  { name: 'Monthly Premium PT', type: 'Monthly Plan', fee: '\u20b914,500', duration: '1 month', freeze: '1 hold', status: 'Active' },
+  { name: 'Elite Transformation 24', type: 'Premium Coaching', fee: '\u20b936,000', duration: '60 days', freeze: '3 holds', status: 'Flagship' },
 ];
 
 const sessionRows = [
@@ -83,9 +83,9 @@ function cx(...classes: Array<string | false | null | undefined>) {
 }
 
 function ageFromDob(dob?: string) {
-  if (!dob) return '—';
+  if (!dob) return '\u2014';
   const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return '—';
+  if (Number.isNaN(d.getTime())) return '\u2014';
   const diff = Date.now() - d.getTime();
   return String(Math.max(0, Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000))));
 }
@@ -95,7 +95,7 @@ function premiumTrainerRows(trainers: Trainer[]) {
     name: trainer.name,
     clients: 8 + idx * 2,
     sessions: 3 + (idx % 5),
-    commission: `₹${(18000 + idx * 4200).toLocaleString('en-IN')}`,
+    commission: `\u20b9${(18000 + idx * 4200).toLocaleString('en-IN')}`,
     score: `${88 + (idx % 7)}%`,
     role: trainer.role || 'Coach',
   }));
@@ -112,13 +112,13 @@ export default function PersonalTrainingPortal() {
   useEffect(() => {
     let alive = true;
     Promise.all([
-      api.clients.list({ limit: 200 }).catch(() => []),
-      api.trainers.list().catch(() => []),
-      api.dashboard.summary?.().catch?.(() => null) ?? Promise.resolve(null),
+      api.clients.list({ limit: 200 }).catch(() => [] as Client[]),
+      api.trainers.list().catch(() => [] as Trainer[]),
+      (api.dashboard.summary?.().catch?.(() => null) ?? Promise.resolve(null)),
     ])
-      .then(([clientRes, trainerRes]) => {
+      .then(([clientRes, trainerRes, _summary]) => {
         if (!alive) return;
-        const nextClients = Array.isArray(clientRes) ? clientRes : clientRes?.clients ?? [];
+        const nextClients = Array.isArray(clientRes) ? clientRes : (clientRes as any)?.clients ?? [];
         const nextTrainers = Array.isArray(trainerRes) ? trainerRes : [];
         setClients(nextClients);
         setTrainers(nextTrainers);
@@ -152,8 +152,8 @@ export default function PersonalTrainingPortal() {
   const stats = [
     { label: 'Active PT Clients', value: String(Math.max(visibleClients.length, 24)), note: 'Shared identity from member database', tone: 'pt-stat--violet', icon: Users },
     { label: 'Trainers Online', value: String(Math.max(trainers.length, 6)), note: 'Role-aware trainer management', tone: 'pt-stat--blue', icon: UserCog },
-    { label: "Today’s Sessions", value: String(sessionRows.length * 11 + 1), note: 'Schedule, attendance, completion flow', tone: 'pt-stat--green', icon: CalendarDays },
-    { label: 'PT Revenue', value: '₹2.84L', note: 'PT-only finance isolated from gym reports', tone: 'pt-stat--orange', icon: Wallet },
+    { label: "Today's Sessions", value: String(sessionRows.length * 11 + 1), note: 'Schedule, attendance, completion flow', tone: 'pt-stat--green', icon: CalendarDays },
+    { label: 'PT Revenue', value: '\u20b92.84L', note: 'PT-only finance isolated from gym reports', tone: 'pt-stat--orange', icon: Wallet },
   ];
 
   return (
@@ -171,9 +171,9 @@ export default function PersonalTrainingPortal() {
           </div>
         </div>
         <div className="pt-hero-side premium-surface">
-          <div className="pt-mini-chip"><ShieldCheck size={16} /> Shared client identity · isolated PT finance</div>
+          <div className="pt-mini-chip"><ShieldCheck size={16} /> Shared client identity &middot; isolated PT finance</div>
           <div className="pt-mini-list">
-            <div><span>Signed in as</span><strong>{user?.name || '619 Staff'} · {user?.role || 'admin'}</strong></div>
+            <div><span>Signed in as</span><strong>{user?.name || '619 Staff'} &middot; {user?.role || 'admin'}</strong></div>
             <div><span>Client sync source</span><strong>Main 619 member database</strong></div>
             <div><span>Finance isolation</span><strong>PT revenue stays outside membership reports</strong></div>
           </div>
@@ -227,7 +227,7 @@ export default function PersonalTrainingPortal() {
             </div>
           </header>
 
-          {loading && <div className="pt-loading">Loading PT portal workspace…</div>}
+          {loading && <div className="pt-loading">Loading PT portal workspace...</div>}
 
           {!loading && tab === 'dashboard' && (
             <div className="pt-content-stack">
@@ -349,9 +349,9 @@ export default function PersonalTrainingPortal() {
                         <tr key={client.id}>
                           <td>{client.name}</td>
                           <td>{client.client_id || client.member_code || client.id}</td>
-                          <td>{client.mobile || '—'}</td>
-                          <td>{client.status || '—'}</td>
-                          <td>{ageFromDob(client.dob)} / {client.gender || '—'}</td>
+                          <td>{client.mobile || '\u2014'}</td>
+                          <td>{client.status || '\u2014'}</td>
+                          <td>{ageFromDob(client.dob)} / {client.gender || '\u2014'}</td>
                           <td>{client.trainer_name || 'Unassigned'}</td>
                           <td>{client.photo_url ? 'Available' : 'Pending'}</td>
                         </tr>
@@ -401,7 +401,7 @@ export default function PersonalTrainingPortal() {
                 <div className="pt-panel-head"><div><p className="pt-kicker pt-kicker--dark">Trainer management</p><h3>Allocation, commissions, schedules, and performance</h3></div><UserCog size={18} /></div>
                 <div className="pt-table-wrap">
                   <table className="pt-table">
-                    <thead><tr><th>Trainer</th><th>Role</th><th>PT Clients</th><th>Today’s Sessions</th><th>Commission</th><th>Performance</th></tr></thead>
+                    <thead><tr><th>Trainer</th><th>Role</th><th>PT Clients</th><th>{"Today's Sessions"}</th><th>Commission</th><th>Performance</th></tr></thead>
                     <tbody>
                       {trainerRows.map((trainer) => (
                         <tr key={trainer.name}><td>{trainer.name}</td><td>{trainer.role}</td><td>{trainer.clients}</td><td>{trainer.sessions}</td><td>{trainer.commission}</td><td>{trainer.score}</td></tr>
@@ -423,7 +423,7 @@ export default function PersonalTrainingPortal() {
                       <div key={session.time + session.client} className="pt-agenda-item">
                         <strong>{session.time}</strong>
                         <div>
-                          <h4>{session.client} · {session.trainer}</h4>
+                          <h4>{session.client} &middot; {session.trainer}</h4>
                           <p>{session.focus}</p>
                         </div>
                         <span className={cx('pt-status-pill', session.state === 'Checked-in' && 'is-green', session.state === 'Reschedule request' && 'is-red')}>
