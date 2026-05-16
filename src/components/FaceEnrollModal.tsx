@@ -299,18 +299,20 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
             </div>
           )}
           {state === 'error' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#7f1d1d', fontSize: 13, padding: '0 1rem' }}>
-                  <AlertTriangle size={14} /> Face enrollment works best on updated Chrome or desktop browsers.
-                </div>
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(239,68,68,0.4)', color: '#fff', flexDirection: 'column', gap: 6,
-            }}>
-              <XCircle size={42} />
-              <div style={{ fontWeight: 700, padding: '0 1rem', textAlign: 'center' }}>{error || statusMsg}</div>
-              <div style={{ fontSize: 12, opacity: 0.92, padding: '0 1rem', textAlign: 'center' }}>Current samples: {samples.length}/{SAMPLES_REQUIRED}</div>
-            </div>
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#7f1d1d', fontSize: 13, padding: '0 1rem' }}>
+                <AlertTriangle size={14} /> Face enrollment works best on updated Chrome or desktop browsers.
+              </div>
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(239,68,68,0.4)', color: '#fff', flexDirection: 'column', gap: 6,
+              }}>
+                <XCircle size={42} />
+                <div style={{ fontWeight: 700, padding: '0 1rem', textAlign: 'center' }}>{error || statusMsg}</div>
+                <div style={{ fontSize: 12, opacity: 0.92, padding: '0 1rem', textAlign: 'center' }}>Current samples: {samples.length}/{SAMPLES_REQUIRED}</div>
+              </div>
+            </>
           )}
         </div>
 
