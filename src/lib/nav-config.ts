@@ -77,6 +77,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/trainers/leave',           label: 'Leave Requests',   icon: 'CalendarOff', role: 'admin', badge: 'pendingLeaves' },
       { href: '/training/transformations', label: 'Transformations',  icon: 'Sparkles',    role: 'admin' },
       { href: '/trainers/[id]', label: 'Coach Profile', icon: 'UserCog', hidden: true, matchPrefix: '/trainers/' },
+      { href: '/pt-portal', label: 'PERSONAL TRAINING PORTAL', icon: 'Sparkles', roles: ['admin', 'manager', 'trainer'], isNew: true },
     ],
   },
   {
