@@ -186,11 +186,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm">
                   <img src="/logo.png" alt="619 Fitness Studio logo" className="h-full w-full object-cover" />
                 </span>
-                <span className="hidden text-left md:block">
-                  <span className="block max-w-[220px] truncate text-sm font-bold uppercase tracking-[0.08em] text-slate-900">619 FITNESS STUDIO</span>
-                  <span className="block text-xs text-slate-500">admin</span>
-                </span>
-                <ChevronDown size={16} className={cn('hidden text-slate-400 md:block transition-transform', openMenu === 'account' && 'rotate-180')} />
+                <ChevronDown size={16} className={cn('text-slate-400 transition-transform', openMenu === 'account' && 'rotate-180')} />
               </button>
 
               {openMenu === 'account' && (
