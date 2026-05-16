@@ -98,7 +98,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     router.push('/login');
   };
 
-  const accountLabel = user?.gymName || '619 FITNESS STUDIO';
+  const accountLabel = user?.name || '619 FITNESS STUDIO';
   const roleLabel = user?.role || 'admin';
   const initials = (user?.name || 'A').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
