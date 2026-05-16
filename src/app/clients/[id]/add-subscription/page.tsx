@@ -179,14 +179,16 @@ function Inner() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            {/* Membership plans table */}
-            <div className="ptf-card">
-              <div className="ptf-card-header">
-                <span className="ptf-card-header-icon">💳</span>
-                <span className="ptf-card-header-title">Add Subscription</span>
+          <form onSubmit={handleSubmit} className="subscription-assignment-form">
+            <section className="subscription-premium-card subscription-assign-main">
+              <div className="subscription-section-header subscription-section-header--plans">
+                <div>
+                  <p className="subscription-section-kicker">MEMBERSHIP ASSIGNMENT</p>
+                  <h2>Add Subscription</h2>
+                  <span>Organized pricing, duration, and discount controls in one premium CRM workspace.</span>
+                </div>
               </div>
-              <div className="ptf-card-body">
+              <div className="subscription-section-body">
                 <div style={{ overflowX: 'auto' }}>
                   <table className="ptf-plan-table">
                     <thead>

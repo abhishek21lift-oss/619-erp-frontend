@@ -1151,3 +1151,102 @@ header nav > div > button:hover { transform: translateY(-1px); box-shadow: 0 16p
   .profile-premium-hero { border-radius: 24px; padding: 20px; }
   .subscription-tab-grid { grid-template-columns: 1fr; }
 }
+
+
+/* Subscription assignment premium layout */
+.subscription-assignment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.subscription-premium-card {
+  overflow: hidden;
+  border-radius: 26px;
+  border: 1px solid rgba(255,255,255,0.62);
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.82));
+  box-shadow: 0 22px 60px rgba(15,23,42,0.08);
+}
+.subscription-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  color: #fff;
+}
+.subscription-section-header--plans { background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%); }
+.subscription-section-header--payment { background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); }
+.subscription-section-header--summary { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.subscription-section-header h2 {
+  margin: 6px 0 0;
+  font-size: clamp(1.2rem, 2vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.subscription-section-header span {
+  display: block;
+  margin-top: 8px;
+  max-width: 62ch;
+  color: rgba(255,255,255,0.86);
+  font-size: 0.95rem;
+}
+.subscription-section-kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.74);
+}
+.subscription-section-body {
+  padding: 22px;
+}
+.subscription-split-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 20px;
+}
+.subscription-assign-main .ptf-plan-table thead th {
+  background: rgba(248,250,252,0.9);
+  color: #334155;
+}
+.subscription-assign-main .ptf-plan-table tbody tr:hover {
+  background: rgba(124,58,237,0.04);
+}
+.subscription-assign-main .ptf-input,
+.subscription-assign-main .ptf-select,
+.subscription-premium-card .ptf-input,
+.subscription-premium-card .ptf-select {
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,0.28);
+  background: rgba(255,255,255,0.95);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+.subscription-assign-main .ptf-input:focus,
+.subscription-assign-main .ptf-select:focus,
+.subscription-premium-card .ptf-input:focus,
+.subscription-premium-card .ptf-select:focus {
+  outline: none;
+  border-color: rgba(99,102,241,0.5);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+}
+.subscription-premium-card .ptf-total-box {
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(14,165,233,0.10));
+  border: 1px solid rgba(16,185,129,0.18);
+}
+@media (max-width: 1024px) {
+  .subscription-split-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .subscription-section-header,
+  .subscription-section-body {
+    padding: 18px;
+  }
+  .subscription-premium-card {
+    border-radius: 22px;
+  }
+}
