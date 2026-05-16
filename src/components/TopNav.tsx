@@ -157,9 +157,10 @@ function NavDropdown({ group, isActive, userRole }: DropdownProps) {
       <Link
         href={group.href}
         className={`tn-item${isActive ? ' tn-active' : ''}`}
+        title={group.label}
       >
         {group.icon && <span className="tn-item-icon">{group.icon}</span>}
-        {group.label}
+        <span className="tn-item-label">{group.label}</span>
       </Link>
     );
   }
@@ -171,9 +172,10 @@ function NavDropdown({ group, isActive, userRole }: DropdownProps) {
         className={`tn-item tn-has-arrow${isActive ? ' tn-active' : ''}`}
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        title={group.label}
       >
         {group.icon && <span className="tn-item-icon">{group.icon}</span>}
-        {group.label}
+        <span className="tn-item-label">{group.label}</span>
         <span className="tn-arrow">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
@@ -301,3 +303,6 @@ export default function TopNav() {
     </>
   );
 }
+
+
+/* TopNav navbar sizing fix */

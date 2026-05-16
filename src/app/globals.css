@@ -894,3 +894,36 @@ body {
   .hide-mobile{display:none !important;}
   .mobile-full{width:100% !important;}
 }
+
+
+/* TopNav navbar sizing fix */
+.tn-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.tn-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  max-width: 148px;
+  padding: 8px 12px;
+  text-align: center;
+}
+.tn-item-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  max-width: 96px;
+  line-height: 1rem;
+  word-break: break-word;
+  text-align: center;
+}
+.tn-arrow,
+.tn-item-icon {
+  flex-shrink: 0;
+}
