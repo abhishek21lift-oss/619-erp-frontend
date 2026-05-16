@@ -13,9 +13,16 @@ const nextConfig = {
   // the api lib (src/lib/api.ts) for all requests — this rewrite is dev-only.
   async rewrites() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const rules = [
+      {
+        source: '/models/:path*',
+        destination: '/models/:path*',
+      },
+    ];
     // Don't proxy if the URL is a placeholder
-    if (apiUrl.includes('your-619-api')) return [];
+    if (apiUrl.includes('your-619-api')) return rules;
     return [
+      ...rules,
       {
         source: '/api/:path*',
         destination: `${apiUrl}/api/:path*`,
