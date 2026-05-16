@@ -97,7 +97,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   return (
     <header className="fixed inset-x-0 top-0 z-[100] border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-      <div ref={headerRef} className="mx-auto flex w-full max-w-[1600px] items-start gap-3 overflow-visible px-4 py-3 sm:px-6 lg:px-8">
+      <div ref={headerRef} className="mx-auto flex w-full max-w-[1600px] items-center gap-2 overflow-visible px-3 py-2.5 sm:items-start sm:gap-3 sm:px-6 sm:py-3 lg:px-8">
         <button
           className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md lg:hidden"
           onClick={onMenuClick}
@@ -106,9 +106,9 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           <Menu size={18} />
         </button>
 
-        <div className="min-w-0 shrink-0 pr-2">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">619 Fitness Studio</div>
-          <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">{pageTitle}</h1>
+        <div className="min-w-0 flex-1 pr-1 sm:shrink-0 sm:pr-2">
+          <div className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">619 Fitness Studio</div>
+          <h1 className="truncate text-base font-semibold tracking-tight text-slate-900 sm:text-xl">{pageTitle}</h1>
         </div>
 
         <nav className="relative z-[110] hidden min-w-0 flex-1 flex-wrap items-center gap-2 overflow-visible lg:flex">
@@ -155,8 +155,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           })}
         </nav>
 
-        <div className="ml-auto flex shrink-0 flex-col items-end gap-3">
-          <div className="flex items-center justify-end gap-2">
+        <div className="ml-auto flex shrink-0 flex-col items-end gap-2">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2">
             <button
               type="button"
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md"
@@ -179,14 +179,14 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               <button
                 type="button"
                 onClick={() => toggleMenu('account')}
-                className="inline-flex items-center gap-3 rounded-2xl border border-white/70 bg-white/80 px-2.5 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-2 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:gap-3 sm:px-2.5"
                 aria-label="Account menu"
                 aria-expanded={openMenu === 'account'}
               >
-                <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm">
+                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm sm:h-10 sm:w-10">
                   <img src="/logo.png" alt="619 Fitness Studio logo" className="h-full w-full object-cover" />
                 </span>
-                <ChevronDown size={16} className={cn('text-slate-400 transition-transform', openMenu === 'account' && 'rotate-180')} />
+                <ChevronDown size={16} className={cn('hidden text-slate-400 transition-transform sm:block', openMenu === 'account' && 'rotate-180')} />
               </button>
 
               {openMenu === 'account' && (
