@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, findItemByPath, isVisibleForRole } from '@/lib/nav-config';
-import { Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut } from 'lucide-react';
+import { Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut, Search } from 'lucide-react';
 import { cn } from '@/components/ui';
 
 interface Props {
@@ -42,7 +41,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('619-cmd-palette'));
       }
@@ -62,7 +61,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   useEffect(() => setOpenMenu(null), [pathname]);
 
   const navItem = findItemByPath(pathname);
-  const pageTitle = navItem?.label ?? 'Page';
+  const pageTitle = navItem?.label ?? 'Dashboard';
 
   const topGroups = useMemo(() => {
     const visibleGroups = NAV_GROUPS.map((group) => ({
@@ -75,13 +74,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       items: SETTINGS_GROUP.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
     };
 
-    return [
+    const groups = [
       { id: 'dashboard', label: 'Dashboard', items: [DASHBOARD_ITEM] },
       ...visibleGroups,
       ...(visibleSettings.items.length ? [{ id: visibleSettings.id, label: visibleSettings.label, items: visibleSettings.items }] : []),
     ];
+
+    return groups;
   }, [user?.role]);
 
+  const primaryGroups = topGroups.slice(0, 6);
+  const secondaryGroups = topGroups.slice(6);
   const toggleMenu = (id: string) => setOpenMenu((current) => (current === id ? null : id));
 
   const handleResetPassword = () => {
@@ -95,76 +98,84 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     router.push('/login');
   };
 
-  return (
-    <header className="fixed inset-x-0 top-0 z-[100] border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-      <div ref={headerRef} className="mx-auto flex w-full max-w-[1600px] items-center gap-2 overflow-visible px-3 py-2.5 sm:items-start sm:gap-3 sm:px-6 sm:py-3 lg:px-8">
+  const accountLabel = user?.gymName || '619 FITNESS STUDIO';
+  const roleLabel = user?.role || 'admin';
+  const initials = (user?.name || 'A').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+
+  const renderGroup = (group: { id: string; label: string; items: typeof DASHBOARD_ITEM[] }) => {
+    const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+    const opened = openMenu === group.id;
+
+    return (
+      <div key={group.id} className="relative shrink-0">
         <button
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md lg:hidden"
-          onClick={onMenuClick}
-          aria-label="Open navigation"
+          type="button"
+          onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
+          className={active
+            ? 'inline-flex h-11 items-center gap-2 rounded-[16px] bg-gradient-to-r from-violet-700 to-purple-600 px-6 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(109,40,217,0.24)]'
+            : 'inline-flex h-11 items-center gap-2 rounded-[16px] px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-950'}
+          aria-expanded={opened}
         >
-          <Menu size={18} />
+          <span className="whitespace-nowrap">{group.label}</span>
+          {group.items.length > 1 && <ChevronDown size={15} className={cn('shrink-0 transition-transform', opened && 'rotate-180')} />}
         </button>
 
-        <div className="min-w-0 flex-1 pr-1 sm:shrink-0 sm:pr-2">
-          <div className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 sm:text-[11px] sm:tracking-[0.18em]">619 Fitness Studio</div>
-          <h1 className="truncate text-base font-semibold tracking-tight text-slate-900 sm:text-xl">{pageTitle}</h1>
-        </div>
-
-        <nav className="relative z-[110] hidden min-w-0 flex-1 flex-wrap items-center gap-2 overflow-visible lg:flex">
-          {topGroups.map((group) => {
-            const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
-            const opened = openMenu === group.id;
-
-            return (
-              <div key={group.id} className="relative shrink-0">
+        {group.items.length > 1 && opened && (
+          <div className="absolute left-0 top-[calc(100%+10px)] z-[120] min-w-[240px] rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_24px_50px_rgba(15,23,42,0.12)]">
+            {group.items.map((item) => {
+              const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
                 <button
                   type="button"
-                  onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
-                  className={active
-                    ? 'inline-flex min-h-[52px] max-w-[140px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(109,40,217,0.25)]'
-                    : 'inline-flex min-h-[52px] max-w-[140px] items-center justify-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 hover:shadow-sm'}
-                  aria-expanded={opened}
+                  key={item.href}
+                  onClick={() => router.push(item.href)}
+                  className={itemActive
+                    ? 'flex w-full items-center justify-between rounded-2xl bg-violet-50 px-3 py-2.5 text-left text-sm font-semibold text-violet-700'
+                    : 'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50'}
                 >
-                  <span
-                    className="line-clamp-2 max-w-[96px] text-center break-words leading-4"
-                    title={group.label}
-                  >
-                    {group.label}
-                  </span>
-                  {group.items.length > 1 && <ChevronDown size={15} className={cn('shrink-0 transition-transform', opened && 'rotate-180')} />}
+                  <span>{item.label}</span>
+                  {item.isNew && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">New</span>}
                 </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
-                {group.items.length > 1 && opened && (
-                  <div className="absolute left-0 top-[calc(100%+12px)] z-[120] min-w-[240px] rounded-[22px] border border-white/70 bg-white/95 p-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-xl">
-                    {group.items.map((item) => {
-                      const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                      return (
-                        <button
-                          type="button"
-                          key={item.href}
-                          onClick={() => router.push(item.href)}
-                          className={itemActive
-                            ? 'flex w-full items-center justify-between rounded-2xl bg-violet-50 px-3 py-2.5 text-left text-sm font-semibold text-violet-700'
-                            : 'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50'}
-                        >
-                          <span>{item.label}</span>
-                          {item.isNew && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">New</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
+  return (
+    <header className="fixed inset-x-0 top-0 z-[100] border-b border-slate-200 bg-white/96 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl">
+      <div ref={headerRef} className="mx-auto flex w-full max-w-[1680px] flex-col gap-3 px-3 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-start gap-3">
+          <button
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
+            onClick={onMenuClick}
+            aria-label="Open navigation"
+          >
+            <Menu size={18} />
+          </button>
 
-        <div className="ml-auto flex shrink-0 flex-col items-end gap-2">
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+          <div className="min-w-0 shrink-0 pr-2">
+            <div className="truncate text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">619 Fitness Studio</div>
+            <h1 className="truncate pt-1 text-[18px] font-semibold tracking-tight text-slate-950">{pageTitle}</h1>
+          </div>
+
+          <div className="hidden min-w-0 flex-1 flex-col gap-2 lg:flex">
+            <nav className="flex min-w-0 flex-wrap items-center gap-2">
+              {primaryGroups.map(renderGroup)}
+            </nav>
+            {secondaryGroups.length > 0 && (
+              <nav className="flex min-w-0 flex-wrap items-center gap-2 pl-4">
+                {secondaryGroups.map(renderGroup)}
+              </nav>
+            )}
+          </div>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <button
               type="button"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               onClick={toggleTheme}
               aria-label="Toggle theme"
             >
@@ -173,7 +184,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
             <button
               type="button"
-              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:text-slate-900 hover:shadow-md"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               aria-label="Notifications"
             >
               <Bell size={18} />
@@ -184,50 +195,45 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               <button
                 type="button"
                 onClick={() => toggleMenu('account')}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-2 py-2 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:gap-3 sm:px-2.5"
-                aria-label="Account menu"
+                className="inline-flex h-11 items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-3 pr-4 shadow-sm transition hover:bg-slate-50"
                 aria-expanded={openMenu === 'account'}
               >
-                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm sm:h-10 sm:w-10">
-                  <img src="/logo.png" alt="619 Fitness Studio logo" className="h-full w-full object-cover" />
-                </span>
-                <ChevronDown size={16} className={cn('hidden text-slate-400 transition-transform sm:block', openMenu === 'account' && 'rotate-180')} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">{initials}</div>
+                <div className="hidden text-left xl:block">
+                  <div className="max-w-[220px] truncate text-[13px] font-semibold text-slate-900">{accountLabel}</div>
+                  <div className="text-xs lowercase text-slate-500">{roleLabel}</div>
+                </div>
+                <ChevronDown size={16} className={cn('text-slate-500 transition-transform', openMenu === 'account' && 'rotate-180')} />
               </button>
 
               {openMenu === 'account' && (
-                <div className="absolute right-0 top-[calc(100%+12px)] z-[120] min-w-[220px] rounded-[22px] border border-white/70 bg-white/95 p-2 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-xl">
-                  <button
-                    type="button"
-                    onClick={handleResetPassword}
-                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <KeyRound size={16} />
-                    <span>Reset Password</span>
+                <div className="absolute right-0 top-[calc(100%+10px)] z-[130] w-[240px] rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_24px_50px_rgba(15,23,42,0.12)]">
+                  <button type="button" onClick={handleResetPassword} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                    <KeyRound size={16} className="text-violet-600" />
+                    Reset password
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50"
-                  >
+                  <button type="button" onClick={handleLogout} className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50">
                     <LogOut size={16} />
-                    <span>Log Out</span>
+                    Log out
                   </button>
                 </div>
               )}
             </div>
           </div>
+        </div>
 
-          <div className="hidden w-full max-w-[320px] items-center gap-2 self-end rounded-2xl border border-white/70 bg-white/72 px-3 py-2 shadow-sm lg:flex">
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 text-sm text-slate-500"
-              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-              title="Search — ⌘K"
-            >
-              <span className="truncate">Search for pages, members, payments…</span>
-              <kbd className="ml-auto rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">⌘K</kbd>
-            </button>
-          </div>
+        <div className="hidden lg:flex lg:items-center lg:justify-end">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
+            className="group inline-flex h-12 w-full max-w-[520px] items-center justify-between rounded-[18px] border border-slate-200 bg-white px-4 text-sm text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-700"
+          >
+            <span className="flex items-center gap-3">
+              <Search size={16} className="text-slate-400 transition group-hover:text-slate-600" />
+              <span>Search for pages, members, payments...</span>
+            </span>
+            <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold tracking-wide text-slate-500">⌘K</span>
+          </button>
         </div>
       </div>
     </header>
