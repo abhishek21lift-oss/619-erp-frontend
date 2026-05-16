@@ -14,6 +14,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
 
 const MODEL_URL = '/models'; // Served from public/models/
+const MODEL_FALLBACK_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js-models@master';
 const RECOGNITION_THRESHOLD = 0.50; // Euclidean distance — lower = stricter
 const DETECTION_INTERVAL_MS = 80;   // ~12 fps detection (not blocking 30fps render)
 const MIN_FACE_SIZE = 80;           // px — ignore tiny detected faces
@@ -61,16 +62,35 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     try {
       const faceapi = await getFaceApi();
 
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-      ]);
+      const sources = [
+        `${MODEL_URL}?v=2`,
+        MODEL_URL,
+        MODEL_FALLBACK_URL,
+      ];
+
+      let lastError: any = null;
+      let loaded = false;
+      for (const source of sources) {
+        const base = source.replace(/\/$/, '');
+        try {
+          await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(base),
+            faceapi.nets.faceLandmark68Net.loadFromUri(base),
+            faceapi.nets.faceRecognitionNet.loadFromUri(base),
+          ]);
+          loaded = true;
+          break;
+        } catch (e) {
+          lastError = e;
+        }
+      }
+
+      if (!loaded) throw lastError || new Error('Could not load face models from any source');
 
       setModelStatus('ready');
       return true;
     } catch (err: any) {
-      const msg = 'Could not load face recognition models from /models. Check that the static model files are deployed and try again.';
+      const msg = 'Could not load face recognition models. Tried local /models and CDN fallback.';
       setModelError(msg);
       setModelStatus('error');
       console.error('[FaceDetection] Model load error:', err);
