@@ -12,7 +12,7 @@
  * much more reliable anchor than relying on any one frame.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, CheckCircle2, XCircle, Loader2, RefreshCw, Scan } from 'lucide-react';
+import { Camera, CheckCircle2, XCircle, Loader2, RefreshCw, Scan, AlertTriangle } from 'lucide-react';
 import { useCamera } from '@/hooks/useCamera';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
 import { api } from '@/lib/api';
@@ -291,6 +291,9 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
             </div>
           )}
           {state === 'error' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#7f1d1d', fontSize: 13, padding: '0 1rem' }}>
+                  <AlertTriangle size={14} /> Face enrollment works best on updated Chrome or desktop browsers.
+                </div>
             <div style={{
               position: 'absolute', inset: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -326,6 +329,9 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
               <>
                 <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
                 {state === 'error' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#7f1d1d', fontSize: 13, padding: '0 1rem' }}>
+                  <AlertTriangle size={14} /> Face enrollment works best on updated Chrome or desktop browsers.
+                </div>
                   <button className="btn btn-primary btn-sm" onClick={retry}>
                     <RefreshCw size={14} /> Try again
                   </button>

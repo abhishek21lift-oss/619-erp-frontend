@@ -88,12 +88,6 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     setModelStatus('loading');
     setModelError('');
     try {
-      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-      const isAndroid = /Android/i.test(ua);
-      const lowMemory = typeof navigator !== 'undefined' && (navigator as any).deviceMemory && (navigator as any).deviceMemory <= 4;
-      if (isAndroid && lowMemory) {
-        throw new Error('This mobile device does not have enough browser resources for face recognition models');
-      }
       const faceapi = await getFaceApi();
       let lastErr: any = null;
       for (const source of MODEL_SOURCES) {
