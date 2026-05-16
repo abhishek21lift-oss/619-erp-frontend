@@ -370,7 +370,7 @@ function PaymentsContent() {
         </div>
 
         {/* ── Table ── */}
-        <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="card premium-surface" style={{ overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>

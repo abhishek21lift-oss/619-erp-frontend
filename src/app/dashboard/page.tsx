@@ -141,15 +141,11 @@ function DashboardContent() {
     <AppShell>
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Header row */}
-        <header className="relative flex flex-col gap-3 overflow-hidden rounded-[28px] border border-white/70 bg-white/70 px-5 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl sm:flex-row sm:items-end sm:justify-between sm:px-6">
+        <header className="dashboard-hero relative flex flex-col gap-4 px-5 py-6 sm:flex-row sm:items-end sm:justify-between sm:px-7">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Welcome back, {user?.name?.split(' ')[0] ?? 'Coach'}
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-              Operations Dashboard
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="eyebrow">WELCOME BACK</p>
+            <h1 className="mt-2">619 FITNESS STUDIO</h1>
+            <p className="subcopy mt-1 text-sm">
               {periodCopy(period)} · refreshes every 30 s while open
             </p>
           </div>
@@ -201,7 +197,7 @@ function DashboardContent() {
           aria-label="Donut breakdowns"
           className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3"
         >
-          <Card>
+          <Card className="premium-surface">
             <CardHeader>
               <CardTitle>Membership mix</CardTitle>
               <Badge tone="neutral">All time</Badge>
@@ -216,7 +212,7 @@ function DashboardContent() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card className="premium-surface">
             <CardHeader>
               <CardTitle>Revenue snapshot</CardTitle>
               <Badge tone="brand">{labelForPeriod(period)}</Badge>
@@ -234,7 +230,7 @@ function DashboardContent() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card className="premium-surface">
             <CardHeader>
               <CardTitle>Renewal pipeline</CardTitle>
               <Badge tone="warning">Next 30 days</Badge>
@@ -332,7 +328,7 @@ function KpiRow({ d }: { d: DashSummary }) {
   const correctedNewThisMonth = rawTotalMembers === 0 && trainerCount > 0 ? 0 : Math.max(0, rawNewThisMonth - trainerCount);
   return (
     <>
-      <KpiCard
+      <KpiCard className="kpi-premium"
         accent="emerald"
         label="Today's revenue"
         value={fmtINRCompact(d.revenue?.today ?? 0)}
@@ -340,7 +336,7 @@ function KpiRow({ d }: { d: DashSummary }) {
         icon={<TrendingUp className="h-5 w-5" />}
         href="/payments"
       />
-      <KpiCard
+      <KpiCard className="kpi-premium"
         accent="rose"
         label="Active members"
         value={(d.clients?.active ?? 0).toLocaleString('en-IN')}
@@ -348,7 +344,7 @@ function KpiRow({ d }: { d: DashSummary }) {
         icon={<Users className="h-5 w-5" />}
         href="/members/active"
       />
-      <KpiCard
+      <KpiCard className="kpi-premium"
         accent="sky"
         label="Today's check-ins"
         value={(d.attendance_today ?? 0).toLocaleString('en-IN')}
@@ -356,7 +352,7 @@ function KpiRow({ d }: { d: DashSummary }) {
         icon={<CheckCircle2 className="h-5 w-5" />}
         href="/attendance"
       />
-      <KpiCard
+      <KpiCard className="kpi-premium"
         accent="violet"
         label="Renewals due"
         value={(d.expiring_soon ?? 0).toLocaleString('en-IN')}
@@ -364,7 +360,7 @@ function KpiRow({ d }: { d: DashSummary }) {
         icon={<RefreshCw className="h-5 w-5" />}
         href="/members/expiring"
       />
-      <KpiCard
+      <KpiCard className="kpi-premium"
         accent={dueColor}
         label="Pending dues"
         value={fmtINRCompact(d.total_dues ?? 0)}
@@ -548,7 +544,7 @@ function TopTrainersCard({
   rows: NonNullable<DashSummary['top_trainers']>;
 }) {
   return (
-    <Card>
+    <Card className="premium-surface">
       <CardHeader>
         <CardTitle>Top trainers — month revenue</CardTitle>
         <Link

@@ -239,7 +239,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           </button>
 
           {/* ── Profile header card ── */}
-          <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+          <div className="card premium-surface" style={{ padding: 24, marginBottom: 16 }}>
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               {/* Avatar with photo upload */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -355,7 +355,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
 
               {/* Personal info */}
-              <div className="card" style={{ padding: 20 }}>
+              <div className="card premium-surface" style={{ padding: 20 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <User size={14} /> Personal Information
                 </h3>
@@ -374,7 +374,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* Membership info */}
-              <div className="card" style={{ padding: 20 }}>
+              <div className="card premium-surface" style={{ padding: 20 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CreditCard size={14} /> Membership
                 </h3>
@@ -402,7 +402,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
               {/* Notes */}
               {client.notes && (
-                <div className="card" style={{ padding: 20, gridColumn: '1/-1' }}>
+                <div className="card premium-surface" style={{ padding: 20, gridColumn: '1/-1' }}>
                   <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>Notes</h3>
                   <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                     {client.notes}
@@ -414,7 +414,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
           {/* ── Attendance tab ── */}
           {activeTab === 'attendance' && (
-            <div className="card" style={{ overflow: 'hidden' }}>
+            <div className="card premium-surface" style={{ overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Activity size={14} /> Attendance History
@@ -469,7 +469,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
           {/* ── Payments tab ── */}
           {activeTab === 'payments' && (
-            <div className="card" style={{ overflow: 'hidden' }}>
+            <div className="card premium-surface" style={{ overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CreditCard size={14} /> Payment History

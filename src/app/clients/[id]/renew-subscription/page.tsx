@@ -150,12 +150,22 @@ function Inner() {
     }
   }
 
-  if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem', color: 'var(--muted)' }}>Loading…</div></AppShell>;
+  if (loading) return <AppShell>
+      <section className="profile-premium-hero">
+        <div className="eyebrow">PREMIUM MEMBER EXPERIENCE</div>
+        <h1 style={{ marginTop: 8, fontSize: "clamp(1.8rem, 2.8vw, 3rem)", fontWeight: 900, letterSpacing: "-0.04em" }}>619 FITNESS STUDIO</h1>
+        <p style={{ marginTop: 10, maxWidth: 760, color: "rgba(255,255,255,0.82)" }}>A cleaner, colourful and better organized member management workflow across subscriptions, memberships and payments.</p>
+      </section><div className="page-main" style={{ padding: '2rem', color: 'var(--muted)' }}>Loading…</div></AppShell>;
 
   const initials = (client?.name || 'C').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
     <AppShell>
+      <section className="profile-premium-hero">
+        <div className="eyebrow">PREMIUM MEMBER EXPERIENCE</div>
+        <h1 style={{ marginTop: 8, fontSize: "clamp(1.8rem, 2.8vw, 3rem)", fontWeight: 900, letterSpacing: "-0.04em" }}>619 FITNESS STUDIO</h1>
+        <p style={{ marginTop: 10, maxWidth: 760, color: "rgba(255,255,255,0.82)" }}>A cleaner, colourful and better organized member management workflow across subscriptions, memberships and payments.</p>
+      </section>
       <div className="page-main">
         <div className="ptf-wrap">
           <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
