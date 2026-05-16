@@ -338,7 +338,7 @@ function NewClientForm() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
                   <span className="member-info-icon">💡</span>
                   <div>
-                    <div className="member-info-title">Plan & payment moved</div>
+                    <div className="member-info-title">Plan &amp; payment moved</div>
                     <div className="member-info-copy">
                       After saving, you'll land on this member's profile where you can pick a plan, set start/end dates and record the payment under <b>Add Subscription</b>.
                     </div>
