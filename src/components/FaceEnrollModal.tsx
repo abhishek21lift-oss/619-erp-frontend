@@ -21,6 +21,7 @@ type State = 'loading' | 'ready' | 'capturing' | 'saving' | 'success' | 'error';
 
 const SAMPLES_REQUIRED = 3;
 const CAPTURE_TIMEOUT_MS = 15000;
+const isMobileDevice = () => /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '');
 
 interface Props {
   clientId: string;
@@ -62,6 +63,13 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
     if (!open) return;
     let cancelled = false;
     (async () => {
+      if (isMobileDevice()) {
+        setState('error');
+        setStatusMsg('Face enrollment is disabled on mobile');
+        setError('Please use a desktop or laptop Chrome browser for face enrollment. Mobile and tablet browsers are not supported for this feature yet.');
+        return;
+      }
+
       const ok = await detection.loadModels();
       if (cancelled) return;
       if (!ok) {
