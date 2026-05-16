@@ -6,7 +6,6 @@ import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
 const MODEL_SOURCES = [
   '/models',
   '/face-models',
-  'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js-models@master',
 ];
 const RECOGNITION_THRESHOLD = 0.50;
 const DETECTION_INTERVAL_MS = 120;
@@ -62,16 +61,26 @@ export function useFaceDetection(): UseFaceDetectionReturn {
   const loadOne = useCallback(async (faceapi: any, base: string) => {
     const url = base.replace(/\/$/, '');
     console.info('[face] trying model source', url);
-    await Promise.race([
-      Promise.all([
-        faceapi.nets.ssdMobilenetv1.loadFromUri(url),
-        faceapi.nets.tinyFaceDetector.loadFromUri(url),
-        faceapi.nets.faceLandmark68Net.loadFromUri(url),
-        faceapi.nets.faceRecognitionNet.loadFromUri(url),
-      ]),
-      new Promise((_, reject) => setTimeout(() => reject(new Error(`timeout: ${url}`)), 20000)),
+
+    const withTimeout = (promise: Promise<any>, label: string) => Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`timeout: ${url}:${label}`)), 12000)),
     ]);
-    console.info('[face] loaded models from', url);
+
+    await withTimeout(faceapi.nets.tinyFaceDetector.loadFromUri(url), 'tiny');
+    await withTimeout(faceapi.nets.faceLandmark68Net.loadFromUri(url), 'landmark');
+    await withTimeout(faceapi.nets.faceRecognitionNet.loadFromUri(url), 'recognition');
+
+    try {
+      await withTimeout(faceapi.nets.ssdMobilenetv1.loadFromUri(url), 'ssd');
+      detectorRef.current = 'ssd';
+      console.info('[face] SSD model ready from', url);
+    } catch (ssdErr) {
+      detectorRef.current = 'tiny';
+      console.warn('[face] SSD model unavailable, using tiny detector only', ssdErr);
+    }
+
+    console.info('[face] loaded models from', url, 'detector=', detectorRef.current);
   }, []);
 
   const loadModels = useCallback(async (): Promise<boolean> => {
