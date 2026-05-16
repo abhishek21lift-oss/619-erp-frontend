@@ -373,7 +373,6 @@ export default function Sidebar({
 
   const wrapCls = [
     'shell-sidebar',
-    'md:hidden',
     collapsed ? 'collapsed' : '',
     mobileOpen ? 'drawer-open' : '',
   ]
