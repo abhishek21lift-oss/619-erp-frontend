@@ -199,7 +199,15 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 className="inline-flex h-11 items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-3 pr-4 shadow-sm transition hover:bg-slate-50"
                 aria-expanded={openMenu === 'account'}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">{initials}</div>
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
+                  <img
+                    src="/619-logo.png"
+                    alt="619 Fitness Studio"
+                    className="h-full w-full object-cover"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; const next = e.currentTarget.nextElementSibling as HTMLElement | null; if (next) next.style.display = 'flex'; }}
+                  />
+                  <span className="hidden h-full w-full items-center justify-center bg-slate-100 text-xs font-semibold text-slate-700">{initials}</span>
+                </div>
                 <div className="hidden text-left xl:block">
                   <div className="max-w-[220px] truncate text-[13px] font-semibold text-slate-900">{accountLabel}</div>
                   <div className="text-xs lowercase text-slate-500">{roleLabel}</div>

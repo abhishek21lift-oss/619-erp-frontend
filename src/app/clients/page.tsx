@@ -389,7 +389,6 @@ export default function ClientsPage() {
                 </Link>
               </div>
               <div className="card" style={{ padding: '10px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', maxWidth: 720 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>Available member actions:</span>
                 <span className="badge badge-secondary">Assign personal training</span>
                 <span className="badge badge-secondary">Renew personal training</span>
                 <span className="badge badge-secondary">Extension</span>
@@ -555,7 +554,6 @@ export default function ClientsPage() {
                           </td>
                           <td onClick={(e) => e.stopPropagation()}>
                             <div style={{ display: 'grid', gap: 8, minWidth: 300, justifyItems: 'start' }}>
-                              <QuickMemberActions client={c} />
                               <RowMenu client={c} onDelete={setDeleteTarget} />
                             </div>
                           </td>
