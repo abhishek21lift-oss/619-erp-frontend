@@ -20,10 +20,6 @@ function NewClientForm() {
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState('');
 
-  // Membership/payment fields are intentionally NOT collected here any more —
-  // they live in the member profile's "Add Subscription" tab. We keep the
-  // backend contract identical (it accepts these as null) so this is a
-  // pure UI change, no migrations needed.
   const [f, setF] = useState({
     first_name: '', last_name: '',
     email: '',
@@ -50,11 +46,9 @@ function NewClientForm() {
     weight: '',
   });
 
-  // Load client data when in edit mode
   useEffect(() => {
     if (!editId) return;
     api.clients.get(editId).then((c: any) => {
-      // Pre-fill form fields with existing client data
       setF((prev: any) => {
         const parts = String(c.name || '').trim().split(/\s+/).filter(Boolean);
         return {
@@ -96,9 +90,6 @@ function NewClientForm() {
     api.trainers.list().then(setTrainers).catch(console.error);
   }, []);
 
-
-
-
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!f.first_name.trim()) return setError('First name is required');
@@ -138,7 +129,7 @@ function NewClientForm() {
               <div className="member-lux-actions">
                 <button type="button" onClick={() => router.back()} className="member-lux-btn-secondary">Back</button>
                 <button type="submit" form="member-form" className="member-lux-btn" disabled={saving}>
-                  {saving ? 'Saving…' : (isEditMode ? 'Update Member' : 'Save Member')}
+                  {saving ? 'Saving...' : (isEditMode ? 'Update Member' : 'Save Member')}
                 </button>
               </div>
             </div>
@@ -156,11 +147,11 @@ function NewClientForm() {
           <form id="member-form" onSubmit={submit}>
             <div style={{ display: 'grid', gap: '1.25rem' }}>
 
-              {/* ── MEMBER SECTION ── */}
+              {/* MEMBER SECTION */}
               <div className="card member-section-card">
                 <div className="member-section-head">
                   <div className="member-section-title-wrap">
-                    <span className="member-section-icon">👤</span>
+                    <span className="member-section-icon">&#128100;</span>
                     <div>
                       <div className="member-section-title">Member Information</div>
                       <div className="member-section-copy">Primary profile, contact, identity, and coaching details organized for a cleaner premium onboarding flow.</div>
@@ -170,7 +161,6 @@ function NewClientForm() {
                 </div>
                 <div className="member-form-grid">
 
-                {/* Name */}
                 <FormGroup label="Member Name" required>
                   <div className="member-span-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
                     <input className="input" placeholder="First name" value={f.first_name} onChange={S('first_name')} required />
@@ -178,12 +168,10 @@ function NewClientForm() {
                   </div>
                 </FormGroup>
 
-                {/* Email */}
                 <FormGroup label="Member Email">
                   <input className="input" type="email" placeholder="e.g. abc@gmail.com" value={f.email} onChange={S('email')} />
                 </FormGroup>
 
-                {/* Mobile */}
                 <FormGroup label="Mobile Number" required>
                   <div style={{ display: 'flex', gap: '.5rem' }}>
                     <CountryCodeBox />
@@ -200,7 +188,6 @@ function NewClientForm() {
                   </label>
                 </FormGroup>
 
-                {/* Alt Mobile */}
                 <FormGroup label="Alternate Mobile Number">
                   <div style={{ display: 'flex', gap: '.5rem' }}>
                     <CountryCodeBox />
@@ -209,7 +196,6 @@ function NewClientForm() {
                   </div>
                 </FormGroup>
 
-                {/* DOB & Anniversary */}
                 <FormGroup label="Date of Birth">
                   <input className="input" type="date" value={f.dob} onChange={S('dob')} />
                 </FormGroup>
@@ -218,7 +204,6 @@ function NewClientForm() {
                   <input className="input" type="date" value={f.anniversary} onChange={S('anniversary')} />
                 </FormGroup>
 
-                {/* Gender radio */}
                 <FormGroup label="Gender" required>
                   <div style={{ display: 'flex', gap: '2.5rem', paddingTop: '.25rem' }}>
                     {(['Male', 'Female', 'Other'] as const).map(g => (
@@ -239,32 +224,26 @@ function NewClientForm() {
                   </div>
                 </FormGroup>
 
-                {/* Reference Number */}
                 <FormGroup label="Reference Number">
                   <input className="input" value={f.reference_no} onChange={S('reference_no')} />
                 </FormGroup>
 
-                {/* Aadhaar */}
                 <FormGroup label="Aadhaar Number">
                   <input className="input" placeholder="e.g. 3675 9834 6012" value={f.aadhaar_no} onChange={S('aadhaar_no')} />
                 </FormGroup>
 
-                {/* PAN */}
                 <FormGroup label="PAN Number">
                   <input className="input" placeholder="Enter PAN Number" value={f.pan_no} onChange={S('pan_no')} />
                 </FormGroup>
 
-                {/* GST */}
                 <FormGroup label="Customer GST Number">
                   <input className="input" value={f.gst_no} onChange={S('gst_no')} />
                 </FormGroup>
 
-                {/* Company */}
                 <FormGroup label="Customer Company Name">
                   <input className="input" value={f.company_name} onChange={S('company_name')} />
                 </FormGroup>
 
-                {/* Assign Trainer */}
                 <FormGroup label="Assign Trainer">
                   <select className="input select" value={f.trainer_id} onChange={S('trainer_id')} disabled={user?.role === 'trainer'}>
                     <option value="">Assign Trainer</option>
@@ -274,12 +253,10 @@ function NewClientForm() {
                   </select>
                 </FormGroup>
 
-                {/* Weight */}
                 <FormGroup label="Weight (kg)">
                   <input className="input" type="number" step="0.1" placeholder="e.g. 68.5" value={f.weight} onChange={S('weight')} />
                 </FormGroup>
 
-                {/* Emergency */}
                 <FormGroup label="Emergency Contact Number">
                   <div style={{ display: 'flex', gap: '.5rem' }}>
                     <CountryCodeBox />
@@ -287,18 +264,18 @@ function NewClientForm() {
                   </div>
                 </FormGroup>
 
-                {/* Interested In */}
                 <FormGroup label="Interested In">
                   <input className="input" placeholder="e.g. Weight Loss, Muscle Gain, Yoga" value={f.interested_in} onChange={S('interested_in')} />
                 </FormGroup>
+
                 </div>
               </div>
 
-              {/* ── ADDRESS SECTION ── */}
+              {/* ADDRESS SECTION */}
               <div className="card member-section-card">
                 <div className="member-section-head">
                   <div className="member-section-title-wrap">
-                    <span className="member-section-icon">📍</span>
+                    <span className="member-section-icon">&#128205;</span>
                     <div>
                       <div className="member-section-title">Address Details</div>
                       <div className="member-section-copy">Capture billing and location details in the same visual language as the member profile experience.</div>
@@ -328,19 +305,18 @@ function NewClientForm() {
                 <FormGroup label="Pincode">
                   <input className="input" value={f.pincode} onChange={S('pincode')} />
                 </FormGroup>
+
                 </div>
               </div>
 
-              {/* Membership + Payment sections live on the member's
-                  profile under "Add Subscription" now — keeps onboarding
-                  to two short steps instead of one long form. */}
+              {/* Membership + Payment: handled via member profile after save */}
               <div className="member-info-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-                  <span className="member-info-icon">💡</span>
+                  <span className="member-info-icon">&#128161;</span>
                   <div>
                     <div className="member-info-title">Plan &amp; payment moved</div>
                     <div className="member-info-copy">
-                      After saving, you'll land on this member's profile where you can pick a plan, set start/end dates and record the payment under <b>Add Subscription</b>.
+                      After saving, you will land on this member profile where you can pick a plan, set start/end dates and record the payment under <b>Add Subscription</b>.
                     </div>
                   </div>
                 </div>
@@ -350,7 +326,7 @@ function NewClientForm() {
               <div className="card">
                 <label style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: '.5rem' }}>Notes (optional)</label>
                 <textarea className="input" rows={3} value={f.notes} onChange={S('notes')}
-                  placeholder="Health conditions, goals, special instructions…" />
+                  placeholder="Health conditions, goals, special instructions..." />
               </div>
 
               <div className="member-bottom-bar">
@@ -360,13 +336,13 @@ function NewClientForm() {
                 </div>
                 <div className="member-bottom-actions">
                   <button type="submit" className="member-bottom-primary" disabled={saving}>
-                    {saving ? 'Saving…' : (isEditMode ? 'Update Member' : 'Save Member')}
+                    {saving ? 'Saving...' : (isEditMode ? 'Update Member' : 'Save Member')}
                   </button>
                   <button type="button" className="member-bottom-secondary" onClick={() => router.back()}>Cancel</button>
                 </div>
               </div>
+
             </div>
-          </div>
           </form>
         </div>
       </div>
@@ -374,7 +350,7 @@ function NewClientForm() {
   );
 }
 
-/* ── Sub-components ── */
+/* Sub-components */
 function FormGroup({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: '1.1rem' }}>
