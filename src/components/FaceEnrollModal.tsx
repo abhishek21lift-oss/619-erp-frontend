@@ -20,6 +20,7 @@ import { api } from '@/lib/api';
 type State = 'loading' | 'ready' | 'capturing' | 'saving' | 'success' | 'error';
 
 const SAMPLES_REQUIRED = 3;
+const CAPTURE_TIMEOUT_MS = 15000;
 
 interface Props {
   clientId: string;
@@ -41,6 +42,8 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
   const [samples, setSamples] = useState<Float32Array[]>([]);
   const [error, setError] = useState('');
   const samplesRef = useRef<Float32Array[]>([]);
+  const captureTimerRef = useRef<number | null>(null);
+  const requestInFlightRef = useRef(false);
 
   // Reset on open
   useEffect(() => {
@@ -50,6 +53,8 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
     setError('');
     setState('loading');
     setStatusMsg('Loading face models…');
+    if (captureTimerRef.current) window.clearTimeout(captureTimerRef.current);
+    requestInFlightRef.current = false;
   }, [open]);
 
   // Start camera + load models once the modal is open
@@ -74,12 +79,19 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
       }
       setState('ready');
       setStatusMsg('Align the face inside the frame and hold still');
+      captureTimerRef.current = window.setTimeout(() => {
+        if (samplesRef.current.length === 0) {
+          setState('error');
+          setError('Face detected too weakly for enrollment. Use good light, keep one face in frame, and hold still.');
+        }
+      }, CAPTURE_TIMEOUT_MS);
     })();
 
     return () => {
       cancelled = true;
       detection.stopDetectionLoop();
       camera.stop();
+      if (captureTimerRef.current) window.clearTimeout(captureTimerRef.current);
     };
   }, [open]);
 
@@ -91,7 +103,7 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
     if (camera.status !== 'active' || detection.modelStatus !== 'ready') return;
 
     detection.startDetectionLoop(videoRef.current, canvasRef.current, (d) => {
-      if (samplesRef.current.length >= SAMPLES_REQUIRED) return;
+      if (samplesRef.current.length >= SAMPLES_REQUIRED || requestInFlightRef.current) return;
 
       if (!d.detected) {
         setStatusMsg('Position the face inside the frame');
@@ -105,12 +117,13 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
         setStatusMsg('Face detected, but descriptor not ready yet');
         return;
       }
-      if (state === 'capturing') return;
+      if (state === 'capturing' || state === 'saving') return;
 
       setState('capturing');
       setStatusMsg(`Captured ${samplesRef.current.length + 1}/${SAMPLES_REQUIRED} — keep holding still`);
       samplesRef.current = [...samplesRef.current, d.descriptor];
       setSamples([...samplesRef.current]);
+      if (captureTimerRef.current) window.clearTimeout(captureTimerRef.current);
 
       if (samplesRef.current.length < SAMPLES_REQUIRED) {
         setTimeout(() => {
@@ -125,7 +138,8 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
 
   // Once we have N samples, send the average to the backend.
   const enroll = useCallback(async () => {
-    if (samplesRef.current.length < SAMPLES_REQUIRED) return;
+    if (samplesRef.current.length < SAMPLES_REQUIRED || requestInFlightRef.current) return;
+    requestInFlightRef.current = true;
     setState('saving');
     setStatusMsg('Saving face descriptor…');
     try {
@@ -138,15 +152,20 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
       }
       for (let i = 0; i < len; i++) avg[i] /= samplesRef.current.length;
 
-      await api.checkin.enroll(clientId, avg);
+      const sanitized = avg.map((n) => Number(Number(n).toFixed(8))).filter((n) => Number.isFinite(n));
+      if (sanitized.length !== avg.length) throw new Error('Descriptor contained invalid values');
+      await api.checkin.enroll(clientId, sanitized);
       setState('success');
       setStatusMsg('Face enrolled successfully');
       camera.stop();
+      detection.stopDetectionLoop();
       onEnrolled?.();
     } catch (e: any) {
       setState('error');
       setStatusMsg('Enrollment failed');
       setError(e?.message || 'Failed to save face descriptor');
+    } finally {
+      requestInFlightRef.current = false;
     }
   }, [clientId, onEnrolled]);
 
@@ -162,6 +181,13 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
     setError('');
     setState('ready');
     setStatusMsg('Align the face inside the frame and hold still');
+    if (captureTimerRef.current) window.clearTimeout(captureTimerRef.current);
+    captureTimerRef.current = window.setTimeout(() => {
+      if (samplesRef.current.length === 0) {
+        setState('error');
+        setError('No valid face descriptor captured. Improve lighting and keep only one face visible.');
+      }
+    }, CAPTURE_TIMEOUT_MS);
   }
 
   if (!open) return null;
@@ -272,6 +298,7 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
             }}>
               <XCircle size={42} />
               <div style={{ fontWeight: 700, padding: '0 1rem', textAlign: 'center' }}>{error || statusMsg}</div>
+              <div style={{ fontSize: 12, opacity: 0.92, padding: '0 1rem', textAlign: 'center' }}>Current samples: {samples.length}/{SAMPLES_REQUIRED}</div>
             </div>
           )}
         </div>

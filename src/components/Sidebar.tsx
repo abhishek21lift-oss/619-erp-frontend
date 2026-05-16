@@ -79,6 +79,7 @@ import {
   Fingerprint,
   Receipt,
   Palette,
+  DatabaseBackup,
 
   ChevronRight,
   Search,
@@ -162,6 +163,7 @@ const ICONS: Record<string, LucideIcon> = {
   Fingerprint,
   Receipt,
   Palette,
+  DatabaseBackup,
 };
 
 function Icon({

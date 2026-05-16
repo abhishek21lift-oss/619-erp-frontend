@@ -99,7 +99,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     <header className="fixed inset-x-0 top-0 z-[100] border-b border-white/60 bg-white/82 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
       <div ref={headerRef} className="mx-auto flex w-full max-w-[1600px] items-start gap-3 overflow-visible px-4 py-3 sm:px-6 lg:px-8">
         <button
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:hidden"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md lg:hidden"
           onClick={onMenuClick}
           aria-label="Open navigation"
         >

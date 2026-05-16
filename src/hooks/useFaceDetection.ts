@@ -9,8 +9,9 @@ const MODEL_SOURCES = [
   'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js-models@master',
 ];
 const RECOGNITION_THRESHOLD = 0.50;
-const DETECTION_INTERVAL_MS = 80;
+const DETECTION_INTERVAL_MS = 120;
 const MIN_FACE_SIZE = 80;
+const DETECTOR_CANDIDATES = ['ssd', 'tiny'] as const;
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -37,6 +38,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
   const rafRef = useRef<number>(0);
   const lastRunRef = useRef<number>(0);
   const processingRef = useRef(false);
+  const detectorRef = useRef<'ssd' | 'tiny'>('ssd');
 
   const getFaceApi = useCallback(async () => {
     if (faceApiRef.current) return faceApiRef.current;
@@ -62,6 +64,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     console.info('[face] trying model source', url);
     await Promise.race([
       Promise.all([
+        faceapi.nets.ssdMobilenetv1.loadFromUri(url),
         faceapi.nets.tinyFaceDetector.loadFromUri(url),
         faceapi.nets.faceLandmark68Net.loadFromUri(url),
         faceapi.nets.faceRecognitionNet.loadFromUri(url),
@@ -119,7 +122,24 @@ export function useFaceDetection(): UseFaceDetectionReturn {
       processingRef.current = true;
       try {
         ctx?.clearRect(0, 0, canvasEl.width, canvasEl.height);
-        const detections = await faceapi.detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptors();
+        let detections = [] as any[];
+        if (detectorRef.current === 'ssd') {
+          try {
+            detections = await faceapi
+              .detectAllFaces(videoEl, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.45 }))
+              .withFaceLandmarks()
+              .withFaceDescriptors();
+          } catch (e) {
+            console.warn('[face] ssd detect failed, falling back to tiny', e);
+            detectorRef.current = 'tiny';
+          }
+        }
+        if (!detections || detections.length === 0) {
+          detections = await faceapi
+            .detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 }))
+            .withFaceLandmarks()
+            .withFaceDescriptors();
+        }
         if (!detections || detections.length === 0) { onDetection({ detected: false, multipleFaces: false }); processingRef.current = false; return; }
         if (detections.length > 1) {
           if (ctx) {
