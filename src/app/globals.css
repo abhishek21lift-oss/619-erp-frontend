@@ -884,3 +884,13 @@ body {
 .sidebar-logo { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
 
 .field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+
+/* ── Mobile responsiveness ───────────────────────────────────── */
+.table-responsive{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+@media(max-width:640px){
+  table{min-width:560px;}
+  .card-grid{grid-template-columns:1fr !important;}
+  .stat-grid{grid-template-columns:1fr 1fr !important;}
+  .hide-mobile{display:none !important;}
+  .mobile-full{width:100% !important;}
+}
