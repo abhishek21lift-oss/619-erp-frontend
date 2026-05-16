@@ -338,12 +338,14 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
               <>
                 <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
                 {state === 'error' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#7f1d1d', fontSize: 13, padding: '0 1rem' }}>
-                  <AlertTriangle size={14} /> Face enrollment works best on updated Chrome or desktop browsers.
-                </div>
-                  <button className="btn btn-primary btn-sm" onClick={retry}>
-                    <RefreshCw size={14} /> Try again
-                  </button>
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#7f1d1d', fontSize: 13, padding: '0 1rem' }}>
+                      <AlertTriangle size={14} /> Face enrollment works best on updated Chrome or desktop browsers.
+                    </div>
+                    <button className="btn btn-primary btn-sm" onClick={retry}>
+                      <RefreshCw size={14} /> Try again
+                    </button>
+                  </>
                 )}
               </>
             ) : (
