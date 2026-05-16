@@ -695,13 +695,18 @@ function NewClientForm() {
                   placeholder="Health conditions, goals, special instructions…" />
               </div>
 
-              <div style={{ display: 'flex', gap: '.75rem' }}>
-                <button type="submit" className="member-bottom-primary" disabled={saving}>
-      {saving ? 'Saving…' : (isEditMode ? '💾 Update Member' : '💾 Save Member')}
-                </button>
-                <button type="button" className="btn btn-ghost btn-lg" onClick={() => router.back()}>Cancel</button>
-              </div></div>
-            </div>
+              <div className="member-bottom-bar">
+                <div className="member-bottom-copy">
+                  <strong>{isEditMode ? 'Ready to update this member?' : 'Ready to create this member?'}</strong>
+                  <span>Subscription setup continues inside the member profile after saving.</span>
+                </div>
+                <div className="member-bottom-actions">
+                  <button type="submit" className="member-bottom-primary" disabled={saving}>
+                    {saving ? 'Saving…' : (isEditMode ? 'Update Member' : 'Save Member')}
+                  </button>
+                  <button type="button" className="member-bottom-secondary" onClick={() => router.back()}>Cancel</button>
+                </div>
+              </div>
           </form>
         </div>
       </div>
