@@ -172,7 +172,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             )}
           </div>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <div className="ml-auto flex shrink-0 flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
             <button
               type="button"
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
@@ -219,22 +220,22 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 </div>
               )}
             </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
+              className="hidden h-10 w-full max-w-[360px] items-center justify-between rounded-[16px] border border-slate-200 bg-white px-3 text-sm text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-700 lg:inline-flex"
+            >
+              <span className="flex items-center gap-2.5">
+                <Search size={15} className="text-slate-400 transition group-hover:text-slate-600" />
+                <span className="truncate">Search pages, members...</span>
+              </span>
+              <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold tracking-wide text-slate-500">⌘K</span>
+            </button>
           </div>
         </div>
 
-        <div className="hidden lg:flex lg:items-center lg:justify-end">
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-            className="group inline-flex h-12 w-full max-w-[520px] items-center justify-between rounded-[18px] border border-slate-200 bg-white px-4 text-sm text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-700"
-          >
-            <span className="flex items-center gap-3">
-              <Search size={16} className="text-slate-400 transition group-hover:text-slate-600" />
-              <span>Search for pages, members, payments...</span>
-            </span>
-            <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold tracking-wide text-slate-500">⌘K</span>
-          </button>
-        </div>
       </div>
     </header>
   );
