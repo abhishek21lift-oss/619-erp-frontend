@@ -707,6 +707,8 @@ function NewClientForm() {
                   <button type="button" className="member-bottom-secondary" onClick={() => router.back()}>Cancel</button>
                 </div>
               </div>
+            </div>
+          </div>
           </form>
         </div>
       </div>
