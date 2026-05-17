@@ -177,18 +177,21 @@ export type StaffMember = {
   created_at?: string;
 };
 
+// All numeric fields are required (default 0 from API).
+// The page uses ?? 0 guards defensively, but the type must be
+// consistent so setState<StaffTarget[]> accepts the API response.
 export type StaffTarget = {
   id: string;
   staff_id: string;
   staff_name: string;
   role: string;
   month: string;
-  target_revenue?: number;
-  target_clients?: number;
-  target_sessions?: number;
-  achieved_revenue?: number;
-  achieved_clients?: number;
-  achieved_sessions?: number;
+  target_revenue: number;
+  target_clients: number;
+  target_sessions: number;
+  achieved_revenue: number;
+  achieved_clients: number;
+  achieved_sessions: number;
 };
 
 // Mirror of the dashboard summary endpoint shape. Kept loose-typed
