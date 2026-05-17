@@ -24,6 +24,10 @@ import {
   Users,
   Wallet,
   Zap,
+  CreditCard,
+  AlertCircle,
+  UserCheck,
+  CalendarCheck,
 } from 'lucide-react';
 
 import Guard from '@/components/Guard';
@@ -70,14 +74,19 @@ type DashSummary = {
     expired?: number;
     frozen?: number;
     new_this_month?: number;
+    new_today?: number;
   };
   revenue?: {
     today?: number;
     month?: number;
     year?: number;
     total?: number;
+    collected?: number;
+    collected_count?: number;
+    collected_count_today?: number;
   };
   total_dues?: number;
+  pending_invoices_count?: number;
   expiring_soon?: number;
   attendance_today?: number;
   birthdays_today?: number;
@@ -364,56 +373,81 @@ function DashboardContent() {
 /* ─────────────────────────  KPI row  ───────────────────────── */
 
 function KpiRow({ d }: { d: DashSummary }) {
-  const dueColor = (d.total_dues ?? 0) > 0 ? 'amber' : 'emerald';
-  const trainerCount = d.top_trainers?.length ?? 0;
-  const rawActiveMembers = d.clients?.active ?? 0;
-  const rawTotalMembers = d.clients?.total ?? 0;
-  const rawNewThisMonth = d.clients?.new_this_month ?? 0;
-  const correctedActiveMembers = rawTotalMembers === 0 && trainerCount > 0 ? 0 : Math.max(0, rawActiveMembers - trainerCount);
-  const correctedTotalMembers = rawTotalMembers === trainerCount ? 0 : Math.max(0, rawTotalMembers - trainerCount);
-  const correctedNewThisMonth = rawTotalMembers === 0 && trainerCount > 0 ? 0 : Math.max(0, rawNewThisMonth - trainerCount);
+  // Today's Revenue
+  const todayRevenue = d.revenue?.today ?? 0;
+  const monthRevenue = d.revenue?.month ?? 0;
+
+  // Collected Payments — use revenue.collected if available, else fall back to revenue.month
+  const collectedAmount = d.revenue?.collected ?? monthRevenue;
+  const collectedCountToday = d.revenue?.collected_count_today ?? d.revenue?.collected_count ?? 0;
+
+  // Pending Payments — total outstanding dues
+  const pendingAmount = d.total_dues ?? 0;
+  const pendingInvoices = d.pending_invoices_count ?? (d.clients?.expired ?? 0);
+
+  // New Clients
+  const newClientsToday = d.clients?.new_today ?? 0;
+  const newClientsMonth = d.clients?.new_this_month ?? 0;
+
+  // Renewals — expiring soon + pending renewals
+  const renewalsCount = (d.expiring_soon ?? 0) + (d.pending_renewals ?? 0);
+
   return (
     <>
-      <KpiCard className="kpi-premium"
+      {/* 1 — Today's Revenue → green */}
+      <KpiCard
+        className="kpi-premium"
         accent="emerald"
         label="Today's revenue"
-        value={fmtINRCompact(d.revenue?.today ?? 0)}
-        hint={`Month-to-date ${fmtINRCompact(d.revenue?.month ?? 0)}`}
+        value={fmtINRCompact(todayRevenue)}
+        hint={`Month-to-date ${fmtINRCompact(monthRevenue)}`}
         icon={<TrendingUp className="h-5 w-5" />}
-        href="/payments"
+        href="/finance/revenue"
       />
-      <KpiCard className="kpi-premium"
+
+      {/* 2 — Collected Payments → rose/pink */}
+      <KpiCard
+        className="kpi-premium"
         accent="rose"
-        label="Active members"
-        value={(d.clients?.active ?? 0).toLocaleString('en-IN')}
-        hint={`${d.clients?.new_this_month ?? 0} new this month`}
-        icon={<Users className="h-5 w-5" />}
-        href="/members/active"
+        label="Collected payments"
+        value={fmtINRCompact(collectedAmount)}
+        hint={`${collectedCountToday.toLocaleString('en-IN')} payments today`}
+        icon={<CreditCard className="h-5 w-5" />}
+        href="/finance/payments/collected"
       />
-      <KpiCard className="kpi-premium"
+
+      {/* 3 — Pending Payments → sky (blue) */}
+      <KpiCard
+        className="kpi-premium"
         accent="sky"
-        label="Today's check-ins"
-        value={(d.attendance_today ?? 0).toLocaleString('en-IN')}
-        hint="Members + walk-ins"
-        icon={<CheckCircle2 className="h-5 w-5" />}
-        href="/attendance"
-      />
-      <KpiCard className="kpi-premium"
-        accent="violet"
-        label="Renewals due"
-        value={(d.expiring_soon ?? 0).toLocaleString('en-IN')}
-        hint="Next 7 days"
-        icon={<RefreshCw className="h-5 w-5" />}
-        href="/members/expiring"
-      />
-      <KpiCard className="kpi-premium"
-        accent={dueColor}
-        label="Pending dues"
-        value={fmtINRCompact(d.total_dues ?? 0)}
-        hint={`${d.clients?.expired ?? 0} lapsed members`}
-        icon={<Banknote className="h-5 w-5" />}
-        href="/finance/dues"
+        label="Pending payments"
+        value={fmtINRCompact(pendingAmount)}
+        hint={`${pendingInvoices.toLocaleString('en-IN')} unpaid invoices`}
+        icon={<AlertCircle className="h-5 w-5" />}
+        href="/finance/payments/pending"
         deltaIs="bad"
+      />
+
+      {/* 4 — New Clients → purple */}
+      <KpiCard
+        className="kpi-premium"
+        accent="violet"
+        label="New clients"
+        value={newClientsToday.toLocaleString('en-IN')}
+        hint={`${newClientsMonth.toLocaleString('en-IN')} joined this month`}
+        icon={<UserPlus className="h-5 w-5" />}
+        href="/members/new"
+      />
+
+      {/* 5 — Renewals → amber */}
+      <KpiCard
+        className="kpi-premium"
+        accent="amber"
+        label="Renewals"
+        value={renewalsCount.toLocaleString('en-IN')}
+        hint="Next 7 days"
+        icon={<CalendarCheck className="h-5 w-5" />}
+        href="/members/renewals"
       />
     </>
   );
