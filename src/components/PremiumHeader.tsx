@@ -11,6 +11,30 @@ interface Props {
   onMenuClick?: () => void;
 }
 
+// Each nav group gets its own premium color identity
+const GROUP_COLORS: Record<string, {
+  gradient: string;
+  glow: string;
+  hoverBg: string;
+  hoverText: string;
+  dropdownAccent: string;
+  dropdownActiveBg: string;
+  dropdownActiveText: string;
+}> = {
+  dashboard:  { gradient: 'linear-gradient(135deg,#6d28d9,#4f46e5)', glow: 'rgba(109,40,217,0.30)', hoverBg: 'rgba(109,40,217,0.07)', hoverText: '#5b21b6', dropdownAccent: '#5b21b6', dropdownActiveBg: '#ede9fe', dropdownActiveText: '#5b21b6' },
+  sales:      { gradient: 'linear-gradient(135deg,#0369a1,#0891b2)', glow: 'rgba(8,145,178,0.28)', hoverBg: 'rgba(8,145,178,0.07)', hoverText: '#0369a1', dropdownAccent: '#0369a1', dropdownActiveBg: '#e0f2fe', dropdownActiveText: '#0369a1' },
+  members:    { gradient: 'linear-gradient(135deg,#0f766e,#059669)', glow: 'rgba(5,150,105,0.26)', hoverBg: 'rgba(5,150,105,0.07)', hoverText: '#0f766e', dropdownAccent: '#0f766e', dropdownActiveBg: '#d1fae5', dropdownActiveText: '#065f46' },
+  training:   { gradient: 'linear-gradient(135deg,#b45309,#d97706)', glow: 'rgba(217,119,6,0.26)', hoverBg: 'rgba(217,119,6,0.07)', hoverText: '#b45309', dropdownAccent: '#b45309', dropdownActiveBg: '#fef3c7', dropdownActiveText: '#92400e' },
+  attendance: { gradient: 'linear-gradient(135deg,#be185d,#db2777)', glow: 'rgba(219,39,119,0.26)', hoverBg: 'rgba(219,39,119,0.07)', hoverText: '#be185d', dropdownAccent: '#be185d', dropdownActiveBg: '#fce7f3', dropdownActiveText: '#9d174d' },
+  memberships:{ gradient: 'linear-gradient(135deg,#7c3aed,#a855f7)', glow: 'rgba(168,85,247,0.28)', hoverBg: 'rgba(168,85,247,0.07)', hoverText: '#7c3aed', dropdownAccent: '#7c3aed', dropdownActiveBg: '#f3e8ff', dropdownActiveText: '#6b21a8' },
+  finance:    { gradient: 'linear-gradient(135deg,#1d4ed8,#2563eb)', glow: 'rgba(37,99,235,0.26)', hoverBg: 'rgba(37,99,235,0.07)', hoverText: '#1d4ed8', dropdownAccent: '#1d4ed8', dropdownActiveBg: '#dbeafe', dropdownActiveText: '#1e40af' },
+  insights:   { gradient: 'linear-gradient(135deg,#0d9488,#06b6d4)', glow: 'rgba(6,182,212,0.26)', hoverBg: 'rgba(6,182,212,0.07)', hoverText: '#0d9488', dropdownAccent: '#0d9488', dropdownActiveBg: '#ccfbf1', dropdownActiveText: '#115e59' },
+  engagement: { gradient: 'linear-gradient(135deg,#dc2626,#f97316)', glow: 'rgba(249,115,22,0.26)', hoverBg: 'rgba(249,115,22,0.07)', hoverText: '#dc2626', dropdownAccent: '#dc2626', dropdownActiveBg: '#fee2e2', dropdownActiveText: '#991b1b' },
+  settings:   { gradient: 'linear-gradient(135deg,#475569,#64748b)', glow: 'rgba(100,116,139,0.22)', hoverBg: 'rgba(100,116,139,0.07)', hoverText: '#475569', dropdownAccent: '#475569', dropdownActiveBg: '#f1f5f9', dropdownActiveText: '#334155' },
+};
+
+const DEFAULT_COLOR = GROUP_COLORS.dashboard;
+
 export default function PremiumHeader({ onMenuClick }: Props) {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -87,34 +111,66 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   const renderGroup = (group: { id: string; label: string; items: typeof DASHBOARD_ITEM[] }) => {
     const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
     const opened = openMenu === group.id;
+    const colors = GROUP_COLORS[group.id] ?? DEFAULT_COLOR;
+
     return (
       <div key={group.id} className="relative shrink-0">
         <button
           type="button"
           onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
           aria-expanded={opened}
-          style={active ? {
-            background: 'linear-gradient(135deg, #5b21b6 0%, #4f46e5 50%, #7c3aed 100%)',
-            boxShadow: '0 4px 20px rgba(109,40,217,0.28), 0 1px 4px rgba(109,40,217,0.15)',
-          } : {}}
+          style={active
+            ? {
+                background: colors.gradient,
+                boxShadow: `0 4px 18px ${colors.glow}, 0 1px 3px ${colors.glow}`,
+                transform: 'translateY(-1px)',
+              }
+            : undefined
+          }
           className={cn(
-            'group relative inline-flex h-[42px] items-center gap-1.5 whitespace-nowrap rounded-full px-5 text-[13.5px] font-semibold tracking-[0.01em] transition-all duration-200 ease-out',
+            'group inline-flex h-[40px] items-center gap-1.5 whitespace-nowrap rounded-full px-[18px] text-[13px] font-semibold tracking-[0.01em] transition-all duration-200 ease-out',
             active
               ? 'text-white'
-              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 hover:-translate-y-px hover:shadow-[0_2px_8px_rgba(15,23,42,0.07)]',
+              : 'text-slate-500',
           )}
+          onMouseEnter={(e) => {
+            if (!active) {
+              (e.currentTarget as HTMLButtonElement).style.background = colors.hoverBg;
+              (e.currentTarget as HTMLButtonElement).style.color = colors.hoverText;
+              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 10px ${colors.glow}`;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!active) {
+              (e.currentTarget as HTMLButtonElement).style.background = '';
+              (e.currentTarget as HTMLButtonElement).style.color = '';
+              (e.currentTarget as HTMLButtonElement).style.transform = '';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '';
+            }
+          }}
         >
           <span>{group.label}</span>
           {group.items.length > 1 && (
-            <ChevronDown size={13} className={cn('shrink-0 opacity-75 transition-transform duration-200', opened && 'rotate-180')} />
+            <ChevronDown size={12} className={cn('shrink-0 opacity-70 transition-transform duration-200', opened && 'rotate-180')} />
           )}
         </button>
 
         {group.items.length > 1 && opened && (
           <div
-            className="absolute left-0 top-[calc(100%+8px)] z-[120] min-w-[230px] overflow-hidden rounded-[20px] border border-slate-200/70 bg-white/98 p-1.5 backdrop-blur-xl"
-            style={{ boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06)' }}
+            className="absolute left-0 top-[calc(100%+8px)] z-[120] min-w-[230px] overflow-hidden rounded-[20px] p-1.5 backdrop-blur-2xl"
+            style={{
+              background: 'rgba(255,255,255,0.92)',
+              border: `1px solid ${colors.glow.replace('0.', '0.15')}`,
+              boxShadow: `0 20px 50px rgba(15,23,42,0.10), 0 4px 16px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.9)`,
+              WebkitBackdropFilter: 'blur(20px)',
+            }}
           >
+            {/* Colored top accent strip */}
+            <div
+              className="mb-1.5 h-[3px] w-full rounded-full"
+              style={{ background: colors.gradient }}
+            />
             {group.items.map((item) => {
               const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -122,11 +178,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   type="button"
                   key={item.href}
                   onClick={() => router.push(item.href)}
+                  style={itemActive ? { background: colors.dropdownActiveBg, color: colors.dropdownActiveText } : undefined}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-[14px] px-3.5 py-2.5 text-left text-[13px] font-semibold transition-all duration-150',
-                    itemActive
-                      ? 'bg-violet-50 text-violet-700'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                    'flex w-full items-center justify-between rounded-[13px] px-3.5 py-2.5 text-left text-[13px] font-semibold transition-all duration-150',
+                    !itemActive && 'text-slate-600 hover:bg-slate-50/80 hover:text-slate-900',
                   )}
                 >
                   <span>{item.label}</span>
@@ -144,7 +199,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   return (
     <>
-      {/* Premium navbar keyframe injection */}
       <style>{`
         @keyframes brand-glow {
           0%, 100% { box-shadow: 0 4px 16px rgba(109,40,217,0.13), inset 0 1px 0 rgba(255,255,255,0.9); }
@@ -160,16 +214,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           boxShadow: '0 1px 0 rgba(15,23,42,0.05), 0 4px 24px rgba(15,23,42,0.04)',
         }}
       >
-        <div
-          ref={headerRef}
-          className="mx-auto flex w-full max-w-[1680px] flex-col px-4 pb-2 pt-3 sm:px-6 lg:px-8"
-        >
-          {/* ═══════════════════════════════════════════════
-              TOP ROW — Brand · Nav Rows · Right Utilities
-          ═══════════════════════════════════════════════ */}
+        <div ref={headerRef} className="mx-auto flex w-full max-w-[1680px] flex-col px-4 pb-2 pt-3 sm:px-6 lg:px-8">
           <div className="flex items-start gap-4">
 
-            {/* Mobile menu button */}
+            {/* Mobile menu */}
             <button
               className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-150 hover:bg-slate-50 hover:shadow-md lg:hidden"
               onClick={onMenuClick}
@@ -178,14 +226,11 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               <Menu size={17} />
             </button>
 
-            {/* ─── Premium Brand Section ─── */}
+            {/* Brand */}
             <div className="flex shrink-0 items-center gap-3">
-              {/* Logo holder — glassmorphism rounded square */}
               <div
                 className="logo-glow relative flex h-[48px] w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-[15px] border border-violet-200/60"
-                style={{
-                  background: 'linear-gradient(150deg, rgba(255,255,255,0.98) 0%, rgba(237,233,254,0.55) 100%)',
-                }}
+                style={{ background: 'linear-gradient(150deg, rgba(255,255,255,0.98) 0%, rgba(237,233,254,0.55) 100%)' }}
               >
                 <img
                   src="/619-logo.png"
@@ -199,7 +244,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                     if (fb) fb.style.display = 'flex';
                   }}
                 />
-                {/* Fallback monogram */}
                 <span
                   className="absolute hidden h-full w-full items-center justify-center rounded-[15px] text-[13px] font-black tracking-tight text-white"
                   style={{ background: 'linear-gradient(135deg,#5b21b6,#4f46e5)' }}
@@ -207,13 +251,11 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   619
                 </span>
               </div>
-
-              {/* Brand text */}
               <div className="hidden select-none flex-col gap-[3px] sm:flex">
                 <span
                   className="text-[15px] font-black leading-none tracking-[0.09em]"
                   style={{
-                    background: 'linear-gradient(120deg, #1e1b4b 0%, #3730a3 40%, #6d28d9 100%)',
+                    background: 'linear-gradient(120deg,#1e1b4b 0%,#3730a3 40%,#6d28d9 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
@@ -221,17 +263,14 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 >
                   619 FITNESS STUDIO
                 </span>
-                <span className="text-[9px] font-bold uppercase tracking-[0.30em] text-slate-400">
-                  Management OS
-                </span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.30em] text-slate-400">Management OS</span>
               </div>
             </div>
 
-            {/* Thin vertical divider */}
             <div className="mx-1 hidden h-10 w-px self-center bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
 
-            {/* ─── Nav rows (exact 2-row structure preserved) ─── */}
-            <div className="hidden min-w-0 flex-1 flex-col gap-[3px] pt-[3px] lg:flex">
+            {/* Nav rows */}
+            <div className="hidden min-w-0 flex-1 flex-col gap-[3px] pt-[2px] lg:flex">
               <nav aria-label="Primary navigation" className="flex min-w-0 flex-wrap items-center gap-1">
                 {primaryGroups.map(renderGroup)}
               </nav>
@@ -242,10 +281,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               )}
             </div>
 
-            {/* ─── Right utilities ─── */}
+            {/* Right utilities */}
             <div className="ml-auto flex shrink-0 items-start gap-2 pt-[2px]">
-
-              {/* Search — desktop */}
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
@@ -258,33 +295,30 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.08)]">⌘K</kbd>
               </button>
 
-              {/* Theme toggle */}
               <button
                 type="button"
-                className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:bg-white hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
               >
                 {hydrated ? (theme === 'light' ? <Moon size={15} /> : <Sun size={15} />) : <span style={{ width: 15 }} />}
               </button>
 
-              {/* Notifications */}
               <button
                 type="button"
-                className="relative inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:bg-white hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                className="relative inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
                 aria-label="Notifications"
               >
                 <Bell size={15} />
                 <span className="absolute right-[9px] top-[9px] h-[7px] w-[7px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
               </button>
 
-              {/* Account pill */}
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => toggleMenu('account')}
                   aria-expanded={openMenu === 'account'}
-                  className="inline-flex h-[38px] items-center gap-2 rounded-full border border-slate-200/90 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:bg-white hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                  className="inline-flex h-[38px] items-center gap-2 rounded-full border border-slate-200/90 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
                 >
                   <div
                     className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100"
@@ -311,13 +345,13 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
                 {openMenu === 'account' && (
                   <div
-                    className="absolute right-0 top-[calc(100%+8px)] z-[130] w-[220px] overflow-hidden rounded-[18px] border border-slate-200/70 bg-white/98 p-1.5 backdrop-blur-xl"
-                    style={{ boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06)' }}
+                    className="absolute right-0 top-[calc(100%+8px)] z-[130] w-[220px] overflow-hidden rounded-[18px] border border-slate-200/70 bg-white/95 p-1.5 backdrop-blur-2xl"
+                    style={{ boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06)', WebkitBackdropFilter: 'blur(20px)' }}
                   >
                     <button
                       type="button"
                       onClick={handleResetPassword}
-                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:text-slate-950"
+                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
                     >
                       <KeyRound size={14} className="text-violet-600" />
                       Reset password
