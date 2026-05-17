@@ -167,6 +167,30 @@ export type LeaveRequest = {
   updated_at?: string;
 };
 
+export type StaffMember = {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  status?: string;
+  created_at?: string;
+};
+
+export type StaffTarget = {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  role: string;
+  month: string;
+  target_revenue?: number;
+  target_clients?: number;
+  target_sessions?: number;
+  achieved_revenue?: number;
+  achieved_clients?: number;
+  achieved_sessions?: number;
+};
+
 // Mirror of the dashboard summary endpoint shape. Kept loose-typed
 // (everything optional) because individual fields can be missing or zero
 // when there's no data for a period — defensive UI code should still
@@ -525,5 +549,40 @@ export const api = {
       req<any[]>(`/api/reports/monthly${year ? `?year=${year}` : ''}`),
     trainerSummary: () => req<any[]>('/api/reports/trainer-summary'),
     dues: () => req<any[]>('/api/reports/dues'),
+  },
+
+  // ── STAFF ──────────────────────────────────────────────────────────
+  staff: {
+    list: (p?: any) => req<StaffMember[]>(`/api/staff${qs(p)}`),
+    get: (id: string) => req<StaffMember>(`/api/staff/${id}`),
+    create: (data: any) =>
+      req<{ message: string; staff: StaffMember }>('/api/staff', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: any) =>
+      req<{ message: string; staff: StaffMember }>(`/api/staff/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      req<{ message: string }>(`/api/staff/${id}`, { method: 'DELETE' }),
+
+    targets: {
+      list: (p?: { month?: string }) =>
+        req<StaffTarget[]>(`/api/staff/targets${qs(p)}`),
+      create: (data: any) =>
+        req<{ message: string; target: StaffTarget }>('/api/staff/targets', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+      update: (id: string, data: any) =>
+        req<{ message: string; target: StaffTarget }>(`/api/staff/targets/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+      delete: (id: string) =>
+        req<{ message: string }>(`/api/staff/targets/${id}`, { method: 'DELETE' }),
+    },
   },
 };
