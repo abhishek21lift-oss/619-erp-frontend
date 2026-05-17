@@ -34,7 +34,9 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     const next = theme === 'light' ? 'dark' : 'light';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('619_theme', next); } catch {}
+    try {
+      localStorage.setItem('619_theme', next);
+    } catch {}
   };
 
   useEffect(() => {
@@ -58,6 +60,9 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   useEffect(() => setOpenMenu(null), [pathname]);
 
+  const navItem = findItemByPath(pathname);
+  const pageTitle = navItem?.label ?? 'Dashboard';
+
   const topGroups = useMemo(() => {
     const visibleGroups = NAV_GROUPS.map((group) => ({
       ...group,
@@ -69,24 +74,33 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       items: SETTINGS_GROUP.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
     };
 
-    return [
+    const groups = [
       { id: 'dashboard', label: 'Dashboard', items: [DASHBOARD_ITEM] },
       ...visibleGroups,
       ...(visibleSettings.items.length ? [{ id: visibleSettings.id, label: visibleSettings.label, items: visibleSettings.items }] : []),
     ];
+
+    return groups;
   }, [user?.role]);
 
-  // Keep exact current split: first 6 on row-1, rest on row-2
   const primaryGroups = topGroups.slice(0, 6);
   const secondaryGroups = topGroups.slice(6);
+  const toggleMenu = (id: string) => setOpenMenu((current) => (current === id ? null : id));
 
-  const toggleMenu = (id: string) => setOpenMenu((c) => (c === id ? null : id));
-  const handleResetPassword = () => { setOpenMenu(null); router.push('/reset-password'); };
-  const handleLogout = () => { setOpenMenu(null); logout(); router.push('/login'); };
+  const handleResetPassword = () => {
+    setOpenMenu(null);
+    router.push('/reset-password');
+  };
+
+  const handleLogout = () => {
+    setOpenMenu(null);
+    logout();
+    router.push('/login');
+  };
 
   const accountLabel = user?.name || '619 FITNESS STUDIO';
   const roleLabel = user?.role || 'admin';
-  const initials = (user?.name || 'A').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+  const initials = (user?.name || 'A').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
   const renderGroup = (group: { id: string; label: string; items: typeof DASHBOARD_ITEM[] }) => {
     const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
@@ -97,39 +111,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         <button
           type="button"
           onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
+          className={active
+            ? 'inline-flex h-11 items-center gap-2 rounded-[16px] bg-gradient-to-r from-violet-700 to-purple-600 px-6 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(109,40,217,0.24)]'
+            : 'inline-flex h-11 items-center gap-2 rounded-[16px] px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-950'}
           aria-expanded={opened}
-          className={cn(
-            'group relative inline-flex h-[42px] items-center gap-1.5 whitespace-nowrap rounded-full px-5 text-[13.5px] font-semibold tracking-[0.005em] transition-all duration-200 ease-out',
-            active
-              ? [
-                  'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white',
-                  'shadow-[0_4px_20px_rgba(109,40,217,0.30),0_1px_3px_rgba(109,40,217,0.15)]',
-                  'hover:-translate-y-[1px] hover:shadow-[0_8px_28px_rgba(109,40,217,0.38)]',
-                ].join(' ')
-              : [
-                  'text-slate-600 hover:text-slate-950',
-                  'hover:bg-white hover:shadow-[0_2px_12px_rgba(15,23,42,0.08)]',
-                  'hover:-translate-y-[1px]',
-                ].join(' '),
-          )}
         >
-          {/* Animated underline for inactive hover */}
-          {!active && (
-            <span
-              className="absolute inset-x-4 bottom-[6px] h-[2px] scale-x-0 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 opacity-0 transition-all duration-200 group-hover:scale-x-100 group-hover:opacity-100"
-            />
-          )}
-          <span>{group.label}</span>
-          {group.items.length > 1 && (
-            <ChevronDown size={13} className={cn('shrink-0 opacity-70 transition-transform duration-200', opened && 'rotate-180')} />
-          )}
+          <span className="whitespace-nowrap">{group.label}</span>
+          {group.items.length > 1 && <ChevronDown size={15} className={cn('shrink-0 transition-transform', opened && 'rotate-180')} />}
         </button>
 
         {group.items.length > 1 && opened && (
-          <div
-            className="absolute left-0 top-[calc(100%+8px)] z-[120] min-w-[230px] overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/95 p-1.5 backdrop-blur-xl"
-            style={{ boxShadow: '0 20px_60px_rgba(15,23,42,0.12), 0 4px 16px rgba(15,23,42,0.06)' }}
-          >
+          <div className="absolute left-0 top-[calc(100%+10px)] z-[120] min-w-[240px] rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_24px_50px_rgba(15,23,42,0.12)]">
             {group.items.map((item) => {
               const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -137,17 +129,12 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   type="button"
                   key={item.href}
                   onClick={() => router.push(item.href)}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-[14px] px-3.5 py-2.5 text-left text-[13px] font-semibold transition-all duration-150',
-                    itemActive
-                      ? 'bg-gradient-to-r from-violet-50 to-indigo-50/80 text-violet-700'
-                      : 'text-slate-700 hover:bg-slate-50 hover:text-slate-950',
-                  )}
+                  className={itemActive
+                    ? 'flex w-full items-center justify-between rounded-2xl bg-violet-50 px-3 py-2.5 text-left text-sm font-semibold text-violet-700'
+                    : 'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50'}
                 >
                   <span>{item.label}</span>
-                  {item.isNew && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">New</span>
-                  )}
+                  {item.isNew && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">New</span>}
                 </button>
               );
             })}
@@ -158,203 +145,105 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   };
 
   return (
-    <header
-      className="fixed inset-x-0 top-0 z-[100] border-b border-slate-200/80 bg-white/[0.96] backdrop-blur-2xl"
-      style={{
-        WebkitBackdropFilter: 'blur(24px)',
-        boxShadow: '0 1px 0 rgba(15,23,42,0.06), 0 4px_24px_rgba(15,23,42,0.05)',
-      }}
-    >
-      <div
-        ref={headerRef}
-        className="mx-auto flex w-full max-w-[1680px] flex-col px-3 pb-2.5 pt-3 sm:px-6 lg:px-8"
-      >
-        {/* ══════════════════════════════════════════════
-            TOP ROW: Brand identity + right utility strip
-        ══════════════════════════════════════════════ */}
-        <div className="flex items-center gap-3 lg:gap-4">
-
-          {/* Mobile hamburger */}
+    <header className="fixed inset-x-0 top-0 z-[100] border-b border-slate-200 bg-white/96 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl">
+      <div ref={headerRef} className="mx-auto flex w-full max-w-[1680px] flex-col gap-3 px-3 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-start gap-3">
           <button
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white/80 text-slate-700 shadow-sm backdrop-blur-sm transition-all duration-150 hover:bg-white hover:shadow-md lg:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
             onClick={onMenuClick}
             aria-label="Open navigation"
           >
-            <Menu size={17} />
+            <Menu size={18} />
           </button>
 
-          {/* ─── Premium Brand Section ─── */}
-          <div className="flex shrink-0 items-center gap-3">
-            {/* Logo container — glassmorphism rounded square */}
-            <div
-              className="relative flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-violet-200/50"
-              style={{
-                background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(237,233,254,0.6) 100%)',
-                boxShadow: [
-                  '0 4px 16px rgba(109,40,217,0.14)',
-                  '0 1px 4px rgba(109,40,217,0.08)',
-                  'inset 0 1px 0 rgba(255,255,255,0.95)',
-                ].join(', '),
-              }}
-            >
-              <img
-                src="/619-logo.png"
-                alt="619 Fitness Studio"
-                width={34}
-                height={34}
-                className="h-[34px] w-[34px] object-contain"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
-                  if (fb) fb.style.display = 'flex';
-                }}
-              />
-              {/* Fallback monogram */}
-              <span
-                className="hidden h-full w-full items-center justify-center bg-gradient-to-br from-violet-600 to-indigo-700 text-[14px] font-black tracking-tight text-white"
-              >
-                619
-              </span>
-            </div>
-
-            {/* Brand text */}
-            <div className="hidden flex-col gap-0.5 sm:flex">
-              <span
-                className="text-[15px] font-black leading-none tracking-[0.10em]"
-                style={{
-                  background: 'linear-gradient(135deg, #1e1b4b 0%, #4338ca 45%, #7c3aed 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                619 FITNESS STUDIO
-              </span>
-              <span className="text-[9.5px] font-bold uppercase tracking-[0.26em] text-slate-400/90">
-                Management OS
-              </span>
-            </div>
+          <div className="min-w-0 shrink-0 pr-2">
+            <div className="truncate text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">619 Fitness Studio</div>
+            <h1 className="truncate pt-1 text-[18px] font-semibold tracking-tight text-slate-950">{pageTitle}</h1>
           </div>
 
-          {/* Thin divider (desktop only) */}
-          <div className="mx-1 hidden h-8 w-px bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
+          <div className="hidden min-w-0 flex-1 flex-col gap-2 lg:flex">
+            <nav className="flex min-w-0 flex-wrap items-center gap-2">
+              {primaryGroups.map(renderGroup)}
+            </nav>
+            {secondaryGroups.length > 0 && (
+              <nav className="flex min-w-0 flex-wrap items-center gap-2 pl-4">
+                {secondaryGroups.map(renderGroup)}
+              </nav>
+            )}
+          </div>
 
-          {/* ─── Right utility strip — pushed to far right ─── */}
-          <div className="ml-auto flex items-center gap-2">
-
-            {/* Search */}
+          <div className="ml-auto flex shrink-0 flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-              className="hidden h-[38px] w-[230px] items-center justify-between rounded-full border border-slate-200/90 bg-slate-50/70 px-3.5 text-[13px] text-slate-400 backdrop-blur-sm transition-all duration-150 hover:border-slate-300 hover:bg-white hover:text-slate-600 hover:shadow-[0_2px_12px_rgba(15,23,42,0.07)] xl:inline-flex"
-            >
-              <span className="flex items-center gap-2">
-                <Search size={13} className="shrink-0 text-slate-400" />
-                <span>Search pages, members...</span>
-              </span>
-              <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.08)]">⌘K</kbd>
-            </button>
-
-            {/* Theme toggle */}
-            <button
-              type="button"
-              className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200/90 bg-white/80 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-slate-300 hover:bg-white hover:text-slate-800 hover:shadow-[0_2px_10px_rgba(15,23,42,0.08)]"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               onClick={toggleTheme}
               aria-label="Toggle theme"
             >
-              {hydrated ? (theme === 'light' ? <Moon size={16} /> : <Sun size={16} />) : <span style={{ width: 16 }} />}
+              {hydrated ? (theme === 'light' ? <Moon size={18} /> : <Sun size={18} />) : <span style={{ width: 18 }} />}
             </button>
 
-            {/* Notifications */}
             <button
               type="button"
-              className="relative inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200/90 bg-white/80 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-slate-300 hover:bg-white hover:text-slate-800 hover:shadow-[0_2px_10px_rgba(15,23,42,0.08)]"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               aria-label="Notifications"
             >
-              <Bell size={16} />
-              <span className="absolute right-[9px] top-[9px] h-[8px] w-[8px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
+              <Bell size={18} />
+              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
             </button>
 
-            {/* Account pill */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => toggleMenu('account')}
+                className="inline-flex h-11 items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-3 pr-4 shadow-sm transition hover:bg-slate-50"
                 aria-expanded={openMenu === 'account'}
-                className="inline-flex h-[38px] items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/80 pl-1.5 pr-3 backdrop-blur-sm transition-all duration-150 hover:border-slate-300 hover:bg-white hover:shadow-[0_2px_10px_rgba(15,23,42,0.08)]"
               >
-                <div className="flex h-[26px] w-[26px] items-center justify-center overflow-hidden rounded-full border border-violet-200/60 bg-gradient-to-br from-violet-50 to-indigo-100">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
                   <img
                     src="/619-logo.png"
-                    alt="Account"
+                    alt="619 Fitness Studio"
                     className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                      const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
-                      if (fb) fb.style.display = 'flex';
-                    }}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; const next = e.currentTarget.nextElementSibling as HTMLElement | null; if (next) next.style.display = 'flex'; }}
                   />
-                  <span className="hidden h-full w-full items-center justify-center text-[10px] font-black text-violet-700">{initials}</span>
+                  <span className="hidden h-full w-full items-center justify-center bg-slate-100 text-xs font-semibold text-slate-700">{initials}</span>
                 </div>
                 <div className="hidden text-left xl:block">
-                  <div className="max-w-[160px] truncate text-[12.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
-                  <div className="mt-0.5 text-[10px] lowercase tracking-wide text-slate-400">{roleLabel}</div>
+                  <div className="max-w-[220px] truncate text-[13px] font-semibold text-slate-900">{accountLabel}</div>
+                  <div className="text-xs lowercase text-slate-500">{roleLabel}</div>
                 </div>
-                <ChevronDown
-                  size={13}
-                  className={cn('text-slate-400 transition-transform duration-200', openMenu === 'account' && 'rotate-180')}
-                />
+                <ChevronDown size={16} className={cn('text-slate-500 transition-transform', openMenu === 'account' && 'rotate-180')} />
               </button>
 
               {openMenu === 'account' && (
-                <div
-                  className="absolute right-0 top-[calc(100%+8px)] z-[130] w-[228px] overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/95 p-1.5 backdrop-blur-xl"
-                  style={{ boxShadow: '0 20px 60px rgba(15,23,42,0.12), 0 4px 16px rgba(15,23,42,0.06)' }}
-                >
-                  <button
-                    type="button"
-                    onClick={handleResetPassword}
-                    className="flex w-full items-center gap-3 rounded-[14px] px-3.5 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50 hover:text-slate-950"
-                  >
-                    <KeyRound size={15} className="text-violet-600" />
+                <div className="absolute right-0 top-[calc(100%+10px)] z-[130] w-[240px] rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_24px_50px_rgba(15,23,42,0.12)]">
+                  <button type="button" onClick={handleResetPassword} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                    <KeyRound size={16} className="text-violet-600" />
                     Reset password
                   </button>
-                  <div className="mx-2 my-1 h-px bg-slate-100" />
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-3 rounded-[14px] px-3.5 py-2.5 text-left text-[13px] font-semibold text-rose-600 transition-all duration-150 hover:bg-rose-50"
-                  >
-                    <LogOut size={15} />
+                  <button type="button" onClick={handleLogout} className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50">
+                    <LogOut size={16} />
                     Log out
                   </button>
                 </div>
               )}
             </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
+              className="hidden h-10 w-full max-w-[360px] items-center justify-between rounded-[16px] border border-slate-200 bg-white px-3 text-sm text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-700 lg:inline-flex"
+            >
+              <span className="flex items-center gap-2.5">
+                <Search size={15} className="text-slate-400 transition group-hover:text-slate-600" />
+                <span className="truncate">Search pages, members...</span>
+              </span>
+              <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold tracking-wide text-slate-500">⌘K</span>
+            </button>
           </div>
         </div>
 
-        {/* ══════════════════════════════════════════════
-            NAV ROWS: Exact same multi-row structure kept.
-            Row 1 — primary groups (first 6)
-            Row 2 — secondary groups (remaining)
-        ══════════════════════════════════════════════ */}
-        <div className="hidden pt-1 lg:block">
-          {/* Subtle top rule */}
-          <div className="mb-1.5 h-px bg-gradient-to-r from-transparent via-slate-200/80 to-transparent" />
-
-          {/* Row 1 */}
-          <nav aria-label="Primary navigation" className="flex flex-wrap items-center gap-1">
-            {primaryGroups.map(renderGroup)}
-          </nav>
-
-          {/* Row 2 (only if overflow groups exist) */}
-          {secondaryGroups.length > 0 && (
-            <nav aria-label="Secondary navigation" className="mt-0.5 flex flex-wrap items-center gap-1 pl-1">
-              {secondaryGroups.map(renderGroup)}
-            </nav>
-          )}
-        </div>
       </div>
     </header>
   );
