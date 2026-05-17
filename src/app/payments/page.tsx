@@ -313,7 +313,7 @@ function PaymentsContent() {
   }
 
   return (
-    <AppShell title="Revenue">
+    <AppShell>
       <style>{`
         @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         @keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
