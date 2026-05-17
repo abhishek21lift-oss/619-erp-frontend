@@ -670,7 +670,7 @@ export default function ClientsPage() {
   /* ─── Render ─────────────────────────────────────────── */
   return (
     <Guard>
-      <AppShell title="Members">
+      <AppShell>
         <div style={{ minHeight: '100vh', background: '#f1f4f9' }}>
 
           {/* ── Ambient background blobs ── */}
