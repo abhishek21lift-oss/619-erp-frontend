@@ -229,7 +229,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
   /* ── Loading ── */
   if (loading) return (
-    <Guard><AppShell title="Member Profile">
+    <Guard><AppShell>
       <div style={{ padding: '24px', maxWidth: 1100, margin: '0 auto' }}>
         {[200, 120, 360].map((h, i) => (
           <div key={i} style={{
@@ -245,7 +245,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   );
 
   if (error || !client) return (
-    <Guard><AppShell title="Member Profile">
+    <Guard><AppShell>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '50vh', gap: 16 }}>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#f1f5f9,#e2e8f0)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <User size={28} color="#94a3b8" />
@@ -281,7 +281,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
   return (
     <Guard>
-      <AppShell title="Member Profile">
+      <AppShell>
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
           .profile-page * { font-family: 'Inter', sans-serif; }
@@ -455,26 +455,21 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   <Link href={`/clients/${id}/renew-subscription`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<RefreshCw size={13} />} label="Renew" gradient="linear-gradient(135deg,#10b981,#059669)" />
                   </Link>
-                  {/* ✅ FIXED: Extension → routes to /extension page */}
                   <Link href={`/clients/${id}/extension`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<Clock size={13} />} label="Extension" outline />
                   </Link>
-                  {/* ✅ FIXED: Transfer → routes to /transfer page */}
                   <Link href={`/clients/${id}/transfer`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<ArrowRightLeft size={13} />} label="Transfer" outline />
                   </Link>
                   <Link href={`/clients/${id}/freeze`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<Snowflake size={13} />} label="Freeze" gradient="linear-gradient(135deg,#06b6d4,#0891b2)" />
                   </Link>
-                  {/* ✅ FIXED: Assign PT → routes to /assign-pt page */}
                   <Link href={`/clients/${id}/assign-pt`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<UserCheck size={13} />} label="Assign PT" gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" />
                   </Link>
-                  {/* ✅ FIXED: Renew PT → routes to /renew-pt page */}
                   <Link href={`/clients/${id}/renew-pt`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<RotateCcw size={13} />} label="Renew PT" outline />
                   </Link>
-                  {/* Face Enroll — keeps modal */}
                   <button
                     onClick={() => setEnrollOpen(true)}
                     style={{
@@ -487,7 +482,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   >
                     <ScanFace size={13} /> {client.face_enrolled_at ? 'Re-enroll Face' : 'Enroll Face ID'}
                   </button>
-                  {/* ✅ FIXED: Biometric → routes to /biometric page */}
                   <Link href={`/clients/${id}/biometric`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<Fingerprint size={13} />} label="Biometric" outline />
                   </Link>
@@ -529,7 +523,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           {activeTab === 'overview' && (
             <div className="tab-content overview-grid" style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
 
-              {/* Personal Information — compact */}
+              {/* Personal Information */}
               <GlassCard style={{ padding: '18px 22px' }} accent="#6366f1">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -547,7 +541,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 </div>
               </GlassCard>
 
-              {/* ✅ MEMBERSHIP CARD — no Add Subscription / Freeze buttons inside */}
+              {/* Membership */}
               <GlassCard style={{ padding: '18px 22px' }} accent="#10b981">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -576,7 +570,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                       : <span style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle size={11} /> Cleared</span>
                   } />
                 </div>
-                {/* Compact progress bar only — no action buttons inside card */}
                 {client.status === 'active' && days < 9999 && (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -594,7 +587,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 )}
               </GlassCard>
 
-              {/* Attendance Summary — compact */}
+              {/* Attendance Summary */}
               <GlassCard style={{ padding: '18px 22px' }} accent="#f59e0b">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -623,7 +616,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 )}
               </GlassCard>
 
-              {/* Payment Insights — compact */}
+              {/* Payment Insights */}
               <GlassCard style={{ padding: '18px 22px' }} accent="#8b5cf6">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
