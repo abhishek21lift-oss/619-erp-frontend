@@ -1,93 +1,142 @@
 'use client';
-import { useRouter } from 'next/navigation';
+/**
+ * TopBar — premium utility bar: hamburger, breadcrumb/title, search,
+ * notifications, theme toggle, avatar.
+ */
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Menu,
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  ChevronRight,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import Breadcrumbs from './Breadcrumbs';
 import NotificationBell from './NotificationBell';
 
-type Props = {
-  /** Optional page title — falls back to a greeting if omitted. */
+interface TopBarProps {
   title?: string;
-  /** Optional subline — falls back to today's date if omitted. */
-  subtitle?: string;
-  /** Slot for page-level primary action button(s). */
-  actions?: React.ReactNode;
-  /** Hide breadcrumbs (e.g. on the root dashboard where they'd say "Home › Dashboard"). */
-  hideBreadcrumbs?: boolean;
+  onMenuClick?: () => void;
+}
+
+const CRUMB_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
+  sales: 'Sales',
+  members: 'Members',
+  training: 'Training',
+  staff: 'Staff',
+  attendance: 'Attendance',
+  memberships: 'Memberships',
+  finance: 'Finance',
+  insights: 'Insights',
+  engagement: 'Engagement',
+  settings: 'Settings',
 };
 
-function todayString() {
-  return new Date().toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-function greet(name?: string) {
-  const h = new Date().getHours();
-  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  return `${g}, ${name?.split(' ')[0] || 'Coach'}`;
-}
-
-export default function TopBar({ title, subtitle, actions, hideBreadcrumbs }: Props) {
+export default function TopBar({ title, onMenuClick }: TopBarProps) {
   const { user } = useAuth();
-  const router = useRouter();
-  const isMac =
-    typeof navigator !== 'undefined' && navigator.platform.toLowerCase().includes('mac');
+  const path = usePathname();
+  const [dark, setDark] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  function openPalette() {
-    window.dispatchEvent(
-      new KeyboardEvent('keydown', {
-        key: 'k',
-        code: 'KeyK',
-        metaKey: isMac,
-        ctrlKey: !isMac,
-        bubbles: true,
-      }),
-    );
-  }
+  useEffect(() => {
+    const stored = document.documentElement.getAttribute('data-theme');
+    setDark(stored === 'dark');
+  }, []);
+
+  const toggleTheme = () => {
+    const next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    setDark(!dark);
+  };
+
+  /* Breadcrumb segments */
+  const segments = path
+    .split('/')
+    .filter(Boolean)
+    .map((seg) => ({
+      label: CRUMB_LABELS[seg] ?? seg.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      href: '/' + seg,
+    }));
 
   const initials = (user?.name || 'U')
     .split(' ')
-    .map((w) => w[0])
+    .map((w: string) => w[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
 
   return (
-    <div className="topbar v2">
+    <div className="topbar-inner">
+      {/* Left: hamburger + breadcrumb */}
       <div className="topbar-left">
-        {!hideBreadcrumbs && <Breadcrumbs />}
-        <div className="topbar-titles">
-          <div className="topbar-title">{title || greet(user?.name)}</div>
-          <div className="topbar-sub">{subtitle || todayString()}</div>
-        </div>
-      </div>
-
-      <div className="topbar-right">
         <button
-          type="button"
-          className="topbar-search-trigger"
-          onClick={openPalette}
-          aria-label="Open search (Cmd+K)"
+          className="topbar-hamburger"
+          onClick={onMenuClick}
+          aria-label="Toggle navigation"
         >
-          <span aria-hidden style={{ opacity: 0.75 }}>⌕</span>
-          <span className="topbar-search-text">Search anything</span>
-          <kbd className="topbar-kbd">{isMac ? '⌘' : 'Ctrl'}</kbd>
-          <kbd className="topbar-kbd">K</kbd>
+          <Menu size={18} />
         </button>
 
+        {/* Breadcrumb */}
+        {segments.length > 0 && (
+          <nav className="topbar-breadcrumb" aria-label="Breadcrumb">
+            <Link href="/dashboard" className="topbar-crumb topbar-crumb-home">
+              Home
+            </Link>
+            {segments.map((seg, i) => (
+              <span key={i} className="topbar-crumb-group">
+                <ChevronRight size={12} className="topbar-crumb-sep" />
+                {i === segments.length - 1 ? (
+                  <span className="topbar-crumb topbar-crumb-active">
+                    {seg.label}
+                  </span>
+                ) : (
+                  <Link href={seg.href} className="topbar-crumb">
+                    {seg.label}
+                  </Link>
+                )}
+              </span>
+            ))}
+          </nav>
+        )}
+      </div>
+
+      {/* Right: search, bell, theme, avatar */}
+      <div className="topbar-right">
+        {/* Search */}
+        <div className={`topbar-search${searchOpen ? ' open' : ''}`}>
+          <Search size={14} className="topbar-search-icon" />
+          <input
+            className="topbar-search-input"
+            placeholder="Search anything…"
+            onFocus={() => setSearchOpen(true)}
+            onBlur={() => setSearchOpen(false)}
+          />
+        </div>
+
+        {/* Notifications */}
         <NotificationBell />
 
-        {actions && <div className="topbar-actions">{actions}</div>}
-
+        {/* Theme toggle */}
         <button
-          type="button"
+          className="topbar-icon-btn"
+          onClick={toggleTheme}
+          aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={dark ? 'Light mode' : 'Dark mode'}
+        >
+          {dark ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+
+        {/* Avatar */}
+        <button
           className="topbar-avatar"
-          aria-label="Account"
-          onClick={() => router.push('/settings')}
-          title={user?.name || 'Account'}
+          aria-label="Profile"
+          title={user?.name || 'Profile'}
+          onClick={() => (window.location.href = '/settings')}
         >
           {initials}
         </button>
