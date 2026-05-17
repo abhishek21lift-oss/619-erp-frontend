@@ -1,20 +1,28 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, Plus, Trash2, ChevronDown, AlertCircle } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import {
+  WorkflowLayout,
+  WorkflowHero,
+  GlassCard,
+  SummaryRail,
+  StickyActionBar,
+  SectionHeading,
+  MetricPill,
+} from '@/components/workflow';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
+import { getStoredPlans } from '@/lib/plans';
 import { computeEndDate, toInputDate } from '@/lib/format';
 import { validatePlanRows } from '@/lib/validators/subscription';
 
 export default function AddSubscriptionPage() {
   return <Guard><Inner /></Guard>;
 }
-
-// Plans loaded dynamically from localStorage via usePlans()
 
 interface PlanRow {
   id: number;
@@ -24,36 +32,62 @@ interface PlanRow {
   basePrice: string;
   sellingPrice: string;
   coupon: string;
+  couponApplied: boolean;
 }
+
+const PAYMENT_METHODS = [
+  { value: 'CASH',   label: 'Cash',          icon: '💵' },
+  { value: 'UPI',    label: 'UPI',           icon: '📲' },
+  { value: 'CARD',   label: 'Card',          icon: '💳' },
+  { value: 'BANK',   label: 'Bank Transfer', icon: '🏦' },
+] as const;
+
+type PayMethod = 'CASH' | 'UPI' | 'CARD' | 'BANK';
 
 function Inner() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+  const router  = useRouter();
   const { toast } = useToast();
 
-  const [client, setClient] = useState<any>(null);
-  const [trainers, setTrainers] = useState<any[]>([]);
+  const [client,  setClient]  = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [error,   setError]   = useState('');
   const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'BANK'>('CASH');
 
+  const [paymentMethod, setPaymentMethod] = useState<PayMethod>('CASH');
   const [groupId, setGroupId] = useState('');
-  const [memPlans, setMemPlans] = useState<{name:string;base:number;final:number}[]>([]);
-  // Pre-fill today as the default start date — almost always what staff want,
-  // and lets the End Date populate immediately when they pick a plan.
+
+  const [memPlans, setMemPlans] = useState<{ name: string; base: number; final: number }[]>([]);
   const today = toInputDate(new Date());
 
+  const [planRows, setPlanRows] = useState<PlanRow[]>([
+    { id: 1, plan: '', startDate: today, endDate: '', basePrice: '', sellingPrice: '', coupon: '', couponApplied: false },
+  ]);
+
+  // ── Load plans ──
   useEffect(() => {
     const stored = getStoredPlans();
-    const mp = stored.filter(p => p.kind === 'Membership').map(p => ({ name: p.name, base: p.base_amount, final: p.final_amount }));
+    const mp = stored
+      .filter(p => p.kind === 'Membership')
+      .map(p => ({ name: p.name, base: p.base_amount, final: p.final_amount }));
     setMemPlans(mp.length > 0 ? mp : [
-      {name:'Monthly',base:2500,final:2500},{name:'Quarterly',base:7000,final:6500},
-      {name:'Half Yearly',base:13000,final:11500},{name:'Yearly',base:24000,final:20000}
+      { name: 'Monthly',     base: 2500,  final: 2500 },
+      { name: 'Quarterly',   base: 7000,  final: 6500 },
+      { name: 'Half Yearly', base: 13000, final: 11500 },
+      { name: 'Yearly',      base: 24000, final: 20000 },
     ]);
   }, []);
 
+  // ── Load client ──
+  useEffect(() => {
+    api.clients.get(id)
+      .then(c => setClient(c))
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  // ── Row helpers ──
   function handlePlanSelect(rowId: number, planName: string) {
     const plan = memPlans.find(p => p.name === planName);
     setPlanRows(r => r.map(x => {
@@ -63,254 +97,363 @@ function Inner() {
         ...x,
         plan: planName,
         startDate: start,
-        // Always recompute end date from the new plan + current start, so
-        // staff don't have to remember to clear it after switching plans.
         endDate: computeEndDate(start, planName),
-        basePrice: plan ? String(plan.base) : x.basePrice,
+        basePrice: plan ? String(plan.base)  : x.basePrice,
         sellingPrice: plan ? String(plan.final) : x.sellingPrice,
+        couponApplied: false,
       };
     }));
   }
 
   function handleStartDateChange(rowId: number, newStart: string) {
-    setPlanRows(r => r.map(x => x.id === rowId
-      ? { ...x, startDate: newStart, endDate: computeEndDate(newStart, x.plan) }
-      : x
+    setPlanRows(r => r.map(x =>
+      x.id === rowId
+        ? { ...x, startDate: newStart, endDate: computeEndDate(newStart, x.plan) }
+        : x
     ));
   }
 
-  const [planRows, setPlanRows] = useState<PlanRow[]>([
-    { id: 1, plan: '', startDate: '', endDate: '', basePrice: '', sellingPrice: '', coupon: '' }
-  ]);
-
-  useEffect(() => {
-    Promise.all([
-      api.clients.get(id),
-      api.trainers.list().catch(() => []),
-    ]).then(([c, t]) => {
-      setClient(c);
-      setTrainers(Array.isArray(t) ? t : []);
-    }).catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [id]);
+  function updateRow(rowId: number, field: keyof PlanRow, value: string | boolean) {
+    setPlanRows(r => r.map(x => x.id === rowId ? { ...x, [field]: value } : x));
+  }
 
   function addPlanRow() {
-    setPlanRows((r) => [...r, { id: Date.now(), plan: '', startDate: '', endDate: '', basePrice: '', sellingPrice: '', coupon: '' }]);
+    setPlanRows(r => [...r, {
+      id: Date.now(), plan: '', startDate: today, endDate: '',
+      basePrice: '', sellingPrice: '', coupon: '', couponApplied: false,
+    }]);
   }
+
   function removePlanRow(rowId: number) {
     if (planRows.length <= 1) return;
-    setPlanRows((r) => r.filter((x) => x.id !== rowId));
-  }
-  function updateRow(rowId: number, field: keyof PlanRow, value: string) {
-    setPlanRows((r) => r.map((x) => x.id === rowId ? { ...x, [field]: value } : x));
+    setPlanRows(r => r.filter(x => x.id !== rowId));
   }
 
-  const totalAmount = planRows.reduce((s, r) => s + (parseFloat(r.sellingPrice) || 0), 0);
+  // ── Pricing ──
+  const mrp      = planRows.reduce((s, r) => s + (parseFloat(r.basePrice)     || 0), 0);
+  const net      = planRows.reduce((s, r) => s + (parseFloat(r.sellingPrice)  || 0), 0);
+  const discount = Math.max(0, mrp - net);
+  const fmt      = (n: number) => '₹\u202f' + n.toLocaleString('en-IN');
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    // Shared validator (lib/validators/subscription) — same rules also run
-    // on the backend so this is purely a UX shortcut.
-    const { error: validationError } = validatePlanRows(planRows);
-    if (validationError) {
-      setError(validationError);
-      toast.error(validationError);
-      return;
-    }
-
+  // ── Submit ──
+  async function handleSubmit() {
+    setError(''); setSuccess('');
+    const { error: ve } = validatePlanRows(planRows);
+    if (ve) { setError(ve); toast.error(ve); return; }
     setSaving(true);
     try {
       const body = {
-        plan_rows: planRows.map((r) => ({
-          plan: r.plan,
-          startDate: r.startDate,
-          endDate: r.endDate,
-          basePrice: parseFloat(r.basePrice) || 0,
+        plan_rows: planRows.map(r => ({
+          plan:         r.plan,
+          startDate:    r.startDate,
+          endDate:      r.endDate,
+          basePrice:    parseFloat(r.basePrice)    || 0,
           sellingPrice: parseFloat(r.sellingPrice) || 0,
-          coupon: r.coupon || null,
+          coupon:       r.coupon || null,
         })),
-        group_id: groupId || null,
+        group_id:       groupId || null,
         payment_method: paymentMethod,
       };
-
-      // Goes through req() → adds NEXT_PUBLIC_API_URL, attaches the JWT,
-      // throws on non-2xx, and redirects to /login on 401. None of which
-      // raw fetch() did before — that's why every submit silently "worked".
       const result = await api.clients.addSubscription(id, body);
-
       const msg = result?.message || 'Subscription added successfully!';
       setSuccess(msg);
       toast.success(msg);
       setTimeout(() => router.push(`/clients/${id}`), 900);
     } catch (err: any) {
       const msg = err?.message || 'Failed to add subscription. Please try again.';
-      setError(msg);
-      toast.error(msg);
+      setError(msg); toast.error(msg);
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <AppShell><div className="page-main" style={{ padding: '2rem', color: 'var(--muted)' }}>Loading…</div></AppShell>;
+  // ── Loading state ──
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-white">
+          <div className="max-w-[1180px] mx-auto px-4 py-8 space-y-4">
+            {[1,2,3].map(i => (
+              <div key={i} className="rounded-2xl bg-white/70 border border-white/60 h-32 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
 
   const initials = (client?.name || 'C').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
+  // ── Summary rail rows ──
+  const summaryRows = [
+    { label: 'MRP',              value: fmt(mrp),      strikethrough: discount > 0 },
+    { label: 'Discount',         value: discount > 0 ? `− ${fmt(discount)}` : '—', muted: discount === 0 },
+    { label: 'Net Sales Amount', value: fmt(net),      highlight: true },
+    { label: 'Payment Method',   value: PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label || 'Cash', muted: true },
+  ];
+
+  const activePlan = planRows.find(r => r.plan);
+
   return (
     <AppShell>
-      <div className="page-main">
-        <div className="ptf-wrap">
-          <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
-
-          {success && <div className="ptf-success">✓ {success}</div>}
-          {error && <div className="alert alert-error">{error}</div>}
-
-          {/* Client hero */}
-          <div className="ptf-client-hero">
-            {client?.photo_url
-              ? <img src={client.photo_url} alt={client.name} className="ptf-client-avatar" />
-              : <div className="ptf-client-avatar-initials">{initials}</div>
+      <WorkflowLayout
+        hero={
+          <WorkflowHero
+            backHref={`/clients/${id}`}
+            backLabel="Back to Member"
+            eyebrow="MEMBERSHIP ASSIGNMENT"
+            title={`Add Subscription — ${client?.name || '…'}`}
+            subtitle={[client?.mobile, client?.email].filter(Boolean).join('  ·  ')}
+            avatar={client?.photo_url || undefined}
+            initials={initials}
+            badges={
+              <>
+                {activePlan && <MetricPill label="Plan" value={activePlan.plan} variant="info" dot />}
+                {net > 0 && <MetricPill label="Total" value={fmt(net)} variant="success" />}
+              </>
             }
-            <div>
-              <div className="ptf-client-name">{client?.name}</div>
-              <div className="ptf-client-meta">📞 {client?.mobile || '—'} &bull; {client?.email || '—'}</div>
-            </div>
-          </div>
+          />
+        }
+        alerts={
+          <AnimatePresence mode="popLayout">
+            {error && (
+              <motion.div
+                key="err"
+                initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0" />{error}
+              </motion.div>
+            )}
+            {success && (
+              <motion.div
+                key="ok"
+                initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-700"
+              >
+                <CheckCircle2 className="w-4 h-4 shrink-0" />{success}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        }
+        main={
+          <>
+            {/* ── Plan Rows ── */}
+            <GlassCard className="p-6">
+              <SectionHeading
+                eyebrow="PLAN SELECTION"
+                title="Membership Plans"
+                description="Select one or more plans with start dates, pricing, and optional coupons."
+                action={
+                  <button
+                    type="button"
+                    onClick={addPlanRow}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Plan
+                  </button>
+                }
+              />
 
-          <form onSubmit={handleSubmit} className="subscription-assignment-form">
-            <section className="subscription-premium-card subscription-assign-main">
-              <div className="subscription-section-header subscription-section-header--plans">
-                <div>
-                  <p className="subscription-section-kicker">MEMBERSHIP ASSIGNMENT</p>
-                  <h2>Add Subscription</h2>
-                  <span>Organized pricing, duration, and discount controls in one premium CRM workspace.</span>
-                </div>
-              </div>
-              <div className="subscription-section-body">
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="ptf-plan-table">
-                    <thead>
-                      <tr>
-                        <th className="ptf-plan-num">#</th>
-                        <th>Membership Plan</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Base Price</th>
-                        <th>Selling Price</th>
-                        <th>Coupon</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {planRows.map((row, i) => (
-                        <tr key={row.id}>
-                          <td className="ptf-plan-num">{i + 1}</td>
-                          <td>
-                            <select className="ptf-select" value={row.plan} onChange={(e) => handlePlanSelect(row.id, e.target.value)} required>
-                              <option value="">Select Membership Plan</option>
-                              {memPlans.map((p) => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
-                            </select>
-                          </td>
-                          <td><input type="date" className="ptf-input" value={row.startDate} onChange={(e) => handleStartDateChange(row.id, e.target.value)} required /></td>
-                          <td><input type="date" className="ptf-input" value={row.endDate} onChange={(e) => updateRow(row.id, 'endDate', e.target.value)} required /></td>
-                          <td><input type="number" className="ptf-input" value={row.basePrice} onChange={(e) => updateRow(row.id, 'basePrice', e.target.value)} placeholder="0" /></td>
-                          <td><input type="number" className="ptf-input" value={row.sellingPrice} onChange={(e) => updateRow(row.id, 'sellingPrice', e.target.value)} placeholder="0" required /></td>
-                          <td>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                              <input type="text" className="ptf-input" placeholder="Code" value={row.coupon} onChange={(e) => updateRow(row.id, 'coupon', e.target.value)} />
-                              <button type="button" style={{ padding: '0 .5rem', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer', fontSize: '.75rem', whiteSpace: 'nowrap' }}>Apply</button>
-                            </div>
-                          </td>
-                          <td>
-                            {planRows.length > 1 && (
-                              <button type="button" onClick={() => removePlanRow(row.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 1.1 + 'rem', lineHeight: 1 }}>✕</button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <button type="button" onClick={addPlanRow} style={{ alignSelf: 'flex-start', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, padding: '.4rem .9rem', fontWeight: 700, cursor: 'pointer', fontSize: '.8rem' }}>
-                  + Add more plan
-                </button>
-
-                <div className="ptf-field" style={{ marginTop: '.5rem' }}>
-                  <label className="ptf-label">Group Members Id</label>
-                  <input className="ptf-input" placeholder="Enter Member Code" value={groupId} onChange={(e) => setGroupId(e.target.value)} />
-                  <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                    <button type="button" style={{ fontSize: '.75rem', padding: '.3rem .65rem', border: '1.5px solid var(--accent)', color: 'var(--accent)', background: '#fff', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>🔍 Lookup Member code</button>
-                    <button type="button" style={{ fontSize: '.75rem', padding: '.3rem .65rem', border: '1.5px solid var(--accent)', color: 'var(--accent)', background: '#fff', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>🔍 Lookup Enquiry code</button>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <div className="subscription-split-grid" style={{ marginTop: 20 }}>
-              <section className="subscription-premium-card">
-                <div className="subscription-section-header subscription-section-header--payment">
-                  <div>
-                    <p className="subscription-section-kicker">PAYMENT DETAILS</p>
-                    <h2>Payment Breakdown</h2>
-                    <span>Keep method, totals, and commercial details clearly separated for staff.</span>
-                  </div>
-                </div>
-                <div className="subscription-section-body">
-                  <div className="ptf-field" style={{ marginBottom: '0.75rem' }}>
-                    <label className="ptf-label">Payment Method</label>
-                    <select className="ptf-select" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as typeof paymentMethod)}>
-                      <option value="CASH">Cash</option>
-                      <option value="UPI">UPI</option>
-                      <option value="CARD">Card</option>
-                      <option value="BANK">Bank transfer</option>
-                    </select>
-                  </div>
-
-                  {(() => {
-                    const mrp = planRows.reduce((s, r) => s + (parseFloat(r.basePrice) || 0), 0);
-                    const net = totalAmount;
-                    const discount = Math.max(0, mrp - net);
-                    return (
-                      <div className="ptf-breakdown">
-                        <div className="ptf-breakdown-row"><span>MRP</span><span className="ptf-breakdown-val">₹ {mrp.toLocaleString('en-IN')}</span></div>
-                        <div className="ptf-breakdown-row"><span>Discount</span><span className="ptf-breakdown-val">₹ {discount.toLocaleString('en-IN')}</span></div>
-                        <div className="ptf-breakdown-row"><span>Net Sales Amount</span><span className="ptf-breakdown-val">₹ {net.toLocaleString('en-IN')}</span></div>
-                        <div className="ptf-breakdown-row total"><span>Total Amount to be Paid</span><span>₹ {net.toLocaleString('en-IN')}</span></div>
+              <div className="space-y-4">
+                <AnimatePresence>
+                  {planRows.map((row, i) => (
+                    <motion.div
+                      key={row.id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.97 }}
+                      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                      className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4"
+                    >
+                      {/* Row header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Plan {i + 1}</span>
+                        {planRows.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removePlanRow(row.id)}
+                            className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
-                    );
-                  })()}
-                </div>
-              </section>
 
-              <section className="subscription-premium-card">
-                <div className="subscription-section-header subscription-section-header--summary">
-                  <div>
-                    <p className="subscription-section-kicker">FINAL ACTIONS</p>
-                    <h2>Confirm Assignment</h2>
-                    <span>Review and complete the subscription with a clean final action area.</span>
-                  </div>
-                </div>
-                <div className="subscription-section-body">
-                  <div className="ptf-total-box">
-                    <div className="ptf-total-label">Total Assignment Value</div>
-                    <div className="ptf-total-value">₹ {totalAmount.toLocaleString('en-IN')}</div>
-                  </div>
+                      {/* Plan name chips */}
+                      {memPlans.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {memPlans.map(p => (
+                            <button
+                              key={p.name}
+                              type="button"
+                              onClick={() => handlePlanSelect(row.id, p.name)}
+                              className={[
+                                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                                row.plan === p.name
+                                  ? 'bg-indigo-600 text-white shadow-[0_2px_8px_rgba(99,102,241,0.35)]'
+                                  : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600',
+                              ].join(' ')}
+                            >
+                              {p.name} &nbsp;·&nbsp; ₹{p.final.toLocaleString('en-IN')}
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
-                  <div className="ptf-actions">
-                    <Link href={`/clients/${id}`} className="ptf-btn-secondary">Cancel</Link>
-                    <button type="submit" className="ptf-btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Add Subscription'}</button>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </form>
-        </div>
-      </div>
+                      {/* Date + price grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-500 mb-1">Start Date</label>
+                          <input
+                            type="date"
+                            value={row.startDate}
+                            onChange={e => handleStartDateChange(row.id, e.target.value)}
+                            required
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-500 mb-1">End Date</label>
+                          <input
+                            type="date"
+                            value={row.endDate}
+                            onChange={e => updateRow(row.id, 'endDate', e.target.value)}
+                            required
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-500 mb-1">Base Price (₹)</label>
+                          <input
+                            type="number"
+                            value={row.basePrice}
+                            onChange={e => updateRow(row.id, 'basePrice', e.target.value)}
+                            placeholder="0"
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-500 mb-1">Selling Price (₹) *</label>
+                          <input
+                            type="number"
+                            value={row.sellingPrice}
+                            onChange={e => updateRow(row.id, 'sellingPrice', e.target.value)}
+                            placeholder="0"
+                            required
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Coupon */}
+                      <div className="mt-3 flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Coupon code (optional)"
+                          value={row.coupon}
+                          onChange={e => updateRow(row.id, 'coupon', e.target.value)}
+                          className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateRow(row.id, 'couponApplied', true)}
+                          disabled={!row.coupon}
+                          className="px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 disabled:opacity-40 transition-colors"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </GlassCard>
+
+            {/* ── Payment Method ── */}
+            <GlassCard className="p-6">
+              <SectionHeading
+                eyebrow="PAYMENT"
+                title="Payment Method"
+                description="Select how this subscription is being paid."
+              />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {PAYMENT_METHODS.map(m => (
+                  <button
+                    key={m.value}
+                    type="button"
+                    onClick={() => setPaymentMethod(m.value)}
+                    className={[
+                      'flex flex-col items-center gap-2 py-4 rounded-xl border text-sm font-semibold transition-all',
+                      paymentMethod === m.value
+                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-[0_4px_14px_rgba(99,102,241,0.35)]'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300',
+                    ].join(' ')}
+                  >
+                    <span className="text-2xl">{m.icon}</span>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </GlassCard>
+
+            {/* ── Group ID ── */}
+            <GlassCard className="p-6">
+              <SectionHeading
+                eyebrow="GROUP"
+                title="Group / Couple Membership"
+                description="Link to an existing member or enquiry code if applicable."
+              />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder="Enter Member or Enquiry Code"
+                  value={groupId}
+                  onChange={e => setGroupId(e.target.value)}
+                  className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                />
+                <button type="button" className="px-4 py-2.5 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap transition-colors">
+                  🔍 Lookup Member Code
+                </button>
+                <button type="button" className="px-4 py-2.5 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 whitespace-nowrap transition-colors">
+                  🔍 Lookup Enquiry Code
+                </button>
+              </div>
+            </GlassCard>
+          </>
+        }
+        aside={
+          <SummaryRail
+            eyebrow="ORDER SUMMARY"
+            title="Pricing Breakdown"
+            rows={summaryRows}
+            total={{ label: 'Total Payable', value: fmt(net) }}
+          >
+            {activePlan && (
+              <div className="mt-1 rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3 text-xs text-indigo-700 space-y-1.5">
+                <p className="font-semibold text-indigo-800">Membership Preview</p>
+                <p>Plan &nbsp;<strong>{activePlan.plan}</strong></p>
+                {activePlan.startDate && <p>Starts &nbsp;<strong>{activePlan.startDate}</strong></p>}
+                {activePlan.endDate   && <p>Ends &nbsp;<strong>{activePlan.endDate}</strong></p>}
+              </div>
+            )}
+          </SummaryRail>
+        }
+        footer={
+          <StickyActionBar
+            total={net > 0 ? fmt(net) : undefined}
+            totalLabel="Total Payable"
+            helperText={paymentMethod !== 'CASH' ? `Paying via ${PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label}` : undefined}
+            primaryLabel="Confirm Subscription"
+            primaryLoading={saving}
+            primaryDisabled={saving}
+            onPrimary={handleSubmit}
+            secondaryLabel="Cancel"
+            onSecondary={() => router.push(`/clients/${id}`)}
+          />
+        }
+      />
     </AppShell>
   );
 }
-
-
