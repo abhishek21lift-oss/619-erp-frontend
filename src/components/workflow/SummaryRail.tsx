@@ -12,20 +12,41 @@ interface RailRow {
   muted?: boolean;
 }
 
-interface SummaryRailProps {
+export interface SummaryRailProps {
   title?: string;
   eyebrow?: string;
-  rows: RailRow[];
-  total?: { label: string; value: string | number };
+  // Legacy API
+  rows?: RailRow[];
+  total?: { label: string; value: string | number } | number;
+  // New API (pages pass `items` array + numeric `total`)
+  items?: Array<{ label: string; value: string | number; highlight?: boolean; strikethrough?: boolean; muted?: boolean }>;
+  // Optional client preview (ignored for layout, accepted to avoid type errors)
+  client?: any;
   children?: ReactNode;
 }
 
-export function SummaryRail({ title = 'Order Summary', eyebrow = 'OVERVIEW', rows, total, children }: SummaryRailProps) {
+export function SummaryRail({
+  title = 'Order Summary',
+  eyebrow = 'OVERVIEW',
+  rows,
+  items,
+  total,
+  children,
+}: SummaryRailProps) {
+  // Normalise: pages that pass `items` instead of `rows`
+  const resolvedRows: RailRow[] = rows ?? items ?? [];
+
+  // Normalise total: pages pass a raw number, legacy passes { label, value }
+  const resolvedTotal: { label: string; value: string | number } | undefined =
+    typeof total === 'number'
+      ? { label: 'Total', value: `₹ ${total.toLocaleString('en-IN')}` }
+      : total;
+
   return (
     <GlassCard className="p-5">
       <SectionHeading eyebrow={eyebrow} title={title} />
       <div className="space-y-2.5">
-        {rows.map((row, i) => (
+        {resolvedRows.map((row, i) => (
           <motion.div
             key={i}
             layout
@@ -46,18 +67,18 @@ export function SummaryRail({ title = 'Order Summary', eyebrow = 'OVERVIEW', row
         ))}
       </div>
 
-      {total && (
+      {resolvedTotal && (
         <>
           <div className="my-4 border-t border-slate-100" />
           <motion.div layout className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-700">{total.label}</span>
+            <span className="text-sm font-semibold text-slate-700">{resolvedTotal.label}</span>
             <motion.span
-              key={String(total.value)}
+              key={String(resolvedTotal.value)}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="text-xl font-bold text-indigo-600"
             >
-              {total.value}
+              {resolvedTotal.value}
             </motion.span>
           </motion.div>
         </>
