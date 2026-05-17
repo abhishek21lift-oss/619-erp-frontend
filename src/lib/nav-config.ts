@@ -20,6 +20,7 @@ export type NavItem = {
   badge?: string;        // badge-provider key
   isNew?: boolean;       // show "NEW" pill
   comingSoon?: boolean;  // render disabled with tooltip
+  children?: NavItem[];  // nested submenu items
 };
 
 export type NavGroup = {
@@ -95,7 +96,16 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Memberships',
     icon: 'CreditCard',
     items: [
-      { href: '/plans',                     label: 'Plans & Pricing',  icon: 'Layers',       role: 'admin' },
+      {
+        href: '/plans',
+        label: 'Plans & Pricing',
+        icon: 'Layers',
+        role: 'admin',
+        children: [
+          { href: '/plans/create', label: 'Create Membership Plan', icon: 'PlusCircle', role: 'admin' },
+          { href: '/plans',        label: 'My Membership Plans',    icon: 'LayoutGrid', role: 'admin' },
+        ],
+      },
       { href: '/memberships/subscriptions', label: 'Subscriptions',    icon: 'RefreshCw' },
       { href: '/appointments',              label: 'Appointments',     icon: 'CalendarDays' },
     ],
@@ -176,7 +186,14 @@ export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: st
   const out: Array<NavItem & { groupId: string; groupLabel: string }> = [];
   out.push({ ...DASHBOARD_ITEM, groupId: 'dashboard', groupLabel: 'Dashboard' });
   for (const g of NAV_GROUPS) {
-    for (const it of g.items) out.push({ ...it, groupId: g.id, groupLabel: g.label });
+    for (const it of g.items) {
+      out.push({ ...it, groupId: g.id, groupLabel: g.label });
+      if (it.children) {
+        for (const child of it.children) {
+          out.push({ ...child, groupId: g.id, groupLabel: g.label });
+        }
+      }
+    }
   }
   for (const it of SETTINGS_GROUP.items) out.push({ ...it, groupId: SETTINGS_GROUP.id, groupLabel: SETTINGS_GROUP.label });
   return out;
