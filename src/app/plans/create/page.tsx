@@ -53,7 +53,6 @@ function fmtINR(n: number) {
 function Inner() {
   const router = useRouter();
 
-  // Form state
   const [kind, setKind] = useState<PlanKind>('Membership');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -239,7 +238,6 @@ function Inner() {
                     <Layers size={16} style={{ color: colorObj.from }} /> Basic Information
                   </h2>
                   <div className="grid gap-5">
-                    {/* Plan Name */}
                     <div>
                       <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Plan Name *</label>
                       <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Premium Monthly Membership"
@@ -251,7 +249,6 @@ function Inner() {
                         }}
                       />
                     </div>
-                    {/* Description */}
                     <div>
                       <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Description</label>
                       <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
@@ -264,7 +261,6 @@ function Inner() {
                         }}
                       />
                     </div>
-                    {/* Plan Color */}
                     <div>
                       <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 10 }}>Plan Theme Color</label>
                       <div className="flex gap-3 flex-wrap">
@@ -285,7 +281,6 @@ function Inner() {
                         ))}
                       </div>
                     </div>
-                    {/* Popular toggle */}
                     <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: popular ? `${colorObj.from}0d` : 'rgba(248,250,252,0.8)', border: `1.5px solid ${popular ? colorObj.from + '40' : 'rgba(0,0,0,0.07)'}`, transition: 'all 0.2s' }}>
                       <div className="flex items-center gap-3">
                         <Star size={18} style={{ color: popular ? colorObj.from : '#94a3b8' }} />
@@ -324,7 +319,6 @@ function Inner() {
                     <DollarSign size={16} style={{ color: colorObj.from }} /> Pricing Builder
                   </h2>
                   <div className="grid gap-5">
-                    {/* Base Price */}
                     <div>
                       <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Base Price (MRP)</label>
                       <div className="relative">
@@ -338,7 +332,6 @@ function Inner() {
                         />
                       </div>
                     </div>
-                    {/* Discount */}
                     <div>
                       <div className="flex justify-between mb-2">
                         <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Discount Amount</label>
@@ -359,7 +352,6 @@ function Inner() {
                         style={{ width: '100%', marginTop: 8, accentColor: colorObj.from }}
                       />
                     </div>
-                    {/* Pricing summary row */}
                     <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr' }}>
                       <div style={{ background: `${colorObj.from}0d`, border: `1px solid ${colorObj.from}25`, borderRadius: 12, padding: '12px 16px' }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: colorObj.from, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Selling Price</div>
@@ -370,7 +362,6 @@ function Inner() {
                         <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>{fmtINR(Math.round(monthlyRate))}</div>
                       </div>
                     </div>
-                    {/* Joining Fee */}
                     <div>
                       <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Joining / Registration Fee</label>
                       <div className="relative">
@@ -384,7 +375,6 @@ function Inner() {
                         />
                       </div>
                     </div>
-                    {/* Tax */}
                     <div>
                       <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>GST / Tax Rate (%)</label>
                       <div className="flex gap-2 flex-wrap">
@@ -399,7 +389,6 @@ function Inner() {
                         ))}
                       </div>
                     </div>
-                    {/* Total with tax */}
                     <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', borderRadius: 14, padding: '16px 20px' }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 8 }}>TOTAL MEMBER PAYS (incl. tax + joining fee)</div>
                       <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em' }}>{fmtINR(totalWithTax)}</div>
@@ -407,9 +396,7 @@ function Inner() {
                     </div>
                   </div>
                   <div className="flex gap-3 mt-6">
-                    <button onClick={() => setActiveSection(0)} className="flex items-center gap-2 font-bold text-sm" style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      ← Basic Info
-                    </button>
+                    <button onClick={() => setActiveSection(0)} className="flex items-center gap-2 font-bold text-sm" style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>← Basic Info</button>
                     <button onClick={() => setActiveSection(2)} className="flex items-center gap-2 font-bold text-sm" style={{ color: colorObj.from, background: 'none', border: 'none', cursor: 'pointer' }}>
                       Next: Duration <ChevronRight size={14} />
                     </button>
@@ -482,7 +469,6 @@ function Inner() {
                   <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Gift size={16} style={{ color: colorObj.from }} /> Plan Benefits
                   </h2>
-                  {/* Quick add chips */}
                   <div className="flex flex-wrap gap-2 mb-5">
                     {BENEFIT_ICONS.map(b => {
                       const full = `${b.icon} ${b.label}`;
@@ -500,7 +486,6 @@ function Inner() {
                       );
                     })}
                   </div>
-                  {/* Custom benefit input */}
                   <div className="flex gap-2 mb-5">
                     <input value={newBenefit} onChange={e => setNewBenefit(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && addBenefit(newBenefit)}
@@ -518,7 +503,6 @@ function Inner() {
                       }}
                     ><Plus size={16} /></button>
                   </div>
-                  {/* Added benefits */}
                   <div className="flex flex-wrap gap-2">
                     {benefits.map(b => (
                       <div key={b} className="flex items-center gap-2" style={{
@@ -545,10 +529,7 @@ function Inner() {
 
             <motion.div
               animate={{ boxShadow: `0 16px 48px ${colorObj.from}30` }}
-              style={{
-                borderRadius: 24, overflow: 'hidden',
-                boxShadow: `0 16px 48px ${colorObj.from}30`,
-              }}
+              style={{ borderRadius: 24, overflow: 'hidden', boxShadow: `0 16px 48px ${colorObj.from}30` }}
             >
               {/* Card header */}
               <div style={{
@@ -556,10 +537,8 @@ function Inner() {
                 padding: '1.5rem 1.5rem 1.25rem',
                 position: 'relative', overflow: 'hidden',
               }}>
-                {/* Background orb */}
                 <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
                 <div style={{ position: 'absolute', bottom: -10, left: -10, width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-
                 {popular && (
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.25)', borderRadius: 20, padding: '3px 10px', marginBottom: 10 }}>
                     <Star size={10} style={{ color: '#fff' }} fill="#fff" />
@@ -567,9 +546,7 @@ function Inner() {
                   </div>
                 )}
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>619 FITNESS · {kind}</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
-                  {name || 'Untitled Plan'}
-                </div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>{name || 'Untitled Plan'}</div>
                 <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 6 }}>{description || 'Your plan description will appear here'}</div>
                 <div style={{ marginTop: 16, display: 'flex', alignItems: 'baseline', gap: 4 }}>
                   <span style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em' }}>{fmtINR(finalAmount)}</span>
@@ -585,18 +562,12 @@ function Inner() {
 
               {/* Card body */}
               <div style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', padding: '1.25rem 1.5rem' }}>
-                {/* Duration chip */}
                 <div className="flex items-center gap-2 mb-4">
-                  <div style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: `${colorObj.from}12`, color: colorObj.from }}>
-                    ⏱ {duration}
-                  </div>
+                  <div style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: `${colorObj.from}12`, color: colorObj.from }}>⏱ {duration}</div>
                   {kind === 'PT' && (
-                    <div style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#fef3c7', color: '#d97706' }}>
-                      🏆 {sessionsPerWeek}×/week
-                    </div>
+                    <div style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#fef3c7', color: '#d97706' }}>🏆 {sessionsPerWeek}×/week</div>
                   )}
                 </div>
-                {/* Benefits */}
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Includes</div>
                 <div className="flex flex-col gap-2">
                   {benefits.slice(0, 6).map(b => (
@@ -611,7 +582,6 @@ function Inner() {
                     <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>+{benefits.length - 6} more benefits</div>
                   )}
                 </div>
-                {/* Pricing footer */}
                 <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
                   <div className="flex justify-between text-sm" style={{ color: '#64748b', marginBottom: 4 }}>
                     <span>Joining fee</span><span style={{ fontWeight: 700, color: '#0f172a' }}>{fmtINR(joiningFee)}</span>
@@ -627,7 +597,44 @@ function Inner() {
               </div>
             </motion.div>
 
-            {/* Revenue projection */}
+            {/* Revenue projections */}
             <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '1rem 1.25rem', marginTop: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Revenue Projections</div>
-              {[{label: '10 members', n: 10}, {label: '25 members', n: 25}, {label
+              {[{ label: '10 members', n: 10 }, { label: '25 members', n: 25 }, { label: '50 members', n: 50 }].map(row => (
+                <div key={row.n} className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                  <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>{row.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>{fmtINR(finalAmount * row.n)}<span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>/mo</span></span>
+                </div>
+              ))}
+            </div>
+
+            {/* Save buttons */}
+            <div className="flex flex-col gap-3 mt-5">
+              <button onClick={() => handleSave(true)} disabled={saving}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: 14, border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
+                  background: saving ? '#e2e8f0' : `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`,
+                  color: saving ? '#94a3b8' : '#fff', fontWeight: 800, fontSize: 15,
+                  boxShadow: saving ? 'none' : `0 8px 24px ${colorObj.from}40`,
+                  transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Sparkles size={16} /> {saving ? 'Saving…' : 'Publish Plan'}
+              </button>
+              <button onClick={() => handleSave(false)} disabled={saving}
+                style={{
+                  width: '100%', padding: '12px', borderRadius: 14, cursor: saving ? 'not-allowed' : 'pointer',
+                  background: 'rgba(255,255,255,0.9)', border: '1.5px solid rgba(0,0,0,0.1)',
+                  color: '#64748b', fontWeight: 700, fontSize: 14,
+                  transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Save size={14} /> Save as Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
