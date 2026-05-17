@@ -25,6 +25,7 @@ const GROUP_COLORS: Record<string, {
   sales:      { gradient: 'linear-gradient(135deg,#0369a1,#0891b2)', glow: 'rgba(8,145,178,0.28)', hoverBg: 'rgba(8,145,178,0.07)', hoverText: '#0369a1', dropdownAccent: '#0369a1', dropdownActiveBg: '#e0f2fe', dropdownActiveText: '#0369a1' },
   members:    { gradient: 'linear-gradient(135deg,#0f766e,#059669)', glow: 'rgba(5,150,105,0.26)', hoverBg: 'rgba(5,150,105,0.07)', hoverText: '#0f766e', dropdownAccent: '#0f766e', dropdownActiveBg: '#d1fae5', dropdownActiveText: '#065f46' },
   training:   { gradient: 'linear-gradient(135deg,#b45309,#d97706)', glow: 'rgba(217,119,6,0.26)', hoverBg: 'rgba(217,119,6,0.07)', hoverText: '#b45309', dropdownAccent: '#b45309', dropdownActiveBg: '#fef3c7', dropdownActiveText: '#92400e' },
+  staff:      { gradient: 'linear-gradient(135deg,#3730a3,#4f46e5)', glow: 'rgba(79,70,229,0.28)', hoverBg: 'rgba(79,70,229,0.07)', hoverText: '#3730a3', dropdownAccent: '#3730a3', dropdownActiveBg: '#e0e7ff', dropdownActiveText: '#3730a3' },
   attendance: { gradient: 'linear-gradient(135deg,#be185d,#db2777)', glow: 'rgba(219,39,119,0.26)', hoverBg: 'rgba(219,39,119,0.07)', hoverText: '#be185d', dropdownAccent: '#be185d', dropdownActiveBg: '#fce7f3', dropdownActiveText: '#9d174d' },
   memberships:{ gradient: 'linear-gradient(135deg,#7c3aed,#a855f7)', glow: 'rgba(168,85,247,0.28)', hoverBg: 'rgba(168,85,247,0.07)', hoverText: '#7c3aed', dropdownAccent: '#7c3aed', dropdownActiveBg: '#f3e8ff', dropdownActiveText: '#6b21a8' },
   finance:    { gradient: 'linear-gradient(135deg,#1d4ed8,#2563eb)', glow: 'rgba(37,99,235,0.26)', hoverBg: 'rgba(37,99,235,0.07)', hoverText: '#1d4ed8', dropdownAccent: '#1d4ed8', dropdownActiveBg: '#dbeafe', dropdownActiveText: '#1e40af' },
@@ -58,7 +59,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     const next = theme === 'light' ? 'dark' : 'light';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('619_theme', next); } catch {}
+    try { localStorage.setItem('619_theme', next); } catch {};
   };
 
   useEffect(() => {
@@ -86,7 +87,14 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     const visibleGroups = NAV_GROUPS.map((group) => ({
       ...group,
       items: group.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
-    })).filter((group) => group.items.length > 0);
+    })).filter((group) => {
+      // For the staff group, also check the group-level roles restriction
+      const g = NAV_GROUPS.find((ng) => ng.id === group.id);
+      if (g && (g as any).roles?.length) {
+        return !!(user?.role) && (g as any).roles.includes(user.role);
+      }
+      return group.items.length > 0;
+    });
     const visibleSettings = {
       ...SETTINGS_GROUP,
       items: SETTINGS_GROUP.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
@@ -98,8 +106,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     ];
   }, [user?.role]);
 
-  const primaryGroups = topGroups.slice(0, 6);
-  const secondaryGroups = topGroups.slice(6);
+  const primaryGroups = topGroups.slice(0, 7);
+  const secondaryGroups = topGroups.slice(7);
   const toggleMenu = (id: string) => setOpenMenu((c) => (c === id ? null : id));
   const handleResetPassword = () => { setOpenMenu(null); router.push('/reset-password'); };
   const handleLogout = () => { setOpenMenu(null); logout(); router.push('/login'); };

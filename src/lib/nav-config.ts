@@ -4,8 +4,8 @@
 // Sidebar, CommandPalette, and Breadcrumbs all consume this file.
 //
 // Icon strings map to Lucide React components inside Sidebar.tsx.
-// Groups: Dashboard → Sales → Members → Training → Attendance →
-//         Memberships → Finance → Insights → Engagement → Settings.
+// Groups: Dashboard → Sales → Members → Training → Staff →
+//         Attendance → Memberships → Finance → Insights → Engagement → Settings.
 
 export type Role = 'admin' | 'manager' | 'reception' | 'trainer' | 'member';
 
@@ -75,9 +75,19 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/trainers',                 label: 'Coaches',          icon: 'UserCog',     role: 'admin' },
       { href: '/trainer/dashboard',        label: 'My Dashboard',     icon: 'LayoutGrid',  role: 'trainer' },
-      { href: '/trainers/leave',           label: 'Leave Requests',   icon: 'CalendarOff', role: 'admin', badge: 'pendingLeaves' },
       { href: '/training/transformations', label: 'Transformations',  icon: 'Sparkles',    role: 'admin' },
       { href: '/trainers/[id]', label: 'Coach Profile', icon: 'UserCog', hidden: true, matchPrefix: '/trainers/' },
+    ],
+  },
+  {
+    id: 'staff',
+    label: 'Staff',
+    icon: 'UsersRound',
+    roles: ['admin', 'manager'],
+    items: [
+      { href: '/trainers/leave',     label: 'Leave Requests',  icon: 'CalendarOff',    roles: ['admin', 'manager'], badge: 'pendingLeaves' },
+      { href: '/attendance/staff',   label: 'Staff Attendance', icon: 'ClipboardCheck', roles: ['admin', 'manager'] },
+      { href: '/settings/staff',     label: 'Staff & Access',   icon: 'ShieldCheck',    role: 'admin' },
     ],
   },
   {
@@ -87,7 +97,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/checkin',                label: 'Face Check-In',     icon: 'ScanFace' },
       { href: '/attendance',             label: 'Member Attendance', icon: 'ClipboardList' },
-      { href: '/attendance/staff',       label: 'Staff Attendance',  icon: 'ClipboardCheck', role: 'admin' },
       { href: '/operations/leaderboard', label: 'Leaderboard',       icon: 'Trophy' },
     ],
   },
