@@ -1,1 +1,37 @@
-/* globals.css - restored */
+/* ══════════════════════════════════════════════════════════════════
+   619 FITNESS — DESIGN SYSTEM v4.0
+   Premium SaaS theme: Crimson brand · Soft ivory surfaces · Dark mode
+   All tokens are CSS custom properties consumed by Tailwind utilities
+   and raw CSS selectors throughout the app.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── TopNav dropdown + submenu styles ── */
+.tn-dropdown { position: relative; }
+.tn-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 9999;
+  min-width: 180px; background: #fff; border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 6px; display: flex; flex-direction: column; gap: 2px;
+}
+.tn-menu-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  color: #1e293b; text-decoration: none; cursor: pointer;
+  transition: background 150ms; white-space: nowrap; position: relative;
+}
+.tn-menu-item:hover { background: #f1f5f9; color: #7c3aed; }
+.tn-menu-item--has-sub {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  color: #1e293b; cursor: pointer; transition: background 150ms;
+  white-space: nowrap; position: relative;
+}
+.tn-menu-item--has-sub:hover { background: #f1f5f9; color: #7c3aed; }
+.tn-menu-item-label { flex: 1; }
+.tn-menu-item-arrow { font-size: 10px; color: #94a3b8; margin-left: 8px; }
+.tn-submenu {
+  position: absolute; left: calc(100% + 4px); top: 0; z-index: 10000;
+  min-width: 160px; background: #fff; border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 6px; display: flex; flex-direction: column; gap: 2px;
+}
