@@ -2,16 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { api } from '@/lib/api';
-
-/* ─── Types ──────────────────────────────────────────────────────── */
-interface StaffMember { id: string; name: string; role: string; email?: string; }
-interface StaffTarget {
-  id: string; staff_id: string; staff_name?: string; role?: string;
-  month: string;
-  target_revenue: number; target_clients: number; target_sessions?: number;
-  achieved_revenue: number; achieved_clients: number; achieved_sessions?: number;
-}
+import { api, StaffMember, StaffTarget } from '@/lib/api';
 
 /* ─── Helpers ────────────────────────────────────────────────────── */
 const fmt = (n: number) =>
@@ -133,18 +124,18 @@ function Inner() {
     } finally { setSubmitting(false); }
   };
 
-  /* KPI computations */
-  const totalRevTarget   = targets.reduce((a, t) => a + (t.target_revenue || 0), 0);
-  const totalRevAchieved = targets.reduce((a, t) => a + (t.achieved_revenue || 0), 0);
-  const totalCliTarget   = targets.reduce((a, t) => a + (t.target_clients || 0), 0);
-  const totalCliAchieved = targets.reduce((a, t) => a + (t.achieved_clients || 0), 0);
+  /* KPI computations — use ?? 0 since api fields are optional */
+  const totalRevTarget   = targets.reduce((a, t) => a + (t.target_revenue   ?? 0), 0);
+  const totalRevAchieved = targets.reduce((a, t) => a + (t.achieved_revenue ?? 0), 0);
+  const totalCliTarget   = targets.reduce((a, t) => a + (t.target_clients   ?? 0), 0);
+  const totalCliAchieved = targets.reduce((a, t) => a + (t.achieved_clients ?? 0), 0);
   const overallPct       = pct(totalRevAchieved, totalRevTarget);
-  const achieved100      = targets.filter(t => pct(t.achieved_revenue, t.target_revenue) >= 100).length;
+  const achieved100      = targets.filter(t => pct(t.achieved_revenue ?? 0, t.target_revenue ?? 0) >= 100).length;
   const teamScore        = Math.round(overallPct * 0.6 + pct(totalCliAchieved, totalCliTarget) * 0.4);
 
   const sorted      = [...targets].sort((a, b) => leaderSort === 'revenue'
-    ? (b.achieved_revenue || 0) - (a.achieved_revenue || 0)
-    : (b.achieved_clients || 0) - (a.achieved_clients || 0));
+    ? (b.achieved_revenue ?? 0) - (a.achieved_revenue ?? 0)
+    : (b.achieved_clients ?? 0) - (a.achieved_clients ?? 0));
   const bestPerformer = sorted[0];
 
   /* AI probability for modal preview */
@@ -180,9 +171,9 @@ function Inner() {
     {
       label: 'Top Performer',
       value: loading ? '—' : (bestPerformer?.staff_name || 'No data'),
-      sub: bestPerformer ? `${fmt(bestPerformer.achieved_revenue || 0)} revenue` : 'Set targets to see',
+      sub: bestPerformer ? `${fmt(bestPerformer.achieved_revenue ?? 0)} revenue` : 'Set targets to see',
       icon: '🏆', grad: ['#f59e0b','#d97706'],
-      pctVal: bestPerformer ? pct(bestPerformer.achieved_revenue, bestPerformer.target_revenue) : 0,
+      pctVal: bestPerformer ? pct(bestPerformer.achieved_revenue ?? 0, bestPerformer.target_revenue ?? 0) : 0,
     },
     {
       label: 'Team Score', value: loading ? '—' : String(teamScore),
@@ -283,8 +274,8 @@ function Inner() {
               </div>
               <div className="pt-cards">
                 {sorted.map((t, i) => {
-                  const rp = pct(t.achieved_revenue, t.target_revenue);
-                  const cp = pct(t.achieved_clients, t.target_clients);
+                  const rp = pct(t.achieved_revenue ?? 0, t.target_revenue ?? 0);
+                  const cp = pct(t.achieved_clients ?? 0, t.target_clients ?? 0);
                   const badge = perfBadge(rp);
                   const insight = aiInsight(rp);
                   return (
@@ -313,8 +304,8 @@ function Inner() {
                       {/* metrics */}
                       <div className="pt-metrics">
                         {[
-                          { label: '💰 Revenue', ach: fmt(t.achieved_revenue), tgt: fmt(t.target_revenue), p: rp, color: badge.ring },
-                          { label: '👥 Clients',  ach: String(t.achieved_clients), tgt: String(t.target_clients), p: cp, color: '#0ea5e9' },
+                          { label: '💰 Revenue', ach: fmt(t.achieved_revenue ?? 0), tgt: fmt(t.target_revenue ?? 0), p: rp, color: badge.ring },
+                          { label: '👥 Clients',  ach: String(t.achieved_clients ?? 0), tgt: String(t.target_clients ?? 0), p: cp, color: '#0ea5e9' },
                         ].map(m => (
                           <div key={m.label} className="pt-metric">
                             <div className="pt-metric-head">
@@ -356,8 +347,8 @@ function Inner() {
                 </div>
                 <div className="pt-leader-list">
                   {sorted.map((t, i) => {
-                    const val = leaderSort === 'revenue' ? fmt(t.achieved_revenue || 0) : `${t.achieved_clients || 0}`;
-                    const p2  = leaderSort === 'revenue' ? pct(t.achieved_revenue, t.target_revenue) : pct(t.achieved_clients, t.target_clients);
+                    const val = leaderSort === 'revenue' ? fmt(t.achieved_revenue ?? 0) : `${t.achieved_clients ?? 0}`;
+                    const p2  = leaderSort === 'revenue' ? pct(t.achieved_revenue ?? 0, t.target_revenue ?? 0) : pct(t.achieved_clients ?? 0, t.target_clients ?? 0);
                     const medals = ['🥇','🥈','🥉'];
                     return (
                       <div key={t.id} className="pt-lrow">
