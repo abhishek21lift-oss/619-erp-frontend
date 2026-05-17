@@ -152,6 +152,21 @@ export type Attendance = {
   check_in?: string;
 };
 
+export type LeaveRequest = {
+  id: string;
+  trainer_id: string;
+  trainer_name?: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  days?: number;
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_note?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
 // Mirror of the dashboard summary endpoint shape. Kept loose-typed
 // (everything optional) because individual fields can be missing or zero
 // when there's no data for a period — defensive UI code should still
@@ -336,12 +351,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ photo_url }),
       }),
-
-    // ── Membership action endpoints ─────────────────────────────────
-    // All routes are mounted under `/api/clients/:id/<action>` and
-    // implemented in backend/src/routes/client-actions.js. Going through
-    // req() guarantees auth headers, JSON parsing, 401 redirects, and
-    // proper rejection on 4xx / 5xx — which raw fetch() does not do.
     addSubscription: (id: string, data: any) =>
       req<{ message: string; client: Client }>(`/api/clients/${id}/add-subscription`, {
         method: 'POST',
@@ -426,6 +435,34 @@ export const api = {
       }),
     delete: (id: string) =>
       req<{ message: string }>(`/api/trainers/${id}`, { method: 'DELETE' }),
+  },
+
+  leave: {
+    list: (p?: { trainer_id?: string; status?: string }) =>
+      req<LeaveRequest[]>(`/api/leave${qs(p)}`),
+    create: (data: {
+      trainer_id: string;
+      leave_type: string;
+      from_date: string;
+      to_date: string;
+      reason?: string;
+    }) =>
+      req<{ message: string; leave: LeaveRequest }>('/api/leave', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    approve: (id: string, admin_note?: string) =>
+      req<{ message: string; leave: LeaveRequest }>(`/api/leave/${id}/approve`, {
+        method: 'PUT',
+        body: JSON.stringify({ admin_note }),
+      }),
+    reject: (id: string, admin_note?: string) =>
+      req<{ message: string; leave: LeaveRequest }>(`/api/leave/${id}/reject`, {
+        method: 'PUT',
+        body: JSON.stringify({ admin_note }),
+      }),
+    delete: (id: string) =>
+      req<{ message: string }>(`/api/leave/${id}`, { method: 'DELETE' }),
   },
 
   payments: {
