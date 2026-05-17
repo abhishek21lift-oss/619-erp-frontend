@@ -982,7 +982,7 @@ select.form-control { cursor: pointer; }
 .animate-pulse     { animation: pulse    2s ease infinite; }
 .animate-shimmer   {
   background: linear-gradient(90deg, var(--bg-subtle) 25%, var(--bg-hover) 50%, var(--bg-subtle) 75%);
-  background-size: 200% 100%;
+  background-size:200% 100%;
   animation: shimmer 1.6s ease infinite;
 }
 
@@ -1237,4 +1237,75 @@ a[href="/pt-portal"], button[data-href="/pt-portal"] { font-weight:900; letter-s
   min-width: 160px; background: #fff; border: 1px solid rgba(0,0,0,0.09);
   border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   padding: 6px; display: flex; flex-direction: column; gap: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DASHBOARD — hero banner + typography helpers
+   These classes are used in src/app/dashboard/page.tsx
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Hero banner — crimson-to-dark gradient header card */
+.dashboard-hero {
+  background: linear-gradient(135deg, #1e0a0a 0%, #3b0d0d 40%, #1a0a0a 100%);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  box-shadow: 0 8px 32px rgba(185, 28, 28, 0.18), 0 1px 4px rgba(0,0,0,0.12);
+  color: #fff;
+  overflow: hidden;
+  position: relative;
+}
+.dashboard-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 70% 50%, rgba(220,38,38,0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+.dashboard-hero h1 {
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #fff;
+  line-height: 1.1;
+}
+
+/* Eyebrow label above the hero title */
+.eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(252, 165, 165, 0.80);
+}
+
+/* Subtitle / copy below the hero title */
+.subcopy {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+}
+
+/* Premium surface — subtle brand-tinted card */
+.premium-surface {
+  background: var(--bg-card);
+  border-color: rgba(220, 38, 38, 0.10) !important;
+  box-shadow: 0 2px 12px rgba(220, 38, 38, 0.06), var(--shadow-card) !important;
+}
+[data-theme="dark"] .premium-surface,
+.dark .premium-surface {
+  background: var(--bg-card);
+  border-color: rgba(248, 113, 113, 0.12) !important;
+  box-shadow: 0 2px 12px rgba(248, 113, 113, 0.08), var(--shadow-card) !important;
+}
+
+/* KPI card premium variant — slight brand glow on hover */
+.kpi-premium {
+  transition: box-shadow var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
+}
+.kpi-premium:hover {
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.12), var(--shadow-card-hover) !important;
+  transform: translateY(-2px);
+}
+[data-theme="dark"] .kpi-premium:hover,
+.dark .kpi-premium:hover {
+  box-shadow: 0 4px 20px rgba(248, 113, 113, 0.14), var(--shadow-card-hover) !important;
 }
