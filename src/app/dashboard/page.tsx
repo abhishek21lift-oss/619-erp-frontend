@@ -139,7 +139,8 @@ function DashboardContent() {
 
   return (
     <AppShell>
-      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      {/* pt-0 — AppShell's <main> already adds the header offset; pb-8 keeps breathing room at the bottom */}
+      <div className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6">
         {/* Header row */}
         <header className="dashboard-hero relative flex flex-col gap-4 px-5 py-6 sm:flex-row sm:items-end sm:justify-between sm:px-7">
           <div>
