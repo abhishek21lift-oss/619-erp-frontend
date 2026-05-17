@@ -3,12 +3,11 @@ import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
 export interface StickyActionBarProps {
-  // New API (used by rebuilt pages)
   total?: string | number;
+  hideTotal?: boolean;
   label?: string;
   saving?: boolean;
   onCancel?: () => void;
-  // Legacy API
   totalLabel?: string;
   helperText?: string;
   primaryLabel?: string;
@@ -22,6 +21,7 @@ export interface StickyActionBarProps {
 
 export function StickyActionBar({
   total,
+  hideTotal = false,
   label,
   saving,
   onCancel,
@@ -35,16 +35,14 @@ export function StickyActionBar({
   onSecondary,
   alert,
 }: StickyActionBarProps) {
-  // Normalise new API -> legacy variables
   const resolvedPrimaryLabel = label ?? primaryLabel ?? 'Submit';
   const resolvedPrimaryLoading = saving ?? primaryLoading ?? false;
   const resolvedSecondaryLabel = secondaryLabel ?? (onCancel ? 'Cancel' : undefined);
   const resolvedOnSecondary = onSecondary ?? onCancel;
   const resolvedOnPrimary = onPrimary ?? (() => {});
 
-  // Format numeric total
-  const resolvedTotal =
-    typeof total === 'number'
+  const resolvedTotal = hideTotal ? undefined
+    : typeof total === 'number'
       ? `\u20b9 ${total.toLocaleString('en-IN')}`
       : total;
 
