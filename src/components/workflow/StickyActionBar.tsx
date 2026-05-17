@@ -6,6 +6,7 @@ export interface StickyActionBarProps {
   total?: string | number;
   hideTotal?: boolean;
   label?: string;
+  icon?: ReactNode;
   saving?: boolean;
   onCancel?: () => void;
   totalLabel?: string;
@@ -23,6 +24,7 @@ export function StickyActionBar({
   total,
   hideTotal = false,
   label,
+  icon,
   saving,
   onCancel,
   totalLabel = 'Total Payable',
@@ -95,7 +97,12 @@ export function StickyActionBar({
                 </svg>
                 Saving…
               </span>
-            ) : resolvedPrimaryLabel}
+            ) : (
+              <span className="flex items-center gap-2">
+                {icon && <span className="flex items-center">{icon}</span>}
+                {resolvedPrimaryLabel}
+              </span>
+            )}
           </button>
         </div>
       </div>
