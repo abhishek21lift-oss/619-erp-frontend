@@ -1,22 +1,18 @@
 'use client';
 /**
- * Payments Page — premium SaaS rebuild
- * Features:
- *  • KPI strip (total revenue, today's, this month, pending dues)
- *  • Date range filter (from/to)
- *  • Payment method filter
- *  • Record New Payment modal (admin/manager)
- *  • Sortable table with CSV export
- *  • Admin delete with confirm
+ * Payments Page — Ultra-Premium Financial Analytics Dashboard
+ * 619 Fitness Studio — Luxury SaaS redesign
  */
-import { useEffect, useState, useCallback, useRef, useMemo, FormEvent } from 'react';
+import { useEffect, useState, useCallback, useMemo, FormEvent } from 'react';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
-  Plus, Download, Trash2, DollarSign, TrendingUp, Calendar,
+  Plus, Download, Trash2, TrendingUp, Calendar,
   AlertCircle, ChevronLeft, ChevronRight, X, Search,
+  CreditCard, Banknote, Smartphone, Building2, Zap,
+  BarChart3, ArrowUpRight, RefreshCw,
 } from 'lucide-react';
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -48,23 +44,20 @@ function fmtDate(d?: string) {
   const dt = new Date(d);
   return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
 function fmtAmount(n: number) {
   return '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
-
-function isoToday() {
-  return new Date().toISOString().split('T')[0];
+function fmtCompact(n: number) {
+  if (n >= 10_000_000) return '₹' + (n / 10_000_000).toFixed(1) + 'Cr';
+  if (n >= 100_000)    return '₹' + (n / 100_000).toFixed(1) + 'L';
+  if (n >= 1_000)      return '₹' + (n / 1_000).toFixed(1) + 'K';
+  return fmtAmount(n);
 }
-
-function isoMonthStart() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-}
-
+function isoToday()      { return new Date().toISOString().split('T')[0]; }
+function isoMonthStart() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; }
 function exportCSV(payments: Payment[]) {
   const headers = ['Receipt', 'Member', 'Amount', 'Method', 'Date', 'Notes'];
-  const rows = (payments ?? []).map((p) => [p.receipt_no ?? '', p.client_name ?? '', p.amount, p.method, p.date, p.notes ?? '']);
+  const rows = payments.map((p) => [p.receipt_no ?? '', p.client_name ?? '', p.amount, p.method, p.date, p.notes ?? '']);
   const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
@@ -73,15 +66,89 @@ function exportCSV(payments: Payment[]) {
   a.click();
 }
 
-/* ─── KPI Card ──────────────────────────────────────────── */
-function KpiCard({ label, value, icon, color, sub }: { label: string; value: string; icon: React.ReactNode; color: string; sub?: string }) {
+/* ─── Premium KPI Card ──────────────────────────────────── */
+function PremiumKpiCard({
+  label, value, sub, icon, accent, delta,
+}: {
+  label: string; value: string; sub?: string;
+  icon: React.ReactNode; accent: string; delta?: string;
+}) {
   return (
-    <div className="kpi-card" style={{ borderTop: `3px solid ${color}` }}>
-      <div className="kpi-icon" style={{ color }}>{icon}</div>
-      <div className="kpi-value">{value}</div>
-      <div className="kpi-label">{label}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{sub}</div>}
+    <div style={{
+      background: 'white',
+      borderRadius: 20,
+      padding: '22px 24px',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+      border: '1px solid rgba(0,0,0,0.06)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+      transition: 'box-shadow 200ms ease, transform 200ms ease',
+      position: 'relative',
+      overflow: 'hidden',
+    }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.boxShadow = `0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)`;
+        el.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)';
+        el.style.transform = 'translateY(0)';
+      }}
+    >
+      {/* accent top bar */}
+      <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 2, background: accent, borderRadius: '0 0 2px 2px', opacity: 0.7 }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: 12,
+          background: `${accent}18`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: accent,
+        }}>
+          {icon}
+        </div>
+        {delta && (
+          <span style={{
+            fontSize: 11, fontWeight: 600, color: '#10b981',
+            background: '#10b98115', borderRadius: 20, padding: '3px 8px',
+            display: 'flex', alignItems: 'center', gap: 3,
+          }}>
+            <ArrowUpRight size={10} />{delta}
+          </span>
+        )}
+      </div>
+      <div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>
+          {value}
+        </div>
+        <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{label}</div>
+        {sub && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{sub}</div>}
+      </div>
     </div>
+  );
+}
+
+/* ─── Method Badge ──────────────────────────────────────── */
+function MethodBadge({ method }: { method: string }) {
+  const styles: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
+    CASH:          { bg: '#f0fdf4', color: '#16a34a', icon: <Banknote size={10} /> },
+    UPI:           { bg: '#eff6ff', color: '#2563eb', icon: <Smartphone size={10} /> },
+    CARD:          { bg: '#faf5ff', color: '#7c3aed', icon: <CreditCard size={10} /> },
+    BANK_TRANSFER: { bg: '#fff7ed', color: '#ea580c', icon: <Building2 size={10} /> },
+  };
+  const s = styles[method] ?? { bg: '#f1f5f9', color: '#475569', icon: null };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      fontSize: 11, fontWeight: 600,
+      background: s.bg, color: s.color,
+      borderRadius: 20, padding: '3px 9px',
+      border: `1px solid ${s.color}25`,
+    }}>
+      {s.icon}{method}
+    </span>
   );
 }
 
@@ -90,113 +157,83 @@ function SkeletonRow() {
   return (
     <tr>
       {[80, 140, 90, 80, 90, 120].map((w, i) => (
-        <td key={i}><div className="skeleton" style={{ height: 13, width: w, borderRadius: 4 }} /></td>
+        <td key={i} style={{ padding: '14px 16px' }}>
+          <div style={{
+            height: 13, width: w, borderRadius: 6,
+            background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s ease-in-out infinite',
+          }} />
+        </td>
       ))}
-      <td />
     </tr>
   );
 }
 
 /* ─── Record Payment Modal ──────────────────────────────── */
-function RecordPaymentModal({
-  clients, onClose, onSaved,
-}: {
-  clients: ClientOption[];
-  onClose: () => void;
-  onSaved: () => void;
-}) {
+function RecordPaymentModal({ clients, onClose, onSaved }: { clients: ClientOption[]; onClose: () => void; onSaved: () => void }) {
   const today = isoToday();
-  const [form, setForm] = useState({ client_id: '', amount: '', method: 'CASH', date: today, notes: '' });
+  const [form, setForm]   = useState({ client_id: '', amount: '', method: 'CASH', date: today, notes: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
-
-  const S = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-
+  const S = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const selectedClient = clients.find((c) => String(c.id) === form.client_id);
   const balanceDue = Number(selectedClient?.balance_due ?? selectedClient?.balance_amount ?? 0);
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!form.client_id || !form.amount) { setError('Member and Amount are required.'); return; }
     setSaving(true); setError('');
     try {
-      const newPay = await api.payments.create({ ...form, amount: parseFloat(form.amount as any) });
-      void newPay; // result available if needed
+      await api.payments.create({ ...form, amount: parseFloat(form.amount as any) });
       onSaved();
-    } catch (e: any) {
-      setError(e.message || 'Failed to record payment.');
-    } finally {
-      setSaving(false);
-    }
+    } catch (e: any) { setError(e.message || 'Failed.'); }
+    finally { setSaving(false); }
   }
-
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal animate-slide-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
-        <div className="modal-header">
-          <h3 className="modal-title">Record New Payment</h3>
-          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }} onClick={onClose}>
+      <div style={{ background: 'white', borderRadius: 24, width: '100%', maxWidth: 480, boxShadow: '0 24px 64px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>Record Payment</h3>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>Log a new collection</p>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e2e8f0', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}><X size={14} /></button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {error && <div className="alert alert-danger" style={{ fontSize: 13 }}>{error}</div>}
-
-            <div className="form-group">
-              <label className="form-label">Member *</label>
-              <select className="input" value={form.client_id} onChange={S('client_id')} required>
+          <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#dc2626' }}>{error}</div>}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Member *</label>
+              <select style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, color: '#0f172a', background: '#fafafa', outline: 'none' }} value={form.client_id} onChange={S('client_id')} required>
                 <option value="">Select member…</option>
-                {(clients ?? []).map((c) => {
-                  const due = Number(c.balance_due ?? c.balance_amount ?? 0);
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {c.name}{due > 0 ? ` — Due: ${fmtAmount(due)}` : ''}
-                    </option>
-                  );
-                })}
+                {clients.map((c) => { const due = Number(c.balance_due ?? c.balance_amount ?? 0); return (<option key={c.id} value={c.id}>{c.name}{due > 0 ? ` — Due: ${fmtAmount(due)}` : ''}</option>); })}
               </select>
-              {balanceDue > 0 && (
-                <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>
-                  Outstanding balance: {fmtAmount(balanceDue)}
-                </div>
-              )}
+              {balanceDue > 0 && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 6 }}>⚠ Outstanding: {fmtAmount(balanceDue)}</p>}
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div className="form-group">
-                <label className="form-label">Amount (₹) *</label>
-                <input
-                  className="input" type="number" min="1" step="1"
-                  value={form.amount} onChange={S('amount')} required
-                  placeholder={balanceDue > 0 ? String(balanceDue) : '0'}
-                />
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Amount (₹) *</label>
+                <input style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }} type="number" min="1" step="1" value={form.amount} onChange={S('amount')} required placeholder={balanceDue > 0 ? String(balanceDue) : '0'} />
               </div>
-              <div className="form-group">
-                <label className="form-label">Method</label>
-                <select className="input" value={form.method} onChange={S('method')}>
-                  <option>CASH</option>
-                  <option>UPI</option>
-                  <option>CARD</option>
-                  <option>BANK_TRANSFER</option>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Method</label>
+                <select style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, color: '#0f172a', background: '#fafafa', outline: 'none' }} value={form.method} onChange={S('method')}>
+                  <option>CASH</option><option>UPI</option><option>CARD</option><option>BANK_TRANSFER</option>
                 </select>
               </div>
             </div>
-
-            <div className="form-group">
-              <label className="form-label">Date</label>
-              <input className="input" type="date" value={form.date} onChange={S('date')} required />
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</label>
+              <input style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }} type="date" value={form.date} onChange={S('date')} required />
             </div>
-
-            <div className="form-group">
-              <label className="form-label">Notes</label>
-              <input className="input" value={form.notes} onChange={S('notes')} placeholder="Optional note…" />
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</label>
+              <input style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }} value={form.notes} onChange={S('notes')} placeholder="Optional note…" />
             </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-outline btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-              {saving ? 'Saving…' : 'Record payment'}
-            </button>
+          <div style={{ padding: '16px 28px 24px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: 'white', fontSize: 14, fontWeight: 600, color: '#475569', cursor: 'pointer' }}>Cancel</button>
+            <button type="submit" disabled={saving} style={{ padding: '10px 24px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', fontSize: 14, fontWeight: 700, color: 'white', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Saving…' : 'Record Payment'}</button>
           </div>
         </form>
       </div>
@@ -208,13 +245,11 @@ function RecordPaymentModal({
 function PaymentsContent() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
-
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clients, setClients]   = useState<ClientOption[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
   const [showModal, setShowModal] = useState(false);
-
   const [filterFrom, setFilterFrom]     = useState('');
   const [filterTo, setFilterTo]         = useState('');
   const [filterMethod, setFilterMethod] = useState('ALL');
@@ -222,7 +257,6 @@ function PaymentsContent() {
   const [page, setPage]                 = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Payment | null>(null);
   const [deleting, setDeleting]         = useState(false);
-
   const today      = isoToday();
   const monthStart = isoMonthStart();
 
@@ -232,31 +266,16 @@ function PaymentsContent() {
       const params = new URLSearchParams();
       if (filterFrom) params.set('from', filterFrom);
       if (filterTo)   params.set('to', filterTo);
-
-      const [pRes, cRes] = await Promise.allSettled([
-        api.payments.list(Object.fromEntries(new URLSearchParams(params))),
-        api.clients.list(),
-      ]);
-
-      if (pRes.status === 'fulfilled') {
-        const d = pRes.value as any;
-        setPayments(Array.isArray(d) ? d : (d.payments ?? []));
-      }
-      if (cRes.status === 'fulfilled') {
-        const d = cRes.value as any;
-        setClients(Array.isArray(d) ? d : (d.clients ?? []));
-      }
-    } catch (e: any) {
-      setError(e.message || 'Failed to load payments.');
-    } finally {
-      setLoading(false);
-    }
+      const [pRes, cRes] = await Promise.allSettled([api.payments.list(Object.fromEntries(params)), api.clients.list()]);
+      if (pRes.status === 'fulfilled') { const d = pRes.value as any; setPayments(Array.isArray(d) ? d : (d.payments ?? [])); }
+      if (cRes.status === 'fulfilled') { const d = cRes.value as any; setClients(Array.isArray(d) ? d : (d.clients ?? [])); }
+    } catch (e: any) { setError(e.message || 'Failed to load.'); }
+    finally { setLoading(false); }
   }, [filterFrom, filterTo]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
   useEffect(() => { setPage(1); }, [filterFrom, filterTo, filterMethod, search]);
 
-  /* ── KPIs ── */
   const kpis = useMemo(() => {
     const all = payments;
     const total    = all.reduce((s, p) => s + Number(p.amount), 0);
@@ -266,17 +285,18 @@ function PaymentsContent() {
     return { total, todayRev, monthRev, dueTot };
   }, [payments, clients, today, monthStart]);
 
-  /* ── Filtered list ── */
+  const methodBreakdown = useMemo(() => {
+    const m: Record<string, number> = {};
+    payments.forEach((p) => { m[p.method] = (m[p.method] ?? 0) + Number(p.amount); });
+    return m;
+  }, [payments]);
+
   const filtered = useMemo(() => {
     let list = [...payments];
     if (filterMethod !== 'ALL') list = list.filter((p) => p.method === filterMethod);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((p) =>
-        (p.client_name ?? '').toLowerCase().includes(q) ||
-        (p.receipt_no ?? '').toLowerCase().includes(q) ||
-        (p.notes ?? '').toLowerCase().includes(q)
-      );
+      list = list.filter((p) => (p.client_name ?? '').toLowerCase().includes(q) || (p.receipt_no ?? '').toLowerCase().includes(q) || (p.notes ?? '').toLowerCase().includes(q));
     }
     return list;
   }, [payments, filterMethod, search]);
@@ -287,148 +307,155 @@ function PaymentsContent() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
-    try {
-      await api.payments.delete(String(deleteTarget.id));
-      setPayments((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-      setDeleteTarget(null);
-    } catch (e: any) {
-      alert(`Delete failed: ${e.message}`);
-    } finally {
-      setDeleting(false);
-    }
+    try { await api.payments.delete(String(deleteTarget.id)); setPayments((prev) => prev.filter((p) => p.id !== deleteTarget.id)); setDeleteTarget(null); }
+    catch (e: any) { alert(`Delete failed: ${e.message}`); }
+    finally { setDeleting(false); }
   }
 
-  const methodColor: Record<string, string> = {
-    CASH: 'badge-success', UPI: 'badge-info', CARD: 'badge-secondary', BANK_TRANSFER: 'badge-warning',
-  };
-
   return (
-    <AppShell title="Payments">
-      <div className="page-container animate-fade-in">
+    <AppShell title="Revenue">
+      <style>{`
+        @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        @keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        .rev-page { animation: fadeInUp 0.4s ease; }
+        .rev-table tr:hover td { background: #fafbff; }
+        .rev-tab-btn { padding: 7px 14px; border-radius: 20px; border: 1.5px solid #e2e8f0; background: white; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 160ms ease; }
+        .rev-tab-btn:hover { border-color: #7c3aed; color: #7c3aed; }
+        .rev-tab-btn.active { background: linear-gradient(135deg,#7c3aed,#6d28d9); border-color: transparent; color: white; }
+      `}</style>
+      <div className="rev-page" style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
-        {/* ── Header ── */}
-        <div className="page-header">
+        {/* ── Page Header ── */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="page-title">Payments</h1>
-            <p className="page-subtitle">Revenue & collection ledger</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <TrendingUp size={18} color="white" />
+              </div>
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Revenue & Collections</h1>
+            </div>
+            <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>Financial analytics · Payment ledger · Collection tracking</p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-outline btn-sm" onClick={() => exportCSV(filtered)}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => exportCSV(filtered)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: 'white', fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
               <Download size={14} /> Export CSV
             </button>
             {isAdmin && (
-              <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}>
+              <button onClick={() => setShowModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', fontSize: 13, fontWeight: 700, color: 'white', cursor: 'pointer', boxShadow: '0 4px 12px rgba(124,58,237,0.3)' }}>
                 <Plus size={14} /> Record Payment
               </button>
             )}
           </div>
         </div>
 
-        {/* ── KPI strip ── */}
-        <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 20 }}>
-          <KpiCard label="Total Collected"  value={fmtAmount(kpis.total)}    icon={<DollarSign size={18} />}  color="var(--success)" />
-          <KpiCard label="Today's Revenue"  value={fmtAmount(kpis.todayRev)} icon={<TrendingUp size={18} />}  color="var(--brand)" />
-          <KpiCard label="This Month"       value={fmtAmount(kpis.monthRev)} icon={<Calendar size={18} />}    color="var(--info)" />
-          <KpiCard label="Outstanding Dues" value={fmtAmount(kpis.dueTot)}   icon={<AlertCircle size={18} />} color="var(--danger)" />
+        {/* ── Hero Revenue Banner ── */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1e1b4b 0%, #3730a3 40%, #4f46e5 70%, #7c3aed 100%)',
+          borderRadius: 24, padding: '32px 36px', marginBottom: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.04)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', bottom: -40, right: 80, width: 120, height: 120, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
+          <div style={{ position: 'relative' }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px' }}>Total Revenue Collected</p>
+            <div style={{ fontSize: 44, fontWeight: 900, color: 'white', letterSpacing: '-0.03em', lineHeight: 1 }}>{fmtCompact(kpis.total)}</div>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', margin: '8px 0 0' }}>{payments.length} transactions recorded</p>
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', position: 'relative' }}>
+            {Object.entries(methodBreakdown).map(([method, amt]) => (
+              <div key={method} style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: 14, padding: '12px 16px', minWidth: 100, border: '1px solid rgba(255,255,255,0.15)' }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{method}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'white' }}>{fmtCompact(amt)}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* ── Error ── */}
-        {error && (
-          <div className="alert alert-danger" style={{ marginBottom: 16 }}>
-            {error}
-            <button className="btn btn-ghost btn-sm" onClick={fetchAll}>Retry</button>
-          </div>
-        )}
+        {/* ── KPI Cards ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
+          <PremiumKpiCard label="Today's Collection" value={fmtCompact(kpis.todayRev)} sub={`Full: ${fmtAmount(kpis.todayRev)}`} icon={<Zap size={18} />} accent="#7c3aed" />
+          <PremiumKpiCard label="This Month" value={fmtCompact(kpis.monthRev)} sub="Month-to-date" icon={<Calendar size={18} />} accent="#0ea5e9" />
+          <PremiumKpiCard label="Outstanding Dues" value={fmtCompact(kpis.dueTot)} sub={`${clients.filter((c) => Number(c.balance_due ?? c.balance_amount ?? 0) > 0).length} members`} icon={<AlertCircle size={18} />} accent="#ef4444" />
+          <PremiumKpiCard label="Collection Rate" value={kpis.total + kpis.dueTot > 0 ? Math.round((kpis.total / (kpis.total + kpis.dueTot)) * 100) + '%' : '—'} sub="Collected vs total" icon={<BarChart3 size={18} />} accent="#10b981" />
+        </div>
 
-        {/* ── Filters bar ── */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div className="input-wrap" style={{ maxWidth: 260 }}>
-            <span className="input-icon"><Search size={14} /></span>
-            <input type="search" className="input" placeholder="Search member, receipt…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#dc2626', marginBottom: 16 }}>{error} <button onClick={fetchAll} style={{ marginLeft: 8, fontSize: 12, color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Retry</button></div>}
+
+        {/* ── Filters & Search ── */}
+        <div style={{ background: 'white', borderRadius: 18, border: '1px solid #f1f5f9', padding: '16px 20px', marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+          <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 0 }}>
+            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input type="search" placeholder="Search member, receipt…" value={search} onChange={(e) => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 13, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#64748b', flexWrap: 'wrap' }}>
             <span>From</span>
-            <input className="input" type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} style={{ maxWidth: 150 }} />
+            <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 12, color: '#0f172a', background: '#fafafa', outline: 'none' }} />
             <span>to</span>
-            <input className="input" type="date" value={filterTo}   onChange={(e) => setFilterTo(e.target.value)}   style={{ maxWidth: 150 }} />
+            <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} style={{ padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 12, color: '#0f172a', background: '#fafafa', outline: 'none' }} />
           </div>
-          <div className="tab-bar" style={{ marginBottom: 0 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {METHODS.map((m) => (
-              <button key={m} className={`tab-btn ${filterMethod === m ? 'active' : ''}`} onClick={() => setFilterMethod(m)} style={{ fontSize: 11 }}>
-                {m === 'ALL' ? 'All Methods' : m}
+              <button key={m} className={`rev-tab-btn${filterMethod === m ? ' active' : ''}`} onClick={() => setFilterMethod(m)}>
+                {m === 'ALL' ? 'All' : m}
               </button>
             ))}
           </div>
           {(filterFrom || filterTo || filterMethod !== 'ALL' || search) && (
-            <button className="btn btn-ghost btn-sm" onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterMethod('ALL'); setSearch(''); }}>
-              <X size={12} /> Clear
+            <button onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterMethod('ALL'); setSearch(''); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', borderRadius: 10, border: '1.5px solid #fca5a5', background: '#fef2f2', fontSize: 12, fontWeight: 600, color: '#dc2626', cursor: 'pointer' }}>
+              <X size={11} /> Clear filters
             </button>
           )}
-          <div style={{ marginLeft: 'auto', fontWeight: 700, color: 'var(--success)', fontSize: 14 }}>
-            {fmtAmount(filtered.reduce((s, p) => s + Number(p.amount), 0))} filtered
+          <div style={{ marginLeft: 'auto', fontWeight: 800, color: '#10b981', fontSize: 15, letterSpacing: '-0.01em' }}>
+            {fmtAmount(filtered.reduce((s, p) => s + Number(p.amount), 0))}
           </div>
         </div>
 
-        {/* ── Table ── */}
-        <div className="card premium-surface" style={{ overflow: 'hidden' }}>
+        {/* ── Premium Table ── */}
+        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
           <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
+            <table className="rev-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr>
-                  <th>Receipt</th>
-                  <th>Member</th>
-                  <th>Amount</th>
-                  <th>Method</th>
-                  <th>Date</th>
-                  <th>Notes</th>
-                  {isAdmin && <th style={{ width: 40 }} />}
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  {['Receipt', 'Member', 'Amount', 'Method', 'Date', 'Notes', ...(isAdmin ? [''] : [])].map((h, i) => (
+                    <th key={i} style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.8px', background: '#fafbff', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
                 ) : paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={isAdmin ? 7 : 6}>
-                      <div className="empty-state">
-                        <DollarSign size={32} className="empty-state-icon" />
-                        <p className="empty-state-title">No payments found</p>
-                        <p className="empty-state-desc">{search ? 'Try a different search term.' : 'No payments match the current filters.'}</p>
+                  <tr><td colSpan={isAdmin ? 7 : 6}>
+                    <div style={{ padding: '64px 32px', textAlign: 'center' }}>
+                      <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg,#ede9fe,#ddd6fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                        <TrendingUp size={28} color="#7c3aed" />
                       </div>
-                    </td>
-                  </tr>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>No payments found</p>
+                      <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>{search ? 'Try a different search term.' : 'No payments match the current filters.'}</p>
+                    </div>
+                  </td></tr>
                 ) : (
                   paginated.map((p) => (
-                    <tr key={p.id}>
-                      <td>
-                        <span style={{ fontSize: 11, fontFamily: 'var(--font-mono, monospace)', color: 'var(--text-muted)' }}>
-                          {p.receipt_no ?? '—'}
-                        </span>
+                    <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 150ms' }}>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#94a3b8', background: '#f8fafc', borderRadius: 6, padding: '3px 7px' }}>{p.receipt_no ?? '—'}</span>
                       </td>
-                      <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.client_name ?? '—'}</td>
-                      <td style={{ fontWeight: 700, color: 'var(--success)', fontSize: 14 }}>
-                        {fmtAmount(p.amount)}
+                      <td style={{ padding: '14px 16px', fontWeight: 600, color: '#0f172a', fontSize: 14 }}>{p.client_name ?? '—'}</td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: '#10b981', letterSpacing: '-0.02em' }}>{fmtAmount(p.amount)}</span>
                       </td>
-                      <td>
-                        <span className={`badge ${methodColor[p.method] ?? 'badge-secondary'}`} style={{ fontSize: 11 }}>
-                          {p.method}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{fmtDate(p.date)}</td>
-                      <td style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 200 }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                          {p.notes ?? '—'}
-                        </span>
+                      <td style={{ padding: '14px 16px' }}><MethodBadge method={p.method} /></td>
+                      <td style={{ padding: '14px 16px', fontSize: 13, color: '#64748b' }}>{fmtDate(p.date)}</td>
+                      <td style={{ padding: '14px 16px', fontSize: 12, color: '#94a3b8', maxWidth: 200 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{p.notes ?? '—'}</span>
                       </td>
                       {isAdmin && (
-                        <td>
-                          <button
-                            className="btn btn-ghost btn-icon btn-sm"
-                            style={{ color: 'var(--danger)' }}
-                            onClick={() => setDeleteTarget(p)}
-                            title="Delete payment"
-                          >
-                            <Trash2 size={13} />
+                        <td style={{ padding: '14px 16px' }}>
+                          <button onClick={() => setDeleteTarget(p)} style={{ width: 28, height: 28, borderRadius: 8, border: '1.5px solid #fecaca', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ef4444' }}>
+                            <Trash2 size={12} />
                           </button>
                         </td>
                       )}
@@ -438,57 +465,30 @@ function PaymentsContent() {
               </tbody>
             </table>
           </div>
-
-          {/* ── Pagination ── */}
+          {/* Pagination */}
           {!loading && filtered.length > PAGE_SIZE && (
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '12px 16px', borderTop: '1px solid var(--border)',
-              fontSize: 13, color: 'var(--text-muted)',
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderTop: '1px solid #f1f5f9', fontSize: 13, color: '#64748b' }}>
               <span>{((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <button className="btn btn-ghost btn-sm btn-icon" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  <ChevronLeft size={15} />
-                </button>
-                <span style={{ padding: '4px 10px', fontWeight: 600 }}>{page} / {totalPages}</span>
-                <button className="btn btn-ghost btn-sm btn-icon" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                  <ChevronRight size={15} />
-                </button>
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} style={{ width: 32, height: 32, borderRadius: 10, border: '1.5px solid #e2e8f0', background: page <= 1 ? '#f8fafc' : 'white', cursor: page <= 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><ChevronLeft size={14} /></button>
+                <span style={{ padding: '4px 12px', fontWeight: 700, color: '#0f172a' }}>{page} / {totalPages}</span>
+                <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} style={{ width: 32, height: 32, borderRadius: 10, border: '1.5px solid #e2e8f0', background: page >= totalPages ? '#f8fafc' : 'white', cursor: page >= totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><ChevronRight size={14} /></button>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Record Payment Modal ── */}
-      {showModal && (
-        <RecordPaymentModal
-          clients={clients}
-          onClose={() => setShowModal(false)}
-          onSaved={() => { setShowModal(false); fetchAll(); }}
-        />
-      )}
+      {showModal && <RecordPaymentModal clients={clients} onClose={() => setShowModal(false)} onSaved={() => { setShowModal(false); fetchAll(); }} />}
 
-      {/* ── Delete Confirm ── */}
       {deleteTarget && (
-        <div className="modal-backdrop" onClick={() => setDeleteTarget(null)}>
-          <div className="modal animate-slide-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 380 }}>
-            <div className="modal-header">
-              <h3 className="modal-title">Delete Payment</h3>
-              <button className="modal-close" onClick={() => setDeleteTarget(null)}>×</button>
-            </div>
-            <div className="modal-body">
-              <p style={{ color: 'var(--text-secondary)' }}>
-                Delete payment of <strong>{fmtAmount(deleteTarget.amount)}</strong> from <strong>{deleteTarget.client_name}</strong>?
-                The member's outstanding balance will be adjusted.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline btn-sm" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button className="btn btn-danger btn-sm" onClick={handleDelete} disabled={deleting}>
-                {deleting ? 'Deleting…' : 'Delete payment'}
-              </button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={() => setDeleteTarget(null)}>
+          <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 380, padding: '28px', boxShadow: '0 24px 64px rgba(0,0,0,0.2)', margin: 16 }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: '0 0 8px' }}>Delete Payment?</h3>
+            <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 24px', lineHeight: 1.6 }}>Delete <strong>{fmtAmount(deleteTarget.amount)}</strong> from <strong>{deleteTarget.client_name}</strong>? The member&rsquo;s balance will be adjusted.</p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setDeleteTarget(null)} style={{ padding: '9px 18px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: 'white', fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleDelete} disabled={deleting} style={{ padding: '9px 20px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#ef4444,#dc2626)', fontSize: 13, fontWeight: 700, color: 'white', cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}>{deleting ? 'Deleting…' : 'Delete'}</button>
             </div>
           </div>
         </div>
