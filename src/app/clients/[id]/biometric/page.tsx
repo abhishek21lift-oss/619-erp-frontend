@@ -270,7 +270,7 @@ function Inner() {
                     disabled={!deviceConnected}
                     className="finger-btn"
                     style={{
-                      padding: '10px 6px', borderRadius: 12, border: 'none', cursor: deviceConnected ? 'pointer' : 'not-allowed',
+                      padding: '10px 6px', borderRadius: 12, cursor: deviceConnected ? 'pointer' : 'not-allowed',
                       background: enrolledFingers.includes(fi) ? 'rgba(16,185,129,0.1)' : 'rgba(248,250,252,0.8)',
                       border: `1px solid ${enrolledFingers.includes(fi) ? 'rgba(16,185,129,0.3)' : 'rgba(226,232,240,0.6)'}`,
                       textAlign: 'center', transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
