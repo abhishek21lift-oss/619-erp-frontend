@@ -1,7 +1,7 @@
 'use client';
 /**
  * AppShell — root layout wrapper for every authenticated page.
- * Sidebar (fixed + collapsible), sticky topbar, main content area.
+ * Single-row premium navbar is 72px tall — pt matches exactly.
  */
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
@@ -26,7 +26,8 @@ export default function AppShell({ children, title }: AppShellProps) {
     <div className="min-h-screen bg-[var(--bg-canvas)]">
       <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
-      <main className="mx-auto w-full max-w-[1600px] px-3 pb-6 pt-[88px] sm:px-5 sm:pb-8 sm:pt-[100px] lg:px-8 lg:pt-[116px]">{children}</main>
+      {/* pt-[80px] = 72px navbar + 8px breathing gap */}
+      <main className="mx-auto w-full max-w-[1600px] px-3 pb-8 pt-[80px] sm:px-5 lg:px-8">{children}</main>
     </div>
   );
 }
