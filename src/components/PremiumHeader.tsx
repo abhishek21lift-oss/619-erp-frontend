@@ -36,6 +36,10 @@ const GROUP_COLORS: Record<string, {
 
 const DEFAULT_COLOR = GROUP_COLORS.dashboard;
 
+// Row 1 always gets the first ROW1_COUNT groups; everything else lands on row 2.
+// Tweak this number if you add/remove groups later.
+const ROW1_COUNT = 6;
+
 export default function PremiumHeader({ onMenuClick }: Props) {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -88,10 +92,9 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       ...group,
       items: group.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
     })).filter((group) => {
-      // For the staff group, also check the group-level roles restriction
       const g = NAV_GROUPS.find((ng) => ng.id === group.id);
-      if (g && (g as any).roles?.length) {
-        return !!(user?.role) && (g as any).roles.includes(user.role);
+      if (g?.roles?.length) {
+        return !!user?.role && g.roles.includes(user.role as any);
       }
       return group.items.length > 0;
     });
@@ -106,8 +109,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     ];
   }, [user?.role]);
 
-  const primaryGroups = topGroups.slice(0, 7);
-  const secondaryGroups = topGroups.slice(7);
+  // Always exactly 2 rows — first ROW1_COUNT groups on row 1, the rest on row 2
+  const row1 = topGroups.slice(0, ROW1_COUNT);
+  const row2 = topGroups.slice(ROW1_COUNT);
+
   const toggleMenu = (id: string) => setOpenMenu((c) => (c === id ? null : id));
   const handleResetPassword = () => { setOpenMenu(null); router.push('/reset-password'); };
   const handleLogout = () => { setOpenMenu(null); logout(); router.push('/login'); };
@@ -136,10 +141,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             : undefined
           }
           className={cn(
-            'group inline-flex h-[40px] items-center gap-1.5 whitespace-nowrap rounded-full px-[18px] text-[13px] font-semibold tracking-[0.01em] transition-all duration-200 ease-out',
-            active
-              ? 'text-white'
-              : 'text-slate-500',
+            'group inline-flex h-[36px] items-center gap-1.5 whitespace-nowrap rounded-full px-[16px] text-[12.5px] font-semibold tracking-[0.01em] transition-all duration-200 ease-out',
+            active ? 'text-white' : 'text-slate-500',
           )}
           onMouseEnter={(e) => {
             if (!active) {
@@ -160,7 +163,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         >
           <span>{group.label}</span>
           {group.items.length > 1 && (
-            <ChevronDown size={12} className={cn('shrink-0 opacity-70 transition-transform duration-200', opened && 'rotate-180')} />
+            <ChevronDown size={11} className={cn('shrink-0 opacity-70 transition-transform duration-200', opened && 'rotate-180')} />
           )}
         </button>
 
@@ -277,14 +280,16 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
             <div className="mx-1 hidden h-10 w-px self-center bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
 
-            {/* Nav rows */}
-            <div className="hidden min-w-0 flex-1 flex-col gap-[3px] pt-[2px] lg:flex">
-              <nav aria-label="Primary navigation" className="flex min-w-0 flex-wrap items-center gap-1">
-                {primaryGroups.map(renderGroup)}
+            {/* Nav — always exactly 2 rows */}
+            <div className="hidden min-w-0 flex-1 flex-col gap-[2px] pt-[2px] lg:flex">
+              {/* Row 1 */}
+              <nav aria-label="Primary navigation" className="flex min-w-0 flex-nowrap items-center gap-1">
+                {row1.map(renderGroup)}
               </nav>
-              {secondaryGroups.length > 0 && (
-                <nav aria-label="Secondary navigation" className="flex min-w-0 flex-wrap items-center gap-1 pl-2">
-                  {secondaryGroups.map(renderGroup)}
+              {/* Row 2 */}
+              {row2.length > 0 && (
+                <nav aria-label="Secondary navigation" className="flex min-w-0 flex-nowrap items-center gap-1 pl-1">
+                  {row2.map(renderGroup)}
                 </nav>
               )}
             </div>
@@ -294,10 +299,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-                className="hidden h-[38px] w-[220px] items-center justify-between rounded-full border border-slate-200/90 bg-slate-50/80 px-3.5 text-[12.5px] text-slate-400 backdrop-blur-sm transition-all duration-150 hover:border-violet-200 hover:bg-white hover:text-slate-600 hover:shadow-[0_2px_12px_rgba(109,40,217,0.08)] xl:inline-flex"
+                className="hidden h-[36px] w-[200px] items-center justify-between rounded-full border border-slate-200/90 bg-slate-50/80 px-3.5 text-[12px] text-slate-400 backdrop-blur-sm transition-all duration-150 hover:border-violet-200 hover:bg-white hover:text-slate-600 hover:shadow-[0_2px_12px_rgba(109,40,217,0.08)] xl:inline-flex"
               >
                 <span className="flex items-center gap-2">
-                  <Search size={13} className="shrink-0" />
+                  <Search size={12} className="shrink-0" />
                   <span>Search...</span>
                 </span>
                 <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.08)]">⌘K</kbd>
@@ -305,20 +310,20 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
               <button
                 type="button"
-                className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                className="inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
               >
-                {hydrated ? (theme === 'light' ? <Moon size={15} /> : <Sun size={15} />) : <span style={{ width: 15 }} />}
+                {hydrated ? (theme === 'light' ? <Moon size={14} /> : <Sun size={14} />) : <span style={{ width: 14 }} />}
               </button>
 
               <button
                 type="button"
-                className="relative inline-flex h-[38px] w-[38px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                className="relative inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
                 aria-label="Notifications"
               >
-                <Bell size={15} />
-                <span className="absolute right-[9px] top-[9px] h-[7px] w-[7px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
+                <Bell size={14} />
+                <span className="absolute right-[9px] top-[9px] h-[6px] w-[6px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
               </button>
 
               <div className="relative">
@@ -326,10 +331,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   type="button"
                   onClick={() => toggleMenu('account')}
                   aria-expanded={openMenu === 'account'}
-                  className="inline-flex h-[38px] items-center gap-2 rounded-full border border-slate-200/90 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                  className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/90 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
                 >
                   <div
-                    className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100"
+                    className="flex h-[24px] w-[24px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100"
                     style={{ background: 'linear-gradient(135deg,#ede9fe,#e0e7ff)' }}
                   >
                     <img
@@ -345,10 +350,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                     <span className="hidden h-full w-full items-center justify-center text-[10px] font-black text-violet-700">{initials}</span>
                   </div>
                   <div className="hidden text-left xl:block">
-                    <div className="max-w-[160px] truncate text-[12px] font-bold leading-none text-slate-900">{accountLabel}</div>
+                    <div className="max-w-[140px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
                     <div className="mt-0.5 text-[10px] lowercase tracking-wide text-slate-400">{roleLabel}</div>
                   </div>
-                  <ChevronDown size={12} className={cn('text-slate-400 transition-transform duration-200', openMenu === 'account' && 'rotate-180')} />
+                  <ChevronDown size={11} className={cn('text-slate-400 transition-transform duration-200', openMenu === 'account' && 'rotate-180')} />
                 </button>
 
                 {openMenu === 'account' && (
