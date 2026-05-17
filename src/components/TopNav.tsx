@@ -1,19 +1,19 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import BrandLogo from './BrandLogo';
 
 /* =====================================================================
-   Navigation tree — mirrors YDL structure, mapped to 619 ERP routes
+   Navigation tree
    ===================================================================== */
 type NavChild = { label: string; href: string; role?: 'admin' | 'trainer' | 'member' };
 type NavGroup = {
   id: string;
   label: string;
   icon?: string;
-  href?: string;            // direct link (no dropdown)
+  href?: string;
   children?: NavChild[];
   role?: 'admin' | 'trainer' | 'member';
 };
@@ -129,21 +129,52 @@ const NAV_ROW2: NavGroup[] = [
 ];
 
 /* =====================================================================
-   Dropdown component
+   Nested-dropdown support
+   A NavChild can optionally carry sub-children for a fly-out panel.
+   ===================================================================== */
+type NavChildWithSub = NavChild & { sub?: NavChild[] };
+type NavGroupExtended = Omit<NavGroup, 'children'> & { children?: NavChildWithSub[] };
+
+// Patch the Memberships entry to give "Plans & Pricing" a sub-menu
+const NAV_ROW1_EXT: NavGroupExtended[] = NAV_ROW1.map((g) => {
+  if (g.id !== 'memberships') return g;
+  return {
+    ...g,
+    children: [
+      {
+        label: 'Plans & Pricing',
+        href: '/plans',
+        sub: [
+          { label: 'Plans', href: '/plans' },
+          { label: 'Create Plan', href: '/plans/create' },
+        ],
+      },
+      { label: 'Subscriptions', href: '/memberships/subscriptions' },
+      { label: 'Appointments', href: '/appointments' },
+    ],
+  };
+});
+
+/* =====================================================================
+   Dropdown component  (supports one level of sub-menu fly-out)
    ===================================================================== */
 interface DropdownProps {
-  group: NavGroup;
+  group: NavGroupExtended;
   isActive: boolean;
   userRole?: string;
 }
 
 function NavDropdown({ group, isActive, userRole }: DropdownProps) {
   const [open, setOpen] = useState(false);
+  const [subOpen, setSubOpen] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSubOpen(null);
+      }
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -151,7 +182,7 @@ function NavDropdown({ group, isActive, userRole }: DropdownProps) {
 
   const visibleChildren = (group.children || []).filter(
     (c) => !c.role || c.role === userRole,
-  );
+  ) as NavChildWithSub[];
 
   if (group.href) {
     return (
@@ -171,7 +202,7 @@ function NavDropdown({ group, isActive, userRole }: DropdownProps) {
       <button
         type="button"
         className={`tn-item tn-has-arrow${isActive ? ' tn-active' : ''}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { setOpen((o) => !o); setSubOpen(null); }}
         aria-expanded={open}
         title={group.label}
       >
@@ -179,18 +210,46 @@ function NavDropdown({ group, isActive, userRole }: DropdownProps) {
         <span className="tn-item-label">{group.label}</span>
         <span className="tn-arrow">{open ? '▲' : '▼'}</span>
       </button>
+
       {open && (
         <div className="tn-menu">
-          {visibleChildren.map((c) => (
-            <Link
-              key={c.href + c.label}
-              href={c.href}
-              className="tn-menu-item"
-              onClick={() => setOpen(false)}
-            >
-              {c.label}
-            </Link>
-          ))}
+          {visibleChildren.map((c) =>
+            c.sub ? (
+              /* Item with sub-menu */
+              <div
+                key={c.href + c.label}
+                className={`tn-menu-item tn-menu-item--has-sub${subOpen === c.label ? ' tn-sub-open' : ''}`}
+                onMouseEnter={() => setSubOpen(c.label)}
+                onMouseLeave={() => setSubOpen(null)}
+              >
+                <span className="tn-menu-item-label">{c.label}</span>
+                <span className="tn-menu-item-arrow">▶</span>
+                {subOpen === c.label && (
+                  <div className="tn-submenu">
+                    {c.sub.map((s) => (
+                      <Link
+                        key={s.href + s.label}
+                        href={s.href}
+                        className="tn-menu-item"
+                        onClick={() => { setOpen(false); setSubOpen(null); }}
+                      >
+                        {s.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                key={c.href + c.label}
+                href={c.href}
+                className="tn-menu-item"
+                onClick={() => { setOpen(false); setSubOpen(null); }}
+              >
+                {c.label}
+              </Link>
+            )
+          )}
         </div>
       )}
     </div>
@@ -210,7 +269,7 @@ export default function TopNav() {
 
   const userRole = user?.role;
 
-  function isGroupActive(group: NavGroup): boolean {
+  function isGroupActive(group: NavGroupExtended): boolean {
     if (group.href) return path === group.href || path.startsWith(group.href + '/');
     return (group.children || []).some(
       (c) => path === c.href || path.startsWith(c.href.split('?')[0] + '/'),
@@ -222,7 +281,7 @@ export default function TopNav() {
 
   const roleLabel = userRole === 'admin' ? 'Owner' : userRole === 'trainer' ? 'Coach' : 'Athlete';
 
-  const visibleRow1 = NAV_ROW1.filter((g) => !g.role || g.role === userRole);
+  const visibleRow1 = NAV_ROW1_EXT.filter((g) => !g.role || g.role === userRole);
   const visibleRow2 = NAV_ROW2.filter((g) => !g.role || g.role === userRole);
 
   return (
@@ -285,8 +344,8 @@ export default function TopNav() {
             {visibleRow2.map((g) => (
               <NavDropdown
                 key={g.id}
-                group={g}
-                isActive={isGroupActive(g)}
+                group={g as NavGroupExtended}
+                isActive={isGroupActive(g as NavGroupExtended)}
                 userRole={userRole}
               />
             ))}
