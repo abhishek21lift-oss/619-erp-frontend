@@ -1,66 +1,32 @@
 'use client';
-
-import { useState, useCallback, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+/**
+ * AppShell — root layout wrapper for every authenticated page.
+ * Sidebar (fixed + collapsible), sticky topbar, main content area.
+ */
+import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import TopBar from './TopBar';
+import PremiumHeader from './PremiumHeader';
 
 interface AppShellProps {
   children: React.ReactNode;
-  /** Optional page title — accepted by all pages, currently rendered by the page itself */
   title?: string;
 }
 
-export default function AppShell({ children }: AppShellProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function AppShell({ children, title }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const pathname = usePathname();
-
-  // Close mobile drawer on navigation
   useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  // Auto-collapse sidebar on tablet
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1024px)');
-    const handler = (e: MediaQueryListEvent) => {
-      if (e.matches) setCollapsed(true);
-    };
-    if (mq.matches) setCollapsed(true);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    const mq = window.matchMedia('(min-width: 768px)');
+    const listener = (e: MediaQueryListEvent) => { if (e.matches) setMobileOpen(false); };
+    mq.addEventListener('change', listener);
+    return () => mq.removeEventListener('change', listener);
   }, []);
 
-  const handleToggle = useCallback(() => setCollapsed(c => !c), []);
-  const handleMobileOpen = useCallback(() => setMobileOpen(true), []);
-  const handleMobileClose = useCallback(() => setMobileOpen(false), []);
-
-  const sidebarWidth = collapsed ? 72 : 280;
-
   return (
-    <div className="app-shell">
-      <Sidebar
-        collapsed={collapsed}
-        onToggle={handleToggle}
-        mobileOpen={mobileOpen}
-        onMobileClose={handleMobileClose}
-      />
-
-      {/* ── Main body — offset by sidebar width ── */}
-      <div
-        className="app-shell__body"
-        style={{
-          '--sidebar-offset': `${sidebarWidth}px`,
-        } as React.CSSProperties}
-      >
-        <TopBar onMenuOpen={handleMobileOpen} sidebarCollapsed={collapsed} />
-
-        <main className="app-shell__main">
-          {children}
-        </main>
-      </div>
+    <div className="min-h-screen bg-[var(--bg-canvas)]">
+      <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
+      <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
+      <main className="mx-auto w-full max-w-[1600px] px-3 pb-6 pt-[88px] sm:px-5 sm:pb-8 sm:pt-[100px] lg:px-8 lg:pt-[116px]">{children}</main>
     </div>
   );
 }
