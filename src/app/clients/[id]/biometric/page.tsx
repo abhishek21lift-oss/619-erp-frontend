@@ -96,7 +96,7 @@ function Inner() {
   }
 
   if (loading) return (
-    <AppShell title="Biometric Enrollment">
+    <AppShell>
       <div style={{ padding: '2rem', color: '#94a3b8', textAlign: 'center' }}>Loading member…</div>
     </AppShell>
   );
@@ -104,7 +104,7 @@ function Inner() {
   const initials = (client?.name || 'M').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <AppShell title="Biometric Enrollment">
+    <AppShell>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         .bio-page * { font-family: 'Inter', sans-serif; }
