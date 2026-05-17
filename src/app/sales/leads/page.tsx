@@ -238,9 +238,12 @@ function Inner() {
         {loading ? (
           <div className="grid gap-3" style={{ gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill,minmax(300px,1fr))' : '1fr' }}>
             {[...Array(6)].map((_, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 16, padding: '1rem 1.25rem', height: 72,
+              <div key={i} style={{
+                borderRadius: 16, padding: '1rem 1.25rem', height: 72,
                 animation: 'shimmer 1.5s ease-in-out infinite',
-                background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }} />
+                background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)',
+                backgroundSize: '200% 100%',
+              }} />
             ))}
           </div>
         ) : leads.length === 0 ? (
