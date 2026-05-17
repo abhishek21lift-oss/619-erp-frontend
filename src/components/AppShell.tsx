@@ -7,6 +7,8 @@ import TopBar from './TopBar';
 
 interface AppShellProps {
   children: React.ReactNode;
+  /** Optional page title — accepted by all pages, currently rendered by the page itself */
+  title?: string;
 }
 
 export default function AppShell({ children }: AppShellProps) {
