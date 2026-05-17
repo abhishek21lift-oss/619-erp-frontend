@@ -74,9 +74,9 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Training',
     icon: 'Dumbbell',
     items: [
-      { href: '/trainers',                 label: 'Coaches',          icon: 'UserCog',     role: 'admin' },
-      { href: '/trainer/dashboard',        label: 'My Dashboard',     icon: 'LayoutGrid',  role: 'trainer' },
-      { href: '/training/transformations', label: 'Transformations',  icon: 'Sparkles',    role: 'admin' },
+      { href: '/trainers',                 label: 'Coaches',         icon: 'UserCog',    role: 'admin' },
+      { href: '/trainer/dashboard',        label: 'My Dashboard',    icon: 'LayoutGrid', role: 'trainer' },
+      { href: '/training/transformations', label: 'Transformations', icon: 'Sparkles',   role: 'admin' },
       { href: '/trainers/[id]', label: 'Coach Profile', icon: 'UserCog', hidden: true, matchPrefix: '/trainers/' },
     ],
   },
@@ -86,9 +86,11 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'UsersRound',
     roles: ['admin', 'manager'],
     items: [
-      { href: '/trainers/leave',   label: 'Leave Requests',   icon: 'CalendarOff',    roles: ['admin', 'manager'], badge: 'pendingLeaves' },
-      { href: '/attendance/staff', label: 'Staff Attendance', icon: 'ClipboardCheck', roles: ['admin', 'manager'] },
-      { href: '/settings/staff',   label: 'Staff & Access',   icon: 'ShieldCheck',    role: 'admin' },
+      { href: '/staff/new',       label: 'Add Staff Account',  icon: 'UserPlus',     roles: ['admin', 'manager'] },
+      { href: '/staff',           label: 'Staff List',          icon: 'UsersRound',   roles: ['admin', 'manager'] },
+      { href: '/settings/staff',  label: 'Staff Access Control',icon: 'ShieldCheck',  role: 'admin' },
+      { href: '/staff/targets',   label: 'Staff Target',        icon: 'Target',       roles: ['admin', 'manager'] },
+      { href: '/trainers/leave',  label: 'Leave Requests',      icon: 'CalendarOff',  roles: ['admin', 'manager'], badge: 'pendingLeaves' },
     ],
   },
   {
