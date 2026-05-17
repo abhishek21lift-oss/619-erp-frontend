@@ -2,18 +2,25 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { WorkflowLayout, WorkflowHero, SummaryRail, StickyActionBar, SectionHeading, GlassCard } from '@/components/workflow';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
+import { getStoredPlans } from '@/lib/plans';
 import { computeEndDate, toInputDate } from '@/lib/format';
 
 export default function RenewSubscriptionPage() {
   return <Guard><Inner /></Guard>;
 }
 
-// Plans loaded dynamically from localStorage via usePlans()
+const PAYMENT_METHODS = [
+  { value: 'CASH', label: 'Cash', icon: '💵' },
+  { value: 'UPI', label: 'UPI', icon: '📱' },
+  { value: 'CARD', label: 'Card', icon: '💳' },
+  { value: 'BANK', label: 'Bank Transfer', icon: '🏦' },
+];
 
 interface PlanRow {
   id: number;
@@ -35,109 +42,76 @@ function Inner() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-
-  const [renewPlan, setRenewPlan] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [groupId, setGroupId] = useState('');
-  const [memPlans, setMemPlans] = useState<{name:string;base:number;final:number}[]>([]);
+  const [memPlans, setMemPlans] = useState<{ name: string; base: number; final: number }[]>([]);
+  const [planRows, setPlanRows] = useState<PlanRow[]>([
+    { id: 1, plan: '', startDate: '', endDate: '', basePrice: '', sellingPrice: '', coupon: '' },
+  ]);
 
   useEffect(() => {
     const stored = getStoredPlans();
     const mp = stored.filter(p => p.kind === 'Membership').map(p => ({ name: p.name, base: p.base_amount, final: p.final_amount }));
     setMemPlans(mp.length > 0 ? mp : [
-      {name:'Monthly',base:2500,final:2500},{name:'Quarterly',base:7000,final:6500},
-      {name:'Half Yearly',base:13000,final:11500},{name:'Yearly',base:24000,final:20000}
+      { name: 'Monthly', base: 2500, final: 2500 },
+      { name: 'Quarterly', base: 7000, final: 6500 },
+      { name: 'Half Yearly', base: 13000, final: 11500 },
+      { name: 'Yearly', base: 24000, final: 20000 },
     ]);
   }, []);
 
-  // Default the first start date to the day the previous membership ends,
-  // or today if no prior end date — this is what staff almost always want
-  // when renewing.
-  const defaultStart = toInputDate(client?.pt_end_date) || toInputDate(new Date());
+  useEffect(() => {
+    api.clients.get(id).then(setClient).catch((e: any) => setError(e.message)).finally(() => setLoading(false));
+  }, [id]);
 
   function handlePlanSelect(rowId: number, planName: string) {
     const plan = memPlans.find(p => p.name === planName);
     setPlanRows(r => r.map(x => {
       if (x.id !== rowId) return x;
-      const start = x.startDate || defaultStart;
-      return {
-        ...x,
-        plan: planName,
-        startDate: start,
-        endDate: computeEndDate(start, planName),
-        basePrice: plan ? String(plan.base) : x.basePrice,
-        sellingPrice: plan ? String(plan.final) : x.sellingPrice,
-      };
+      const start = x.startDate || toInputDate(client?.pt_end_date) || toInputDate(new Date());
+      return { ...x, plan: planName, startDate: start, endDate: computeEndDate(start, planName), basePrice: plan ? String(plan.base) : x.basePrice, sellingPrice: plan ? String(plan.final) : x.sellingPrice };
     }));
   }
 
   function handleStartDateChange(rowId: number, newStart: string) {
-    setPlanRows(r => r.map(x => x.id === rowId
-      ? { ...x, startDate: newStart, endDate: computeEndDate(newStart, x.plan) }
-      : x
-    ));
+    setPlanRows(r => r.map(x => x.id === rowId ? { ...x, startDate: newStart, endDate: computeEndDate(newStart, x.plan) } : x));
   }
 
-  const [planRows, setPlanRows] = useState<PlanRow[]>([
-    { id: 1, plan: '', startDate: '', endDate: '', basePrice: '', sellingPrice: '', coupon: '' }
-  ]);
-
-  useEffect(() => {
-    api.clients.get(id)
-      .then(setClient)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [id]);
+  function updateRow(rowId: number, field: keyof PlanRow, value: string) {
+    setPlanRows(r => r.map(x => x.id === rowId ? { ...x, [field]: value } : x));
+  }
 
   function addPlanRow() {
-    setPlanRows((r) => [...r, { id: Date.now(), plan: '', startDate: '', endDate: '', basePrice: '', sellingPrice: '', coupon: '' }]);
+    setPlanRows(r => [...r, { id: Date.now(), plan: '', startDate: '', endDate: '', basePrice: '', sellingPrice: '', coupon: '' }]);
   }
+
   function removePlanRow(rowId: number) {
     if (planRows.length <= 1) return;
-    setPlanRows((r) => r.filter((x) => x.id !== rowId));
-  }
-  function updateRow(rowId: number, field: keyof PlanRow, value: string) {
-    setPlanRows((r) => r.map((x) => x.id === rowId ? { ...x, [field]: value } : x));
+    setPlanRows(r => r.filter(x => x.id !== rowId));
   }
 
   const mrp = planRows.reduce((s, r) => s + (parseFloat(r.basePrice) || 0), 0);
   const total = planRows.reduce((s, r) => s + (parseFloat(r.sellingPrice) || 0), 0);
+  const discount = Math.max(0, mrp - total);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(''); setSuccess('');
-    if (planRows.length === 0) {
-      const m = 'Add at least one plan row';
-      setError(m); toast.error(m); return;
-    }
     for (let i = 0; i < planRows.length; i++) {
-      const r = planRows[i];
-      const n = i + 1;
-      if (!r.plan)        { const m = `Row ${n}: pick a plan`; setError(m); toast.error(m); return; }
-      if (!r.startDate)   { const m = `Row ${n}: start date is required`; setError(m); toast.error(m); return; }
-      if (!r.endDate)     { const m = `Row ${n}: end date is required`; setError(m); toast.error(m); return; }
-      if (new Date(r.endDate) <= new Date(r.startDate)) {
-        const m = `Row ${n}: end date must be after start date`;
-        setError(m); toast.error(m); return;
-      }
-      if (!(parseFloat(r.sellingPrice) > 0)) {
-        const m = `Row ${n}: selling price is required`;
-        setError(m); toast.error(m); return;
-      }
+      const r = planRows[i]; const n = i + 1;
+      if (!r.plan) { const m = `Row ${n}: pick a plan`; setError(m); toast.error(m); return; }
+      if (!r.startDate) { const m = `Row ${n}: start date required`; setError(m); toast.error(m); return; }
+      if (!r.endDate) { const m = `Row ${n}: end date required`; setError(m); toast.error(m); return; }
+      if (new Date(r.endDate) <= new Date(r.startDate)) { const m = `Row ${n}: end must be after start`; setError(m); toast.error(m); return; }
+      if (!(parseFloat(r.sellingPrice) > 0)) { const m = `Row ${n}: selling price required`; setError(m); toast.error(m); return; }
     }
     setSaving(true);
     try {
       const result = await api.clients.renewSubscription(id, {
-        renew_plan: renewPlan || planRows[0].plan,
-        plan_rows: planRows.map((r) => ({
-          plan: r.plan,
-          startDate: r.startDate,
-          endDate: r.endDate,
-          basePrice: parseFloat(r.basePrice) || 0,
-          sellingPrice: parseFloat(r.sellingPrice) || 0,
-          coupon: r.coupon || null,
-        })),
+        renew_plan: planRows[0].plan,
+        plan_rows: planRows.map(r => ({ plan: r.plan, startDate: r.startDate, endDate: r.endDate, basePrice: parseFloat(r.basePrice) || 0, sellingPrice: parseFloat(r.sellingPrice) || 0, coupon: r.coupon || null })),
         group_id: groupId || null,
-        payment_method: 'CASH',
+        payment_method: paymentMethod,
       });
       const m = result?.message || 'Subscription renewed successfully!';
       setSuccess(m); toast.success(m);
@@ -145,147 +119,153 @@ function Inner() {
     } catch (err: any) {
       const m = err?.message || 'Failed to renew subscription';
       setError(m); toast.error(m);
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }
 
-  if (loading) return <AppShell>
-      <section className="profile-premium-hero">
-        <div className="eyebrow">PREMIUM MEMBER EXPERIENCE</div>
-        <h1 style={{ marginTop: 8, fontSize: "clamp(1.8rem, 2.8vw, 3rem)", fontWeight: 900, letterSpacing: "-0.04em" }}>619 FITNESS STUDIO</h1>
-        <p style={{ marginTop: 10, maxWidth: 760, color: "rgba(255,255,255,0.82)" }}>A cleaner, colourful and better organized member management workflow across subscriptions, memberships and payments.</p>
-      </section><div className="page-main" style={{ padding: '2rem', color: 'var(--muted)' }}>Loading…</div></AppShell>;
+  if (loading) return <AppShell><div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>Loading…</div></AppShell>;
 
-  const initials = (client?.name || 'C').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+  const summaryItems = [
+    { label: 'MRP', value: `₹ ${mrp.toLocaleString('en-IN')}` },
+    { label: 'Discount', value: `- ₹ ${discount.toLocaleString('en-IN')}`, highlight: discount > 0 },
+    { label: 'CGST', value: '₹ 0' },
+    { label: 'SGST', value: '₹ 0' },
+    { label: 'Coupon', value: '₹ 0' },
+  ];
 
   return (
     <AppShell>
-      <section className="profile-premium-hero">
-        <div className="eyebrow">PREMIUM MEMBER EXPERIENCE</div>
-        <h1 style={{ marginTop: 8, fontSize: "clamp(1.8rem, 2.8vw, 3rem)", fontWeight: 900, letterSpacing: "-0.04em" }}>619 FITNESS STUDIO</h1>
-        <p style={{ marginTop: 10, maxWidth: 760, color: "rgba(255,255,255,0.82)" }}>A cleaner, colourful and better organized member management workflow across subscriptions, memberships and payments.</p>
-      </section>
-      <div className="page-main">
-        <div className="ptf-wrap">
-          <Link href={`/clients/${id}`} className="ptf-back-btn">← Back to Member</Link>
-          {success && <div className="ptf-success">✓ {success}</div>}
-          {error && <div className="alert alert-error">{error}</div>}
+      <WorkflowLayout
+        hero={
+          <WorkflowHero
+            client={client}
+            backHref={`/clients/${id}`}
+            badge={{ label: 'Renew Subscription', color: '#10b981' }}
+          />
+        }
+        rail={
+          <SummaryRail
+            title="Renewal Summary"
+            items={summaryItems}
+            total={total}
+            client={client}
+          />
+        }
+        actionBar={
+          <StickyActionBar
+            total={total}
+            label="Renew Subscription"
+            saving={saving}
+            onCancel={() => router.push(`/clients/${id}`)}
+          />
+        }
+        onSubmit={handleSubmit}
+      >
+        <AnimatePresence>
+          {success && (
+            <motion.div key="s" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: 10, padding: '12px 16px', marginBottom: 16, color: '#065f46', fontWeight: 600, display: 'flex', gap: 8, alignItems: 'center' }}>
+              ✓ {success}
+            </motion.div>
+          )}
+          {error && (
+            <motion.div key="e" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 10, padding: '12px 16px', marginBottom: 16, color: '#991b1b', display: 'flex', gap: 8, alignItems: 'center' }}>
+              ⚠ {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          {/* Client hero */}
-          <div className="ptf-client-hero">
-            {client?.photo_url
-              ? <img src={client.photo_url} alt={client.name} className="ptf-client-avatar" />
-              : <div className="ptf-client-avatar-initials">{initials}</div>}
-            <div>
-              <div className="ptf-client-name">{client?.name}</div>
-              <div className="ptf-client-meta">📞 {client?.mobile || '—'} &bull; {client?.email || '—'}</div>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            {/* Renew plan select */}
-            <div className="ptf-card">
-              <div className="ptf-card-header">
-                <span className="ptf-card-header-icon">↻</span>
-                <span className="ptf-card-header-title">Renew Subscription</span>
-              </div>
-              <div className="ptf-card-body">
-                <div className="ptf-field" style={{ maxWidth: 320 }}>
-                  <label className="ptf-label">Select Membership Plan to Renew <span className="req">*</span></label>
-                  <select className="ptf-select" value={renewPlan} onChange={(e) => setRenewPlan(e.target.value)} required>
-                    <option value="">Select Membership Plan to Renew</option>
-                    {memPlans.map((p) => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
-                  </select>
-                </div>
-
-                {/* Plan rows table */}
-                <div style={{ overflowX: 'auto', marginTop: '.5rem' }}>
-                  <table className="ptf-plan-table">
-                    <thead>
-                      <tr>
-                        <th className="ptf-plan-num">#</th>
-                        <th>Membership Plan</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Base Price</th>
-                        <th>Selling Price</th>
-                        <th>Apply Coupon</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {planRows.map((row, i) => (
-                        <tr key={row.id}>
-                          <td className="ptf-plan-num">{i + 1}</td>
-                          <td>
-                            <select className="ptf-select" value={row.plan} onChange={(e) => handlePlanSelect(row.id, e.target.value)} required>
-                              <option value="">Select Membership Plan</option>
-                              {memPlans.map((p) => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
-                            </select>
-                          </td>
-                          <td><input type="date" className="ptf-input" value={row.startDate} onChange={(e) => handleStartDateChange(row.id, e.target.value)} required /></td>
-                          <td><input type="date" className="ptf-input" value={row.endDate} onChange={(e) => updateRow(row.id, 'endDate', e.target.value)} /></td>
-                          <td><input type="number" className="ptf-input" placeholder="₹" value={row.basePrice} onChange={(e) => updateRow(row.id, 'basePrice', e.target.value)} /></td>
-                          <td><input type="number" className="ptf-input" placeholder="₹" value={row.sellingPrice} onChange={(e) => updateRow(row.id, 'sellingPrice', e.target.value)} required /></td>
-                          <td>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                              <input type="text" className="ptf-input" placeholder="Code" value={row.coupon} onChange={(e) => updateRow(row.id, 'coupon', e.target.value)} />
-                              <button type="button" style={{ padding: '0 .5rem', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer', fontSize: '.75rem', whiteSpace: 'nowrap' }}>Apply</button>
-                            </div>
-                          </td>
-                          <td>
-                            {planRows.length > 1 && (
-                              <button type="button" onClick={() => removePlanRow(row.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}>✕</button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <button type="button" onClick={addPlanRow} style={{ alignSelf: 'flex-start', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, padding: '.4rem .9rem', fontWeight: 700, cursor: 'pointer', fontSize: '.8rem' }}>
-                  + Add more plan
-                </button>
-
-                {/* Group ID */}
-                <div className="ptf-field" style={{ marginTop: '.5rem' }}>
-                  <label className="ptf-label">Group Members Id</label>
-                  <input className="ptf-input" placeholder="Enter Member Code" value={groupId} onChange={(e) => setGroupId(e.target.value)} />
-                  <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                    <button type="button" style={{ fontSize: '.75rem', padding: '.3rem .65rem', border: '1.5px solid var(--accent)', color: 'var(--accent)', background: '#fff', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>🔍 Lookup Member code</button>
-                    <button type="button" style={{ fontSize: '.75rem', padding: '.3rem .65rem', border: '1.5px solid var(--accent)', color: 'var(--accent)', background: '#fff', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>🔍 Lookup Enquiry code</button>
+        {/* Plan rows */}
+        <GlassCard>
+          <SectionHeading eyebrow="MEMBERSHIP" title="Select Renewal Plan" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {planRows.map((row, i) => {
+              const planObj = memPlans.find(p => p.name === row.plan);
+              return (
+                <motion.div key={row.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                  style={{ background: 'var(--bg-elevated, #f8f9fa)', borderRadius: 12, padding: '16px 18px', border: '1px solid var(--border, #e5e7eb)', position: 'relative' }}>
+                  {planRows.length > 1 && (
+                    <button type="button" onClick={() => removePlanRow(row.id)}
+                      style={{ position: 'absolute', top: 10, right: 12, background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
+                  )}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.04em' }}>Plan {i + 1} *</span>
+                      <select style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border, #e5e7eb)', fontSize: 14, background: '#fff', appearance: 'none', cursor: 'pointer' }}
+                        value={row.plan} onChange={e => handlePlanSelect(row.id, e.target.value)} required>
+                        <option value="">Select Plan</option>
+                        {memPlans.map(p => <option key={p.name} value={p.name}>{p.name} — ₹{p.final.toLocaleString('en-IN')}</option>)}
+                      </select>
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.04em' }}>Start Date *</span>
+                      <input type="date" style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border, #e5e7eb)', fontSize: 14 }}
+                        value={row.startDate} onChange={e => handleStartDateChange(row.id, e.target.value)} required />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.04em' }}>End Date</span>
+                      <input type="date" style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border, #e5e7eb)', fontSize: 14 }}
+                        value={row.endDate} onChange={e => updateRow(row.id, 'endDate', e.target.value)} />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.04em' }}>Base Price</span>
+                      <input type="number" placeholder="₹" style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border, #e5e7eb)', fontSize: 14 }}
+                        value={row.basePrice} onChange={e => updateRow(row.id, 'basePrice', e.target.value)} />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.04em' }}>Selling Price *</span>
+                      <input type="number" placeholder="₹" style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border, #e5e7eb)', fontSize: 14 }}
+                        value={row.sellingPrice} onChange={e => updateRow(row.id, 'sellingPrice', e.target.value)} required />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.04em' }}>Coupon</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <input type="text" placeholder="Code" style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border, #e5e7eb)', fontSize: 14, flex: 1 }}
+                          value={row.coupon} onChange={e => updateRow(row.id, 'coupon', e.target.value)} />
+                        <button type="button" style={{ padding: '0 12px', background: 'var(--accent, #6366f1)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>Apply</button>
+                      </div>
+                    </label>
                   </div>
-                </div>
-              </div>
-            </div>
+                  {planObj && (
+                    <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ background: '#ecfdf5', color: '#065f46', padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>✓ {planObj.name}</span>
+                      <span style={{ background: '#eff6ff', color: '#1d4ed8', padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>₹{planObj.final.toLocaleString('en-IN')} net</span>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+          <button type="button" onClick={addPlanRow}
+            style={{ marginTop: 12, alignSelf: 'flex-start', background: 'transparent', border: '1.5px dashed var(--accent, #6366f1)', color: 'var(--accent, #6366f1)', borderRadius: 8, padding: '8px 16px', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>
+            + Add another plan
+          </button>
+        </GlassCard>
 
-            {/* Payment breakdown */}
-            <div className="ptf-card">
-              <div className="ptf-card-header">
-                <span className="ptf-card-header-icon">₹</span>
-                <span className="ptf-card-header-title">Payment Breakdown</span>
-              </div>
-              <div className="ptf-card-body">
-                <div className="ptf-breakdown">
-                  <div className="ptf-breakdown-row"><span>MRP</span><span className="ptf-breakdown-val">₹ {mrp.toLocaleString('en-IN')}</span></div>
-                  <div className="ptf-breakdown-row"><span>Discount</span><span className="ptf-breakdown-val">₹ {Math.max(0, mrp - total).toLocaleString('en-IN')}</span></div>
-                  <div className="ptf-breakdown-row"><span>Net Sales Amount</span><span className="ptf-breakdown-val">₹ {total.toLocaleString('en-IN')}</span></div>
-                  <div className="ptf-breakdown-row"><span>Coupon Applied</span><span className="ptf-breakdown-val">₹ 0</span></div>
-                  <div className="ptf-breakdown-row"><span>—CGST @</span><span className="ptf-breakdown-val">₹ 0</span></div>
-                  <div className="ptf-breakdown-row"><span>—SGST @</span><span className="ptf-breakdown-val">₹ 0</span></div>
-                  <div className="ptf-breakdown-row total"><span>Total Amount to be Paid</span><span>₹ {total.toLocaleString('en-IN')}</span></div>
-                </div>
-              </div>
-            </div>
+        {/* Payment method */}
+        <GlassCard>
+          <SectionHeading eyebrow="PAYMENT" title="Payment Method" />
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {PAYMENT_METHODS.map(m => (
+              <button key={m.value} type="button" onClick={() => setPaymentMethod(m.value)}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '14px 22px', borderRadius: 12, border: paymentMethod === m.value ? '2px solid var(--accent, #6366f1)' : '2px solid var(--border, #e5e7eb)', background: paymentMethod === m.value ? 'var(--accent-soft, #eef2ff)' : '#fff', cursor: 'pointer', transition: 'all .18s', minWidth: 90 }}>
+                <span style={{ fontSize: 22 }}>{m.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: paymentMethod === m.value ? 'var(--accent, #6366f1)' : 'var(--text, #1f2937)' }}>{m.label}</span>
+              </button>
+            ))}
+          </div>
+        </GlassCard>
 
-            <div className="ptf-actions">
-              <Link href={`/clients/${id}`} className="ptf-btn-secondary">Cancel</Link>
-              <button type="submit" className="ptf-btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Renew Subscription'}</button>
-            </div>
-          </form>
-        </div>
-      </div>
+        {/* Group ID */}
+        <GlassCard>
+          <SectionHeading eyebrow="OPTIONAL" title="Group / Referral" />
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 360 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.04em' }}>Group Member ID</span>
+            <input style={{ padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border, #e5e7eb)', fontSize: 14 }}
+              placeholder="Enter Member / Enquiry code" value={groupId} onChange={e => setGroupId(e.target.value)} />
+          </label>
+        </GlassCard>
+      </WorkflowLayout>
     </AppShell>
   );
 }
