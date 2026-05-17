@@ -28,6 +28,7 @@ import {
 
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import QuickActionsRail from '@/components/QuickActionsRail';
 import { useAuth } from '@/lib/auth-context';
 import { fmtDate } from '@/lib/format';
 import { request } from '@/lib/http';
@@ -272,6 +273,9 @@ function DashboardContent() {
           )}
         </section>
 
+        {/* ── Premium Quick Actions Rail (full width) ─────────────── */}
+        <QuickActionsRail />
+
         {/* Charts row */}
         <section
           aria-label="Donut breakdowns"
@@ -326,47 +330,9 @@ function DashboardContent() {
           </Card>
         </section>
 
-        {/* Quick actions + recent payments */}
-        <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Quick actions</CardTitle>
-            </CardHeader>
-            <CardBody className="grid grid-cols-2 gap-2">
-              <QuickAction
-                href="/sales/enquiry"
-                icon={<Plus className="h-4 w-4" />}
-                label="Add enquiry"
-              />
-              <QuickAction
-                href="/payments?new=1"
-                icon={<Zap className="h-4 w-4" />}
-                label="Quick billing"
-              />
-              <QuickAction
-                href="/checkin"
-                icon={<Scan className="h-4 w-4" />}
-                label="Face check-in"
-              />
-              <QuickAction
-                href="/clients/new"
-                icon={<UserPlus className="h-4 w-4" />}
-                label="New member"
-              />
-              <QuickAction
-                href="/finance/dues"
-                icon={<Wallet className="h-4 w-4" />}
-                label="Dues report"
-              />
-              <QuickAction
-                href="/members/expiring"
-                icon={<CalendarClock className="h-4 w-4" />}
-                label="Renewals"
-              />
-            </CardBody>
-          </Card>
-
-          <Card className="lg:col-span-2">
+        {/* Recent payments — full width now that quick actions has its own row */}
+        <section className="mt-6">
+          <Card>
             <CardHeader>
               <CardTitle>Recent payments</CardTitle>
               <Link
@@ -514,29 +480,6 @@ function PeriodPicker({
         </button>
       ))}
     </div>
-  );
-}
-
-function QuickAction({
-  href,
-  icon,
-  label,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-rose-200 hover:text-rose-700"
-    >
-      <span className="grid h-7 w-7 place-items-center rounded-md bg-rose-50 text-rose-600 transition group-hover:bg-rose-100">
-        {icon}
-      </span>
-      <span className="truncate">{label}</span>
-      <ArrowUpRight className="ml-auto h-3 w-3 text-slate-400 group-hover:text-rose-600" />
-    </Link>
   );
 }
 
