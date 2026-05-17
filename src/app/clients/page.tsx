@@ -179,65 +179,140 @@ function ExpiryPill({ days, date }: { days: number; date?: string }) {
   return <span style={{ color: '#6b7280', fontSize: 12 }}>{fmtDateShort(date)}</span>;
 }
 
-/* ─── KPI Card ──────────────────────────────────────────── */
+/* ─── KPI Card — Premium Glassmorphism ─────────────────── */
 interface KpiConfig {
   label: string;
   value: number;
   icon: React.ReactNode;
-  accent: string;
-  accentBg: string;
+  gradient: string;       // e.g. "135deg, #6366f1, #8b5cf6"
+  glowColor: string;      // rgba glow
   trend?: number;
   sub?: string;
+  segment?: Segment;
 }
+
 function KpiCard({ cfg, onClick, active }: { cfg: KpiConfig; onClick: () => void; active: boolean }) {
+  const [hovered, setHovered] = useState(false);
+  const on = hovered || active;
+
   return (
     <button
       onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: active
-          ? `linear-gradient(135deg, ${cfg.accent}18, ${cfg.accent}08)`
-          : 'rgba(255,255,255,0.7)',
-        border: active ? `1.5px solid ${cfg.accent}40` : '1.5px solid rgba(0,0,0,0.06)',
-        borderRadius: 16, padding: '18px 20px',
-        textAlign: 'left', cursor: 'pointer', width: '100%',
-        backdropFilter: 'blur(8px)',
-        boxShadow: active
-          ? `0 4px 24px ${cfg.accent}20, 0 1px 4px rgba(0,0,0,0.06)`
-          : '0 1px 4px rgba(0,0,0,0.05)',
-        transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)',
-        transform: active ? 'translateY(-1px)' : 'none',
-        position: 'relative', overflow: 'hidden',
+        position: 'relative',
+        background: on
+          ? `linear-gradient(${cfg.gradient}, 0.18)`
+          : 'rgba(255,255,255,0.62)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: `1px solid ${on ? cfg.glowColor.replace('0.15', '0.45') : 'rgba(255,255,255,0.55)'}`,
+        borderRadius: 20,
+        padding: '14px 16px',
+        textAlign: 'left',
+        cursor: 'pointer',
+        width: '100%',
+        overflow: 'hidden',
+        transform: on ? 'translateY(-3px) scale(1.015)' : 'translateY(0) scale(1)',
+        boxShadow: on
+          ? `0 12px 36px ${cfg.glowColor}, 0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6)`
+          : `0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)`,
+        transition: 'all 0.32s cubic-bezier(0.16,1,0.3,1)',
       }}
     >
+      {/* ── Gradient wash behind content ── */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 20, pointerEvents: 'none',
+        background: `linear-gradient(${cfg.gradient})`,
+        opacity: on ? 0.13 : 0.06,
+        transition: 'opacity 0.32s ease',
+      }} />
+
+      {/* ── Top shimmer line ── */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: 1,
+        background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent)`,
+        opacity: on ? 1 : 0.5,
+        transition: 'opacity 0.32s ease',
+      }} />
+
+      {/* ── Active accent bar ── */}
       {active && (
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-          background: `linear-gradient(90deg, ${cfg.accent}, transparent)`,
+          position: 'absolute', top: 0, left: '15%', right: '15%', height: 2, borderRadius: '0 0 4px 4px',
+          background: `linear-gradient(90deg, ${cfg.gradient.split(',').slice(1).join(',')})`,
+          opacity: 0.9,
         }} />
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+
+      {/* ── Content row ── */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+
+        {/* Icon pill */}
         <div style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: cfg.accentBg, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', color: cfg.accent,
+          flexShrink: 0,
+          width: 36, height: 36, borderRadius: 12,
+          background: `linear-gradient(${cfg.gradient})`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff',
+          boxShadow: on
+            ? `0 4px 16px ${cfg.glowColor}, inset 0 1px 0 rgba(255,255,255,0.25)`
+            : `0 2px 8px ${cfg.glowColor}, inset 0 1px 0 rgba(255,255,255,0.2)`,
+          transform: on ? 'scale(1.08) rotate(-4deg)' : 'scale(1) rotate(0deg)',
+          transition: 'all 0.32s cubic-bezier(0.16,1,0.3,1)',
         }}>
           {cfg.icon}
         </div>
-        {cfg.trend !== undefined && (
-          <span style={{
-            display: 'flex', alignItems: 'center', gap: 2, fontSize: 11,
-            color: cfg.trend >= 0 ? '#10b981' : '#ef4444', fontWeight: 600,
+
+        {/* Text block */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 22, fontWeight: 800, color: '#0f172a',
+            letterSpacing: '-0.8px', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
           }}>
-            {cfg.trend >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+            <AnimatedNumber value={cfg.value} />
+          </div>
+          <div style={{ fontSize: 11, color: '#475569', marginTop: 2, fontWeight: 600, letterSpacing: '0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {cfg.label}
+          </div>
+        </div>
+
+        {/* Trend badge */}
+        {cfg.trend !== undefined && (
+          <div style={{
+            flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 2,
+            padding: '3px 7px', borderRadius: 20,
+            background: cfg.trend >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+            color: cfg.trend >= 0 ? '#059669' : '#dc2626',
+            fontSize: 10, fontWeight: 700,
+          }}>
+            {cfg.trend >= 0 ? <TrendingUp size={9} /> : <TrendingDown size={9} />}
             {Math.abs(cfg.trend)}%
-          </span>
+          </div>
         )}
       </div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1 }}>
-        <AnimatedNumber value={cfg.value} />
-      </div>
-      <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{cfg.label}</div>
-      {cfg.sub && <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{cfg.sub}</div>}
+
+      {/* ── Sub label ── */}
+      {cfg.sub && (
+        <div style={{
+          position: 'relative', zIndex: 1,
+          fontSize: 10, color: '#94a3b8', marginTop: 8, fontWeight: 500,
+          paddingLeft: 48,
+        }}>
+          {cfg.sub}
+        </div>
+      )}
+
+      {/* ── Bottom glow orb ── */}
+      <div style={{
+        position: 'absolute', bottom: -20, right: -10,
+        width: 70, height: 70, borderRadius: '50%',
+        background: `radial-gradient(circle, ${cfg.glowColor.replace('0.15', on ? '0.35' : '0.15')}, transparent 70%)`,
+        transition: 'all 0.32s ease',
+        pointerEvents: 'none',
+      }} />
     </button>
   );
 }
@@ -432,26 +507,91 @@ export default function ClientsPage() {
     birthdays: clients.filter((c) => isThisMonthBirthday(c.dob)).length,
   }), [clients]);
 
-  const kpiCards: KpiConfig[] = [
-    { label: 'Total Members',   value: kpis.total,     icon: <Users size={16} />,       accent: '#6366f1', accentBg: 'rgba(99,102,241,0.1)',  trend: 12, sub: 'All time registered' },
-    { label: 'Active',          value: kpis.active,    icon: <CheckCircle size={16} />, accent: '#10b981', accentBg: 'rgba(16,185,129,0.1)',  trend: 5,  sub: 'Currently active' },
-    { label: 'Expired',         value: kpis.expired,   icon: <XCircle size={16} />,     accent: '#ef4444', accentBg: 'rgba(239,68,68,0.1)',   trend: -3, sub: 'Needs renewal' },
-    { label: 'Frozen',          value: kpis.frozen,    icon: <Snowflake size={16} />,   accent: '#3b82f6', accentBg: 'rgba(59,130,246,0.1)',  sub: 'Paused memberships' },
-    { label: 'Has Dues',        value: kpis.dues,      icon: <AlertCircle size={16} />, accent: '#f59e0b', accentBg: 'rgba(245,158,11,0.1)',  sub: 'Pending payments' },
-    { label: 'Expiring Soon',   value: kpis.expiring,  icon: <Clock size={16} />,       accent: '#f97316', accentBg: 'rgba(249,115,22,0.1)',  sub: 'Within 30 days' },
-    { label: 'Birthdays',       value: kpis.birthdays, icon: <Cake size={16} />,        accent: '#ec4899', accentBg: 'rgba(236,72,153,0.1)',  sub: 'This month' },
-    { label: 'New This Month',  value: clients.filter((c) => {
-        if (!c.joining_date) return false;
-        const d = new Date(c.joining_date);
-        const n = new Date();
-        return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
-      }).length, icon: <Star size={16} />, accent: '#8b5cf6', accentBg: 'rgba(139,92,246,0.1)', trend: 8, sub: 'Joined this month' },
-  ];
+  const newThisMonth = clients.filter((c) => {
+    if (!c.joining_date) return false;
+    const d = new Date(c.joining_date);
+    const n = new Date();
+    return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+  }).length;
 
-  /* segment→kpiCard index mapping */
-  const segmentKpiMap: Partial<Record<Segment, number>> = {
-    all: 0, active: 1, expired: 2, frozen: 3, dues: 4, expiring: 5, birthdays: 6,
-  };
+  /* ── Premium KPI card definitions ── */
+  const kpiCards: KpiConfig[] = [
+    {
+      label: 'Total Members',
+      value: kpis.total,
+      icon: <Users size={16} />,
+      gradient: '135deg, #6366f1 0%, #8b5cf6 100%',
+      glowColor: 'rgba(99,102,241,0.22)',
+      trend: 12,
+      sub: 'All time registered',
+      segment: 'all',
+    },
+    {
+      label: 'Active',
+      value: kpis.active,
+      icon: <CheckCircle size={16} />,
+      gradient: '135deg, #10b981 0%, #34d399 100%',
+      glowColor: 'rgba(16,185,129,0.22)',
+      trend: 5,
+      sub: 'Currently active',
+      segment: 'active',
+    },
+    {
+      label: 'Expired',
+      value: kpis.expired,
+      icon: <XCircle size={16} />,
+      gradient: '135deg, #f43f5e 0%, #fb7185 100%',
+      glowColor: 'rgba(244,63,94,0.2)',
+      trend: -3,
+      sub: 'Needs renewal',
+      segment: 'expired',
+    },
+    {
+      label: 'Frozen',
+      value: kpis.frozen,
+      icon: <Snowflake size={16} />,
+      gradient: '135deg, #06b6d4 0%, #67e8f9 100%',
+      glowColor: 'rgba(6,182,212,0.2)',
+      sub: 'Paused memberships',
+      segment: 'frozen',
+    },
+    {
+      label: 'Has Dues',
+      value: kpis.dues,
+      icon: <AlertCircle size={16} />,
+      gradient: '135deg, #f59e0b 0%, #fbbf24 100%',
+      glowColor: 'rgba(245,158,11,0.22)',
+      sub: 'Pending payments',
+      segment: 'dues',
+    },
+    {
+      label: 'Expiring Soon',
+      value: kpis.expiring,
+      icon: <Clock size={16} />,
+      gradient: '135deg, #f97316 0%, #fb923c 100%',
+      glowColor: 'rgba(249,115,22,0.2)',
+      sub: 'Within 30 days',
+      segment: 'expiring',
+    },
+    {
+      label: 'Birthdays',
+      value: kpis.birthdays,
+      icon: <Cake size={16} />,
+      gradient: '135deg, #ec4899 0%, #f472b6 100%',
+      glowColor: 'rgba(236,72,153,0.2)',
+      sub: 'This month',
+      segment: 'birthdays',
+    },
+    {
+      label: 'New This Month',
+      value: newThisMonth,
+      icon: <Star size={16} />,
+      gradient: '135deg, #7c3aed 0%, #a78bfa 100%',
+      glowColor: 'rgba(124,58,237,0.22)',
+      trend: 8,
+      sub: 'Joined this month',
+    },
+  ];
 
   /* ── Filter + search ── */
   const filtered = useMemo(() => {
@@ -531,14 +671,30 @@ export default function ClientsPage() {
   return (
     <Guard>
       <AppShell title="Members">
-        <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+        <div style={{ minHeight: '100vh', background: '#f1f4f9' }}>
+
+          {/* ── Ambient background blobs ── */}
+          <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
+            <div style={{
+              position: 'absolute', top: -120, right: -80, width: 480, height: 480, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)',
+            }} />
+            <div style={{
+              position: 'absolute', top: 200, left: -100, width: 360, height: 360, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%)',
+            }} />
+            <div style={{
+              position: 'absolute', bottom: 80, right: 120, width: 300, height: 300, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(236,72,153,0.06) 0%, transparent 70%)',
+            }} />
+          </div>
 
           {/* ── Premium Page Container ── */}
-          <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px 48px' }}>
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: 1400, margin: '0 auto', padding: '0 24px 48px' }}>
 
             {/* ── Hero Header ── */}
             <div style={{
-              padding: '32px 0 24px',
+              padding: '32px 0 20px',
               display: 'flex', alignItems: 'flex-end',
               justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
             }}>
@@ -548,6 +704,7 @@ export default function ClientsPage() {
                     width: 32, height: 32, borderRadius: 9,
                     background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
                   }}>
                     <Users size={15} color="#fff" />
                   </div>
@@ -611,20 +768,20 @@ export default function ClientsPage() {
               </div>
             </div>
 
-            {/* ── KPI Grid ── */}
+            {/* ── KPI Grid — 4 across on desktop, 2 on mobile ── */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-              gap: 12, marginBottom: 24,
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 10,
+              marginBottom: 20,
             }}>
-              {kpiCards.map((cfg, i) => (
+              {kpiCards.map((cfg) => (
                 <KpiCard
                   key={cfg.label}
                   cfg={cfg}
-                  active={segment === (Object.keys(segmentKpiMap) as Segment[]).find((k) => segmentKpiMap[k] === i)}
+                  active={!!cfg.segment && segment === cfg.segment}
                   onClick={() => {
-                    const seg = (Object.keys(segmentKpiMap) as Segment[]).find((k) => segmentKpiMap[k] === i);
-                    if (seg) setSegment(seg);
+                    if (cfg.segment) setSegment(cfg.segment);
                   }}
                 />
               ))}
