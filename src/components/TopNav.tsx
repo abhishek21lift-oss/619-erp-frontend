@@ -58,8 +58,9 @@ const NAV_ROW1: NavGroup[] = [
   {
     id: 'memberships', label: 'Memberships',
     children: [
-      { label: 'Plans', href: '/plans' },
+      { label: 'Plans & Pricing', href: '/plans' },
       { label: 'Subscriptions', href: '/memberships/subscriptions' },
+      { label: 'Appointments', href: '/appointments' },
     ],
   },
   {
