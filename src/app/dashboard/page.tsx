@@ -120,14 +120,85 @@ export default function DashboardPage() {
   );
 }
 
+/* ─── 619 antler / flame SVG (right-side decoration) ─────── */
+function HeroDecoration() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 320 160"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="hero-decoration"
+    >
+      {/* outer glow rings */}
+      <ellipse cx="200" cy="80" rx="120" ry="72" fill="rgba(185,28,28,0.13)" />
+      <ellipse cx="200" cy="80" rx="88" ry="52" fill="rgba(185,28,28,0.10)" />
+      {/* stylised antler left */}
+      <path
+        d="M160 130 C158 110 148 95 140 78 C135 65 130 52 134 38 C138 28 148 22 152 14"
+        stroke="rgba(220,38,38,0.55)" strokeWidth="3" strokeLinecap="round"
+      />
+      <path d="M152 14 C146 24 138 30 128 34" stroke="rgba(220,38,38,0.40)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M148 42 C138 40 128 44 120 50" stroke="rgba(220,38,38,0.35)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M143 56 C134 52 124 54 116 60" stroke="rgba(220,38,38,0.30)" strokeWidth="2" strokeLinecap="round" />
+      {/* stylised antler right */}
+      <path
+        d="M175 130 C178 110 190 95 198 78 C204 65 210 52 206 38 C202 28 192 22 188 14"
+        stroke="rgba(220,38,38,0.55)" strokeWidth="3" strokeLinecap="round"
+      />
+      <path d="M188 14 C194 24 202 30 212 34" stroke="rgba(220,38,38,0.40)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M192 42 C202 40 212 44 220 50" stroke="rgba(220,38,38,0.35)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M197 56 C206 52 216 54 224 60" stroke="rgba(220,38,38,0.30)" strokeWidth="2" strokeLinecap="round" />
+      {/* flame / body centre */}
+      <path
+        d="M167 130 C162 112 158 96 162 82 C165 70 172 62 168 52 C172 58 178 68 176 80 C180 68 184 56 182 44 C188 54 190 68 186 80 C192 70 196 60 194 50 C200 62 200 76 196 88 C202 80 208 72 206 62 C212 74 210 90 202 100 C208 96 216 92 218 84 C218 96 210 110 198 118 C196 122 192 126 190 130Z"
+        fill="rgba(220,38,38,0.22)"
+        stroke="rgba(220,38,38,0.45)" strokeWidth="1.2"
+      />
+      {/* 619 badge circle */}
+      <circle cx="168" cy="100" r="22" fill="rgba(185,28,28,0.70)" stroke="rgba(220,38,38,0.60)" strokeWidth="1.5" />
+      <text x="168" y="105" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="800" fontFamily="system-ui,sans-serif">619</text>
+    </svg>
+  );
+}
+
+/* ─── 619 shield logo (left side) ──────────────────────────── */
+function LogoBadge() {
+  return (
+    <div className="hero-logo-wrap" aria-hidden="true">
+      <svg viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg" className="hero-logo-svg">
+        {/* shield */}
+        <path
+          d="M32 4 L60 16 L60 42 C60 56 44 68 32 72 C20 68 4 56 4 42 L4 16 Z"
+          fill="#b91c1c" stroke="#dc2626" strokeWidth="1.5"
+        />
+        {/* inner shield */}
+        <path
+          d="M32 10 L54 20 L54 42 C54 53 42 64 32 68 C22 64 10 53 10 42 L10 20 Z"
+          fill="rgba(0,0,0,0.25)"
+        />
+        {/* antler hint */}
+        <path d="M28 36 C26 28 22 22 24 16 C26 12 30 10 32 8" stroke="rgba(255,255,255,0.70)" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M36 36 C38 28 42 22 40 16 C38 12 34 10 32 8" stroke="rgba(255,255,255,0.70)" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M26 22 C22 20 18 22 16 26" stroke="rgba(255,255,255,0.50)" strokeWidth="1.2" strokeLinecap="round" />
+        <path d="M38 22 C42 20 46 22 48 26" stroke="rgba(255,255,255,0.50)" strokeWidth="1.2" strokeLinecap="round" />
+        {/* flame */}
+        <path
+          d="M32 62 C28 54 26 46 28 38 C30 32 34 28 32 22 C36 28 38 36 36 44 C40 38 40 30 38 24 C44 32 44 44 40 52 C44 48 48 44 46 38 C50 46 48 58 42 62 C40 66 36 68 32 68 C28 68 24 66 22 62 C16 58 14 46 18 38 C16 44 20 48 24 52 C20 44 20 32 26 24 C24 30 24 38 28 44 C26 36 28 28 32 22 C30 28 34 32 36 38 C34 30 36 22 40 18 C42 26 40 34 36 42Z"
+          fill="rgba(255,100,50,0.55)" stroke="rgba(255,150,80,0.50)" strokeWidth="0.8"
+        />
+        {/* 619 text */}
+        <text x="32" y="52" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="900" fontFamily="system-ui,sans-serif">619</text>
+      </svg>
+    </div>
+  );
+}
+
 function DashboardContent() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [period, setPeriod] = React.useState<Period>('30d');
 
-  // Summary fetch — server already aggregates. Period is forwarded; if the
-  // backend doesn't yet honor it the response is just the all-up summary,
-  // which is still useful.
   const summary = useAsync<DashSummary>(
     (signal) =>
       request<DashSummary>(`/api/dashboard/summary?period=${period}`, {
@@ -139,19 +210,24 @@ function DashboardContent() {
 
   return (
     <AppShell>
-      {/* pt-0 — AppShell's <main> already adds the header offset; pb-8 keeps breathing room at the bottom */}
       <div className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6">
-        {/* Header row */}
-        <header className="dashboard-hero relative flex flex-col gap-4 px-5 py-6 sm:flex-row sm:items-end sm:justify-between sm:px-7">
-          <div>
-            <p className="eyebrow">WELCOME BACK</p>
-            <h1 className="mt-2">619 FITNESS STUDIO</h1>
-            <p className="subcopy mt-1 text-sm">
-              {periodCopy(period)} · refreshes every 30 s while open
-            </p>
+
+        {/* ── Hero banner ───────────────────────────────────────────── */}
+        <header className="dashboard-hero619">
+          {/* left: logo + text */}
+          <div className="hero619-left">
+            <LogoBadge />
+            <div className="hero619-text">
+              <p className="hero619-eyebrow">Welcome Back</p>
+              <h1 className="hero619-title">619 FITNESS STUDIO</h1>
+              <p className="hero619-sub">
+                {periodCopy(period)} · refreshes every 30 s while open
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          {/* right: period tabs + refresh */}
+          <div className="hero619-right">
             <PeriodPicker value={period} onChange={setPeriod} />
             <Button
               size="sm"
@@ -163,6 +239,9 @@ function DashboardContent() {
               Refresh
             </Button>
           </div>
+
+          {/* decorative antler/flame graphic */}
+          <HeroDecoration />
         </header>
 
         {/* Errors */}
@@ -418,7 +497,7 @@ function PeriodPicker({
     <div
       role="tablist"
       aria-label="Time range"
-      className="inline-flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm"
+      className="hero619-period-picker"
     >
       {PERIOD_TABS.map((t) => (
         <button
@@ -427,10 +506,8 @@ function PeriodPicker({
           aria-selected={value === t.id}
           onClick={() => onChange(t.id)}
           className={cn(
-            'rounded-md px-3 py-1.5 text-xs font-medium transition',
-            value === t.id
-              ? 'bg-rose-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100',
+            'hero619-period-btn',
+            value === t.id ? 'hero619-period-btn--active' : '',
           )}
         >
           {t.label}
