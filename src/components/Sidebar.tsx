@@ -1,316 +1,199 @@
 'use client';
-/**
- * Sidebar — Premium luxury left navigation.
- * Linear × Arc × Notion inspired. Violet/indigo active states.
- * 3 states: expanded (desktop), compact icon-only (tablet), mobile drawer.
- */
 
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from 'react';
-
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-
-import type { LucideIcon } from 'lucide-react';
-
-import {
-  LayoutDashboard, TrendingUp, Users, Dumbbell, ScanFace,
-  CreditCard, IndianRupee, LineChart, Megaphone, Settings,
-  Inbox, PlusCircle, Filter, PieChart,
-  UserCheck, CalendarClock, UserX, Cake, UserPlus, User,
-  UserCog, LayoutGrid, CalendarOff, Sparkles,
-  ClipboardList, ClipboardCheck, Trophy,
-  Layers, RefreshCw, CalendarDays,
-  Wallet, AlertCircle, ArrowUpRight, BarChart3, Award,
-  FileBarChart, Activity, RefreshCcw, Clock,
-  Bell, MessageCircle, Send, Tag, Star,
-  Building2, ShieldCheck, Fingerprint, Receipt, Palette, DatabaseBackup,
-  ChevronRight, Search, LogOut, PanelLeftClose, PanelLeftOpen,
-  Zap, Target, BarChart2,
-} from 'lucide-react';
-
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
-import {
-  NAV_GROUPS,
-  isVisibleForRole,
-  type NavItem,
-} from '@/lib/nav-config';
+// ─── Lucide-style inline SVG icons (zero dependency) ───────────────────────
+const Icon = ({ d, size = 20 }: { d: string; size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d={d} />
+  </svg>
+);
 
-// ─── Icon map ──────────────────────────────────────────────────────
-const ICONS: Record<string, LucideIcon> = {
-  LayoutDashboard, TrendingUp, Users, Dumbbell, ScanFace,
-  CreditCard, IndianRupee, LineChart, Megaphone, Settings,
-  Inbox, PlusCircle, Filter, PieChart,
-  UserCheck, CalendarClock, UserX, Cake, UserPlus, User,
-  UserCog, LayoutGrid, CalendarOff, Sparkles,
-  ClipboardList, ClipboardCheck, Trophy,
-  Layers, RefreshCw, CalendarDays,
-  Wallet, AlertCircle, ArrowUpRight, BarChart3, Award,
-  FileBarChart, Activity, RefreshCcw, Clock,
-  Bell, MessageCircle, Send, Tag, Star,
-  Building2, ShieldCheck, Fingerprint, Receipt, Palette, DatabaseBackup,
-  Zap, Target, BarChart2,
+const icons: Record<string, string> = {
+  dashboard:   'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10',
+  sales:       'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
+  members:     'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  training:    'M6.5 6.5a6 6 0 0 1 8.485.015M17.5 17.5a6 6 0 0 1-8.485-.015 M2 12h2 M20 12h2 M12 2v2 M12 20v2',
+  staff:       'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  attendance:  'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+  memberships: 'M20 12V22H4V12 M22 7H2v5h20V7z M12 22V7 M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z',
+  finance:     'M3 3h18v18H3z M3 9h18 M9 21V9',
+  insights:    'M22 12h-4l-3 9L9 3l-3 9H2',
+  engagement:  'M18 20.94c-3.61-.9-6-4.23-6-8.94s2.39-8.04 6-8.94 M8 8H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h1l4 6V2L5 8z',
+  settings:    'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',
+  chevronLeft: 'M15 18l-6-6 6-6',
+  chevronRight:'M9 18l6-6-6-6',
+  logout:      'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9',
+  ptportal:    'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
 };
 
-function Icon({ name, size = 16 }: { name: string; size?: number }) {
-  const C = ICONS[name];
-  return C ? <C size={size} strokeWidth={1.8} /> : null;
-}
-
-// ─── Nav items flat list ────────────────────────────────────────────
-const TOP_NAV: NavItem[] = [
-  { href: '/dashboard',   icon: 'LayoutDashboard', label: 'Dashboard'  },
-  { href: '/sales',       icon: 'TrendingUp',      label: 'Sales'      },
-  { href: '/members',     icon: 'Users',           label: 'Members'    },
-  { href: '/training',    icon: 'Dumbbell',        label: 'Training'   },
-  { href: '/staff',       icon: 'UserCog',         label: 'Staff'      },
-  { href: '/attendance',  icon: 'ScanFace',        label: 'Attendance' },
-  { href: '/memberships', icon: 'CreditCard',      label: 'Memberships'},
-  { href: '/finance',     icon: 'IndianRupee',     label: 'Finance'    },
-  { href: '/insights',    icon: 'LineChart',       label: 'Insights'   },
-  { href: '/engagement',  icon: 'Megaphone',       label: 'Engagement' },
+// ─── Nav structure ──────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { label: 'Dashboard',   href: '/',             icon: 'dashboard'    },
+  { label: 'Sales',       href: '/sales',        icon: 'sales'        },
+  { label: 'Members',     href: '/members',      icon: 'members'      },
+  { label: 'Training',    href: '/training',     icon: 'training'     },
+  { label: 'Staff',       href: '/settings/staff', icon: 'staff'      },
+  { label: 'Attendance',  href: '/attendance',   icon: 'attendance'   },
+  { label: 'Memberships', href: '/memberships',  icon: 'memberships'  },
+  { label: 'Finance',     href: '/finance',      icon: 'finance'      },
+  { label: 'Insights',    href: '/insights',     icon: 'insights'     },
+  { label: 'Engagement',  href: '/engagement',   icon: 'engagement'   },
+  { label: 'Settings',    href: '/settings',     icon: 'settings'     },
 ];
 
-const BOTTOM_NAV: NavItem[] = [
-  { href: '/settings', icon: 'Settings', label: 'Settings' },
-];
-
-// ─── Storage helpers ────────────────────────────────────────────────
-const COLLAPSED_KEY = '619_sidebar_collapsed';
-
-function loadCollapsed(): boolean {
-  try { return localStorage.getItem(COLLAPSED_KEY) === 'true'; } catch { return false; }
-}
-function saveCollapsed(v: boolean) {
-  try { localStorage.setItem(COLLAPSED_KEY, String(v)); } catch {}
-}
-
-// ─── Props ──────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 interface SidebarProps {
-  mobileOpen?: boolean;
-  onMobileClose?: () => void;
-  collapsed?: boolean;
-  onCollapsedChange?: (v: boolean) => void;
+  collapsed: boolean;
+  onToggle: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
-// ─── Component ──────────────────────────────────────────────────────
-export default function Sidebar({
-  mobileOpen = false,
-  onMobileClose,
-  collapsed: collapsedProp,
-  onCollapsedChange,
-}: SidebarProps) {
+export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
+  const pathname = usePathname();
   const { user, logout } = useAuth();
-  const path = usePathname();
-  const router = useRouter();
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
-  const [collapsedLocal, setCollapsedLocal] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-
-  const collapsed = collapsedProp !== undefined ? collapsedProp : collapsedLocal;
-
+  // Close on outside click (mobile)
   useEffect(() => {
-    const v = loadCollapsed();
-    setCollapsedLocal(v);
-    onCollapsedChange?.(v);
-    setHydrated(true);
-  }, []);
+    const handler = (e: MouseEvent) => {
+      if (mobileOpen && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        onMobileClose();
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [mobileOpen, onMobileClose]);
 
-  /* Close drawer on route change */
-  useEffect(() => { onMobileClose?.(); }, [path]);
+  // Lock body scroll when mobile drawer open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
-  const isActive = useCallback(
-    (href: string) => {
-      const a = href.split('?')[0];
-      const b = path.split('?')[0];
-      if (a === '/dashboard') return b === '/dashboard';
-      return b === a || b.startsWith(a + '/');
-    },
-    [path]
-  );
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href);
 
-  const toggleCollapsed = useCallback(() => {
-    const next = !collapsed;
-    setCollapsedLocal(next);
-    saveCollapsed(next);
-    onCollapsedChange?.(next);
-  }, [collapsed, onCollapsedChange]);
-
-  const initials = (user?.name || 'U')
-    .split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-
-  // ── Render a single nav pill ──────────────────────────────────────
-  const NavPill = ({ item }: { item: NavItem }) => {
-    const active = isActive(item.href);
-    if (!isVisibleForRole(item, user?.role)) return null;
-
-    return (
-      <Link
-        href={item.href}
-        aria-current={active ? 'page' : undefined}
-        className={`sb-pill${active ? ' active' : ''}`}
-      >
-        {/* Icon container */}
-        <span className="sb-pill-icon">
-          <Icon name={item.icon} size={17} />
-        </span>
-
-        {/* Label — hidden when collapsed */}
-        {!collapsed && (
-          <span className="sb-pill-label">{item.label}</span>
-        )}
-
-        {/* Tooltip when collapsed */}
-        {collapsed && (
-          <span className="sb-tooltip">{item.label}</span>
-        )}
-      </Link>
-    );
-  };
-
-  if (!hydrated) return null;
+  const initials = user?.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'GY';
+  const role = (user as any)?.role || 'Admin';
 
   return (
-    <aside
-      className={[
-        'sb-shell',
-        collapsed ? 'collapsed' : '',
-        mobileOpen ? 'mobile-open' : '',
-      ].filter(Boolean).join(' ')}
-      aria-label="Main navigation"
-    >
-      {/* ── Background orbs (decorative) ── */}
-      <div className="sb-orb sb-orb-1" aria-hidden="true" />
-      <div className="sb-orb sb-orb-2" aria-hidden="true" />
+    <>
+      {/* ── Mobile backdrop ── */}
+      <div
+        className={`lsb-backdrop ${mobileOpen ? 'lsb-backdrop--visible' : ''}`}
+        onClick={onMobileClose}
+        aria-hidden="true"
+      />
 
-      {/* ══ HEADER ════════════════════════════════════════════ */}
-      <div className="sb-header">
-        {/* Logo container */}
-        <div className="sb-logo-wrap">
-          <div className="sb-logo">
-            <Image
-              src="/619-logo.png"
-              alt="619 Fitness"
-              width={28}
-              height={28}
-              style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(124,58,237,0.4))' }}
-            />
+      {/* ── Sidebar panel ── */}
+      <aside
+        ref={sidebarRef}
+        className={`lsb ${
+          collapsed ? 'lsb--collapsed' : 'lsb--expanded'
+        } ${mobileOpen ? 'lsb--mobile-open' : ''}`}
+        aria-label="Main navigation"
+      >
+        {/* ─ Gradient orbs (decorative) ─ */}
+        <div className="lsb-orb lsb-orb--1" aria-hidden="true" />
+        <div className="lsb-orb lsb-orb--2" aria-hidden="true" />
+
+        {/* ─ Brand header ─ */}
+        <div className="lsb-brand">
+          <div className="lsb-logo-wrap">
+            {/* 619 Shield SVG mark */}
+            <svg viewBox="0 0 40 40" fill="none" className="lsb-logo-svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="lgBrand" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#a78bfa" />
+                  <stop offset="1" stopColor="#6366f1" />
+                </linearGradient>
+              </defs>
+              {/* Shield shape */}
+              <path d="M20 3 L34 9 L34 22 Q34 32 20 37 Q6 32 6 22 L6 9 Z"
+                    fill="url(#lgBrand)" opacity="0.15" />
+              <path d="M20 3 L34 9 L34 22 Q34 32 20 37 Q6 32 6 22 L6 9 Z"
+                    stroke="url(#lgBrand)" strokeWidth="1.5" fill="none" />
+              <text x="20" y="24" textAnchor="middle"
+                    fontFamily="Inter,system-ui,sans-serif"
+                    fontSize="11" fontWeight="800" fill="#a78bfa"
+                    letterSpacing="-0.5">619</text>
+            </svg>
           </div>
+
+          <div className="lsb-brand-text">
+            <span className="lsb-brand-name">619 FITNESS</span>
+            <span className="lsb-brand-sub">Management OS</span>
+          </div>
+
+          {/* Collapse toggle (desktop) */}
+          <button
+            className="lsb-toggle"
+            onClick={onToggle}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <Icon d={collapsed ? icons.chevronRight : icons.chevronLeft} size={14} />
+          </button>
         </div>
 
-        {/* Brand text */}
-        {!collapsed && (
-          <div className="sb-brand">
-            <span className="sb-brand-name">619 FITNESS</span>
-            <span className="sb-brand-sub">Management OS</span>
-          </div>
-        )}
+        {/* ─ Divider ─ */}
+        <div className="lsb-divider" />
 
-        {/* Collapse toggle */}
-        <button
-          className="sb-toggle"
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={collapsed ? 'Expand' : 'Collapse'}
-        >
-          {collapsed
-            ? <PanelLeftOpen size={14} strokeWidth={2} />
-            : <PanelLeftClose size={14} strokeWidth={2} />}
-        </button>
-      </div>
+        {/* ─ Nav list ─ */}
+        <nav className="lsb-nav" aria-label="Primary navigation">
+          {NAV_ITEMS.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onMobileClose}
+                className={`lsb-item ${active ? 'lsb-item--active' : ''}`}
+                aria-current={active ? 'page' : undefined}
+              >
+                {/* Active glow bar */}
+                {active && <span className="lsb-item-glow-bar" aria-hidden="true" />}
 
-      {/* ══ NAV SCROLL AREA ═══════════════════════════════════ */}
-      <div className="sb-scroll">
+                <span className="lsb-item-icon">
+                  <Icon d={icons[item.icon]} size={18} />
+                </span>
 
-        {/* Top nav group */}
-        <div className="sb-group">
-          {!collapsed && (
-            <span className="sb-group-label">Navigation</span>
-          )}
-          {TOP_NAV.map((item) => (
-            <NavPill key={item.href} item={item} />
-          ))}
-        </div>
+                <span className="lsb-item-label">{item.label}</span>
 
-        {/* Divider */}
-        <div className="sb-divider" />
+                {/* Tooltip for collapsed state */}
+                <span className="lsb-tooltip" role="tooltip">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-        {/* Sub-nav from NAV_GROUPS (extra items not in top list) */}
-        {NAV_GROUPS.map((group) => {
-          const extras = group.items.filter(
-            (i) =>
-              isVisibleForRole(i, user?.role) &&
-              !i.hidden &&
-              !TOP_NAV.some((t) => t.href === i.href) &&
-              !BOTTOM_NAV.some((b) => b.href === i.href)
-          );
-          if (extras.length === 0) return null;
-          return (
-            <div key={group.id} className="sb-group">
-              {!collapsed && (
-                <span className="sb-group-label">{group.label}</span>
-              )}
-              {extras.map((item) => (
-                <NavPill key={item.href} item={item} />
-              ))}
+        <div className="lsb-spacer" />
+        <div className="lsb-divider" />
+
+        {/* ─ User footer ─ */}
+        <div className="lsb-footer">
+          <div className="lsb-user">
+            <div className="lsb-avatar">{initials}</div>
+            <div className="lsb-user-info">
+              <span className="lsb-user-name">{user?.name || 'Gym Admin'}</span>
+              <span className="lsb-user-role">{role}</span>
             </div>
-          );
-        })}
-
-      </div>
-
-      {/* ══ FOOTER ════════════════════════════════════════════ */}
-      <div className="sb-footer">
-        {/* Settings pill */}
-        {BOTTOM_NAV.map((item) => (
-          <NavPill key={item.href} item={item} />
-        ))}
-
-        {/* Divider */}
-        <div className="sb-divider" style={{ marginBlock: '8px' }} />
-
-        {/* User card */}
-        <div
-          className="sb-user"
-          onClick={() => router.push('/settings')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && router.push('/settings')}
-        >
-          <div className="sb-avatar">{initials}</div>
-
-          {!collapsed && (
-            <div className="sb-user-info">
-              <span className="sb-user-name">{user?.name || 'User'}</span>
-              <span className="sb-user-role" style={{ textTransform: 'capitalize' }}>
-                {user?.role || 'Staff'}
-              </span>
-            </div>
-          )}
-
-          {!collapsed && (
             <button
-              className="sb-logout"
-              onClick={(e) => {
-                e.stopPropagation();
-                logout();
-                router.push('/login');
-              }}
-              aria-label="Sign out"
-              title="Sign out"
+              className="lsb-logout"
+              onClick={logout}
+              aria-label="Logout"
+              title="Logout"
             >
-              <LogOut size={14} strokeWidth={2} />
+              <Icon d={icons.logout} size={15} />
             </button>
-          )}
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
