@@ -7,9 +7,601 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080a0f;--surface:rgba(255,255,255,0.06);--surface2:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.10);--text:#f1f5f9;--muted:#7c8a9e;--faint:#3a4455;
+  --emerald:#10e098;--emerald-dim:rgba(16,224,152,0.15);--red:#ff5e72;
+  --red-dim:rgba(255,94,114,0.15);--blue:#4da8ff;--blue-dim:rgba(77,168,255,0.15);
+  --violet:#9d7fff;--violet-dim:rgba(157,127,255,0.15);--amber:#ffb547;--r:20px;--r2:28px;
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 900px 600px at -5% 0%,rgba(77,168,255,.12) 0%,transparent 60%),
+    radial-gradient(ellipse 700px 500px at 105% 0%,rgba(157,127,255,.10) 0%,transparent 55%),
+    radial-gradient(ellipse 600px 400px at 50% 100%,rgba(16,224,152,.07) 0%,transparent 55%);
+}
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:10px;padding:0 24px;height:58px;background:rgba(8,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-logo{font-size:16px;font-weight:700;letter-spacing:-.5px;white-space:nowrap;margin-right:8px}
+.nav-logo span{color:var(--emerald)}
+.nav-tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{position:relative;padding:6px 14px;border-radius:10px;font-size:13px;font-weight:500;color:var(--muted);background:none;border:none;cursor:pointer;white-space:nowrap;transition:color .18s,background .18s;}
+.nav-tab:hover{color:var(--text);background:var(--surface)}
+.nav-tab.active{color:var(--text);background:var(--surface)}
+.nav-tab.active::after{content:'';position:absolute;bottom:-1px;left:14px;right:14px;height:2px;background:var(--emerald);border-radius:2px 2px 0 0;}
+.nav-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.badge-live{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:600;background:var(--emerald-dim);color:var(--emerald);border:1px solid rgba(16,224,152,.3);}
+.badge-live::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .18s;}
+.btn-primary{background:linear-gradient(135deg,#10e098,#4da8ff);color:#0a0f14;box-shadow:0 4px 18px rgba(16,224,152,.25);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(16,224,152,.35)}
+.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.page{display:none;padding:28px 24px 60px;max-width:1280px;margin:0 auto}
+.page.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.03));backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:var(--r2);box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden;position:relative;}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 45%);pointer-events:none;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.kpi-card{padding:22px;border-radius:var(--r2);position:relative;overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.25);transition:transform .2s,box-shadow .2s;cursor:default;}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,0,0,.35)}
+.kpi-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.05),transparent 40%);pointer-events:none}
+.kpi-glow{position:absolute;width:120px;height:120px;border-radius:50%;filter:blur(40px);opacity:.2;bottom:-30px;right:-20px}
+.kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.kpi-value{font-size:32px;font-weight:700;margin:10px 0 4px;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.kpi-delta{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px}
+.delta-up{background:rgba(16,224,152,.15);color:var(--emerald)}
+.delta-down{background:rgba(255,94,114,.15);color:var(--red)}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.chart-grid{display:grid;gap:16px}
+.chart-grid-2{grid-template-columns:1fr 1fr}
+.chart-grid-3{grid-template-columns:2fr 1fr}
+.chart-header{display:flex;align-items:center;justify-content:space-between;padding:20px 22px 0;flex-wrap:wrap;gap:10px}
+.chart-title{font-size:15px;font-weight:700}
+.chart-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.chart-body{padding:16px 20px 20px;position:relative}
+.table-wrapper{overflow-x:auto;border-radius:0 0 var(--r2) var(--r2)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.04)}
+tbody td{padding:12px 16px;color:var(--text)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
+.pill-green{background:var(--emerald-dim);color:var(--emerald)}
+.pill-red{background:var(--red-dim);color:var(--red)}
+.pill-blue{background:var(--blue-dim);color:var(--blue)}
+.pill-amber{background:rgba(255,181,71,.15);color:var(--amber)}
+.ai-card{background:linear-gradient(135deg,rgba(157,127,255,.12),rgba(77,168,255,.08));border:1px solid rgba(157,127,255,.25);border-radius:var(--r);padding:16px 18px;margin-top:16px;}
+.ai-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--violet);margin-bottom:10px}
+.ai-row{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#c4c9d6;margin-bottom:6px}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--violet);margin-top:5px;flex-shrink:0}
+.section-title{font-size:22px;font-weight:700;letter-spacing:-.4px;margin-bottom:6px}
+.section-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.trainer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.trainer-card{padding:22px;border-radius:var(--r2);background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.2);transition:transform .2s;position:relative;overflow:hidden;}
+.trainer-card:hover{transform:translateY(-3px)}
+.trainer-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin-bottom:14px;}
+.rank-badge{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+.scenario-btn{padding:7px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .18s;}
+.scenario-btn.active{background:var(--blue-dim);color:var(--blue);border-color:rgba(77,168,255,.3)}
+.scenario-btn:hover:not(.active){color:var(--text);background:var(--surface2)}
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:9px 14px;margin-bottom:16px;}
+.search-bar input{background:none;border:none;outline:none;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;width:100%}
+.search-bar input::placeholder{color:var(--muted)}
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}.mb-2{margin-bottom:8px}.mb-4{margin-bottom:16px}.mb-6{margin-bottom:24px}.mt-2{margin-top:8px}.mt-4{margin-top:16px}.p-4{padding:16px}.font-bold{font-weight:700}.text-sm{font-size:13px}.text-xs{font-size:11px}.text-muted{color:var(--muted)}.text-emerald{color:var(--emerald)}.text-red{color:var(--red)}.text-blue{color:var(--blue)}.text-violet{color:var(--violet)}.text-amber{color:var(--amber)}
+@media(max-width:768px){
+  .chart-grid-2,.chart-grid-3{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  nav{padding:0 12px;gap:6px}
+  .page{padding:16px 12px 60px}
+  .nav-logo{font-size:14px}
+}
+@media(max-width:480px){.kpi-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-<!-- GymOS Finance Dashboard - Full prototype pushed via Perplexity AI -->
-<!-- See attached HTML file for complete implementation -->
+<nav>
+  <div class="nav-logo">Gym<span>OS</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('payments',this)">Payments</button>
+    <button class="nav-tab" onclick="showPage('dues',this)">Outstanding Dues</button>
+    <button class="nav-tab" onclick="showPage('collections',this)">Collections</button>
+    <button class="nav-tab" onclick="showPage('pnl',this)">P&amp;L</button>
+    <button class="nav-tab" onclick="showPage('forecast',this)">Forecasting</button>
+    <button class="nav-tab" onclick="showPage('trainers',this)">Trainer Revenue</button>
+    <button class="nav-tab" onclick="showPage('kpi',this)">KPI Analytics</button>
+  </div>
+  <div class="nav-right">
+    <span class="badge-live">Live</span>
+    <button class="btn btn-primary" style="font-size:12px;padding:6px 14px">Export</button>
+  </div>
+</nav>
+
+<!-- PAYMENTS PAGE -->
+<div class="page active" id="page-payments">
+  <div class="section-title">Payments Ledger</div>
+  <div class="section-sub">Real-time transaction monitoring · May 2026</div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-glow" style="background:var(--emerald)"></div>
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value text-emerald" id="kpi-revenue">₹0</div>
+      <span class="kpi-delta delta-up">↑ 18.4%</span>
+      <div class="kpi-sub">vs last month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-glow" style="background:var(--blue)"></div>
+      <div class="kpi-label">Transactions</div>
+      <div class="kpi-value text-blue" id="kpi-txn">0</div>
+      <span class="kpi-delta delta-up">↑ 12.1%</span>
+      <div class="kpi-sub">this month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-glow" style="background:var(--violet)"></div>
+      <div class="kpi-label">Avg. Ticket Size</div>
+      <div class="kpi-value text-violet" id="kpi-avg">₹0</div>
+      <span class="kpi-delta delta-up">↑ 5.3%</span>
+      <div class="kpi-sub">per member</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-glow" style="background:var(--red)"></div>
+      <div class="kpi-label">Failed Payments</div>
+      <div class="kpi-value text-red" id="kpi-failed">0</div>
+      <span class="kpi-delta delta-down">↑ 3 new</span>
+      <div class="kpi-sub">needs attention</div>
+    </div>
+  </div>
+  <div class="chart-grid chart-grid-3 mb-6">
+    <div class="card">
+      <div class="chart-header">
+        <div><div class="chart-title">Revenue Trend</div><div class="chart-sub">12-month overview</div></div>
+        <span class="pill pill-green">MoM +18%</span>
+      </div>
+      <div class="chart-body"><canvas id="revenueChart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header"><div><div class="chart-title">Payment Methods</div><div class="chart-sub">By volume</div></div></div>
+      <div class="chart-body"><canvas id="methodChart" height="200"></canvas></div>
+    </div>
+  </div>
+  <div class="card mb-6">
+    <div class="chart-header" style="padding-bottom:12px">
+      <div><div class="chart-title">Recent Transactions</div><div class="chart-sub">Last 50 payments</div></div>
+      <div class="search-bar" style="margin:0;width:280px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input placeholder="Search transactions..." oninput="filterTable(this.value)">
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Member</th><th>Plan</th><th>Amount</th><th>Method</th><th>Date</th><th>Status</th></tr></thead>
+        <tbody id="txn-table"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ai-card">
+    <div class="ai-label">⚡ AI Revenue Insights</div>
+    <div class="ai-row"><div class="ai-dot"></div><div>UPI payments grew 34% this month — consider offering UPI autopay for recurring memberships to reduce churn.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Saturday peak collections at ₹1.8L suggest weekend walk-ins are high. Add a weekend-only trial plan.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>3 high-value members (₹8K+ plans) have delayed renewals. Proactive outreach can recover ~₹24,000.</div></div>
+  </div>
+</div>
+
+<!-- DUES PAGE -->
+<div class="page" id="page-dues">
+  <div class="section-title">Outstanding Dues</div>
+  <div class="section-sub">Collection pipeline · Risk-stratified view</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--red)"></div><div class="kpi-label">Total Outstanding</div><div class="kpi-value text-red">₹2,84,500</div><span class="kpi-delta delta-down">↑ 8.2%</span><div class="kpi-sub">vs last month</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--amber)"></div><div class="kpi-label">Members Overdue</div><div class="kpi-value text-amber">47</div><span class="kpi-delta delta-down">+6 new</span><div class="kpi-sub">this week</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--emerald)"></div><div class="kpi-label">Collection Rate</div><div class="kpi-value text-emerald">78.4%</div><span class="kpi-delta delta-up">↑ 3.1%</span><div class="kpi-sub">30-day rate</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--blue)"></div><div class="kpi-label">Avg. Days Overdue</div><div class="kpi-value text-blue">14.2</div><span class="kpi-delta delta-down">+2.1 days</span><div class="kpi-sub">this period</div></div>
+  </div>
+  <div class="chart-grid chart-grid-2 mb-6">
+    <div class="card">
+      <div class="chart-header"><div><div class="chart-title">Dues by Risk Level</div><div class="chart-sub">Stratified collection view</div></div></div>
+      <div class="chart-body"><canvas id="duesRiskChart" height="220"></canvas></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px">
+      <div class="chart-title mb-2">Collection Progress</div>
+      <div class="chart-sub mb-4" style="text-align:center">₹2,22,680 of ₹2,84,500 target</div>
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="70" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="16"/>
+        <circle cx="90" cy="90" r="70" fill="none" stroke="url(#pg)" stroke-width="16" stroke-dasharray="439.82" stroke-dashoffset="94.37" stroke-linecap="round" transform="rotate(-90 90 90)"/>
+        <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#10e098"/><stop offset="100%" stop-color="#4da8ff"/></linearGradient></defs>
+        <text x="90" y="84" text-anchor="middle" fill="#f1f5f9" font-size="28" font-weight="700" font-family="Inter">78.4%</text>
+        <text x="90" y="106" text-anchor="middle" fill="#7c8a9e" font-size="13" font-family="Inter">Collected</text>
+      </svg>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chart-header" style="padding-bottom:12px"><div class="chart-title">Priority Dues — Immediate Action Required</div></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Member</th><th>Plan</th><th>Overdue Amount</th><th>Days Overdue</th><th>Risk</th><th>Action</th></tr></thead>
+        <tbody id="dues-table"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ai-card mt-4">
+    <div class="ai-label">⚡ AI Collection Insights</div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Members overdue 8-14 days have a 71% payment rate when contacted via WhatsApp. Automate outreach now.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>12 members are 30+ days overdue with total ₹96,400. Consider offering 10% waiver to recover principal.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>End-of-month collection campaigns yield 40% higher recovery. Schedule reminders for May 28-31.</div></div>
+  </div>
+</div>
+
+<!-- COLLECTIONS PAGE -->
+<div class="page" id="page-collections">
+  <div class="section-title">Monthly Collections</div>
+  <div class="section-sub">12-month collection performance analysis</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--emerald)"></div><div class="kpi-label">May Collections</div><div class="kpi-value text-emerald">₹8,42,000</div><span class="kpi-delta delta-up">↑ 22.1%</span><div class="kpi-sub">best month ever</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--blue)"></div><div class="kpi-label">Annual Total</div><div class="kpi-value text-blue">₹74.6L</div><span class="kpi-delta delta-up">↑ 31%</span><div class="kpi-sub">YoY growth</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--violet)"></div><div class="kpi-label">Monthly Average</div><div class="kpi-value text-violet">₹6.2L</div><span class="kpi-delta delta-up">↑ 18%</span><div class="kpi-sub">trailing 12M</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--amber)"></div><div class="kpi-label">Best Quarter</div><div class="kpi-value text-amber">Q1 2026</div><span class="kpi-delta delta-up">↑ 28%</span><div class="kpi-sub">₹21.4L total</div></div>
+  </div>
+  <div class="card mb-6">
+    <div class="chart-header"><div><div class="chart-title">Monthly Collection Trend</div><div class="chart-sub">Revenue + Target overlay · Jan–May 2026</div></div></div>
+    <div class="chart-body"><canvas id="collectionChart" height="240"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="chart-header" style="padding-bottom:12px"><div class="chart-title">Month-by-Month Performance</div></div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Month</th><th>Target</th><th>Collected</th><th>Achievement</th><th>New Members</th><th>Status</th></tr></thead>
+        <tbody id="coll-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- P&L PAGE -->
+<div class="page" id="page-pnl">
+  <div class="section-title">Profit &amp; Loss</div>
+  <div class="section-sub">Financial performance · May 2026</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--emerald)"></div><div class="kpi-label">Gross Revenue</div><div class="kpi-value text-emerald">₹8,42,000</div><span class="kpi-delta delta-up">↑ 22%</span><div class="kpi-sub">this month</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--red)"></div><div class="kpi-label">Total Expenses</div><div class="kpi-value text-red">₹3,18,000</div><span class="kpi-delta delta-down">↑ 6%</span><div class="kpi-sub">under control</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--emerald)"></div><div class="kpi-label">Net Profit</div><div class="kpi-value text-emerald">₹5,24,000</div><span class="kpi-delta delta-up">↑ 34%</span><div class="kpi-sub">62.2% margin</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--violet)"></div><div class="kpi-label">EBITDA Margin</div><div class="kpi-value text-violet">62.2%</div><span class="kpi-delta delta-up">industry top</span><div class="kpi-sub">benchmark: 45%</div></div>
+  </div>
+  <div class="chart-grid chart-grid-2 mb-6">
+    <div class="card">
+      <div class="chart-header"><div><div class="chart-title">Revenue vs Expenses</div><div class="chart-sub">6-month comparison</div></div></div>
+      <div class="chart-body"><canvas id="pnlChart" height="220"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header"><div><div class="chart-title">Expense Breakdown</div><div class="chart-sub">By category · May 2026</div></div></div>
+      <div class="chart-body"><canvas id="expenseChart" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="card mb-6">
+    <div class="chart-header"><div><div class="chart-title">Waterfall — Revenue to Net Profit</div><div class="chart-sub">P&amp;L bridge analysis</div></div></div>
+    <div id="waterfall" style="display:flex;align-items:flex-end;gap:8px;padding:20px;height:200px;overflow-x:auto"></div>
+  </div>
+  <div class="ai-card">
+    <div class="ai-label">⚡ CFO AI Insights</div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Staff costs at 21% of revenue is well within industry benchmark (25-30%). You have headroom to hire 1-2 trainers.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Utility costs spiked 18% in April. Audit AC usage during off-peak hours to recover ~₹8,000/month.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Net margin of 62.2% exceeds premium gym benchmark by 17pp. Consider reinvesting in equipment upgrade.</div></div>
+  </div>
+</div>
+
+<!-- FORECAST PAGE -->
+<div class="page" id="page-forecast">
+  <div class="section-title">Revenue Forecasting</div>
+  <div class="section-sub">AI-powered scenario planning · Next 6 months</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--blue)"></div><div class="kpi-label">Conservative</div><div class="kpi-value text-blue">₹52.4L</div><span class="kpi-delta delta-up">+8% YoY</span><div class="kpi-sub">6-month forecast</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--emerald)"></div><div class="kpi-label">Moderate</div><div class="kpi-value text-emerald">₹64.8L</div><span class="kpi-delta delta-up">+22% YoY</span><div class="kpi-sub">base case</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--violet)"></div><div class="kpi-label">Aggressive</div><div class="kpi-value text-violet">₹79.2L</div><span class="kpi-delta delta-up">+38% YoY</span><div class="kpi-sub">high growth path</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--amber)"></div><div class="kpi-label">Confidence</div><div class="kpi-value text-amber">86%</div><span class="kpi-delta delta-up">high accuracy</span><div class="kpi-sub">AI model score</div></div>
+  </div>
+  <div class="card mb-6">
+    <div class="chart-header">
+      <div><div class="chart-title">Revenue Forecast — Scenario Analysis</div><div class="chart-sub">Jun–Nov 2026 projection with confidence bands</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="scenario-btn" onclick="setScenario('conservative',this)">Conservative</button>
+        <button class="scenario-btn active" onclick="setScenario('moderate',this)">Moderate</button>
+        <button class="scenario-btn" onclick="setScenario('aggressive',this)">Aggressive</button>
+      </div>
+    </div>
+    <div class="chart-body"><canvas id="forecastChart" height="280"></canvas></div>
+  </div>
+  <div class="ai-card">
+    <div class="ai-label">⚡ Forecast Intelligence</div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Moderate scenario assumes 8% member growth monthly + 3% ARPU increase from upsell campaigns.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Q3 dip (Aug-Sep) is seasonal. Pre-emptive Monsoon Fitness campaigns can add ₹4-6L buffer.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Aggressive path requires launching PT packages + nutrition add-ons. Est. incremental: ₹14.4L.</div></div>
+  </div>
+</div>
+
+<!-- TRAINERS PAGE -->
+<div class="page" id="page-trainers">
+  <div class="section-title">Trainer Revenue</div>
+  <div class="section-sub">Personal training performance · May 2026</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--emerald)"></div><div class="kpi-label">Total PT Revenue</div><div class="kpi-value text-emerald">₹2,14,000</div><span class="kpi-delta delta-up">↑ 29%</span><div class="kpi-sub">this month</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--blue)"></div><div class="kpi-label">Active PT Clients</div><div class="kpi-value text-blue">84</div><span class="kpi-delta delta-up">+12 new</span><div class="kpi-sub">this month</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--violet)"></div><div class="kpi-label">Avg. Revenue/Trainer</div><div class="kpi-value text-violet">₹42,800</div><span class="kpi-delta delta-up">↑ 14%</span><div class="kpi-sub">per trainer</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--amber)"></div><div class="kpi-label">PT Conversion Rate</div><div class="kpi-value text-amber">23.4%</div><span class="kpi-delta delta-up">↑ 4.2pp</span><div class="kpi-sub">gym → PT upgrade</div></div>
+  </div>
+  <div class="chart-grid chart-grid-2 mb-6">
+    <div class="card">
+      <div class="chart-header"><div><div class="chart-title">Revenue by Trainer</div><div class="chart-sub">Share of total PT revenue</div></div></div>
+      <div class="chart-body"><canvas id="trainerPieChart" height="220"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header"><div><div class="chart-title">PT Growth Trend</div><div class="chart-sub">6-month trajectory</div></div></div>
+      <div class="chart-body"><canvas id="ptTrendChart" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="section-title" style="font-size:17px;margin-bottom:12px">Trainer Leaderboard</div>
+  <div class="trainer-grid" id="trainer-cards"></div>
+</div>
+
+<!-- KPI PAGE -->
+<div class="page" id="page-kpi">
+  <div class="section-title">KPI Analytics</div>
+  <div class="section-sub">Business health metrics · May 2026</div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--emerald)"></div><div class="kpi-label">Total Members</div><div class="kpi-value text-emerald">1,247</div><span class="kpi-delta delta-up">↑ 8.3%</span><div class="kpi-sub">active this month</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--red)"></div><div class="kpi-label">Churn Rate</div><div class="kpi-value text-red">4.2%</div><span class="kpi-delta delta-up">↓ 1.1pp</span><div class="kpi-sub">improving trend</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--blue)"></div><div class="kpi-label">LTV per Member</div><div class="kpi-value text-blue">₹18,400</div><span class="kpi-delta delta-up">↑ 11%</span><div class="kpi-sub">avg lifetime value</div></div>
+    <div class="kpi-card"><div class="kpi-glow" style="background:var(--violet)"></div><div class="kpi-label">NPS Score</div><div class="kpi-value text-violet">72</div><span class="kpi-delta delta-up">world class</span><div class="kpi-sub">benchmark: 50+</div></div>
+  </div>
+  <div class="chart-grid chart-grid-2 mb-6">
+    <div class="card">
+      <div class="chart-header"><div><div class="chart-title">Member Growth vs Churn</div><div class="chart-sub">Net expansion trend</div></div></div>
+      <div class="chart-body"><canvas id="growthChart" height="220"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header"><div><div class="chart-title">Plan Distribution</div><div class="chart-sub">Members by plan type</div></div></div>
+      <div class="chart-body"><canvas id="planChart" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="ai-card">
+    <div class="ai-label">⚡ KPI Intelligence</div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Churn dropped 1.1pp after introducing the Freeze Policy. Highlight it during renewals to boost retention further.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>Premium plan members have 3.2x higher LTV. Increase upsell touchpoints at month 2 and month 5.</div></div>
+    <div class="ai-row"><div class="ai-dot"></div><div>NPS of 72 is exceptional. Launch a referral program — 1 referral per promoter can add 180+ members annually.</div></div>
+  </div>
+</div>
+
+<script>
+const charts = {};
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function animateCount(el, target, prefix, suffix, duration) {
+  const start = 0, steps = 60;
+  let step = 0;
+  const timer = setInterval(() => {
+    step++;
+    const val = Math.round(start + (target - start) * (step / steps));
+    el.textContent = prefix + val.toLocaleString('en-IN') + suffix;
+    if (step >= steps) clearInterval(timer);
+  }, duration / steps);
+}
+
+window.addEventListener('load', () => {
+  animateCount(document.getElementById('kpi-revenue'), 842000, '₹', '', 1200);
+  animateCount(document.getElementById('kpi-txn'), 1247, '', '', 1200);
+  animateCount(document.getElementById('kpi-avg'), 6752, '₹', '', 1200);
+  animateCount(document.getElementById('kpi-failed'), 9, '', '', 800);
+  initCharts();
+  populateTables();
+  buildTrainerCards();
+});
+
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const cOpts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7c8a9e',font:{size:12,family:'Inter'}}},tooltip:{backgroundColor:'rgba(10,14,20,.9)',titleColor:'#f1f5f9',bodyColor:'#7c8a9e',borderColor:'rgba(255,255,255,.1)',borderWidth:1}},scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e',font:{size:11}}}}};
+
+function initCharts() {
+  // Revenue Trend
+  charts.revenue = new Chart(document.getElementById('revenueChart'), {
+    type:'line', data:{
+      labels:months.slice(0,5),
+      datasets:[{label:'Revenue (₹L)',data:[5.2,5.8,6.4,6.9,8.42],borderColor:'#10e098',backgroundColor:'rgba(16,224,152,.1)',tension:.4,fill:true,pointBackgroundColor:'#10e098',pointRadius:4}]
+    }, options:{...cOpts,scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e'}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e',callback:v=>'₹'+v+'L'}}}}
+  });
+  // Payment Methods
+  charts.methods = new Chart(document.getElementById('methodChart'), {
+    type:'doughnut', data:{
+      labels:['UPI','Cash','Card','Net Banking','Wallet'],
+      datasets:[{data:[42,28,18,8,4],backgroundColor:['#10e098','#4da8ff','#9d7fff','#ffb547','#ff5e72'],borderWidth:0,hoverOffset:8}]
+    }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#7c8a9e',font:{size:11},padding:12}},tooltip:{backgroundColor:'rgba(10,14,20,.9)',titleColor:'#f1f5f9',bodyColor:'#7c8a9e'}}}
+  });
+  // Dues Risk
+  charts.duesRisk = new Chart(document.getElementById('duesRiskChart'), {
+    type:'bar', data:{
+      labels:['0-7 days','8-14 days','15-30 days','30+ days'],
+      datasets:[{label:'Members',data:[12,18,11,6],backgroundColor:['rgba(16,224,152,.7)','rgba(255,181,71,.7)','rgba(255,94,114,.6)','rgba(255,94,114,.9)'],borderRadius:8,borderWidth:0}]
+    }, options:{...cOpts}
+  });
+  // Collections
+  charts.collections = new Chart(document.getElementById('collectionChart'), {
+    type:'bar', data:{
+      labels:months.slice(0,5),
+      datasets:[
+        {type:'bar',label:'Collected (₹L)',data:[5.2,5.8,6.4,6.9,8.42],backgroundColor:'rgba(77,168,255,.5)',borderRadius:8,order:2},
+        {type:'line',label:'Target (₹L)',data:[6,6.5,7,7.5,8],borderColor:'#10e098',borderDash:[4,4],tension:.3,pointRadius:4,order:1,fill:false}
+      ]
+    }, options:{...cOpts,scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e'}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e',callback:v=>'₹'+v+'L'}}}}
+  });
+  // P&L
+  charts.pnl = new Chart(document.getElementById('pnlChart'), {
+    type:'bar', data:{
+      labels:['Dec','Jan','Feb','Mar','Apr','May'],
+      datasets:[
+        {label:'Revenue',data:[6.2,6.8,5.9,7.1,6.9,8.42],backgroundColor:'rgba(16,224,152,.6)',borderRadius:6},
+        {label:'Expenses',data:[2.4,2.6,2.3,2.7,2.8,3.18],backgroundColor:'rgba(255,94,114,.5)',borderRadius:6}
+      ]
+    }, options:{...cOpts,scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e'}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e',callback:v=>'₹'+v+'L'}}}}
+  });
+  // Expenses
+  charts.expenses = new Chart(document.getElementById('expenseChart'), {
+    type:'doughnut', data:{
+      labels:['Staff Salaries','Rent','Equipment','Utilities','Marketing','Misc'],
+      datasets:[{data:[38,22,15,12,8,5],backgroundColor:['#4da8ff','#9d7fff','#10e098','#ffb547','#ff5e72','#7c8a9e'],borderWidth:0,hoverOffset:8}]
+    }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#7c8a9e',font:{size:11},padding:10}},tooltip:{backgroundColor:'rgba(10,14,20,.9)',titleColor:'#f1f5f9',bodyColor:'#7c8a9e'}}}
+  });
+  buildWaterfall();
+  // Forecast
+  const fData = {
+    conservative:[5.8,5.6,5.4,5.8,6.1,6.4],
+    moderate:[6.2,6.5,6.1,6.8,7.4,8.1],
+    aggressive:[6.8,7.4,7.1,8.2,9.1,10.3]
+  };
+  window.forecastData = fData;
+  charts.forecast = new Chart(document.getElementById('forecastChart'), {
+    type:'line', data:{
+      labels:['Jun','Jul','Aug','Sep','Oct','Nov'],
+      datasets:[
+        {label:'Forecast (₹L)',data:fData.moderate,borderColor:'#4da8ff',backgroundColor:'rgba(77,168,255,.12)',tension:.4,fill:true,pointBackgroundColor:'#4da8ff',pointRadius:5},
+        {label:'Upper Band',data:fData.moderate.map(v=>v*1.08),borderColor:'rgba(77,168,255,.3)',borderDash:[3,3],tension:.4,fill:'+1',backgroundColor:'rgba(77,168,255,.05)',pointRadius:0},
+        {label:'Lower Band',data:fData.moderate.map(v=>v*0.92),borderColor:'rgba(77,168,255,.3)',borderDash:[3,3],tension:.4,fill:false,pointRadius:0}
+      ]
+    }, options:{...cOpts,scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e'}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e',callback:v=>'₹'+v+'L'}}}}
+  });
+  // Trainer Pie
+  charts.trainerPie = new Chart(document.getElementById('trainerPieChart'), {
+    type:'doughnut', data:{
+      labels:['Rahul Sharma','Priya Singh','Amit Yadav','Neha Gupta','Vikram Joshi'],
+      datasets:[{data:[34,26,18,14,8],backgroundColor:['#10e098','#4da8ff','#9d7fff','#ffb547','#ff5e72'],borderWidth:0,hoverOffset:8}]
+    }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#7c8a9e',font:{size:11},padding:10}},tooltip:{backgroundColor:'rgba(10,14,20,.9)',titleColor:'#f1f5f9',bodyColor:'#7c8a9e'}}}
+  });
+  // PT Trend
+  charts.ptTrend = new Chart(document.getElementById('ptTrendChart'), {
+    type:'line', data:{
+      labels:['Dec','Jan','Feb','Mar','Apr','May'],
+      datasets:[{label:'PT Revenue (₹L)',data:[1.2,1.4,1.5,1.7,1.9,2.14],borderColor:'#9d7fff',backgroundColor:'rgba(157,127,255,.12)',tension:.4,fill:true,pointBackgroundColor:'#9d7fff',pointRadius:4}]
+    }, options:{...cOpts,scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e'}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#7c8a9e',callback:v=>'₹'+v+'L'}}}}
+  });
+  // Growth
+  charts.growth = new Chart(document.getElementById('growthChart'), {
+    type:'bar', data:{
+      labels:months.slice(0,5),
+      datasets:[
+        {label:'New Members',data:[88,94,102,111,124],backgroundColor:'rgba(16,224,152,.6)',borderRadius:6},
+        {label:'Churned',data:[38,32,28,22,18],backgroundColor:'rgba(255,94,114,.5)',borderRadius:6}
+      ]
+    }, options:{...cOpts}
+  });
+  // Plan distribution
+  charts.plans = new Chart(document.getElementById('planChart'), {
+    type:'doughnut', data:{
+      labels:['Monthly','Quarterly','Half-Yearly','Annual','PT Premium'],
+      datasets:[{data:[38,24,18,14,6],backgroundColor:['#4da8ff','#10e098','#9d7fff','#ffb547','#ff5e72'],borderWidth:0,hoverOffset:8}]
+    }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#7c8a9e',font:{size:11},padding:10}},tooltip:{backgroundColor:'rgba(10,14,20,.9)',titleColor:'#f1f5f9',bodyColor:'#7c8a9e'}}}
+  });
+}
+
+function buildWaterfall() {
+  const items=[{l:'Gross Revenue',v:842000,c:'var(--emerald)'},{l:'Staff',v:-118000,c:'var(--red)'},{l:'Rent',v:-70000,c:'var(--red)'},{l:'Equipment',v:-47000,c:'var(--red)'},{l:'Utilities',v:-38000,c:'var(--red)'},{l:'Marketing',v:-25000,c:'var(--amber)'},{l:'Net Profit',v:524000,c:'var(--blue)'}];
+  const max=842000;const container=document.getElementById('waterfall');
+  items.forEach(item=>{
+    const pct=Math.abs(item.v)/max*100;
+    const col=document.createElement('div');col.className='wf-col';
+    col.innerHTML=`<div class="wf-val" style="color:${item.c};font-size:10px">${item.v>0?'₹'+Math.abs(item.v/1000).toFixed(0)+'K':'-₹'+Math.abs(item.v/1000).toFixed(0)+'K'}</div><div class="wf-rect" style="height:${pct}%;background:${item.c};opacity:0.8"></div><div class="wf-lbl">${item.l}</div>`;
+    container.appendChild(col);
+  });
+}
+
+function setScenario(type, btn) {
+  document.querySelectorAll('.scenario-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const data = window.forecastData[type];
+  const colors={conservative:'#4da8ff',moderate:'#10e098',aggressive:'#9d7fff'};
+  charts.forecast.data.datasets[0].data=data;
+  charts.forecast.data.datasets[0].borderColor=colors[type];
+  charts.forecast.data.datasets[1].data=data.map(v=>v*1.08);
+  charts.forecast.data.datasets[2].data=data.map(v=>v*0.92);
+  charts.forecast.update('active');
+}
+
+const txnData=[
+  {name:'Arjun Mehta',plan:'Annual Premium',amount:'₹12,000',method:'UPI',date:'17 May',status:'paid'},
+  {name:'Priya Sharma',plan:'Quarterly',amount:'₹4,500',method:'Card',date:'17 May',status:'paid'},
+  {name:'Rohit Kumar',plan:'Monthly',amount:'₹2,200',method:'Cash',date:'16 May',status:'paid'},
+  {name:'Sneha Patel',plan:'PT Premium',amount:'₹8,000',method:'Net Banking',date:'16 May',status:'paid'},
+  {name:'Vikash Gupta',plan:'Half-Yearly',amount:'₹7,800',method:'UPI',date:'15 May',status:'pending'},
+  {name:'Ananya Singh',plan:'Monthly',amount:'₹2,200',method:'UPI',date:'15 May',status:'paid'},
+  {name:'Manish Joshi',plan:'Annual',amount:'₹9,600',method:'Card',date:'14 May',status:'paid'},
+  {name:'Kavya Reddy',plan:'Quarterly',amount:'₹4,500',method:'Cash',date:'14 May',status:'failed'},
+  {name:'Suresh Nair',plan:'PT Package',amount:'₹6,000',method:'UPI',date:'13 May',status:'paid'},
+  {name:'Deepika Rao',plan:'Monthly',amount:'₹2,200',method:'Wallet',date:'13 May',status:'paid'},
+];
+
+function populateTables(){
+  renderTxnTable(txnData);
+  const duesData=[
+    {name:'Rajesh Verma',plan:'Annual Premium',amount:'₹12,000',days:'32',risk:'high'},
+    {name:'Pooja Agarwal',plan:'Quarterly',amount:'₹4,500',days:'18',risk:'medium'},
+    {name:'Kiran Jain',plan:'Half-Yearly',amount:'₹7,800',days:'14',risk:'medium'},
+    {name:'Sanjay Tiwari',plan:'Monthly',amount:'₹2,200',days:'9',risk:'low'},
+    {name:'Meera Pillai',plan:'PT Premium',amount:'₹8,000',days:'45',risk:'high'},
+    {name:'Aakash Bhatt',plan:'Annual',amount:'₹9,600',days:'22',risk:'high'},
+    {name:'Nisha Choudhary',plan:'Monthly',amount:'₹2,200',days:'7',risk:'low'},
+  ];
+  const dt=document.getElementById('dues-table');
+  dt.innerHTML=duesData.map(d=>`<tr><td><strong>${d.name}</strong></td><td>${d.plan}</td><td style="color:var(--red);font-weight:600">${d.amount}</td><td style="font-variant-numeric:tabular-nums">${d.days} days</td><td><span class="pill ${d.risk==='high'?'pill-red':d.risk==='medium'?'pill-amber':'pill-green'}">${d.risk.toUpperCase()}</span></td><td><button class="btn btn-ghost" style="font-size:11px;padding:5px 12px;border-radius:8px">📱 Remind</button></td></tr>`).join('');
+  const collData=[
+    {m:'Jan 2026',target:'₹6,00,000',collected:'₹5,22,000',pct:'87%',new:88,status:'partial'},
+    {m:'Feb 2026',target:'₹6,50,000',collected:'₹5,84,000',pct:'89.8%',new:94,status:'partial'},
+    {m:'Mar 2026',target:'₹7,00,000',collected:'₹6,41,000',pct:'91.6%',new:102,status:'partial'},
+    {m:'Apr 2026',target:'₹7,50,000',collected:'₹6,92,000',pct:'92.3%',new:111,status:'partial'},
+    {m:'May 2026',target:'₹8,00,000',collected:'₹8,42,000',pct:'105.3%',new:124,status:'exceeded'},
+  ];
+  const ct=document.getElementById('coll-table');
+  ct.innerHTML=collData.map(c=>`<tr><td><strong>${c.m}</strong></td><td style="color:var(--muted)">${c.target}</td><td style="color:var(--emerald);font-weight:600">${c.collected}</td><td style="font-variant-numeric:tabular-nums;font-weight:600;color:${c.status==='exceeded'?'var(--emerald)':'var(--amber)'}">${c.pct}</td><td>${c.new}</td><td><span class="pill ${c.status==='exceeded'?'pill-green':'pill-amber'}">${c.status==='exceeded'?'TARGET HIT':'PARTIAL'}</span></td></tr>`).join('');
+}
+
+function renderTxnTable(data){
+  const t=document.getElementById('txn-table');
+  t.innerHTML=data.map(r=>`<tr><td><strong>${r.name}</strong></td><td><span style="color:var(--muted)">${r.plan}</span></td><td style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--emerald)">${r.amount}</td><td>${r.method}</td><td style="color:var(--muted)">${r.date}</td><td><span class="pill ${r.status==='paid'?'pill-green':r.status==='pending'?'pill-amber':'pill-red'}">${r.status.toUpperCase()}</span></td></tr>`).join('');
+}
+
+function filterTable(q){
+  const f=txnData.filter(r=>r.name.toLowerCase().includes(q.toLowerCase())||r.plan.toLowerCase().includes(q.toLowerCase())||r.method.toLowerCase().includes(q.toLowerCase()));
+  renderTxnTable(f);
+}
+
+function buildTrainerCards(){
+  const trainers=[
+    {name:'Rahul Sharma',revenue:'₹72,800',clients:28,rating:'4.9',growth:'+34%',rank:1,color:'#10e098',bg:'rgba(16,224,152,.15)',emoji:'💪'},
+    {name:'Priya Singh',revenue:'₹55,600',clients:22,rating:'4.8',growth:'+28%',rank:2,color:'#4da8ff',bg:'rgba(77,168,255,.15)',emoji:'🏋️'},
+    {name:'Amit Yadav',revenue:'₹38,500',clients:16,rating:'4.7',growth:'+19%',rank:3,color:'#9d7fff',bg:'rgba(157,127,255,.15)',emoji:'🥊'},
+    {name:'Neha Gupta',revenue:'₹29,900',clients:12,rating:'4.6',growth:'+15%',rank:4,color:'#ffb547',bg:'rgba(255,181,71,.15)',emoji:'🧘'},
+    {name:'Vikram Joshi',revenue:'₹17,200',clients:6,rating:'4.4',growth:'+8%',rank:5,color:'#ff5e72',bg:'rgba(255,94,114,.15)',emoji:'🏃'},
+  ];
+  const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
+  const container=document.getElementById('trainer-cards');
+  container.innerHTML=trainers.map(t=>`
+    <div class="trainer-card">
+      <div class="rank-badge" style="background:${t.bg};color:${t.color}">${medals[t.rank-1]}</div>
+      <div class="trainer-avatar" style="background:${t.bg};color:${t.color}">${t.emoji}</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">${t.name}</div>
+      <div style="font-size:26px;font-weight:700;color:${t.color};margin-bottom:8px;font-variant-numeric:tabular-nums">${t.revenue}</div>
+      <div class="flex gap-3" style="flex-wrap:wrap">
+        <div style="font-size:12px;color:var(--muted)">👥 ${t.clients} clients</div>
+        <div style="font-size:12px;color:var(--muted)">⭐ ${t.rating} rating</div>
+        <span class="pill pill-green">${t.growth}</span>
+      </div>
+    </div>
+  `).join('');
+}
+</script>
 </body>
 </html>
