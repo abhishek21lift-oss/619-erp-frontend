@@ -97,7 +97,6 @@ function GlassCard({ children, style = {}, accent = '#6366f1', className = '' }:
         ...style,
       }}
     >
-      {/* Shimmer top line */}
       <div style={{
         position: 'absolute', top: 0, left: '10%', right: '10%', height: 1,
         background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.9),transparent)',
@@ -109,9 +108,9 @@ function GlassCard({ children, style = {}, accent = '#6366f1', className = '' }:
 }
 
 /* ─── Info field ─────────────────────────────────────────── */
-function Field({ label, value, accent }: { label: string; value?: React.ReactNode; accent?: string }) {
+function Field({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <span style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
       <span style={{ fontSize: 13, color: '#1e293b', fontWeight: 500, lineHeight: 1.4 }}>{value ?? '—'}</span>
     </div>
@@ -259,18 +258,18 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     </AppShell></Guard>
   );
 
-  const membershipPlan = client.membership_plan || client.package_type;
-  const joinDate       = client.join_date || client.joining_date || (client as any).created_at;
-  const expiryDate     = client.expiry_date || client.pt_end_date;
+  const membershipPlan  = client.membership_plan || client.package_type;
+  const joinDate        = client.join_date || client.joining_date || (client as any).created_at;
+  const expiryDate      = client.expiry_date || client.pt_end_date;
   const assignedTrainer = client.trainer_name || client.trainer_full_name;
-  const phone          = client.mobile || (client as any).phone;
-  const days           = daysUntil(expiryDate);
-  const total          = totalDays(joinDate, expiryDate);
-  const elapsed        = total - Math.max(0, days);
-  const progress       = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
-  const isAdmin        = user?.role === 'admin' || user?.role === 'manager';
-  const statusCfg      = STATUS_CFG[client.status] ?? STATUS_CFG.active;
-  const initials       = client.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+  const phone           = client.mobile || (client as any).phone;
+  const days            = daysUntil(expiryDate);
+  const total           = totalDays(joinDate, expiryDate);
+  const elapsed         = total - Math.max(0, days);
+  const progress        = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+  const isAdmin         = user?.role === 'admin' || user?.role === 'manager';
+  const statusCfg       = STATUS_CFG[client.status] ?? STATUS_CFG.active;
+  const initials        = client.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
   const RING_GRADIENT = client.status === 'active'
     ? 'conic-gradient(#10b981, #6366f1, #8b5cf6, #ec4899, #10b981)'
@@ -283,7 +282,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   return (
     <Guard>
       <AppShell title="Member Profile">
-        {/* ── Global page styles ── */}
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
           .profile-page * { font-family: 'Inter', sans-serif; }
@@ -305,14 +303,14 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
         <div className="profile-page" style={{ padding: '20px 20px 100px', maxWidth: 1100, margin: '0 auto' }}>
 
-          {/* ── Ambient blobs ── */}
+          {/* Ambient blobs */}
           <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(99,102,241,0.12),transparent 70%)', filter: 'blur(40px)' }} />
             <div style={{ position: 'absolute', top: '30%', left: '-8%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle,rgba(16,185,129,0.09),transparent 70%)', filter: 'blur(40px)' }} />
             <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle,rgba(236,72,153,0.08),transparent 70%)', filter: 'blur(40px)' }} />
           </div>
 
-          {/* ── Back nav ── */}
+          {/* Back nav */}
           <div style={{ position: 'relative', zIndex: 1, marginBottom: 20 }}>
             <button
               onClick={() => router.back()}
@@ -327,16 +325,13 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </button>
           </div>
 
-          {/* ══════════════════════════════════════════════════════ */}
-          {/*  HERO CARD                                             */}
-          {/* ══════════════════════════════════════════════════════ */}
+          {/* ══ HERO CARD ══ */}
           <div style={{ position: 'relative', zIndex: 1, marginBottom: 16 }}>
             <GlassCard style={{ padding: '28px 28px 24px' }} accent="#6366f1">
               <div className="hero-inner" style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
 
-                {/* ── Avatar ── */}
+                {/* Avatar */}
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  {/* Animated gradient ring */}
                   <div style={{
                     width: 100, height: 100, borderRadius: '50%', padding: 3,
                     background: RING_GRADIENT,
@@ -354,14 +349,12 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                       }
                     </div>
                   </div>
-                  {/* Status pulse dot */}
                   <div style={{
                     position: 'absolute', bottom: 4, right: 4, width: 16, height: 16,
                     borderRadius: '50%', background: statusCfg.dot,
                     border: '3px solid #fff', boxShadow: `0 0 0 3px ${statusCfg.dot}44`,
                     animation: client.status === 'active' ? 'pulse-ring 2s ease-in-out infinite' : undefined,
                   }} />
-                  {/* Camera upload */}
                   <label style={{
                     position: 'absolute', top: 0, right: 0, width: 26, height: 26, borderRadius: '50%',
                     background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff',
@@ -378,40 +371,31 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
 
-                {/* ── Member meta ── */}
+                {/* Member meta */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
                     <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
                       {client.name}
                     </h1>
-                    {/* Status pill */}
                     <span style={{
                       padding: '3px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700,
                       background: statusCfg.gradient, color: '#fff', letterSpacing: '0.04em',
                       textTransform: 'uppercase',
-                    }}>
-                      {statusCfg.label}
-                    </span>
+                    }}>{statusCfg.label}</span>
                     {client.face_enrolled && (
                       <span style={{
                         padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
                         background: 'rgba(6,182,212,0.12)', color: '#0891b2',
                         border: '1px solid rgba(6,182,212,0.3)', display: 'flex', alignItems: 'center', gap: 4,
-                      }}>
-                        <ScanFace size={11} /> Face ID
-                      </span>
+                      }}><ScanFace size={11} /> Face ID</span>
                     )}
                   </div>
-
-                  {/* Phone under name */}
                   {phone && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, color: '#475569', fontSize: 13, fontWeight: 500 }}>
                       <Phone size={13} color="#94a3b8" /> {phone}
                       {client.email && <><span style={{ color: '#cbd5e1', margin: '0 4px' }}>·</span><Mail size={13} color="#94a3b8" />{client.email}</>}
                     </div>
                   )}
-
-                  {/* Chips row */}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
                     {membershipPlan && (
                       <span style={{ padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 600, background: 'rgba(99,102,241,0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -434,8 +418,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                       </span>
                     )}
                   </div>
-
-                  {/* Expiry warning */}
                   {client.status === 'active' && days <= 30 && days > 0 && (
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', color: '#b45309', fontSize: 12, fontWeight: 600, marginTop: 2 }}>
                       <Clock size={12} /> Expires in {days} day{days !== 1 ? 's' : ''} — {fmtDate(expiryDate)}
@@ -448,7 +430,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
 
-                {/* ── WhatsApp quick action ── */}
+                {/* WhatsApp */}
                 <div style={{ flexShrink: 0 }}>
                   <a href={whatsappHref()} target="_blank" rel="noopener noreferrer" style={{
                     display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px',
@@ -461,7 +443,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
-              {/* ── Action Button Bar ── */}
+              {/* ── ACTION BUTTON BAR ── */}
               <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(226,232,240,0.7)' }}>
                 <div
                   className="action-btn-group"
@@ -473,13 +455,26 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   <Link href={`/clients/${id}/renew-subscription`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<RefreshCw size={13} />} label="Renew" gradient="linear-gradient(135deg,#10b981,#059669)" />
                   </Link>
-                  <ActionBtn icon={<Clock size={13} />} label="Extension" outline onClick={() => alert('Extension flow — coming soon')} />
-                  <ActionBtn icon={<ArrowRightLeft size={13} />} label="Transfer" outline onClick={() => alert('Transfer flow — coming soon')} />
+                  {/* ✅ FIXED: Extension → routes to /extension page */}
+                  <Link href={`/clients/${id}/extension`} style={{ textDecoration: 'none' }}>
+                    <ActionBtn icon={<Clock size={13} />} label="Extension" outline />
+                  </Link>
+                  {/* ✅ FIXED: Transfer → routes to /transfer page */}
+                  <Link href={`/clients/${id}/transfer`} style={{ textDecoration: 'none' }}>
+                    <ActionBtn icon={<ArrowRightLeft size={13} />} label="Transfer" outline />
+                  </Link>
                   <Link href={`/clients/${id}/freeze`} style={{ textDecoration: 'none' }}>
                     <ActionBtn icon={<Snowflake size={13} />} label="Freeze" gradient="linear-gradient(135deg,#06b6d4,#0891b2)" />
                   </Link>
-                  <ActionBtn icon={<UserCheck size={13} />} label="Assign PT" gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" onClick={() => alert('Assign PT — coming soon')} />
-                  <ActionBtn icon={<RotateCcw size={13} />} label="Renew PT" outline onClick={() => alert('Renew PT — coming soon')} />
+                  {/* ✅ FIXED: Assign PT → routes to /assign-pt page */}
+                  <Link href={`/clients/${id}/assign-pt`} style={{ textDecoration: 'none' }}>
+                    <ActionBtn icon={<UserCheck size={13} />} label="Assign PT" gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" />
+                  </Link>
+                  {/* ✅ FIXED: Renew PT → routes to /renew-pt page */}
+                  <Link href={`/clients/${id}/renew-pt`} style={{ textDecoration: 'none' }}>
+                    <ActionBtn icon={<RotateCcw size={13} />} label="Renew PT" outline />
+                  </Link>
+                  {/* Face Enroll — keeps modal */}
                   <button
                     onClick={() => setEnrollOpen(true)}
                     style={{
@@ -492,8 +487,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   >
                     <ScanFace size={13} /> {client.face_enrolled_at ? 'Re-enroll Face' : 'Enroll Face ID'}
                   </button>
-                  <ActionBtn icon={<Fingerprint size={13} />} label="Biometric" outline onClick={() => alert('Biometric enrollment — coming soon')} />
-                  {isAdmin && isAdmin && (
+                  {/* ✅ FIXED: Biometric → routes to /biometric page */}
+                  <Link href={`/clients/${id}/biometric`} style={{ textDecoration: 'none' }}>
+                    <ActionBtn icon={<Fingerprint size={13} />} label="Biometric" outline />
+                  </Link>
+                  {isAdmin && (
                     <Link href={`/clients/new?edit=${id}`} style={{ textDecoration: 'none', marginLeft: 'auto' }}>
                       <ActionBtn icon={<Edit2 size={13} />} label="Edit" outline />
                     </Link>
@@ -506,9 +504,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </GlassCard>
           </div>
 
-          {/* ══════════════════════════════════════════════════════ */}
-          {/*  TABS                                                  */}
-          {/* ══════════════════════════════════════════════════════ */}
+          {/* ══ TABS ══ */}
           <div style={{ position: 'relative', zIndex: 1, marginBottom: 16 }}>
             <div style={{
               display: 'inline-flex', gap: 4, padding: 4,
@@ -529,55 +525,47 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* ══════════════════════════════════════════════════════ */}
-          {/*  OVERVIEW TAB                                          */}
-          {/* ══════════════════════════════════════════════════════ */}
+          {/* ══ OVERVIEW TAB ══ */}
           {activeTab === 'overview' && (
             <div className="tab-content overview-grid" style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
 
-              {/* ── Personal Information ── */}
-              <GlassCard style={{ padding: 24 }} accent="#6366f1">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <User size={15} color="#fff" />
+              {/* Personal Information — compact */}
+              <GlassCard style={{ padding: '18px 22px' }} accent="#6366f1">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <User size={13} color="#fff" />
                   </div>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Personal Information</h3>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: 0 }}>Personal Information</h3>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <Field label="Date of Birth" value={fmtDate(client.dob)} />
                   <Field label="Gender" value={client.gender} />
                   <Field label="Phone" value={phone} />
                   <Field label="Email" value={client.email} />
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <Field label="Address" value={client.address} />
-                  </div>
-                  <div style={{ gridColumn: '1/-1' }}>
-                    <Field label="Emergency Contact" value={client.emergency_contact} />
-                  </div>
+                  <div style={{ gridColumn: '1/-1' }}><Field label="Address" value={client.address} /></div>
+                  <div style={{ gridColumn: '1/-1' }}><Field label="Emergency Contact" value={client.emergency_contact} /></div>
                 </div>
               </GlassCard>
 
-              {/* ── Membership ── */}
-              <GlassCard style={{ padding: 24 }} accent="#10b981">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <CreditCard size={15} color="#fff" />
+              {/* ✅ MEMBERSHIP CARD — no Add Subscription / Freeze buttons inside */}
+              <GlassCard style={{ padding: '18px 22px' }} accent="#10b981">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CreditCard size={13} color="#fff" />
                   </div>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Membership</h3>
-                  {/* Days remaining chip */}
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: 0 }}>Membership</h3>
                   {client.status === 'active' && days < 9999 && (
-                    <span style={{ marginLeft: 'auto', padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: days <= 7 ? 'rgba(244,63,94,0.1)' : days <= 30 ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)', color: days <= 7 ? '#e11d48' : days <= 30 ? '#b45309' : '#059669' }}>
-                      {days}d left
-                    </span>
+                    <span style={{
+                      marginLeft: 'auto', padding: '2px 10px', borderRadius: 99, fontSize: 10, fontWeight: 700,
+                      background: days <= 7 ? 'rgba(244,63,94,0.1)' : days <= 30 ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)',
+                      color: days <= 7 ? '#e11d48' : days <= 30 ? '#b45309' : '#059669',
+                    }}>{days}d left</span>
                   )}
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
                   <Field label="Plan" value={membershipPlan} />
                   <Field label="Status" value={
-                    <span style={{ padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: statusCfg.gradient, color: '#fff' }}>
-                      {statusCfg.label}
-                    </span>
+                    <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: statusCfg.gradient, color: '#fff' }}>{statusCfg.label}</span>
                   } />
                   <Field label="Join Date" value={fmtDate(joinDate)} />
                   <Field label="Expiry Date" value={fmtDate(expiryDate)} />
@@ -585,113 +573,88 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   <Field label="Balance Due" value={
                     (client.balance_due ?? 0) > 0
                       ? <span style={{ color: '#e11d48', fontWeight: 700 }}>₹{client.balance_due?.toLocaleString('en-IN')}</span>
-                      : <span style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle size={12} /> Cleared</span>
+                      : <span style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle size={11} /> Cleared</span>
                   } />
                 </div>
-
-                {/* Progress bar */}
+                {/* Compact progress bar only — no action buttons inside card */}
                 {client.status === 'active' && days < 9999 && (
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Membership progress</span>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                      <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Progress</span>
                       <span style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>{progress}% used</span>
                     </div>
-                    <div style={{ height: 6, borderRadius: 99, background: 'rgba(226,232,240,0.8)', overflow: 'hidden' }}>
+                    <div style={{ height: 5, borderRadius: 99, background: 'rgba(226,232,240,0.8)', overflow: 'hidden' }}>
                       <div style={{
                         height: '100%', borderRadius: 99, width: `${progress}%`,
-                        background: progress >= 80
-                          ? 'linear-gradient(90deg,#f59e0b,#f43f5e)'
-                          : 'linear-gradient(90deg,#10b981,#06b6d4)',
+                        background: progress >= 80 ? 'linear-gradient(90deg,#f59e0b,#f43f5e)' : 'linear-gradient(90deg,#10b981,#06b6d4)',
                         transition: 'width 1s cubic-bezier(0.16,1,0.3,1)',
                       }} />
                     </div>
                   </div>
                 )}
-
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Link href={`/clients/${id}/add-subscription`} style={{ textDecoration: 'none', flex: 1 }}>
-                    <button style={{
-                      width: '100%', padding: '10px', borderRadius: 12, border: 'none',
-                      background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff',
-                      fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    }}>
-                      <Plus size={14} /> Add Subscription
-                    </button>
-                  </Link>
-                  <Link href={`/clients/${id}/freeze`} style={{ textDecoration: 'none' }}>
-                    <button style={{
-                      padding: '10px 16px', borderRadius: 12, border: '1px solid rgba(6,182,212,0.3)',
-                      background: 'rgba(6,182,212,0.08)', color: '#0891b2',
-                      fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                    }}>
-                      <Snowflake size={14} /> Freeze
-                    </button>
-                  </Link>
-                </div>
               </GlassCard>
 
-              {/* ── Attendance Summary ── */}
-              <GlassCard style={{ padding: 24 }} accent="#f59e0b">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Activity size={15} color="#fff" />
+              {/* Attendance Summary — compact */}
+              <GlassCard style={{ padding: '18px 22px' }} accent="#f59e0b">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Activity size={13} color="#fff" />
                   </div>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Attendance</h3>
-                  <span style={{ marginLeft: 'auto', fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{attendance.length}</span>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: 0 }}>Attendance</h3>
+                  <span style={{ marginLeft: 'auto', fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{attendance.length}</span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                   {[
                     { label: 'This Month', val: attendance.filter(a => new Date(a.date).getMonth() === new Date().getMonth()).length },
                     { label: 'Last Month', val: attendance.filter(a => new Date(a.date).getMonth() === new Date().getMonth() - 1).length },
                     { label: 'Total', val: attendance.length },
                   ].map(({ label, val }) => (
-                    <div key={label} style={{ textAlign: 'center', padding: '12px 8px', borderRadius: 14, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>{val}</div>
+                    <div key={label} style={{ textAlign: 'center', padding: '10px 6px', borderRadius: 12, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>{val}</div>
                       <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>{label}</div>
                     </div>
                   ))}
                 </div>
                 {attendance.length > 0 && (
-                  <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 12, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
-                    <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Last check-in</div>
-                    <div style={{ fontSize: 13, color: '#0f172a', fontWeight: 600 }}>{fmtDate(attendance[0]?.date)} · {fmtTime(attendance[0]?.check_in_time)}</div>
+                  <div style={{ marginTop: 12, padding: '8px 12px', borderRadius: 10, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
+                    <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Last check-in</div>
+                    <div style={{ fontSize: 12, color: '#0f172a', fontWeight: 600 }}>{fmtDate(attendance[0]?.date)} · {fmtTime(attendance[0]?.check_in_time)}</div>
                   </div>
                 )}
               </GlassCard>
 
-              {/* ── Payment Summary ── */}
-              <GlassCard style={{ padding: 24 }} accent="#8b5cf6">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <TrendingUp size={15} color="#fff" />
+              {/* Payment Insights — compact */}
+              <GlassCard style={{ padding: '18px 22px' }} accent="#8b5cf6">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <TrendingUp size={13} color="#fff" />
                   </div>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Payment Insights</h3>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: 0 }}>Payment Insights</h3>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   {[
                     { label: 'Total Paid', val: `₹${payments.reduce((s, p) => s + p.amount, 0).toLocaleString('en-IN')}`, accent: '#8b5cf6' },
                     { label: 'Transactions', val: payments.length, accent: '#6366f1' },
                     { label: 'Last Payment', val: payments[0] ? fmtDate(payments[0].date) : '—', accent: '#0891b2' },
                     { label: 'Balance Due', val: (client.balance_due ?? 0) > 0 ? `₹${client.balance_due?.toLocaleString('en-IN')}` : 'Clear', accent: (client.balance_due ?? 0) > 0 ? '#e11d48' : '#10b981' },
                   ].map(({ label, val, accent }) => (
-                    <div key={label} style={{ padding: '12px', borderRadius: 14, background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.1)' }}>
-                      <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{label}</div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: accent }}>{val}</div>
+                    <div key={label} style={{ padding: '10px', borderRadius: 12, background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.1)' }}>
+                      <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{label}</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: accent }}>{val}</div>
                     </div>
                   ))}
                 </div>
               </GlassCard>
 
-              {/* ── Notes ── */}
               {client.notes && (
-                <GlassCard style={{ padding: 24, gridColumn: '1/-1' }} accent="#94a3b8">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,#64748b,#475569)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <MessageCircle size={15} color="#fff" />
+                <GlassCard style={{ padding: '18px 22px', gridColumn: '1/-1' }} accent="#94a3b8">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#64748b,#475569)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <MessageCircle size={13} color="#fff" />
                     </div>
-                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Trainer Notes</h3>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', margin: 0 }}>Trainer Notes</h3>
                   </div>
-                  <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0, padding: '14px 16px', borderRadius: 12, background: 'rgba(241,245,249,0.6)', border: '1px solid rgba(226,232,240,0.6)' }}>
+                  <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.7, whiteSpace: 'pre-wrap', margin: 0, padding: '12px 14px', borderRadius: 10, background: 'rgba(241,245,249,0.6)', border: '1px solid rgba(226,232,240,0.6)' }}>
                     {client.notes}
                   </p>
                 </GlassCard>
@@ -699,26 +662,20 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════ */}
-          {/*  ATTENDANCE TAB                                        */}
-          {/* ══════════════════════════════════════════════════════ */}
+          {/* ══ ATTENDANCE TAB ══ */}
           {activeTab === 'attendance' && (
             <div className="tab-content" style={{ position: 'relative', zIndex: 1 }}>
               <GlassCard style={{ overflow: 'hidden' }} accent="#f59e0b">
                 <div style={{ padding: '18px 24px', borderBottom: '1px solid rgba(226,232,240,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Activity size={13} color="#fff" />
-                    </div>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#f59e0b,#d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Activity size={13} color="#fff" /></div>
                     <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Attendance History</h3>
                   </div>
                   <span style={{ padding: '3px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: 'rgba(245,158,11,0.1)', color: '#d97706' }}>{attendance.length} records</span>
                 </div>
                 {attendance.length === 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: 12 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Activity size={24} color="#d97706" />
-                    </div>
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Activity size={24} color="#d97706" /></div>
                     <p style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', margin: 0 }}>No attendance records yet</p>
                     <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>Check-in history will appear here</p>
                   </div>
@@ -743,9 +700,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                               <td style={{ padding: '12px 20px', fontSize: 13, color: '#475569' }}>{fmtTime(a.check_in_time)}</td>
                               <td style={{ padding: '12px 20px', fontSize: 13, color: '#475569' }}>{fmtTime(a.check_out_time)}</td>
                               <td style={{ padding: '12px 20px' }}>
-                                <span style={{ padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, background: a.method === 'face' ? 'rgba(6,182,212,0.1)' : 'rgba(99,102,241,0.1)', color: a.method === 'face' ? '#0891b2' : '#6366f1' }}>
-                                  {a.method}
-                                </span>
+                                <span style={{ padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, background: a.method === 'face' ? 'rgba(6,182,212,0.1)' : 'rgba(99,102,241,0.1)', color: a.method === 'face' ? '#0891b2' : '#6366f1' }}>{a.method}</span>
                               </td>
                               <td style={{ padding: '12px 20px', fontSize: 13, color: '#94a3b8' }}>{durMin !== null ? `${durMin} min` : '—'}</td>
                             </tr>
@@ -759,28 +714,20 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════ */}
-          {/*  PAYMENTS TAB                                          */}
-          {/* ══════════════════════════════════════════════════════ */}
+          {/* ══ PAYMENTS TAB ══ */}
           {activeTab === 'payments' && (
             <div className="tab-content" style={{ position: 'relative', zIndex: 1 }}>
               <GlassCard style={{ overflow: 'hidden' }} accent="#8b5cf6">
                 <div style={{ padding: '18px 24px', borderBottom: '1px solid rgba(226,232,240,0.6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CreditCard size={13} color="#fff" />
-                    </div>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CreditCard size={13} color="#fff" /></div>
                     <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Payment History</h3>
                   </div>
-                  <span style={{ padding: '3px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: 'rgba(139,92,246,0.1)', color: '#7c3aed' }}>
-                    ₹{payments.reduce((s, p) => s + p.amount, 0).toLocaleString('en-IN')} total
-                  </span>
+                  <span style={{ padding: '3px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: 'rgba(139,92,246,0.1)', color: '#7c3aed' }}>₹{payments.reduce((s, p) => s + p.amount, 0).toLocaleString('en-IN')} total</span>
                 </div>
                 {payments.length === 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: 12 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CreditCard size={24} color="#7c3aed" />
-                    </div>
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CreditCard size={24} color="#7c3aed" /></div>
                     <p style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', margin: 0 }}>No payment records yet</p>
                     <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>Payment history will appear here</p>
                   </div>
@@ -805,9 +752,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                             </td>
                             <td style={{ padding: '12px 20px' }}>
                               {p.receipt ? (
-                                <a href={p.receipt} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#6366f1', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                  View <ChevronRight size={12} />
-                                </a>
+                                <a href={p.receipt} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#6366f1', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>View <ChevronRight size={12} /></a>
                               ) : '—'}
                             </td>
                           </tr>
@@ -822,9 +767,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
         </div>
 
-        {/* ══════════════════════════════════════════════════════ */}
-        {/*  FACE ENROLL MODAL                                     */}
-        {/* ══════════════════════════════════════════════════════ */}
+        {/* Face Enroll Modal */}
         {enrollOpen && (
           <FaceEnrollModal
             clientId={id} clientName={client.name}
@@ -837,19 +780,13 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           />
         )}
 
-        {/* ══════════════════════════════════════════════════════ */}
-        {/*  DELETE CONFIRMATION — STEP 1                          */}
-        {/* ══════════════════════════════════════════════════════ */}
+        {/* Delete step 1 */}
         {deleteStep === 1 && (
           <div onClick={() => setDeleteStep(0)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, borderRadius: 24, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 32px 80px rgba(0,0,0,0.15)', padding: 32, animation: 'fade-in 0.28s ease both' }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(244,63,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                <Trash2 size={24} color="#e11d48" />
-              </div>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(244,63,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}><Trash2 size={24} color="#e11d48" /></div>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>Delete member?</h3>
-              <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6, marginBottom: 24 }}>
-                You are about to permanently delete <strong>{client.name}</strong>. All attendance, payment, and membership data will be removed. This <strong>cannot be undone</strong>.
-              </p>
+              <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6, marginBottom: 24 }}>You are about to permanently delete <strong>{client.name}</strong>. All data will be removed. This <strong>cannot be undone</strong>.</p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setDeleteStep(0)} style={{ flex: 1, padding: '12px', borderRadius: 14, border: '1px solid rgba(226,232,240,0.8)', background: 'transparent', color: '#64748b', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 <button onClick={() => setDeleteStep(2)} style={{ flex: 1, padding: '12px', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg,#f43f5e,#e11d48)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Continue</button>
@@ -858,22 +795,14 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           </div>
         )}
 
-        {/* ── DELETE CONFIRMATION — STEP 2 (final confirm) ── */}
+        {/* Delete step 2 */}
         {deleteStep === 2 && (
           <div onClick={() => setDeleteStep(0)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, borderRadius: 24, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', border: '2px solid rgba(244,63,94,0.3)', boxShadow: '0 32px 80px rgba(244,63,94,0.15)', padding: 32, animation: 'fade-in 0.28s ease both' }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(244,63,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                <AlertCircle size={24} color="#e11d48" />
-              </div>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(244,63,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}><AlertCircle size={24} color="#e11d48" /></div>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: '#e11d48', marginBottom: 8 }}>Final confirmation</h3>
-              <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6, marginBottom: 24 }}>
-                Type <strong style={{ color: '#0f172a' }}>DELETE</strong> to confirm permanent deletion of <strong>{client.name}</strong>.
-              </p>
-              <input
-                placeholder="Type DELETE to confirm"
-                id="delete-confirm-input"
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(244,63,94,0.3)', background: 'rgba(244,63,94,0.04)', fontSize: 14, fontWeight: 600, color: '#0f172a', marginBottom: 16, boxSizing: 'border-box', outline: 'none' }}
-              />
+              <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6, marginBottom: 24 }}>Type <strong style={{ color: '#0f172a' }}>DELETE</strong> to confirm permanent deletion of <strong>{client.name}</strong>.</p>
+              <input placeholder="Type DELETE to confirm" id="delete-confirm-input" style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(244,63,94,0.3)', background: 'rgba(244,63,94,0.04)', fontSize: 14, fontWeight: 600, color: '#0f172a', marginBottom: 16, boxSizing: 'border-box', outline: 'none' }} />
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setDeleteStep(0)} style={{ flex: 1, padding: '12px', borderRadius: 14, border: '1px solid rgba(226,232,240,0.8)', background: 'transparent', color: '#64748b', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 <button disabled={deleting} onClick={() => {
@@ -888,13 +817,8 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           </div>
         )}
 
-        {/* ── Mobile sticky bottom bar ── */}
-        <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-          padding: '12px 16px', display: 'flex', gap: 8,
-          background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(226,232,240,0.6)',
-        }} className="mobile-bar">
+        {/* Mobile sticky bottom bar */}
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, padding: '12px 16px', display: 'flex', gap: 8, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(226,232,240,0.6)' }} className="mobile-bar">
           <style>{`@media(min-width:769px){.mobile-bar{display:none!important}}`}</style>
           <Link href={`/clients/${id}/add-subscription`} style={{ flex: 1, textDecoration: 'none' }}>
             <button style={{ width: '100%', padding: '12px', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
