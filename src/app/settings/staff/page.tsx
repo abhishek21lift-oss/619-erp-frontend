@@ -17,6 +17,8 @@ interface StaffMember {
   created_at?: string;
 }
 
+type StaffEdits = Record<string, { role: string; status: string }>;
+
 /* ─── Constants ──────────────────────────────────────────────────── */
 const ROLES = ['admin', 'manager', 'trainer', 'receptionist', 'accountant', 'hr', 'support'];
 
@@ -90,7 +92,7 @@ function Inner() {
   const [roleFilter, setRole]   = useState('all');
   const [view, setView]         = useState<'grid' | 'list'>('grid');
   const [panel, setPanel]       = useState<StaffMember | null>(null);
-  const [edits, setEdits]       = useState<Record<string, { role: string; status: string }>>({});
+  const [edits, setEdits]       = useState<StaffEdits>({});
   const searchRef               = useRef<HTMLInputElement>(null);
 
   /* keyboard shortcut: / → focus search */
@@ -112,7 +114,7 @@ function Inner() {
         if (!alive) return;
         const list: StaffMember[] = Array.isArray(data) ? data : [];
         setStaff(list);
-        const init: Record<string, { role: string; status: string }> = {};
+        const init: StaffEdits = {};
         list.forEach(s => { init[s.id] = { role: s.role, status: s.status || 'active' }; });
         setEdits(init);
       })
@@ -133,8 +135,8 @@ function Inner() {
       await api.staff.update(s.id, { role: edits[s.id]?.role, status: edits[s.id]?.status });
       setStaff(prev => prev.map(m => m.id === s.id ? { ...m, ...edits[s.id] } : m));
       flash(`Changes saved for ${s.name}`);
-    } catch (e: any) {
-      setError(e.message || 'Could not save');
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || 'Could not save');
     } finally {
       setSaving(null);
     }
@@ -321,7 +323,7 @@ function Inner() {
             saving={saving}
             save={save}
             isDirty={isDirty}
-            onOpen={(s) => setPanel(s)}
+            onOpen={(s: StaffMember) => setPanel(s)}
           />
         )}
 
@@ -348,8 +350,8 @@ function Inner() {
 ══════════════════════════════════════════════════════════════════ */
 function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
   s: StaffMember;
-  edits: Record<string, { role: string; status: string }>;
-  setEdits: React.Dispatch<React.SetStateAction<Record<string, { role: string; status: string }>>>;
+  edits: StaffEdits;
+  setEdits: React.Dispatch<React.SetStateAction<StaffEdits>>;
   saving: string | null;
   save: (s: StaffMember) => Promise<void>;
   isDirty: (s: StaffMember) => boolean;
@@ -363,7 +365,7 @@ function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
   const isActive = e.status === 'active';
 
   return (
-    <div className={`sm-card${isDirty(s) ? ' dirty' : ''}`} style={{ '--ring': cfg.ring } as any}>
+    <div className={`sm-card${isDirty(s) ? ' dirty' : ''}`} style={{ '--ring': cfg.ring } as React.CSSProperties}>
 
       {/* AI badge */}
       {ai && (
@@ -457,7 +459,17 @@ function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
 /* ══════════════════════════════════════════════════════════════════
    STAFF TABLE (list view)
 ══════════════════════════════════════════════════════════════════ */
-function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }: any) {
+interface StaffTableProps {
+  filtered: StaffMember[];
+  edits: StaffEdits;
+  setEdits: React.Dispatch<React.SetStateAction<StaffEdits>>;
+  saving: string | null;
+  save: (s: StaffMember) => Promise<void>;
+  isDirty: (s: StaffMember) => boolean;
+  onOpen: (s: StaffMember) => void;
+}
+
+function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }: StaffTableProps) {
   return (
     <div className="sm-table-card">
       <table className="sm-table">
@@ -514,14 +526,14 @@ function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }
                 </td>
                 <td>
                   <select className="sm-select" style={{ minWidth: 130 }} value={e.role}
-                    onChange={ev => setEdits((p: any) => ({ ...p, [s.id]: { ...p[s.id], role: ev.target.value } }))}
+                    onChange={ev => setEdits(p => ({ ...p, [s.id]: { ...p[s.id], role: ev.target.value } }))}
                   >
                     {ROLES.map(r => <option key={r} value={r}>{getRoleCfg(r).label}</option>)}
                   </select>
                 </td>
                 <td>
                   <select className={`sm-select${e.status === 'active' ? ' active' : ''}`} value={e.status}
-                    onChange={ev => setEdits((p: any) => ({ ...p, [s.id]: { ...p[s.id], status: ev.target.value } }))}
+                    onChange={ev => setEdits(p => ({ ...p, [s.id]: { ...p[s.id], status: ev.target.value } }))}
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -547,7 +559,17 @@ function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }
 /* ══════════════════════════════════════════════════════════════════
    SIDE PANEL
 ══════════════════════════════════════════════════════════════════ */
-function SidePanel({ s, edits, setEdits, saving, save, isDirty, onClose }: any) {
+interface SidePanelProps {
+  s: StaffMember;
+  edits: StaffEdits;
+  setEdits: React.Dispatch<React.SetStateAction<StaffEdits>>;
+  saving: string | null;
+  save: (s: StaffMember) => Promise<void>;
+  isDirty: (s: StaffMember) => boolean;
+  onClose: () => void;
+}
+
+function SidePanel({ s, edits, setEdits, saving, save, isDirty, onClose }: SidePanelProps) {
   const e     = edits[s.id] || { role: s.role, status: s.status || 'active' };
   const cfg   = getRoleCfg(e.role);
   const stats = fakeStats(s.id);
@@ -601,7 +623,7 @@ function SidePanel({ s, edits, setEdits, saving, save, isDirty, onClose }: any) 
           <div className="sm-panel-section">
             <div className="sm-panel-section-title">Change Role</div>
             <select className="sm-select" style={{ width: '100%' }} value={e.role}
-              onChange={ev => setEdits((p: any) => ({ ...p, [s.id]: { ...p[s.id], role: ev.target.value } }))}
+              onChange={ev => setEdits(p => ({ ...p, [s.id]: { ...p[s.id], role: ev.target.value } }))}
             >
               {ROLES.map(r => <option key={r} value={r}>{getRoleCfg(r).label}</option>)}
             </select>
@@ -610,7 +632,7 @@ function SidePanel({ s, edits, setEdits, saving, save, isDirty, onClose }: any) 
           <div className="sm-panel-section">
             <div className="sm-panel-section-title">Account Status</div>
             <select className="sm-select" style={{ width: '100%' }} value={e.status}
-              onChange={ev => setEdits((p: any) => ({ ...p, [s.id]: { ...p[s.id], status: ev.target.value } }))}
+              onChange={ev => setEdits(p => ({ ...p, [s.id]: { ...p[s.id], status: ev.target.value } }))}
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
