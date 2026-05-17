@@ -2,14 +2,19 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
-interface StickyActionBarProps {
-  total?: string;
+export interface StickyActionBarProps {
+  // New API (used by rebuilt pages)
+  total?: string | number;
+  label?: string;
+  saving?: boolean;
+  onCancel?: () => void;
+  // Legacy API
   totalLabel?: string;
   helperText?: string;
-  primaryLabel: string;
+  primaryLabel?: string;
   primaryDisabled?: boolean;
   primaryLoading?: boolean;
-  onPrimary: () => void;
+  onPrimary?: () => void;
   secondaryLabel?: string;
   onSecondary?: () => void;
   alert?: ReactNode;
@@ -17,6 +22,9 @@ interface StickyActionBarProps {
 
 export function StickyActionBar({
   total,
+  label,
+  saving,
+  onCancel,
   totalLabel = 'Total Payable',
   helperText,
   primaryLabel,
@@ -27,6 +35,19 @@ export function StickyActionBar({
   onSecondary,
   alert,
 }: StickyActionBarProps) {
+  // Normalise new API -> legacy variables
+  const resolvedPrimaryLabel = label ?? primaryLabel ?? 'Submit';
+  const resolvedPrimaryLoading = saving ?? primaryLoading ?? false;
+  const resolvedSecondaryLabel = secondaryLabel ?? (onCancel ? 'Cancel' : undefined);
+  const resolvedOnSecondary = onSecondary ?? onCancel;
+  const resolvedOnPrimary = onPrimary ?? (() => {});
+
+  // Format numeric total
+  const resolvedTotal =
+    typeof total === 'number'
+      ? `\u20b9 ${total.toLocaleString('en-IN')}`
+      : total;
+
   return (
     <motion.div
       initial={{ y: 80, opacity: 0 }}
@@ -36,16 +57,16 @@ export function StickyActionBar({
     >
       <div className="max-w-[1180px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
         <div>
-          {total && (
+          {resolvedTotal && (
             <div className="flex items-baseline gap-2">
               <span className="text-xs text-slate-500 font-medium">{totalLabel}</span>
               <motion.span
-                key={total}
+                key={resolvedTotal}
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="text-2xl font-bold text-indigo-600"
               >
-                {total}
+                {resolvedTotal}
               </motion.span>
             </div>
           )}
@@ -53,22 +74,22 @@ export function StickyActionBar({
           {alert}
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {secondaryLabel && onSecondary && (
+          {resolvedSecondaryLabel && resolvedOnSecondary && (
             <button
               type="button"
-              onClick={onSecondary}
+              onClick={resolvedOnSecondary}
               className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
             >
-              {secondaryLabel}
+              {resolvedSecondaryLabel}
             </button>
           )}
           <button
-            type="button"
-            onClick={onPrimary}
-            disabled={primaryDisabled || primaryLoading}
+            type="submit"
+            onClick={onPrimary ? resolvedOnPrimary : undefined}
+            disabled={primaryDisabled || resolvedPrimaryLoading}
             className="flex-1 sm:flex-none px-7 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-[0_4px_14px_rgba(99,102,241,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {primaryLoading ? (
+            {resolvedPrimaryLoading ? (
               <span className="flex items-center gap-2">
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -76,7 +97,7 @@ export function StickyActionBar({
                 </svg>
                 Saving…
               </span>
-            ) : primaryLabel}
+            ) : resolvedPrimaryLabel}
           </button>
         </div>
       </div>
