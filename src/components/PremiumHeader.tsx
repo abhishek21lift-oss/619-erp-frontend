@@ -11,75 +11,6 @@ interface Props {
   onMenuClick?: () => void;
 }
 
-// Premium color palette — one unique gradient per nav slot
-const NAV_COLORS: Record<number, {
-  active: string;
-  hover: string;
-  shadow: string;
-  dot: string;
-}> = {
-  0: { // Dashboard — Royal Violet
-    active: 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_8px_24px_rgba(124,58,237,0.35)]',
-    hover:  'hover:bg-violet-50 hover:text-violet-700 hover:shadow-[0_2px_12px_rgba(124,58,237,0.12)]',
-    shadow: '',
-    dot:    'bg-violet-500',
-  },
-  1: { // Sales — Emerald
-    active: 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-[0_8px_24px_rgba(16,185,129,0.35)]',
-    hover:  'hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-[0_2px_12px_rgba(16,185,129,0.12)]',
-    shadow: '',
-    dot:    'bg-emerald-500',
-  },
-  2: { // Members — Sky Blue
-    active: 'bg-gradient-to-r from-sky-500 to-blue-500 text-white shadow-[0_8px_24px_rgba(14,165,233,0.35)]',
-    hover:  'hover:bg-sky-50 hover:text-sky-700 hover:shadow-[0_2px_12px_rgba(14,165,233,0.12)]',
-    shadow: '',
-    dot:    'bg-sky-500',
-  },
-  3: { // Training — Orange Amber
-    active: 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-[0_8px_24px_rgba(249,115,22,0.35)]',
-    hover:  'hover:bg-orange-50 hover:text-orange-700 hover:shadow-[0_2px_12px_rgba(249,115,22,0.12)]',
-    shadow: '',
-    dot:    'bg-orange-500',
-  },
-  4: { // Attendance — Rose Pink
-    active: 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-[0_8px_24px_rgba(244,63,94,0.35)]',
-    hover:  'hover:bg-rose-50 hover:text-rose-700 hover:shadow-[0_2px_12px_rgba(244,63,94,0.12)]',
-    shadow: '',
-    dot:    'bg-rose-500',
-  },
-  5: { // Memberships — Indigo
-    active: 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-[0_8px_24px_rgba(99,102,241,0.35)]',
-    hover:  'hover:bg-indigo-50 hover:text-indigo-700 hover:shadow-[0_2px_12px_rgba(99,102,241,0.12)]',
-    shadow: '',
-    dot:    'bg-indigo-500',
-  },
-  6: { // Finance — Yellow Gold
-    active: 'bg-gradient-to-r from-yellow-500 to-amber-400 text-white shadow-[0_8px_24px_rgba(234,179,8,0.35)]',
-    hover:  'hover:bg-yellow-50 hover:text-yellow-700 hover:shadow-[0_2px_12px_rgba(234,179,8,0.12)]',
-    shadow: '',
-    dot:    'bg-yellow-500',
-  },
-  7: { // Insights — Cyan
-    active: 'bg-gradient-to-r from-cyan-500 to-teal-400 text-white shadow-[0_8px_24px_rgba(6,182,212,0.35)]',
-    hover:  'hover:bg-cyan-50 hover:text-cyan-700 hover:shadow-[0_2px_12px_rgba(6,182,212,0.12)]',
-    shadow: '',
-    dot:    'bg-cyan-500',
-  },
-  8: { // Engagement — Fuchsia
-    active: 'bg-gradient-to-r from-fuchsia-500 to-purple-500 text-white shadow-[0_8px_24px_rgba(217,70,239,0.35)]',
-    hover:  'hover:bg-fuchsia-50 hover:text-fuchsia-700 hover:shadow-[0_2px_12px_rgba(217,70,239,0.12)]',
-    shadow: '',
-    dot:    'bg-fuchsia-500',
-  },
-  9: { // Settings — Slate Blue
-    active: 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-[0_8px_24px_rgba(71,85,105,0.35)]',
-    hover:  'hover:bg-slate-100 hover:text-slate-800 hover:shadow-[0_2px_12px_rgba(71,85,105,0.12)]',
-    shadow: '',
-    dot:    'bg-slate-500',
-  },
-};
-
 export default function PremiumHeader({ onMenuClick }: Props) {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -103,7 +34,9 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     const next = theme === 'light' ? 'dark' : 'light';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('619_theme', next); } catch {}
+    try {
+      localStorage.setItem('619_theme', next);
+    } catch {}
   };
 
   useEffect(() => {
@@ -141,50 +74,50 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       items: SETTINGS_GROUP.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
     };
 
-    return [
+    const groups = [
       { id: 'dashboard', label: 'Dashboard', items: [DASHBOARD_ITEM] },
       ...visibleGroups,
       ...(visibleSettings.items.length ? [{ id: visibleSettings.id, label: visibleSettings.label, items: visibleSettings.items }] : []),
     ];
+
+    return groups;
   }, [user?.role]);
 
   const primaryGroups = topGroups.slice(0, 6);
   const secondaryGroups = topGroups.slice(6);
   const toggleMenu = (id: string) => setOpenMenu((current) => (current === id ? null : id));
 
-  const handleResetPassword = () => { setOpenMenu(null); router.push('/reset-password'); };
-  const handleLogout = () => { setOpenMenu(null); logout(); router.push('/login'); };
+  const handleResetPassword = () => {
+    setOpenMenu(null);
+    router.push('/reset-password');
+  };
+
+  const handleLogout = () => {
+    setOpenMenu(null);
+    logout();
+    router.push('/login');
+  };
 
   const accountLabel = user?.name || '619 FITNESS STUDIO';
   const roleLabel = user?.role || 'admin';
   const initials = (user?.name || 'A').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
-  const renderGroup = (group: { id: string; label: string; items: typeof DASHBOARD_ITEM[] }, index: number) => {
+  const renderGroup = (group: { id: string; label: string; items: typeof DASHBOARD_ITEM[] }) => {
     const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
     const opened = openMenu === group.id;
-    const colors = NAV_COLORS[index] ?? NAV_COLORS[0];
 
     return (
       <div key={group.id} className="relative shrink-0">
         <button
           type="button"
           onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
+          className={active
+            ? 'inline-flex h-11 items-center gap-2 rounded-[16px] bg-gradient-to-r from-violet-700 to-purple-600 px-6 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(109,40,217,0.24)]'
+            : 'inline-flex h-11 items-center gap-2 rounded-[16px] px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-950'}
           aria-expanded={opened}
-          className={cn(
-            'inline-flex h-11 items-center gap-2 rounded-[16px] px-5 text-sm font-semibold transition-all duration-200',
-            active
-              ? colors.active
-              : cn('text-slate-600', colors.hover),
-          )}
         >
-          {/* Colored dot for inactive state — subtle color hint */}
-          {!active && (
-            <span className={cn('h-[7px] w-[7px] shrink-0 rounded-full opacity-70', colors.dot)} />
-          )}
           <span className="whitespace-nowrap">{group.label}</span>
-          {group.items.length > 1 && (
-            <ChevronDown size={15} className={cn('shrink-0 transition-transform', opened && 'rotate-180')} />
-          )}
+          {group.items.length > 1 && <ChevronDown size={15} className={cn('shrink-0 transition-transform', opened && 'rotate-180')} />}
         </button>
 
         {group.items.length > 1 && opened && (
@@ -201,9 +134,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                     : 'flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50'}
                 >
                   <span>{item.label}</span>
-                  {item.isNew && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">New</span>
-                  )}
+                  {item.isNew && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">New</span>}
                 </button>
               );
             })}
@@ -217,8 +148,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     <header className="fixed inset-x-0 top-0 z-[100] border-b border-slate-200 bg-white/96 shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl">
       <div ref={headerRef} className="mx-auto flex w-full max-w-[1680px] flex-col gap-3 px-3 py-3 sm:px-6 lg:px-8">
         <div className="flex items-start gap-3">
-
-          {/* Mobile hamburger */}
           <button
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 lg:hidden"
             onClick={onMenuClick}
@@ -227,105 +156,94 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             <Menu size={18} />
           </button>
 
-          {/* Brand */}
           <div className="min-w-0 shrink-0 pr-2">
             <div className="truncate text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">619 Fitness Studio</div>
             <h1 className="truncate pt-1 text-[18px] font-semibold tracking-tight text-slate-950">{pageTitle}</h1>
           </div>
 
-          {/* Nav rows */}
           <div className="hidden min-w-0 flex-1 flex-col gap-2 lg:flex">
-            <nav aria-label="Primary navigation" className="flex min-w-0 flex-wrap items-center gap-1.5">
-              {primaryGroups.map((g, i) => renderGroup(g, i))}
+            <nav className="flex min-w-0 flex-wrap items-center gap-2">
+              {primaryGroups.map(renderGroup)}
             </nav>
             {secondaryGroups.length > 0 && (
-              <nav aria-label="Secondary navigation" className="flex min-w-0 flex-wrap items-center gap-1.5 pl-4">
-                {secondaryGroups.map((g, i) => renderGroup(g, i + 6))}
+              <nav className="flex min-w-0 flex-wrap items-center gap-2 pl-4">
+                {secondaryGroups.map(renderGroup)}
               </nav>
             )}
           </div>
 
-          {/* Right utilities */}
           <div className="ml-auto flex shrink-0 flex-col items-end gap-2">
             <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+            >
+              {hydrated ? (theme === 'light' ? <Moon size={18} /> : <Sun size={18} />) : <span style={{ width: 18 }} />}
+            </button>
 
-              {/* Theme toggle */}
+            <button
+              type="button"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              aria-label="Notifications"
+            >
+              <Bell size={18} />
+              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
+            </button>
+
+            <div className="relative">
               <button
                 type="button"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
+                onClick={() => toggleMenu('account')}
+                className="inline-flex h-11 items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-3 pr-4 shadow-sm transition hover:bg-slate-50"
+                aria-expanded={openMenu === 'account'}
               >
-                {hydrated ? (theme === 'light' ? <Moon size={18} /> : <Sun size={18} />) : <span style={{ width: 18 }} />}
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
+                  <img
+                    src="/619-logo.png"
+                    alt="619 Fitness Studio"
+                    className="h-full w-full object-cover"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; const next = e.currentTarget.nextElementSibling as HTMLElement | null; if (next) next.style.display = 'flex'; }}
+                  />
+                  <span className="hidden h-full w-full items-center justify-center bg-slate-100 text-xs font-semibold text-slate-700">{initials}</span>
+                </div>
+                <div className="hidden text-left xl:block">
+                  <div className="max-w-[220px] truncate text-[13px] font-semibold text-slate-900">{accountLabel}</div>
+                  <div className="text-xs lowercase text-slate-500">{roleLabel}</div>
+                </div>
+                <ChevronDown size={16} className={cn('text-slate-500 transition-transform', openMenu === 'account' && 'rotate-180')} />
               </button>
 
-              {/* Notifications */}
-              <button
-                type="button"
-                className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
-                aria-label="Notifications"
-              >
-                <Bell size={18} />
-                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
-              </button>
-
-              {/* Account */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => toggleMenu('account')}
-                  className="inline-flex h-11 items-center gap-3 rounded-[18px] border border-slate-200 bg-white px-3 pr-4 shadow-sm transition hover:bg-slate-50"
-                  aria-expanded={openMenu === 'account'}
-                >
-                  <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
-                    <img
-                      src="/619-logo.png"
-                      alt="619 Fitness Studio"
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
-                        const next = e.currentTarget.nextElementSibling as HTMLElement | null;
-                        if (next) next.style.display = 'flex';
-                      }}
-                    />
-                    <span className="hidden h-full w-full items-center justify-center bg-slate-100 text-xs font-semibold text-slate-700">{initials}</span>
-                  </div>
-                  <div className="hidden text-left xl:block">
-                    <div className="max-w-[220px] truncate text-[13px] font-semibold text-slate-900">{accountLabel}</div>
-                    <div className="text-xs lowercase text-slate-500">{roleLabel}</div>
-                  </div>
-                  <ChevronDown size={16} className={cn('text-slate-500 transition-transform', openMenu === 'account' && 'rotate-180')} />
-                </button>
-
-                {openMenu === 'account' && (
-                  <div className="absolute right-0 top-[calc(100%+10px)] z-[130] w-[240px] rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_24px_50px_rgba(15,23,42,0.12)]">
-                    <button type="button" onClick={handleResetPassword} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-                      <KeyRound size={16} className="text-violet-600" />
-                      Reset password
-                    </button>
-                    <button type="button" onClick={handleLogout} className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50">
-                      <LogOut size={16} />
-                      Log out
-                    </button>
-                  </div>
-                )}
-              </div>
+              {openMenu === 'account' && (
+                <div className="absolute right-0 top-[calc(100%+10px)] z-[130] w-[240px] rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_24px_50px_rgba(15,23,42,0.12)]">
+                  <button type="button" onClick={handleResetPassword} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                    <KeyRound size={16} className="text-violet-600" />
+                    Reset password
+                  </button>
+                  <button type="button" onClick={handleLogout} className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium text-rose-600 transition hover:bg-rose-50">
+                    <LogOut size={16} />
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
             </div>
 
-            {/* Search */}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
               className="hidden h-10 w-full max-w-[360px] items-center justify-between rounded-[16px] border border-slate-200 bg-white px-3 text-sm text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-700 lg:inline-flex"
             >
               <span className="flex items-center gap-2.5">
-                <Search size={15} className="text-slate-400" />
+                <Search size={15} className="text-slate-400 transition group-hover:text-slate-600" />
                 <span className="truncate">Search pages, members...</span>
               </span>
               <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold tracking-wide text-slate-500">⌘K</span>
             </button>
           </div>
         </div>
+
       </div>
     </header>
   );
