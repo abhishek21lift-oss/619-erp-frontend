@@ -104,7 +104,7 @@ function Inner() {
 
   const loadTargets = useCallback(() => {
     setLoading(true);
-    api.staff.targets.list(month)
+    api.staff.targets.list({ month })
       .then(d => setTargets(Array.isArray(d) ? d : []))
       .catch(e => setError(e.message || 'Failed to load'))
       .finally(() => setLoading(false));
