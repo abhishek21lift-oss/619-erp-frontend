@@ -15,12 +15,10 @@ interface RailRow {
 export interface SummaryRailProps {
   title?: string;
   eyebrow?: string;
-  // Legacy API
   rows?: RailRow[];
   total?: { label: string; value: string | number } | number;
-  // New API (pages pass `items` array + numeric `total`)
+  hideTotal?: boolean;
   items?: Array<{ label: string; value: string | number; highlight?: boolean; strikethrough?: boolean; muted?: boolean }>;
-  // Optional client preview (ignored for layout, accepted to avoid type errors)
   client?: any;
   children?: ReactNode;
 }
@@ -31,15 +29,15 @@ export function SummaryRail({
   rows,
   items,
   total,
+  hideTotal = false,
   children,
 }: SummaryRailProps) {
-  // Normalise: pages that pass `items` instead of `rows`
   const resolvedRows: RailRow[] = rows ?? items ?? [];
 
-  // Normalise total: pages pass a raw number, legacy passes { label, value }
   const resolvedTotal: { label: string; value: string | number } | undefined =
-    typeof total === 'number'
-      ? { label: 'Total', value: `₹ ${total.toLocaleString('en-IN')}` }
+    hideTotal ? undefined
+    : typeof total === 'number'
+      ? { label: 'Total', value: `\u20b9 ${total.toLocaleString('en-IN')}` }
       : total;
 
   return (
@@ -47,20 +45,14 @@ export function SummaryRail({
       <SectionHeading eyebrow={eyebrow} title={title} />
       <div className="space-y-2.5">
         {resolvedRows.map((row, i) => (
-          <motion.div
-            key={i}
-            layout
-            className="flex items-center justify-between text-sm"
-          >
+          <motion.div key={i} layout className="flex items-center justify-between text-sm">
             <span className={row.muted ? 'text-slate-400' : 'text-slate-600'}>{row.label}</span>
-            <span
-              className={[
-                'font-semibold',
-                row.highlight ? 'text-indigo-600' : '',
-                row.strikethrough ? 'line-through text-slate-400 font-normal' : '',
-                row.muted ? 'text-slate-400' : 'text-slate-900',
-              ].join(' ')}
-            >
+            <span className={[
+              'font-semibold',
+              row.highlight ? 'text-indigo-600' : '',
+              row.strikethrough ? 'line-through text-slate-400 font-normal' : '',
+              row.muted ? 'text-slate-400' : 'text-slate-900',
+            ].join(' ')}>
               {row.value}
             </span>
           </motion.div>
