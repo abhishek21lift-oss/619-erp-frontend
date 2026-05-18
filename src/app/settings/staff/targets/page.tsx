@@ -394,7 +394,7 @@ export default function StaffTargetsPage() {
     setLoading(true);
     try {
       const [t, s] = await Promise.all([
-        api.staff.targets.list(month),
+        api.staff.targets.list({ month }),
         api.staff.list(),
       ]);
       setTargets(Array.isArray(t) ? t : []);
