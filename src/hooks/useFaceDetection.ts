@@ -2,18 +2,17 @@
 /**
  * useFaceDetection — face-api.js wrapper
  *
- * @tensorflow/tfjs and face-api.js are MASSIVE (~4-8 MB each).
- * They must NEVER be statically bundled. We use webpackIgnore magic
- * comments so Turbopack/Webpack skip static analysis entirely —
- * the imports only execute at runtime in the browser, on demand.
+ * @tensorflow/tfjs and face-api.js are installed as npm deps (required for
+ * runtime resolution), but they must NEVER be SSR-evaluated.
  *
- * Fixes:
- * 1. modelStatus stale closure → replaced with ref
- * 2. Canvas size set before video metadata ready → resized each loop tick
- * 3. MIN_FACE_SIZE applied to raw (un-scaled) box.width
- * 4. TF backend selection hardened for Safari/iOS
- * 5. CDN fallback for face-api models (jsDelivr)
- * 6. TF + face-api excluded from SSR/static bundle via webpackIgnore
+ * Protection layers:
+ *  1. This hook is 'use client' — never runs on server
+ *  2. getFaceApi() guards with typeof window check before any import
+ *  3. The checkin page wraps CheckInContent in next/dynamic with ssr:false,
+ *     so this entire module tree is excluded from the SSR bundle
+ *
+ * The public/models files serve the actual neural network weights:
+ *   tiny_face_detector, face_landmark_68, face_recognition, ssd_mobilenetv1
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
@@ -62,24 +61,16 @@ export function useFaceDetection(): UseFaceDetectionReturn {
   const processingRef = useRef(false);
   const detectorRef = useRef<'ssd' | 'tiny'>('tiny');
 
-  /**
-   * Lazily imports TF + face-api ONLY in the browser, at runtime.
-   *
-   * The /* webpackIgnore: true *\/ comments tell both Webpack and Turbopack
-   * to skip static analysis of these imports — they are never bundled,
-   * never SSR'd, and never affect LCP. They load as separate network
-   * requests the first time the checkin page is actually used.
-   */
   const getFaceApi = useCallback(async () => {
     if (faceApiRef.current) return faceApiRef.current;
+    // Safety guard — should never reach here on server due to ssr:false wrapper
     if (typeof window === 'undefined') throw new Error('Browser only');
 
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/i.test(ua);
     const isSafari = /^((?!chrome|android).)*safari/i.test(ua) || isIOS;
 
-    // webpackIgnore keeps these OUT of the bundle — loaded at runtime only
-    const tf = await import(/* webpackIgnore: true */ '@tensorflow/tfjs' as string);
+    const tf = await import('@tensorflow/tfjs');
 
     try {
       if (isIOS || isSafari) {
@@ -100,7 +91,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
       try { await tf.setBackend('cpu'); await tf.ready(); } catch {}
     }
 
-    const faceapi = await import(/* webpackIgnore: true */ 'face-api.js' as string);
+    const faceapi = await import('face-api.js');
     faceApiRef.current = faceapi;
     return faceapi;
   }, []);
@@ -279,9 +270,9 @@ export function useFaceDetection(): UseFaceDetectionReturn {
           ctx.strokeStyle = '#818cf8';
           ctx.lineWidth = 3;
           ctx.setLineDash([]);
-          [[box.x, box.y], [box.x + box.width, box.y],
-           [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]
-          ].forEach(([cx, cy]: number[], i: number) => {
+          ([[box.x, box.y], [box.x + box.width, box.y],
+            [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]
+          ] as [number, number][]).forEach(([cx, cy], i) => {
             ctx.beginPath();
             ctx.moveTo(cx + (i % 2 === 0 ? cl : -cl), cy);
             ctx.lineTo(cx, cy);
