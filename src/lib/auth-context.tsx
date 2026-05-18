@@ -3,64 +3,89 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, User } from './api';
 
 interface Ctx {
-  user: User | null; token: string | null; loading: boolean;
+  user: User | null;
+  token: string | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
-const AuthContext = createContext<Ctx>({ user:null, token:null, loading:true, login:async()=>{}, logout:()=>{} });
+
+const AuthContext = createContext<Ctx>({
+  user: null, token: null, loading: true,
+  login: async () => {}, logout: () => {},
+});
+
+// Safe localStorage helpers — silently fail on SSR or quota exceeded
+function lsGet(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function lsSet(key: string, val: string): void {
+  try { localStorage.setItem(key, val); } catch { /* quota exceeded or SSR */ }
+}
+function lsDel(key: string): void {
+  try { localStorage.removeItem(key); } catch { /* SSR */ }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser]     = useState<User|null>(null);
-  const [token, setToken]   = useState<string|null>(null);
+  const [user,    setUser]    = useState<User | null>(null);
+  const [token,   setToken]   = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const t = localStorage.getItem('619_token');
-    const u = localStorage.getItem('619_user');
+    const t = lsGet('619_token');
+    const u = lsGet('619_user');
+
     if (!t || !u) { setLoading(false); return; }
 
-    try { setToken(t); setUser(JSON.parse(u)); }
-    catch {
-      localStorage.removeItem('619_token');
-      localStorage.removeItem('619_user');
-      setLoading(false);
-      return;
+    let parsed: User | null = null;
+    try { parsed = JSON.parse(u) as User; } catch {
+      lsDel('619_token'); lsDel('619_user');
+      setLoading(false); return;
     }
 
-    // Validate the token against the API. If the JWT secret has rotated
-    // (or the user was disabled / deleted), clear it and force a fresh login.
-    // ALWAYS take the server's copy of the user — that way role / trainer_id
-    // changes (e.g. an admin links the trainer profile) are picked up on
-    // the very next page load without making the user log out and back in.
+    setToken(t);
+    setUser(parsed);
+
+    // Validate the token and refresh the user record from the server.
+    // If the JWT has expired / been rotated, clear credentials and redirect.
     api.auth.me()
       .then(res => {
         if (res?.user) {
           setUser(res.user as User);
-          try { localStorage.setItem('619_user', JSON.stringify(res.user)); } catch {}
+          lsSet('619_user', JSON.stringify(res.user));
         }
       })
       .catch(() => {
-        localStorage.removeItem('619_token');
-        localStorage.removeItem('619_user');
-        setToken(null); setUser(null);
+        lsDel('619_token');
+        lsDel('619_user');
+        setToken(null);
+        setUser(null);
       })
       .finally(() => setLoading(false));
   }, []);
 
   async function login(email: string, password: string) {
     const data = await api.auth.login(email, password);
-    setToken(data.token); setUser(data.user);
-    localStorage.setItem('619_token', data.token);
-    localStorage.setItem('619_user', JSON.stringify(data.user));
+    setToken(data.token);
+    setUser(data.user);
+    lsSet('619_token', data.token);
+    lsSet('619_user', JSON.stringify(data.user));
   }
 
   function logout() {
-    setToken(null); setUser(null);
-    localStorage.removeItem('619_token');
-    localStorage.removeItem('619_user');
+    // Fire-and-forget server-side logout (invalidate token if backend supports it)
+    api.auth.logout?.();
+    setToken(null);
+    setUser(null);
+    lsDel('619_token');
+    lsDel('619_user');
   }
 
-  return <AuthContext.Provider value={{ user, token, loading, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);

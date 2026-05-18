@@ -1,40 +1,52 @@
-# ─── Stage 1: deps ───────────────────────────────────────────────────
+# ─── Stage 1: Install ALL dependencies (including devDeps for build) ─
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Install ALL deps (devDeps needed for TypeScript + Next.js build)
+# Use --legacy-peer-deps for face-api.js / TensorFlow peer-dep conflicts
+RUN npm ci --legacy-peer-deps
 
-# ─── Stage 2: builder ────────────────────────────────────────────────
+# ─── Stage 2: Build ────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Disable Next.js telemetry in CI
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN npm run build
 
-# ─── Stage 3: runner ─────────────────────────────────────────────────
+# ─── Stage 3: Production runner (minimal image) ────────────────────
 FROM node:20-alpine AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Non-root user
+# Non-root user for security
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
 
+# Copy public assets
 COPY --from=builder /app/public ./public
+
+# Copy standalone server (output:'standalone' in next.config.js generates this)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy package.json so version is readable at runtime
+COPY --from=builder /app/package.json ./package.json
+
 USER nextjs
+
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+# Health check using wget (alpine has wget, not curl by default)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD wget -qO- http://localhost:3000/api/health || exit 1
 
 CMD ["node", "server.js"]

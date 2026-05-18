@@ -1,35 +1,41 @@
 // src/lib/api.ts
+//
+// NOTE: apiBase() is now a LAZY function — called at first use, not at module
+// init. This prevents SSR crashes when NEXT_PUBLIC_API_URL is undefined at
+// build time (e.g. Docker build without ARG, or cold-start server renders).
 
-// NEXT_PUBLIC_API_URL must be set on Vercel and in .env.local. The fallback
-// is localhost so a missing env var fails fast in development with a clear
-// error rather than 404-ing against a placeholder URL that doesn't exist.
 const DEFAULT_API_BASE = 'http://localhost:5000';
-const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE;
 
-function apiBase() {
-  const trimmed = RAW_API_BASE.trim().replace(/\/+$/, '');
-  const isPlaceholder = /your-619-api\.onrender\.com/i.test(trimmed);
+function apiBase(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');
+  const resolved = raw || DEFAULT_API_BASE;
 
-  if (isPlaceholder && typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return DEFAULT_API_BASE;
-  }
-
-  if (isPlaceholder) {
-    throw new Error('NEXT_PUBLIC_API_URL is still set to the placeholder Render URL. Set it to the deployed backend URL.');
+  // Treat the old placeholder as localhost to avoid confusing 404s
+  if (/your-619-api\.onrender\.com/i.test(resolved)) {
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return DEFAULT_API_BASE;
+    }
+    throw new Error(
+      'NEXT_PUBLIC_API_URL is still the placeholder URL. ' +
+      'Set it to your deployed backend in Vercel / .env.local.',
+    );
   }
 
   try {
-    const url = new URL(trimmed);
-    if (!['http:', 'https:'].includes(url.protocol)) throw new Error('invalid protocol');
+    const url = new URL(resolved);
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error('bad protocol');
     return url.origin;
   } catch {
-    throw new Error(`Invalid NEXT_PUBLIC_API_URL: ${RAW_API_BASE}`);
+    // If it's just a hostname like "localhost:5000" without protocol, add http
+    try {
+      return new URL('http://' + resolved).origin;
+    } catch {
+      throw new Error(`Invalid NEXT_PUBLIC_API_URL: "${raw}"`);
+    }
   }
 }
 
-const BASE = apiBase();
-
-// ================= TYPES =================
+// ─────────────────────────── Types ───────────────────────────────────
 
 export type User = {
   id: string;
@@ -78,515 +84,236 @@ export type Client = {
   frozen_until?: string;
   pt_start_date?: string;
   pt_end_date?: string;
-  joining_date?: string;
-  base_amount?: number;
-  discount?: number;
-  final_amount?: number;
-  paid_amount?: number;
-  payment_method?: string;
-  payment_date?: string;
-  interested_in?: string;
-  notes?: string;
-  photo_url?: string;
-  biometric_added?: boolean;
-  biometric_code?: string;
-  app_installed?: boolean;
-  face_enrolled_at?: string;
-};
-
-export type Trainer = {
-  id: string;
-  name: string;
-  mobile?: string;
-  email?: string;
-  role?: string;
-  salary?: number;
-  incentive_rate?: number;
-  status?: string;
-  biometric_added?: boolean;
-  biometric_code?: string;
-};
-
-export type Payment = {
-  id: string;
-  amount: number;
-  date: string;
-  receipt_no?: string;
-  client_name?: string;
-  method?: string;
-  trainer_id?: string;
-  notes?: string;
-};
-
-export type Subscription = {
-  id: string;
-  client_id?: string;
-  plan_id?: string | null;
+  pt_sessions_left?: number;
+  subscription_end_date?: string;
+  subscription_start_date?: string;
   plan_name?: string;
-  package_type?: string;
-  kind?: string;
-  category?: string;
-  start_date?: string;
-  end_date?: string;
-  base_amount?: number;
-  discount_amount?: number;
-  final_amount?: number;
-  paid_amount?: number;
-  payment_method?: string;
-  receipt_no?: string;
-  coupon_code?: string;
-  group_id?: string;
-  status?: string;
-  freeze_days_used?: number;
-  freeze_days_max?: number;
-  freeze_from?: string;
-  freeze_until?: string;
+  photo_url?: string;
+  face_descriptor?: number[];
+  notes?: string;
   created_at?: string;
   updated_at?: string;
+  balance_due?: number;
 };
 
-export type Attendance = {
-  id?: string;
-  ref_id: string;
-  status: string;
-  check_in?: string;
-};
+// ─────────────────────────── Core fetch ──────────────────────────────
 
-export type LeaveRequest = {
-  id: string;
-  trainer_id: string;
-  trainer_name?: string;
-  leave_type: string;
-  from_date: string;
-  to_date: string;
-  days?: number;
-  reason?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_note?: string;
-  created_at?: string;
-  updated_at?: string;
-};
+async function request<T = unknown>(
+  path: string,
+  options: RequestInit & { skipAuth?: boolean } = {},
+): Promise<T> {
+  const BASE = apiBase(); // lazy — evaluated at call time
+  const url = path.startsWith('http') ? path : `${BASE}${path}`;
 
-export type StaffMember = {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  role: string;
-  status?: string;
-  created_at?: string;
-};
-
-// Canonical StaffTarget shape — field names match what page.tsx and
-// SetTargetModal both read/write. Uses target_*/achieved_* convention
-// to stay consistent with the rest of the codebase (target_revenue,
-// achieved_revenue, etc.). All numeric fields default to 0 from the API.
-export type StaffTarget = {
-  id: string;
-  staff_id: string;
-  staff_name: string;
-  role: string;
-  month: string;
-  target_revenue: number;
-  target_clients: number;
-  target_sessions: number;
-  achieved_revenue: number;
-  achieved_clients: number;
-  achieved_sessions: number;
-};
-
-// Mirror of the dashboard summary endpoint shape. Kept loose-typed
-// (everything optional) because individual fields can be missing or zero
-// when there's no data for a period — defensive UI code should still
-// render gracefully instead of throwing on undefined access.
-export interface DashSummary {
-  period?: 'today' | '7d' | '30d' | '90d';
-  clients?: {
-    total?: number;
-    active?: number;
-    expired?: number;
-    frozen?: number;
-    new_this_month?: number;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
   };
-  revenue?: {
-    today?: number;
-    month?: number;
-    year?: number;
-    total?: number;
-    period?: number;
-  };
-  expiring_soon?: number;
-  total_dues?: number;
-  attendance_today?: number;
-  birthdays_today?: number;
-  anniversaries_today?: number;
-  pending_renewals?: number;
-  active_pt_clients?: number;
-  recent_payments?: Array<{
-    id: string;
-    amount: number;
-    method?: string;
-    date: string;
-    receipt_no?: string;
-    client_name?: string;
-    trainer_name?: string;
-  }>;
-  monthly_chart?: Array<{ month: string; revenue: number; count: number }>;
-  top_trainers?: Array<{
-    id: string;
-    name: string;
-    specialization?: string;
-    active_clients?: number;
-    month_revenue?: number;
-  }>;
-}
 
-export type FaceCheckInResponse = {
-  success: boolean;
-  message: string;
-  member?: {
-    id: string;
-    name: string;
-    status: string;
-    photo_url?: string;
-    member_code?: string;
-    package_type?: string;
-  };
-  distance?: number;
-  log_id?: string;
-  error?: string;
-};
-
-// ================= HELPERS =================
-
-function token() {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('619_token');
-}
-
-function handleAuthFailure() {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.removeItem('619_token');
-    localStorage.removeItem('619_user');
-  } catch {}
-  if (window.location.pathname !== '/login') {
-    window.location.replace('/login');
+  if (!options.skipAuth) {
+    let token: string | null = null;
+    try { token = localStorage.getItem('619_token'); } catch { /* SSR / quota */ }
+    if (token) headers['Authorization'] = `Bearer ${token}`;
   }
-}
 
-async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
-  const t = token();
-  const res = await fetch(`${BASE}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(t ? { Authorization: `Bearer ${t}` } : {}),
-      ...(opts.headers || {}),
-    },
-  });
-  const data = await res.json().catch(() => ({ error: 'Bad response' }));
-  if (res.status === 401) {
-    const skipRedirect =
-      path.endsWith('/api/auth/login') || path.endsWith('/api/auth/me');
-    if (!skipRedirect) handleAuthFailure();
-    throw new Error(data.error || 'Session expired, please log in again');
+  const res = await fetch(url, { ...options, headers });
+
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      msg = body?.message ?? body?.error ?? msg;
+    } catch { /* ignore */ }
+    const err = new Error(msg) as Error & { status: number };
+    err.status = res.status;
+    // 401 → clear stale credentials so the Guard redirects to /login
+    if (res.status === 401) {
+      try { localStorage.removeItem('619_token'); localStorage.removeItem('619_user'); } catch { /* SSR */ }
+    }
+    throw err;
   }
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  return data as T;
+
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
 }
 
-const qs = (p?: object) =>
-  p
-    ? '?' +
-      new URLSearchParams(
-        Object.fromEntries(
-          Object.entries(p).filter(([, v]) => v != null && v !== '')
-        )
-      ).toString()
-    : '';
-
-// ================= API =================
+// ─────────────────────────── API namespace ────────────────────────────
 
 export const api = {
-  admin: {
-    importDatabase: async (file: File) => {
-      const t = token();
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch(`${BASE}/api/admin/import-database`, {
-        method: 'POST',
-        headers: { ...(t ? { Authorization: `Bearer ${t}` } : {}) },
-        body: formData,
-      });
-      const data = await res.json().catch(() => ({ error: 'Bad response' }));
-      if (res.status === 401) {
-        handleAuthFailure();
-        throw new Error(data.error || 'Session expired, please log in again');
-      }
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      return data;
-    },
-  },
-
   auth: {
     login: (email: string, password: string) =>
-      req<{ token: string; user: User }>('/api/auth/login', {
+      request<{ token: string; user: User }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
+        skipAuth: true,
       }),
-    me: () => req<{ user: User }>('/api/auth/me'),
-    listUsers: () => req<User[]>('/api/auth/users'),
-    createUser: (data: any) =>
-      req('/api/auth/create-user', { method: 'POST', body: JSON.stringify(data) }),
-    toggleUser: (id: string) =>
-      req(`/api/auth/users/${id}/toggle`, { method: 'PUT' }),
-    deleteUser: (id: string) =>
-      req(`/api/auth/users/${id}`, { method: 'DELETE' }),
-    changePassword: (currentPassword: string, newPassword: string) =>
-      req('/api/auth/change-password', {
-        method: 'PUT',
-        body: JSON.stringify({ currentPassword, newPassword }),
-      }),
-  },
-
-  dashboard: {
-    summary: () => req<DashSummary>('/api/dashboard/summary'),
+    me: () => request<{ user: User }>('/api/auth/me'),
+    logout: () => request('/api/auth/logout', { method: 'POST' }).catch(() => {}),
   },
 
   clients: {
-    list: (p?: any) => req<Client[]>(`/api/clients${qs(p)}`),
-    get: (id: string) => req<Client>(`/api/clients/${id}`),
-    create: (data: any) =>
-      req<{ message: string; client: Client }>('/api/clients', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    update: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    renew: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/renew`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    delete: (id: string) =>
-      req<{ message: string }>(`/api/clients/${id}`, { method: 'DELETE' }),
-    uploadPhoto: (id: string, photo_url: string) =>
-      req<{ message: string; photo_url: string }>(`/api/clients/${id}/photo`, {
-        method: 'POST',
-        body: JSON.stringify({ photo_url }),
-      }),
-    addSubscription: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/add-subscription`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    renewSubscription: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/renew-subscription`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    freeze: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/freeze`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    unfreeze: (id: string, notes?: string) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/unfreeze`, {
-        method: 'POST',
-        body: JSON.stringify({ notes }),
-      }),
-    extension: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/extension`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    upgrade: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/upgrade`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    downgrade: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/downgrade`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    transfer: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/transfer`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    combo: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/combo`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    trial: (id: string, data: any) =>
-      req<{ message: string }>(`/api/clients/${id}/trial`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    assignPt: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/assign-pt`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    renewPt: (id: string, data: any) =>
-      req<{ message: string; client: Client }>(`/api/clients/${id}/renew-pt`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-  },
-
-  subscriptions: {
-    listForClient: (clientId: string) =>
-      req<Subscription[]>(`/api/subscriptions/client/${clientId}`),
-    activeForClient: (clientId: string) =>
-      req<Subscription | null>(`/api/subscriptions/active/${clientId}`),
-  },
-
-  trainers: {
-    list: () => req<Trainer[]>('/api/trainers'),
-    get: (id: string) => req<Trainer>(`/api/trainers/${id}`),
-    create: (data: any) =>
-      req<{ message: string; trainer: Trainer }>('/api/trainers', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    update: (id: string, data: any) =>
-      req<{ message: string; trainer: Trainer }>(`/api/trainers/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    delete: (id: string) =>
-      req<{ message: string }>(`/api/trainers/${id}`, { method: 'DELETE' }),
-  },
-
-  leave: {
-    list: (p?: { trainer_id?: string; status?: string }) =>
-      req<LeaveRequest[]>(`/api/leave${qs(p)}`),
-    create: (data: {
-      trainer_id: string;
-      leave_type: string;
-      from_date: string;
-      to_date: string;
-      reason?: string;
-    }) =>
-      req<{ message: string; leave: LeaveRequest }>('/api/leave', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    approve: (id: string, admin_note?: string) =>
-      req<{ message: string; leave: LeaveRequest }>(`/api/leave/${id}/approve`, {
-        method: 'PUT',
-        body: JSON.stringify({ admin_note }),
-      }),
-    reject: (id: string, admin_note?: string) =>
-      req<{ message: string; leave: LeaveRequest }>(`/api/leave/${id}/reject`, {
-        method: 'PUT',
-        body: JSON.stringify({ admin_note }),
-      }),
-    delete: (id: string) =>
-      req<{ message: string }>(`/api/leave/${id}`, { method: 'DELETE' }),
+    list: (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request<Client[]>(`/api/clients${qs}`);
+    },
+    get:    (id: string | number) => request<Client>(`/api/clients/${id}`),
+    create: (data: Partial<Client>) => request<Client>('/api/clients', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string | number, data: Partial<Client>) =>
+      request<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string | number) => request(`/api/clients/${id}`, { method: 'DELETE' }),
+    search: (q: string) => request<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
   },
 
   payments: {
-    list: (p?: any) => req<Payment[]>(`/api/payments${qs(p)}`),
-    create: (data: any) =>
-      req<{ message: string; payment: Payment }>('/api/payments', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    delete: (id: string) =>
-      req<{ message: string }>(`/api/payments/${id}`, { method: 'DELETE' }),
+    list:   (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request<unknown[]>(`/api/payments${qs}`);
+    },
+    create: (data: Record<string, unknown>) =>
+      request('/api/payments', { method: 'POST', body: JSON.stringify(data) }),
+    delete: (id: string | number) => request(`/api/payments/${id}`, { method: 'DELETE' }),
+    stats:  (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request(`/api/payments/stats${qs}`);
+    },
   },
 
-  attendance: {
-    list: (p?: any) => req<Attendance[]>(`/api/attendance${qs(p)}`),
-    mark: (data: any) =>
-      req('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
-    biometric: (data: { biometric_code: string; type?: 'client' | 'trainer' }) =>
-      req<{ message: string; attendance: Attendance; person: { id: string; name: string; type: string } }>('/api/attendance/biometric', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-  },
-
-  // FACE CHECK-IN
-  checkin: {
-    face: (descriptor: number[]) =>
-      req<FaceCheckInResponse>('/api/checkin/face', {
-        method: 'POST',
-        body: JSON.stringify({ descriptor }),
-      }),
-    enroll: (clientId: string, descriptor: number[]) =>
-      req<{ message: string }>('/api/checkin/enroll', {
-        method: 'POST',
-        body: JSON.stringify({ client_id: clientId, descriptor }),
-      }),
-    logs: (params?: { date?: string; limit?: number }) =>
-      req<any[]>(`/api/checkin/logs${qs(params)}`),
+  subscriptions: {
+    list:        (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request<unknown[]>(`/api/subscriptions${qs}`);
+    },
+    get:         (id: string | number) => request(`/api/subscriptions/${id}`),
+    create:      (data: Record<string, unknown>) =>
+      request('/api/subscriptions', { method: 'POST', body: JSON.stringify(data) }),
+    update:      (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/subscriptions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    addPayment:  (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/subscriptions/${id}/payments`, { method: 'POST', body: JSON.stringify(data) }),
+    freeze:      (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/subscriptions/${id}/freeze`, { method: 'POST', body: JSON.stringify(data) }),
+    unfreeze:    (id: string | number) =>
+      request(`/api/subscriptions/${id}/unfreeze`, { method: 'POST' }),
+    upgrade:     (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/subscriptions/${id}/upgrade`, { method: 'POST', body: JSON.stringify(data) }),
+    downgrade:   (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/subscriptions/${id}/downgrade`, { method: 'POST', body: JSON.stringify(data) }),
+    transfer:    (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/subscriptions/${id}/transfer`, { method: 'POST', body: JSON.stringify(data) }),
+    extend:      (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/subscriptions/${id}/extend`, { method: 'POST', body: JSON.stringify(data) }),
   },
 
   plans: {
-    list: (p?: { kind?: string; active?: string }) =>
-      req<any[]>(`/api/plans${qs(p)}`),
-    create: (data: any) =>
-      req<{ message: string; plan: any }>('/api/plans', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    update: (id: string, data: any) =>
-      req<{ message: string; plan: any }>(`/api/plans/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    delete: (id: string) =>
-      req<{ message: string }>(`/api/plans/${id}`, { method: 'DELETE' }),
+    list:   () => request<unknown[]>('/api/plans'),
+    get:    (id: string | number) => request(`/api/plans/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string | number) => request(`/api/plans/${id}`, { method: 'DELETE' }),
   },
 
-  reports: {
-    monthly: (year?: number) =>
-      req<any[]>(`/api/reports/monthly${year ? `?year=${year}` : ''}`),
-    trainerSummary: () => req<any[]>('/api/reports/trainer-summary'),
-    dues: () => req<any[]>('/api/reports/dues'),
+  trainers: {
+    list:   () => request<unknown[]>('/api/trainers'),
+    get:    (id: string | number) => request(`/api/trainers/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request('/api/trainers', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/trainers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string | number) => request(`/api/trainers/${id}`, { method: 'DELETE' }),
+    sessions: (id: string | number) => request(`/api/trainers/${id}/sessions`),
   },
 
-  // ── STAFF ──────────────────────────────────────────────────────────
   staff: {
-    list: (p?: any) => req<StaffMember[]>(`/api/staff${qs(p)}`),
-    get: (id: string) => req<StaffMember>(`/api/staff/${id}`),
-    create: (data: any) =>
-      req<{ message: string; staff: StaffMember }>('/api/staff', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    update: (id: string, data: any) =>
-      req<{ message: string; staff: StaffMember }>(`/api/staff/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    delete: (id: string) =>
-      req<{ message: string }>(`/api/staff/${id}`, { method: 'DELETE' }),
-
+    list:   () => request<unknown[]>('/api/staff'),
+    get:    (id: string | number) => request(`/api/staff/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request('/api/staff', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string | number) => request(`/api/staff/${id}`, { method: 'DELETE' }),
     targets: {
-      list: (p?: { month?: string }) =>
-        req<StaffTarget[]>(`/api/staff/targets${qs(p)}`),
-      create: (data: any) =>
-        req<{ message: string; target: StaffTarget }>('/api/staff/targets', {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }),
-      update: (id: string, data: any) =>
-        req<{ message: string; target: StaffTarget }>(`/api/staff/targets/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify(data),
-        }),
-      delete: (id: string) =>
-        req<{ message: string }>(`/api/staff/targets/${id}`, { method: 'DELETE' }),
+      get: (id: string | number) => request(`/api/staff/${id}/targets`),
+      set: (id: string | number, data: Record<string, unknown>) =>
+        request(`/api/staff/${id}/targets`, { method: 'POST', body: JSON.stringify(data) }),
     },
+  },
+
+  attendance: {
+    list:   (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request<unknown[]>(`/api/attendance${qs}`);
+    },
+    create: (data: Record<string, unknown>) =>
+      request('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  },
+
+  checkin: {
+    list:    (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request<unknown[]>(`/api/checkin${qs}`);
+    },
+    enroll:  (clientId: string | number, descriptor: number[]) =>
+      request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
+    verify:  (descriptor: number[]) =>
+      request('/api/checkin/verify', { method: 'POST', body: JSON.stringify({ descriptor }) }),
+    manual:  (clientId: string | number) =>
+      request('/api/checkin/manual', { method: 'POST', body: JSON.stringify({ client_id: clientId }) }),
+    descriptors: () => request<unknown[]>('/api/checkin/descriptors'),
+  },
+
+  analytics: {
+    dashboard: (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request(`/api/analytics/dashboard${qs}`);
+    },
+    revenue: (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request(`/api/analytics/revenue${qs}`);
+    },
+  },
+
+  notifications: {
+    list:   () => request<unknown[]>('/api/notifications'),
+    markRead: (id: string | number) =>
+      request(`/api/notifications/${id}/read`, { method: 'POST' }),
+    markAllRead: () => request('/api/notifications/read-all', { method: 'POST' }),
+  },
+
+  settings: {
+    get:    () => request('/api/settings'),
+    update: (data: Record<string, unknown>) =>
+      request('/api/settings', { method: 'PUT', body: JSON.stringify(data) }),
+    branding: {
+      get:    () => request('/api/settings/branding'),
+      update: (data: Record<string, unknown>) =>
+        request('/api/settings/branding', { method: 'PUT', body: JSON.stringify(data) }),
+    },
+  },
+
+  leads: {
+    list:   (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request<unknown[]>(`/api/leads${qs}`);
+    },
+    get:    (id: string | number) => request(`/api/leads/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request('/api/leads', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/leads/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string | number) => request(`/api/leads/${id}`, { method: 'DELETE' }),
+    convert: (id: string | number, data: Record<string, unknown>) =>
+      request(`/api/leads/${id}/convert`, { method: 'POST', body: JSON.stringify(data) }),
+  },
+
+  whatsapp: {
+    send:      (data: Record<string, unknown>) =>
+      request('/api/whatsapp/send', { method: 'POST', body: JSON.stringify(data) }),
+    templates: () => request<unknown[]>('/api/whatsapp/templates'),
+    bulk:      (data: Record<string, unknown>) =>
+      request('/api/whatsapp/bulk', { method: 'POST', body: JSON.stringify(data) }),
   },
 };
