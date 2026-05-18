@@ -224,9 +224,22 @@ function AiInsightBanner({ payments, kpis }: { payments: Payment[]; kpis: { tota
   const cashPct = payments.length > 0
     ? Math.round((payments.filter(p => p.method === 'CASH').length / payments.length) * 100)
     : null;
-  const insight = rate !== null
-    ? `Collection efficiency is at ${rate}%. ${rate >= 80 ? 'Strong performance — consider rewarding top payers.' : 'Focus on ${kpis.dueTot > 0 ? fmtCompact(kpis.dueTot) : 'outstanding'} in dues.'} ${cashPct !== null ? `${cashPct}% of transactions are cash — encourage digital payments for faster reconciliation.` : ''}`
-    : 'Add payment records to unlock AI-powered revenue insights and forecasting.';
+
+  // Build insight string without nested template literals
+  let insight: string;
+  if (rate !== null) {
+    const dueText = kpis.dueTot > 0 ? fmtCompact(kpis.dueTot) : 'outstanding';
+    const focusMsg = rate >= 80
+      ? 'Strong performance — consider rewarding top payers.'
+      : 'Focus on ' + dueText + ' in dues.';
+    const cashMsg = cashPct !== null
+      ? ' ' + String(cashPct) + '% of transactions are cash — encourage digital payments for faster reconciliation.'
+      : '';
+    insight = 'Collection efficiency is at ' + String(rate) + '%. ' + focusMsg + cashMsg;
+  } else {
+    insight = 'Add payment records to unlock AI-powered revenue insights and forecasting.';
+  }
+
   return (
     <div style={{
       background: 'linear-gradient(135deg, rgba(124,58,237,0.07) 0%, rgba(79,70,229,0.05) 50%, rgba(14,165,233,0.05) 100%)',
@@ -404,12 +417,6 @@ function RevenuHero({ kpis, payments, methodBreakdown, onRefresh, loading }: {
   onRefresh: () => void; loading: boolean;
 }) {
   const rate = kpis.total + kpis.dueTot > 0 ? Math.round((kpis.total / (kpis.total + kpis.dueTot)) * 100) : 0;
-  const methodGradients: Record<string, string> = {
-    CASH: 'linear-gradient(135deg,#059669,#10b981)',
-    UPI: 'linear-gradient(135deg,#2563eb,#3b82f6)',
-    CARD: 'linear-gradient(135deg,#7c3aed,#8b5cf6)',
-    BANK_TRANSFER: 'linear-gradient(135deg,#ea580c,#f97316)',
-  };
   return (
     <div style={{
       background: 'linear-gradient(135deg,#0f0c29 0%,#302b63 45%,#24243e 100%)',
