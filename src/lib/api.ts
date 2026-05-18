@@ -289,8 +289,10 @@ export const api = {
     },
     create: (data: Record<string, unknown>) =>
       request('/api/checkin', { method: 'POST', body: JSON.stringify(data) }),
-    enroll: (clientId: string, descriptors: number[][]) =>
-      request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptors }) }),
+    // FIX: was (clientId, descriptors: number[][]) sending key "descriptors" (plural).
+    // Backend expects key "descriptor" (singular) and a flat number[128] array.
+    enroll: (clientId: string, descriptor: number[]) =>
+      request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
     descriptors: () => request<unknown[]>('/api/checkin/descriptors'),
   },
 

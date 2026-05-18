@@ -9,12 +9,12 @@
  *   Adding 'unsafe-eval' globally weakens the CSP for every page.
  *
  * FIX:
- *   We match ONLY the /checkin route with a relaxed CSP and keep the strict
- *   policy everywhere else. Next.js applies `headers()` rules in order — the
- *   first matching source wins.
+ *   We match ONLY the routes that use face-api.js with a relaxed CSP and keep
+ *   the strict policy everywhere else. Next.js applies `headers()` rules in order
+ *   — the first matching source wins.
  *
- *   /checkin gets: script-src 'self' 'unsafe-inline' 'unsafe-eval'
- *   All other routes keep:  script-src 'self' 'unsafe-inline'
+ *   Relaxed paths: /checkin, /checkin/*, /clients/[id]/biometric
+ *   All other routes keep the strict policy.
  */
 
 const STRICT_CSP = [
@@ -93,7 +93,7 @@ const nextConfig = {
 
   async headers() {
     return [
-      // ── /checkin route: relaxed CSP with unsafe-eval for TF.js ──
+      // ── Relaxed CSP: /checkin routes ────────────────────────────────────
       {
         source: '/checkin',
         headers: [
@@ -108,7 +108,15 @@ const nextConfig = {
           { key: 'Content-Security-Policy', value: CHECKIN_CSP },
         ],
       },
-      // ── All other routes: strict CSP (no unsafe-eval) ──
+      // ── Relaxed CSP: biometric enrollment page (uses face-api.js) ───────
+      {
+        source: '/clients/:id/biometric',
+        headers: [
+          ...BASE_SECURITY_HEADERS,
+          { key: 'Content-Security-Policy', value: CHECKIN_CSP },
+        ],
+      },
+      // ── All other routes: strict CSP (no unsafe-eval) ────────────────────
       {
         source: '/(.*)',
         headers: [
