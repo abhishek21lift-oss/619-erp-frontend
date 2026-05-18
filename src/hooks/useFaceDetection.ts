@@ -1,17 +1,23 @@
 'use client';
 /**
- * useFaceDetection — face-api.js wrapper with fixes for:
- * 1. modelStatus stale closure in loadModels() → replaced with a ref
+ * useFaceDetection — face-api.js wrapper
+ *
+ * @tensorflow/tfjs and face-api.js are MASSIVE (~4-8 MB each).
+ * They must NEVER be statically bundled. We use webpackIgnore magic
+ * comments so Turbopack/Webpack skip static analysis entirely —
+ * the imports only execute at runtime in the browser, on demand.
+ *
+ * Fixes:
+ * 1. modelStatus stale closure → replaced with ref
  * 2. Canvas size set before video metadata ready → resized each loop tick
- * 3. MIN_FACE_SIZE applied to raw (un-scaled) box.width now
+ * 3. MIN_FACE_SIZE applied to raw (un-scaled) box.width
  * 4. TF backend selection hardened for Safari/iOS
- * 5. CDN fallback added for face-api models (jsDelivr)
+ * 5. CDN fallback for face-api models (jsDelivr)
+ * 6. TF + face-api excluded from SSR/static bundle via webpackIgnore
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
 
-// Model sources tried in order. CDN fallback ensures models always load even if
-// /public/models is missing from the deployment.
 const MODEL_SOURCES = [
   '/models',
   '/face-models',
@@ -19,8 +25,8 @@ const MODEL_SOURCES = [
 ];
 
 const RECOGNITION_THRESHOLD = 0.50;
-const DETECTION_INTERVAL_MS = 150;  // ~6-7fps for inference, smooth enough
-const MIN_FACE_SIZE_PX = 60;        // applied to raw videoWidth coords now
+const DETECTION_INTERVAL_MS = 150;
+const MIN_FACE_SIZE_PX = 60;
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -44,26 +50,37 @@ export function useFaceDetection(): UseFaceDetectionReturn {
   const [modelStatus, setModelStatus] = useState<ModelStatus>('idle');
   const [modelError, setModelError] = useState('');
 
-  // FIX: use a ref for model status so async callbacks never see stale value
   const modelStatusRef = useRef<ModelStatus>('idle');
-  const setModelStatusSync = (s: ModelStatus) => { modelStatusRef.current = s; setModelStatus(s); };
+  const setModelStatusSync = (s: ModelStatus) => {
+    modelStatusRef.current = s;
+    setModelStatus(s);
+  };
 
   const faceApiRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const lastRunRef = useRef<number>(0);
   const processingRef = useRef(false);
-  const detectorRef = useRef<'ssd' | 'tiny'>('tiny'); // default tiny; upgrade to ssd if available
+  const detectorRef = useRef<'ssd' | 'tiny'>('tiny');
 
+  /**
+   * Lazily imports TF + face-api ONLY in the browser, at runtime.
+   *
+   * The /* webpackIgnore: true *\/ comments tell both Webpack and Turbopack
+   * to skip static analysis of these imports — they are never bundled,
+   * never SSR'd, and never affect LCP. They load as separate network
+   * requests the first time the checkin page is actually used.
+   */
   const getFaceApi = useCallback(async () => {
     if (faceApiRef.current) return faceApiRef.current;
+    if (typeof window === 'undefined') throw new Error('Browser only');
 
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad|iPod/i.test(ua);
     const isSafari = /^((?!chrome|android).)*safari/i.test(ua) || isIOS;
 
-    const tf = await import('@tensorflow/tfjs');
+    // webpackIgnore keeps these OUT of the bundle — loaded at runtime only
+    const tf = await import(/* webpackIgnore: true */ '@tensorflow/tfjs' as string);
 
-    // FIX: proper backend selection — webgl for desktop, cpu for iOS/Safari
     try {
       if (isIOS || isSafari) {
         await tf.setBackend('cpu');
@@ -71,7 +88,6 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         try {
           await tf.setBackend('webgl');
           await tf.ready();
-          // Sanity check — webgl sometimes reports ready but fails on inference
           const test = tf.tensor1d([1, 2, 3]);
           test.dispose();
         } catch {
@@ -84,7 +100,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
       try { await tf.setBackend('cpu'); await tf.ready(); } catch {}
     }
 
-    const faceapi = await import('face-api.js');
+    const faceapi = await import(/* webpackIgnore: true */ 'face-api.js' as string);
     faceApiRef.current = faceapi;
     return faceapi;
   }, []);
@@ -94,19 +110,22 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     console.info('[face] trying model source:', url);
 
     const withTimeout = <T>(p: Promise<T>, label: string, ms = 15000): Promise<T> =>
-      Promise.race([p, new Promise<T>((_, r) => setTimeout(() => r(new Error(`timeout:${label}`)), ms))]);
+      Promise.race([
+        p,
+        new Promise<T>((_, r) =>
+          setTimeout(() => r(new Error(`timeout:${label}`)), ms)
+        ),
+      ]);
 
-    // Always load tiny + landmark + recognition (required for descriptors)
     await withTimeout(faceapi.nets.tinyFaceDetector.loadFromUri(url), 'tinyFaceDetector');
     await withTimeout(faceapi.nets.faceLandmark68Net.loadFromUri(url), 'faceLandmark68Net');
     await withTimeout(faceapi.nets.faceRecognitionNet.loadFromUri(url), 'faceRecognitionNet');
 
-    // SSD is optional — better accuracy but larger model
     try {
       await withTimeout(faceapi.nets.ssdMobilenetv1.loadFromUri(url), 'ssdMobilenetv1', 20000);
       detectorRef.current = 'ssd';
       console.info('[face] SSD loaded — using SSD detector');
-    } catch (e) {
+    } catch {
       detectorRef.current = 'tiny';
       console.warn('[face] SSD unavailable, using TinyFaceDetector only');
     }
@@ -115,11 +134,9 @@ export function useFaceDetection(): UseFaceDetectionReturn {
   }, []);
 
   const loadModels = useCallback(async (): Promise<boolean> => {
-    // FIX: use ref instead of stale state
     if (modelStatusRef.current === 'ready') return true;
     if (modelStatusRef.current === 'loading') {
-      // Wait for existing load to finish
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         const check = setInterval(() => {
           if (modelStatusRef.current === 'ready') { clearInterval(check); resolve(true); }
           if (modelStatusRef.current === 'error') { clearInterval(check); resolve(false); }
@@ -178,7 +195,6 @@ export function useFaceDetection(): UseFaceDetectionReturn {
 
       if (timestamp - lastRunRef.current < DETECTION_INTERVAL_MS) return;
       if (processingRef.current) return;
-      // FIX: check readyState 2 = HAVE_CURRENT_DATA, 3/4 = enough to decode
       if (!videoEl || videoEl.readyState < 2) return;
       if (videoEl.paused || videoEl.ended) return;
 
@@ -186,7 +202,6 @@ export function useFaceDetection(): UseFaceDetectionReturn {
       processingRef.current = true;
 
       try {
-        // FIX: resize canvas each tick to match actual video dimensions
         const vw = videoEl.videoWidth;
         const vh = videoEl.videoHeight;
         if (vw > 0 && vh > 0) {
@@ -245,14 +260,12 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         const det = detections[0];
         const box = det.detection.box;
 
-        // FIX: compare raw box.width (video coords) to MIN_FACE_SIZE_PX
         if (box.width < MIN_FACE_SIZE_PX) {
           onDetection({ detected: false, multipleFaces: false });
           processingRef.current = false;
           return;
         }
 
-        // Draw bounding box on canvas (same coordinate space as video)
         if (ctx) {
           ctx.strokeStyle = '#6366f1';
           ctx.lineWidth = 2.5;
@@ -262,12 +275,13 @@ export function useFaceDetection(): UseFaceDetectionReturn {
           ctx.fillStyle = 'rgba(99,102,241,0.07)';
           ctx.fillRect(box.x, box.y, box.width, box.height);
 
-          // Corner accents
           const cl = 14;
           ctx.strokeStyle = '#818cf8';
           ctx.lineWidth = 3;
           ctx.setLineDash([]);
-          [[box.x, box.y], [box.x + box.width, box.y], [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]].forEach(([cx, cy], i) => {
+          [[box.x, box.y], [box.x + box.width, box.y],
+           [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]
+          ].forEach(([cx, cy]: number[], i: number) => {
             ctx.beginPath();
             ctx.moveTo(cx + (i % 2 === 0 ? cl : -cl), cy);
             ctx.lineTo(cx, cy);
@@ -276,7 +290,8 @@ export function useFaceDetection(): UseFaceDetectionReturn {
           });
         }
 
-        const landmarks = det.landmarks?.positions?.map?.((p: any) => ({ x: p.x, y: p.y })) ?? [];
+        const landmarks =
+          det.landmarks?.positions?.map?.((p: any) => ({ x: p.x, y: p.y })) ?? [];
 
         onDetection({
           detected: true,
@@ -320,5 +335,12 @@ export function useFaceDetection(): UseFaceDetectionReturn {
 
   useEffect(() => () => { stopDetectionLoop(); }, [stopDetectionLoop]);
 
-  return { modelStatus, modelError, loadModels, startDetectionLoop, stopDetectionLoop, matchDescriptor };
+  return {
+    modelStatus,
+    modelError,
+    loadModels,
+    startDetectionLoop,
+    stopDetectionLoop,
+    matchDescriptor,
+  };
 }
