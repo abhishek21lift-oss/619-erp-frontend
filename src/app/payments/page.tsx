@@ -56,21 +56,20 @@ function fmtCompact(n: number) {
   return fmtAmount(n);
 }
 function isoToday()      { return new Date().toISOString().split('T')[0]; }
-function isoMonthStart() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; }
+function isoMonthStart() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01'; }
 function exportCSV(payments: Payment[]) {
   const headers = ['Receipt', 'Member', 'Amount', 'Method', 'Date', 'Notes'];
   const rows = payments.map((p) => [p.receipt_no ?? '', p.client_name ?? '', p.amount, p.method, p.date, p.notes ?? '']);
-  const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const csv = [headers, ...rows].map((r) => r.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `619_payments_${isoToday()}.csv`;
+  a.download = '619_payments_' + isoToday() + '.csv';
   a.click();
 }
 
 /* ─── CSS-in-JS styles object ───────────────────────────── */
 const S = {
-  // Surfaces
   card: {
     background: 'rgba(255,255,255,0.85)',
     backdropFilter: 'blur(20px)',
@@ -87,11 +86,9 @@ const S = {
     borderRadius: 24,
     boxShadow: '0 2px 6px rgba(15,23,42,0.04), 0 8px 32px rgba(15,23,42,0.08)',
   } as React.CSSProperties,
-  // Text
   heading: { fontSize: 28, fontWeight: 800, color: '#0a0a18', letterSpacing: '-0.03em', lineHeight: 1.1 } as React.CSSProperties,
   subheading: { fontSize: 14, color: '#64748b', fontWeight: 500, lineHeight: 1.5 } as React.CSSProperties,
   label: { fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: '1px' },
-  // Inputs
   input: {
     width: '100%', padding: '11px 14px', borderRadius: 12,
     border: '1.5px solid rgba(100,116,139,0.15)',
@@ -145,7 +142,6 @@ function KpiCard({
         transition: 'transform 200ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease',
       }}
     >
-      {/* subtle gradient background glow */}
       <div style={{
         position: 'absolute', inset: 0, opacity: hovered ? 0.06 : 0.03,
         background: gradient, borderRadius: 20, transition: 'opacity 200ms',
@@ -155,7 +151,7 @@ function KpiCard({
           width: 38, height: 38, borderRadius: 11,
           background: gradient, display: 'flex', alignItems: 'center',
           justifyContent: 'center', color: 'white',
-          boxShadow: `0 4px 12px rgba(0,0,0,0.15)`,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         }}>
           {icon}
         </div>
@@ -194,7 +190,7 @@ function MethodBadge({ method }: { method: string }) {
       fontSize: 11, fontWeight: 700,
       background: s.bg, color: s.color,
       borderRadius: 20, padding: '3px 9px',
-      border: `1px solid ${s.color}20`,
+      border: '1px solid ' + s.color + '20',
     }}>
       {s.icon}{method.replace('_', ' ')}
     </span>
@@ -225,7 +221,6 @@ function AiInsightBanner({ payments, kpis }: { payments: Payment[]; kpis: { tota
     ? Math.round((payments.filter(p => p.method === 'CASH').length / payments.length) * 100)
     : null;
 
-  // Build insight string without nested template literals
   let insight: string;
   if (rate !== null) {
     const dueText = kpis.dueTot > 0 ? fmtCompact(kpis.dueTot) : 'outstanding';
@@ -328,7 +323,7 @@ function RecordPaymentModal({ clients, onClose, onSaved }: { clients: ClientOpti
                 <option value="">Select member…</option>
                 {clients.map((c) => {
                   const due = Number(c.balance_due ?? c.balance_amount ?? 0);
-                  return <option key={c.id} value={c.id}>{c.name}{due > 0 ? ` · Due: ${fmtAmount(due)}` : ''}</option>;
+                  return <option key={c.id} value={c.id}>{c.name}{due > 0 ? ' · Due: ' + fmtAmount(due) : ''}</option>;
                 })}
               </select>
               {balanceDue > 0 && (
@@ -461,12 +456,10 @@ function RevenuHero({ kpis, payments, methodBreakdown, onRefresh, loading }: {
 
         {/* Right — method breakdown + rate */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
-          {/* Collection rate ring */}
           <div style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(10px)', borderRadius: 16, padding: '14px 20px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', minWidth: 130 }}>
             <div style={{ fontSize: 32, fontWeight: 900, color: rate >= 80 ? '#34d399' : rate >= 60 ? '#fbbf24' : '#f87171', letterSpacing: '-0.03em' }}>{rate}%</div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: 2 }}>Collection Rate</div>
           </div>
-          {/* Method pills */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 280 }}>
             {Object.entries(methodBreakdown).map(([method, amt]) => (
               <div key={method} style={{
@@ -565,7 +558,7 @@ function PaymentsContent() {
       await api.payments.delete(String(deleteTarget.id));
       setPayments((prev) => prev.filter((p) => p.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch (e: any) { alert(`Delete failed: ${e.message}`); }
+    } catch (e: any) { alert('Delete failed: ' + e.message); }
     finally { setDeleting(false); }
   }
 
@@ -609,7 +602,7 @@ function PaymentsContent() {
               <div style={{ padding: '2px 10px', background: 'rgba(124,58,237,0.08)', borderRadius: 20, fontSize: 11, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.8px', border: '1px solid rgba(124,58,237,0.12)' }}>
                 Finance
               </div>
-              <span style={{ fontSize: 12, color: '#94a3b8' }}>/ Revenue & Collections</span>
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>/ Revenue &amp; Collections</span>
             </div>
             <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0a0a18', margin: 0, letterSpacing: '-0.03em' }}>Revenue Intelligence</h1>
             <p style={{ fontSize: 13, color: '#64748b', margin: '5px 0 0', fontWeight: 500 }}>
@@ -638,7 +631,7 @@ function PaymentsContent() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px,1fr))', gap: 14, marginBottom: 22 }}>
           <KpiCard label="Today's Collection" value={fmtCompact(kpis.todayRev)} sub={kpis.todayRev > 0 ? fmtAmount(kpis.todayRev) : 'No entries yet'} icon={<Zap size={16} />} gradient="linear-gradient(135deg,#7c3aed,#4f46e5)" delta={kpis.todayRev > 0 ? 'Today' : undefined} />
           <KpiCard label="This Month" value={fmtCompact(kpis.monthRev)} sub="Month-to-date" icon={<Calendar size={16} />} gradient="linear-gradient(135deg,#0ea5e9,#2563eb)" />
-          <KpiCard label="Outstanding Dues" value={fmtCompact(kpis.dueTot)} sub={`${membersWithDues} member${membersWithDues !== 1 ? 's' : ''} pending`} icon={<AlertCircle size={16} />} gradient="linear-gradient(135deg,#ef4444,#dc2626)" delta={kpis.dueTot > 0 ? 'Attention' : undefined} deltaUp={false} />
+          <KpiCard label="Outstanding Dues" value={fmtCompact(kpis.dueTot)} sub={membersWithDues + ' member' + (membersWithDues !== 1 ? 's' : '') + ' pending'} icon={<AlertCircle size={16} />} gradient="linear-gradient(135deg,#ef4444,#dc2626)" delta={kpis.dueTot > 0 ? 'Attention' : undefined} deltaUp={false} />
           <KpiCard label="Collection Rate" value={collectionRate + '%'} sub="Collected vs total" icon={<Target size={16} />} gradient="linear-gradient(135deg,#059669,#10b981)" delta={collectionRate >= 80 ? 'Strong' : undefined} />
           <KpiCard label="Total Transactions" value={String(payments.length)} sub="All time" icon={<Activity size={16} />} gradient="linear-gradient(135deg,#f59e0b,#d97706)" />
           <KpiCard label="Active Members" value={String(clients.length)} sub="In system" icon={<Shield size={16} />} gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" />
@@ -657,7 +650,6 @@ function PaymentsContent() {
 
         {/* ── Search & Filters ── */}
         <div style={{ ...S.card, padding: '14px 18px', marginBottom: 14, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Search */}
           <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 0 }}>
             <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
             <input
@@ -667,7 +659,6 @@ function PaymentsContent() {
             />
           </div>
 
-          {/* Date range */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#64748b', flexWrap: 'wrap' }}>
             <Calendar size={12} style={{ color: '#94a3b8' }} />
             <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} style={{ ...S.input, width: 'auto', fontSize: 12, padding: '8px 11px' }} />
@@ -675,7 +666,6 @@ function PaymentsContent() {
             <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} style={{ ...S.input, width: 'auto', fontSize: 12, padding: '8px 11px' }} />
           </div>
 
-          {/* Method tabs */}
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
             {METHODS.map((m) => (
               <button key={m} className="ri-method-btn"
@@ -694,7 +684,6 @@ function PaymentsContent() {
             ))}
           </div>
 
-          {/* Clear + total */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto', flexWrap: 'wrap' }}>
             {(filterFrom || filterTo || filterMethod !== 'ALL' || search) && (
               <button onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterMethod('ALL'); setSearch(''); }}
