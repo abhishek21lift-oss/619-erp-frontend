@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  sitemap.xml — Issue #9 FIX
+
+  Only public-facing routes are listed here. All authenticated routes
+  (/dashboard, /payments, /clients, /checkin, etc.) are excluded because:
+    a) They require login — search engines cannot index them.
+    b) Exposing internal route structure aids recon attacks.
+
+  Update <lastmod> and <changefreq> when adding new public pages.
+  Regenerate dynamically via /app/sitemap.ts if the site grows.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://619fitness.in/</loc>
+    <lastmod>2026-05-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://619fitness.in/login</loc>
+    <lastmod>2026-05-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>

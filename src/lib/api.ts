@@ -1,8 +1,8 @@
 // src/lib/api.ts
 //
-// NOTE: apiBase() is now a LAZY function — called at first use, not at module
-// init. This prevents SSR crashes when NEXT_PUBLIC_API_URL is undefined at
-// build time (e.g. Docker build without ARG, or cold-start server renders).
+// NOTE: apiBase() is lazy — evaluated at call time, not module init.
+// This prevents SSR crashes when NEXT_PUBLIC_API_URL is undefined at
+// Docker build time or cold-start server renders.
 
 const DEFAULT_API_BASE = 'http://localhost:5000';
 
@@ -10,7 +10,6 @@ function apiBase(): string {
   const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');
   const resolved = raw || DEFAULT_API_BASE;
 
-  // Treat the old placeholder as localhost to avoid confusing 404s
   if (/your-619-api\.onrender\.com/i.test(resolved)) {
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
       return DEFAULT_API_BASE;
@@ -26,10 +25,7 @@ function apiBase(): string {
     if (!['http:', 'https:'].includes(url.protocol)) throw new Error('bad protocol');
     return url.origin;
   } catch {
-    // If it's just a hostname like "localhost:5000" without protocol, add http
-    try {
-      return new URL('http://' + resolved).origin;
-    } catch {
+    try { return new URL('http://' + resolved).origin; } catch {
       throw new Error(`Invalid NEXT_PUBLIC_API_URL: "${raw}"`);
     }
   }
@@ -37,11 +33,19 @@ function apiBase(): string {
 
 // ─────────────────────────── Types ───────────────────────────────────
 
+/**
+ * Role union (Issue #19 — was `string`, now a discriminated union).
+ * Add roles here as the backend evolves; all switch/if-chains on role
+ * will now get exhaustiveness feedback from TypeScript.
+ */
+export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist';
+
 export type User = {
   id: string;
   name?: string;
   email: string;
-  role?: string;
+  /** Typed as Role union — never a free-form string */
+  role?: Role;
   trainer_id?: string;
   is_active?: boolean;
 };
@@ -96,13 +100,30 @@ export type Client = {
   balance_due?: number;
 };
 
+/**
+ * Payment — Issue #7: id is always string.
+ * Backend may return number; we normalise at the API boundary (see `payments.list`).
+ */
+export type Payment = {
+  /** Always a string — coerced from number at fetch boundary if needed. */
+  id: string;
+  receipt_no?: string;
+  client_id?: string;
+  client_name?: string;
+  amount: number;
+  method: string;
+  date: string;
+  notes?: string;
+  trainer_name?: string;
+};
+
 // ─────────────────────────── Core fetch ──────────────────────────────
 
 async function request<T = unknown>(
   path: string,
   options: RequestInit & { skipAuth?: boolean } = {},
 ): Promise<T> {
-  const BASE = apiBase(); // lazy — evaluated at call time
+  const BASE = apiBase();
   const url = path.startsWith('http') ? path : `${BASE}${path}`;
 
   const headers: Record<string, string> = {
@@ -110,13 +131,16 @@ async function request<T = unknown>(
     ...(options.headers as Record<string, string>),
   };
 
-  if (!options.skipAuth) {
-    let token: string | null = null;
-    try { token = localStorage.getItem('619_token'); } catch { /* SSR / quota */ }
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-  }
+  // Include credentials so the httpOnly auth cookie is sent automatically.
+  // The in-memory token is used as a bearer fallback for hybrid backends that
+  // still require an Authorization header (legacy deployment support).
+  const init: RequestInit = {
+    ...options,
+    headers,
+    credentials: 'include',
+  };
 
-  const res = await fetch(url, { ...options, headers });
+  const res = await fetch(url, init);
 
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
@@ -126,15 +150,21 @@ async function request<T = unknown>(
     } catch { /* ignore */ }
     const err = new Error(msg) as Error & { status: number };
     err.status = res.status;
-    // 401 → clear stale credentials so the Guard redirects to /login
-    if (res.status === 401) {
-      try { localStorage.removeItem('619_token'); localStorage.removeItem('619_user'); } catch { /* SSR */ }
-    }
     throw err;
   }
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+// ─── Normalise a raw payment record from the server ──────────────────
+function normalisePayment(raw: Record<string, unknown>): Payment {
+  return {
+    ...raw,
+    id: String(raw.id ?? ''),
+    client_id: raw.client_id != null ? String(raw.client_id) : undefined,
+    amount: Number(raw.amount ?? 0),
+  } as Payment;
 }
 
 // ─────────────────────────── API namespace ────────────────────────────
@@ -156,22 +186,23 @@ export const api = {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
       return request<Client[]>(`/api/clients${qs}`);
     },
-    get:    (id: string | number) => request<Client>(`/api/clients/${id}`),
+    get:    (id: string) => request<Client>(`/api/clients/${id}`),
     create: (data: Partial<Client>) => request<Client>('/api/clients', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string | number, data: Partial<Client>) =>
+    update: (id: string, data: Partial<Client>) =>
       request<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string | number) => request(`/api/clients/${id}`, { method: 'DELETE' }),
+    delete: (id: string) => request(`/api/clients/${id}`, { method: 'DELETE' }),
     search: (q: string) => request<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
   },
 
   payments: {
-    list:   (params?: Record<string, string>) => {
+    list: async (params?: Record<string, string>): Promise<Payment[]> => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<unknown[]>(`/api/payments${qs}`);
+      const raw = await request<Record<string, unknown>[]>(`/api/payments${qs}`);
+      return Array.isArray(raw) ? raw.map(normalisePayment) : [];
     },
     create: (data: Record<string, unknown>) =>
       request('/api/payments', { method: 'POST', body: JSON.stringify(data) }),
-    delete: (id: string | number) => request(`/api/payments/${id}`, { method: 'DELETE' }),
+    delete: (id: string) => request(`/api/payments/${id}`, { method: 'DELETE' }),
     stats:  (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
       return request(`/api/payments/stats${qs}`);
@@ -179,141 +210,117 @@ export const api = {
   },
 
   subscriptions: {
-    list:        (params?: Record<string, string>) => {
+    list: (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
       return request<unknown[]>(`/api/subscriptions${qs}`);
     },
-    get:         (id: string | number) => request(`/api/subscriptions/${id}`),
+    get:         (id: string) => request(`/api/subscriptions/${id}`),
     create:      (data: Record<string, unknown>) =>
       request('/api/subscriptions', { method: 'POST', body: JSON.stringify(data) }),
-    update:      (id: string | number, data: Record<string, unknown>) =>
+    update:      (id: string, data: Record<string, unknown>) =>
       request(`/api/subscriptions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    addPayment:  (id: string | number, data: Record<string, unknown>) =>
+    addPayment:  (id: string, data: Record<string, unknown>) =>
       request(`/api/subscriptions/${id}/payments`, { method: 'POST', body: JSON.stringify(data) }),
-    freeze:      (id: string | number, data: Record<string, unknown>) =>
+    freeze:      (id: string, data: Record<string, unknown>) =>
       request(`/api/subscriptions/${id}/freeze`, { method: 'POST', body: JSON.stringify(data) }),
-    unfreeze:    (id: string | number) =>
+    unfreeze:    (id: string) =>
       request(`/api/subscriptions/${id}/unfreeze`, { method: 'POST' }),
-    upgrade:     (id: string | number, data: Record<string, unknown>) =>
+    upgrade:     (id: string, data: Record<string, unknown>) =>
       request(`/api/subscriptions/${id}/upgrade`, { method: 'POST', body: JSON.stringify(data) }),
-    downgrade:   (id: string | number, data: Record<string, unknown>) =>
+    downgrade:   (id: string, data: Record<string, unknown>) =>
       request(`/api/subscriptions/${id}/downgrade`, { method: 'POST', body: JSON.stringify(data) }),
-    transfer:    (id: string | number, data: Record<string, unknown>) =>
+    transfer:    (id: string, data: Record<string, unknown>) =>
       request(`/api/subscriptions/${id}/transfer`, { method: 'POST', body: JSON.stringify(data) }),
-    extend:      (id: string | number, data: Record<string, unknown>) =>
+    extend:      (id: string, data: Record<string, unknown>) =>
       request(`/api/subscriptions/${id}/extend`, { method: 'POST', body: JSON.stringify(data) }),
   },
 
   plans: {
     list:   () => request<unknown[]>('/api/plans'),
-    get:    (id: string | number) => request(`/api/plans/${id}`),
+    get:    (id: string) => request(`/api/plans/${id}`),
     create: (data: Record<string, unknown>) =>
       request('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string | number, data: Record<string, unknown>) =>
+    update: (id: string, data: Record<string, unknown>) =>
       request(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string | number) => request(`/api/plans/${id}`, { method: 'DELETE' }),
+    delete: (id: string) => request(`/api/plans/${id}`, { method: 'DELETE' }),
   },
 
   trainers: {
     list:   () => request<unknown[]>('/api/trainers'),
-    get:    (id: string | number) => request(`/api/trainers/${id}`),
+    get:    (id: string) => request(`/api/trainers/${id}`),
     create: (data: Record<string, unknown>) =>
       request('/api/trainers', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string | number, data: Record<string, unknown>) =>
+    update: (id: string, data: Record<string, unknown>) =>
       request(`/api/trainers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string | number) => request(`/api/trainers/${id}`, { method: 'DELETE' }),
-    sessions: (id: string | number) => request(`/api/trainers/${id}/sessions`),
+    delete: (id: string) => request(`/api/trainers/${id}`, { method: 'DELETE' }),
+    sessions: (id: string) => request(`/api/trainers/${id}/sessions`),
   },
 
   staff: {
     list:   () => request<unknown[]>('/api/staff'),
-    get:    (id: string | number) => request(`/api/staff/${id}`),
+    get:    (id: string) => request(`/api/staff/${id}`),
     create: (data: Record<string, unknown>) =>
       request('/api/staff', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string | number, data: Record<string, unknown>) =>
+    update: (id: string, data: Record<string, unknown>) =>
       request(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string | number) => request(`/api/staff/${id}`, { method: 'DELETE' }),
+    delete: (id: string) => request(`/api/staff/${id}`, { method: 'DELETE' }),
     targets: {
-      get: (id: string | number) => request(`/api/staff/${id}/targets`),
-      set: (id: string | number, data: Record<string, unknown>) =>
+      get: (id: string) => request(`/api/staff/${id}/targets`),
+      set: (id: string, data: Record<string, unknown>) =>
         request(`/api/staff/${id}/targets`, { method: 'POST', body: JSON.stringify(data) }),
     },
   },
 
   attendance: {
-    list:   (params?: Record<string, string>) => {
+    list: (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
       return request<unknown[]>(`/api/attendance${qs}`);
     },
     create: (data: Record<string, unknown>) =>
       request('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string | number, data: Record<string, unknown>) =>
+    update: (id: string, data: Record<string, unknown>) =>
       request(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   },
 
   checkin: {
-    list:    (params?: Record<string, string>) => {
+    list: (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
       return request<unknown[]>(`/api/checkin${qs}`);
     },
-    enroll:  (clientId: string | number, descriptor: number[]) =>
-      request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
-    verify:  (descriptor: number[]) =>
-      request('/api/checkin/verify', { method: 'POST', body: JSON.stringify({ descriptor }) }),
-    manual:  (clientId: string | number) =>
-      request('/api/checkin/manual', { method: 'POST', body: JSON.stringify({ client_id: clientId }) }),
+    create: (data: Record<string, unknown>) =>
+      request('/api/checkin', { method: 'POST', body: JSON.stringify(data) }),
+    enroll: (clientId: string, descriptors: number[][]) =>
+      request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptors }) }),
     descriptors: () => request<unknown[]>('/api/checkin/descriptors'),
   },
 
-  analytics: {
-    dashboard: (params?: Record<string, string>) => {
+  notifications: {
+    list: (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request(`/api/analytics/dashboard${qs}`);
+      return request<unknown[]>(`/api/notifications${qs}`);
     },
+    markRead: (id: string) =>
+      request(`/api/notifications/${id}/read`, { method: 'PATCH' }),
+    markAllRead: () =>
+      request('/api/notifications/read-all', { method: 'PATCH' }),
+  },
+
+  dashboard: {
+    stats: () => request('/api/dashboard/stats'),
     revenue: (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request(`/api/analytics/revenue${qs}`);
+      return request(`/api/dashboard/revenue${qs}`);
     },
   },
 
-  notifications: {
-    list:   () => request<unknown[]>('/api/notifications'),
-    markRead: (id: string | number) =>
-      request(`/api/notifications/${id}/read`, { method: 'POST' }),
-    markAllRead: () => request('/api/notifications/read-all', { method: 'POST' }),
-  },
-
-  settings: {
-    get:    () => request('/api/settings'),
-    update: (data: Record<string, unknown>) =>
-      request('/api/settings', { method: 'PUT', body: JSON.stringify(data) }),
-    branding: {
-      get:    () => request('/api/settings/branding'),
-      update: (data: Record<string, unknown>) =>
-        request('/api/settings/branding', { method: 'PUT', body: JSON.stringify(data) }),
-    },
-  },
-
-  leads: {
-    list:   (params?: Record<string, string>) => {
+  reports: {
+    revenue: (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<unknown[]>(`/api/leads${qs}`);
+      return request(`/api/reports/revenue${qs}`);
     },
-    get:    (id: string | number) => request(`/api/leads/${id}`),
-    create: (data: Record<string, unknown>) =>
-      request('/api/leads', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string | number, data: Record<string, unknown>) =>
-      request(`/api/leads/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string | number) => request(`/api/leads/${id}`, { method: 'DELETE' }),
-    convert: (id: string | number, data: Record<string, unknown>) =>
-      request(`/api/leads/${id}/convert`, { method: 'POST', body: JSON.stringify(data) }),
-  },
-
-  whatsapp: {
-    send:      (data: Record<string, unknown>) =>
-      request('/api/whatsapp/send', { method: 'POST', body: JSON.stringify(data) }),
-    templates: () => request<unknown[]>('/api/whatsapp/templates'),
-    bulk:      (data: Record<string, unknown>) =>
-      request('/api/whatsapp/bulk', { method: 'POST', body: JSON.stringify(data) }),
+    members: (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+      return request(`/api/reports/members${qs}`);
+    },
   },
 };

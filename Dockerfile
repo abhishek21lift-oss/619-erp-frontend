@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 # Install ALL deps (devDeps needed for TypeScript + Next.js build)
-# Use --legacy-peer-deps for face-api.js / TensorFlow peer-dep conflicts
+# --legacy-peer-deps: face-api.js / TensorFlow have peer-dep conflicts with React 18
 RUN npm ci --legacy-peer-deps
 
 # ─── Stage 2: Build ────────────────────────────────────────────────
@@ -29,24 +29,28 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
 
-# Copy public assets
+# Issue #10 — Standalone deployment requires these three COPY lines:
+#   1. public/          — static assets (robots.txt, logo, face models, etc.)
+#   2. .next/standalone — generated Node server + all dependencies inlined
+#   3. .next/static     — hashed JS/CSS chunks served by Next.js
+#
+# Without line 3, _next/static/* returns 404 in production.
+# Without line 1, public/* (face-models, robots.txt) returns 404.
 COPY --from=builder /app/public ./public
-
-# Copy standalone server (output:'standalone' in next.config.js generates this)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy package.json so version is readable at runtime
+# Runtime package.json (readable version at /api/health)
 COPY --from=builder /app/package.json ./package.json
 
 USER nextjs
 
 EXPOSE 3000
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV HOSTNAME=0.0.0.0
 
-# Health check using wget (alpine has wget, not curl by default)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+# Docker HEALTHCHECK — polls the lightweight /api/health route
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:3000/api/health || exit 1
 
 CMD ["node", "server.js"]

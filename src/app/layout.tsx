@@ -10,13 +10,9 @@ export const metadata: Metadata = {
   description:
     '619 FITNESS STUDIO — Train heavy. Run light. The classy operating system for serious gyms.',
   icons: { icon: '/logo.PNG' },
-  // appleWebApp moved out of meta tags so Next can add the right markup.
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent' },
 };
 
-// Next 14+ wants viewport / theme-color / color-scheme out of <meta> and into
-// this dedicated export. The runtime warning (and the React 19 "viewport
-// metadata moved" deprecation) goes away once this is here.
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -37,12 +33,41 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap"
           rel="stylesheet"
         />
+        {/* Skip-to-content link (Accessibility — Issue #16) */}
+        <style>{`.skip-link{position:absolute;top:-999px;left:0;z-index:9999;padding:8px 16px;background:#fff;color:#111;font-weight:600;border-radius:0 0 8px 0;}.skip-link:focus{top:0}`}</style>
       </head>
       <body>
+        {/* Issue #17 — noscript fallback: JS is required for auth + face recognition */}
+        <noscript>
+          <div
+            role="alert"
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9999,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: '#fff', padding: '24px', textAlign: 'center',
+            }}
+          >
+            <div>
+              <strong style={{ fontSize: 20, display: 'block', marginBottom: 8 }}>
+                JavaScript Required
+              </strong>
+              <p style={{ color: '#64748b', maxWidth: 400 }}>
+                619 Fitness Studio ERP requires JavaScript for authentication and
+                face-recognition check-in. Please enable JavaScript in your browser
+                settings and reload the page.
+              </p>
+            </div>
+          </div>
+        </noscript>
+
+        {/* Skip link for keyboard navigation (WCAG 2.4.1) */}
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
+
         {/*
          * ErrorBoundary is outermost so a throw from AuthProvider's
-         * effect (e.g. a stale localStorage payload that fails JSON.parse)
-         * still renders the fallback instead of a blank page.
+         * effect still renders the fallback instead of a blank page.
          */}
         <ErrorBoundary>
           <AuthProvider>
