@@ -90,11 +90,16 @@ function Inner() {
 
   async function handleSave(publish = false) {
     if (!name.trim()) { setFlash('❌ Plan name is required'); setTimeout(() => setFlash(''), 3000); return; }
+    if (finalAmount <= 0) { setFlash('❌ Final amount must be greater than 0'); setTimeout(() => setFlash(''), 3000); return; }
     setSaving(true);
     try {
       await api.plans.create({
-        kind, name: name.trim(), description, duration,
-        base_amount: baseAmount, discount,
+        kind,
+        name: name.trim(),
+        description,
+        duration,
+        base_amount: baseAmount,
+        discount,
         final_amount: finalAmount,
         joining_fee: joiningFee,
         tax_pct: taxPct,
@@ -102,7 +107,7 @@ function Inner() {
         features: benefits,
         popular,
         color: planColor,
-        status: publish ? 'active' : 'draft',
+        is_active: publish,
       });
       setFlash('✓ Plan saved successfully!');
       setTimeout(() => router.push('/plans'), 1200);
@@ -203,435 +208,441 @@ function Inner() {
           </div>
         </div>
 
-        {/* Main Split Layout */}
-        <div className="grid gap-6" style={{ gridTemplateColumns: '1fr 380px', alignItems: 'start' }}>
+        {/* Main Grid */}
+        <div className="grid lg:grid-cols-[1fr_420px] gap-8">
 
           {/* LEFT: Form */}
-          <div className="flex flex-col gap-5">
+          <div>
 
-            {/* Section nav */}
-            <div className="flex gap-2 flex-wrap">
+            {/* Section Tabs */}
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
               {sections.map(s => (
                 <button key={s.id} onClick={() => setActiveSection(s.id)}
-                  className="flex items-center gap-2"
                   style={{
-                    padding: '7px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                    transition: 'all 0.18s', border: 'none',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                    cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap', border: 'none',
                     background: activeSection === s.id ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : 'rgba(255,255,255,0.8)',
                     color: activeSection === s.id ? '#fff' : '#64748b',
-                    boxShadow: activeSection === s.id ? `0 4px 12px ${colorObj.from}35` : '0 1px 4px rgba(0,0,0,0.06)',
-                    backdropFilter: 'blur(12px)',
+                    boxShadow: activeSection === s.id ? `0 4px 12px ${colorObj.from}30` : '0 1px 3px rgba(0,0,0,0.06)',
                   }}
                 >
                   {s.icon} {s.label}
+                  {s.id < activeSection && <Check size={12} style={{ color: activeSection === s.id ? '#fff' : '#10b981' }} />}
                 </button>
               ))}
             </div>
 
-            {/* Section 0: Basic Info */}
+            {/* Section Content */}
             <AnimatePresence mode="wait">
-              {activeSection === 0 && (
-                <motion.div key="basic" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-                  style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 20, padding: '1.75rem', boxShadow: '0 4px 24px rgba(0,0,0,0.05)' }}
-                >
-                  <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Layers size={16} style={{ color: colorObj.from }} /> Basic Information
-                  </h2>
-                  <div className="grid gap-5">
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Plan Name *</label>
-                      <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Premium Monthly Membership"
-                        style={{
-                          width: '100%', padding: '12px 16px', borderRadius: 12,
-                          border: `1.5px solid ${name ? colorObj.from + '60' : 'rgba(0,0,0,0.1)'}`,
-                          background: 'rgba(255,255,255,0.9)', fontSize: 15, fontWeight: 600, color: '#0f172a',
-                          outline: 'none', transition: 'all 0.2s', boxShadow: name ? `0 0 0 3px ${colorObj.from}12` : 'none',
-                        }}
+              <motion.div key={activeSection}
+                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+
+                {/* ─── BASIC INFO ─── */}
+                {activeSection === 0 && (
+                  <div style={{ background: 'rgba(255,255,255,0.9)', borderRadius: 20, padding: '2rem', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 24 }}>Plan Details</h2>
+
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Plan Name *</label>
+                      <input value={name} onChange={e => setName(e.target.value)}
+                        placeholder="e.g. Premium Monthly, PT Pro Pack..."
+                        style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', fontSize: 15, fontWeight: 500, outline: 'none', background: '#f8fafc', transition: 'border-color 0.2s' }}
+                        onFocus={e => e.target.style.borderColor = colorObj.from}
+                        onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.1)'}
                       />
                     </div>
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Description</label>
+
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Description</label>
                       <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
-                        placeholder="Describe what makes this plan valuable..."
-                        style={{
-                          width: '100%', padding: '12px 16px', borderRadius: 12,
-                          border: '1.5px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.9)',
-                          fontSize: 14, color: '#0f172a', outline: 'none', resize: 'none',
-                          transition: 'all 0.2s', fontFamily: 'inherit',
-                        }}
+                        placeholder="Describe what makes this plan special..."
+                        style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', fontSize: 14, outline: 'none', background: '#f8fafc', resize: 'vertical', fontFamily: 'inherit', transition: 'border-color 0.2s' }}
+                        onFocus={e => e.target.style.borderColor = colorObj.from}
+                        onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.1)'}
                       />
                     </div>
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 10 }}>Plan Theme Color</label>
+
+                    {/* Color Theme */}
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Card Color Theme</label>
                       <div className="flex gap-3 flex-wrap">
                         {PLAN_COLORS.map(c => (
                           <button key={c.id} onClick={() => setPlanColor(c.id)}
                             title={c.label}
                             style={{
-                              width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', border: 'none',
+                              width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
                               background: `linear-gradient(135deg, ${c.from}, ${c.to})`,
-                              outline: planColor === c.id ? `3px solid ${c.from}` : '3px solid transparent',
-                              outlineOffset: 2,
-                              boxShadow: planColor === c.id ? `0 4px 12px ${c.from}60` : 'none',
+                              boxShadow: planColor === c.id ? `0 0 0 3px white, 0 0 0 5px ${c.from}` : '0 2px 8px rgba(0,0,0,0.15)',
+                              transform: planColor === c.id ? 'scale(1.15)' : 'scale(1)',
                               transition: 'all 0.2s',
                             }}
-                          >
-                            {planColor === c.id && <Check size={14} style={{ color: '#fff', margin: 'auto' }} />}
-                          </button>
+                          />
                         ))}
                       </div>
                     </div>
-                    <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: popular ? `${colorObj.from}0d` : 'rgba(248,250,252,0.8)', border: `1.5px solid ${popular ? colorObj.from + '40' : 'rgba(0,0,0,0.07)'}`, transition: 'all 0.2s' }}>
-                      <div className="flex items-center gap-3">
-                        <Star size={18} style={{ color: popular ? colorObj.from : '#94a3b8' }} />
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Mark as Popular</div>
-                          <div style={{ fontSize: 12, color: '#64748b' }}>Highlights this plan with a "Most Popular" badge</div>
-                        </div>
+
+                    {/* Popular Toggle */}
+                    <div className="flex items-center justify-between" style={{ padding: '16px', borderRadius: 12, background: popular ? `${colorObj.from}10` : '#f8fafc', border: `1.5px solid ${popular ? colorObj.from + '30' : 'rgba(0,0,0,0.08)'}`, transition: 'all 0.2s' }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>⭐ Mark as Popular</div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Highlights this plan with a badge on the pricing page</div>
                       </div>
                       <button onClick={() => setPopular(p => !p)}
                         style={{
                           width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
                           background: popular ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : '#e2e8f0',
-                          transition: 'all 0.25s', position: 'relative',
+                          position: 'relative', transition: 'all 0.3s',
                         }}
                       >
-                        <div style={{
-                          position: 'absolute', top: 3, left: popular ? 25 : 3,
-                          width: 20, height: 20, borderRadius: '50%', background: '#fff',
-                          boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left 0.25s',
+                        <span style={{
+                          position: 'absolute', top: 3, left: popular ? 25 : 3, width: 20, height: 20,
+                          borderRadius: '50%', background: '#fff', transition: 'left 0.3s',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
                         }} />
                       </button>
                     </div>
-                  </div>
-                  <button onClick={() => setActiveSection(1)} className="mt-6 flex items-center gap-2 font-bold text-sm" style={{ color: colorObj.from, background: 'none', border: 'none', cursor: 'pointer' }}>
-                    Next: Pricing <ChevronRight size={14} />
-                  </button>
-                </motion.div>
-              )}
 
-              {/* Section 1: Pricing Builder */}
-              {activeSection === 1 && (
-                <motion.div key="pricing" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-                  style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 20, padding: '1.75rem', boxShadow: '0 4px 24px rgba(0,0,0,0.05)' }}
-                >
-                  <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <DollarSign size={16} style={{ color: colorObj.from }} /> Pricing Builder
-                  </h2>
-                  <div className="grid gap-5">
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Base Price (MRP)</label>
-                      <div className="relative">
-                        <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, fontWeight: 700, color: '#64748b' }}>₹</span>
+                    <div className="flex justify-end mt-6">
+                      <button onClick={() => setActiveSection(1)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`, color: '#fff', boxShadow: `0 4px 16px ${colorObj.from}40` }}
+                      >
+                        Next: Pricing <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── PRICING ─── */}
+                {activeSection === 1 && (
+                  <div style={{ background: 'rgba(255,255,255,0.9)', borderRadius: 20, padding: '2rem', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 24 }}>Pricing Structure</h2>
+
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Base Amount (₹)</label>
                         <input type="number" value={baseAmount} onChange={e => setBaseAmount(Number(e.target.value))}
-                          style={{
-                            width: '100%', padding: '12px 16px 12px 32px', borderRadius: 12,
-                            border: `1.5px solid rgba(0,0,0,0.1)`, background: 'rgba(255,255,255,0.9)',
-                            fontSize: 18, fontWeight: 700, color: '#0f172a', outline: 'none',
-                          }}
+                          min={0}
+                          style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', fontSize: 15, fontWeight: 700, outline: 'none', background: '#f8fafc' }}
+                          onFocus={e => e.target.style.borderColor = colorObj.from}
+                          onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.1)'}
                         />
                       </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Discount Amount</label>
-                        {savingPct > 0 && <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981', background: '#d1fae5', padding: '2px 8px', borderRadius: 20 }}>Save {savingPct}%</span>}
-                      </div>
-                      <div className="relative">
-                        <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, fontWeight: 700, color: '#64748b' }}>₹</span>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Discount (₹)</label>
                         <input type="number" value={discount} onChange={e => setDiscount(Math.min(Number(e.target.value), baseAmount))}
                           min={0} max={baseAmount}
-                          style={{
-                            width: '100%', padding: '12px 16px 12px 32px', borderRadius: 12,
-                            border: `1.5px solid ${discount > 0 ? '#10b981' : 'rgba(0,0,0,0.1)'}`, background: 'rgba(255,255,255,0.9)',
-                            fontSize: 18, fontWeight: 700, color: '#0f172a', outline: 'none',
-                          }}
+                          style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', fontSize: 15, fontWeight: 700, outline: 'none', background: '#f8fafc' }}
+                          onFocus={e => e.target.style.borderColor = colorObj.from}
+                          onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.1)'}
                         />
                       </div>
+                    </div>
+
+                    {/* Discount slider */}
+                    <div style={{ marginBottom: 20 }}>
                       <input type="range" min={0} max={baseAmount} value={discount} onChange={e => setDiscount(Number(e.target.value))}
-                        style={{ width: '100%', marginTop: 8, accentColor: colorObj.from }}
+                        style={{ width: '100%', accentColor: colorObj.from }}
                       />
-                    </div>
-                    <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                      <div style={{ background: `${colorObj.from}0d`, border: `1px solid ${colorObj.from}25`, borderRadius: 12, padding: '12px 16px' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: colorObj.from, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Selling Price</div>
-                        <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>{fmtINR(finalAmount)}</div>
-                      </div>
-                      <div style={{ background: 'rgba(248,250,252,0.8)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 12, padding: '12px 16px' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Per Month</div>
-                        <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>{fmtINR(Math.round(monthlyRate))}</div>
+                      <div className="flex justify-between" style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+                        <span>No discount</span>
+                        {savingPct > 0 && <span style={{ color: '#10b981', fontWeight: 700 }}>{savingPct}% off</span>}
+                        <span>Max ({fmtINR(baseAmount)})</span>
                       </div>
                     </div>
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Joining / Registration Fee</label>
-                      <div className="relative">
-                        <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, fontWeight: 700, color: '#64748b' }}>₹</span>
-                        <input type="number" value={joiningFee} onChange={e => setJoiningFee(Number(e.target.value))}
-                          style={{
-                            width: '100%', padding: '12px 16px 12px 32px', borderRadius: 12,
-                            border: '1.5px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.9)',
-                            fontSize: 18, fontWeight: 700, color: '#0f172a', outline: 'none',
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>GST / Tax Rate (%)</label>
-                      <div className="flex gap-2 flex-wrap">
-                        {[0, 5, 12, 18, 28].map(t => (
-                          <button key={t} onClick={() => setTaxPct(t)}
-                            style={{
-                              padding: '8px 16px', borderRadius: 10, fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer',
-                              background: taxPct === t ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : 'rgba(241,245,249,0.9)',
-                              color: taxPct === t ? '#fff' : '#64748b', transition: 'all 0.18s',
-                            }}
-                          >{t}%</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', borderRadius: 14, padding: '16px 20px' }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 8 }}>TOTAL MEMBER PAYS (incl. tax + joining fee)</div>
-                      <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em' }}>{fmtINR(totalWithTax)}</div>
+
+                    {/* Final Amount Display */}
+                    <div style={{ padding: '16px 20px', borderRadius: 14, background: `linear-gradient(135deg, ${colorObj.from}10, ${colorObj.to}08)`, border: `1.5px solid ${colorObj.from}20`, marginBottom: 20 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: colorObj.from, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Final Amount</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginTop: 4 }}>{fmtINR(finalAmount)}</div>
                       <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{fmtINR(finalAmount)} + {fmtINR(taxAmount)} GST + {fmtINR(joiningFee)} joining fee</div>
                     </div>
-                  </div>
-                  <div className="flex gap-3 mt-6">
-                    <button onClick={() => setActiveSection(0)} className="flex items-center gap-2 font-bold text-sm" style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>← Basic Info</button>
-                    <button onClick={() => setActiveSection(2)} className="flex items-center gap-2 font-bold text-sm" style={{ color: colorObj.from, background: 'none', border: 'none', cursor: 'pointer' }}>
-                      Next: Duration <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
 
-              {/* Section 2: Duration */}
-              {activeSection === 2 && (
-                <motion.div key="duration" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-                  style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 20, padding: '1.75rem', boxShadow: '0 4px 24px rgba(0,0,0,0.05)' }}
-                >
-                  <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Clock size={16} style={{ color: colorObj.from }} /> Duration & Access
-                  </h2>
-                  <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-                    {DURATIONS.map(d => (
-                      <motion.button key={d} onClick={() => setDuration(d)} whileHover={{ y: -2 }}
-                        style={{
-                          padding: '20px 16px', borderRadius: 16, cursor: 'pointer',
-                          background: duration === d ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : 'rgba(255,255,255,0.9)',
-                          border: `2px solid ${duration === d ? 'transparent' : 'rgba(0,0,0,0.08)'}`,
-                          color: duration === d ? '#fff' : '#0f172a',
-                          boxShadow: duration === d ? `0 8px 24px ${colorObj.from}40` : '0 2px 8px rgba(0,0,0,0.05)',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-0.04em' }}>{DURATION_MONTHS[d]}</div>
-                        <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>month{DURATION_MONTHS[d] > 1 ? 's' : ''}</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>{d}</div>
-                        {duration === d && <Check size={14} style={{ margin: '8px auto 0', display: 'block' }} />}
-                      </motion.button>
-                    ))}
-                  </div>
-                  {kind === 'PT' && (
-                    <div className="mt-6">
-                      <label style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 12 }}>Sessions Per Week</label>
-                      <div className="flex gap-3">
-                        {[1, 2, 3, 4, 5, 6].map(n => (
-                          <button key={n} onClick={() => setSessionsPerWeek(n)}
-                            style={{
-                              width: 44, height: 44, borderRadius: 12, fontWeight: 800, fontSize: 16, border: 'none', cursor: 'pointer',
-                              background: sessionsPerWeek === n ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : 'rgba(241,245,249,0.9)',
-                              color: sessionsPerWeek === n ? '#fff' : '#64748b',
-                              boxShadow: sessionsPerWeek === n ? `0 4px 12px ${colorObj.from}40` : 'none',
-                              transition: 'all 0.18s',
-                            }}
-                          >{n}</button>
-                        ))}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Joining Fee (₹)</label>
+                        <input type="number" value={joiningFee} onChange={e => setJoiningFee(Number(e.target.value))}
+                          min={0}
+                          style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', fontSize: 15, fontWeight: 700, outline: 'none', background: '#f8fafc' }}
+                          onFocus={e => e.target.style.borderColor = colorObj.from}
+                          onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.1)'}
+                        />
                       </div>
-                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>
-                        = {sessionsPerWeek * 4 * DURATION_MONTHS[duration]} total sessions for {duration}
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>GST (%)</label>
+                        <input type="number" value={taxPct} onChange={e => setTaxPct(Number(e.target.value))}
+                          min={0} max={28}
+                          style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.1)', fontSize: 15, fontWeight: 700, outline: 'none', background: '#f8fafc' }}
+                          onFocus={e => e.target.style.borderColor = colorObj.from}
+                          onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.1)'}
+                        />
                       </div>
                     </div>
-                  )}
-                  <div className="flex gap-3 mt-6">
-                    <button onClick={() => setActiveSection(1)} className="font-bold text-sm" style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>← Pricing</button>
-                    <button onClick={() => setActiveSection(3)} className="flex items-center gap-2 font-bold text-sm" style={{ color: colorObj.from, background: 'none', border: 'none', cursor: 'pointer' }}>
-                      Next: Benefits <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
 
-              {/* Section 3: Benefits */}
-              {activeSection === 3 && (
-                <motion.div key="benefits" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-                  style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 20, padding: '1.75rem', boxShadow: '0 4px 24px rgba(0,0,0,0.05)' }}
-                >
-                  <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Gift size={16} style={{ color: colorObj.from }} /> Plan Benefits
-                  </h2>
-                  <div className="flex flex-wrap gap-2 mb-5">
-                    {BENEFIT_ICONS.map(b => {
-                      const full = `${b.icon} ${b.label}`;
-                      const active = benefits.includes(full);
-                      return (
-                        <button key={b.label} onClick={() => active ? removeBenefit(full) : addBenefit(full)}
+                    <div className="flex justify-between mt-6">
+                      <button onClick={() => setActiveSection(0)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: '1.5px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: '#fff', color: '#64748b' }}
+                      >
+                        <ArrowLeft size={16} /> Back
+                      </button>
+                      <button onClick={() => setActiveSection(2)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`, color: '#fff', boxShadow: `0 4px 16px ${colorObj.from}40` }}
+                      >
+                        Next: Duration <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ─── DURATION ─── */}
+                {activeSection === 2 && (
+                  <div style={{ background: 'rgba(255,255,255,0.9)', borderRadius: 20, padding: '2rem', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 24 }}>Plan Duration</h2>
+
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      {DURATIONS.map(d => (
+                        <button key={d} onClick={() => setDuration(d)}
                           style={{
-                            padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                            background: active ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : 'rgba(241,245,249,0.9)',
-                            color: active ? '#fff' : '#64748b',
-                            border: 'none', transition: 'all 0.18s',
-                            boxShadow: active ? `0 2px 8px ${colorObj.from}40` : 'none',
-                          }}
-                        >{b.icon} {b.label}</button>
-                      );
-                    })}
+                            padding: '16px', borderRadius: 14, cursor: 'pointer', transition: 'all 0.2s', border: 'none',
+                            background: duration === d ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : '#f8fafc',
+                            color: duration === d ? '#fff' : '#475569',
+                            boxShadow: duration === d ? `0 4px 16px ${colorObj.from}40` : '0 1px 4px rgba(0,0,0,0.06)',
+                            border: duration === d ? 'none' : '1.5px solid rgba(0,0,0,0.08)',
+                          } as any}
+                        >
+                          <div style={{ fontSize: 16, fontWeight: 800 }}>{d}</div>
+                          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>
+                            {DURATION_MONTHS[d]} month{DURATION_MONTHS[d] > 1 ? 's' : ''}
+                            {finalAmount > 0 && ` · ${fmtINR(Math.round(finalAmount / DURATION_MONTHS[d]))}/mo`}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* PT Sessions per week */}
+                    {kind === 'PT' && (
+                      <div style={{ marginBottom: 20, padding: '20px', borderRadius: 14, background: `${colorObj.from}08`, border: `1.5px solid ${colorObj.from}20` }}>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: colorObj.from, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Sessions Per Week</label>
+                        <div className="flex gap-3">
+                          {[2, 3, 4, 5, 6].map(n => (
+                            <button key={n} onClick={() => setSessionsPerWeek(n)}
+                              style={{
+                                width: 44, height: 44, borderRadius: 12, fontWeight: 800, fontSize: 16, border: 'none', cursor: 'pointer',
+                                background: sessionsPerWeek === n ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : '#fff',
+                                color: sessionsPerWeek === n ? '#fff' : '#64748b',
+                                boxShadow: sessionsPerWeek === n ? `0 4px 12px ${colorObj.from}40` : '0 1px 4px rgba(0,0,0,0.08)',
+                                transition: 'all 0.2s',
+                              }}
+                            >{n}</button>
+                          ))}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>{sessionsPerWeek}x per week · {sessionsPerWeek * 4} sessions/month</div>
+                      </div>
+                    )}
+
+                    {/* Revenue Projections */}
+                    {finalAmount > 0 && (
+                      <div style={{ padding: '20px', borderRadius: 14, background: '#f8fafc', border: '1px solid rgba(0,0,0,0.06)' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Revenue Projections</div>
+                        {[10, 25, 50].map(members => (
+                          <div key={members} className="flex justify-between items-center" style={{ padding: '8px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                            <span style={{ fontSize: 14, color: '#475569' }}>{members} members</span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{fmtINR(members * finalAmount)}<span style={{ fontSize: 12, color: '#94a3b8' }}>/mo</span></span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex justify-between mt-6">
+                      <button onClick={() => setActiveSection(1)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: '1.5px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: '#fff', color: '#64748b' }}
+                      >
+                        <ArrowLeft size={16} /> Back
+                      </button>
+                      <button onClick={() => setActiveSection(3)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`, color: '#fff', boxShadow: `0 4px 16px ${colorObj.from}40` }}
+                      >
+                        Next: Benefits <ChevronRight size={16} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2 mb-5">
-                    <input value={newBenefit} onChange={e => setNewBenefit(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addBenefit(newBenefit)}
-                      placeholder="Add custom benefit… (press Enter)"
-                      style={{
-                        flex: 1, padding: '10px 14px', borderRadius: 10,
-                        border: '1.5px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.9)',
-                        fontSize: 14, color: '#0f172a', outline: 'none',
-                      }}
-                    />
-                    <button onClick={() => addBenefit(newBenefit)}
-                      style={{
-                        padding: '10px 16px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700,
-                        background: `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`, color: '#fff',
-                      }}
-                    ><Plus size={16} /></button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {benefits.map(b => (
-                      <div key={b} className="flex items-center gap-2" style={{
-                        padding: '7px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                        background: `${colorObj.from}12`, color: colorObj.from,
-                        border: `1px solid ${colorObj.from}30`,
-                      }}>
-                        {b}
-                        <button onClick={() => removeBenefit(b)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: colorObj.from, lineHeight: 1 }}>
-                          <X size={12} />
+                )}
+
+                {/* ─── BENEFITS ─── */}
+                {activeSection === 3 && (
+                  <div style={{ background: 'rgba(255,255,255,0.9)', borderRadius: 20, padding: '2rem', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>Plan Benefits</h2>
+                    <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>Select what's included in this plan</p>
+
+                    {/* Quick-add badges */}
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {BENEFIT_ICONS.map(b => {
+                        const label = `${b.icon} ${b.label}`;
+                        const selected = benefits.includes(label);
+                        return (
+                          <button key={label}
+                            onClick={() => selected ? removeBenefit(label) : addBenefit(label)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 6,
+                              padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600,
+                              cursor: 'pointer', transition: 'all 0.2s', border: 'none',
+                              background: selected ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : '#f1f5f9',
+                              color: selected ? '#fff' : '#475569',
+                              boxShadow: selected ? `0 3px 10px ${colorObj.from}30` : 'none',
+                            }}
+                          >
+                            {selected && <Check size={12} />}
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Custom benefit input */}
+                    <div className="flex gap-2 mb-4">
+                      <input
+                        value={newBenefit}
+                        onChange={e => setNewBenefit(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && addBenefit(newBenefit)}
+                        placeholder="Add custom benefit... (press Enter)"
+                        style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.1)', fontSize: 14, outline: 'none', background: '#f8fafc' }}
+                        onFocus={e => e.target.style.borderColor = colorObj.from}
+                        onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.1)'}
+                      />
+                      <button onClick={() => addBenefit(newBenefit)}
+                        style={{ width: 40, height: 40, borderRadius: 10, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      ><Plus size={16} /></button>
+                    </div>
+
+                    {/* Selected benefits */}
+                    {benefits.length > 0 && (
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Selected ({benefits.length})</div>
+                        <div className="flex flex-wrap gap-2">
+                          {benefits.map(b => (
+                            <span key={b}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 12px', borderRadius: 999, fontSize: 13, fontWeight: 600, background: `${colorObj.from}12`, color: colorObj.from, border: `1px solid ${colorObj.from}25` }}
+                            >
+                              {b}
+                              <button onClick={() => removeBenefit(b)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: colorObj.from, display: 'flex', padding: 0, opacity: 0.7 }}>
+                                <X size={12} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between mt-6">
+                      <button onClick={() => setActiveSection(2)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: '1.5px solid rgba(0,0,0,0.1)', cursor: 'pointer', background: '#fff', color: '#64748b' }}
+                      >
+                        <ArrowLeft size={16} /> Back
+                      </button>
+                      <div className="flex gap-3">
+                        <button onClick={() => handleSave(false)} disabled={saving}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: '1.5px solid rgba(0,0,0,0.1)', cursor: saving ? 'not-allowed' : 'pointer', background: '#fff', color: '#64748b', opacity: saving ? 0.6 : 1 }}
+                        >
+                          <Save size={15} /> Save Draft
+                        </button>
+                        <button onClick={() => handleSave(true)} disabled={saving}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, fontWeight: 700, fontSize: 14, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: saving ? '#94a3b8' : `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`, color: '#fff', boxShadow: saving ? 'none' : `0 4px 16px ${colorObj.from}40`, opacity: saving ? 0.8 : 1 }}
+                        >
+                          {saving ? '⏳ Saving...' : <><Send size={15} /> Publish Plan</>}
                         </button>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                  <button onClick={() => setActiveSection(2)} className="mt-6 font-bold text-sm" style={{ color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>← Duration</button>
-                </motion.div>
-              )}
+                )}
+
+              </motion.div>
             </AnimatePresence>
           </div>
 
-          {/* RIGHT: Live Preview Card */}
-          <div style={{ position: 'sticky', top: 120 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Live Preview</div>
+          {/* RIGHT: Live Preview */}
+          <div className="lg:sticky lg:top-24 h-fit">
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Live Preview</div>
 
-            <motion.div
-              animate={{ boxShadow: `0 16px 48px ${colorObj.from}30` }}
-              style={{ borderRadius: 24, overflow: 'hidden', boxShadow: `0 16px 48px ${colorObj.from}30` }}
-            >
-              {/* Card header */}
-              <div style={{
-                background: `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`,
-                padding: '1.5rem 1.5rem 1.25rem',
-                position: 'relative', overflow: 'hidden',
-              }}>
-                <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-                <div style={{ position: 'absolute', bottom: -10, left: -10, width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+            {/* Plan Card */}
+            <div style={{
+              borderRadius: 24, overflow: 'hidden',
+              boxShadow: `0 20px 60px ${colorObj.from}30, 0 4px 16px rgba(0,0,0,0.08)`,
+            }}>
+              {/* Card Header */}
+              <div style={{ padding: '28px 28px 24px', background: `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                <div style={{ position: 'absolute', bottom: -10, left: '60%', width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>619 FITNESS · {kind}</div>
                 {popular && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.25)', borderRadius: 20, padding: '3px 10px', marginBottom: 10 }}>
-                    <Star size={10} style={{ color: '#fff' }} fill="#fff" />
-                    <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Popular</span>
+                  <div style={{ position: 'absolute', top: 20, right: 20, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', fontSize: 11, fontWeight: 700, color: '#fff' }}>
+                    <Star size={11} fill="#fff" /> POPULAR
                   </div>
                 )}
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>619 FITNESS · {kind}</div>
-                <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.2 }}>{name || 'Untitled Plan'}</div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.1 }}>{name || 'Plan Name'}</div>
                 <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 6 }}>{description || 'Your plan description will appear here'}</div>
-                <div style={{ marginTop: 16, display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <div className="flex items-baseline gap-2" style={{ marginTop: 16 }}>
                   <span style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: '-0.04em' }}>{fmtINR(finalAmount)}</span>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>/ {duration}</span>
+                  <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>/ {duration === 'Monthly' ? 'Monthly' : duration}</span>
+                  {savingPct > 0 && <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'line-through' }}>{fmtINR(baseAmount)}</span>}
                 </div>
-                {discount > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'line-through' }}>{fmtINR(baseAmount)}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,0.25)', color: '#fff', padding: '2px 8px', borderRadius: 20 }}>Save {savingPct}%</span>
-                  </div>
+                {duration !== 'Monthly' && finalAmount > 0 && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>{fmtINR(Math.round(monthlyRate))}/month equivalent</div>
                 )}
               </div>
 
-              {/* Card body */}
-              <div style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', padding: '1.25rem 1.5rem' }}>
-                <div className="flex items-center gap-2 mb-4">
-                  <div style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: `${colorObj.from}12`, color: colorObj.from }}>⏱ {duration}</div>
-                  {kind === 'PT' && (
-                    <div style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: '#fef3c7', color: '#d97706' }}>🏆 {sessionsPerWeek}×/week</div>
-                  )}
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Includes</div>
-                <div className="flex flex-col gap-2">
-                  {benefits.slice(0, 6).map(b => (
-                    <div key={b} className="flex items-center gap-2">
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: `${colorObj.from}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Check size={10} style={{ color: colorObj.from }} />
+              {/* Card Body */}
+              <div style={{ padding: '20px 28px 28px', background: '#fff' }}>
+                {kind === 'PT' && (
+                  <div className="flex gap-2 mb-4">
+                    <span style={{ padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: `${colorObj.from}12`, color: colorObj.from, border: `1px solid ${colorObj.from}20` }}>🔄 {duration}</span>
+                    <span style={{ padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: '#fef3c7', color: '#d97706', border: '1px solid #fde68a' }}>🏆 {sessionsPerWeek}x/week</span>
+                  </div>
+                )}
+
+                {benefits.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>INCLUDES</div>
+                    {benefits.slice(0, 6).map(b => (
+                      <div key={b} className="flex items-center gap-2" style={{ padding: '5px 0', fontSize: 13, color: '#475569' }}>
+                        <Check size={13} style={{ color: colorObj.from, flexShrink: 0 }} />
+                        {b}
                       </div>
-                      <span style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>{b}</span>
+                    ))}
+                    {benefits.length > 6 && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>+{benefits.length - 6} more benefits</div>}
+                  </div>
+                )}
+
+                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
+                  {[
+                    { label: 'Joining fee', value: fmtINR(joiningFee) },
+                    { label: `GST (${taxPct}%)`, value: fmtINR(taxAmount) },
+                  ].map(row => (
+                    <div key={row.label} className="flex justify-between" style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>
+                      <span>{row.label}</span><span>{row.value}</span>
                     </div>
                   ))}
-                  {benefits.length > 6 && (
-                    <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>+{benefits.length - 6} more benefits</div>
-                  )}
-                </div>
-                <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                  <div className="flex justify-between text-sm" style={{ color: '#64748b', marginBottom: 4 }}>
-                    <span>Joining fee</span><span style={{ fontWeight: 700, color: '#0f172a' }}>{fmtINR(joiningFee)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm" style={{ color: '#64748b', marginBottom: 4 }}>
-                    <span>GST ({taxPct}%)</span><span style={{ fontWeight: 700, color: '#0f172a' }}>{fmtINR(taxAmount)}</span>
-                  </div>
-                  <div className="flex justify-between" style={{ paddingTop: 8, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Total Payable</span>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: colorObj.from }}>{fmtINR(totalWithTax)}</span>
+                  <div className="flex justify-between" style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', marginTop: 8, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
+                    <span>Total Payable</span>
+                    <span style={{ color: colorObj.from }}>{fmtINR(totalWithTax)}</span>
                   </div>
                 </div>
               </div>
-            </motion.div>
-
-            {/* Revenue projections */}
-            <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '1rem 1.25rem', marginTop: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Revenue Projections</div>
-              {[{ label: '10 members', n: 10 }, { label: '25 members', n: 25 }, { label: '50 members', n: 50 }].map(row => (
-                <div key={row.n} className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                  <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>{row.label}</span>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>{fmtINR(finalAmount * row.n)}<span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>/mo</span></span>
-                </div>
-              ))}
             </div>
 
-            {/* Save buttons */}
-            <div className="flex flex-col gap-3 mt-5">
-              <button onClick={() => handleSave(true)} disabled={saving}
-                style={{
-                  width: '100%', padding: '14px', borderRadius: 14, border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
-                  background: saving ? '#e2e8f0' : `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})`,
-                  color: saving ? '#94a3b8' : '#fff', fontWeight: 800, fontSize: 15,
-                  boxShadow: saving ? 'none' : `0 8px 24px ${colorObj.from}40`,
-                  transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}
-              >
-                <Sparkles size={16} /> {saving ? 'Saving…' : 'Publish Plan'}
-              </button>
-              <button onClick={() => handleSave(false)} disabled={saving}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 14, cursor: saving ? 'not-allowed' : 'pointer',
-                  background: 'rgba(255,255,255,0.9)', border: '1.5px solid rgba(0,0,0,0.1)',
-                  color: '#64748b', fontWeight: 700, fontSize: 14,
-                  transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}
-              >
-                <Save size={14} /> Save as Draft
-              </button>
-            </div>
+            {/* Revenue Projections on Preview */}
+            {finalAmount > 0 && (
+              <div style={{ marginTop: 16, padding: '20px', borderRadius: 16, background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Revenue Projections</div>
+                {[10, 25, 50].map(m => (
+                  <div key={m} className="flex justify-between items-center" style={{ padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                    <span style={{ fontSize: 13, color: '#64748b' }}>{m} members</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>{fmtINR(m * finalAmount)}<span style={{ fontSize: 11, color: '#94a3b8' }}>/mo</span></span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
