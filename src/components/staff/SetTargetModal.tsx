@@ -1,26 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { api } from '@/lib/api';
-
-interface StaffMember {
-  id: string;
-  name: string;
-  role: string;
-}
-
-interface StaffTarget {
-  id: string;
-  staff_id: string;
-  staff_name: string;
-  staff_role: string;
-  month: string;
-  revenue_target: number;
-  client_target: number;
-  revenue_achieved: number;
-  clients_achieved: number;
-  sessions_achieved: number;
-}
+import { api, StaffTarget, StaffMember } from '@/lib/api';
 
 interface Props {
   staff: StaffMember[];
@@ -56,10 +37,10 @@ export default function SetTargetModal({
 }: Props) {
   const [staffId, setStaffId] = useState(editTarget?.staff_id ?? '');
   const [revenue, setRevenue] = useState(
-    editTarget?.revenue_target ? String(editTarget.revenue_target) : ''
+    editTarget?.target_revenue ? String(editTarget.target_revenue) : ''
   );
   const [clients, setClients] = useState(
-    editTarget?.client_target ? String(editTarget.client_target) : ''
+    editTarget?.target_clients ? String(editTarget.target_clients) : ''
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -94,8 +75,8 @@ export default function SetTargetModal({
       const payload = {
         staff_id: staffId,
         month,
-        revenue_target: revNum,
-        client_target: cliNum,
+        target_revenue: revNum,
+        target_clients: cliNum,
       };
       if (editTarget) {
         await api.staff.targets.update(editTarget.id, payload);
