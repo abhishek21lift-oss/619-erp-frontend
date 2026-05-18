@@ -1,0 +1,9 @@
+.git
+.next
+node_modules
+.env.local
+.env.*.local
+design-prototypes
+*.log
+.DS_Store
+README.md
