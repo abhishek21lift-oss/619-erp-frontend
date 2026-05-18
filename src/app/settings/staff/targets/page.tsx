@@ -1,29 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { api, StaffTarget, StaffMember } from '@/lib/api';
 import SetTargetModal from '@/components/staff/SetTargetModal';
-
-/* ─── Types ─────────────────────────────────────────── */
-interface StaffMember {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-}
-
-interface StaffTarget {
-  id: string;
-  staff_id: string;
-  staff_name: string;
-  staff_role: string;
-  month: string;
-  revenue_target: number;
-  client_target: number;
-  revenue_achieved: number;
-  clients_achieved: number;
-  sessions_achieved: number;
-}
 
 /* ─── Helpers ────────────────────────────────────────── */
 const INR = (n: number) =>
@@ -170,8 +149,8 @@ function StaffTargetCard({
   t: StaffTarget;
   onEdit: (t: StaffTarget) => void;
 }) {
-  const revPct = pct(t.revenue_achieved, t.revenue_target);
-  const cliPct = pct(t.clients_achieved, t.client_target);
+  const revPct = pct(t.achieved_revenue, t.target_revenue);
+  const cliPct = pct(t.achieved_clients, t.target_clients);
   const overall = Math.round((revPct + cliPct) / 2);
   const b = badge(overall);
   const initials = t.staff_name
@@ -193,7 +172,7 @@ function StaffTargetCard({
             </div>
             <div>
               <p className="text-[15px] font-semibold text-slate-950">{t.staff_name}</p>
-              <p className="text-[12px] text-slate-500">{t.staff_role}</p>
+              <p className="text-[12px] text-slate-500">{t.role}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -216,8 +195,8 @@ function StaffTargetCard({
         {/* Metrics row */}
         <div className="mb-4 grid grid-cols-3 gap-3">
           {[
-            { label: 'Revenue', val: INR(t.revenue_target) },
-            { label: 'Clients', val: String(t.client_target) },
+            { label: 'Revenue', val: INR(t.target_revenue) },
+            { label: 'Clients', val: String(t.target_clients) },
             { label: 'Achieved', val: `${overall}%` },
           ].map((m) => (
             <div key={m.label} className="rounded-xl bg-slate-50/80 px-3 py-2.5">
@@ -249,7 +228,7 @@ function StaffTargetCard({
               <div className="mb-1 flex justify-between text-[11px] text-slate-500">
                 <span>Revenue</span>
                 <span className="font-medium text-slate-700">
-                  {INR(t.revenue_achieved)} / {INR(t.revenue_target)}
+                  {INR(t.achieved_revenue)} / {INR(t.target_revenue)}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -263,7 +242,7 @@ function StaffTargetCard({
               <div className="mb-1 flex justify-between text-[11px] text-slate-500">
                 <span>Clients</span>
                 <span className="font-medium text-slate-700">
-                  {t.clients_achieved} / {t.client_target}
+                  {t.achieved_clients} / {t.target_clients}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -325,8 +304,8 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 function Leaderboard({ targets }: { targets: StaffTarget[] }) {
   const sorted = [...targets]
     .sort((a, b) => {
-      const pa = pct(a.revenue_achieved, a.revenue_target);
-      const pb = pct(b.revenue_achieved, b.revenue_target);
+      const pa = pct(a.achieved_revenue, a.target_revenue);
+      const pb = pct(b.achieved_revenue, b.target_revenue);
       return pb - pa;
     })
     .slice(0, 5);
@@ -338,7 +317,7 @@ function Leaderboard({ targets }: { targets: StaffTarget[] }) {
       </div>
       <div className="divide-y divide-slate-100/60">
         {sorted.map((t, i) => {
-          const p = pct(t.revenue_achieved, t.revenue_target);
+          const p = pct(t.achieved_revenue, t.target_revenue);
           const medals = ['🥇', '🥈', '🥉'];
           return (
             <div key={t.id} className="flex items-center gap-3 px-5 py-3.5">
@@ -409,12 +388,12 @@ export default function StaffTargetsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month]);
 
-  const totalRevTarget = targets.reduce((s, t) => s + t.revenue_target, 0);
-  const totalRevAchieved = targets.reduce((s, t) => s + t.revenue_achieved, 0);
+  const totalRevTarget = targets.reduce((s, t) => s + (t.target_revenue ?? 0), 0);
+  const totalRevAchieved = targets.reduce((s, t) => s + (t.achieved_revenue ?? 0), 0);
   const overallPct = pct(totalRevAchieved, totalRevTarget);
   const bestPerformer = [...targets].sort(
     (a, b) =>
-      pct(b.revenue_achieved, b.revenue_target) - pct(a.revenue_achieved, a.revenue_target)
+      pct(b.achieved_revenue, b.target_revenue) - pct(a.achieved_revenue, a.target_revenue)
   )[0];
   const pendingTargets = Math.max(staff.length - targets.length, 0);
 
@@ -530,7 +509,7 @@ export default function StaffTargetsPage() {
             value={bestPerformer ? bestPerformer.staff_name.split(' ')[0] : '—'}
             sub={
               bestPerformer
-                ? `${pct(bestPerformer.revenue_achieved, bestPerformer.revenue_target)}% achieved`
+                ? `${pct(bestPerformer.achieved_revenue, bestPerformer.target_revenue)}% achieved`
                 : 'No data'
             }
             accentColor="#0891b2"
@@ -564,7 +543,7 @@ export default function StaffTargetsPage() {
                 ? String(
                     Math.round(
                       targets.reduce(
-                        (s, t) => s + pct(t.revenue_achieved, t.revenue_target),
+                        (s, t) => s + pct(t.achieved_revenue, t.target_revenue),
                         0
                       ) / targets.length
                     )
@@ -640,13 +619,13 @@ export default function StaffTargetsPage() {
                     },
                     {
                       label: 'Clients active',
-                      value: String(targets.reduce((s, t) => s + t.clients_achieved, 0)),
-                      of: String(targets.reduce((s, t) => s + t.client_target, 0)),
+                      value: String(targets.reduce((s, t) => s + (t.achieved_clients ?? 0), 0)),
+                      of: String(targets.reduce((s, t) => s + (t.target_clients ?? 0), 0)),
                     },
                     {
                       label: 'Sessions done',
-                      value: String(targets.reduce((s, t) => s + (t.sessions_achieved ?? 0), 0)),
-                      of: '—',
+                      value: String(targets.reduce((s, t) => s + (t.achieved_sessions ?? 0), 0)),
+                      of: String(targets.reduce((s, t) => s + (t.target_sessions ?? 0), 0)),
                     },
                   ].map((row) => (
                     <div key={row.label} className="flex items-center justify-between">
