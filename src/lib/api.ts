@@ -177,21 +177,22 @@ export type StaffMember = {
   created_at?: string;
 };
 
-// All numeric fields are required (default 0 from API).
-// The page uses ?? 0 guards defensively, but the type must be
+// Canonical StaffTarget shape — field names match what SetTargetModal and
+// page.tsx both read/write. All numeric fields are required (default 0 from
+// the API). The page uses ?? 0 guards defensively, but the type must be
 // consistent so setState<StaffTarget[]> accepts the API response.
 export type StaffTarget = {
   id: string;
   staff_id: string;
   staff_name: string;
-  role: string;
+  staff_role: string;
   month: string;
-  target_revenue: number;
-  target_clients: number;
-  target_sessions: number;
-  achieved_revenue: number;
-  achieved_clients: number;
-  achieved_sessions: number;
+  revenue_target: number;
+  client_target: number;
+  sessions_target: number;
+  revenue_achieved: number;
+  clients_achieved: number;
+  sessions_achieved: number;
 };
 
 // Mirror of the dashboard summary endpoint shape. Kept loose-typed
