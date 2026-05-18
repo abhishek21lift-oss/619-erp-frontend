@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, findItemByPath, isVisibleForRole } from '@/lib/nav-config';
+import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/lib/nav-config';
 import { Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut, Search } from 'lucide-react';
 import { cn } from '@/components/ui';
 
@@ -35,9 +35,6 @@ const GROUP_COLORS: Record<string, {
 };
 
 const DEFAULT_COLOR = GROUP_COLORS.dashboard;
-
-// Row 1 always gets the first ROW1_COUNT groups; everything else lands on row 2.
-// Tweak this number if you add/remove groups later.
 const ROW1_COUNT = 6;
 
 export default function PremiumHeader({ onMenuClick }: Props) {
@@ -93,9 +90,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       items: group.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
     })).filter((group) => {
       const g = NAV_GROUPS.find((ng) => ng.id === group.id);
-      if (g?.roles?.length) {
-        return !!user?.role && g.roles.includes(user.role as any);
-      }
+      if (g?.roles?.length) return !!user?.role && g.roles.includes(user.role as any);
       return group.items.length > 0;
     });
     const visibleSettings = {
@@ -109,7 +104,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     ];
   }, [user?.role]);
 
-  // Always exactly 2 rows — first ROW1_COUNT groups on row 1, the rest on row 2
   const row1 = topGroups.slice(0, ROW1_COUNT);
   const row2 = topGroups.slice(ROW1_COUNT);
 
@@ -133,11 +127,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
           aria-expanded={opened}
           style={active
-            ? {
-                background: colors.gradient,
-                boxShadow: `0 4px 18px ${colors.glow}, 0 1px 3px ${colors.glow}`,
-                transform: 'translateY(-1px)',
-              }
+            ? { background: colors.gradient, boxShadow: `0 4px 18px ${colors.glow}, 0 1px 3px ${colors.glow}`, transform: 'translateY(-1px)' }
             : undefined
           }
           className={cn(
@@ -177,11 +167,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               WebkitBackdropFilter: 'blur(20px)',
             }}
           >
-            {/* Colored top accent strip */}
-            <div
-              className="mb-1.5 h-[3px] w-full rounded-full"
-              style={{ background: colors.gradient }}
-            />
+            <div className="mb-1.5 h-[3px] w-full rounded-full" style={{ background: colors.gradient }} />
             {group.items.map((item) => {
               const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -228,11 +214,12 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         <div ref={headerRef} className="mx-auto flex w-full max-w-[1680px] flex-col px-4 pb-2 pt-3 sm:px-6 lg:px-8">
           <div className="flex items-start gap-4">
 
-            {/* Mobile menu */}
+            {/* ── Mobile hamburger — visible below lg ── */}
             <button
+              type="button"
               className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-150 hover:bg-slate-50 hover:shadow-md lg:hidden"
               onClick={onMenuClick}
-              aria-label="Open navigation"
+              aria-label="Open navigation menu"
             >
               <Menu size={17} />
             </button>
@@ -280,13 +267,11 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
             <div className="mx-1 hidden h-10 w-px self-center bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
 
-            {/* Nav — always exactly 2 rows */}
+            {/* Desktop nav — always exactly 2 rows, only visible lg+ */}
             <div className="hidden min-w-0 flex-1 flex-col gap-[2px] pt-[2px] lg:flex">
-              {/* Row 1 */}
               <nav aria-label="Primary navigation" className="flex min-w-0 flex-nowrap items-center gap-1">
                 {row1.map(renderGroup)}
               </nav>
-              {/* Row 2 */}
               {row2.length > 0 && (
                 <nav aria-label="Secondary navigation" className="flex min-w-0 flex-nowrap items-center gap-1 pl-1">
                   {row2.map(renderGroup)}

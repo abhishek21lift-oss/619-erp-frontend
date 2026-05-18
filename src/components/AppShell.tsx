@@ -15,18 +15,27 @@ interface AppShellProps {
 export default function AppShell({ children, title }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Close drawer when viewport becomes desktop-width
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
+    const mq = window.matchMedia('(min-width: 1024px)');
     const listener = (e: MediaQueryListEvent) => { if (e.matches) setMobileOpen(false); };
     mq.addEventListener('change', listener);
     return () => mq.removeEventListener('change', listener);
   }, []);
 
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
   return (
     <div className="min-h-screen bg-[var(--bg-canvas)]">
       <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
-      <main className="mx-auto w-full max-w-[1600px] px-3 pb-6 pt-[88px] sm:px-5 sm:pb-8 sm:pt-[100px] lg:px-8 lg:pt-[116px]">{children}</main>
+      <main className="mx-auto w-full max-w-[1600px] px-3 pb-6 pt-[88px] sm:px-5 sm:pb-8 sm:pt-[100px] lg:px-8 lg:pt-[116px]">
+        {children}
+      </main>
     </div>
   );
 }
