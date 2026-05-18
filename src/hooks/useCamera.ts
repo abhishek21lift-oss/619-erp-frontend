@@ -1,7 +1,10 @@
 'use client';
 /**
- * useCamera — manages webcam lifecycle.
- * Exposes videoRef, start(), stop(), and permission state.
+ * useCamera — manages webcam lifecycle with fixes for:
+ * - Safari autoPlay policy (play() wrapped in catch)
+ * - onloadedmetadata timeout rejecting with undefined
+ * - Front camera selection on all devices
+ * - Stream cleanup on stop
  */
 import { useRef, useState, useCallback } from 'react';
 
@@ -24,9 +27,14 @@ export function useCamera(): UseCameraReturn {
   const [dimensions, setDimensions] = useState({ width: 640, height: 480 });
 
   const stop = useCallback(() => {
-    streamRef.current?.getTracks().forEach(t => t.stop());
+    try {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    } catch {}
     streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+      videoRef.current.load(); // force reset on Safari
+    }
     setStatus('idle');
     setError('');
   }, []);
@@ -36,46 +44,87 @@ export function useCamera(): UseCameraReturn {
     setStatus('starting');
     setError('');
 
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setError('Your browser does not support camera access. Use Chrome or Safari 14+.');
+      setStatus('error');
+      return false;
+    }
+
     try {
-      // Prefer environment-facing camera on mobile, user-facing on desktop
+      // Stop any existing stream first
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode: 'user',
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          frameRate: { ideal: 30 },
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          frameRate: { ideal: 24, max: 30 },
         },
+        audio: false,
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
-      if (!videoRef.current) { stop(); return false; }
+      if (!videoRef.current) {
+        stream.getTracks().forEach(t => t.stop());
+        setStatus('error');
+        setError('Video element not available.');
+        return false;
+      }
 
-      videoRef.current.srcObject = stream;
+      const video = videoRef.current;
+      video.srcObject = stream;
 
-      // Wait for video to be ready
+      // FIX: properly typed timeout rejection
       await new Promise<void>((resolve, reject) => {
-        const v = videoRef.current!;
-        v.onloadedmetadata = () => {
-          setDimensions({ width: v.videoWidth || 640, height: v.videoHeight || 480 });
+        let settled = false;
+        const timer = window.setTimeout(() => {
+          if (!settled) { settled = true; reject(new Error('Camera stream timed out')); }
+        }, 8000);
+
+        video.onloadedmetadata = () => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          setDimensions({
+            width: video.videoWidth || 640,
+            height: video.videoHeight || 480,
+          });
           resolve();
         };
-        v.onerror = reject;
-        setTimeout(reject, 5000); // 5s timeout
+
+        video.onerror = (e) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          reject(new Error('Video element error'));
+        };
       });
 
-      await videoRef.current.play();
+      // FIX: Safari autoplay — play() may throw NotAllowedError, catch and ignore
+      try { await video.play(); } catch (playErr: any) {
+        // Safari sometimes rejects play() even on muted video — the stream still works
+        console.warn('[camera] play() failed (often benign on Safari):', playErr?.name);
+      }
+
       setStatus('active');
       return true;
     } catch (err: any) {
-      const msg = err?.name === 'NotAllowedError'
-        ? 'Camera permission denied. Please allow camera access.'
-        : err?.name === 'NotFoundError'
+      const name = err?.name ?? '';
+      const msg = name === 'NotAllowedError' || name === 'PermissionDeniedError'
+        ? 'Camera permission denied. Please allow camera access in your browser settings.'
+        : name === 'NotFoundError' || name === 'DevicesNotFoundError'
         ? 'No camera found on this device.'
-        : 'Could not start camera. Please check your device.';
+        : name === 'NotReadableError' || name === 'TrackStartError'
+        ? 'Camera is in use by another application. Close it and try again.'
+        : name === 'OverconstrainedError'
+        ? 'Camera does not meet requirements. Try a different browser.'
+        : (err?.message || 'Could not start camera. Please check your device.');
       setError(msg);
-      setStatus(err?.name === 'NotAllowedError' ? 'denied' : 'error');
+      setStatus(name === 'NotAllowedError' || name === 'PermissionDeniedError' ? 'denied' : 'error');
       return false;
     }
   }, [status, stop]);

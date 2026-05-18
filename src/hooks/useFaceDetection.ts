@@ -1,16 +1,26 @@
-
 'use client';
+/**
+ * useFaceDetection — face-api.js wrapper with fixes for:
+ * 1. modelStatus stale closure in loadModels() → replaced with a ref
+ * 2. Canvas size set before video metadata ready → resized each loop tick
+ * 3. MIN_FACE_SIZE applied to raw (un-scaled) box.width now
+ * 4. TF backend selection hardened for Safari/iOS
+ * 5. CDN fallback added for face-api models (jsDelivr)
+ */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
 
+// Model sources tried in order. CDN fallback ensures models always load even if
+// /public/models is missing from the deployment.
 const MODEL_SOURCES = [
   '/models',
   '/face-models',
+  'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model',
 ];
+
 const RECOGNITION_THRESHOLD = 0.50;
-const DETECTION_INTERVAL_MS = 120;
-const MIN_FACE_SIZE = 80;
-const DETECTOR_CANDIDATES = ['ssd', 'tiny'] as const;
+const DETECTION_INTERVAL_MS = 150;  // ~6-7fps for inference, smooth enough
+const MIN_FACE_SIZE_PX = 60;        // applied to raw videoWidth coords now
 
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -33,26 +43,47 @@ interface UseFaceDetectionReturn {
 export function useFaceDetection(): UseFaceDetectionReturn {
   const [modelStatus, setModelStatus] = useState<ModelStatus>('idle');
   const [modelError, setModelError] = useState('');
+
+  // FIX: use a ref for model status so async callbacks never see stale value
+  const modelStatusRef = useRef<ModelStatus>('idle');
+  const setModelStatusSync = (s: ModelStatus) => { modelStatusRef.current = s; setModelStatus(s); };
+
   const faceApiRef = useRef<any>(null);
   const rafRef = useRef<number>(0);
   const lastRunRef = useRef<number>(0);
   const processingRef = useRef(false);
-  const detectorRef = useRef<'ssd' | 'tiny'>('ssd');
+  const detectorRef = useRef<'ssd' | 'tiny'>('tiny'); // default tiny; upgrade to ssd if available
 
   const getFaceApi = useCallback(async () => {
     if (faceApiRef.current) return faceApiRef.current;
-    const tf = await import('@tensorflow/tfjs');
+
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
     const isIOS = /iPhone|iPad|iPod/i.test(ua);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(ua) || (isIOS && /Safari/i.test(ua));
+    const isSafari = /^((?!chrome|android).)*safari/i.test(ua) || isIOS;
+
+    const tf = await import('@tensorflow/tfjs');
+
+    // FIX: proper backend selection — webgl for desktop, cpu for iOS/Safari
     try {
-      if (isIOS || isSafari) await tf.setBackend('cpu');
-      else { try { await tf.setBackend('webgl'); } catch { await tf.setBackend('cpu'); } }
+      if (isIOS || isSafari) {
+        await tf.setBackend('cpu');
+      } else {
+        try {
+          await tf.setBackend('webgl');
+          await tf.ready();
+          // Sanity check — webgl sometimes reports ready but fails on inference
+          const test = tf.tensor1d([1, 2, 3]);
+          test.dispose();
+        } catch {
+          await tf.setBackend('cpu');
+        }
+      }
       await tf.ready();
-      console.info('[face] tf backend', tf.getBackend());
-    } catch (e) {
+      console.info('[face] tf backend:', tf.getBackend());
+    } catch {
       try { await tf.setBackend('cpu'); await tf.ready(); } catch {}
     }
+
     const faceapi = await import('face-api.js');
     faceApiRef.current = faceapi;
     return faceapi;
@@ -60,133 +91,234 @@ export function useFaceDetection(): UseFaceDetectionReturn {
 
   const loadOne = useCallback(async (faceapi: any, base: string) => {
     const url = base.replace(/\/$/, '');
-    console.info('[face] trying model source', url);
+    console.info('[face] trying model source:', url);
 
-    const withTimeout = (promise: Promise<any>, label: string) => Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error(`timeout: ${url}:${label}`)), 12000)),
-    ]);
+    const withTimeout = <T>(p: Promise<T>, label: string, ms = 15000): Promise<T> =>
+      Promise.race([p, new Promise<T>((_, r) => setTimeout(() => r(new Error(`timeout:${label}`)), ms))]);
 
-    await withTimeout(faceapi.nets.tinyFaceDetector.loadFromUri(url), 'tiny');
-    await withTimeout(faceapi.nets.faceLandmark68Net.loadFromUri(url), 'landmark');
-    await withTimeout(faceapi.nets.faceRecognitionNet.loadFromUri(url), 'recognition');
+    // Always load tiny + landmark + recognition (required for descriptors)
+    await withTimeout(faceapi.nets.tinyFaceDetector.loadFromUri(url), 'tinyFaceDetector');
+    await withTimeout(faceapi.nets.faceLandmark68Net.loadFromUri(url), 'faceLandmark68Net');
+    await withTimeout(faceapi.nets.faceRecognitionNet.loadFromUri(url), 'faceRecognitionNet');
 
+    // SSD is optional — better accuracy but larger model
     try {
-      await withTimeout(faceapi.nets.ssdMobilenetv1.loadFromUri(url), 'ssd');
+      await withTimeout(faceapi.nets.ssdMobilenetv1.loadFromUri(url), 'ssdMobilenetv1', 20000);
       detectorRef.current = 'ssd';
-      console.info('[face] SSD model ready from', url);
-    } catch (ssdErr) {
+      console.info('[face] SSD loaded — using SSD detector');
+    } catch (e) {
       detectorRef.current = 'tiny';
-      console.warn('[face] SSD model unavailable, using tiny detector only', ssdErr);
+      console.warn('[face] SSD unavailable, using TinyFaceDetector only');
     }
 
-    console.info('[face] loaded models from', url, 'detector=', detectorRef.current);
+    console.info('[face] models ready from', url, '| detector:', detectorRef.current);
   }, []);
 
   const loadModels = useCallback(async (): Promise<boolean> => {
-    if (modelStatus === 'ready') return true;
-    setModelStatus('loading');
+    // FIX: use ref instead of stale state
+    if (modelStatusRef.current === 'ready') return true;
+    if (modelStatusRef.current === 'loading') {
+      // Wait for existing load to finish
+      return new Promise(resolve => {
+        const check = setInterval(() => {
+          if (modelStatusRef.current === 'ready') { clearInterval(check); resolve(true); }
+          if (modelStatusRef.current === 'error') { clearInterval(check); resolve(false); }
+        }, 100);
+      });
+    }
+
+    setModelStatusSync('loading');
     setModelError('');
+
     try {
       const faceapi = await getFaceApi();
       let lastErr: any = null;
       for (const source of MODEL_SOURCES) {
         try {
           await loadOne(faceapi, source);
-          setModelStatus('ready');
+          setModelStatusSync('ready');
           return true;
         } catch (e) {
           lastErr = e;
-          console.error('[face] failed source', source, e);
+          console.warn('[face] source failed:', source, e);
         }
       }
-      throw lastErr || new Error('All model sources failed');
+      throw lastErr ?? new Error('All model sources failed');
     } catch (err: any) {
-      const msg = err?.message || 'Could not load face recognition models';
+      const msg = err?.message ?? 'Could not load face recognition models';
       setModelError(msg);
-      setModelStatus('error');
-      console.error('[FaceDetection] Model load error:', err);
+      setModelStatusSync('error');
+      console.error('[face] model load failed:', err);
       return false;
     }
-  }, [modelStatus, getFaceApi, loadOne]);
+  }, [getFaceApi, loadOne]);
 
   const stopDetectionLoop = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
     processingRef.current = false;
   }, []);
 
-  const startDetectionLoop = useCallback((videoEl: HTMLVideoElement, canvasEl: HTMLCanvasElement, onDetection: (result: DetectionResult) => void) => {
-    if (!faceApiRef.current) return;
+  const startDetectionLoop = useCallback((
+    videoEl: HTMLVideoElement,
+    canvasEl: HTMLCanvasElement,
+    onDetection: (result: DetectionResult) => void
+  ) => {
+    if (!faceApiRef.current) {
+      console.error('[face] startDetectionLoop called before models loaded');
+      return;
+    }
+    cancelAnimationFrame(rafRef.current);
+    processingRef.current = false;
+
     const faceapi = faceApiRef.current;
-    canvasEl.width = videoEl.videoWidth || 640;
-    canvasEl.height = videoEl.videoHeight || 480;
-    const ctx = canvasEl.getContext('2d');
 
     const loop = async (timestamp: number) => {
       rafRef.current = requestAnimationFrame(loop);
+
       if (timestamp - lastRunRef.current < DETECTION_INTERVAL_MS) return;
       if (processingRef.current) return;
-      if (videoEl.readyState < 2) return;
+      // FIX: check readyState 2 = HAVE_CURRENT_DATA, 3/4 = enough to decode
+      if (!videoEl || videoEl.readyState < 2) return;
+      if (videoEl.paused || videoEl.ended) return;
+
       lastRunRef.current = timestamp;
       processingRef.current = true;
+
       try {
+        // FIX: resize canvas each tick to match actual video dimensions
+        const vw = videoEl.videoWidth;
+        const vh = videoEl.videoHeight;
+        if (vw > 0 && vh > 0) {
+          if (canvasEl.width !== vw) canvasEl.width = vw;
+          if (canvasEl.height !== vh) canvasEl.height = vh;
+        }
+
+        const ctx = canvasEl.getContext('2d');
         ctx?.clearRect(0, 0, canvasEl.width, canvasEl.height);
-        let detections = [] as any[];
+
+        let detections: any[] = [];
+
         if (detectorRef.current === 'ssd') {
           try {
             detections = await faceapi
-              .detectAllFaces(videoEl, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.45 }))
+              .detectAllFaces(videoEl, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.40 }))
               .withFaceLandmarks()
               .withFaceDescriptors();
           } catch (e) {
-            console.warn('[face] ssd detect failed, falling back to tiny', e);
+            console.warn('[face] SSD failed, switching to tiny:', e);
             detectorRef.current = 'tiny';
           }
         }
+
         if (!detections || detections.length === 0) {
           detections = await faceapi
-            .detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 }))
+            .detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({
+              inputSize: 320,
+              scoreThreshold: 0.40,
+            }))
             .withFaceLandmarks()
             .withFaceDescriptors();
         }
-        if (!detections || detections.length === 0) { onDetection({ detected: false, multipleFaces: false }); processingRef.current = false; return; }
+
+        if (!detections || detections.length === 0) {
+          onDetection({ detected: false, multipleFaces: false });
+          processingRef.current = false;
+          return;
+        }
+
         if (detections.length > 1) {
           if (ctx) {
-            const scaleX = canvasEl.width / (videoEl.videoWidth || 640);
-            const scaleY = canvasEl.height / (videoEl.videoHeight || 480);
-            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
-            detections.forEach((d: any) => { const b = d.detection.box; ctx.strokeRect(b.x * scaleX, b.y * scaleY, b.width * scaleX, b.height * scaleY); });
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            detections.forEach((d: any) => {
+              const b = d.detection.box;
+              ctx.strokeRect(b.x, b.y, b.width, b.height);
+            });
           }
-          onDetection({ detected: true, multipleFaces: true }); processingRef.current = false; return;
+          onDetection({ detected: true, multipleFaces: true });
+          processingRef.current = false;
+          return;
         }
-        const det = detections[0]; const box = det.detection.box;
-        if (box.width < MIN_FACE_SIZE) { onDetection({ detected: false, multipleFaces: false }); processingRef.current = false; return; }
-        const scaleX = canvasEl.width / (videoEl.videoWidth || 640);
-        const scaleY = canvasEl.height / (videoEl.videoHeight || 480);
-        const scaledBox = { x: box.x * scaleX, y: box.y * scaleY, width: box.width * scaleX, height: box.height * scaleY };
-        if (ctx) { ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2; ctx.strokeRect(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height); ctx.fillStyle = 'rgba(99,102,241,0.06)'; ctx.fillRect(scaledBox.x, scaledBox.y, scaledBox.width, scaledBox.height); }
-        const landmarks = det.landmarks.positions.map((p: any) => ({ x: p.x, y: p.y }));
-        onDetection({ detected: true, multipleFaces: false, box: scaledBox, descriptor: det.descriptor, landmarks });
+
+        const det = detections[0];
+        const box = det.detection.box;
+
+        // FIX: compare raw box.width (video coords) to MIN_FACE_SIZE_PX
+        if (box.width < MIN_FACE_SIZE_PX) {
+          onDetection({ detected: false, multipleFaces: false });
+          processingRef.current = false;
+          return;
+        }
+
+        // Draw bounding box on canvas (same coordinate space as video)
+        if (ctx) {
+          ctx.strokeStyle = '#6366f1';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([6, 3]);
+          ctx.strokeRect(box.x, box.y, box.width, box.height);
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(99,102,241,0.07)';
+          ctx.fillRect(box.x, box.y, box.width, box.height);
+
+          // Corner accents
+          const cl = 14;
+          ctx.strokeStyle = '#818cf8';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([]);
+          [[box.x, box.y], [box.x + box.width, box.y], [box.x, box.y + box.height], [box.x + box.width, box.y + box.height]].forEach(([cx, cy], i) => {
+            ctx.beginPath();
+            ctx.moveTo(cx + (i % 2 === 0 ? cl : -cl), cy);
+            ctx.lineTo(cx, cy);
+            ctx.lineTo(cx, cy + (i < 2 ? cl : -cl));
+            ctx.stroke();
+          });
+        }
+
+        const landmarks = det.landmarks?.positions?.map?.((p: any) => ({ x: p.x, y: p.y })) ?? [];
+
+        onDetection({
+          detected: true,
+          multipleFaces: false,
+          box: { x: box.x, y: box.y, width: box.width, height: box.height },
+          descriptor: det.descriptor,
+          landmarks,
+        });
       } catch (err) {
-        console.error('[face] detect loop error', err);
+        console.error('[face] detect loop error:', err);
       } finally {
         processingRef.current = false;
       }
     };
+
     rafRef.current = requestAnimationFrame(loop);
   }, []);
 
-  const matchDescriptor = useCallback((descriptor: Float32Array, storedDescriptors: FaceDescriptorEntry[]) => {
-    if (!faceApiRef.current || storedDescriptors.length === 0) return { matched: false, distance: Infinity };
-    let bestDistance = Infinity; let bestEntry: FaceDescriptorEntry | undefined;
+  const matchDescriptor = useCallback((
+    descriptor: Float32Array,
+    storedDescriptors: FaceDescriptorEntry[]
+  ) => {
+    if (!faceApiRef.current || storedDescriptors.length === 0)
+      return { matched: false, distance: Infinity };
+
+    let bestDistance = Infinity;
+    let bestEntry: FaceDescriptorEntry | undefined;
+
     for (const entry of storedDescriptors) {
       const stored = new Float32Array(entry.descriptor);
-      const dist = faceApiRef.current.euclideanDistance(descriptor, stored);
+      const dist: number = faceApiRef.current.euclideanDistance(descriptor, stored);
       if (dist < bestDistance) { bestDistance = dist; bestEntry = entry; }
     }
-    return { matched: bestDistance < RECOGNITION_THRESHOLD, entry: bestEntry, distance: bestDistance };
+
+    return {
+      matched: bestDistance < RECOGNITION_THRESHOLD,
+      entry: bestEntry,
+      distance: bestDistance,
+    };
   }, []);
 
   useEffect(() => () => { stopDetectionLoop(); }, [stopDetectionLoop]);
+
   return { modelStatus, modelError, loadModels, startDetectionLoop, stopDetectionLoop, matchDescriptor };
 }
