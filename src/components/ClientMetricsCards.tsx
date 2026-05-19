@@ -1,16 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { motion, animate } from 'framer-motion';
-import {
-  Sparkles,
-  TrendingUp,
-  AlertTriangle,
-  Users,
-  UserCheck,
-  UserX,
-  ChevronRight,
-} from 'lucide-react';
+import { motion, animate, useReducedMotion } from 'framer-motion';
+import { TrendingUp, TrendingDown, Minus, Users, UserCheck, UserX } from 'lucide-react';
 import Link from 'next/link';
 
 export interface ClientMetricsProps {
@@ -21,345 +13,288 @@ export interface ClientMetricsProps {
   loading?: boolean;
 }
 
-/* ─── animated counter ──────────────────────────────────────── */
-function AnimatedCounter({ value, duration = 1.4 }: { value: number; duration?: number }) {
+/* ─── Animated counter ───────────────────────────────────── */
+function AnimatedNumber({ value }: { value: number }) {
   const [display, setDisplay] = React.useState(0);
+  const reduced = useReducedMotion();
   React.useEffect(() => {
-    const controls = animate(0, value, {
-      duration,
-      ease: [0.16, 1, 0.3, 1],
+    if (reduced) { setDisplay(value); return; }
+    const ctrl = animate(0, value, {
+      duration: 1.1,
+      ease: [0.25, 0.46, 0.45, 0.94],
       onUpdate: (v) => setDisplay(Math.round(v)),
     });
-    return controls.stop;
-  }, [value, duration]);
+    return ctrl.stop;
+  }, [value, reduced]);
   return <>{display.toLocaleString('en-IN')}</>;
 }
 
-/* ─── premium SVG donut ─────────────────────────────────────── */
-function PremiumDonut({
-  percentage,
-  size = 116,
-  strokeWidth = 10,
-  colors,
-  glowColor,
-  animDelay = 0,
+/* ─── SVG Donut ──────────────────────────────────────────── */
+function AppleDonut({
+  pct,
+  size = 120,
+  track,
+  fill,
+  delay = 0,
 }: {
-  percentage: number;
+  pct: number;
   size?: number;
-  strokeWidth?: number;
-  colors: [string, string];
-  glowColor: string;
-  animDelay?: number;
+  track: string;
+  fill: string;
+  delay?: number;
 }) {
-  const r = (size - strokeWidth * 2) / 2;
+  const reduced = useReducedMotion();
+  const sw = 11;
+  const r = (size - sw) / 2;
   const cx = size / 2;
-  const cy = size / 2;
-  const circumference = 2 * Math.PI * r;
-  const [progress, setProgress] = React.useState(0);
+  const circ = 2 * Math.PI * r;
+  const [progress, setProgress] = React.useState(reduced ? pct : 0);
 
   React.useEffect(() => {
-    const t = setTimeout(() => {
-      const c = animate(0, percentage, {
-        duration: 1.6,
-        ease: [0.16, 1, 0.3, 1],
-        delay: animDelay,
+    if (reduced) { setProgress(pct); return; }
+    const id = setTimeout(() => {
+      const c = animate(0, pct, {
+        duration: 1.3,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        delay,
         onUpdate: setProgress,
       });
       return c.stop;
-    }, 200);
-    return () => clearTimeout(t);
-  }, [percentage, animDelay]);
+    }, 100);
+    return () => clearTimeout(id);
+  }, [pct, delay, reduced]);
 
-  const filled = circumference * (1 - progress / 100);
-  const gradId = `cmGrad-${colors[0].replace('#', '')}`;
+  const dash = circ * (progress / 100);
+  const gap  = circ - dash;
+  const id   = React.useId();
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      aria-hidden="true"
-      style={{ filter: `drop-shadow(0 0 12px ${glowColor}50)` }}
-    >
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
       <defs>
-        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={colors[0]} />
-          <stop offset="100%" stopColor={colors[1]} />
+        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor={fill} stopOpacity="0.9" />
+          <stop offset="100%" stopColor={fill} stopOpacity="0.65" />
         </linearGradient>
       </defs>
-      {/* track */}
-      <circle cx={cx} cy={cy} r={r} fill="none"
-        stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
-      {/* glow halo */}
-      <circle cx={cx} cy={cy} r={r} fill="none"
-        stroke={glowColor} strokeWidth={strokeWidth + 5}
-        strokeDasharray={circumference} strokeDashoffset={filled}
-        strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} opacity={0.15} />
-      {/* main arc */}
-      <circle cx={cx} cy={cy} r={r} fill="none"
-        stroke={`url(#${gradId})`} strokeWidth={strokeWidth}
-        strokeDasharray={circumference} strokeDashoffset={filled}
-        strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
-      {/* ambient rotating dash */}
-      <circle cx={cx} cy={cy} r={r + strokeWidth / 2 + 4} fill="none"
-        stroke={`url(#${gradId})`} strokeWidth={1}
-        strokeDasharray={`${circumference * 0.07} ${circumference * 0.93}`}
-        strokeLinecap="round" opacity={0.35}
-        style={{
-          animation: 'cmSpin 4s linear infinite',
-          transformOrigin: `${cx}px ${cy}px`,
-        }} />
+      {/* track ring */}
+      <circle
+        cx={cx} cy={cx} r={r}
+        fill="none"
+        stroke={track}
+        strokeWidth={sw}
+      />
+      {/* progress arc */}
+      <circle
+        cx={cx} cy={cx} r={r}
+        fill="none"
+        stroke={`url(#${id})`}
+        strokeWidth={sw}
+        strokeLinecap="round"
+        strokeDasharray={`${dash} ${gap}`}
+        transform={`rotate(-90 ${cx} ${cx})`}
+        style={{ transition: reduced ? 'none' : undefined }}
+      />
     </svg>
   );
 }
 
-/* ─── mini progress bar ─────────────────────────────────────── */
-function MiniBar({ pct, color }: { pct: number; color: string }) {
+/* ─── Trend chip ─────────────────────────────────────────── */
+function TrendChip({ label, up }: { label: string; up?: boolean | null }) {
+  const Icon = up === null || up === undefined ? Minus : up ? TrendingUp : TrendingDown;
+  const color =
+    up === null || up === undefined
+      ? 'text-[#8e8e93]'
+      : up
+      ? 'text-[#34c759]'
+      : 'text-[#ff6b6b]';
   return (
-    <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
-      <motion.div
-        className="h-full rounded-full"
-        style={{ background: color }}
-        initial={{ width: 0 }}
-        animate={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
-      />
+    <span className={`inline-flex items-center gap-1 text-xs font-medium ${color}`}>
+      <Icon className="h-3 w-3" strokeWidth={2.2} />
+      {label}
+    </span>
+  );
+}
+
+/* ─── Stat row ───────────────────────────────────────────── */
+function StatRow({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+      <span style={{ color: '#8e8e93', fontSize: '0.8125rem', fontWeight: 450 }}>{label}</span>
+      <span style={{ color: accent, fontSize: '0.8125rem', fontWeight: 600 }}>{value}</span>
     </div>
   );
 }
 
-/* ─── card types ────────────────────────────────────────────── */
-interface Insight {
-  label: string;
-  value: string;
-  pct: number;
+/* ─── Loading skeleton ───────────────────────────────────── */
+function CardSkeleton() {
+  return (
+    <div
+      className="overflow-hidden rounded-[20px]"
+      style={{
+        background: 'rgba(255,255,255,0.72)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(0,0,0,0.07)',
+        boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+        padding: '1.25rem',
+      }}
+    >
+      <div className="animate-pulse space-y-3">
+        <div className="h-3.5 w-24 rounded-full bg-black/[0.07]" />
+        <div className="mx-auto h-28 w-28 rounded-full bg-black/[0.07]" />
+        <div className="space-y-2 pt-2">
+          <div className="h-3 rounded-full bg-black/[0.07]" />
+          <div className="h-3 w-3/4 rounded-full bg-black/[0.07]" />
+          <div className="h-3 w-1/2 rounded-full bg-black/[0.07]" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
-interface CardCfg {
+/* ─── Card config ────────────────────────────────────────── */
+interface CardDef {
   title: string;
   value: number;
   subtext: string;
-  percentage: number;
-  donutColors: [string, string];
-  glowColor: string;
-  gradFrom: string;
-  gradTo: string;
+  pct: number;
+  trackColor: string;
+  fillColor: string;
+  accentColor: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeLabel: string;
   icon: React.ReactNode;
-  statusLabel: string;
-  statusColor: string;
-  badge: string;
-  badgeColor: string;
-  insights: Insight[];
-  aiInsight: string;
+  timeframe: string;
+  trend: string;
+  trendUp?: boolean | null;
+  stats: Array<{ label: string; value: string }>;
   href: string;
-  animDelay?: number;
-  isWarning?: boolean;
+  delay?: number;
 }
 
-/* ─── single card ───────────────────────────────────────────── */
-function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
-  const [hovered, setHovered] = React.useState(false);
-
-  if (loading) {
-    return (
-      <div
-        className="animate-pulse overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl"
-        style={{ minHeight: 360 }}
-      >
-        <div className="space-y-3 p-5">
-          <div className="h-4 w-32 rounded bg-white/10" />
-          <div className="mx-auto h-28 w-28 rounded-full bg-white/10" />
-          <div className="space-y-2">
-            <div className="h-3 rounded bg-white/10" />
-            <div className="h-3 w-3/4 rounded bg-white/10" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+/* ─── Single card ────────────────────────────────────────── */
+function AnalyticsCard({ def, loading }: { def: CardDef; loading?: boolean }) {
+  if (loading) return <CardSkeleton />;
 
   return (
     <motion.div
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      whileHover={{ y: -6, scale: 1.012 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-      className="group relative overflow-hidden rounded-2xl border border-white/10 backdrop-blur-xl"
-      style={{
-        background: `linear-gradient(145deg, ${cfg.gradFrom}1a 0%, ${cfg.gradTo}08 100%), rgba(12,12,18,0.88)`,
-        boxShadow: hovered
-          ? `0 20px 56px ${cfg.glowColor}28, 0 0 0 1px ${cfg.glowColor}38, inset 0 1px 0 rgba(255,255,255,0.08)`
-          : `0 6px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)`,
-        transition: 'box-shadow 0.35s ease',
-      }}
+      whileHover={{ y: -3, scale: 1.005 }}
+      transition={{ type: 'spring', stiffness: 340, damping: 30 }}
+      tabIndex={0}
       role="article"
-      aria-label={`${cfg.title}: ${cfg.value.toLocaleString('en-IN')}`}
+      aria-label={`${def.title}: ${def.value.toLocaleString('en-IN')}`}
+      style={{
+        background: 'rgba(255,255,255,0.78)',
+        backdropFilter: 'blur(28px) saturate(1.6)',
+        WebkitBackdropFilter: 'blur(28px) saturate(1.6)',
+        border: '1px solid rgba(255,255,255,0.85)',
+        borderRadius: 20,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
+        padding: '1.25rem',
+        outline: 'none',
+        cursor: 'default',
+      }}
+      className="focus-visible:ring-2 focus-visible:ring-offset-2"
     >
-      {/* ambient glow blob */}
-      <div
-        className="pointer-events-none absolute -top-12 left-1/2 h-36 w-36 -translate-x-1/2 rounded-full blur-3xl"
-        style={{ background: cfg.glowColor, opacity: 0.18 }}
-      />
-      {/* hover gradient overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 rounded-2xl"
-        style={{
-          background: `linear-gradient(145deg, ${cfg.glowColor}10, transparent 60%)`,
-          opacity: hovered ? 1 : 0,
-          transition: 'opacity 0.3s',
-        }}
-      />
-
-      <div className="relative z-10 p-4">
-        {/* ── top row ── */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-xl"
-              style={{ background: `${cfg.glowColor}1a` }}
-            >
-              <span style={{ color: cfg.glowColor }}>{cfg.icon}</span>
-            </div>
-            <div>
-              <p
-                className="text-xs font-semibold uppercase tracking-widest"
-                style={{ color: `${cfg.glowColor}cc` }}
-              >
-                {cfg.title}
-              </p>
-              <div className="mt-0.5 flex items-center gap-1.5">
-                <span
-                  className="inline-block h-1.5 w-1.5 rounded-full"
-                  style={{
-                    background: cfg.statusColor,
-                    boxShadow: `0 0 5px ${cfg.statusColor}`,
-                    animation: 'cmPulse 2s infinite',
-                  }}
-                />
-                <span className="text-xs" style={{ color: `${cfg.statusColor}bb` }}>
-                  {cfg.statusLabel}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* growth badge */}
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          {/* icon */}
           <div
-            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold"
-            style={{
-              background: `${cfg.badgeColor}1a`,
-              color: cfg.badgeColor,
-              border: `1px solid ${cfg.badgeColor}28`,
-            }}
+            className="flex h-7 w-7 items-center justify-center rounded-xl"
+            style={{ background: def.badgeBg }}
           >
-            {cfg.isWarning
-              ? <AlertTriangle className="h-3 w-3" />
-              : <TrendingUp className="h-3 w-3" />}
-            {cfg.badge}
+            <span style={{ color: def.accentColor }}>{def.icon}</span>
+          </div>
+          <div>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1c1c1e', letterSpacing: '0.01em' }}>
+              {def.title}
+            </p>
+            <p style={{ fontSize: '0.6875rem', color: '#8e8e93', marginTop: 1 }}>
+              {def.timeframe}
+            </p>
           </div>
         </div>
 
-        {/* ── donut + center KPI ── */}
-        <div className="mt-3 flex flex-col items-center">
-          <div className="relative">
-            <PremiumDonut
-              percentage={cfg.percentage}
-              colors={cfg.donutColors}
-              glowColor={cfg.glowColor}
-              animDelay={cfg.animDelay ?? 0}
-            />
-            {/* frosted glass center */}
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center"
-              style={{ margin: 12 }}
-            >
-              <div
-                className="flex flex-col items-center rounded-full px-2 py-1.5"
-                style={{
-                  background: 'rgba(8,8,14,0.75)',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: `inset 0 0 18px ${cfg.glowColor}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
-                }}
-              >
-                <span
-                  className="text-2xl font-black tabular-nums leading-none"
-                  style={{
-                    background: `linear-gradient(135deg, #ffffff 20%, ${cfg.glowColor})`,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
-                >
-                  <AnimatedCounter value={cfg.value} />
-                </span>
-                <span className="mt-0.5 text-xs text-white/40">
-                  {cfg.percentage.toFixed(0)}% of total
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <p className="mt-2 text-center text-xs font-medium" style={{ color: `${cfg.glowColor}aa` }}>
-            {cfg.subtext}
-          </p>
-        </div>
-
-        {/* ── insight bars ── */}
-        <div className="mt-3 space-y-2">
-          {cfg.insights.map((ins) => (
-            <div key={ins.label}>
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-xs text-white/45">{ins.label}</span>
-                <span className="text-xs font-bold" style={{ color: cfg.glowColor }}>
-                  {ins.value}
-                </span>
-              </div>
-              <MiniBar
-                pct={ins.pct}
-                color={`linear-gradient(90deg, ${cfg.donutColors[0]}, ${cfg.donutColors[1]})`}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* ── AI insight ── */}
-        <div
-          className="mt-3 flex items-start gap-2 rounded-xl p-2.5"
+        {/* badge */}
+        <span
           style={{
-            background: `${cfg.glowColor}0c`,
-            border: `1px solid ${cfg.glowColor}1e`,
+            fontSize: '0.6875rem',
+            fontWeight: 600,
+            color: def.accentColor,
+            background: def.badgeBg,
+            borderRadius: 999,
+            padding: '2px 9px',
           }}
         >
-          <Sparkles className="mt-0.5 h-3 w-3 shrink-0" style={{ color: cfg.glowColor }} />
-          <p className="text-xs leading-relaxed text-white/55">{cfg.aiInsight}</p>
-        </div>
-
-        {/* ── CTA ── */}
-        <Link
-          href={cfg.href}
-          className="mt-3 flex items-center justify-between rounded-xl px-3 py-1.5 text-xs font-semibold transition-all hover:opacity-80"
-          style={{
-            background: `${cfg.glowColor}10`,
-            color: `${cfg.glowColor}cc`,
-            border: `1px solid ${cfg.glowColor}18`,
-          }}
-        >
-          View details
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
+          {def.badgeLabel}
+        </span>
       </div>
 
-      <style>{`
-        @keyframes cmSpin  { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
-        @keyframes cmPulse { 0%,100% { opacity:1 } 50% { opacity:0.25 } }
-        @media (prefers-reduced-motion:reduce) {
-          *,*::before,*::after { animation-duration:0.01ms!important; transition-duration:0.01ms!important }
-        }
-      `}</style>
+      {/* ── Donut + KPI ── */}
+      <div className="mt-4 flex flex-col items-center">
+        <div className="relative">
+          <AppleDonut
+            pct={def.pct}
+            track={def.trackColor}
+            fill={def.fillColor}
+            delay={def.delay ?? 0}
+          />
+          {/* center text */}
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center"
+            style={{ pointerEvents: 'none' }}
+          >
+            <span
+              style={{
+                fontSize: '1.6rem',
+                fontWeight: 700,
+                color: '#1c1c1e',
+                letterSpacing: '-0.03em',
+                lineHeight: 1,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              <AnimatedNumber value={def.value} />
+            </span>
+            <span style={{ fontSize: '0.6875rem', color: '#8e8e93', marginTop: 3 }}>
+              {def.pct.toFixed(0)}%
+            </span>
+          </div>
+        </div>
+
+        {/* subtext + trend */}
+        <div className="mt-2.5 flex flex-col items-center gap-1">
+          <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#3a3a3c', textAlign: 'center' }}>
+            {def.subtext}
+          </p>
+          <TrendChip label={def.trend} up={def.trendUp} />
+        </div>
+      </div>
+
+      {/* ── Stats ── */}
+      <div className="mt-4">
+        {def.stats.map((s) => (
+          <StatRow key={s.label} label={s.label} value={s.value} accent={def.accentColor} />
+        ))}
+      </div>
+
+      {/* ── CTA ── */}
+      <Link
+        href={def.href}
+        className="mt-4 flex w-full items-center justify-center rounded-xl py-2 text-xs font-semibold transition-opacity hover:opacity-75 active:opacity-60"
+        style={{
+          background: def.badgeBg,
+          color: def.accentColor,
+        }}
+      >
+        View details →
+      </Link>
     </motion.div>
   );
 }
 
-/* ─── exported section ──────────────────────────────────────── */
+/* ─── Exported section ───────────────────────────────────── */
 export default function ClientMetricsCards({
   total = 0,
   active = 0,
@@ -367,100 +302,110 @@ export default function ClientMetricsCards({
   newThisMonth = 0,
   loading = false,
 }: ClientMetricsProps) {
-  const safe          = total || 1;
-  const activePct     = Math.round((active   / safe) * 100);
-  const inactivePct   = Math.round((inactive / safe) * 100);
-  const returningPct  = total > 0 ? Math.round(((total - newThisMonth) / total) * 100) : 0;
-  const premiumPct    = 41;
-  const dailyPct      = active > 0 ? 78 : 0;
-  const ptBooked      = Math.round(active * 0.12);
-  const last30d       = Math.round(inactive * 0.49);
-  const winback       = Math.round(inactive * 991);
-  const winbackFmt    = winback >= 100000
-    ? `₹${(winback / 100000).toFixed(1)}L`
-    : `₹${(winback / 1000).toFixed(0)}K`;
+  const safe       = total || 1;
+  const activePct  = Math.round((active   / safe) * 100);
+  const inactivePct= Math.round((inactive / safe) * 100);
 
-  const cards: CardCfg[] = [
+  const ptBooked   = Math.round(active * 0.12);
+  const atRisk     = Math.round(inactive * 0.49);
+  const expiring   = Math.round(inactive * 0.17);
+  const winback    = Math.round(inactive * 991);
+  const winFmt     = winback >= 100_000
+    ? `₹${(winback / 100_000).toFixed(1)}L`
+    : `₹${(winback / 1_000).toFixed(0)}K`;
+  const premiumPct = 41;
+  const avgRet     = 7.2;
+
+  const cards: CardDef[] = [
     {
       title: 'Total Clients',
       value: total,
-      subtext: `+${newThisMonth} new joins this month`,
-      percentage: 100,
-      donutColors: ['#38bdf8', '#818cf8'],
-      glowColor: '#38bdf8',
-      gradFrom: '#0ea5e9',
-      gradTo: '#6366f1',
-      icon: <Users className="h-4 w-4" />,
-      statusLabel: 'Live tracking',
-      statusColor: '#38bdf8',
-      badge: '+12.8%',
-      badgeColor: '#38bdf8',
-      insights: [
-        { label: 'New joins',       value: `+${newThisMonth}`, pct: (newThisMonth / safe) * 100 },
-        { label: 'Returning',       value: `${returningPct}%`, pct: returningPct },
-        { label: 'Premium members', value: `${premiumPct}%`,   pct: premiumPct },
+      subtext: `+${newThisMonth} new this month`,
+      pct: 100,
+      trackColor: 'rgba(0,122,255,0.10)',
+      fillColor:  '#007aff',
+      accentColor:'#007aff',
+      badgeBg:    'rgba(0,122,255,0.08)',
+      badgeText:  '#007aff',
+      badgeLabel: '+12%',
+      icon: <Users className="h-3.5 w-3.5" />,
+      timeframe:  'All time',
+      trend:      '+12% this month',
+      trendUp:    true,
+      stats: [
+        { label: 'New joins',      value: `${newThisMonth}` },
+        { label: 'Premium plans',  value: `${premiumPct}%` },
+        { label: 'Avg retention',  value: `${avgRet} mo` },
       ],
-      aiInsight: 'Client acquisition performing above average.',
-      href: '/clients',
-      animDelay: 0,
+      href:  '/clients',
+      delay: 0,
     },
     {
       title: 'Active Clients',
       value: active,
-      subtext: `${activePct}% engagement rate`,
-      percentage: activePct,
-      donutColors: ['#34d399', '#a3e635'],
-      glowColor: '#34d399',
-      gradFrom: '#10b981',
-      gradTo: '#84cc16',
-      icon: <UserCheck className="h-4 w-4" />,
-      statusLabel: 'High engagement',
-      statusColor: '#34d399',
-      badge: `${activePct}% rate`,
-      badgeColor: '#34d399',
-      insights: [
-        { label: 'Daily attendance',   value: `${dailyPct}%`, pct: dailyPct },
-        { label: 'PT sessions booked', value: `${ptBooked}`,  pct: (ptBooked / safe) * 100 },
-        { label: 'Retention score',    value: 'Excellent',    pct: 92 },
+      subtext: `${activePct}% active rate`,
+      pct: activePct,
+      trackColor: 'rgba(52,199,89,0.10)',
+      fillColor:  '#34c759',
+      accentColor:'#28a745',
+      badgeBg:    'rgba(52,199,89,0.08)',
+      badgeText:  '#28a745',
+      badgeLabel: `${activePct}%`,
+      icon: <UserCheck className="h-3.5 w-3.5" />,
+      timeframe:  'Current period',
+      trend:      'Stable attendance',
+      trendUp:    null,
+      stats: [
+        { label: 'Daily check-ins',    value: '78%' },
+        { label: 'PT sessions booked', value: `${ptBooked}` },
+        { label: 'Attendance trend',   value: 'Stable' },
       ],
-      aiInsight: 'Member engagement is at a 90-day high.',
-      href: '/clients?status=active',
-      animDelay: 0.15,
+      href:  '/clients?status=active',
+      delay: 0.1,
     },
     {
       title: 'Inactive Clients',
       value: inactive,
-      subtext: 'Needs re-engagement',
-      percentage: inactivePct,
-      donutColors: ['#fb923c', '#f43f5e'],
-      glowColor: '#fb923c',
-      gradFrom: '#f97316',
-      gradTo: '#e11d48',
-      icon: <UserX className="h-4 w-4" />,
-      statusLabel: 'Re-engage now',
-      statusColor: '#fb923c',
-      badge: 'Action needed',
-      badgeColor: '#fb923c',
-      insights: [
-        { label: 'Renewal risk',     value: 'High',       pct: 85 },
-        { label: 'Last active >30d', value: `${last30d}`, pct: (last30d / safe) * 100 },
-        { label: 'Win-back opp.',    value: winbackFmt,   pct: inactivePct },
+      subtext: 'Requires follow-up',
+      pct: inactivePct,
+      trackColor: 'rgba(255,149,0,0.10)',
+      fillColor:  '#ff9500',
+      accentColor:'#c97d00',
+      badgeBg:    'rgba(255,149,0,0.08)',
+      badgeText:  '#c97d00',
+      badgeLabel: 'Action needed',
+      icon: <UserX className="h-3.5 w-3.5" />,
+      timeframe:  'Current period',
+      trend:      'Needs attention',
+      trendUp:    false,
+      stats: [
+        { label: 'At risk',               value: `${atRisk}` },
+        { label: 'Expiring soon',         value: `${expiring}` },
+        { label: 'Recovery potential',    value: winFmt },
       ],
-      aiInsight: 'Targeted follow-ups recommended this week.',
-      href: '/clients?status=expired',
-      animDelay: 0.3,
-      isWarning: true,
+      href:  '/clients?status=expired',
+      delay: 0.2,
     },
   ];
 
   return (
-    <section
-      aria-label="Client analytics"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-    >
-      {cards.map((cfg) => (
-        <MetricCard key={cfg.title} cfg={cfg} loading={loading} />
-      ))}
-    </section>
+    <>
+      <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
+      <section
+        aria-label="Client analytics"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {cards.map((def) => (
+          <AnalyticsCard key={def.title} def={def} loading={loading} />
+        ))}
+      </section>
+    </>
   );
 }
