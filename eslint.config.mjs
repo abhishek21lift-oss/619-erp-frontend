@@ -8,8 +8,8 @@ const __dirname = dirname(__filename);
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const eslintConfig = [
-  // next/typescript registers the @typescript-eslint plugin so that
-  // @typescript-eslint/* rules can be referenced in subsequent rule blocks.
+  // next/core-web-vitals includes the Next.js ESLint plugin.
+  // next/typescript registers @typescript-eslint so rules below work.
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
 
   // ── TypeScript-specific overrides ────────────────────────────────────
@@ -35,6 +35,12 @@ const eslintConfig = [
       '@typescript-eslint/no-unsafe-function-type': 'warn',
       '@typescript-eslint/no-wrapper-object-types': 'warn',
       'react/no-unescaped-entities': 'off',
+      // Suppress the no-img-element warning globally — we use <img> intentionally
+      // for face-api.js photo rendering and dynamic member photos.
+      // Switch to next/image for static assets over time.
+      '@next/next/no-img-element': 'warn',
+      // Custom font in layout.tsx is intentional (single root layout = loads once)
+      '@next/next/no-page-custom-font': 'off',
     },
   },
 
