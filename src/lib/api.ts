@@ -139,6 +139,17 @@ export type Attendance = {
   created_at?: string;
 };
 
+export type Trainer = {
+  id: string;
+  name: string;
+  mobile?: string;
+  email?: string;
+  role?: string;
+  specialty?: string;
+  is_active?: boolean;
+  created_at?: string;
+};
+
 // ─────────────────────────── Core fetch ──────────────────────────────
 
 async function request<T = unknown>(
@@ -268,8 +279,8 @@ export const api = {
   },
 
   trainers: {
-    list:   () => request<unknown[]>('/api/trainers'),
-    get:    (id: string) => request(`/api/trainers/${id}`),
+    list:   () => request<Trainer[]>('/api/trainers'),
+    get:    (id: string) => request<Trainer>(`/api/trainers/${id}`),
     create: (data: Record<string, unknown>) =>
       request('/api/trainers', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
