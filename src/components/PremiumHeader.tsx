@@ -1,16 +1,21 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import {
+  useEffect, useMemo, useRef, useState, useCallback,
+  useId,
+} from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/lib/nav-config';
 import {
   Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut, Search,
   Plus, UserPlus, Dumbbell, FileText, CreditCard, UserCheck,
-  CalendarPlus, ClipboardList, Salad, Zap, RefreshCw, X,
+  CalendarPlus, ClipboardList, Salad, Zap, X,
   LayoutDashboard, TrendingUp, Users, Activity, Settings, BarChart2,
   IndianRupee,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/components/ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -208,6 +213,249 @@ const LIVE_PILLS = [
   { label: 'Sync', color: '#3b82f6', pulse: false },
 ];
 
+// ─── Framer Motion variants ───────────────────────────────────────────────────
+const megaVariants = {
+  hidden: {
+    opacity: 0,
+    y: -8,
+    scale: 0.975,
+    filter: 'blur(4px)',
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: 'blur(0px)',
+    transition: {
+      type: 'spring' as const,
+      stiffness: 420,
+      damping: 30,
+      mass: 0.6,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -6,
+    scale: 0.982,
+    filter: 'blur(2px)',
+    transition: {
+      duration: 0.14,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
+
+const dropVariants = {
+  hidden: { opacity: 0, y: -6, scale: 0.975 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring' as const, stiffness: 440, damping: 28, mass: 0.5 },
+  },
+  exit: {
+    opacity: 0,
+    y: -4,
+    scale: 0.985,
+    transition: { duration: 0.12, ease: [0.16, 1, 0.3, 1] },
+  },
+};
+
+// ─── Portal-rendered Mega Menu ────────────────────────────────────────────────
+// FIX: Render menus via createPortal to document.body so they are never clipped
+// by overflow:hidden, overflow:clip, or transform stacking contexts on parent elements.
+interface MegaPortalProps {
+  section: NavSection;
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+  onClose: () => void;
+  pathname: string;
+  router: ReturnType<typeof useRouter>;
+}
+
+function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaPortalProps) {
+  const [mounted, setMounted] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Mount only on client (Next.js SSR guard)
+  useEffect(() => { setMounted(true); }, []);
+
+  // Compute anchor position on every open
+  useEffect(() => {
+    if (!anchorRef.current) return;
+
+    const update = () => {
+      const rect = anchorRef.current!.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 10,
+        left: rect.left + window.scrollX,
+        width: section.spotlight ? 640 : 480,
+      });
+    };
+
+    update();
+    // Re-compute on scroll/resize so portal stays aligned
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [anchorRef, section.spotlight]);
+
+  // Click-outside for the portal menu (the header's own click-away handles most cases,
+  // but we add this for robustness so clicking inside the menu doesn't close it)
+  useEffect(() => {
+    const handleDown = (e: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        anchorRef.current &&
+        !anchorRef.current.contains(e.target as Node)
+      ) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleDown);
+    return () => document.removeEventListener('mousedown', handleDown);
+  }, [onClose, anchorRef]);
+
+  if (!mounted) return null;
+
+  const menuWidth = section.spotlight ? 640 : 480;
+
+  // Clamp so it never overflows the viewport right edge
+  const safeLeft = Math.min(
+    pos.left,
+    typeof window !== 'undefined' ? window.innerWidth - menuWidth - 16 : pos.left,
+  );
+
+  return createPortal(
+    <motion.div
+      ref={menuRef}
+      key={section.id}
+      variants={megaVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      // FIX: z-[9999] — guaranteed above ALL page content, sidebars, and overlays
+      style={{
+        position: 'absolute',
+        top: pos.top,
+        left: safeLeft,
+        width: menuWidth,
+        zIndex: 9999,
+        background: 'rgba(255,255,255,0.97)',
+        border: '1px solid rgba(255,255,255,0.75)',
+        boxShadow: `0 32px 80px rgba(15,23,42,0.14), 0 12px 32px ${section.glow}, inset 0 1px 0 rgba(255,255,255,0.9)`,
+        backdropFilter: 'blur(28px)',
+        WebkitBackdropFilter: 'blur(28px)',
+        borderRadius: 22,
+        // FIX: transformOrigin at the top-left so animation originates from the nav button
+        transformOrigin: 'top left',
+        // FIX: willChange for GPU compositing — prevents layout recalc during animation
+        willChange: 'transform, opacity',
+        // FIX: isolation creates its own stacking context, preventing z-index wars
+        isolation: 'isolate',
+      }}
+    >
+      {/* Top accent bar */}
+      <div
+        className="h-[3px] w-full rounded-t-[22px]"
+        style={{ background: section.gradient }}
+      />
+
+      <div className="flex gap-0 p-4">
+        {/* Columns */}
+        <div className={cn('flex gap-3', section.spotlight ? 'flex-1' : 'w-full')}>
+          {section.columns.map((col, ci) => (
+            <div key={ci} className="flex flex-1 flex-col gap-0.5">
+              {col.heading && (
+                <div
+                  className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.15em]"
+                  style={{ color: section.accent }}
+                >
+                  {col.heading}
+                </div>
+              )}
+              {col.items.map((item) => {
+                const ia = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <button
+                    type="button"
+                    key={item.href}
+                    onClick={() => { router.push(item.href); onClose(); }}
+                    className={cn(
+                      'group/item flex w-full items-start gap-2.5 rounded-[12px] px-2.5 py-2 text-left transition-all duration-150',
+                      ia ? 'font-semibold' : 'hover:bg-slate-50/80',
+                    )}
+                    style={ia ? { background: section.glow.replace('0.18', '0.10') } : {}}
+                  >
+                    <div>
+                      <div
+                        className="text-[13px] font-semibold leading-snug"
+                        style={{ color: ia ? section.accent : '#1e293b' }}
+                      >
+                        {item.label}
+                        {item.isNew && (
+                          <span
+                            className="ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white"
+                            style={{ background: section.gradient }}
+                          >
+                            New
+                          </span>
+                        )}
+                      </div>
+                      {item.description && (
+                        <div className="mt-0.5 text-[11px] text-slate-400 group-hover/item:text-slate-500">
+                          {item.description}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Spotlight card */}
+        {section.spotlight && (
+          <div
+            className="ml-3 flex w-[148px] shrink-0 flex-col justify-between rounded-[16px] p-4"
+            style={{
+              background: `linear-gradient(145deg, ${section.glow.replace('0.18', '0.10')}, ${section.glow.replace('0.18', '0.04')})`,
+              border: `1px solid ${section.glow.replace('0.18', '0.20')}`,
+            }}
+          >
+            <div
+              className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em]"
+              style={{ color: section.accent }}
+            >
+              {section.spotlight.title}
+            </div>
+            <div>
+              <div className="text-[28px] font-black leading-none" style={{ color: section.accent }}>
+                {section.spotlight.value}
+              </div>
+              <div className="mt-1 text-[11px] text-slate-500">{section.spotlight.sub}</div>
+            </div>
+            <button
+              type="button"
+              className="mt-3 w-full rounded-[10px] py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
+              style={{ background: section.gradient }}
+              onClick={() => { router.push(section.columns[0].items[0].href); onClose(); }}
+            >
+              Open →
+            </button>
+          </div>
+        )}
+      </div>
+    </motion.div>,
+    document.body,
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function PremiumHeader({ onMenuClick }: Props) {
   const { user, logout } = useAuth();
@@ -217,9 +465,21 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hydrated, setHydrated] = useState(false);
+  // FIX: single openMenu string; null = all closed
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [showQuick, setShowQuick] = useState(false);
+
+  // Ref map so MegaMenuPortal can compute anchor position
+  const anchorRefs = useRef<Record<string, React.RefObject<HTMLButtonElement | null>>>({});
+  MEGA_SECTIONS.forEach((s) => {
+    if (!anchorRefs.current[s.id]) {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      anchorRefs.current[s.id] = { current: null };
+    }
+  });
+  const quickAnchorRef = useRef<HTMLButtonElement | null>(null);
+  const accountAnchorRef = useRef<HTMLButtonElement | null>(null);
 
   // ── Hydrate theme ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -227,7 +487,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       const saved = (localStorage.getItem('619_theme') as 'light' | 'dark') ?? 'light';
       setTheme(saved);
       document.documentElement.setAttribute('data-theme', saved);
-    } catch {}
+    } catch { /* ignore */ }
     setHydrated(true);
   }, []);
 
@@ -236,7 +496,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     const next = theme === 'light' ? 'dark' : 'light';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('619_theme', next); } catch {};
+    try { localStorage.setItem('619_theme', next); } catch { /* ignore */ }
   }, [hydrated, theme]);
 
   // ── Scroll detect ──────────────────────────────────────────────────────────
@@ -255,8 +515,14 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       }
       if (e.key === 'Escape') { setOpenMenu(null); setShowQuick(false); }
     };
+    // FIX: click-away only on the header DOM node (portal menus handle themselves)
     const onClickAway = (e: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        // Check if click was inside any open portal menu
+        const portalMenus = document.querySelectorAll('[data-mega-portal]');
+        for (const menu of Array.from(portalMenus)) {
+          if (menu.contains(e.target as Node)) return;
+        }
         setOpenMenu(null);
         setShowQuick(false);
       }
@@ -269,16 +535,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     };
   }, []);
 
+  // Close menus on route change
   useEffect(() => { setOpenMenu(null); setShowQuick(false); }, [pathname]);
 
   // ── Legacy nav groups (sidebar compat) ────────────────────────────────────
-  const legacyGroups = useMemo(() => {
+  const _legacyGroups = useMemo(() => {
     const visible = NAV_GROUPS.map((g) => ({
       ...g,
       items: g.items.filter((i) => isVisibleForRole(i, user?.role) && !i.hidden),
     })).filter((g) => {
       const orig = NAV_GROUPS.find((ng) => ng.id === g.id);
-      if (orig?.roles?.length) return !!user?.role && orig.roles.includes(user.role as any);
+      if (orig?.roles?.length) return !!user?.role && orig.roles.includes(user.role as never);
       return g.items.length > 0;
     });
     const vs = {
@@ -301,18 +568,23 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       col.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     );
 
-  // ── Render mega-menu section ───────────────────────────────────────────────
+  // ── Render nav tab ────────────────────────────────────────────────────────
   const renderSection = (section: NavSection) => {
     const active = isActive(section);
     const opened = openMenu === section.id;
 
     return (
-      <div key={section.id} className="relative shrink-0">
-        {/* Nav tab */}
+      // FIX: key on the outer wrapper, NOT on the menu — prevents unmount flicker
+      // FIX: Do NOT use `relative` + `overflow-hidden` here — that clips the portal.
+      //      The portal is rendered to document.body, so the wrapper is just a flex item.
+      <div key={section.id} className="shrink-0">
         <button
+          // FIX: store ref so portal can compute position
+          ref={(el) => { anchorRefs.current[section.id].current = el; }}
           type="button"
           onClick={() => setOpenMenu(opened ? null : section.id)}
           aria-expanded={opened}
+          aria-haspopup="true"
           className={cn(
             'group relative inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full px-[12px] text-[12px] font-semibold tracking-[0.01em] transition-all duration-200',
             active
@@ -324,17 +596,21 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             boxShadow: `0 4px 16px ${section.glow}, 0 1px 3px rgba(0,0,0,0.1)`,
             transform: 'translateY(-1px)',
           } : {
-            background: opened ? `${section.glow.replace('0.18', '0.09')}` : 'transparent',
+            background: opened ? section.glow.replace('0.18', '0.09') : 'transparent',
           }}
         >
           <span className={cn('shrink-0 opacity-70 transition-opacity group-hover:opacity-100', active && 'opacity-90')}>
             {section.icon}
           </span>
           <span>{section.label}</span>
-          <ChevronDown
-            size={10}
-            className={cn('shrink-0 opacity-50 transition-transform duration-200', opened && 'rotate-180')}
-          />
+          <motion.span
+            animate={{ rotate: opened ? 180 : 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="shrink-0"
+            style={{ display: 'inline-flex', opacity: 0.5 }}
+          >
+            <ChevronDown size={10} />
+          </motion.span>
           {/* Hover underline for inactive */}
           {!active && (
             <span
@@ -343,133 +619,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             />
           )}
         </button>
-
-        {/* Mega menu */}
-        {opened && (
-          <div
-            className="absolute left-0 top-[calc(100%+10px)] z-[120] overflow-hidden rounded-[22px]"
-            style={{
-              width: section.spotlight ? 640 : 480,
-              background: 'rgba(255,255,255,0.94)',
-              border: '1px solid rgba(255,255,255,0.7)',
-              boxShadow: `0 24px 64px rgba(15,23,42,0.12), 0 8px 24px ${section.glow}, inset 0 1px 0 rgba(255,255,255,0.9)`,
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              animation: 'megaIn 0.18s cubic-bezier(0.16,1,0.3,1) both',
-            }}
-          >
-            {/* Top accent bar */}
-            <div className="h-[3px] w-full" style={{ background: section.gradient }} />
-
-            <div className="flex gap-0 p-4">
-              {/* Columns */}
-              <div className={cn('flex gap-3', section.spotlight ? 'flex-1' : 'w-full')}>
-                {section.columns.map((col, ci) => (
-                  <div key={ci} className={cn('flex flex-col gap-0.5', section.spotlight ? 'flex-1' : 'flex-1')}>
-                    {col.heading && (
-                      <div
-                        className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.15em]"
-                        style={{ color: section.accent }}
-                      >
-                        {col.heading}
-                      </div>
-                    )}
-                    {col.items.map((item) => {
-                      const ia = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                      return (
-                        <button
-                          type="button"
-                          key={item.href}
-                          onClick={() => router.push(item.href)}
-                          className={cn(
-                            'group/item flex w-full items-start gap-2.5 rounded-[12px] px-2.5 py-2 text-left transition-all duration-150',
-                            ia
-                              ? 'bg-opacity-10 font-semibold'
-                              : 'hover:bg-slate-50/80',
-                          )}
-                          style={ia ? { background: `${section.glow.replace('0.18', '0.10')}` } : {}}
-                        >
-                          <div>
-                            <div
-                              className="text-[13px] font-semibold leading-snug"
-                              style={{ color: ia ? section.accent : '#1e293b' }}
-                            >
-                              {item.label}
-                              {item.isNew && (
-                                <span
-                                  className="ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white"
-                                  style={{ background: section.gradient }}
-                                >
-                                  New
-                                </span>
-                              )}
-                            </div>
-                            {item.description && (
-                              <div className="mt-0.5 text-[11px] text-slate-400 group-hover/item:text-slate-500">
-                                {item.description}
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-
-              {/* Spotlight card */}
-              {section.spotlight && (
-                <div
-                  className="ml-3 flex w-[148px] shrink-0 flex-col justify-between rounded-[16px] p-4"
-                  style={{
-                    background: `linear-gradient(145deg, ${section.glow.replace('0.18', '0.10')}, ${section.glow.replace('0.18', '0.04')})`,
-                    border: `1px solid ${section.glow.replace('0.18', '0.20')}`,
-                  }}
-                >
-                  <div
-                    className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em]"
-                    style={{ color: section.accent }}
-                  >
-                    {section.spotlight.title}
-                  </div>
-                  <div>
-                    <div className="text-[28px] font-black leading-none" style={{ color: section.accent }}>
-                      {section.spotlight.value}
-                    </div>
-                    <div className="mt-1 text-[11px] text-slate-500">{section.spotlight.sub}</div>
-                  </div>
-                  <button
-                    type="button"
-                    className="mt-3 w-full rounded-[10px] py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
-                    style={{ background: section.gradient }}
-                    onClick={() => router.push(section.columns[0].items[0].href)}
-                  >
-                    Open →
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
 
   return (
     <>
-      {/* ── Keyframes ──────────────────────────────────────────────────────── */}
+      {/* ── Keyframes — only for logo glow + pill pulse (no megaIn needed; Framer handles it) ── */}
       <style>{`
         @keyframes brand-glow {
           0%,100% { box-shadow: 0 0 0 0 transparent; }
           50%      { box-shadow: 0 0 14px 2px rgba(220,38,38,0.22); }
-        }
-        @keyframes megaIn {
-          from { opacity:0; transform:translateY(-6px) scale(0.98); }
-          to   { opacity:1; transform:translateY(0)    scale(1); }
-        }
-        @keyframes dropIn {
-          from { opacity:0; transform:translateY(-4px) scale(0.98); }
-          to   { opacity:1; transform:translateY(0)    scale(1); }
         }
         @keyframes pulse-ring {
           0%   { box-shadow: 0 0 0 0 currentColor; opacity:0.8; }
@@ -478,17 +638,19 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         }
         .logo-glow { animation: brand-glow 3.5s ease-in-out infinite; }
         .pill-pulse { animation: pulse-ring 2.2s cubic-bezier(0.455,0.03,0.515,0.955) infinite; }
-        /* Remove white background from logo PNG */
-        .logo-img-clean {
-          mix-blend-mode: multiply;
-          filter: contrast(1.1);
-        }
-        /* Scrollable nav — hide scrollbar cross-browser */
+        .logo-img-clean { mix-blend-mode: multiply; filter: contrast(1.1); }
         .nav-scroll::-webkit-scrollbar { display: none; }
         .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
       {/* ── Header shell ───────────────────────────────────────────────────── */}
+      {/*
+        FIX: Remove any overflow:hidden from the header.
+        FIX: Use isolate + z-[100] so the header paints above page content
+             but portal menus (z-9999) always paint above the header.
+        NOTE: backdrop-blur on `fixed` elements is fine — it does NOT clip children
+              when children are portaled to document.body.
+      */}
       <header
         className={cn(
           'fixed inset-x-0 top-0 z-[100] transition-all duration-300',
@@ -501,6 +663,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           boxShadow: scrolled
             ? '0 1px 0 rgba(15,23,42,0.07), 0 8px 32px rgba(15,23,42,0.05)'
             : '0 1px 0 rgba(15,23,42,0.04), 0 4px 20px rgba(15,23,42,0.03)',
+          // FIX: NO overflow:hidden here — that would clip portal z-index stacking
         }}
       >
         <div
@@ -520,7 +683,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             <Menu size={16} />
           </button>
 
-          {/* ── Brand — Logo only, no text, transparent bg ───────────────── */}
+          {/* ── Brand logo ───────────────────────────────────────────────── */}
           <div
             className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center rounded-[14px]"
             style={{
@@ -545,9 +708,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 if (fb) fb.style.display = 'flex';
               }}
             />
-            {/* Fallback if image missing */}
             <span
-              className="absolute hidden h-full w-full items-center justify-center text-[13px] font-black text-white rounded-[14px]"
+              className="absolute hidden h-full w-full items-center justify-center rounded-[14px] text-[13px] font-black text-white"
               style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}
             >
               619
@@ -557,7 +719,13 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           {/* Divider */}
           <div className="mx-1 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
 
-          {/* ── Center nav — always scrollable so ALL tabs (incl Finance & Analytics) are reachable ── */}
+          {/* ── Center nav ───────────────────────────────────────────────── */}
+          {/*
+            FIX: nav must NOT have overflow:hidden — that clips dropdowns even with portals
+                 when the nav is a stacking context. overflow-x:auto is fine since we portal.
+            FIX: nav must NOT have isolation:isolate — it creates a stacking context that
+                 traps z-index inside it.
+          */}
           <nav
             aria-label="Primary navigation"
             className="nav-scroll hidden min-w-0 flex-1 overflow-x-auto lg:flex lg:items-center"
@@ -583,10 +751,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   }}
                 >
                   <span className="relative flex h-[6px] w-[6px] shrink-0 items-center justify-center">
-                    <span
-                      className="h-[6px] w-[6px] rounded-full"
-                      style={{ background: pill.color }}
-                    />
+                    <span className="h-[6px] w-[6px] rounded-full" style={{ background: pill.color }} />
                     {pill.pulse && (
                       <span
                         className="pill-pulse absolute h-[6px] w-[6px] rounded-full"
@@ -625,8 +790,9 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             </button>
 
             {/* Quick actions (+ New) */}
-            <div className="relative shrink-0">
+            <div className="shrink-0">
               <button
+                ref={quickAnchorRef}
                 type="button"
                 onClick={() => setShowQuick((v) => !v)}
                 aria-expanded={showQuick}
@@ -639,38 +805,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 <Plus size={13} className="shrink-0" />
                 <span className="hidden sm:inline">New</span>
               </button>
-
-              {showQuick && (
-                <div
-                  className="absolute right-0 top-[calc(100%+8px)] z-[130] w-[240px] overflow-hidden rounded-[20px] p-1.5"
-                  style={{
-                    background: 'rgba(255,255,255,0.96)',
-                    border: '1px solid rgba(124,58,237,0.12)',
-                    boxShadow: '0 20px 56px rgba(15,23,42,0.12), 0 4px 16px rgba(124,58,237,0.10)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    animation: 'dropIn 0.16s cubic-bezier(0.16,1,0.3,1) both',
-                  }}
-                >
-                  <div className="mb-1.5 h-[3px] rounded-full" style={{ background: 'linear-gradient(90deg,#7c3aed,#4f46e5)' }} />
-                  {['Members', 'Finance', 'Training', 'Sales'].map((group) => (
-                    <div key={group}>
-                      <div className="px-3 py-1 text-[9.5px] font-bold uppercase tracking-[0.18em] text-slate-400">{group}</div>
-                      {QUICK_ACTIONS.filter((a) => a.group === group).map((action) => (
-                        <button
-                          type="button"
-                          key={action.href}
-                          onClick={() => { router.push(action.href); setShowQuick(false); }}
-                          className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-violet-50 hover:text-violet-700"
-                        >
-                          <span className="text-violet-500">{action.icon}</span>
-                          {action.label}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Theme toggle */}
@@ -694,8 +828,9 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             </button>
 
             {/* Admin profile */}
-            <div className="relative shrink-0">
+            <div className="shrink-0">
               <button
+                ref={accountAnchorRef}
                 type="button"
                 onClick={() => setOpenMenu(openMenu === 'account' ? null : 'account')}
                 aria-expanded={openMenu === 'account'}
@@ -718,73 +853,273 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   <div className="max-w-[90px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
                   <div className="mt-0.5 text-[10px] capitalize tracking-wide text-slate-400">{roleLabel}</div>
                 </div>
-                <ChevronDown size={10} className={cn('text-slate-400 transition-transform duration-200', openMenu === 'account' && 'rotate-180')} />
-              </button>
-
-              {openMenu === 'account' && (
-                <div
-                  className="absolute right-0 top-[calc(100%+8px)] z-[130] w-[220px] overflow-hidden rounded-[18px] p-1.5"
-                  style={{
-                    background: 'rgba(255,255,255,0.96)',
-                    border: '1px solid rgba(255,255,255,0.7)',
-                    boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    animation: 'dropIn 0.16s cubic-bezier(0.16,1,0.3,1) both',
-                  }}
+                <motion.span
+                  animate={{ rotate: openMenu === 'account' ? 180 : 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  style={{ display: 'inline-flex', color: 'rgb(148 163 184)' }}
                 >
-                  {/* Profile card */}
-                  <div className="mb-1.5 flex items-center gap-3 rounded-[14px] bg-gradient-to-br from-slate-50 to-slate-100 p-3">
-                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-black text-slate-700">
-                      {initials}
-                    </div>
-                    <div>
-                      <div className="text-[13px] font-bold text-slate-900">{accountLabel}</div>
-                      <div className="text-[11px] capitalize text-slate-500">{roleLabel}</div>
-                    </div>
-                  </div>
-
-                  {[{ href: '/profile', icon: <Users size={13} />, label: 'My Profile' },
-                    { href: '/settings', icon: <Settings size={13} />, label: 'Studio Settings' },
-                    { href: '/settings/team', icon: <Users size={13} />, label: 'Team Management' },
-                    { href: '/settings/billing', icon: <IndianRupee size={13} />, label: 'Billing' },
-                    { href: '/settings/integrations', icon: <Zap size={13} />, label: 'Integrations' },
-                  ].map((item) => (
-                    <button
-                      type="button"
-                      key={item.href}
-                      onClick={() => { router.push(item.href); setOpenMenu(null); }}
-                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
-                    >
-                      <span className="text-slate-400">{item.icon}</span>
-                      {item.label}
-                    </button>
-                  ))}
-
-                  <div className="mx-2 my-1 h-px bg-slate-100" />
-
-                  <button
-                    type="button"
-                    onClick={() => { router.push('/reset-password'); setOpenMenu(null); }}
-                    className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
-                  >
-                    <KeyRound size={13} className="text-slate-400" />
-                    Reset Password
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { logout(); router.push('/login'); }}
-                    className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-rose-600 transition-all hover:bg-rose-50"
-                  >
-                    <LogOut size={13} />
-                    Log Out
-                  </button>
-                </div>
-              )}
+                  <ChevronDown size={10} />
+                </motion.span>
+              </button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* ── Portal-rendered Mega Menus ─────────────────────────────────────── */}
+      {/*
+        FIX: AnimatePresence handles enter/exit animations.
+             All menus are rendered via createPortal to document.body
+             — completely escaping all overflow/stacking context issues.
+      */}
+      <AnimatePresence mode="wait">
+        {MEGA_SECTIONS.map((section) =>
+          openMenu === section.id ? (
+            <MegaMenuPortal
+              key={section.id}
+              section={section}
+              anchorRef={anchorRefs.current[section.id] as React.RefObject<HTMLButtonElement | null>}
+              onClose={() => setOpenMenu(null)}
+              pathname={pathname}
+              router={router}
+            />
+          ) : null
+        )}
+      </AnimatePresence>
+
+      {/* ── Quick Actions Portal ───────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showQuick && <QuickActionsPortal anchorRef={quickAnchorRef} onClose={() => setShowQuick(false)} router={router} />}
+      </AnimatePresence>
+
+      {/* ── Account Menu Portal ────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {openMenu === 'account' && (
+          <AccountMenuPortal
+            anchorRef={accountAnchorRef}
+            onClose={() => setOpenMenu(null)}
+            router={router}
+            logout={logout}
+            initials={initials}
+            accountLabel={accountLabel}
+            roleLabel={roleLabel}
+          />
+        )}
+      </AnimatePresence>
     </>
+  );
+}
+
+// ─── Quick Actions Portal ─────────────────────────────────────────────────────
+function QuickActionsPortal({
+  anchorRef,
+  onClose,
+  router,
+}: {
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+  onClose: () => void;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const [mounted, setMounted] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!anchorRef.current) return;
+    const update = () => {
+      const rect = anchorRef.current!.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 8,
+        right: window.innerWidth - rect.right - window.scrollX,
+      });
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update); };
+  }, [anchorRef]);
+
+  useEffect(() => {
+    const handleDown = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        anchorRef.current && !anchorRef.current.contains(e.target as Node)
+      ) { onClose(); }
+    };
+    document.addEventListener('mousedown', handleDown);
+    return () => document.removeEventListener('mousedown', handleDown);
+  }, [onClose, anchorRef]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <motion.div
+      ref={menuRef}
+      variants={dropVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      style={{
+        position: 'absolute',
+        top: pos.top,
+        right: pos.right,
+        width: 240,
+        zIndex: 9999,
+        background: 'rgba(255,255,255,0.97)',
+        border: '1px solid rgba(124,58,237,0.12)',
+        boxShadow: '0 20px 56px rgba(15,23,42,0.12), 0 4px 16px rgba(124,58,237,0.10)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderRadius: 20,
+        padding: 6,
+        transformOrigin: 'top right',
+        willChange: 'transform, opacity',
+        isolation: 'isolate',
+      }}
+    >
+      <div className="mb-1.5 h-[3px] rounded-full" style={{ background: 'linear-gradient(90deg,#7c3aed,#4f46e5)' }} />
+      {['Members', 'Finance', 'Training', 'Sales'].map((group) => (
+        <div key={group}>
+          <div className="px-3 py-1 text-[9.5px] font-bold uppercase tracking-[0.18em] text-slate-400">{group}</div>
+          {QUICK_ACTIONS.filter((a) => a.group === group).map((action) => (
+            <button
+              type="button"
+              key={action.href}
+              onClick={() => { router.push(action.href); onClose(); }}
+              className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-violet-50 hover:text-violet-700"
+            >
+              <span className="text-violet-500">{action.icon}</span>
+              {action.label}
+            </button>
+          ))}
+        </div>
+      ))}
+    </motion.div>,
+    document.body,
+  );
+}
+
+// ─── Account Menu Portal ──────────────────────────────────────────────────────
+function AccountMenuPortal({
+  anchorRef, onClose, router, logout, initials, accountLabel, roleLabel,
+}: {
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+  onClose: () => void;
+  router: ReturnType<typeof useRouter>;
+  logout: () => void;
+  initials: string;
+  accountLabel: string;
+  roleLabel: string;
+}) {
+  const [mounted, setMounted] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    if (!anchorRef.current) return;
+    const update = () => {
+      const rect = anchorRef.current!.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 8,
+        right: window.innerWidth - rect.right - window.scrollX,
+      });
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update); };
+  }, [anchorRef]);
+
+  useEffect(() => {
+    const handleDown = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        anchorRef.current && !anchorRef.current.contains(e.target as Node)
+      ) { onClose(); }
+    };
+    document.addEventListener('mousedown', handleDown);
+    return () => document.removeEventListener('mousedown', handleDown);
+  }, [onClose, anchorRef]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <motion.div
+      ref={menuRef}
+      variants={dropVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      style={{
+        position: 'absolute',
+        top: pos.top,
+        right: pos.right,
+        width: 220,
+        zIndex: 9999,
+        background: 'rgba(255,255,255,0.97)',
+        border: '1px solid rgba(255,255,255,0.75)',
+        boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderRadius: 18,
+        padding: 6,
+        transformOrigin: 'top right',
+        willChange: 'transform, opacity',
+        isolation: 'isolate',
+      }}
+    >
+      {/* Profile card */}
+      <div className="mb-1.5 flex items-center gap-3 rounded-[14px] bg-gradient-to-br from-slate-50 to-slate-100 p-3">
+        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-black text-slate-700">
+          {initials}
+        </div>
+        <div>
+          <div className="text-[13px] font-bold text-slate-900">{accountLabel}</div>
+          <div className="text-[11px] capitalize text-slate-500">{roleLabel}</div>
+        </div>
+      </div>
+
+      {([
+        { href: '/profile', icon: <Users size={13} />, label: 'My Profile' },
+        { href: '/settings', icon: <Settings size={13} />, label: 'Studio Settings' },
+        { href: '/settings/team', icon: <Users size={13} />, label: 'Team Management' },
+        { href: '/settings/billing', icon: <IndianRupee size={13} />, label: 'Billing' },
+        { href: '/settings/integrations', icon: <Zap size={13} />, label: 'Integrations' },
+      ] as const).map((item) => (
+        <button
+          type="button"
+          key={item.href}
+          onClick={() => { router.push(item.href); onClose(); }}
+          className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
+        >
+          <span className="text-slate-400">{item.icon}</span>
+          {item.label}
+        </button>
+      ))}
+
+      <div className="mx-2 my-1 h-px bg-slate-100" />
+
+      <button
+        type="button"
+        onClick={() => { router.push('/reset-password'); onClose(); }}
+        className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
+      >
+        <KeyRound size={13} className="text-slate-400" />
+        Reset Password
+      </button>
+      <button
+        type="button"
+        onClick={() => { logout(); router.push('/login'); }}
+        className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-rose-600 transition-all hover:bg-rose-50"
+      >
+        <LogOut size={13} />
+        Log Out
+      </button>
+    </motion.div>,
+    document.body,
   );
 }
