@@ -217,6 +217,34 @@ async function request<T = unknown>(
   return res.json() as Promise<T>;
 }
 
+async function requestFormData<T = unknown>(
+  path: string,
+  formData: FormData,
+): Promise<T> {
+  const BASE = apiBase();
+  const url = path.startsWith('http') ? path : `${BASE}${path}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      msg = body?.message ?? body?.error ?? msg;
+    } catch { /* ignore */ }
+    const err = new Error(msg) as Error & { status: number };
+    err.status = res.status;
+    throw err;
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
 function buildQs(params?: Record<string, string | number>): string {
   if (!params) return '';
   const entries = Object.entries(params).map(([k, v]) => [k, String(v)] as [string, string]);
@@ -453,5 +481,15 @@ export const api = {
       request<unknown[]>('/api/reports/dues'),
     trainerSummary: () =>
       request<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
+  },
+
+  admin: {
+    importDatabase: (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return requestFormData<{ message?: string }>('/api/admin/import-database', formData);
+    },
+    exportDatabase: () => request<{ message?: string; url?: string }>('/api/admin/export-database'),
+    backupDatabase: () => request<{ message?: string }>('/api/admin/backup-database', { method: 'POST' }),
   },
 };
