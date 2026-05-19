@@ -38,7 +38,7 @@ function buildQs(params: Record<string, string | number>): string {
   ).toString();
 }
 
-// ─────────────────────────── Types ───────────────────────────────────
+// ─────────────────────────── Types ───────────────────────────────────────────
 
 export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist' | 'manager';
 
@@ -222,7 +222,7 @@ export type LeaveRequest = {
   updated_at?: string;
 };
 
-// ─────────────────────────── Core fetch ──────────────────────────────
+// ─────────────────────────── Core fetch ──────────────────────────────────
 
 async function request<T = unknown>(
   path: string,
@@ -268,7 +268,7 @@ function normalisePayment(raw: Record<string, unknown>): Payment {
   } as Payment;
 }
 
-// ─────────────────────────── API namespace ────────────────────────────
+// ─────────────────────────── API namespace ────────────────────────────────
 
 export const api = {
   auth: {
@@ -426,13 +426,13 @@ export const api = {
       return request<Attendance[]>(`/api/attendance${qs}`);
     },
     mark: (data: Record<string, unknown>) =>
-      request('/api/attendance/mark', { method: 'POST', body: JSON.stringify(data) }),
+      request<{ message?: string }>('/api/attendance/mark', { method: 'POST', body: JSON.stringify(data) }),
     biometric: (data: Record<string, unknown>) =>
-      request('/api/attendance/biometric', { method: 'POST', body: JSON.stringify(data) }),
+      request<{ message?: string }>('/api/attendance/biometric', { method: 'POST', body: JSON.stringify(data) }),
     create: (data: Record<string, unknown>) =>
-      request('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
+      request<{ message?: string }>('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
-      request(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      request<{ message?: string }>(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   },
 
   checkin: {
