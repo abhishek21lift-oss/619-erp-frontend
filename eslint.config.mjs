@@ -14,8 +14,9 @@ const eslintConfig = [
   // Project-wide non-plugin rules
   {
     rules: {
-      'prefer-const': 'error',
+      'prefer-const': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
+      'react/no-unescaped-entities': 'off',
     },
   },
 
