@@ -52,7 +52,7 @@ export default function CheckInContent() {
   const antiSpoof = useAntiSpoof();
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const cooldownRef = useRef<number>(0);
-  const autoRetryRef= useRef<ReturnType<typeof setTimeout>>();
+  const autoRetryRef= useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryFnRef = useRef<() => void>(() => {});
 
   const [state,      setState]      = useState<CheckInState>('idle');
@@ -138,7 +138,7 @@ export default function CheckInContent() {
       setState('error'); setStatusMsg('Network error');
       speak('Network error');
     }
-    clearTimeout(autoRetryRef.current);
+    if (autoRetryRef.current) clearTimeout(autoRetryRef.current);
     autoRetryRef.current = setTimeout(() => retryFnRef.current(), 6000);
   }, [speak, pushRecent]);
 
@@ -167,7 +167,7 @@ export default function CheckInContent() {
   }, [state, antiSpoof, runRecognition]);
 
   const retry = useCallback(() => {
-    clearTimeout(autoRetryRef.current);
+    if (autoRetryRef.current) clearTimeout(autoRetryRef.current);
     antiSpoof.reset(); cooldownRef.current = 0; setResult(null);
     setState(camera.status === 'active' ? 'ready' : 'idle');
     setStatusMsg(
@@ -204,7 +204,7 @@ export default function CheckInContent() {
     return () => {
       cancelled = true;
       detection.stopDetectionLoop(); camera.stop();
-      clearTimeout(autoRetryRef.current);
+      if (autoRetryRef.current) clearTimeout(autoRetryRef.current);
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, []); // eslint-disable-line

@@ -7,7 +7,7 @@ import React from 'react';
 import { Camera } from 'lucide-react';
 
 interface CameraFeedProps {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   isActive: boolean;
   /** Color of the animated corner frame SVG */

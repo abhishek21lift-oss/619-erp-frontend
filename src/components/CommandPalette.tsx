@@ -41,7 +41,7 @@ export default function CommandPalette() {
   const [memberLoading, setMemberLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Open / close hotkey + custom event from topbar button ──
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function CommandPalette() {
 
   // ── Fetch members (debounced) ──
   useEffect(() => {
-    clearTimeout(searchTimer.current);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
     if (!open || !q.trim()) { setMemberResults([]); return; }
     searchTimer.current = setTimeout(async () => {
       setMemberLoading(true);
@@ -85,7 +85,9 @@ export default function CommandPalette() {
       } catch { /* ignore */ }
       finally { setMemberLoading(false); }
     }, 200);
-    return () => clearTimeout(searchTimer.current);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
   }, [q, open]);
 
   // ── Build static results ──

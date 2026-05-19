@@ -11,7 +11,7 @@ import { useRef, useState, useCallback } from 'react';
 export type CameraStatus = 'idle' | 'starting' | 'active' | 'denied' | 'error';
 
 interface UseCameraReturn {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   status: CameraStatus;
   error: string;
   start: () => Promise<boolean>;

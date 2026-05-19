@@ -359,7 +359,7 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
 function BiometricPanel({ bioCode, setBioCode, bioSaving, onSubmit, bioRef, bioFocus, setBioFocus }: {
   bioCode: string; setBioCode: (v: string) => void;
   bioSaving: boolean; onSubmit: () => void;
-  bioRef: React.RefObject<HTMLInputElement>;
+  bioRef: React.RefObject<HTMLInputElement | null>;
   bioFocus: boolean; setBioFocus: (v: boolean) => void;
 }) {
   return (
