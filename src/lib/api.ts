@@ -266,6 +266,18 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    /** Upgrade a client's membership plan */
+    upgrade: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/upgrade`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    /** Transfer a client to a different trainer */
+    transfer: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/transfer`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     /** Freeze a client's active membership */
     freeze: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/freeze`, {
