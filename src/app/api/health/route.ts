@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from 'next/server';
  *     attacker spoofs many distinct IPs.
  */
 
-// ─── Rate limiter ────────────────────────────────────────────────────
+// ─── Rate limiter ────────────────────────────────────────────────────────────────────
 const WINDOW_MS   = 60_000;  // 60 seconds
 const MAX_RPS     = 60;      // requests per window per IP
 const MAX_ENTRIES = 10_000;  // cap Map size against IP spoofing
@@ -54,7 +54,7 @@ function isRateLimited(ip: string): { limited: boolean; retryAfter: number } {
   return { limited: false, retryAfter: 0 };
 }
 
-// ─── Handler ─────────────────────────────────────────────────────────
+// ─── Handler ──────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   // Resolve client IP — Vercel/Cloudflare sets x-forwarded-for
   const forwarded = req.headers.get('x-forwarded-for');
@@ -77,7 +77,6 @@ export async function GET(req: NextRequest) {
 
   let version = 'unknown';
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pkg = require('../../../package.json') as { version?: string };
     version = pkg.version ?? 'unknown';
   } catch { /* standalone copy may not have package.json */ }
