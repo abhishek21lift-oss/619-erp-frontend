@@ -236,7 +236,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     const next = theme === 'light' ? 'dark' : 'light';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('619_theme', next); } catch {}
+    try { localStorage.setItem('619_theme', next); } catch {};
   }, [hydrated, theme]);
 
   // ── Scroll detect ──────────────────────────────────────────────────────────
@@ -561,19 +561,19 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           {/* Divider */}
           <div className="mx-1 hidden h-8 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
 
-          {/* ── Center nav (desktop) ──────────────────────────────────────── */}
+          {/* ── Center nav (desktop) — min-w-0 lets it compress before action buttons do ── */}
           <nav
             aria-label="Primary navigation"
-            className="hidden min-w-0 flex-1 items-center gap-0.5 lg:flex"
+            className="hidden min-w-0 flex-1 items-center gap-0.5 overflow-hidden lg:flex"
           >
             {MEGA_SECTIONS.map(renderSection)}
           </nav>
 
-          {/* ── Right cluster ─────────────────────────────────────────────── */}
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          {/* ── Right cluster — shrink-0 keeps it from being squeezed ─────── */}
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
 
-            {/* Live pills — hide on small */}
-            <div className="hidden items-center gap-1.5 xl:flex">
+            {/* Live pills — only at 2xl+ */}
+            <div className="hidden items-center gap-1.5 2xl:flex">
               {LIVE_PILLS.map((pill, i) => (
                 <div
                   key={i}
@@ -584,9 +584,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                     color: pill.color,
                   }}
                 >
-                  <span
-                    className="relative flex h-[6px] w-[6px] shrink-0 items-center justify-center"
-                  >
+                  <span className="relative flex h-[6px] w-[6px] shrink-0 items-center justify-center">
                     <span
                       className="h-[6px] w-[6px] rounded-full"
                       style={{ background: pill.color }}
@@ -603,11 +601,11 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               ))}
             </div>
 
-            {/* Search */}
+            {/* Search — only at 2xl+ */}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-              className="hidden h-[36px] w-[220px] items-center justify-between rounded-full border border-slate-200/80 bg-white/80 px-3.5 backdrop-blur-sm transition-all duration-150 hover:border-violet-300/60 hover:bg-white hover:shadow-[0_2px_16px_rgba(124,58,237,0.10)] xl:inline-flex"
+              className="hidden h-[36px] w-[200px] items-center justify-between rounded-full border border-slate-200/80 bg-white/80 px-3.5 backdrop-blur-sm transition-all duration-150 hover:border-violet-300/60 hover:bg-white hover:shadow-[0_2px_16px_rgba(124,58,237,0.10)] 2xl:inline-flex"
             >
               <span className="flex items-center gap-2 text-[12px] text-slate-400">
                 <Search size={12} className="shrink-0" />
@@ -618,13 +616,23 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               </kbd>
             </button>
 
-            {/* Quick actions */}
-            <div className="relative">
+            {/* Search icon only — lg to 2xl */}
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
+              className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)] 2xl:hidden"
+              aria-label="Search"
+            >
+              <Search size={14} />
+            </button>
+
+            {/* Quick actions (+ New) */}
+            <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setShowQuick((v) => !v)}
                 aria-expanded={showQuick}
-                className="inline-flex h-[36px] items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-bold text-white transition-all duration-150 hover:opacity-90 hover:shadow-lg active:scale-[0.97]"
+                className="inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-bold text-white transition-all duration-150 hover:opacity-90 hover:shadow-lg active:scale-[0.97]"
                 style={{
                   background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
                   boxShadow: '0 4px 14px rgba(124,58,237,0.30)',
@@ -670,7 +678,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             {/* Theme toggle */}
             <button
               type="button"
-              className="inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
+              className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
               onClick={toggleTheme}
               aria-label="Toggle theme"
             >
@@ -680,7 +688,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             {/* Notifications */}
             <button
               type="button"
-              className="relative inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-rose-200 hover:text-rose-500 hover:shadow-[0_2px_10px_rgba(239,68,68,0.10)]"
+              className="relative inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-rose-200 hover:text-rose-500 hover:shadow-[0_2px_10px_rgba(239,68,68,0.10)]"
               aria-label="Notifications"
             >
               <Bell size={14} />
@@ -688,7 +696,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             </button>
 
             {/* Admin profile */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setOpenMenu(openMenu === 'account' ? null : 'account')}
@@ -712,7 +720,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   <span className="hidden h-full w-full items-center justify-center text-[10px] font-black text-violet-700">{initials}</span>
                 </div>
                 <div className="hidden text-left xl:block">
-                  <div className="max-w-[130px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
+                  <div className="max-w-[100px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
                   <div className="mt-0.5 text-[10px] capitalize tracking-wide text-slate-400">{roleLabel}</div>
                 </div>
                 <ChevronDown size={10} className={cn('text-slate-400 transition-transform duration-200', openMenu === 'account' && 'rotate-180')} />
