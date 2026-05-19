@@ -100,6 +100,8 @@ export type Client = {
   plan_name?: string;
   photo_url?: string;
   face_descriptor?: number[];
+  /** JSON-encoded array of enrolled biometric finger indices */
+  biometric_fingers?: string;
   notes?: string;
   created_at?: string;
   updated_at?: string;
@@ -165,8 +167,6 @@ async function request<T = unknown>(
   };
 
   // Include credentials so the httpOnly auth cookie is sent automatically.
-  // The in-memory token is used as a bearer fallback for hybrid backends that
-  // still require an Authorization header (legacy deployment support).
   const init: RequestInit = {
     ...options,
     headers,
@@ -340,8 +340,6 @@ export const api = {
       request<unknown[]>(`/api/checkin${buildQs(params)}`),
     create: (data: Record<string, unknown>) =>
       request('/api/checkin', { method: 'POST', body: JSON.stringify(data) }),
-    // FIX: was (clientId, descriptors: number[][]) sending key "descriptors" (plural).
-    // Backend expects key "descriptor" (singular) and a flat number[128] array.
     enroll: (clientId: string, descriptor: number[]) =>
       request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
     descriptors: () => request<unknown[]>('/api/checkin/descriptors'),
