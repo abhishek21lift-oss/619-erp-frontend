@@ -346,6 +346,13 @@ export const api = {
     stats: () => request('/api/dashboard/stats'),
     revenue: (params?: Record<string, string>) =>
       request(`/api/dashboard/revenue${buildQs(params)}`),
+    summary: () =>
+      request<{
+        expiring_soon: number;
+        total_dues: number;
+        attendance_today: number;
+        recent_payments: Array<{ id: string; client_name?: string; amount: number; method?: string; date?: string }>;
+      }>('/api/dashboard/summary'),
   },
 
   reports: {
