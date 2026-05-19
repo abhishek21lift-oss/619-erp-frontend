@@ -153,6 +153,49 @@ export type Trainer = {
   created_at?: string;
 };
 
+export type StaffMember = {
+  id: string;
+  name: string;
+  email?: string;
+  mobile?: string;
+  role?: string;
+  is_active?: boolean;
+  joining_date?: string;
+  salary?: number;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+};
+
+export type StaffTarget = {
+  id: string;
+  staff_id: string;
+  staff_name?: string;
+  month: string;
+  revenue_target?: number;
+  revenue_achieved?: number;
+  renewals_target?: number;
+  renewals_achieved?: number;
+  new_members_target?: number;
+  new_members_achieved?: number;
+  [key: string]: unknown;
+};
+
+export type LeaveRequest = {
+  id: string;
+  trainer_id?: string;
+  trainer_name?: string;
+  leave_type?: string;
+  from_date?: string;
+  to_date?: string;
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+};
+
 export type PlanApiResponse = {
   plan: {
     id: string;
@@ -277,6 +320,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       }),
+    listUsers: () => request<User[]>('/api/auth/users'),
+    createUser: (data: Record<string, unknown>) =>
+      request<User>('/api/auth/users', { method: 'POST', body: JSON.stringify(data) }),
+    toggleUser: (id: string) =>
+      request<{ message?: string }>(`/api/auth/users/${id}/toggle`, { method: 'PATCH' }),
+    deleteUser: (id: string) =>
+      request<{ message?: string }>(`/api/auth/users/${id}`, { method: 'DELETE' }),
   },
 
   clients: {
@@ -407,17 +457,23 @@ export const api = {
   },
 
   staff: {
-    list:   () => request<unknown[]>('/api/staff'),
-    get:    (id: string) => request(`/api/staff/${id}`),
+    list:   () => request<StaffMember[]>('/api/staff'),
+    get:    (id: string) => request<StaffMember>(`/api/staff/${id}`),
     create: (data: Record<string, unknown>) =>
-      request('/api/staff', { method: 'POST', body: JSON.stringify(data) }),
+      request<StaffMember>('/api/staff', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
-      request(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      request<StaffMember>(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/staff/${id}`, { method: 'DELETE' }),
     targets: {
-      get: (id: string) => request(`/api/staff/${id}/targets`),
+      list: (params?: Record<string, string>) =>
+        request<StaffTarget[]>(`/api/staff/targets${buildQs(params)}`),
+      get: (id: string) => request<StaffTarget>(`/api/staff/${id}/targets`),
       set: (id: string, data: Record<string, unknown>) =>
-        request(`/api/staff/${id}/targets`, { method: 'POST', body: JSON.stringify(data) }),
+        request<StaffTarget>(`/api/staff/${id}/targets`, { method: 'POST', body: JSON.stringify(data) }),
+      create: (data: Record<string, unknown>) =>
+        request<StaffTarget>('/api/staff/targets', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Record<string, unknown>) =>
+        request<StaffTarget>(`/api/staff/targets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     },
   },
 
@@ -446,6 +502,21 @@ export const api = {
       request<{ success: boolean; error?: string; member?: { id: string; name: string; status: string } }>(
         '/api/checkin/face', { method: 'POST', body: JSON.stringify({ descriptor }) }
       ),
+  },
+
+  leave: {
+    list: (params?: Record<string, string>) =>
+      request<LeaveRequest[]>(`/api/leave${buildQs(params)}`),
+    get: (id: string) => request<LeaveRequest>(`/api/leave/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request<LeaveRequest>('/api/leave', { method: 'POST', body: JSON.stringify(data) }),
+    approve: (id: string) =>
+      request<{ message?: string }>(`/api/leave/${id}/approve`, { method: 'PATCH' }),
+    reject: (id: string, reason?: string) =>
+      request<{ message?: string }>(`/api/leave/${id}/reject`, {
+        method: 'PATCH',
+        body: JSON.stringify({ reason }),
+      }),
   },
 
   notifications: {
