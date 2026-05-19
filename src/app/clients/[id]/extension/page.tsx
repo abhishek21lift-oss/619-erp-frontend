@@ -23,9 +23,13 @@ function Inner() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [form, setForm] = useState({ days: '7', reason: '' });
+  const [activeSubId, setActiveSubId] = useState<string | null>(null);
 
   useEffect(() => {
     api.clients.get(id).then(setClient).catch(console.error).finally(() => setLoading(false));
+    api.subscriptions.list({ client_id: id, status: 'active' }).then((subs: any[]) => {
+      if (subs && subs.length > 0) setActiveSubId(String(subs[0].id));
+    }).catch(() => {});
   }, [id]);
 
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
@@ -44,7 +48,8 @@ function Inner() {
     }
     setSaving(true);
     try {
-      const result = await api.clients.extension(id, { days, reason: form.reason || null });
+      if (!activeSubId) throw new Error('No active subscription found for this member');
+      const result: any = await api.subscriptions.extend(activeSubId, { days, reason: form.reason || null });
       const m = result?.message || `Membership extended by ${days} days!`;
       setSuccess(m); toast.success(m);
       setTimeout(() => router.push(`/clients/${id}`), 900);
@@ -109,7 +114,6 @@ function Inner() {
         <GlassCard>
           <SectionHeading eyebrow="EXTENSION" title="Add Days to Membership" />
 
-          {/* Quick select chips */}
           <div>
             <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '.04em', display: 'block', marginBottom: 8 }}>Quick Select</span>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
