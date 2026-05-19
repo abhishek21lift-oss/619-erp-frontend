@@ -21,6 +21,14 @@ import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
 // without actually bundling face-api.js at static analysis time.
 type FaceApiModule = typeof import('face-api.js');
 
+// Concrete shape we extract from each detection result.
+// Defined here once so the loop body stays readable.
+type FaceDetection = {
+  detection: { box: { x: number; y: number; width: number; height: number } };
+  landmarks?: { positions?: Array<{ x: number; y: number }> };
+  descriptor?: Float32Array;
+};
+
 const MODEL_SOURCES = [
   '/models',
   '/face-models',
@@ -208,45 +216,38 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         const ctx = canvasEl.getContext('2d');
         ctx?.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
-        // face-api.js returns typed detection arrays; we narrow via length checks below
-        type DetectionWithAll = Awaited<ReturnType<typeof faceapi.detectAllFaces>> extends infer R ? R : never;
-        let detections: DetectionWithAll = [] as unknown as DetectionWithAll;
+        // Collect all detections into a typed array.
+        // Try SSD first (more accurate); fall back to TinyFaceDetector.
+        // Both detector paths return the same shape via withFaceDescriptors().
+        let dArr: FaceDetection[] = [];
 
         if (detectorRef.current === 'ssd') {
           try {
-            detections = await faceapi
+            dArr = (await faceapi
               .detectAllFaces(videoEl, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.40 }))
               .withFaceLandmarks()
-              .withFaceDescriptors();
+              .withFaceDescriptors()) as FaceDetection[];
           } catch (e) {
             console.warn('[face] SSD failed, switching to tiny:', e);
             detectorRef.current = 'tiny';
           }
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!detections || (detections as unknown[]).length === 0) {
-          detections = await faceapi
+        if (dArr.length === 0) {
+          dArr = (await faceapi
             .detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({
               inputSize: 320,
               scoreThreshold: 0.40,
             }))
             .withFaceLandmarks()
-            .withFaceDescriptors();
+            .withFaceDescriptors()) as FaceDetection[];
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!detections || (detections as unknown[]).length === 0) {
+        if (dArr.length === 0) {
           onDetection({ detected: false, multipleFaces: false });
           processingRef.current = false;
           return;
         }
-
-        const dArr = detections as Array<{
-          detection: { box: { x: number; y: number; width: number; height: number } };
-          landmarks?: { positions?: Array<{ x: number; y: number }> };
-          descriptor?: Float32Array;
-        }>;
 
         if (dArr.length > 1) {
           if (ctx) {
