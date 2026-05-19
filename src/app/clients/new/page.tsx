@@ -135,7 +135,7 @@ function NewClientForm() {
             </div>
             <div className="member-lux-metrics">
               <div className="member-lux-metric"><strong>{f.first_name ? 'Active' : 'Draft'}</strong><span>member profile state</span></div>
-              <div className="member-lux-metric"><strong>{trainers.filter(t => t.status === 'active').length}</strong><span>active trainers available</span></div>
+              <div className="member-lux-metric"><strong>{trainers.filter(t => t.is_active === true).length}</strong><span>active trainers available</span></div>
               <div className="member-lux-metric"><strong>{isEditMode ? 'Update mode' : 'New onboarding'}</strong><span>workflow context</span></div>
             </div>
           </div>
@@ -247,7 +247,7 @@ function NewClientForm() {
                 <FormGroup label="Assign Trainer">
                   <select className="input select" value={f.trainer_id} onChange={S('trainer_id')} disabled={user?.role === 'trainer'}>
                     <option value="">Assign Trainer</option>
-                    {trainers.filter(t => t.status === 'active').map(t => (
+                    {trainers.filter(t => t.is_active === true).map(t => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
