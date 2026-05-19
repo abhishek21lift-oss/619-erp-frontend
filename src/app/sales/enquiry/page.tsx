@@ -55,15 +55,15 @@ function Inner() {
     setSaving(true);
     try {
       await api.clients.create({
-        name: form.name, mobile: form.mobile, email: form.email || null,
-        gender: form.gender || null, dob: form.dob || null,
-        interested_in: form.interested_in || null, reference_no: form.source,
-        notes: form.notes || null, status: 'lead',
+        name: form.name, mobile: form.mobile, email: form.email || undefined,
+        gender: form.gender || undefined, dob: form.dob || undefined,
+        interested_in: form.interested_in || undefined, reference_no: form.source,
+        notes: form.notes || undefined, status: 'lead',
         joining_date: new Date().toISOString().split('T')[0],
       });
       setSuccess('Enquiry saved!');
       setTimeout(() => router.push('/sales/leads'), 900);
-    } catch (e: any) { setError(e.message || 'Could not save.'); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Could not save.'); }
     finally { setSaving(false); }
   }
 
