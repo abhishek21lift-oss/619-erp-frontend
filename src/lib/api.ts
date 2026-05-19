@@ -254,6 +254,17 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    /** Freeze a client's active membership */
+    freeze: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/freeze`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    /** Unfreeze a client's frozen membership */
+    unfreeze: (id: string) =>
+      request<{ message?: string }>(`/api/clients/${id}/unfreeze`, {
+        method: 'POST',
+      }),
   },
 
   payments: {
