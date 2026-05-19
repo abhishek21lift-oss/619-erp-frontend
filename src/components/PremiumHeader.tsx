@@ -4,48 +4,64 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/lib/nav-config';
-import { Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut, Search } from 'lucide-react';
+import {
+  Menu, Moon, Sun, ChevronDown, KeyRound, LogOut, Search, Zap,
+} from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
 import { cn } from '@/components/ui';
 
 interface Props {
   onMenuClick?: () => void;
 }
 
-// Each nav group gets its own premium color identity
-const GROUP_COLORS: Record<string, {
-  gradient: string;
-  glow: string;
-  hoverBg: string;
-  hoverText: string;
-  dropdownAccent: string;
-  dropdownActiveBg: string;
-  dropdownActiveText: string;
+// ─── Active accent per group (dark mode palette) ──────────────────────────────
+const GROUP_ACCENT: Record<string, {
+  pill: string;          // active pill background
+  glow: string;          // box-shadow glow colour
+  underline: string;     // active underline gradient
+  dropActiveBg: string;  // dropdown active row bg
+  dropActiveText: string;
 }> = {
-  dashboard:  { gradient: 'linear-gradient(135deg,#6d28d9,#4f46e5)', glow: 'rgba(109,40,217,0.30)', hoverBg: 'rgba(109,40,217,0.07)', hoverText: '#5b21b6', dropdownAccent: '#5b21b6', dropdownActiveBg: '#ede9fe', dropdownActiveText: '#5b21b6' },
-  sales:      { gradient: 'linear-gradient(135deg,#0369a1,#0891b2)', glow: 'rgba(8,145,178,0.28)', hoverBg: 'rgba(8,145,178,0.07)', hoverText: '#0369a1', dropdownAccent: '#0369a1', dropdownActiveBg: '#e0f2fe', dropdownActiveText: '#0369a1' },
-  members:    { gradient: 'linear-gradient(135deg,#0f766e,#059669)', glow: 'rgba(5,150,105,0.26)', hoverBg: 'rgba(5,150,105,0.07)', hoverText: '#0f766e', dropdownAccent: '#0f766e', dropdownActiveBg: '#d1fae5', dropdownActiveText: '#065f46' },
-  training:   { gradient: 'linear-gradient(135deg,#b45309,#d97706)', glow: 'rgba(217,119,6,0.26)', hoverBg: 'rgba(217,119,6,0.07)', hoverText: '#b45309', dropdownAccent: '#b45309', dropdownActiveBg: '#fef3c7', dropdownActiveText: '#92400e' },
-  staff:      { gradient: 'linear-gradient(135deg,#3730a3,#4f46e5)', glow: 'rgba(79,70,229,0.28)', hoverBg: 'rgba(79,70,229,0.07)', hoverText: '#3730a3', dropdownAccent: '#3730a3', dropdownActiveBg: '#e0e7ff', dropdownActiveText: '#3730a3' },
-  attendance: { gradient: 'linear-gradient(135deg,#be185d,#db2777)', glow: 'rgba(219,39,119,0.26)', hoverBg: 'rgba(219,39,119,0.07)', hoverText: '#be185d', dropdownAccent: '#be185d', dropdownActiveBg: '#fce7f3', dropdownActiveText: '#9d174d' },
-  memberships:{ gradient: 'linear-gradient(135deg,#7c3aed,#a855f7)', glow: 'rgba(168,85,247,0.28)', hoverBg: 'rgba(168,85,247,0.07)', hoverText: '#7c3aed', dropdownAccent: '#7c3aed', dropdownActiveBg: '#f3e8ff', dropdownActiveText: '#6b21a8' },
-  finance:    { gradient: 'linear-gradient(135deg,#1d4ed8,#2563eb)', glow: 'rgba(37,99,235,0.26)', hoverBg: 'rgba(37,99,235,0.07)', hoverText: '#1d4ed8', dropdownAccent: '#1d4ed8', dropdownActiveBg: '#dbeafe', dropdownActiveText: '#1e40af' },
-  insights:   { gradient: 'linear-gradient(135deg,#0d9488,#06b6d4)', glow: 'rgba(6,182,212,0.26)', hoverBg: 'rgba(6,182,212,0.07)', hoverText: '#0d9488', dropdownAccent: '#0d9488', dropdownActiveBg: '#ccfbf1', dropdownActiveText: '#115e59' },
-  engagement: { gradient: 'linear-gradient(135deg,#dc2626,#f97316)', glow: 'rgba(249,115,22,0.26)', hoverBg: 'rgba(249,115,22,0.07)', hoverText: '#dc2626', dropdownAccent: '#dc2626', dropdownActiveBg: '#fee2e2', dropdownActiveText: '#991b1b' },
-  settings:   { gradient: 'linear-gradient(135deg,#475569,#64748b)', glow: 'rgba(100,116,139,0.22)', hoverBg: 'rgba(100,116,139,0.07)', hoverText: '#475569', dropdownAccent: '#475569', dropdownActiveBg: '#f1f5f9', dropdownActiveText: '#334155' },
+  dashboard:   { pill: 'rgba(124,58,237,0.20)', glow: 'rgba(124,58,237,0.35)', underline: 'rgba(168,85,247,0.8)',  dropActiveBg: 'rgba(124,58,237,0.18)', dropActiveText: '#c4b5fd' },
+  sales:       { pill: 'rgba(6,182,212,0.18)',  glow: 'rgba(6,182,212,0.30)',  underline: 'rgba(34,211,238,0.7)', dropActiveBg: 'rgba(6,182,212,0.15)',  dropActiveText: '#67e8f9' },
+  members:     { pill: 'rgba(16,185,129,0.16)', glow: 'rgba(16,185,129,0.28)', underline: 'rgba(52,211,153,0.7)', dropActiveBg: 'rgba(16,185,129,0.13)', dropActiveText: '#6ee7b7' },
+  training:    { pill: 'rgba(245,158,11,0.16)', glow: 'rgba(245,158,11,0.28)', underline: 'rgba(251,191,36,0.7)', dropActiveBg: 'rgba(245,158,11,0.13)', dropActiveText: '#fde68a' },
+  staff:       { pill: 'rgba(99,102,241,0.18)', glow: 'rgba(99,102,241,0.30)', underline: 'rgba(129,140,248,0.7)',dropActiveBg: 'rgba(99,102,241,0.15)', dropActiveText: '#a5b4fc' },
+  attendance:  { pill: 'rgba(236,72,153,0.16)', glow: 'rgba(236,72,153,0.28)', underline: 'rgba(244,114,182,0.7)',dropActiveBg: 'rgba(236,72,153,0.13)', dropActiveText: '#f9a8d4' },
+  memberships: { pill: 'rgba(168,85,247,0.18)', glow: 'rgba(168,85,247,0.30)', underline: 'rgba(192,132,252,0.7)',dropActiveBg: 'rgba(168,85,247,0.15)', dropActiveText: '#d8b4fe' },
+  finance:     { pill: 'rgba(59,130,246,0.18)', glow: 'rgba(59,130,246,0.28)', underline: 'rgba(96,165,250,0.7)', dropActiveBg: 'rgba(59,130,246,0.15)', dropActiveText: '#93c5fd' },
+  insights:    { pill: 'rgba(20,184,166,0.16)', glow: 'rgba(20,184,166,0.26)', underline: 'rgba(45,212,191,0.7)', dropActiveBg: 'rgba(20,184,166,0.13)', dropActiveText: '#5eead4' },
+  engagement:  { pill: 'rgba(239,68,68,0.16)',  glow: 'rgba(239,68,68,0.26)',  underline: 'rgba(252,165,165,0.7)',dropActiveBg: 'rgba(239,68,68,0.13)',  dropActiveText: '#fca5a5' },
+  settings:    { pill: 'rgba(148,163,184,0.14)', glow: 'rgba(148,163,184,0.22)', underline: 'rgba(203,213,225,0.6)',dropActiveBg: 'rgba(148,163,184,0.12)', dropActiveText: '#cbd5e1' },
 };
+const DEFAULT_ACCENT = GROUP_ACCENT.dashboard;
 
-const DEFAULT_COLOR = GROUP_COLORS.dashboard;
 const ROW1_COUNT = 6;
 
 export default function PremiumHeader({ onMenuClick }: Props) {
   const { user, logout } = useAuth();
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
   const headerRef = useRef<HTMLDivElement | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [hydrated, setHydrated] = useState(false);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
+  const [scrolled,  setScrolled]  = useState(false);
+  const [theme,     setTheme]     = useState<'light' | 'dark'>('light');
+  const [hydrated,  setHydrated]  = useState(false);
+  const [openMenu,  setOpenMenu]  = useState<string | null>(null);
+
+  // ── scroll detection ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const el = document.getElementById('main-content');
+    const target = el ?? window;
+    const onScroll = () => {
+      const y = el ? el.scrollTop : window.scrollY;
+      setScrolled(y > 8);
+    };
+    target.addEventListener('scroll', onScroll, { passive: true });
+    return () => target.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // ── theme init ────────────────────────────────────────────────────────────
   useEffect(() => {
     try {
       const saved = (localStorage.getItem('619_theme') as 'light' | 'dark') ?? 'light';
@@ -60,9 +76,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     const next = theme === 'light' ? 'dark' : 'light';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('619_theme', next); } catch {};
+    try { localStorage.setItem('619_theme', next); } catch {}
   };
 
+  // ── keyboard + click-away ─────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -84,13 +101,14 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   useEffect(() => setOpenMenu(null), [pathname]);
 
+  // ── nav groups (respects role) ────────────────────────────────────────────
   const topGroups = useMemo(() => {
     const visibleGroups = NAV_GROUPS.map((group) => ({
       ...group,
       items: group.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
     })).filter((group) => {
       const g = NAV_GROUPS.find((ng) => ng.id === group.id);
-      if (g?.roles?.length) return !!user?.role && g.roles.includes(user.role as any);
+      if (g?.roles?.length) return !!user?.role && g.roles.includes(user.role as string);
       return group.items.length > 0;
     });
     const visibleSettings = {
@@ -107,84 +125,93 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   const row1 = topGroups.slice(0, ROW1_COUNT);
   const row2 = topGroups.slice(ROW1_COUNT);
 
-  const toggleMenu = (id: string) => setOpenMenu((c) => (c === id ? null : id));
-  const handleResetPassword = () => { setOpenMenu(null); router.push('/reset-password'); };
-  const handleLogout = () => { setOpenMenu(null); logout(); router.push('/login'); };
+  const toggleMenu    = (id: string) => setOpenMenu((c) => (c === id ? null : id));
+  const handleLogout  = () => { setOpenMenu(null); logout(); router.push('/login'); };
+  const handleReset   = () => { setOpenMenu(null); router.push('/reset-password'); };
 
-  const accountLabel = user?.name || '619 FITNESS STUDIO';
-  const roleLabel = user?.role || 'admin';
-  const initials = (user?.name || 'A').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+  const accountLabel = user?.name  || '619 FITNESS STUDIO';
+  const roleLabel    = user?.role  || 'admin';
+  const initials     = (user?.name || 'A').split(' ').map((p: string) => p[0]).join('').slice(0, 2).toUpperCase();
 
+  // ── render a single nav group button + dropdown ───────────────────────────
   const renderGroup = (group: { id: string; label: string; items: typeof DASHBOARD_ITEM[] }) => {
-    const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
-    const opened = openMenu === group.id;
-    const colors = GROUP_COLORS[group.id] ?? DEFAULT_COLOR;
+    const active  = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+    const opened  = openMenu === group.id;
+    const accent  = GROUP_ACCENT[group.id] ?? DEFAULT_ACCENT;
 
     return (
       <div key={group.id} className="relative shrink-0">
         <button
           type="button"
-          onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
-          aria-expanded={opened}
-          style={active
-            ? { background: colors.gradient, boxShadow: `0 4px 18px ${colors.glow}, 0 1px 3px ${colors.glow}`, transform: 'translateY(-1px)' }
-            : undefined
-          }
+          onClick={() => group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id)}
+          aria-expanded={group.items.length > 1 ? opened : undefined}
           className={cn(
-            'group inline-flex h-[36px] items-center gap-1.5 whitespace-nowrap rounded-full px-[16px] text-[12.5px] font-semibold tracking-[0.01em] transition-all duration-200 ease-out',
-            active ? 'text-white' : 'text-slate-500',
+            'group relative inline-flex h-[32px] items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-[12.5px] font-medium tracking-[0.01em] transition-all duration-200 ease-out',
+            active
+              ? 'text-white'
+              : 'text-white/45 hover:text-white/80 hover:bg-white/[0.06]',
           )}
-          onMouseEnter={(e) => {
-            if (!active) {
-              (e.currentTarget as HTMLButtonElement).style.background = colors.hoverBg;
-              (e.currentTarget as HTMLButtonElement).style.color = colors.hoverText;
-              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 10px ${colors.glow}`;
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!active) {
-              (e.currentTarget as HTMLButtonElement).style.background = '';
-              (e.currentTarget as HTMLButtonElement).style.color = '';
-              (e.currentTarget as HTMLButtonElement).style.transform = '';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = '';
-            }
-          }}
+          style={active ? {
+            background: accent.pill,
+            boxShadow: `0 0 0 1px ${accent.glow.replace('0.3', '0.15')}, 0 2px 12px ${accent.glow}`,
+          } : undefined}
         >
           <span>{group.label}</span>
           {group.items.length > 1 && (
-            <ChevronDown size={11} className={cn('shrink-0 opacity-70 transition-transform duration-200', opened && 'rotate-180')} />
+            <ChevronDown
+              size={10}
+              className={cn('shrink-0 opacity-60 transition-transform duration-200', opened && 'rotate-180')}
+            />
+          )}
+          {/* Active underline glow */}
+          {active && (
+            <span
+              aria-hidden
+              className="absolute bottom-0 left-3 right-3 h-px rounded-full"
+              style={{ background: `linear-gradient(90deg, transparent, ${accent.underline}, transparent)` }}
+            />
           )}
         </button>
 
         {group.items.length > 1 && opened && (
           <div
-            className="absolute left-0 top-[calc(100%+8px)] z-[120] min-w-[230px] overflow-hidden rounded-[20px] p-1.5 backdrop-blur-2xl"
+            className="absolute left-0 top-[calc(100%+8px)] z-[120] min-w-[220px] overflow-hidden rounded-2xl p-1.5"
             style={{
-              background: 'rgba(255,255,255,0.92)',
-              border: `1px solid ${colors.glow.replace('0.', '0.15')}`,
-              boxShadow: `0 20px 50px rgba(15,23,42,0.10), 0 4px 16px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.9)`,
-              WebkitBackdropFilter: 'blur(20px)',
+              background: 'rgba(14,14,18,0.97)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: `1px solid rgba(255,255,255,0.08)`,
+              boxShadow: `0 20px 60px rgba(0,0,0,0.6), 0 4px 20px ${accent.glow}, 0 0 0 1px ${accent.glow.replace('0.3','0.08')}`,
+              animation: 'dropIn 0.15s cubic-bezier(0.16,1,0.3,1)',
             }}
           >
-            <div className="mb-1.5 h-[3px] w-full rounded-full" style={{ background: colors.gradient }} />
+            {/* Colour top stripe */}
+            <div
+              className="mb-1 h-[2px] w-full rounded-full mx-auto"
+              style={{ width: 'calc(100% - 12px)', background: `linear-gradient(90deg, ${accent.underline}, transparent)` }}
+            />
             {group.items.map((item) => {
               const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <button
                   type="button"
                   key={item.href}
-                  onClick={() => router.push(item.href)}
-                  style={itemActive ? { background: colors.dropdownActiveBg, color: colors.dropdownActiveText } : undefined}
+                  onClick={() => { router.push(item.href); setOpenMenu(null); }}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-[13px] px-3.5 py-2.5 text-left text-[13px] font-semibold transition-all duration-150',
-                    !itemActive && 'text-slate-600 hover:bg-slate-50/80 hover:text-slate-900',
+                    'flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[13px] font-medium transition-all duration-150',
+                    itemActive
+                      ? 'text-white'
+                      : 'text-white/50 hover:bg-white/[0.06] hover:text-white/80',
                   )}
+                  style={itemActive ? { background: accent.dropActiveBg, color: accent.dropActiveText } : undefined}
                 >
                   <span>{item.label}</span>
-                  {item.isNew && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">New</span>
-                  )}
+                  <span className="flex items-center gap-1.5">
+                    {item.isNew && (
+                      <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-400">New</span>
+                    )}
+                    {itemActive && <span className="h-1.5 w-1.5 rounded-full" style={{ background: accent.dropActiveText }} />}
+                  </span>
                 </button>
               );
             })}
@@ -194,133 +221,145 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     );
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
       <style>{`
-        @keyframes brand-glow {
-          0%, 100% { box-shadow: 0 4px 16px rgba(109,40,217,0.13), inset 0 1px 0 rgba(255,255,255,0.9); }
-          50%       { box-shadow: 0 4px 22px rgba(109,40,217,0.22), inset 0 1px 0 rgba(255,255,255,0.9); }
+        @keyframes dropIn {
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)   scale(1);    }
         }
-        .logo-glow { animation: brand-glow 3.5s ease-in-out infinite; }
+        @keyframes logoGlow {
+          0%, 100% { box-shadow: 0 0 12px rgba(124,58,237,0.3), 0 0 0 1px rgba(124,58,237,0.15); }
+          50%       { box-shadow: 0 0 20px rgba(168,85,247,0.45), 0 0 0 1px rgba(168,85,247,0.25); }
+        }
+        .logo-glow { animation: logoGlow 3.5s ease-in-out infinite; }
       `}</style>
 
       <header
-        className="fixed inset-x-0 top-0 z-[100] border-b border-slate-200/80 bg-white/[0.97] backdrop-blur-2xl"
+        className={cn(
+          'fixed inset-x-0 top-0 z-[100] transition-all duration-300 ease-out',
+          scrolled
+            ? 'border-b border-white/[0.06] shadow-[0_1px_0_rgba(255,255,255,0.03)]'
+            : 'border-b border-transparent',
+        )}
         style={{
-          WebkitBackdropFilter: 'blur(24px)',
-          boxShadow: '0 1px 0 rgba(15,23,42,0.05), 0 4px 24px rgba(15,23,42,0.04)',
+          background: scrolled
+            ? 'rgba(10,10,14,0.92)'
+            : 'linear-gradient(180deg, rgba(10,10,14,0.80) 0%, rgba(10,10,14,0.60) 100%)',
+          backdropFilter: scrolled ? 'blur(24px) saturate(180%)' : 'blur(8px)',
+          WebkitBackdropFilter: scrolled ? 'blur(24px) saturate(180%)' : 'blur(8px)',
         }}
       >
         <div ref={headerRef} className="mx-auto flex w-full max-w-[1680px] flex-col px-4 pb-2 pt-3 sm:px-6 lg:px-8">
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-3">
 
-            {/* ── Mobile hamburger — visible below lg ── */}
+            {/* ── Mobile hamburger ─────────────────────────────────────── */}
             <button
               type="button"
-              className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-150 hover:bg-slate-50 hover:shadow-md lg:hidden"
+              className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white/60 transition-all duration-150 hover:bg-white/[0.10] hover:text-white lg:hidden"
               onClick={onMenuClick}
               aria-label="Open navigation menu"
             >
-              <Menu size={17} />
+              <Menu size={16} />
             </button>
 
-            {/* Brand */}
-            <div className="flex shrink-0 items-center gap-3">
-              <div
-                className="logo-glow relative flex h-[48px] w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-[15px] border border-violet-200/60"
-                style={{ background: 'linear-gradient(150deg, rgba(255,255,255,0.98) 0%, rgba(237,233,254,0.55) 100%)' }}
+            {/* ── Brand mark ───────────────────────────────────────────── */}
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard')}
+              className="flex shrink-0 items-center gap-2.5 group"
+              aria-label="619 Fitness Studio — Home"
+            >
+              <span
+                className="logo-glow flex h-[38px] w-[38px] shrink-0 items-center justify-center overflow-hidden rounded-[11px] text-[11px] font-black tracking-tight text-white"
+                style={{ background: 'linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #a855f7 100%)' }}
               >
                 <img
                   src="/619-logo.png"
-                  alt="619 Fitness Studio logo"
-                  width={36}
-                  height={36}
-                  className="h-[36px] w-[36px] object-contain"
+                  alt="619 Fitness Studio"
+                  width={30}
+                  height={30}
+                  className="h-[30px] w-[30px] object-contain"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).style.display = 'none';
                     const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
                     if (fb) fb.style.display = 'flex';
                   }}
                 />
+                <span className="hidden h-full w-full items-center justify-center">619</span>
+              </span>
+              <div className="hidden select-none flex-col sm:flex">
                 <span
-                  className="absolute hidden h-full w-full items-center justify-center rounded-[15px] text-[13px] font-black tracking-tight text-white"
-                  style={{ background: 'linear-gradient(135deg,#5b21b6,#4f46e5)' }}
+                  className="text-[13px] font-black leading-none tracking-[0.08em] text-white/90 group-hover:text-white transition-colors duration-150"
                 >
-                  619
+                  619 FITNESS
                 </span>
+                <span className="mt-[3px] text-[9px] font-semibold uppercase tracking-[0.28em] text-white/30">Management OS</span>
               </div>
-              <div className="hidden select-none flex-col gap-[3px] sm:flex">
-                <span
-                  className="text-[15px] font-black leading-none tracking-[0.09em]"
-                  style={{
-                    background: 'linear-gradient(120deg,#1e1b4b 0%,#3730a3 40%,#6d28d9 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  619 FITNESS STUDIO
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-[0.30em] text-slate-400">Management OS</span>
-              </div>
-            </div>
+            </button>
 
-            <div className="mx-1 hidden h-10 w-px self-center bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
+            {/* ── Divider ──────────────────────────────────────────────── */}
+            <div className="mx-1 hidden h-9 w-px self-center bg-gradient-to-b from-transparent via-white/10 to-transparent lg:block" />
 
-            {/* Desktop nav — always exactly 2 rows, only visible lg+ */}
-            <div className="hidden min-w-0 flex-1 flex-col gap-[2px] pt-[2px] lg:flex">
-              <nav aria-label="Primary navigation" className="flex min-w-0 flex-nowrap items-center gap-1">
+            {/* ── Desktop nav rows ─────────────────────────────────────── */}
+            <div className="hidden min-w-0 flex-1 flex-col gap-[3px] pt-[3px] lg:flex">
+              <nav aria-label="Primary navigation" className="flex min-w-0 flex-nowrap items-center gap-0.5">
                 {row1.map(renderGroup)}
               </nav>
               {row2.length > 0 && (
-                <nav aria-label="Secondary navigation" className="flex min-w-0 flex-nowrap items-center gap-1 pl-1">
+                <nav aria-label="Secondary navigation" className="flex min-w-0 flex-nowrap items-center gap-0.5 pl-0.5">
                   {row2.map(renderGroup)}
                 </nav>
               )}
             </div>
 
-            {/* Right utilities */}
-            <div className="ml-auto flex shrink-0 items-start gap-2 pt-[2px]">
+            {/* ── Right utilities ──────────────────────────────────────── */}
+            <div className="ml-auto flex shrink-0 items-start gap-1.5 pt-[3px]">
+
+              {/* Search pill */}
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-                className="hidden h-[36px] w-[200px] items-center justify-between rounded-full border border-slate-200/90 bg-slate-50/80 px-3.5 text-[12px] text-slate-400 backdrop-blur-sm transition-all duration-150 hover:border-violet-200 hover:bg-white hover:text-slate-600 hover:shadow-[0_2px_12px_rgba(109,40,217,0.08)] xl:inline-flex"
+                className="hidden h-[32px] w-[180px] items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.05] px-3 text-[12px] text-white/30 transition-all duration-150 hover:border-white/[0.14] hover:bg-white/[0.08] hover:text-white/50 xl:inline-flex"
               >
                 <span className="flex items-center gap-2">
                   <Search size={12} className="shrink-0" />
-                  <span>Search...</span>
+                  <span>Search…</span>
                 </span>
-                <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.08)]">⌘K</kbd>
+                <kbd className="rounded border border-white/[0.08] bg-white/[0.05] px-1.5 py-0.5 text-[9px] font-medium text-white/20 font-mono">⌘K</kbd>
               </button>
 
+              {/* Theme toggle */}
               <button
                 type="button"
-                className="inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                className="inline-flex h-[32px] w-[32px] items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.05] text-white/40 transition-all duration-150 hover:bg-white/[0.09] hover:text-white/70"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
               >
-                {hydrated ? (theme === 'light' ? <Moon size={14} /> : <Sun size={14} />) : <span style={{ width: 14 }} />}
+                {hydrated ? (theme === 'light' ? <Moon size={13} /> : <Sun size={13} />) : <span style={{ width: 13 }} />}
               </button>
 
-              <button
-                type="button"
-                className="relative inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
-                aria-label="Notifications"
-              >
-                <Bell size={14} />
-                <span className="absolute right-[9px] top-[9px] h-[6px] w-[6px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
-              </button>
+              {/* Notifications */}
+              <NotificationBell />
 
+              {/* Profile dropdown */}
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => toggleMenu('account')}
                   aria-expanded={openMenu === 'account'}
-                  className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/90 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                  className={cn(
+                    'inline-flex h-[32px] items-center gap-2 rounded-lg border border-white/[0.08] pl-1.5 pr-2.5 transition-all duration-150',
+                    openMenu === 'account'
+                      ? 'bg-white/[0.10] border-white/[0.14]'
+                      : 'bg-white/[0.05] hover:bg-white/[0.09] hover:border-white/[0.13]',
+                  )}
                 >
-                  <div
-                    className="flex h-[24px] w-[24px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100"
-                    style={{ background: 'linear-gradient(135deg,#ede9fe,#e0e7ff)' }}
+                  {/* Avatar */}
+                  <span
+                    className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden rounded-full text-[9px] font-black text-white"
+                    style={{ background: 'linear-gradient(135deg, #5b21b6, #a855f7)' }}
                   >
                     <img
                       src="/619-logo.png"
@@ -332,37 +371,67 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                         if (fb) fb.style.display = 'flex';
                       }}
                     />
-                    <span className="hidden h-full w-full items-center justify-center text-[10px] font-black text-violet-700">{initials}</span>
-                  </div>
+                    <span className="hidden h-full w-full items-center justify-center">{initials}</span>
+                  </span>
+
                   <div className="hidden text-left xl:block">
-                    <div className="max-w-[140px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
-                    <div className="mt-0.5 text-[10px] lowercase tracking-wide text-slate-400">{roleLabel}</div>
+                    <div className="max-w-[120px] truncate text-[11px] font-semibold leading-none text-white/80">{accountLabel}</div>
+                    <div className="mt-0.5 text-[9px] lowercase tracking-wide text-white/30">{roleLabel}</div>
                   </div>
-                  <ChevronDown size={11} className={cn('text-slate-400 transition-transform duration-200', openMenu === 'account' && 'rotate-180')} />
+                  <ChevronDown
+                    size={10}
+                    className={cn('text-white/30 transition-transform duration-200', openMenu === 'account' && 'rotate-180')}
+                  />
                 </button>
 
                 {openMenu === 'account' && (
                   <div
-                    className="absolute right-0 top-[calc(100%+8px)] z-[130] w-[220px] overflow-hidden rounded-[18px] border border-slate-200/70 bg-white/95 p-1.5 backdrop-blur-2xl"
-                    style={{ boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06)', WebkitBackdropFilter: 'blur(20px)' }}
+                    className="absolute right-0 top-[calc(100%+8px)] z-[130] w-[220px] overflow-hidden rounded-2xl p-1.5"
+                    style={{
+                      background: 'rgba(14,14,18,0.97)',
+                      backdropFilter: 'blur(24px)',
+                      WebkitBackdropFilter: 'blur(24px)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      boxShadow: '0 20px 60px rgba(0,0,0,0.65), 0 4px 20px rgba(124,58,237,0.2)',
+                      animation: 'dropIn 0.15s cubic-bezier(0.16,1,0.3,1)',
+                    }}
                   >
-                    <button
-                      type="button"
-                      onClick={handleResetPassword}
-                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
-                    >
-                      <KeyRound size={14} className="text-violet-600" />
-                      Reset password
-                    </button>
-                    <div className="mx-2 my-1 h-px bg-slate-100" />
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-rose-600 transition-all hover:bg-rose-50"
-                    >
-                      <LogOut size={14} />
-                      Log out
-                    </button>
+                    {/* Account header */}
+                    <div className="px-3 py-2.5 border-b border-white/[0.06]">
+                      <p className="text-[12.5px] font-semibold text-white/90 truncate">{accountLabel}</p>
+                      <p className="text-[10px] text-white/30 mt-0.5 lowercase tracking-wide">{roleLabel}</p>
+                    </div>
+
+                    <div className="mt-1 space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => { window.dispatchEvent(new CustomEvent('619-cmd-palette')); setOpenMenu(null); }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12.5px] font-medium text-white/50 transition-all hover:bg-white/[0.06] hover:text-white/80"
+                      >
+                        <Zap size={13} className="text-purple-400/70" />
+                        Quick Actions
+                        <kbd className="ml-auto text-[9px] text-white/20 font-mono">⌘K</kbd>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleReset}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12.5px] font-medium text-white/50 transition-all hover:bg-white/[0.06] hover:text-white/80"
+                      >
+                        <KeyRound size={13} className="text-purple-400/70" />
+                        Reset password
+                      </button>
+                    </div>
+
+                    <div className="mt-1.5 border-t border-white/[0.06] pt-1">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[12.5px] font-medium text-red-400/60 transition-all hover:bg-red-500/10 hover:text-red-400"
+                      >
+                        <LogOut size={13} />
+                        Sign out
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
