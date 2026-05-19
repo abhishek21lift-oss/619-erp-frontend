@@ -272,9 +272,21 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    /** Downgrade a client's membership plan */
+    downgrade: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/downgrade`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     /** Transfer a client to a different trainer */
     transfer: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/transfer`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    /** Schedule or record a trial session for a prospect */
+    trial: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/trial`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
