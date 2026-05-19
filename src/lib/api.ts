@@ -573,4 +573,25 @@ export const api = {
     exportDatabase: () => request<{ message?: string; url?: string }>('/api/admin/export-database'),
     backupDatabase: () => request<{ message?: string }>('/api/admin/backup-database', { method: 'POST' }),
   },
+
+  // ── Settings / Branding ──────────────────────────────────────────────
+  settings: {
+    /** Load all branding key-value pairs */
+    getBranding: () =>
+      request<Record<string, string>>('/api/settings/branding'),
+
+    /** Persist branding key-value pairs (admin only) */
+    saveBranding: (data: Record<string, string>) =>
+      request<{ message: string; settings: Record<string, string> }>('/api/settings/branding', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    /** Upload a brand asset (base64 data-URL) and store under `key` */
+    uploadAsset: (image: string, key: string) =>
+      request<{ message: string; url: string }>('/api/settings/branding/upload-logo', {
+        method: 'POST',
+        body: JSON.stringify({ image, key }),
+      }),
+  },
 };
