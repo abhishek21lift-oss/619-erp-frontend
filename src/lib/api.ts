@@ -40,7 +40,7 @@ function buildQs(params: Record<string, string | number>): string {
 
 // ─────────────────────────── Types ───────────────────────────────────
 
-export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist';
+export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist' | 'manager';
 
 export type User = {
   id: string;
@@ -178,6 +178,21 @@ export type TrainerSummaryRow = {
   [key: string]: unknown;
 };
 
+export type LeaveRequest = {
+  id: string;
+  trainer_id?: string;
+  trainer_name?: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  days?: number;
+  admin_note?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
 // ─────────────────────────── Core fetch ──────────────────────────────
 
 async function request<T = unknown>(
@@ -280,6 +295,8 @@ export const api = {
       request(`/api/clients/${id}/freeze`, { method: 'POST', body: JSON.stringify(data) }),
     unfreeze: (id: string) =>
       request(`/api/clients/${id}/unfreeze`, { method: 'POST' }),
+    extension: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/extension`, { method: 'POST', body: JSON.stringify(data) }),
   },
 
   payments: {
@@ -423,5 +440,15 @@ export const api = {
       request<unknown[]>(`/api/reports/monthly?year=${year}`),
     dues: () => request<unknown[]>('/api/reports/dues'),
     trainerSummary: () => request<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
+  },
+
+  leave: {
+    list: () => request<LeaveRequest[]>('/api/leave'),
+    create: (data: Record<string, unknown>) =>
+      request<{ leave: LeaveRequest }>('/api/leave', { method: 'POST', body: JSON.stringify(data) }),
+    approve: (id: string) =>
+      request<{ leave: LeaveRequest }>(`/api/leave/${id}/approve`, { method: 'POST' }),
+    reject: (id: string, note?: string) =>
+      request<{ leave: LeaveRequest }>(`/api/leave/${id}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
   },
 };
