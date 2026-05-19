@@ -1,521 +1,375 @@
 'use client';
-// ─────────────────────────────────────────────────────────────
-// 619 FITNESS STUDIO — Premium Light Glassmorphic Navbar
-// Design language: Apple × Linear × Vercel × Stripe
-// ─────────────────────────────────────────────────────────────
 
-import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  AnimatePresence,
-  motion,
-  useMotionValueEvent,
-  useScroll,
-} from 'framer-motion';
-import {
-  Bell,
-  BarChart3,
-  ChevronDown,
-  CreditCard,
-  LayoutDashboard,
-  LogOut,
-  BellRing,
-  Search,
-  Settings,
-  TrendingUp,
-  User,
-  Users,
-  Wallet,
-  Wrench,
-  Menu,
-} from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/lib/nav-config';
+import { Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut, Search } from 'lucide-react';
 import { cn } from '@/components/ui';
 
-// ─── Nav items ────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { id: 'dashboard',  label: 'Dashboard',  href: '/dashboard',  icon: LayoutDashboard },
-  { id: 'sales',      label: 'Sales',      href: '/sales',      icon: TrendingUp },
-  { id: 'members',    label: 'Members',    href: '/clients',    icon: Users },
-  { id: 'operations', label: 'Operations', href: '/operations', icon: Wrench },
-  { id: 'finance',    label: 'Finance',    href: '/finance',    icon: Wallet },
-  { id: 'analytics',  label: 'Analytics',  href: '/insights',   icon: BarChart3 },
-] as const;
+interface Props {
+  onMenuClick?: () => void;
+}
 
-const DROPDOWN_ITEMS = [
-  { id: 'profile',       label: 'Profile',          icon: User,       href: '/profile' },
-  { id: 'settings',      label: 'Studio Settings',  icon: Settings,   href: '/settings', shortcut: '⌘,' },
-  { id: 'notifications', label: 'Notifications',    icon: BellRing,   href: '/settings/notifications' },
-  { id: 'billing',       label: 'Billing',          icon: CreditCard, href: '/billing' },
-] as const;
+// Each nav group gets its own premium color identity
+const GROUP_COLORS: Record<string, {
+  gradient: string;
+  glow: string;
+  hoverBg: string;
+  hoverText: string;
+  dropdownAccent: string;
+  dropdownActiveBg: string;
+  dropdownActiveText: string;
+}> = {
+  dashboard:  { gradient: 'linear-gradient(135deg,#6d28d9,#4f46e5)', glow: 'rgba(109,40,217,0.30)', hoverBg: 'rgba(109,40,217,0.07)', hoverText: '#5b21b6', dropdownAccent: '#5b21b6', dropdownActiveBg: '#ede9fe', dropdownActiveText: '#5b21b6' },
+  sales:      { gradient: 'linear-gradient(135deg,#0369a1,#0891b2)', glow: 'rgba(8,145,178,0.28)', hoverBg: 'rgba(8,145,178,0.07)', hoverText: '#0369a1', dropdownAccent: '#0369a1', dropdownActiveBg: '#e0f2fe', dropdownActiveText: '#0369a1' },
+  members:    { gradient: 'linear-gradient(135deg,#0f766e,#059669)', glow: 'rgba(5,150,105,0.26)', hoverBg: 'rgba(5,150,105,0.07)', hoverText: '#0f766e', dropdownAccent: '#0f766e', dropdownActiveBg: '#d1fae5', dropdownActiveText: '#065f46' },
+  training:   { gradient: 'linear-gradient(135deg,#b45309,#d97706)', glow: 'rgba(217,119,6,0.26)', hoverBg: 'rgba(217,119,6,0.07)', hoverText: '#b45309', dropdownAccent: '#b45309', dropdownActiveBg: '#fef3c7', dropdownActiveText: '#92400e' },
+  staff:      { gradient: 'linear-gradient(135deg,#3730a3,#4f46e5)', glow: 'rgba(79,70,229,0.28)', hoverBg: 'rgba(79,70,229,0.07)', hoverText: '#3730a3', dropdownAccent: '#3730a3', dropdownActiveBg: '#e0e7ff', dropdownActiveText: '#3730a3' },
+  attendance: { gradient: 'linear-gradient(135deg,#be185d,#db2777)', glow: 'rgba(219,39,119,0.26)', hoverBg: 'rgba(219,39,119,0.07)', hoverText: '#be185d', dropdownAccent: '#be185d', dropdownActiveBg: '#fce7f3', dropdownActiveText: '#9d174d' },
+  memberships:{ gradient: 'linear-gradient(135deg,#7c3aed,#a855f7)', glow: 'rgba(168,85,247,0.28)', hoverBg: 'rgba(168,85,247,0.07)', hoverText: '#7c3aed', dropdownAccent: '#7c3aed', dropdownActiveBg: '#f3e8ff', dropdownActiveText: '#6b21a8' },
+  finance:    { gradient: 'linear-gradient(135deg,#1d4ed8,#2563eb)', glow: 'rgba(37,99,235,0.26)', hoverBg: 'rgba(37,99,235,0.07)', hoverText: '#1d4ed8', dropdownAccent: '#1d4ed8', dropdownActiveBg: '#dbeafe', dropdownActiveText: '#1e40af' },
+  insights:   { gradient: 'linear-gradient(135deg,#0d9488,#06b6d4)', glow: 'rgba(6,182,212,0.26)', hoverBg: 'rgba(6,182,212,0.07)', hoverText: '#0d9488', dropdownAccent: '#0d9488', dropdownActiveBg: '#ccfbf1', dropdownActiveText: '#115e59' },
+  engagement: { gradient: 'linear-gradient(135deg,#dc2626,#f97316)', glow: 'rgba(249,115,22,0.26)', hoverBg: 'rgba(249,115,22,0.07)', hoverText: '#dc2626', dropdownAccent: '#dc2626', dropdownActiveBg: '#fee2e2', dropdownActiveText: '#991b1b' },
+  settings:   { gradient: 'linear-gradient(135deg,#475569,#64748b)', glow: 'rgba(100,116,139,0.22)', hoverBg: 'rgba(100,116,139,0.07)', hoverText: '#475569', dropdownAccent: '#475569', dropdownActiveBg: '#f1f5f9', dropdownActiveText: '#334155' },
+};
 
-// ─── Glass style tokens ───────────────────────────────────────
-const G = {
-  nav: {
-    bg:     'rgba(250,250,249,0.72)',
-    bgSc:   'rgba(250,250,249,0.90)',
-    border: '1px solid rgba(255,255,255,0.50)',
-    borSc:  '1px solid rgba(255,255,255,0.65)',
-    blur:   'blur(20px) saturate(180%)',
-    blurSc: 'blur(28px) saturate(200%)',
-    shadow: '0 1px 0 rgba(255,255,255,0.65) inset, 0 4px 24px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06)',
-    shadowSc:'0 1px 0 rgba(255,255,255,0.70) inset, 0 8px 32px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.08)',
-  },
-  pill: {
-    bg:     'rgba(255,255,255,0.95)',
-    shadow: '0 1px 8px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05)',
-  },
-  drop: {
-    bg:     'rgba(255,255,255,0.92)',
-    blur:   'blur(24px) saturate(160%)',
-    border: '1px solid rgba(255,255,255,0.70)',
-    shadow: '0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
-  },
-  search: {
-    bg:    'rgba(0,0,0,0.04)',
-    bdr:   '1px solid rgba(0,0,0,0.08)',
-    bgF:   'rgba(255,255,255,0.90)',
-    bdrF:  '1px solid rgba(196,30,58,0.28)',
-    shdF:  '0 0 0 3px rgba(196,30,58,0.09)',
-  },
-} as const;
+const DEFAULT_COLOR = GROUP_COLORS.dashboard;
+const ROW1_COUNT = 6;
 
-const SP = {
-  pill:  { type: 'spring' as const, stiffness: 380, damping: 32, mass: 0.8 },
-  drop:  { type: 'spring' as const, stiffness: 400, damping: 28 },
-  badge: { type: 'spring' as const, stiffness: 500, damping: 22 },
-  sz:    { type: 'spring' as const, stiffness: 260, damping: 26 },
-} as const;
-
-// ─── Props ────────────────────────────────────────────────────
-interface Props { onMenuClick?: () => void; }
-
-// ─── Component ───────────────────────────────────────────────
 export default function PremiumHeader({ onMenuClick }: Props) {
-  const pathname = usePathname();
-  const router   = useRouter();
   const { user, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [hydrated, setHydrated] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const [scrolled,      setScrolled]      = useState(false);
-  const [adminOpen,     setAdminOpen]     = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [unreadCount]                     = useState(3);
-
-  const adminRef  = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  const { scrollY } = useScroll();
-  useMotionValueEvent(scrollY, 'change', (v) => setScrolled(v > 20));
-
-  // ⌘K → focus search
   useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
+    try {
+      const saved = (localStorage.getItem('619_theme') as 'light' | 'dark') ?? 'light';
+      setTheme(saved);
+      document.documentElement.setAttribute('data-theme', saved);
+    } catch {}
+    setHydrated(true);
   }, []);
 
-  // Close dropdown on outside click or Escape
-  useEffect(() => {
-    const out = (e: MouseEvent) => {
-      if (adminRef.current && !adminRef.current.contains(e.target as Node))
-        setAdminOpen(false);
-    };
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAdminOpen(false); };
-    document.addEventListener('mousedown', out);
-    document.addEventListener('keydown', esc);
-    return () => {
-      document.removeEventListener('mousedown', out);
-      document.removeEventListener('keydown', esc);
-    };
-  }, []);
-
-  // Close on route change
-  useEffect(() => setAdminOpen(false), [pathname]);
-
-  const activeId = NAV_ITEMS.find(
-    (item) => pathname === item.href || pathname.startsWith(item.href + '/')
-  )?.id;
-
-  const handleLogout = async () => {
-    setAdminOpen(false);
-    await logout();
-    router.push('/login');
+  const toggleTheme = () => {
+    if (!hydrated) return;
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('619_theme', next); } catch {};
   };
 
-  const sc = scrolled;
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('619-cmd-palette'));
+      }
+      if (e.key === 'Escape') setOpenMenu(null);
+    };
+    const clickAway = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) setOpenMenu(null);
+    };
+    window.addEventListener('keydown', handler);
+    document.addEventListener('mousedown', clickAway);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      document.removeEventListener('mousedown', clickAway);
+    };
+  }, []);
 
-  return (
-    <motion.header
-      layout
-      animate={{ height: sc ? 56 : 64 }}
-      transition={SP.sz}
-      className="sticky top-0 z-50 w-full overflow-visible"
-      style={{
-        background:          sc ? G.nav.bgSc   : G.nav.bg,
-        backdropFilter:      sc ? G.nav.blurSc : G.nav.blur,
-        WebkitBackdropFilter:sc ? G.nav.blurSc : G.nav.blur,
-        borderBottom:        sc ? G.nav.borSc  : G.nav.border,
-        boxShadow:           sc ? G.nav.shadowSc : G.nav.shadow,
-      }}
-    >
-      <div className="mx-auto flex h-full max-w-[1600px] items-center gap-3 px-5 sm:px-6">
+  useEffect(() => setOpenMenu(null), [pathname]);
 
-        {/* ── Mobile hamburger ─────────────────────────────── */}
+  const topGroups = useMemo(() => {
+    const visibleGroups = NAV_GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
+    })).filter((group) => {
+      const g = NAV_GROUPS.find((ng) => ng.id === group.id);
+      if (g?.roles?.length) return !!user?.role && g.roles.includes(user.role as any);
+      return group.items.length > 0;
+    });
+    const visibleSettings = {
+      ...SETTINGS_GROUP,
+      items: SETTINGS_GROUP.items.filter((item) => isVisibleForRole(item, user?.role) && !item.hidden),
+    };
+    return [
+      { id: 'dashboard', label: 'Dashboard', items: [DASHBOARD_ITEM] },
+      ...visibleGroups,
+      ...(visibleSettings.items.length ? [{ id: visibleSettings.id, label: visibleSettings.label, items: visibleSettings.items }] : []),
+    ];
+  }, [user?.role]);
+
+  const row1 = topGroups.slice(0, ROW1_COUNT);
+  const row2 = topGroups.slice(ROW1_COUNT);
+
+  const toggleMenu = (id: string) => setOpenMenu((c) => (c === id ? null : id));
+  const handleResetPassword = () => { setOpenMenu(null); router.push('/reset-password'); };
+  const handleLogout = () => { setOpenMenu(null); logout(); router.push('/login'); };
+
+  const accountLabel = user?.name || '619 FITNESS STUDIO';
+  const roleLabel = user?.role || 'admin';
+  const initials = (user?.name || 'A').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+
+  const renderGroup = (group: { id: string; label: string; items: typeof DASHBOARD_ITEM[] }) => {
+    const active = group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+    const opened = openMenu === group.id;
+    const colors = GROUP_COLORS[group.id] ?? DEFAULT_COLOR;
+
+    return (
+      <div key={group.id} className="relative shrink-0">
         <button
           type="button"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#6B6A67] lg:hidden"
-          style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.07)' }}
-          onClick={onMenuClick}
-          aria-label="Open navigation"
+          onClick={() => (group.items.length === 1 ? router.push(group.items[0].href) : toggleMenu(group.id))}
+          aria-expanded={opened}
+          style={active
+            ? { background: colors.gradient, boxShadow: `0 4px 18px ${colors.glow}, 0 1px 3px ${colors.glow}`, transform: 'translateY(-1px)' }
+            : undefined
+          }
+          className={cn(
+            'group inline-flex h-[36px] items-center gap-1.5 whitespace-nowrap rounded-full px-[16px] text-[12.5px] font-semibold tracking-[0.01em] transition-all duration-200 ease-out',
+            active ? 'text-white' : 'text-slate-500',
+          )}
+          onMouseEnter={(e) => {
+            if (!active) {
+              (e.currentTarget as HTMLButtonElement).style.background = colors.hoverBg;
+              (e.currentTarget as HTMLButtonElement).style.color = colors.hoverText;
+              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 2px 10px ${colors.glow}`;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!active) {
+              (e.currentTarget as HTMLButtonElement).style.background = '';
+              (e.currentTarget as HTMLButtonElement).style.color = '';
+              (e.currentTarget as HTMLButtonElement).style.transform = '';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '';
+            }
+          }}
         >
-          <Menu size={15} />
+          <span>{group.label}</span>
+          {group.items.length > 1 && (
+            <ChevronDown size={11} className={cn('shrink-0 opacity-70 transition-transform duration-200', opened && 'rotate-180')} />
+          )}
         </button>
 
-        {/* ── Brand ────────────────────────────────────────── */}
-        <Link
-          href="/dashboard"
-          className="group flex shrink-0 select-none items-center gap-2.5"
-          aria-label="619 Fitness Studio — Home"
-        >
-          {/* Logo ring */}
+        {group.items.length > 1 && opened && (
           <div
-            className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl"
+            className="absolute left-0 top-[calc(100%+8px)] z-[120] min-w-[230px] overflow-hidden rounded-[20px] p-1.5 backdrop-blur-2xl"
             style={{
-              width: 34, height: 34,
-              background: 'rgba(196,30,58,0.08)',
-              boxShadow: '0 0 0 1px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.08)',
+              background: 'rgba(255,255,255,0.92)',
+              border: `1px solid ${colors.glow.replace('0.', '0.15')}`,
+              boxShadow: `0 20px 50px rgba(15,23,42,0.10), 0 4px 16px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.9)`,
+              WebkitBackdropFilter: 'blur(20px)',
             }}
           >
-            <svg viewBox="0 0 34 38" fill="none" className="h-[26px] w-[26px]" aria-hidden="true">
-              <path d="M17 2L30 8L30 22C30 30 24 36 17 38C10 36 4 30 4 22L4 8Z" fill="#B91C1C" stroke="#DC2626" strokeWidth="0.8"/>
-              <path d="M13.5 21C11.8 15.5 9 11.5 11 8C12.8 5 16 4 17 3" stroke="rgba(255,255,255,0.65)" strokeWidth="1.1" strokeLinecap="round"/>
-              <path d="M20.5 21C22.2 15.5 25 11.5 23 8C21.2 5 18 4 17 3" stroke="rgba(255,255,255,0.65)" strokeWidth="1.1" strokeLinecap="round"/>
-              <path d="M17 35C15.2 29.5 14.5 23.5 15.8 19C16.8 15 19 12 17 8.5C20 12 20.8 17.5 19.3 21.5C21.5 17 21.5 11.5 20 7C23.5 12.5 22.5 20 20.5 26C22.8 22.5 24 19.5 23 16C25 21 23.5 28.5 20 31.5C19 33.5 18 34.5 17 35.5C16 34.5 15 33.5 14 31.5C10.5 28.5 9 21 11 16C10 19.5 11.2 22.5 13.5 26C11.5 20 10.5 12.5 14 7C12.5 11.5 12.5 17 14.7 21.5C13.2 17.5 14 12 17 8.5Z" fill="rgba(255,80,50,0.40)" stroke="rgba(255,140,80,0.35)" strokeWidth="0.5"/>
-              <text x="17" y="28" textAnchor="middle" fill="#fff" fontSize="7.5" fontWeight="800" fontFamily="system-ui,sans-serif">619</text>
-            </svg>
-          </div>
-
-          {/* Name + subtitle */}
-          <div className="hidden flex-col leading-none sm:flex">
-            <span
-              className="font-semibold text-[#1A1916] transition-opacity group-hover:opacity-80"
-              style={{ fontSize: 13, letterSpacing: '-0.02em', fontFeatureSettings: '"cv01" 1, "cv11" 1' }}
-            >
-              619 FITNESS STUDIO
-            </span>
-            <span
-              className="mt-0.5 font-medium text-[#9E9D9A]"
-              style={{ fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase' }}
-            >
-              Management OS
-            </span>
-          </div>
-        </Link>
-
-        {/* ── Spacer ───────────────────────────────────────── */}
-        <div className="flex-1" />
-
-        {/* ── Center Nav ───────────────────────────────────── */}
-        <nav
-          className="relative hidden items-center gap-0.5 lg:flex"
-          aria-label="Primary navigation"
-        >
-          {NAV_ITEMS.map((item) => {
-            const active = activeId === item.id;
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                title={item.label}
-                className={cn(
-                  'relative flex cursor-pointer select-none items-center rounded-lg px-3 py-1.5 text-[13px] transition-colors duration-100',
-                  active
-                    ? 'z-10 font-semibold text-[#1A1916]'
-                    : 'font-medium text-[#6B6A67] hover:text-[#1A1916]',
-                )}
-                style={{ letterSpacing: '-0.01em', fontFeatureSettings: '"cv01" 1' }}
-              >
-                {/* Floating active pill */}
-                {active && (
-                  <motion.span
-                    layoutId="nav-pill-619"
-                    className="absolute inset-0 rounded-lg"
-                    style={{ background: G.pill.bg, boxShadow: G.pill.shadow }}
-                    transition={SP.pill}
-                    aria-hidden="true"
-                  />
-                )}
-
-                {/* Hover bg */}
-                <motion.span
-                  className="absolute inset-0 rounded-lg"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: active ? 0 : 1 }}
-                  style={{ background: 'rgba(0,0,0,0.04)' }}
-                  transition={{ duration: 0.12 }}
-                  aria-hidden="true"
-                />
-
-                <span className="relative z-10">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* ── Spacer ───────────────────────────────────────── */}
-        <div className="flex-1" />
-
-        {/* ── Right actions ────────────────────────────────── */}
-        <div className="flex shrink-0 items-center gap-1.5">
-
-          {/* Search bar */}
-          <motion.div
-            className="hidden items-center gap-2 md:flex"
-            animate={{ width: searchFocused ? 256 : 192 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            style={{
-              background:   searchFocused ? G.search.bgF  : G.search.bg,
-              border:       searchFocused ? G.search.bdrF : G.search.bdr,
-              boxShadow:    searchFocused ? G.search.shdF : 'none',
-              height: 34,
-              borderRadius: 10,
-              overflow: 'hidden',
-              paddingLeft: 10,
-              paddingRight: 10,
-              transition: 'background 0.15s, border 0.15s, box-shadow 0.15s',
-            }}
-          >
-            <Search
-              size={13}
-              style={{
-                color: searchFocused ? '#C41E3A' : '#9E9D9A',
-                flexShrink: 0,
-                transition: 'color 0.15s',
-              }}
-            />
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder="Search..."
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-[#1A1916] outline-none placeholder:text-[#9E9D9A]"
-              style={{ fontFeatureSettings: '"cv01" 1' }}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-            <AnimatePresence>
-              {!searchFocused && (
-                <motion.kbd
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.12 }}
-                  className="flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-[#9E9D9A]"
-                  style={{ background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.10)' }}
+            <div className="mb-1.5 h-[3px] w-full rounded-full" style={{ background: colors.gradient }} />
+            {group.items.map((item) => {
+              const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <button
+                  type="button"
+                  key={item.href}
+                  onClick={() => router.push(item.href)}
+                  style={itemActive ? { background: colors.dropdownActiveBg, color: colors.dropdownActiveText } : undefined}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-[13px] px-3.5 py-2.5 text-left text-[13px] font-semibold transition-all duration-150',
+                    !itemActive && 'text-slate-600 hover:bg-slate-50/80 hover:text-slate-900',
+                  )}
                 >
-                  ⌘K
-                </motion.kbd>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                  <span>{item.label}</span>
+                  {item.isNew && (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">New</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
-          {/* Notification bell */}
-          <motion.button
-            type="button"
-            className="relative flex items-center justify-center rounded-lg text-[#3A3936]"
-            style={{
-              width: 34, height: 34,
-              background: 'rgba(0,0,0,0.04)',
-              border: '1px solid rgba(0,0,0,0.06)',
-            }}
-            whileHover={{ background: 'rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-            whileTap={{ scale: 0.93 }}
-            transition={{ duration: 0.12 }}
-            title={`${unreadCount} unread notifications`}
-            aria-label={`Notifications — ${unreadCount} unread`}
-          >
-            <Bell size={15} />
-            {unreadCount > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={SP.badge}
-                className="absolute"
-                style={{ top: 0, right: 0 }}
-                aria-hidden="true"
+  return (
+    <>
+      <style>{`
+        @keyframes brand-glow {
+          0%, 100% { box-shadow: 0 4px 16px rgba(109,40,217,0.13), inset 0 1px 0 rgba(255,255,255,0.9); }
+          50%       { box-shadow: 0 4px 22px rgba(109,40,217,0.22), inset 0 1px 0 rgba(255,255,255,0.9); }
+        }
+        .logo-glow { animation: brand-glow 3.5s ease-in-out infinite; }
+      `}</style>
+
+      <header
+        className="fixed inset-x-0 top-0 z-[100] border-b border-slate-200/80 bg-white/[0.97] backdrop-blur-2xl"
+        style={{
+          WebkitBackdropFilter: 'blur(24px)',
+          boxShadow: '0 1px 0 rgba(15,23,42,0.05), 0 4px 24px rgba(15,23,42,0.04)',
+        }}
+      >
+        <div ref={headerRef} className="mx-auto flex w-full max-w-[1680px] flex-col px-4 pb-2 pt-3 sm:px-6 lg:px-8">
+          <div className="flex items-start gap-4">
+
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-150 hover:bg-slate-50 hover:shadow-md lg:hidden"
+              onClick={onMenuClick}
+              aria-label="Open navigation menu"
+            >
+              <Menu size={17} />
+            </button>
+
+            {/* Brand */}
+            <div className="flex shrink-0 items-center gap-3">
+              <div
+                className="logo-glow relative flex h-[48px] w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-[15px] border border-violet-200/60"
+                style={{ background: 'linear-gradient(150deg, rgba(255,255,255,0.98) 0%, rgba(237,233,254,0.55) 100%)' }}
               >
-                <motion.span
-                  className="absolute block rounded-full"
-                  style={{ width: 7, height: 7, background: '#C41E3A', top: -1, right: -1 }}
-                  animate={{ scale: [1, 1.9, 1], opacity: [0.6, 0, 0.6] }}
-                  transition={{ repeat: Infinity, duration: 2.2, ease: 'easeOut' }}
+                <img
+                  src="/619-logo.png"
+                  alt="619 Fitness Studio logo"
+                  width={36}
+                  height={36}
+                  className="h-[36px] w-[36px] object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                    const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                    if (fb) fb.style.display = 'flex';
+                  }}
                 />
                 <span
-                  className="relative block rounded-full"
-                  style={{ width: 7, height: 7, background: '#C41E3A', border: '1.5px solid white', top: -1, right: -1 }}
-                />
-              </motion.span>
-            )}
-          </motion.button>
-
-          {/* Divider */}
-          <span
-            className="mx-0.5 hidden h-5 w-px sm:block"
-            style={{ background: 'rgba(0,0,0,0.10)' }}
-            aria-hidden="true"
-          />
-
-          {/* Admin dropdown */}
-          <div className="relative" ref={adminRef}>
-            <motion.button
-              type="button"
-              className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-[#1A1916]"
-              whileHover={{ background: 'rgba(0,0,0,0.05)' }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ duration: 0.12 }}
-              onClick={() => setAdminOpen((o) => !o)}
-              aria-haspopup="true"
-              aria-expanded={adminOpen}
-            >
-              {/* Avatar */}
-              <div
-                className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full"
-                style={{
-                  width: 28, height: 28,
-                  background: 'rgba(196,30,58,0.10)',
-                  border: '1.5px solid rgba(196,30,58,0.22)',
-                }}
-              >
-                <svg viewBox="0 0 28 28" fill="none" className="h-full w-full" aria-hidden="true">
-                  <text x="14" y="19" textAnchor="middle" fill="#B91C1C" fontSize="7" fontWeight="800" fontFamily="system-ui,sans-serif">619</text>
-                </svg>
-              </div>
-
-              {/* Name */}
-              <span
-                className="hidden text-[12.5px] font-medium text-[#3A3936] sm:block"
-                style={{ letterSpacing: '-0.01em', fontFeatureSettings: '"cv01" 1' }}
-              >
-                {user?.name || 'Admin'}
-              </span>
-
-              {/* Role badge */}
-              <span
-                className="hidden rounded-full px-1.5 py-0.5 text-[10px] font-medium text-[#C41E3A] sm:block"
-                style={{ background: 'rgba(196,30,58,0.09)', letterSpacing: '0.01em' }}
-              >
-                Admin
-              </span>
-
-              {/* Chevron */}
-              <motion.span
-                animate={{ rotate: adminOpen ? 180 : 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-                className="text-[#9E9D9A]"
-              >
-                <ChevronDown size={13} />
-              </motion.span>
-            </motion.button>
-
-            {/* Dropdown panel */}
-            <AnimatePresence>
-              {adminOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.94, y: -8, filter: 'blur(4px)' }}
-                  animate={{ opacity: 1, scale: 1,    y: 0,  filter: 'blur(0px)' }}
-                  exit={{    opacity: 0, scale: 0.97, y: -4, filter: 'blur(2px)' }}
-                  transition={SP.drop}
-                  className="absolute right-0 top-full mt-2 min-w-[224px] overflow-hidden rounded-2xl"
-                  style={{
-                    background: G.drop.bg,
-                    backdropFilter: G.drop.blur,
-                    WebkitBackdropFilter: G.drop.blur,
-                    border: G.drop.border,
-                    boxShadow: G.drop.shadow,
-                    transformOrigin: 'top right',
-                  }}
-                  role="menu"
+                  className="absolute hidden h-full w-full items-center justify-center rounded-[15px] text-[13px] font-black tracking-tight text-white"
+                  style={{ background: 'linear-gradient(135deg,#5b21b6,#4f46e5)' }}
                 >
-                  {/* Profile header */}
+                  619
+                </span>
+              </div>
+              <div className="hidden select-none flex-col gap-[3px] sm:flex">
+                <span
+                  className="text-[15px] font-black leading-none tracking-[0.09em]"
+                  style={{
+                    background: 'linear-gradient(120deg,#1e1b4b 0%,#3730a3 40%,#6d28d9 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  619 FITNESS STUDIO
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.30em] text-slate-400">Management OS</span>
+              </div>
+            </div>
+
+            <div className="mx-1 hidden h-10 w-px self-center bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
+
+            {/* Desktop nav — 2 rows, lg+ only */}
+            <div className="hidden min-w-0 flex-1 flex-col gap-[2px] pt-[2px] lg:flex">
+              <nav aria-label="Primary navigation" className="flex min-w-0 flex-nowrap items-center gap-1">
+                {row1.map(renderGroup)}
+              </nav>
+              {row2.length > 0 && (
+                <nav aria-label="Secondary navigation" className="flex min-w-0 flex-nowrap items-center gap-1 pl-1">
+                  {row2.map(renderGroup)}
+                </nav>
+              )}
+            </div>
+
+            {/* Right utilities */}
+            <div className="ml-auto flex shrink-0 items-start gap-2 pt-[2px]">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
+                className="hidden h-[36px] w-[200px] items-center justify-between rounded-full border border-slate-200/90 bg-slate-50/80 px-3.5 text-[12px] text-slate-400 backdrop-blur-sm transition-all duration-150 hover:border-violet-200 hover:bg-white hover:text-slate-600 hover:shadow-[0_2px_12px_rgba(109,40,217,0.08)] xl:inline-flex"
+              >
+                <span className="flex items-center gap-2">
+                  <Search size={12} className="shrink-0" />
+                  <span>Search...</span>
+                </span>
+                <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.08)]">⌘K</kbd>
+              </button>
+
+              <button
+                type="button"
+                className="inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+              >
+                {hydrated ? (theme === 'light' ? <Moon size={14} /> : <Sun size={14} />) : <span style={{ width: 14 }} />}
+              </button>
+
+              <button
+                type="button"
+                className="relative inline-flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200/90 bg-white/90 text-slate-500 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                aria-label="Notifications"
+              >
+                <Bell size={14} />
+                <span className="absolute right-[9px] top-[9px] h-[6px] w-[6px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
+              </button>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleMenu('account')}
+                  aria-expanded={openMenu === 'account'}
+                  className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/90 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all duration-150 hover:border-violet-200/80 hover:shadow-[0_2px_10px_rgba(109,40,217,0.10)]"
+                >
                   <div
-                    className="flex items-center gap-3 px-4 py-3"
-                    style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.02)' }}
+                    className="flex h-[24px] w-[24px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100"
+                    style={{ background: 'linear-gradient(135deg,#ede9fe,#e0e7ff)' }}
                   >
-                    <div
-                      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full"
-                      style={{ width: 36, height: 36, background: 'rgba(196,30,58,0.10)', border: '1.5px solid rgba(196,30,58,0.20)' }}
-                    >
-                      <svg viewBox="0 0 36 36" fill="none" className="h-full w-full" aria-hidden="true">
-                        <text x="18" y="23" textAnchor="middle" fill="#B91C1C" fontSize="9" fontWeight="800" fontFamily="system-ui,sans-serif">619</text>
-                      </svg>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold text-[#1A1916]" style={{ letterSpacing: '-0.01em' }}>
-                        {user?.name || 'Admin User'}
-                      </p>
-                      <p className="truncate text-[11px] text-[#9E9D9A]">
-                        {user?.email || 'admin@619fitness.com'}
-                      </p>
-                    </div>
+                    <img
+                      src="/619-logo.png"
+                      alt="Account"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                        if (fb) fb.style.display = 'flex';
+                      }}
+                    />
+                    <span className="hidden h-full w-full items-center justify-center text-[10px] font-black text-violet-700">{initials}</span>
                   </div>
+                  <div className="hidden text-left xl:block">
+                    <div className="max-w-[140px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
+                    <div className="mt-0.5 text-[10px] lowercase tracking-wide text-slate-400">{roleLabel}</div>
+                  </div>
+                  <ChevronDown size={11} className={cn('text-slate-400 transition-transform duration-200', openMenu === 'account' && 'rotate-180')} />
+                </button>
 
-                  {/* Menu items */}
-                  <div className="p-1.5">
-                    {DROPDOWN_ITEMS.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.id}
-                          href={item.href}
-                          role="menuitem"
-                          className="flex items-center justify-between rounded-lg px-2.5 py-[7px] text-[#3A3936] outline-none transition-colors hover:bg-black/[0.05]"
-                          style={{ fontSize: 13, fontFeatureSettings: '"cv01" 1' }}
-                          onClick={() => setAdminOpen(false)}
-                        >
-                          <span className="flex items-center gap-2.5">
-                            <Icon size={14} className="text-[#6B6A67]" />
-                            {item.label}
-                          </span>
-                          {'shortcut' in item && item.shortcut && (
-                            <kbd
-                              className="rounded px-1 py-0.5 text-[10px] text-[#9E9D9A]"
-                              style={{ background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.09)' }}
-                            >
-                              {item.shortcut}
-                            </kbd>
-                          )}
-                        </Link>
-                      );
-                    })}
-
-                    {/* Divider */}
-                    <div className="my-1.5 h-px" style={{ background: 'rgba(0,0,0,0.06)' }} />
-
-                    {/* Logout */}
-                    <motion.button
+                {openMenu === 'account' && (
+                  <div
+                    className="absolute right-0 top-[calc(100%+8px)] z-[130] w-[220px] overflow-hidden rounded-[18px] border border-slate-200/70 bg-white/95 p-1.5 backdrop-blur-2xl"
+                    style={{ boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06)', WebkitBackdropFilter: 'blur(20px)' }}
+                  >
+                    <button
                       type="button"
-                      role="menuitem"
-                      className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[#C41E3A] outline-none"
-                      style={{ fontSize: 13, fontFeatureSettings: '"cv01" 1' }}
-                      whileHover={{ background: 'rgba(196,30,58,0.08)' }}
-                      transition={{ duration: 0.1 }}
+                      onClick={handleResetPassword}
+                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
+                    >
+                      <KeyRound size={14} className="text-violet-600" />
+                      Reset password
+                    </button>
+                    <div className="mx-2 my-1 h-px bg-slate-100" />
+                    <button
+                      type="button"
                       onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-rose-600 transition-all hover:bg-rose-50"
                     >
                       <LogOut size={14} />
-                      Logout
-                    </motion.button>
+                      Log out
+                    </button>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </motion.header>
+      </header>
+    </>
   );
 }
