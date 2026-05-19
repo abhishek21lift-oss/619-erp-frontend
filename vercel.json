@@ -4,6 +4,9 @@
   "devCommand": "npm run dev",
   "installCommand": "npm ci --legacy-peer-deps",
   "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://six19-erp-api.onrender.com"
+  },
   "headers": [
     {
       "source": "/(.*)",
