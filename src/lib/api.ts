@@ -63,6 +63,8 @@ export type Client = {
   last_name?: string;
   country_code?: string;
   mobile?: string;
+  /** Alias for mobile — some pages reference c.phone */
+  phone?: string;
   is_mobile_redacted?: boolean;
   alt_country_code?: string;
   alt_mobile?: string;
@@ -88,13 +90,21 @@ export type Client = {
   trainer_id?: string;
   trainer_name?: string;
   package_type?: string;
+  /** Alias for package_type — some pages reference c.membership_plan */
+  membership_plan?: string;
   status?: string;
   balance_amount?: number;
+  balance_due?: number;
   frozen_from?: string;
   frozen_until?: string;
+  freeze_from?: string;
+  freeze_until?: string;
   pt_start_date?: string;
   pt_end_date?: string;
+  /** Alias for pt_end_date — some pages reference c.expiry_date */
+  expiry_date?: string;
   pt_sessions_left?: number;
+  pt_sessions_total?: number;
   subscription_end_date?: string;
   subscription_start_date?: string;
   plan_name?: string;
@@ -103,9 +113,14 @@ export type Client = {
   /** JSON-encoded array of enrolled biometric finger indices */
   biometric_fingers?: string;
   notes?: string;
+  /** Date the client joined / was created */
+  joining_date?: string;
   created_at?: string;
   updated_at?: string;
-  balance_due?: number;
+  is_frozen?: boolean;
+  paid_amount?: number;
+  final_amount?: number;
+  combo_plan?: string;
 };
 
 /**
@@ -244,7 +259,7 @@ export const api = {
       }),
     /** Add a subscription (one or more plan rows) to a client */
     addSubscription: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/subscriptions`, {
+      request<{ message?: string }>(`/api/clients/${id}/add-subscription`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
