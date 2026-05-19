@@ -23,10 +23,10 @@
  *   If your backend can't yet do this, the in-memory token fallback ensures nothing breaks.
  */
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { api, User } from './api';
+import { api, type User } from './api';
 
-// ─── Role union (Issue #19) ───────────────────────────────────────────
-export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist';
+// ─── Role union (aligned with api.ts / nav-config.ts) ────────────────
+export type Role = 'admin' | 'manager' | 'staff' | 'trainer' | 'receptionist' | 'reception' | 'member';
 
 interface Ctx {
   user: User | null;
