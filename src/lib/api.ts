@@ -236,6 +236,18 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    /** Assign Personal Training to a client */
+    assignPt: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/assign-pt`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    /** Renew Personal Training for a client */
+    renewPt: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/renew-pt`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   payments: {
