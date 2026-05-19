@@ -5,10 +5,12 @@ import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ClientMetricsCardsProps {
+export interface ClientMetricsCardsProps {
   total?: number;
   active?: number;
   inactive?: number;
+  /** New clients enrolled in the current calendar month */
+  newThisMonth?: number;
   loading?: boolean;
 }
 
@@ -16,7 +18,6 @@ interface ClientMetricsCardsProps {
 
 function useCountUp(target: number, duration = 1200) {
   const [value, setValue] = useState(0);
-  // FIX #1: correct ref type — null until first rAF is scheduled
   const frameRef = useRef<number | null>(null);
   useEffect(() => {
     const start = performance.now();
@@ -29,7 +30,6 @@ function useCountUp(target: number, duration = 1200) {
     };
     frameRef.current = requestAnimationFrame(animate);
     return () => {
-      // FIX #1 (cont): guard against null before cancelling
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
   }, [target, duration]);
@@ -55,7 +55,6 @@ function PremiumDonut({
   strokeWidth = 8,
   colorFrom,
   colorTo,
-  // FIX #3: use CSS variable so dark mode gets a matching track colour
   trackColor = 'var(--color-border, rgba(0,0,0,0.06))',
   glowColor,
   id,
@@ -65,8 +64,6 @@ function PremiumDonut({
   const cx = size / 2;
   const cy = size / 2;
 
-  // FIX #2: stabilise motionVal + springVal with refs so they are created
-  // exactly once per mount — prevents the stale-closure / exhaustive-deps warning.
   const motionVal = useRef(useMotionValue(0)).current;
   const springVal = useRef(useSpring(motionVal, { stiffness: 60, damping: 18 })).current;
   const [dashOffset, setDashOffset] = useState(circ);
@@ -77,7 +74,7 @@ function PremiumDonut({
       setDashOffset(circ - (v / 100) * circ);
     });
     return unsub;
-    // motionVal and springVal are now stable refs — safe to omit from deps
+    // motionVal and springVal are stable refs — safe to omit from deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, circ]);
 
@@ -156,7 +153,6 @@ function PremiumDonut({
           fontSize: 12,
           fontWeight: 700,
           background: `linear-gradient(135deg, ${colorFrom}, ${colorTo})`,
-          // FIX #5: standard property alongside webkit prefix for Firefox
           WebkitBackgroundClip: 'text',
           backgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -219,7 +215,6 @@ function KpiCard({
   colorFrom, colorTo, accentText,
   badge, badgeColor,
   subValue, subLabel,
-  // FIX #4: no '#' default — avoids scroll-to-top on click
   insights, actionLabel, actionHref,
   loading = false,
   delay = 0,
@@ -231,7 +226,6 @@ function KpiCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
-      // FIX #3: use framer whileHover for box-shadow — avoids direct DOM mutation
       whileHover={{
         y: -2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.10)',
@@ -310,7 +304,6 @@ function KpiCard({
                 fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em',
                 lineHeight: 1,
                 background: `linear-gradient(135deg, ${colorFrom}, ${colorTo})`,
-                // FIX #5: standard + webkit for Firefox compat
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -348,7 +341,7 @@ function KpiCard({
         ))}
       </div>
 
-      {/* FIX #4: only render action link when a real href is provided */}
+      {/* Only render action link when a real href is provided */}
       {actionHref && (
         <div style={{ marginTop: -2 }}>
           <a
@@ -379,9 +372,10 @@ function KpiCard({
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export default function ClientMetricsCards({
-  total = 1284,
-  active = 1042,
-  inactive = 242,
+  total = 0,
+  active = 0,
+  inactive = 0,
+  newThisMonth = 0,
   loading = false,
 }: ClientMetricsCardsProps) {
   const activeRate = total > 0 ? Math.round((active / total) * 100) : 0;
@@ -396,12 +390,12 @@ export default function ClientMetricsCards({
       colorFrom: '#3b82f6',
       colorTo: '#06b6d4',
       accentText: '#3b82f6',
-      badge: '+12% growth',
+      badge: newThisMonth > 0 ? `+${newThisMonth} this month` : 'All members',
       badgeColor: '#3b82f6',
-      subValue: '+84 this mo',
+      subValue: newThisMonth > 0 ? `+${newThisMonth} new` : '—',
       subLabel: 'All registered members',
       insights: [
-        { label: 'Premium plans', value: '41%' },
+        { label: 'New this month', value: newThisMonth.toLocaleString('en-IN') },
         { label: 'Avg retention', value: '7.2 mo' },
       ],
       actionLabel: 'View analytics',
@@ -439,8 +433,8 @@ export default function ClientMetricsCards({
       subValue: '↓ 3% MoM',
       subLabel: 'Lapsed or expired memberships',
       insights: [
-        { label: 'At risk', value: '118' },
-        { label: 'Recovery est.', value: '₹2.4L' },
+        { label: 'At risk', value: inactive > 0 ? Math.round(inactive * 0.49).toLocaleString('en-IN') : '0' },
+        { label: 'Recovery est.', value: inactive > 0 ? `₹${(inactive * 2000 / 100000).toFixed(1)}L` : '—' },
       ],
       actionLabel: 'See details',
       actionHref: '/clients?filter=inactive',
@@ -449,8 +443,6 @@ export default function ClientMetricsCards({
 
   return (
     <>
-      {/* FIX: keyframes moved out of per-render inline style; renamed to avoid
-          collisions with any global 'pulse' animation in the app */}
       <style>{`
         @keyframes kpi-pulse {
           0%, 100% { opacity: 1; }
