@@ -230,6 +230,12 @@ export const api = {
       request<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/clients/${id}`, { method: 'DELETE' }),
     search: (q: string) => request<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
+    /** Upload a photo (base64 data URL) for a client */
+    uploadPhoto: (id: string, dataUrl: string) =>
+      request<{ message?: string; photo_url?: string }>(`/api/clients/${id}/photo`, {
+        method: 'POST',
+        body: JSON.stringify({ photo: dataUrl }),
+      }),
     /** Add a subscription (one or more plan rows) to a client */
     addSubscription: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/subscriptions`, {
