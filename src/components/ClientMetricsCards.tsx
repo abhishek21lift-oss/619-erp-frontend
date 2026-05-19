@@ -38,8 +38,8 @@ function AnimatedCounter({ value, duration = 1.4 }: { value: number; duration?: 
 /* ─── premium SVG donut ─────────────────────────────────────── */
 function PremiumDonut({
   percentage,
-  size = 140,
-  strokeWidth = 12,
+  size = 116,
+  strokeWidth = 10,
   colors,
   glowColor,
   animDelay = 0,
@@ -79,7 +79,7 @@ function PremiumDonut({
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       aria-hidden="true"
-      style={{ filter: `drop-shadow(0 0 14px ${glowColor}50)` }}
+      style={{ filter: `drop-shadow(0 0 12px ${glowColor}50)` }}
     >
       <defs>
         <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -92,7 +92,7 @@ function PremiumDonut({
         stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
       {/* glow halo */}
       <circle cx={cx} cy={cy} r={r} fill="none"
-        stroke={glowColor} strokeWidth={strokeWidth + 6}
+        stroke={glowColor} strokeWidth={strokeWidth + 5}
         strokeDasharray={circumference} strokeDashoffset={filled}
         strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} opacity={0.15} />
       {/* main arc */}
@@ -101,7 +101,7 @@ function PremiumDonut({
         strokeDasharray={circumference} strokeDashoffset={filled}
         strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
       {/* ambient rotating dash */}
-      <circle cx={cx} cy={cy} r={r + strokeWidth / 2 + 5} fill="none"
+      <circle cx={cx} cy={cy} r={r + strokeWidth / 2 + 4} fill="none"
         stroke={`url(#${gradId})`} strokeWidth={1}
         strokeDasharray={`${circumference * 0.07} ${circumference * 0.93}`}
         strokeLinecap="round" opacity={0.35}
@@ -164,11 +164,11 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
     return (
       <div
         className="animate-pulse overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl"
-        style={{ minHeight: 420 }}
+        style={{ minHeight: 360 }}
       >
-        <div className="space-y-4 p-6">
+        <div className="space-y-3 p-5">
           <div className="h-4 w-32 rounded bg-white/10" />
-          <div className="mx-auto h-36 w-36 rounded-full bg-white/10" />
+          <div className="mx-auto h-28 w-28 rounded-full bg-white/10" />
           <div className="space-y-2">
             <div className="h-3 rounded bg-white/10" />
             <div className="h-3 w-3/4 rounded bg-white/10" />
@@ -188,8 +188,8 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
       style={{
         background: `linear-gradient(145deg, ${cfg.gradFrom}1a 0%, ${cfg.gradTo}08 100%), rgba(12,12,18,0.88)`,
         boxShadow: hovered
-          ? `0 24px 64px ${cfg.glowColor}28, 0 0 0 1px ${cfg.glowColor}38, inset 0 1px 0 rgba(255,255,255,0.08)`
-          : `0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)`,
+          ? `0 20px 56px ${cfg.glowColor}28, 0 0 0 1px ${cfg.glowColor}38, inset 0 1px 0 rgba(255,255,255,0.08)`
+          : `0 6px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)`,
         transition: 'box-shadow 0.35s ease',
       }}
       role="article"
@@ -197,7 +197,7 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
     >
       {/* ambient glow blob */}
       <div
-        className="pointer-events-none absolute -top-14 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full blur-3xl"
+        className="pointer-events-none absolute -top-12 left-1/2 h-36 w-36 -translate-x-1/2 rounded-full blur-3xl"
         style={{ background: cfg.glowColor, opacity: 0.18 }}
       />
       {/* hover gradient overlay */}
@@ -210,12 +210,12 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
         }}
       />
 
-      <div className="relative z-10 p-5">
+      <div className="relative z-10 p-4">
         {/* ── top row ── */}
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-xl"
+              className="flex h-7 w-7 items-center justify-center rounded-xl"
               style={{ background: `${cfg.glowColor}1a` }}
             >
               <span style={{ color: cfg.glowColor }}>{cfg.icon}</span>
@@ -245,7 +245,7 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
 
           {/* growth badge */}
           <div
-            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
+            className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold"
             style={{
               background: `${cfg.badgeColor}1a`,
               color: cfg.badgeColor,
@@ -260,7 +260,7 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
         </div>
 
         {/* ── donut + center KPI ── */}
-        <div className="mt-4 flex flex-col items-center">
+        <div className="mt-3 flex flex-col items-center">
           <div className="relative">
             <PremiumDonut
               percentage={cfg.percentage}
@@ -271,18 +271,18 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
             {/* frosted glass center */}
             <div
               className="absolute inset-0 flex flex-col items-center justify-center"
-              style={{ margin: 14 }}
+              style={{ margin: 12 }}
             >
               <div
-                className="flex flex-col items-center rounded-full px-2 py-2"
+                className="flex flex-col items-center rounded-full px-2 py-1.5"
                 style={{
                   background: 'rgba(8,8,14,0.75)',
                   backdropFilter: 'blur(10px)',
-                  boxShadow: `inset 0 0 22px ${cfg.glowColor}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  boxShadow: `inset 0 0 18px ${cfg.glowColor}14, inset 0 1px 0 rgba(255,255,255,0.06)`,
                 }}
               >
                 <span
-                  className="text-3xl font-black tabular-nums leading-none"
+                  className="text-2xl font-black tabular-nums leading-none"
                   style={{
                     background: `linear-gradient(135deg, #ffffff 20%, ${cfg.glowColor})`,
                     WebkitBackgroundClip: 'text',
@@ -298,13 +298,13 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
             </div>
           </div>
 
-          <p className="mt-2.5 text-center text-xs font-medium" style={{ color: `${cfg.glowColor}aa` }}>
+          <p className="mt-2 text-center text-xs font-medium" style={{ color: `${cfg.glowColor}aa` }}>
             {cfg.subtext}
           </p>
         </div>
 
         {/* ── insight bars ── */}
-        <div className="mt-4 space-y-2.5">
+        <div className="mt-3 space-y-2">
           {cfg.insights.map((ins) => (
             <div key={ins.label}>
               <div className="mb-1 flex items-center justify-between">
@@ -323,20 +323,20 @@ function MetricCard({ cfg, loading }: { cfg: CardCfg; loading?: boolean }) {
 
         {/* ── AI insight ── */}
         <div
-          className="mt-4 flex items-start gap-2 rounded-xl p-3"
+          className="mt-3 flex items-start gap-2 rounded-xl p-2.5"
           style={{
             background: `${cfg.glowColor}0c`,
             border: `1px solid ${cfg.glowColor}1e`,
           }}
         >
-          <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: cfg.glowColor }} />
+          <Sparkles className="mt-0.5 h-3 w-3 shrink-0" style={{ color: cfg.glowColor }} />
           <p className="text-xs leading-relaxed text-white/55">{cfg.aiInsight}</p>
         </div>
 
         {/* ── CTA ── */}
         <Link
           href={cfg.href}
-          className="mt-3.5 flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:opacity-80"
+          className="mt-3 flex items-center justify-between rounded-xl px-3 py-1.5 text-xs font-semibold transition-all hover:opacity-80"
           style={{
             background: `${cfg.glowColor}10`,
             color: `${cfg.glowColor}cc`,
