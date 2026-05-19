@@ -156,9 +156,9 @@ export type Trainer = {
 export type StaffMember = {
   id: string;
   name: string;
-  email?: string;
+  email: string;
   mobile?: string;
-  role?: string;
+  role: string;
   is_active?: boolean;
   joining_date?: string;
   salary?: number;
@@ -170,14 +170,15 @@ export type StaffMember = {
 export type StaffTarget = {
   id: string;
   staff_id: string;
-  staff_name?: string;
+  staff_name: string;
+  role: string;
   month: string;
-  revenue_target?: number;
-  revenue_achieved?: number;
-  renewals_target?: number;
-  renewals_achieved?: number;
-  new_members_target?: number;
-  new_members_achieved?: number;
+  target_revenue: number;
+  achieved_revenue: number;
+  target_clients: number;
+  achieved_clients: number;
+  target_sessions?: number;
+  achieved_sessions?: number;
   [key: string]: unknown;
 };
 
@@ -191,6 +192,8 @@ export type LeaveRequest = {
   reason?: string;
   status: 'pending' | 'approved' | 'rejected';
   notes?: string;
+  admin_note?: string;
+  days?: number;
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;
@@ -225,7 +228,8 @@ export type TrainerSummaryRow = {
 
 // ─────────────────────────── Core fetch ──────────────────────────────
 
-async function request<T = unknown>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function request<T = any>(
   path: string,
   options: RequestInit & { skipAuth?: boolean } = {},
 ): Promise<T> {
@@ -471,9 +475,9 @@ export const api = {
       set: (id: string, data: Record<string, unknown>) =>
         request<StaffTarget>(`/api/staff/${id}/targets`, { method: 'POST', body: JSON.stringify(data) }),
       create: (data: Record<string, unknown>) =>
-        request<StaffTarget>('/api/staff/targets', { method: 'POST', body: JSON.stringify(data) }),
+        request<{ target: StaffTarget }>('/api/staff/targets', { method: 'POST', body: JSON.stringify(data) }),
       update: (id: string, data: Record<string, unknown>) =>
-        request<StaffTarget>(`/api/staff/targets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        request<{ target: StaffTarget }>(`/api/staff/targets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     },
   },
 
@@ -509,11 +513,11 @@ export const api = {
       request<LeaveRequest[]>(`/api/leave${buildQs(params)}`),
     get: (id: string) => request<LeaveRequest>(`/api/leave/${id}`),
     create: (data: Record<string, unknown>) =>
-      request<LeaveRequest>('/api/leave', { method: 'POST', body: JSON.stringify(data) }),
+      request<{ leave: LeaveRequest }>('/api/leave', { method: 'POST', body: JSON.stringify(data) }),
     approve: (id: string) =>
-      request<{ message?: string }>(`/api/leave/${id}/approve`, { method: 'PATCH' }),
+      request<{ leave: LeaveRequest }>(`/api/leave/${id}/approve`, { method: 'PATCH' }),
     reject: (id: string, reason?: string) =>
-      request<{ message?: string }>(`/api/leave/${id}/reject`, {
+      request<{ leave: LeaveRequest }>(`/api/leave/${id}/reject`, {
         method: 'PATCH',
         body: JSON.stringify({ reason }),
       }),

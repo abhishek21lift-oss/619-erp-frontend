@@ -299,9 +299,9 @@ function Inner() {
                   </thead>
                   <tbody>
                     {filtered.map((lv) => {
-                      const tc = TYPE_COLORS[lv.leave_type] || TYPE_COLORS.other;
+                      const tc = TYPE_COLORS[lv.leave_type ?? 'other'] || TYPE_COLORS.other;
                       const sm = STATUS_META[lv.status];
-                      const days = lv.days ?? daysBetween(lv.from_date, lv.to_date);
+                      const days = lv.days ?? daysBetween(lv.from_date ?? '', lv.to_date ?? '');
                       const busy = acting === lv.id;
 
                       return (
@@ -344,9 +344,9 @@ function Inner() {
                           {/* Duration */}
                           <td>
                             <div style={{ fontSize: 13, fontWeight: 600 }}>
-                              {fmt(lv.from_date)}
+                              {fmt(lv.from_date ?? '')}
                               {lv.from_date !== lv.to_date && (
-                                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> → {fmt(lv.to_date)}</span>
+                                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> → {fmt(lv.to_date ?? '')}</span>
                               )}
                             </div>
                             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
@@ -563,7 +563,7 @@ function Inner() {
               Reject Leave Request
             </div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 18 }}>
-              {rejectTarget.trainer_name} · {rejectTarget.leave_type} · {daysBetween(rejectTarget.from_date, rejectTarget.to_date)} day(s)
+              {rejectTarget.trainer_name} · {rejectTarget.leave_type} · {daysBetween(rejectTarget.from_date ?? '', rejectTarget.to_date ?? '')} day(s)
             </div>
             <div>
               <label className="form-label">Rejection Reason (optional)</label>
