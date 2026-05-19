@@ -172,8 +172,6 @@ export type PlanApiResponse = {
 };
 
 // ─── Trainer summary row returned by /api/reports/trainer-summary ─────────
-// Each row corresponds to one trainer. Fields mirror what TrainerSummaryTab
-// renders; extra fields from the backend are captured by the index signature.
 export type TrainerSummaryRow = {
   id: string | number;
   name: string;
@@ -248,6 +246,13 @@ export const api = {
       }),
     me: () => request<{ user: User }>('/api/auth/me'),
     logout: () => request('/api/auth/logout', { method: 'POST' }).catch(() => {}),
+    // Changes the current user's password.
+    // Backend endpoint: POST /api/auth/change-password
+    changePassword: (currentPassword: string, newPassword: string) =>
+      request<{ message?: string }>('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+      }),
   },
 
   clients: {
@@ -450,8 +455,6 @@ export const api = {
       request<unknown[]>(`/api/reports/monthly?year=${year}`),
     dues: () =>
       request<unknown[]>('/api/reports/dues'),
-    // Returns one row per trainer with client counts and revenue figures.
-    // Backend endpoint: GET /api/reports/trainer-summary
     trainerSummary: () =>
       request<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
   },
