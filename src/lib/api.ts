@@ -123,6 +123,22 @@ export type Payment = {
   trainer_name?: string;
 };
 
+export type Attendance = {
+  id?: string;
+  ref_id: string;
+  ref_type?: string;
+  ref_name?: string;
+  date?: string;
+  check_in?: string;
+  check_out?: string;
+  status: string;
+  method?: string;
+  notes?: string;
+  trainer_id?: string;
+  trainer_name?: string;
+  created_at?: string;
+};
+
 // ─────────────────────────── Core fetch ──────────────────────────────
 
 async function request<T = unknown>(
@@ -280,8 +296,12 @@ export const api = {
   attendance: {
     list: (params?: Record<string, string>) => {
       const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<unknown[]>(`/api/attendance${qs}`);
+      return request<Attendance[]>(`/api/attendance${qs}`);
     },
+    mark: (data: Record<string, unknown>) =>
+      request<Attendance>('/api/attendance/mark', { method: 'POST', body: JSON.stringify(data) }),
+    biometric: (data: Record<string, unknown>) =>
+      request<{ message: string }>('/api/attendance/biometric', { method: 'POST', body: JSON.stringify(data) }),
     create: (data: Record<string, unknown>) =>
       request('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>

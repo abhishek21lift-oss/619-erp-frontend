@@ -68,6 +68,7 @@ const cache    = new Map<string, CacheEntry>();
 export interface FetchOptions extends Omit<RequestInit, 'body'> {
   body?:        unknown;
   ttl?:         number;       // cache TTL in ms (GET only)
+  cacheMs?:     number;       // alias for ttl — used by dashboard / legacy callers
   retries?:     number;       // retry count on network error (GET only, default 2)
   signal?:      AbortSignal;
   skipAuth?:    boolean;
@@ -106,6 +107,9 @@ export async function http<T = unknown>(
   const url  = path.startsWith('http') ? path : `${BASE}${path}`;
   const method = (options.method ?? 'GET').toUpperCase();
 
+  // cacheMs is an alias for ttl — normalise here
+  const ttl = options.ttl ?? options.cacheMs;
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> | undefined),
@@ -120,7 +124,7 @@ export async function http<T = unknown>(
   const cacheKey = method === 'GET' ? url : '';
 
   // ── Cache hit ──
-  if (cacheKey && options.ttl) {
+  if (cacheKey && ttl) {
     const hit = cache.get(cacheKey);
     if (hit && hit.expiresAt > Date.now()) return hit.data as T;
   }
@@ -146,8 +150,8 @@ export async function http<T = unknown>(
   const doFetch = async (): Promise<T> => {
     try {
       const result = await fetchOnce<T>(url, init);
-      if (cacheKey && options.ttl) {
-        cache.set(cacheKey, { data: result, expiresAt: Date.now() + options.ttl });
+      if (cacheKey && ttl) {
+        cache.set(cacheKey, { data: result, expiresAt: Date.now() + ttl });
       }
       return result;
     } catch (err) {
@@ -167,5 +171,8 @@ export async function http<T = unknown>(
   if (method === 'GET' && cacheKey) inflight.set(cacheKey, promise as Promise<unknown>);
   return promise;
 }
+
+// request is the canonical alias used by pages that import from this module
+export const request = http;
 
 export default http;
