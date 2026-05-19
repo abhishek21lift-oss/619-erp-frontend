@@ -100,7 +100,7 @@ const MEGA_SECTIONS: NavSection[] = [
   },
   {
     id: 'training',
-    label: 'Personal Training',
+    label: 'Training',
     icon: <Dumbbell size={13} />,
     accent: '#b45309',
     glow: 'rgba(180,83,9,0.18)',
@@ -314,7 +314,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           onClick={() => setOpenMenu(opened ? null : section.id)}
           aria-expanded={opened}
           className={cn(
-            'group relative inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full px-[14px] text-[12.5px] font-semibold tracking-[0.01em] transition-all duration-200',
+            'group relative inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full px-[12px] text-[12px] font-semibold tracking-[0.01em] transition-all duration-200',
             active
               ? 'text-white shadow-lg'
               : 'text-slate-500 hover:text-slate-900',
@@ -460,8 +460,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       {/* ── Keyframes ──────────────────────────────────────────────────────── */}
       <style>{`
         @keyframes brand-glow {
-          0%,100% { box-shadow: 0 4px 16px rgba(220,38,38,0.15), inset 0 1px 0 rgba(255,255,255,0.2); }
-          50%      { box-shadow: 0 4px 22px rgba(220,38,38,0.28), inset 0 1px 0 rgba(255,255,255,0.2); }
+          0%,100% { box-shadow: 0 0 0 0 transparent; }
+          50%      { box-shadow: 0 0 14px 2px rgba(220,38,38,0.22); }
         }
         @keyframes megaIn {
           from { opacity:0; transform:translateY(-6px) scale(0.98); }
@@ -476,10 +476,16 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           70%  { box-shadow: 0 0 0 5px currentColor; opacity:0; }
           100% { box-shadow: 0 0 0 0 currentColor; opacity:0; }
         }
-        .logo-glow  { animation: brand-glow 3.5s ease-in-out infinite; }
+        .logo-glow { animation: brand-glow 3.5s ease-in-out infinite; }
         .pill-pulse { animation: pulse-ring 2.2s cubic-bezier(0.455,0.03,0.515,0.955) infinite; }
-        /* Remove white bg from logo PNG using multiply blend */
-        .logo-img { mix-blend-mode: multiply; }
+        /* Remove white background from logo PNG */
+        .logo-img-clean {
+          mix-blend-mode: multiply;
+          filter: contrast(1.1);
+        }
+        /* Scrollable nav — hide scrollbar cross-browser */
+        .nav-scroll::-webkit-scrollbar { display: none; }
+        .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
       {/* ── Header shell ───────────────────────────────────────────────────── */}
@@ -500,7 +506,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         <div
           ref={headerRef}
           className={cn(
-            'mx-auto flex w-full max-w-[1680px] items-center gap-2 px-3 transition-all duration-300 sm:px-5 lg:px-6',
+            'mx-auto flex w-full max-w-[1680px] items-center gap-2 px-3 transition-all duration-300 sm:px-4 lg:px-5',
             scrolled ? 'h-[56px]' : 'h-[64px]',
           )}
         >
@@ -514,14 +520,14 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             <Menu size={16} />
           </button>
 
-          {/* ── Brand — LOGO ONLY, no text ───────────────────────────────── */}
+          {/* ── Brand — Logo only, no text, transparent bg ───────────────── */}
           <div
-            className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-[14px]"
+            className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center rounded-[14px]"
             style={{
-              width: scrolled ? 38 : 44,
-              height: scrolled ? 38 : 44,
+              width: scrolled ? 38 : 46,
+              height: scrolled ? 38 : 46,
               background: 'transparent',
-              transition: 'width 0.3s,height 0.3s',
+              transition: 'width 0.3s, height 0.3s',
             }}
             onClick={() => router.push('/dashboard')}
             title="619 Fitness Studio"
@@ -529,9 +535,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             <img
               src="/619-logo.png"
               alt="619 Fitness Studio"
-              width={scrolled ? 34 : 40}
-              height={scrolled ? 34 : 40}
-              className="logo-img object-contain transition-all duration-300"
+              width={scrolled ? 34 : 42}
+              height={scrolled ? 34 : 42}
+              className="logo-img-clean object-contain transition-all duration-300"
+              style={{ display: 'block' }}
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = 'none';
                 const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
@@ -550,18 +557,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           {/* Divider */}
           <div className="mx-1 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
 
-          {/* ── Center nav — scrollable so Finance & Analytics never get cut off ── */}
+          {/* ── Center nav — always scrollable so ALL tabs (incl Finance & Analytics) are reachable ── */}
           <nav
             aria-label="Primary navigation"
-            className="hidden min-w-0 flex-1 overflow-x-auto scrollbar-none lg:flex lg:items-center"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="nav-scroll hidden min-w-0 flex-1 overflow-x-auto lg:flex lg:items-center"
           >
             <div className="flex items-center gap-0.5 pr-2">
               {MEGA_SECTIONS.map(renderSection)}
             </div>
           </nav>
 
-          {/* ── Right cluster — shrink-0 keeps it from being squeezed ─────── */}
+          {/* ── Right cluster ─────────────────────────────────────────────── */}
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
 
             {/* Live pills — only at 2xl+ */}
@@ -593,7 +599,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               ))}
             </div>
 
-            {/* Search — only at 2xl+ */}
+            {/* Search bar — only at 2xl+ */}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
@@ -608,7 +614,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               </kbd>
             </button>
 
-            {/* Search icon only — lg to 2xl */}
+            {/* Search icon — lg to 2xl */}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
@@ -695,13 +701,11 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 aria-expanded={openMenu === 'account'}
                 className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all hover:border-violet-200 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
               >
-                <div
-                  className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-50"
-                >
+                <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
                   <img
                     src="/619-logo.png"
                     alt="Account"
-                    className="logo-img h-full w-full object-contain"
+                    className="logo-img-clean h-full w-full object-contain"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = 'none';
                       const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
@@ -731,9 +735,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 >
                   {/* Profile card */}
                   <div className="mb-1.5 flex items-center gap-3 rounded-[14px] bg-gradient-to-br from-slate-50 to-slate-100 p-3">
-                    <div
-                      className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-black text-slate-700"
-                    >
+                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-black text-slate-700">
                       {initials}
                     </div>
                     <div>
