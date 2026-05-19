@@ -48,6 +48,7 @@ const STATUS_CFG: Record<CheckInState, { color: string; label: string; Icon: any
 export default function CheckInContent() {
   const camera    = useCamera();
   const detection = useFaceDetection();
+  const { modelStatus, startDetectionLoop, stopDetectionLoop } = detection;
   const antiSpoof = useAntiSpoof();
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const cooldownRef = useRef<number>(0);
@@ -139,7 +140,7 @@ export default function CheckInContent() {
     }
     clearTimeout(autoRetryRef.current);
     autoRetryRef.current = setTimeout(() => retryFnRef.current(), 6000);
-  }, [speak, pushRecent]); // eslint-disable-line
+  }, [speak, pushRecent]);
 
   const handleDetection = useCallback((d: DetectionResult) => {
     if (Date.now() < cooldownRef.current) return;
@@ -209,13 +210,13 @@ export default function CheckInContent() {
   }, []); // eslint-disable-line
 
   useEffect(() => {
-    if (camera.status !== 'active' || detection.modelStatus !== 'ready') return;
+    if (camera.status !== 'active' || modelStatus !== 'ready') return;
     if (!camera.videoRef.current || !canvasRef.current) return;
-    detection.startDetectionLoop(
+    startDetectionLoop(
       camera.videoRef.current, canvasRef.current, handleDetection
     );
-    return () => detection.stopDetectionLoop();
-  }, [camera.status, detection.modelStatus, handleDetection]);
+    return () => stopDetectionLoop();
+  }, [camera.status, camera.videoRef, handleDetection, modelStatus, startDetectionLoop, stopDetectionLoop]);
 
   const manualCheckIn = async (client: any) => {
     setManualBusy(true); setSearch('');

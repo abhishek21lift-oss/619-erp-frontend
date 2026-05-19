@@ -158,7 +158,9 @@ export type StaffMember = {
   name: string;
   email: string;
   mobile?: string;
+  phone?: string;
   role: string;
+  status?: string;
   is_active?: boolean;
   joining_date?: string;
   salary?: number;
@@ -174,13 +176,28 @@ export type StaffTarget = {
   role: string;
   month: string;
   target_revenue: number;
-  achieved_revenue: number;
   target_clients: number;
-  achieved_clients: number;
   target_sessions?: number;
+  achieved_revenue: number;
+  achieved_clients: number;
   achieved_sessions?: number;
+  created_at?: string;
+  updated_at?: string;
   [key: string]: unknown;
 };
+
+export type StaffTargetPayload = {
+  staff_id?: string;
+  month?: string;
+  target_revenue?: number;
+  target_clients?: number;
+  target_sessions?: number;
+  achieved_revenue?: number;
+  achieved_clients?: number;
+  achieved_sessions?: number;
+};
+
+export type LeaveStatus = 'pending' | 'approved' | 'rejected';
 
 export type LeaveRequest = {
   id: string;
@@ -190,13 +207,23 @@ export type LeaveRequest = {
   from_date?: string;
   to_date?: string;
   reason?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: LeaveStatus;
   notes?: string;
   admin_note?: string;
+  approved_by?: string;
+  approved_at?: string;
   days?: number;
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;
+};
+
+export type LeaveRequestPayload = {
+  trainer_id: string;
+  leave_type: string;
+  from_date: string;
+  to_date: string;
+  reason?: string;
 };
 
 export type PlanApiResponse = {
@@ -313,6 +340,18 @@ function normalisePayment(raw: Record<string, unknown>): Payment {
   } as Payment;
 }
 
+function normaliseStaff(raw: Record<string, unknown>): StaffMember {
+  return {
+    ...raw,
+    id: String(raw.id ?? ''),
+    name: String(raw.name ?? ''),
+    email: String(raw.email ?? ''),
+    phone: raw.phone == null ? undefined : String(raw.phone),
+    role: String(raw.role ?? 'staff'),
+    status: raw.status == null ? undefined : String(raw.status),
+  } as StaffMember;
+}
+
 // ─────────────────────────── API namespace ────────────────────────────
 
 export const api = {
@@ -331,10 +370,20 @@ export const api = {
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       }),
     listUsers: () => request<User[]>('/api/auth/users'),
-    createUser: (data: Record<string, unknown>) =>
-      request<User>('/api/auth/users', { method: 'POST', body: JSON.stringify(data) }),
+    createUser: (data: {
+      name: string;
+      email: string;
+      password: string;
+      role: Role;
+      trainer_id?: string;
+    }) => request<{ message?: string; user: User }>('/api/auth/create-user', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
     toggleUser: (id: string) =>
-      request<{ message?: string }>(`/api/auth/users/${id}/toggle`, { method: 'PATCH' }),
+      request<{ message?: string; is_active: boolean }>(`/api/auth/users/${id}/toggle`, {
+        method: 'PUT',
+      }),
     deleteUser: (id: string) =>
       request<{ message?: string }>(`/api/auth/users/${id}`, { method: 'DELETE' }),
   },
@@ -467,24 +516,55 @@ export const api = {
   },
 
   staff: {
-    list:   () => request<StaffMember[]>('/api/staff'),
+    list: async () => {
+      const raw = await request<Record<string, unknown>[]>('/api/staff');
+      return Array.isArray(raw) ? raw.map(normaliseStaff) : [];
+    },
     get:    (id: string) => request<StaffMember>(`/api/staff/${id}`),
     create: (data: Record<string, unknown>) =>
-      request<StaffMember>('/api/staff', { method: 'POST', body: JSON.stringify(data) }),
+      request<{ message?: string; staff: StaffMember }>('/api/staff', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
-      request<StaffMember>(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string) => request(`/api/staff/${id}`, { method: 'DELETE' }),
+      request<{ message?: string; staff: StaffMember }>(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request<{ message?: string }>(`/api/staff/${id}`, { method: 'DELETE' }),
     targets: {
-      list: (params?: Record<string, string>) =>
+      list: (params?: Record<string, string | number>) =>
         request<StaffTarget[]>(`/api/staff/targets${buildQs(params)}`),
       get: (id: string) => request<StaffTarget>(`/api/staff/${id}/targets`),
       set: (id: string, data: Record<string, unknown>) =>
         request<StaffTarget>(`/api/staff/${id}/targets`, { method: 'POST', body: JSON.stringify(data) }),
-      create: (data: Record<string, unknown>) =>
-        request<{ target: StaffTarget }>('/api/staff/targets', { method: 'POST', body: JSON.stringify(data) }),
-      update: (id: string, data: Record<string, unknown>) =>
-        request<{ target: StaffTarget }>(`/api/staff/targets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      create: (data: StaffTargetPayload) =>
+        request<{ message?: string; target: StaffTarget }>('/api/staff/targets', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+      update: (id: string, data: StaffTargetPayload) =>
+        request<{ message?: string; target: StaffTarget }>(`/api/staff/targets/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+      delete: (id: string) =>
+        request<{ message?: string }>(`/api/staff/targets/${id}`, { method: 'DELETE' }),
     },
+  },
+
+  leave: {
+    list: (params?: Record<string, string | number>) =>
+      request<LeaveRequest[]>(`/api/leave${buildQs(params)}`),
+    get: (id: string) => request<LeaveRequest>(`/api/leave/${id}`),
+    create: (data: LeaveRequestPayload) =>
+      request<{ message?: string; leave: LeaveRequest }>('/api/leave', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    approve: (id: string) =>
+      request<{ message?: string; leave: LeaveRequest }>(`/api/leave/${id}/approve`, {
+        method: 'PUT',
+      }),
+    reject: (id: string, admin_note?: string) =>
+      request<{ message?: string; leave: LeaveRequest }>(`/api/leave/${id}/reject`, {
+        method: 'PUT',
+        body: JSON.stringify({ admin_note }),
+      }),
   },
 
   attendance: {
@@ -512,21 +592,6 @@ export const api = {
       request<{ success: boolean; error?: string; member?: { id: string; name: string; status: string } }>(
         '/api/checkin/face', { method: 'POST', body: JSON.stringify({ descriptor }) }
       ),
-  },
-
-  leave: {
-    list: (params?: Record<string, string>) =>
-      request<LeaveRequest[]>(`/api/leave${buildQs(params)}`),
-    get: (id: string) => request<LeaveRequest>(`/api/leave/${id}`),
-    create: (data: Record<string, unknown>) =>
-      request<{ leave: LeaveRequest }>('/api/leave', { method: 'POST', body: JSON.stringify(data) }),
-    approve: (id: string) =>
-      request<{ leave: LeaveRequest }>(`/api/leave/${id}/approve`, { method: 'PATCH' }),
-    reject: (id: string, reason?: string) =>
-      request<{ leave: LeaveRequest }>(`/api/leave/${id}/reject`, {
-        method: 'PATCH',
-        body: JSON.stringify({ reason }),
-      }),
   },
 
   notifications: {

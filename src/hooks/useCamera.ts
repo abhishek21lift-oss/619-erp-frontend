@@ -127,7 +127,7 @@ export function useCamera(): UseCameraReturn {
       setStatus(name === 'NotAllowedError' || name === 'PermissionDeniedError' ? 'denied' : 'error');
       return false;
     }
-  }, [status, stop]);
+  }, [status]);
 
   return { videoRef, status, error, start, stop, dimensions };
 }

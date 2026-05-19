@@ -124,8 +124,8 @@
   --gradient-glass:  linear-gradient(135deg, rgba(255,255,255,0.60) 0%, rgba(255,255,255,0.30) 100%);
 
   /* ── Typography ─────────────────────────────────────────────── */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'Fira Code', monospace;
 }
 
 /* ════════════════════════════════════════════════════════════════════

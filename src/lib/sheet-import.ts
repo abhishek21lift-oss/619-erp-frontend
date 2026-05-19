@@ -149,7 +149,8 @@ function toIsoDate(v: unknown): string {
   const s = String(v).trim();
   const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
   if (m) {
-    let [, dd, mm, yy] = m;
+    const [, dd, mm, rawYear] = m;
+    let yy = rawYear;
     if (yy.length === 2) yy = (parseInt(yy, 10) > 50 ? '19' : '20') + yy;
     return `${yy.padStart(4, '0')}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
   }
