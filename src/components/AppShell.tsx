@@ -2,18 +2,11 @@
 /**
  * AppShell — root layout wrapper for every authenticated page.
  *
- * Issue #3 FIX — Hydration-safe matchMedia:
- *   window.matchMedia called inside a useEffect (client-only) previously, but
- *   any future refactor that moves it to render-time would cause an SSR mismatch.
- *   We now use useSyncExternalStore with a server snapshot of `false` — React
- *   guarantees identical output on server and first client render, then
- *   re-subscribes after hydration. This permanently eliminates the class of
- *   hydration mismatch warnings this pattern is prone to.
+ * Updated: dark luxury aesthetic — ambient violet glow behind navbar,
+ * deep charcoal page background, mobile bottom-nav safe-area padding.
  *
- * Issue #20 FIX — LazyMotion:
- *   framer-motion's full bundle (~100 kB) loads by default. Using LazyMotion
- *   + domAnimation limits the shipped feature set to what 99 % of UIs need,
- *   reducing the chunk by ~40 kB gzipped.
+ * Issue #3 FIX — Hydration-safe matchMedia (useSyncExternalStore)
+ * Issue #20 FIX — LazyMotion + domAnimation (smaller bundle)
  */
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { LazyMotion, domAnimation } from 'framer-motion';
@@ -25,34 +18,22 @@ interface AppShellProps {
   title?: string;
 }
 
-// ─── Hydration-safe matchMedia hook ──────────────────────────────────
+// ─── Hydration-safe matchMedia hook ──────────────────────────────────────────
 function subscribe(cb: () => void): () => void {
   if (typeof window === 'undefined') return () => {};
   const mq = window.matchMedia('(min-width: 1024px)');
   mq.addEventListener('change', cb);
   return () => mq.removeEventListener('change', cb);
 }
-function getSnapshot(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(min-width: 1024px)').matches;
-}
-/** Always returns false on the server — matches first client render. */
+function getSnapshot():       boolean { return typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false; }
 function getServerSnapshot(): boolean { return false; }
-
-function useIsDesktop(): boolean {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
+function useIsDesktop():      boolean { return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot); }
 
 export default function AppShell({ children, title: _title }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isDesktop = useIsDesktop();
 
-  // Auto-close the mobile drawer when viewport grows to desktop width.
-  useEffect(() => {
-    if (isDesktop) setMobileOpen(false);
-  }, [isDesktop]);
-
-  // Prevent body scroll when mobile drawer is open.
+  useEffect(() => { if (isDesktop) setMobileOpen(false); }, [isDesktop]);
   useEffect(() => {
     if (typeof document === 'undefined') return;
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
@@ -60,21 +41,35 @@ export default function AppShell({ children, title: _title }: AppShellProps) {
   }, [mobileOpen]);
 
   return (
-    // LazyMotion scopes framer-motion to domAnimation features only.
-    // Replace <motion.div> with <m.div> anywhere inside AppShell children
-    // to benefit from the smaller bundle (see Issue #20).
     <LazyMotion features={domAnimation} strict>
-      <div className="min-h-screen bg-[var(--bg-canvas)]">
-        <PremiumHeader
-          onMenuClick={() => setMobileOpen(true)}
+      {/*
+       * Dark luxury shell.
+       * bg-[#0a0a0e] = deep charcoal base.
+       * The ambient glow is a fixed pseudo-layer so it stays behind nav
+       * even when page content scrolls.
+       */}
+      <div className="relative min-h-screen" style={{ background: '#0a0a0e' }}>
+
+        {/* Ambient violet glow — fixed, behind everything, pointer-events-none */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-x-0 top-0 z-0"
+          style={{
+            height: 320,
+            background: 'radial-gradient(ellipse 80% 45% at 50% -5%, rgba(124,58,237,0.16) 0%, transparent 70%)',
+          }}
         />
+
+        <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
+
         <Sidebar
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
         />
+
         <main
           id="main-content"
-          className="mx-auto w-full max-w-[1600px] px-3 pb-6 pt-[88px] sm:px-5 sm:pb-8 sm:pt-[100px] lg:px-8 lg:pt-[116px]"
+          className="relative z-10 mx-auto w-full max-w-[1600px] px-3 pb-24 pt-[88px] sm:px-5 sm:pb-8 sm:pt-[100px] lg:px-8 lg:pt-[116px]"
         >
           {children}
         </main>
