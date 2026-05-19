@@ -17,9 +17,12 @@
  *   All other routes keep the strict policy.
  *
  * WEBPACK FIX (May 2026):
- *   Added client-side fs:false fallback to suppress the
- *   "Module not found: Can't resolve 'fs'" warning from face-api.js
- *   during the browser bundle compilation step.
+ *   - Added client-side fs:false fallback to suppress the
+ *     "Module not found: Can't resolve 'fs'" warning from face-api.js
+ *     during the browser bundle compilation step.
+ *   - Added serverExternalPackages (Next.js 15 native API) so the RSC
+ *     bundler never attempts to include face-api.js / TensorFlow in the
+ *     server bundle — this is the primary fix for the Vercel build warning.
  */
 
 const STRICT_CSP = [
@@ -62,15 +65,26 @@ const nextConfig = {
   poweredByHeader: false,
 
   // ── Build: skip TypeScript type-check errors & ESLint during Vercel build ──
-  // Warnings are still visible when running `npm run lint` locally.
-  // Clean these up file-by-file over time; do NOT re-enable until all
-  // @typescript-eslint/no-explicit-any and no-unused-vars issues are resolved.
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  // ── Next.js 15: tell the RSC/server bundler to treat these as external ──────
+  // PRIMARY FIX for "Module not found: Can't resolve 'fs'" Vercel warning.
+  // face-api.js + TensorFlow are browser-only packages; they must never be
+  // included in the server (RSC/SSR) bundle. serverExternalPackages is the
+  // correct Next.js 15 API (replaces experimental.serverComponentsExternalPackages).
+  serverExternalPackages: [
+    'face-api.js',
+    '@tensorflow/tfjs',
+    '@tensorflow/tfjs-core',
+    '@tensorflow/tfjs-backend-webgl',
+    '@tensorflow/tfjs-backend-cpu',
+    'canvas',
+  ],
 
   experimental: {
     optimizePackageImports: [
@@ -85,19 +99,21 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
 
-  // Webpack: exclude face-api.js + TensorFlow from SSR bundle (server-side),
-  // and tell the browser bundler that 'fs' does not exist (client-side).
+  // Webpack: defense-in-depth — keep both the fs:false client fallback and
+  // the server externals even though serverExternalPackages handles the main case.
   webpack(config, { isServer }) {
-    // Client-side: polyfill 'fs' as false so face-api.js build warning disappears
+    // Client-side: tell the browser bundler these Node built-ins don't exist
     if (!isServer) {
       config.resolve = config.resolve || {};
       config.resolve.fallback = {
         ...(config.resolve.fallback || {}),
         fs: false,
+        path: false,
+        crypto: false,
       };
     }
 
-    // Server-side: exclude face-api.js + TensorFlow from SSR bundle entirely
+    // Server-side: belt-and-suspenders — exclude from SSR webpack bundle too
     if (isServer) {
       const existing = Array.isArray(config.externals)
         ? config.externals
@@ -129,14 +145,6 @@ const nextConfig = {
       },
       {
         source: '/checkin/(.*)',
-        headers: [
-          ...BASE_SECURITY_HEADERS,
-          { key: 'Content-Security-Policy', value: CHECKIN_CSP },
-        ],
-      },
-      // ── Relaxed CSP: client detail page (face enroll modal) ──────────────
-      {
-        source: '/clients/:id',
         headers: [
           ...BASE_SECURITY_HEADERS,
           { key: 'Content-Security-Policy', value: CHECKIN_CSP },
