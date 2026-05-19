@@ -421,5 +421,12 @@ export const api = {
      */
     monthly: (year: number | string) =>
       request<unknown[]>(`/api/reports/monthly?year=${year}`),
+    /**
+     * Outstanding dues — all members with a positive balance_amount.
+     * GET /api/reports/dues
+     * Returns: Array<{ id, name, client_id, mobile, trainer_name, balance_amount, pt_end_date, status }>
+     */
+    dues: () =>
+      request<unknown[]>('/api/reports/dues'),
   },
 };
