@@ -460,8 +460,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       {/* ── Keyframes ──────────────────────────────────────────────────────── */}
       <style>{`
         @keyframes brand-glow {
-          0%,100% { box-shadow: 0 4px 16px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.9); }
-          50%      { box-shadow: 0 4px 22px rgba(124,58,237,0.22), inset 0 1px 0 rgba(255,255,255,0.9); }
+          0%,100% { box-shadow: 0 4px 16px rgba(220,38,38,0.15), inset 0 1px 0 rgba(255,255,255,0.2); }
+          50%      { box-shadow: 0 4px 22px rgba(220,38,38,0.28), inset 0 1px 0 rgba(255,255,255,0.2); }
         }
         @keyframes megaIn {
           from { opacity:0; transform:translateY(-6px) scale(0.98); }
@@ -478,6 +478,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         }
         .logo-glow  { animation: brand-glow 3.5s ease-in-out infinite; }
         .pill-pulse { animation: pulse-ring 2.2s cubic-bezier(0.455,0.03,0.515,0.955) infinite; }
+        /* Remove white bg from logo PNG using multiply blend */
+        .logo-img { mix-blend-mode: multiply; }
       `}</style>
 
       {/* ── Header shell ───────────────────────────────────────────────────── */}
@@ -498,8 +500,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         <div
           ref={headerRef}
           className={cn(
-            'mx-auto flex w-full max-w-[1680px] items-center gap-3 px-4 transition-all duration-300 sm:px-6 lg:px-8',
-            scrolled ? 'h-[60px]' : 'h-[70px]',
+            'mx-auto flex w-full max-w-[1680px] items-center gap-2 px-3 transition-all duration-300 sm:px-5 lg:px-6',
+            scrolled ? 'h-[56px]' : 'h-[64px]',
           )}
         >
           {/* ── Mobile hamburger ─────────────────────────────────────────── */}
@@ -512,61 +514,51 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             <Menu size={16} />
           </button>
 
-          {/* ── Brand ────────────────────────────────────────────────────── */}
-          <div className="flex shrink-0 items-center gap-3">
-            <div
-              className="logo-glow relative flex shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-violet-200/50"
-              style={{
-                width: scrolled ? 40 : 46,
-                height: scrolled ? 40 : 46,
-                background: 'linear-gradient(150deg,rgba(255,255,255,0.98) 0%,rgba(237,233,254,0.5) 100%)',
-                transition: 'width 0.3s,height 0.3s',
+          {/* ── Brand — LOGO ONLY, no text ───────────────────────────────── */}
+          <div
+            className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-[14px]"
+            style={{
+              width: scrolled ? 38 : 44,
+              height: scrolled ? 38 : 44,
+              background: 'transparent',
+              transition: 'width 0.3s,height 0.3s',
+            }}
+            onClick={() => router.push('/dashboard')}
+            title="619 Fitness Studio"
+          >
+            <img
+              src="/619-logo.png"
+              alt="619 Fitness Studio"
+              width={scrolled ? 34 : 40}
+              height={scrolled ? 34 : 40}
+              className="logo-img object-contain transition-all duration-300"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fb) fb.style.display = 'flex';
               }}
+            />
+            {/* Fallback if image missing */}
+            <span
+              className="absolute hidden h-full w-full items-center justify-center text-[13px] font-black text-white rounded-[14px]"
+              style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}
             >
-              <img
-                src="/619-logo.png"
-                alt="619 Fitness Studio"
-                width={scrolled ? 30 : 34}
-                height={scrolled ? 30 : 34}
-                className="object-contain transition-all duration-300"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
-                  if (fb) fb.style.display = 'flex';
-                }}
-              />
-              <span
-                className="absolute hidden h-full w-full items-center justify-center text-[12px] font-black text-white"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}
-              >
-                619
-              </span>
-            </div>
-            <div className="hidden select-none flex-col gap-[2px] sm:flex">
-              <span
-                className={cn('font-black leading-none tracking-[0.08em] transition-all duration-300', scrolled ? 'text-[13px]' : 'text-[14.5px]')}
-                style={{
-                  background: 'linear-gradient(120deg,#1e1b4b 0%,#3730a3 40%,#7c3aed 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                619 FITNESS STUDIO
-              </span>
-              <span className="text-[9px] font-bold uppercase tracking-[0.28em] text-slate-400">Management OS</span>
-            </div>
+              619
+            </span>
           </div>
 
           {/* Divider */}
-          <div className="mx-1 hidden h-8 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
+          <div className="mx-1 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
 
-          {/* ── Center nav (desktop) — min-w-0 lets it compress before action buttons do ── */}
+          {/* ── Center nav — scrollable so Finance & Analytics never get cut off ── */}
           <nav
             aria-label="Primary navigation"
-            className="hidden min-w-0 flex-1 items-center gap-0.5 overflow-hidden lg:flex"
+            className="hidden min-w-0 flex-1 overflow-x-auto scrollbar-none lg:flex lg:items-center"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {MEGA_SECTIONS.map(renderSection)}
+            <div className="flex items-center gap-0.5 pr-2">
+              {MEGA_SECTIONS.map(renderSection)}
+            </div>
           </nav>
 
           {/* ── Right cluster — shrink-0 keeps it from being squeezed ─────── */}
@@ -704,23 +696,22 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all hover:border-violet-200 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
               >
                 <div
-                  className="flex h-[24px] w-[24px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-violet-100"
-                  style={{ background: 'linear-gradient(135deg,#ede9fe,#e0e7ff)' }}
+                  className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-50"
                 >
                   <img
                     src="/619-logo.png"
                     alt="Account"
-                    className="h-full w-full object-cover"
+                    className="logo-img h-full w-full object-contain"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = 'none';
                       const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
                       if (fb) fb.style.display = 'flex';
                     }}
                   />
-                  <span className="hidden h-full w-full items-center justify-center text-[10px] font-black text-violet-700">{initials}</span>
+                  <span className="hidden h-full w-full items-center justify-center text-[10px] font-black text-slate-700">{initials}</span>
                 </div>
                 <div className="hidden text-left xl:block">
-                  <div className="max-w-[100px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
+                  <div className="max-w-[90px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
                   <div className="mt-0.5 text-[10px] capitalize tracking-wide text-slate-400">{roleLabel}</div>
                 </div>
                 <ChevronDown size={10} className={cn('text-slate-400 transition-transform duration-200', openMenu === 'account' && 'rotate-180')} />
@@ -739,16 +730,15 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   }}
                 >
                   {/* Profile card */}
-                  <div className="mb-1.5 flex items-center gap-3 rounded-[14px] bg-gradient-to-br from-violet-50 to-indigo-50 p-3">
+                  <div className="mb-1.5 flex items-center gap-3 rounded-[14px] bg-gradient-to-br from-slate-50 to-slate-100 p-3">
                     <div
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-violet-200 text-[11px] font-black text-violet-700"
-                      style={{ background: 'linear-gradient(135deg,#ede9fe,#e0e7ff)' }}
+                      className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-black text-slate-700"
                     >
                       {initials}
                     </div>
                     <div>
                       <div className="text-[13px] font-bold text-slate-900">{accountLabel}</div>
-                      <div className="text-[11px] capitalize text-violet-600">{roleLabel}</div>
+                      <div className="text-[11px] capitalize text-slate-500">{roleLabel}</div>
                     </div>
                   </div>
 
