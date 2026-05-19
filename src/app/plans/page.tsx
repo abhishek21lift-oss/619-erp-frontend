@@ -244,7 +244,7 @@ function PlansContent() {
           final_amount: p.discount > 0 ? p.base_amount - p.discount : p.final_amount,
           sessions_per_week: p.sessions_per_week, features: p.features, popular: p.popular,
         });
-        setPlans((prev) => prev.map((x) => x.id === p.id ? { ...p, ...res.plan } : x));
+        setPlans((prev) => prev.map((x) => x.id === p.id ? { ...p, ...res.plan } as StoredPlan : x));
         showFlash('Plan updated ✓');
       } else {
         const res = await api.plans.create({

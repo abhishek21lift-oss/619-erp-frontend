@@ -17,7 +17,7 @@
  */
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { LazyMotion, domAnimation } from 'framer-motion';
-import Sidebar from './sidebar';
+import Sidebar from './Sidebar';
 import PremiumHeader from './PremiumHeader';
 
 interface AppShellProps {

@@ -405,7 +405,7 @@ function Inner() {
                       {DURATIONS.map(d => (
                         <button key={d} onClick={() => setDuration(d)}
                           style={{
-                            padding: '16px', borderRadius: 14, cursor: 'pointer', transition: 'all 0.2s', border: 'none',
+                            padding: '16px', borderRadius: 14, cursor: 'pointer', transition: 'all 0.2s',
                             background: duration === d ? `linear-gradient(135deg, ${colorObj.from}, ${colorObj.to})` : '#f8fafc',
                             color: duration === d ? '#fff' : '#475569',
                             boxShadow: duration === d ? `0 4px 16px ${colorObj.from}40` : '0 1px 4px rgba(0,0,0,0.06)',

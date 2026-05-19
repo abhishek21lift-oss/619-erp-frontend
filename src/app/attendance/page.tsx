@@ -531,7 +531,7 @@ function TableView({ filtered, saving, getRecord, mark }: {
                   <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-white/10 dark:text-white/65">{c.package_type || '—'}</span>
                 </td>
                 <td className="px-5 py-4 text-sm text-zinc-500 dark:text-white/40">{c.trainer_name || '—'}</td>
-                <td className="px-5 py-4">{rec ? <StatusBadge status={rec.status} /> : <StatusBadge status="unmarked" />}</td>
+                <td className="px-5 py-4">{rec ? <StatusBadge status={rec.status ?? 'unmarked'} /> : <StatusBadge status="unmarked" />}</td>
                 <td className="px-5 py-4 text-xs tabular-nums text-zinc-500 dark:text-white/40">{rec?.check_in || '—'}</td>
                 <td className="px-5 py-4">
                   <AttendanceBtns client={c} rec={rec} saving={saving} mark={mark} />
@@ -564,7 +564,7 @@ function GridView({ filtered, saving, getRecord, mark }: {
                   <p className="text-xs text-zinc-400 dark:text-white/30">{c.package_type || '—'}</p>
                 </div>
               </div>
-              {rec ? <StatusBadge status={rec.status} /> : <StatusBadge status="unmarked" />}
+              {rec ? <StatusBadge status={rec.status ?? 'unmarked'} /> : <StatusBadge status="unmarked" />}
             </div>
             <div className="mt-4 flex items-center justify-between">
               <p className="text-xs text-zinc-500 dark:text-white/40">{rec?.check_in ? `Checked in ${rec.check_in}` : 'Not yet marked'}</p>

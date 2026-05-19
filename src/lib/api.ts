@@ -40,7 +40,7 @@ function buildQs(params: Record<string, string | number>): string {
 
 // ─────────────────────────── Types ───────────────────────────────────────────
 
-export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist' | 'manager';
+export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist' | 'manager' | 'member';
 
 export type User = {
   id: string;
@@ -110,6 +110,7 @@ export type Client = {
   updated_at?: string;
   paid_amount?: number;
   final_amount?: number;
+  interested_in?: string;
 };
 
 export type Payment = {
@@ -150,6 +151,7 @@ export type Attendance = {
   time?: string;
   type?: string;
   status?: string;
+  check_in?: string;
   notes?: string;
   created_at?: string;
   [key: string]: unknown;
@@ -159,7 +161,7 @@ export type StaffMember = {
   id: string;
   name: string;
   role: string;
-  email?: string;
+  email: string;
   phone?: string;
   is_active?: boolean;
   [key: string]: unknown;
@@ -448,7 +450,7 @@ export const api = {
     enroll: (clientId: string, descriptor: number[]) =>
       request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
     descriptors: () => request<unknown[]>('/api/checkin/descriptors'),
-    face: (data: Record<string, unknown>) =>
+    face: (data: unknown) =>
       request('/api/checkin/face', { method: 'POST', body: JSON.stringify(data) }),
   },
 
