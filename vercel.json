@@ -2,8 +2,11 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm ci --legacy-peer-deps",
+  "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://six19-erp-api.onrender.com"
+  },
   "headers": [
     {
       "source": "/(.*)",
@@ -44,8 +47,5 @@
         { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
       ]
     }
-  ],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@619_api_url"
-  }
+  ]
 }
