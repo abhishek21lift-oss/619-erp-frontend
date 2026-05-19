@@ -44,8 +44,5 @@
         { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
       ]
     }
-  ],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@619_api_url"
-  }
+  ]
 }
