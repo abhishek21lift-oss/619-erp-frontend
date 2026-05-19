@@ -111,6 +111,7 @@ export type Client = {
   paid_amount?: number;
   final_amount?: number;
   combo_plan?: string;
+  interested_in?: string;
 };
 
 export type Payment = {
