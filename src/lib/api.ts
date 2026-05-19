@@ -31,8 +31,12 @@ function apiBase(): string {
   }
 }
 
-// ─────────────────────────── Types ─────────────────────────────────────
+// ─────────────────────────── Types ───────────────────────────────────
 
+/**
+ * Role union — union of all role strings the backend can return.
+ * Aligned with nav-config.ts so role comparisons across the app type-check.
+ */
 export type Role =
   | 'admin'
   | 'manager'
@@ -46,6 +50,7 @@ export type User = {
   id: string;
   name?: string;
   email: string;
+  /** Typed as Role union — never a free-form string */
   role?: Role;
   trainer_id?: string;
   is_active?: boolean;
@@ -58,7 +63,6 @@ export type Client = {
   last_name?: string;
   country_code?: string;
   mobile?: string;
-  phone?: string;
   is_mobile_redacted?: boolean;
   alt_country_code?: string;
   alt_mobile?: string;
@@ -84,36 +88,31 @@ export type Client = {
   trainer_id?: string;
   trainer_name?: string;
   package_type?: string;
-  membership_plan?: string;
   status?: string;
   balance_amount?: number;
-  balance_due?: number;
   frozen_from?: string;
   frozen_until?: string;
-  freeze_from?: string;
-  freeze_until?: string;
   pt_start_date?: string;
   pt_end_date?: string;
-  expiry_date?: string;
   pt_sessions_left?: number;
-  pt_sessions_total?: number;
   subscription_end_date?: string;
   subscription_start_date?: string;
   plan_name?: string;
   photo_url?: string;
   face_descriptor?: number[];
-  biometric_fingers?: string;
   notes?: string;
-  joining_date?: string;
   created_at?: string;
   updated_at?: string;
-  is_frozen?: boolean;
-  paid_amount?: number;
-  final_amount?: number;
-  combo_plan?: string;
+  balance_due?: number;
+  biometric_fingers?: string;
 };
 
+/**
+ * Payment — Issue #7: id is always string.
+ * Backend may return number; we normalise at the API boundary (see `payments.list`).
+ */
 export type Payment = {
+  /** Always a string — coerced from number at fetch boundary if needed. */
   id: string;
   receipt_no?: string;
   client_id?: string;
@@ -152,37 +151,7 @@ export type Trainer = {
   created_at?: string;
 };
 
-// ─── Plan API response types ─────────────────────────────────────────────────────
-
-export type PlanApiResponse = {
-  plan: {
-    id: string;
-    kind?: string;
-    name?: string;
-    duration?: string;
-    base_amount?: number;
-    discount?: number;
-    final_amount?: number;
-    sessions_per_week?: number;
-    features?: string[];
-    popular?: boolean;
-    [key: string]: unknown;
-  };
-  message?: string;
-};
-
-// ─── Trainer summary row returned by /api/reports/trainer-summary ─────────
-export type TrainerSummaryRow = {
-  id: string | number;
-  name: string;
-  active_clients?: number;
-  total_clients?: number;
-  month_revenue?: number;
-  total_revenue?: number;
-  [key: string]: unknown;
-};
-
-// ─────────────────────────── Core fetch ────────────────────────────
+// ─────────────────────────── Core fetch ──────────────────────────────
 
 async function request<T = unknown>(
   path: string,
@@ -196,6 +165,9 @@ async function request<T = unknown>(
     ...(options.headers as Record<string, string>),
   };
 
+  // Include credentials so the httpOnly auth cookie is sent automatically.
+  // The in-memory token is used as a bearer fallback for hybrid backends that
+  // still require an Authorization header (legacy deployment support).
   const init: RequestInit = {
     ...options,
     headers,
@@ -219,12 +191,14 @@ async function request<T = unknown>(
   return res.json() as Promise<T>;
 }
 
+// ─── Build query string from params object (values coerced to string) ────
 function buildQs(params?: Record<string, string | number>): string {
   if (!params) return '';
   const entries = Object.entries(params).map(([k, v]) => [k, String(v)] as [string, string]);
   return '?' + new URLSearchParams(entries).toString();
 }
 
+// ─── Normalise a raw payment record from the server ──────────────────
 function normalisePayment(raw: Record<string, unknown>): Payment {
   return {
     ...raw,
@@ -246,13 +220,6 @@ export const api = {
       }),
     me: () => request<{ user: User }>('/api/auth/me'),
     logout: () => request('/api/auth/logout', { method: 'POST' }).catch(() => {}),
-    // Changes the current user's password.
-    // Backend endpoint: POST /api/auth/change-password
-    changePassword: (currentPassword: string, newPassword: string) =>
-      request<{ message?: string }>('/api/auth/change-password', {
-        method: 'POST',
-        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
-      }),
   },
 
   clients: {
@@ -264,65 +231,24 @@ export const api = {
       request<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/clients/${id}`, { method: 'DELETE' }),
     search: (q: string) => request<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
-    uploadPhoto: (id: string, dataUrl: string) =>
-      request<{ message?: string; photo_url?: string }>(`/api/clients/${id}/photo`, {
-        method: 'POST',
-        body: JSON.stringify({ photo: dataUrl }),
-      }),
-    renewSubscription: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/renew-subscription`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
     addSubscription: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/add-subscription`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      request<{ message?: string }>(`/api/clients/${id}/subscriptions`, { method: 'POST', body: JSON.stringify(data) }),
     assignPt: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/assign-pt`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      request<{ message?: string }>(`/api/clients/${id}/assign-pt`, { method: 'POST', body: JSON.stringify(data) }),
     renewPt: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/renew-pt`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    combo: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/combo`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    upgrade: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/upgrade`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    downgrade: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/downgrade`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    transfer: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/transfer`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      request<{ message?: string }>(`/api/clients/${id}/renew-pt`, { method: 'POST', body: JSON.stringify(data) }),
     trial: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/trial`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    freeze: (id: string, data: Record<string, unknown>) =>
-      request<{ message?: string }>(`/api/clients/${id}/freeze`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    unfreeze: (id: string) =>
-      request<{ message?: string }>(`/api/clients/${id}/unfreeze`, {
-        method: 'POST',
-      }),
+      request<{ message?: string }>(`/api/clients/${id}/trial`, { method: 'POST', body: JSON.stringify(data) }),
+    combo: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/combo`, { method: 'POST', body: JSON.stringify(data) }),
+    upgrade: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/upgrade`, { method: 'POST', body: JSON.stringify(data) }),
+    downgrade: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/downgrade`, { method: 'POST', body: JSON.stringify(data) }),
+    transfer: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/transfer`, { method: 'POST', body: JSON.stringify(data) }),
+    uploadPhoto: (id: string, dataUrl: string) =>
+      request<{ message?: string; photo_url?: string }>(`/api/clients/${id}/photo`, { method: 'POST', body: JSON.stringify({ photo_url: dataUrl }) }),
   },
 
   payments: {
@@ -365,9 +291,9 @@ export const api = {
     list:   () => request<unknown[]>('/api/plans'),
     get:    (id: string) => request(`/api/plans/${id}`),
     create: (data: Record<string, unknown>) =>
-      request<PlanApiResponse>('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
+      request('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
-      request<PlanApiResponse>(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      request(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/plans/${id}`, { method: 'DELETE' }),
   },
 
@@ -415,6 +341,8 @@ export const api = {
       request<unknown[]>(`/api/checkin${buildQs(params)}`),
     create: (data: Record<string, unknown>) =>
       request('/api/checkin', { method: 'POST', body: JSON.stringify(data) }),
+    // FIX: was (clientId, descriptors: number[][]) sending key "descriptors" (plural).
+    // Backend expects key "descriptor" (singular) and a flat number[128] array.
     enroll: (clientId: string, descriptor: number[]) =>
       request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
     descriptors: () => request<unknown[]>('/api/checkin/descriptors'),
@@ -451,11 +379,5 @@ export const api = {
       request(`/api/reports/revenue${buildQs(params)}`),
     members: (params?: Record<string, string>) =>
       request(`/api/reports/members${buildQs(params)}`),
-    monthly: (year: number | string) =>
-      request<unknown[]>(`/api/reports/monthly?year=${year}`),
-    dues: () =>
-      request<unknown[]>('/api/reports/dues'),
-    trainerSummary: () =>
-      request<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
   },
 };
