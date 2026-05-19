@@ -4,26 +4,18 @@ import { NextRequest, NextResponse } from 'next/server';
  * GET /api/health
  * Lightweight liveness probe — Docker HEALTHCHECK, load-balancer, uptime monitors.
  *
- * Issue #8 FIX — Rate limiting:
- *   No external infra (Redis, Upstash) required. Uses an in-memory
- *   sliding-window counter per IP. Resets on deployment (acceptable for a
- *   health endpoint that only Kubernetes / uptime bots should poll).
+ * Rate limiting: in-memory sliding-window, 60 req / 60 s per IP.
+ * Resets on deployment (acceptable for a health endpoint).
  *
- *   Limit: 60 requests / 60-second window per IP.
- *   Exceeding returns 429 with Retry-After header.
- *
- * PRODUCTION-SAFETY:
- *   - In-memory state is per-process; with multiple replicas each replica
- *     independently rate-limits. This is intentional — the health endpoint
- *     is stateless by design and replica isolation is fine.
- *   - The Map is bounded by MAX_ENTRIES to prevent memory growth if an
- *     attacker spoofs many distinct IPs.
+ * WHY package.json is read this way:
+ *   require('../../../package.json') resolves relative to the compiled output
+ *   under .next/server, where the path depth differs from source. Using
+ *   process.env.npm_package_version is the correct, path-agnostic approach.
  */
 
-// ─── Rate limiter ────────────────────────────────────────────────────────────────────
-const WINDOW_MS   = 60_000;  // 60 seconds
-const MAX_RPS     = 60;      // requests per window per IP
-const MAX_ENTRIES = 10_000;  // cap Map size against IP spoofing
+const WINDOW_MS   = 60_000;
+const MAX_RPS     = 60;
+const MAX_ENTRIES = 10_000;
 
 type WindowEntry = { count: number; windowStart: number };
 const ipWindows = new Map<string, WindowEntry>();
@@ -31,7 +23,6 @@ const ipWindows = new Map<string, WindowEntry>();
 function isRateLimited(ip: string): { limited: boolean; retryAfter: number } {
   const now = Date.now();
 
-  // Purge expired entries to bound memory use
   if (ipWindows.size > MAX_ENTRIES) {
     for (const [k, v] of ipWindows) {
       if (now - v.windowStart > WINDOW_MS) ipWindows.delete(k);
@@ -54,9 +45,7 @@ function isRateLimited(ip: string): { limited: boolean; retryAfter: number } {
   return { limited: false, retryAfter: 0 };
 }
 
-// ─── Handler ──────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-  // Resolve client IP — Vercel/Cloudflare sets x-forwarded-for
   const forwarded = req.headers.get('x-forwarded-for');
   const ip = (forwarded ? forwarded.split(',')[0] : 'unknown').trim();
 
@@ -75,11 +64,9 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  let version = 'unknown';
-  try {
-    const pkg = require('../../../package.json') as { version?: string };
-    version = pkg.version ?? 'unknown';
-  } catch { /* standalone copy may not have package.json */ }
+  // Use the env var injected by npm at build/start time — no filesystem path needed.
+  // Falls back to 'unknown' gracefully if running outside npm (e.g. direct node invocation).
+  const version = process.env.npm_package_version ?? 'unknown';
 
   return NextResponse.json(
     {

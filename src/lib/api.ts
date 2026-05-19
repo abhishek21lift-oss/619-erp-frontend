@@ -33,10 +33,6 @@ function apiBase(): string {
 
 // ─────────────────────────── Types ───────────────────────────────────
 
-/**
- * Role union — union of all role strings the backend can return.
- * Aligned with nav-config.ts so role comparisons across the app type-check.
- */
 export type Role =
   | 'admin'
   | 'manager'
@@ -50,7 +46,6 @@ export type User = {
   id: string;
   name?: string;
   email: string;
-  /** Typed as Role union — never a free-form string */
   role?: Role;
   trainer_id?: string;
   is_active?: boolean;
@@ -63,7 +58,6 @@ export type Client = {
   last_name?: string;
   country_code?: string;
   mobile?: string;
-  /** Alias for mobile — some pages reference c.phone */
   phone?: string;
   is_mobile_redacted?: boolean;
   alt_country_code?: string;
@@ -90,7 +84,6 @@ export type Client = {
   trainer_id?: string;
   trainer_name?: string;
   package_type?: string;
-  /** Alias for package_type — some pages reference c.membership_plan */
   membership_plan?: string;
   status?: string;
   balance_amount?: number;
@@ -101,7 +94,6 @@ export type Client = {
   freeze_until?: string;
   pt_start_date?: string;
   pt_end_date?: string;
-  /** Alias for pt_end_date — some pages reference c.expiry_date */
   expiry_date?: string;
   pt_sessions_left?: number;
   pt_sessions_total?: number;
@@ -110,10 +102,8 @@ export type Client = {
   plan_name?: string;
   photo_url?: string;
   face_descriptor?: number[];
-  /** JSON-encoded array of enrolled biometric finger indices */
   biometric_fingers?: string;
   notes?: string;
-  /** Date the client joined / was created */
   joining_date?: string;
   created_at?: string;
   updated_at?: string;
@@ -123,12 +113,7 @@ export type Client = {
   combo_plan?: string;
 };
 
-/**
- * Payment — Issue #7: id is always string.
- * Backend may return number; we normalise at the API boundary (see `payments.list`).
- */
 export type Payment = {
-  /** Always a string — coerced from number at fetch boundary if needed. */
   id: string;
   receipt_no?: string;
   client_id?: string;
@@ -181,7 +166,6 @@ async function request<T = unknown>(
     ...(options.headers as Record<string, string>),
   };
 
-  // Include credentials so the httpOnly auth cookie is sent automatically.
   const init: RequestInit = {
     ...options,
     headers,
@@ -205,14 +189,12 @@ async function request<T = unknown>(
   return res.json() as Promise<T>;
 }
 
-// ─── Build query string from params object (values coerced to string) ────
 function buildQs(params?: Record<string, string | number>): string {
   if (!params) return '';
   const entries = Object.entries(params).map(([k, v]) => [k, String(v)] as [string, string]);
   return '?' + new URLSearchParams(entries).toString();
 }
 
-// ─── Normalise a raw payment record from the server ──────────────────
 function normalisePayment(raw: Record<string, unknown>): Payment {
   return {
     ...raw,
@@ -245,73 +227,61 @@ export const api = {
       request<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/clients/${id}`, { method: 'DELETE' }),
     search: (q: string) => request<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
-    /** Upload a photo (base64 data URL) for a client */
     uploadPhoto: (id: string, dataUrl: string) =>
       request<{ message?: string; photo_url?: string }>(`/api/clients/${id}/photo`, {
         method: 'POST',
         body: JSON.stringify({ photo: dataUrl }),
       }),
-    /** Renew a client's gym membership subscription */
     renewSubscription: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/renew-subscription`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Add a subscription (one or more plan rows) to a client */
     addSubscription: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/add-subscription`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Assign Personal Training to a client */
     assignPt: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/assign-pt`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Renew Personal Training for a client */
     renewPt: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/renew-pt`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Apply a Combo Offer (Gym Membership + PT bundle) to a client */
     combo: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/combo`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Upgrade a client's membership plan */
     upgrade: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/upgrade`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Downgrade a client's membership plan */
     downgrade: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/downgrade`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Transfer a client to a different trainer */
     transfer: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/transfer`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Schedule or record a trial session for a prospect */
     trial: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/trial`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Freeze a client's active membership */
     freeze: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/freeze`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    /** Unfreeze a client's frozen membership */
     unfreeze: (id: string) =>
       request<{ message?: string }>(`/api/clients/${id}/unfreeze`, {
         method: 'POST',
@@ -444,5 +414,12 @@ export const api = {
       request(`/api/reports/revenue${buildQs(params)}`),
     members: (params?: Record<string, string>) =>
       request(`/api/reports/members${buildQs(params)}`),
+    /**
+     * Monthly collection breakdown for a given year.
+     * GET /api/reports/monthly?year=YYYY
+     * Returns: Array<{ month_num: string; revenue: string; payment_count: string }>
+     */
+    monthly: (year: number | string) =>
+      request<unknown[]>(`/api/reports/monthly?year=${year}`),
   },
 };
