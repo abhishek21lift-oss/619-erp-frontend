@@ -248,6 +248,12 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    /** Apply a Combo Offer (Gym Membership + PT bundle) to a client */
+    combo: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/combo`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   payments: {
