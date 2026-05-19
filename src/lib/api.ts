@@ -236,6 +236,12 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ photo: dataUrl }),
       }),
+    /** Renew a client's gym membership subscription */
+    renewSubscription: (id: string, data: Record<string, unknown>) =>
+      request<{ message?: string }>(`/api/clients/${id}/renew-subscription`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     /** Add a subscription (one or more plan rows) to a client */
     addSubscription: (id: string, data: Record<string, unknown>) =>
       request<{ message?: string }>(`/api/clients/${id}/subscriptions`, {
