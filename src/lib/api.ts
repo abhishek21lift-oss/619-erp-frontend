@@ -31,7 +31,7 @@ function apiBase(): string {
   }
 }
 
-// ─────────────────────────── Types ───────────────────────────────────
+// ─────────────────────────── Types ─────────────────────────────────────
 
 export type Role =
   | 'admin'
@@ -152,7 +152,7 @@ export type Trainer = {
   created_at?: string;
 };
 
-// ─── Plan API response types ──────────────────────────────────────────
+// ─── Plan API response types ─────────────────────────────────────────────────────
 
 export type PlanApiResponse = {
   plan: {
@@ -171,7 +171,20 @@ export type PlanApiResponse = {
   message?: string;
 };
 
-// ─────────────────────────── Core fetch ──────────────────────────────
+// ─── Trainer summary row returned by /api/reports/trainer-summary ─────────
+// Each row corresponds to one trainer. Fields mirror what TrainerSummaryTab
+// renders; extra fields from the backend are captured by the index signature.
+export type TrainerSummaryRow = {
+  id: string | number;
+  name: string;
+  active_clients?: number;
+  total_clients?: number;
+  month_revenue?: number;
+  total_revenue?: number;
+  [key: string]: unknown;
+};
+
+// ─────────────────────────── Core fetch ────────────────────────────
 
 async function request<T = unknown>(
   path: string,
@@ -437,5 +450,9 @@ export const api = {
       request<unknown[]>(`/api/reports/monthly?year=${year}`),
     dues: () =>
       request<unknown[]>('/api/reports/dues'),
+    // Returns one row per trainer with client counts and revenue figures.
+    // Backend endpoint: GET /api/reports/trainer-summary
+    trainerSummary: () =>
+      request<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
   },
 };
