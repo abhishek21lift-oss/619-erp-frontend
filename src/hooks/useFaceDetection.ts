@@ -86,22 +86,16 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     const tf = await import('@tensorflow/tfjs');
 
     try {
-      if (isIOS || isSafari) {
-        await tf.setBackend('cpu');
-      } else {
-        try {
-          await tf.setBackend('webgl');
-          await tf.ready();
-          const test = tf.tensor1d([1, 2, 3]);
-          test.dispose();
-        } catch {
-          await tf.setBackend('cpu');
-        }
-      }
+      await tf.setBackend('cpu');
       await tf.ready();
       console.info('[face] tf backend:', tf.getBackend());
     } catch {
       try { await tf.setBackend('cpu'); await tf.ready(); } catch { /* ignore */ }
+    }
+
+    // If CPU backend is set and this is a known failing GPU, warn
+    if (tf.getBackend() === 'cpu') {
+      console.info('[face] Using CPU backend for reliable detection');
     }
 
     const faceapi = await import('face-api.js');

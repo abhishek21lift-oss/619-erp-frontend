@@ -134,6 +134,14 @@ const nextConfig = {
           { key: 'Content-Security-Policy', value: CHECKIN_CSP },
         ],
       },
+      // ── Relaxed CSP: client detail page (face enroll modal) ──────────────
+      {
+        source: '/clients/:id',
+        headers: [
+          ...BASE_SECURITY_HEADERS,
+          { key: 'Content-Security-Policy', value: CHECKIN_CSP },
+        ],
+      },
       // ── Relaxed CSP: biometric enrollment page (uses face-api.js) ───────
       {
         source: '/clients/:id/biometric',
