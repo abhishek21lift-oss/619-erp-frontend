@@ -190,6 +190,13 @@ async function request<T = unknown>(
   return res.json() as Promise<T>;
 }
 
+// ─── Build query string from params object (values coerced to string) ────
+function buildQs(params?: Record<string, string | number>): string {
+  if (!params) return '';
+  const entries = Object.entries(params).map(([k, v]) => [k, String(v)] as [string, string]);
+  return '?' + new URLSearchParams(entries).toString();
+}
+
 // ─── Normalise a raw payment record from the server ──────────────────
 function normalisePayment(raw: Record<string, unknown>): Payment {
   return {
@@ -215,10 +222,8 @@ export const api = {
   },
 
   clients: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<Client[]>(`/api/clients${qs}`);
-    },
+    list: (params?: Record<string, string | number>) =>
+      request<Client[]>(`/api/clients${buildQs(params)}`),
     get:    (id: string) => request<Client>(`/api/clients/${id}`),
     create: (data: Partial<Client>) => request<Client>('/api/clients', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Client>) =>
@@ -229,24 +234,19 @@ export const api = {
 
   payments: {
     list: async (params?: Record<string, string>): Promise<Payment[]> => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      const raw = await request<Record<string, unknown>[]>(`/api/payments${qs}`);
+      const raw = await request<Record<string, unknown>[]>(`/api/payments${buildQs(params)}`);
       return Array.isArray(raw) ? raw.map(normalisePayment) : [];
     },
     create: (data: Record<string, unknown>) =>
       request('/api/payments', { method: 'POST', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/payments/${id}`, { method: 'DELETE' }),
-    stats:  (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request(`/api/payments/stats${qs}`);
-    },
+    stats:  (params?: Record<string, string>) =>
+      request(`/api/payments/stats${buildQs(params)}`),
   },
 
   subscriptions: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<unknown[]>(`/api/subscriptions${qs}`);
-    },
+    list: (params?: Record<string, string>) =>
+      request<unknown[]>(`/api/subscriptions${buildQs(params)}`),
     get:         (id: string) => request(`/api/subscriptions/${id}`),
     create:      (data: Record<string, unknown>) =>
       request('/api/subscriptions', { method: 'POST', body: JSON.stringify(data) }),
@@ -305,10 +305,8 @@ export const api = {
   },
 
   attendance: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<Attendance[]>(`/api/attendance${qs}`);
-    },
+    list: (params?: Record<string, string>) =>
+      request<Attendance[]>(`/api/attendance${buildQs(params)}`),
     mark: (data: Record<string, unknown>) =>
       request<Attendance>('/api/attendance/mark', { method: 'POST', body: JSON.stringify(data) }),
     biometric: (data: Record<string, unknown>) =>
@@ -320,10 +318,8 @@ export const api = {
   },
 
   checkin: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<unknown[]>(`/api/checkin${qs}`);
-    },
+    list: (params?: Record<string, string>) =>
+      request<unknown[]>(`/api/checkin${buildQs(params)}`),
     create: (data: Record<string, unknown>) =>
       request('/api/checkin', { method: 'POST', body: JSON.stringify(data) }),
     // FIX: was (clientId, descriptors: number[][]) sending key "descriptors" (plural).
@@ -331,13 +327,15 @@ export const api = {
     enroll: (clientId: string, descriptor: number[]) =>
       request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
     descriptors: () => request<unknown[]>('/api/checkin/descriptors'),
+    face: (descriptor: number[]) =>
+      request<{ success: boolean; error?: string; member?: { id: string; name: string; status: string } }>(
+        '/api/checkin/face', { method: 'POST', body: JSON.stringify({ descriptor }) }
+      ),
   },
 
   notifications: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<unknown[]>(`/api/notifications${qs}`);
-    },
+    list: (params?: Record<string, string>) =>
+      request<unknown[]>(`/api/notifications${buildQs(params)}`),
     markRead: (id: string) =>
       request(`/api/notifications/${id}/read`, { method: 'PATCH' }),
     markAllRead: () =>
@@ -346,20 +344,14 @@ export const api = {
 
   dashboard: {
     stats: () => request('/api/dashboard/stats'),
-    revenue: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request(`/api/dashboard/revenue${qs}`);
-    },
+    revenue: (params?: Record<string, string>) =>
+      request(`/api/dashboard/revenue${buildQs(params)}`),
   },
 
   reports: {
-    revenue: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request(`/api/reports/revenue${qs}`);
-    },
-    members: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request(`/api/reports/members${qs}`);
-    },
+    revenue: (params?: Record<string, string>) =>
+      request(`/api/reports/revenue${buildQs(params)}`),
+    members: (params?: Record<string, string>) =>
+      request(`/api/reports/members${buildQs(params)}`),
   },
 };
