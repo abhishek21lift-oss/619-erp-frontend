@@ -1,25 +1,28 @@
 'use client';
 /**
- * useFaceDetection — face-api.js wrapper
+ * useFaceDetection — @vladmandic/face-api wrapper
  *
  * Protection layers:
  *  1. 'use client' — never evaluated on the server
  *  2. getFaceApi() guards with typeof window before any dynamic import
  *  3. CheckInClient wraps CheckInContent in next/dynamic with ssr:false,
  *     excluding this entire module tree from the SSR bundle
- *  4. next.config.js marks face-api.js + tfjs as webpack server externals
+ *  4. next.config.js marks @vladmandic/face-api + tfjs as webpack server externals
  *     (defense-in-depth for the RSC bundle pass)
  *
  * faceApiRef is typed as the resolved module type, imported lazily so
  * the static import never reaches the server bundler.
+ *
+ * Uses @vladmandic/face-api fork (bundles its own tfjs) so we do NOT
+ * import @tensorflow/tfjs separately — it's available via faceapi.tf.
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
 
 // Lazy type — only used at runtime after the dynamic import resolves.
-// We use `typeof import('face-api.js')` so TypeScript can check call sites
-// without actually bundling face-api.js at static analysis time.
-type FaceApiModule = typeof import('face-api.js');
+// We use `typeof import('@vladmandic/face-api')` so TypeScript can check call sites
+// without actually bundling @vladmandic/face-api at static analysis time.
+type FaceApiModule = typeof import('@vladmandic/face-api');
 
 // Concrete shape we extract from each detection result.
 // Defined here once so the loop body stays readable.
@@ -32,6 +35,7 @@ type FaceDetection = {
 const MODEL_SOURCES = [
   '/models',
   '/face-models',
+  'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model',
 ];
 
 const RECOGNITION_THRESHOLD = 0.50;
@@ -78,11 +82,10 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     // Safety guard — should never reach here on server due to ssr:false wrapper
     if (typeof window === 'undefined') throw new Error('Browser only');
 
-    const ua = navigator.userAgent;
-    const isIOS = /iPhone|iPad|iPod/i.test(ua);
-    const isSafari = /^((?!chrome|android).)*safari/i.test(ua) || isIOS;
+    const faceapi = await import('@vladmandic/face-api');
 
-    const tf = await import('@tensorflow/tfjs');
+    // Use the fork's bundled tfjs instead of importing @tensorflow/tfjs separately
+    const tf = faceapi.tf;
 
     try {
       await tf.setBackend('cpu');
@@ -97,7 +100,6 @@ export function useFaceDetection(): UseFaceDetectionReturn {
       console.info('[face] Using CPU backend for reliable detection');
     }
 
-    const faceapi = await import('face-api.js');
     faceApiRef.current = faceapi;
     return faceapi;
   }, []);

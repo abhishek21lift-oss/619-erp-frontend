@@ -78,7 +78,7 @@ const nextConfig = {
   // included in the server (RSC/SSR) bundle. serverExternalPackages is the
   // correct Next.js 15 API (replaces experimental.serverComponentsExternalPackages).
   serverExternalPackages: [
-    'face-api.js',
+    '@vladmandic/face-api',
     '@tensorflow/tfjs',
     '@tensorflow/tfjs-core',
     '@tensorflow/tfjs-backend-webgl',
@@ -122,7 +122,7 @@ const nextConfig = {
         : [];
       config.externals = [
         ...existing,
-        'face-api.js',
+        '@vladmandic/face-api',
         '@tensorflow/tfjs',
         '@tensorflow/tfjs-core',
         '@tensorflow/tfjs-backend-webgl',
