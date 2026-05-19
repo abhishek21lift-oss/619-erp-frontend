@@ -15,6 +15,11 @@
  *
  *   Relaxed paths: /checkin, /checkin/*, /clients/[id]/biometric
  *   All other routes keep the strict policy.
+ *
+ * WEBPACK FIX (May 2026):
+ *   Added client-side fs:false fallback to suppress the
+ *   "Module not found: Can't resolve 'fs'" warning from face-api.js
+ *   during the browser bundle compilation step.
  */
 
 const STRICT_CSP = [
@@ -69,9 +74,19 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
 
-  // Exclude face-api.js + TensorFlow from the SSR bundle.
-  // Defense-in-depth alongside the next/dynamic ssr:false guard on /checkin.
+  // Webpack: exclude face-api.js + TensorFlow from SSR bundle (server-side),
+  // and tell the browser bundler that 'fs' does not exist (client-side).
   webpack(config, { isServer }) {
+    // Client-side: polyfill 'fs' as false so face-api.js build warning disappears
+    if (!isServer) {
+      config.resolve = config.resolve || {};
+      config.resolve.fallback = {
+        ...(config.resolve.fallback || {}),
+        fs: false,
+      };
+    }
+
+    // Server-side: exclude face-api.js + TensorFlow from SSR bundle entirely
     if (isServer) {
       const existing = Array.isArray(config.externals)
         ? config.externals
