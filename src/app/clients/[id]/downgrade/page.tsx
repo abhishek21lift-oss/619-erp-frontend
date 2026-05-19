@@ -6,11 +6,9 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { getStoredPlans, getMembershipPlanNames, getPlanByName, StoredPlan } from '@/lib/plans';
+import { getStoredPlans } from '@/lib/plans';
 
 export default function DowngradePage() { return <Guard><Inner /></Guard>; }
-
-// Plans loaded dynamically from localStorage via usePlans()
 
 function Inner() {
   const { id } = useParams<{ id: string }>();
@@ -22,11 +20,21 @@ function Inner() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [form, setForm] = useState({ package_type: '', amount: '', reason: '' });
+  const [activeSubId, setActiveSubId] = useState<string | null>(null);
 
   const [memPlans, setMemPlans] = useState<{name:string;order:number;final:number}[]>([]);
 
   useEffect(() => {
-    api.clients.get(id).then((c: any) => { setClient(c); setForm(f => ({ ...f, package_type: c?.package_type || '' })); }).catch(console.error).finally(() => setLoading(false));
+    api.clients.get(id).then((c: any) => {
+      setClient(c);
+      setForm(f => ({ ...f, package_type: c?.package_type || '' }));
+    }).catch(console.error).finally(() => setLoading(false));
+
+    // Fetch subscriptions to get active sub ID for the downgrade call
+    api.subscriptions.list({ client_id: id, status: 'active' }).then((subs: any[]) => {
+      if (subs && subs.length > 0) setActiveSubId(String(subs[0].id));
+    }).catch(() => {});
+
     const stored = getStoredPlans();
     const ORDER: Record<string,number> = { Monthly:1, Quarterly:2, 'Half Yearly':3, Yearly:4 };
     const mp = stored.filter(p => p.kind === 'Membership').map((p, i) => ({
@@ -52,7 +60,8 @@ function Inner() {
     if (!form.reason)       { const m = 'Reason is required for downgrades'; setError(m); toast.error(m); return; }
     setSaving(true);
     try {
-      const result = await api.clients.downgrade(id, {
+      if (!activeSubId) throw new Error('No active subscription found for this member');
+      const result: any = await api.subscriptions.downgrade(activeSubId, {
         package_type: form.package_type,
         amount: parseFloat(form.amount) || 0,
         reason: form.reason,
