@@ -1,14 +1,22 @@
 'use client';
 /**
- * Biometric Enrollment Page — Premium fingerprint + device setup UI
- * Apple Security inspired • Luxury fitness CRM
+ * Biometric Enrollment Page
+ * ─────────────────────────
+ * Section 1 (primary): Face Enrollment — real webcam + face-api.js descriptor
+ *   captured by FaceEnrollmentClient (next/dynamic ssr:false wrapper).
+ *   Calls api.checkin.enroll() to persist the face descriptor in the backend.
+ *
+ * Section 2 (optional): Fingerprint device simulation
+ *   Kept for completeness; only shown after device "connect".
+ *   Saves biometric_fingers JSON to the client record.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { api } from '@/lib/api';
+import FaceEnrollmentClient from '@/components/biometric/FaceEnrollmentClient';
+import { api, type Client } from '@/lib/api';
 import {
   ArrowLeft, Fingerprint, CheckCircle, AlertCircle, Wifi,
   Shield, Smartphone, RotateCcw, Zap, ChevronRight, Activity,
@@ -18,25 +26,32 @@ export default function BiometricPage() { return <Guard><Inner /></Guard>; }
 
 function Inner() {
   const { id } = useParams<{ id: string }>();
-  const router  = useRouter();
+  const router = useRouter();
+  void router;
 
-  const [client, setClient]       = useState<any>(null);
+  const [client, setClient]       = useState<Client | null>(null);
   const [loading, setLoading]     = useState(true);
-  const [step, setStep]           = useState<'select' | 'scanning' | 'success' | 'error'>('select');
+  const [faceEnrolled, setFaceEnrolled] = useState(false);
+
+  // fingerprint section state
+  const [fpStep, setFpStep]             = useState<'select' | 'scanning' | 'success' | 'error'>('select');
   const [selectedFinger, setSelectedFinger] = useState<number | null>(null);
   const [scanProgress, setScanProgress]     = useState(0);
   const [enrolledFingers, setEnrolledFingers] = useState<number[]>([]);
   const [deviceConnected, setDeviceConnected] = useState(false);
   const [connecting, setConnecting]           = useState(false);
-  const [saving, setSaving]                   = useState(false);
-  const [errorMsg, setErrorMsg]               = useState('');
+  const [fpError, setFpError]               = useState('');
 
   useEffect(() => {
     api.clients.get(id)
-      .then((c: any) => {
+      .then((c) => {
         setClient(c);
         if (c.biometric_fingers) {
-          try { setEnrolledFingers(JSON.parse(c.biometric_fingers)); } catch {}
+          try { setEnrolledFingers(JSON.parse(c.biometric_fingers as string)); } catch { /* ignore */ }
+        }
+        // If they already have a face descriptor treat them as enrolled
+        if (Array.isArray((c as Record<string, unknown>).face_descriptor)) {
+          setFaceEnrolled(true);
         }
       })
       .catch(console.error)
@@ -48,52 +63,45 @@ function Inner() {
     'Right Thumb', 'Right Index', 'Right Middle', 'Right Ring', 'Right Pinky',
   ];
 
-  async function connectDevice() {
+  const connectDevice = useCallback(async () => {
     setConnecting(true);
-    // Simulate device connection handshake
     await new Promise(r => setTimeout(r, 1800));
     setDeviceConnected(true);
     setConnecting(false);
-  }
+  }, []);
 
-  async function startScan(fingerIdx: number) {
-    if (!deviceConnected) { setErrorMsg('Please connect the biometric device first.'); return; }
+  const startScan = useCallback(async (fingerIdx: number) => {
+    if (!deviceConnected) { setFpError('Please connect the biometric device first.'); return; }
     setSelectedFinger(fingerIdx);
-    setStep('scanning');
+    setFpStep('scanning');
     setScanProgress(0);
-    setErrorMsg('');
-    // Animate scan progress
+    setFpError('');
     for (let i = 0; i <= 100; i += 5) {
       await new Promise(r => setTimeout(r, 80));
       setScanProgress(i);
     }
-    // Simulate 10% failure rate for realism
     if (Math.random() < 0.1) {
-      setStep('error');
-      setErrorMsg('Scan quality too low. Please place your finger flat on the sensor and try again.');
+      setFpStep('error');
+      setFpError('Scan quality too low. Place finger flat and try again.');
       return;
     }
-    // Save to backend
-    setSaving(true);
     try {
       const newFingers = [...new Set([...enrolledFingers, fingerIdx])];
       await api.clients.update(id, { biometric_fingers: JSON.stringify(newFingers) });
       setEnrolledFingers(newFingers);
-      setStep('success');
-    } catch (err: any) {
-      setStep('error');
-      setErrorMsg(err?.message || 'Failed to save biometric data.');
-    } finally {
-      setSaving(false);
+      setFpStep('success');
+    } catch (err: unknown) {
+      setFpStep('error');
+      setFpError(err instanceof Error ? err.message : 'Failed to save fingerprint.');
     }
-  }
+  }, [deviceConnected, enrolledFingers, id]);
 
-  function resetScan() {
-    setStep('select');
+  const resetScan = useCallback(() => {
+    setFpStep('select');
     setScanProgress(0);
-    setErrorMsg('');
+    setFpError('');
     setSelectedFinger(null);
-  }
+  }, []);
 
   if (loading) return (
     <AppShell>
@@ -101,7 +109,7 @@ function Inner() {
     </AppShell>
   );
 
-  const initials = (client?.name || 'M').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+  const initials = (client?.name ?? 'M').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
     <AppShell>
@@ -110,9 +118,9 @@ function Inner() {
         .bio-page * { font-family: 'Inter', sans-serif; }
         @keyframes bio-fade { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes scan-pulse { 0%,100%{opacity:0.4;transform:scale(0.95)} 50%{opacity:1;transform:scale(1.05)} }
-        @keyframes scan-ring { 0%{box-shadow:0 0 0 0 rgba(99,102,241,0.5)} 100%{box-shadow:0 0 0 32px rgba(99,102,241,0)} }
-        @keyframes success-pop { 0%{transform:scale(0.5);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
-        @keyframes spin { to{transform:rotate(360deg)} }
+        @keyframes scan-ring  { 0%{box-shadow:0 0 0 0 rgba(99,102,241,0.5)} 100%{box-shadow:0 0 0 32px rgba(99,102,241,0)} }
+        @keyframes success-pop{ 0%{transform:scale(0.5);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+        @keyframes spin       { to{transform:rotate(360deg)} }
         .bio-page { animation: bio-fade 0.4s ease both; }
         .finger-btn:hover { transform: translateY(-2px) scale(1.06) !important; }
         @media(max-width:640px){
@@ -136,7 +144,7 @@ function Inner() {
             </div>
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Biometric Enrollment</h1>
-              <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Set up fingerprint access for fast gym check-in</p>
+              <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Set up face &amp; fingerprint access for fast check-in</p>
             </div>
           </div>
         </div>
@@ -144,22 +152,32 @@ function Inner() {
         {/* Member strip */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: 20 }}>
           <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
-            {client?.photo_url ? <img src={client.photo_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : initials}
+            {client?.photo_url
+              ? <img src={client.photo_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              : initials}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{client?.name}</div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>{client?.mobile || client?.phone || '—'}</div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>{client?.mobile ?? client?.phone ?? '—'}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: enrolledFingers.length > 0 ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${enrolledFingers.length > 0 ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}` }}>
-            <Fingerprint size={12} color={enrolledFingers.length > 0 ? '#059669' : '#b45309'} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: enrolledFingers.length > 0 ? '#059669' : '#b45309' }}>
-              {enrolledFingers.length} enrolled
-            </span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {faceEnrolled && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                <CheckCircle size={10} color="#059669" />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#059669' }}>Face ✓</span>
+              </div>
+            )}
+            {enrolledFingers.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                <Fingerprint size={10} color="#6366f1" />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1' }}>{enrolledFingers.length} finger{enrolledFingers.length !== 1 ? 's' : ''}</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Security trust bar */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {/* Trust badges */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
           {[
             { icon: <Shield size={12} />, label: 'AES-256 Encrypted', color: '#6366f1' },
             { icon: <Activity size={12} />, label: 'On-device processing', color: '#10b981' },
@@ -171,210 +189,130 @@ function Inner() {
           ))}
         </div>
 
-        {/* Device connect card */}
-        <div style={{ padding: '18px 20px', borderRadius: 18, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(20px)', border: `1px solid ${deviceConnected ? 'rgba(16,185,129,0.3)' : 'rgba(226,232,240,0.6)'}`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: deviceConnected ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Smartphone size={18} color={deviceConnected ? '#059669' : '#6366f1'} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Biometric Device</div>
-              <div style={{ fontSize: 12, color: deviceConnected ? '#059669' : '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: deviceConnected ? '#10b981' : '#cbd5e1', animation: deviceConnected ? undefined : 'scan-pulse 1.5s ease-in-out infinite' }} />
-                {deviceConnected ? 'Connected & Ready' : 'Not connected'}
-              </div>
-            </div>
-            {!deviceConnected && (
-              <button
-                onClick={connectDevice}
-                disabled={connecting}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 12,
-                  border: 'none', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff',
-                  fontSize: 12, fontWeight: 700, cursor: connecting ? 'not-allowed' : 'pointer',
-                  opacity: connecting ? 0.7 : 1, transition: 'all 0.2s',
-                }}
-              >
-                {connecting ? <><RotateCcw size={12} style={{ animation: 'spin 0.9s linear infinite' }} /> Connecting…</> : <><Wifi size={12} /> Connect</>}
-              </button>
-            )}
-            {deviceConnected && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 99, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                <CheckCircle size={12} color="#059669" />
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#059669' }}>Ready</span>
-              </div>
-            )}
-          </div>
+        {/* ══════════════════════════════════════════════
+             SECTION 1 — FACE ENROLLMENT (primary)
+        ══════════════════════════════════════════════ */}
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Face Recognition</h2>
+          <FaceEnrollmentClient
+            clientId={id}
+            clientName={client?.name}
+            onEnrolled={() => setFaceEnrolled(true)}
+          />
         </div>
 
-        {/* ── STEP: SELECT FINGER ── */}
-        {step === 'select' && (
-          <div style={{ borderRadius: 20, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-            <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(226,232,240,0.6)' }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: 0 }}>Select a finger to enroll</h2>
-              <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>Tap any finger to begin scanning. Green = already enrolled.</p>
-            </div>
-            <div style={{ padding: 22 }}>
-              {/* Hand visualization */}
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
-                <div style={{ position: 'relative', width: 280, height: 120 }}>
-                  {/* Left hand */}
-                  <div style={{ position: 'absolute', left: 10, top: 0, display: 'flex', alignItems: 'flex-end', gap: 4 }}>
-                    {[0,1,2,3,4].map(fi => (
-                      <div key={fi} onClick={() => startScan(fi)} className="finger-btn" style={{
-                        width: fi === 4 ? 28 : [18,22,24,22][fi], height: fi === 4 ? 36 : [48,56,52,44][fi],
-                        borderRadius: 99, cursor: deviceConnected ? 'pointer' : 'not-allowed',
-                        background: enrolledFingers.includes(fi) ? 'linear-gradient(180deg,#10b981,#059669)' : 'linear-gradient(180deg,#e2e8f0,#cbd5e1)',
-                        border: enrolledFingers.includes(fi) ? '2px solid rgba(16,185,129,0.4)' : '2px solid rgba(226,232,240,0.8)',
-                        boxShadow: enrolledFingers.includes(fi) ? '0 4px 12px rgba(16,185,129,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-                        transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
-                        opacity: deviceConnected ? 1 : 0.5,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }} title={fingerLabels[fi]}>
-                        {enrolledFingers.includes(fi) && <CheckCircle size={10} color="#fff" />}
-                      </div>
-                    ))}
-                    <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, position: 'absolute', bottom: -18, left: 0, right: 0, textAlign: 'center' }}>Left</div>
-                  </div>
-                  {/* Center label */}
-                  <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center' }}>
-                    <Fingerprint size={32} color="#e2e8f0" />
-                  </div>
-                  {/* Right hand */}
-                  <div style={{ position: 'absolute', right: 10, top: 0, display: 'flex', alignItems: 'flex-end', gap: 4 }}>
-                    {[5,6,7,8,9].map(fi => (
-                      <div key={fi} onClick={() => startScan(fi)} className="finger-btn" style={{
-                        width: fi === 5 ? 28 : [22,24,22,18][fi-6] ?? 18, height: fi === 5 ? 36 : [44,52,56,48][fi-6] ?? 40,
-                        borderRadius: 99, cursor: deviceConnected ? 'pointer' : 'not-allowed',
-                        background: enrolledFingers.includes(fi) ? 'linear-gradient(180deg,#10b981,#059669)' : 'linear-gradient(180deg,#e2e8f0,#cbd5e1)',
-                        border: enrolledFingers.includes(fi) ? '2px solid rgba(16,185,129,0.4)' : '2px solid rgba(226,232,240,0.8)',
-                        boxShadow: enrolledFingers.includes(fi) ? '0 4px 12px rgba(16,185,129,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-                        transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
-                        opacity: deviceConnected ? 1 : 0.5,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }} title={fingerLabels[fi]}>
-                        {enrolledFingers.includes(fi) && <CheckCircle size={10} color="#fff" />}
-                      </div>
-                    ))}
-                    <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, position: 'absolute', bottom: -18, right: 0, left: 0, textAlign: 'center' }}>Right</div>
-                  </div>
+        {/* ══════════════════════════════════════════════
+             SECTION 2 — FINGERPRINT (optional device)
+        ══════════════════════════════════════════════ */}
+        <div>
+          <h2 style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Fingerprint Device (optional)</h2>
+
+          {/* Device connect card */}
+          <div style={{ padding: '18px 20px', borderRadius: 18, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(20px)', border: `1px solid ${deviceConnected ? 'rgba(16,185,129,0.3)' : 'rgba(226,232,240,0.6)'}`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: deviceConnected ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Smartphone size={18} color={deviceConnected ? '#059669' : '#6366f1'} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Biometric Device</div>
+                <div style={{ fontSize: 12, color: deviceConnected ? '#059669' : '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: deviceConnected ? '#10b981' : '#cbd5e1' }} />
+                  {deviceConnected ? 'Connected & Ready' : 'Not connected'}
                 </div>
               </div>
-
-              {/* Finger list */}
-              <div className="bio-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-                {fingerLabels.map((label, fi) => (
-                  <button
-                    key={fi}
-                    onClick={() => startScan(fi)}
-                    disabled={!deviceConnected}
-                    className="finger-btn"
-                    style={{
-                      padding: '10px 6px', borderRadius: 12, cursor: deviceConnected ? 'pointer' : 'not-allowed',
-                      background: enrolledFingers.includes(fi) ? 'rgba(16,185,129,0.1)' : 'rgba(248,250,252,0.8)',
-                      border: `1px solid ${enrolledFingers.includes(fi) ? 'rgba(16,185,129,0.3)' : 'rgba(226,232,240,0.6)'}`,
-                      textAlign: 'center', transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)',
-                      opacity: deviceConnected ? 1 : 0.5,
-                    }}
-                  >
-                    <Fingerprint size={16} color={enrolledFingers.includes(fi) ? '#059669' : '#94a3b8'} style={{ margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: 9, fontWeight: 600, color: enrolledFingers.includes(fi) ? '#059669' : '#64748b', lineHeight: 1.3 }}>{label}</div>
-                    {enrolledFingers.includes(fi) && <div style={{ fontSize: 8, color: '#10b981', fontWeight: 700, marginTop: 2 }}>✓ Done</div>}
-                  </button>
-                ))}
-              </div>
-
               {!deviceConnected && (
-                <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <AlertCircle size={14} color="#b45309" />
-                  <span style={{ fontSize: 12, color: '#b45309', fontWeight: 500 }}>Connect the biometric device above to begin enrollment.</span>
+                <button
+                  onClick={connectDevice}
+                  disabled={connecting}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: connecting ? 'not-allowed' : 'pointer', opacity: connecting ? 0.7 : 1 }}
+                >
+                  {connecting ? <><RotateCcw size={12} style={{ animation: 'spin 0.9s linear infinite' }} /> Connecting…</> : <><Wifi size={12} /> Connect</>}
+                </button>
+              )}
+              {deviceConnected && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 99, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
+                  <CheckCircle size={12} color="#059669" />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#059669' }}>Ready</span>
                 </div>
               )}
             </div>
           </div>
-        )}
 
-        {/* ── STEP: SCANNING ── */}
-        {step === 'scanning' && (
-          <div style={{ borderRadius: 20, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', padding: 40, textAlign: 'center' }}>
-            <div style={{ width: 100, height: 100, borderRadius: '50%', margin: '0 auto 24px', background: 'rgba(99,102,241,0.08)', border: '2px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'scan-ring 1.2s ease-out infinite' }}>
-              <Fingerprint size={48} color="#6366f1" style={{ animation: 'scan-pulse 1.2s ease-in-out infinite' }} />
-            </div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>Scanning {selectedFinger !== null ? fingerLabels[selectedFinger] : ''}…</h2>
-            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 24 }}>Keep your finger flat and still on the sensor</p>
-            <div style={{ height: 6, borderRadius: 99, background: 'rgba(226,232,240,0.8)', overflow: 'hidden', marginBottom: 8 }}>
-              <div style={{ height: '100%', borderRadius: 99, width: `${scanProgress}%`, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', transition: 'width 0.1s linear' }} />
-            </div>
-            <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>{scanProgress}% complete</span>
-          </div>
-        )}
+          {/* Fingerprint selector — only when device connected */}
+          {deviceConnected && (
+            <div style={{ borderRadius: 20, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+              <div style={{ padding: '16px 22px', borderBottom: '1px solid rgba(226,232,240,0.6)' }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>Select finger to enroll</h3>
+                <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>Green = already enrolled</p>
+              </div>
+              <div style={{ padding: 20 }}>
 
-        {/* ── STEP: SUCCESS ── */}
-        {step === 'success' && (
-          <div style={{ borderRadius: 20, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(16,185,129,0.2)', boxShadow: '0 4px 24px rgba(16,185,129,0.12)', padding: 48, textAlign: 'center' }}>
-            <div style={{ width: 88, height: 88, borderRadius: '50%', margin: '0 auto 20px', background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'success-pop 0.5s cubic-bezier(0.16,1,0.3,1) both' }}>
-              <CheckCircle size={44} color="#10b981" />
-            </div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>Fingerprint Enrolled!</h2>
-            <p style={{ fontSize: 14, color: '#64748b', marginBottom: 4 }}>
-              <strong>{selectedFinger !== null ? fingerLabels[selectedFinger] : 'Finger'}</strong> successfully registered for <strong>{client?.name}</strong>.
-            </p>
-            <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 32 }}>{enrolledFingers.length} of 10 fingers enrolled</p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={resetScan} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 12, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.06)', color: '#6366f1', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                <Fingerprint size={14} /> Enroll Another
-              </button>
-              <Link href={`/clients/${id}`} style={{ textDecoration: 'none' }}>
-                <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px rgba(16,185,129,0.35)' }}>
-                  Done <ChevronRight size={14} />
-                </button>
-              </Link>
-            </div>
-          </div>
-        )}
+                {fpStep === 'select' && (
+                  <div className="bio-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                    {fingerLabels.map((label, fi) => (
+                      <button key={fi} onClick={() => startScan(fi)} className="finger-btn"
+                        style={{ padding: '10px 6px', borderRadius: 12, cursor: 'pointer', background: enrolledFingers.includes(fi) ? 'rgba(16,185,129,0.1)' : 'rgba(248,250,252,0.8)', border: `1px solid ${enrolledFingers.includes(fi) ? 'rgba(16,185,129,0.3)' : 'rgba(226,232,240,0.6)'}`, textAlign: 'center', transition: 'all 0.22s cubic-bezier(0.16,1,0.3,1)' }}
+                      >
+                        <Fingerprint size={16} color={enrolledFingers.includes(fi) ? '#059669' : '#94a3b8'} style={{ margin: '0 auto 4px' }} />
+                        <div style={{ fontSize: 9, fontWeight: 600, color: enrolledFingers.includes(fi) ? '#059669' : '#64748b', lineHeight: 1.3 }}>{label}</div>
+                        {enrolledFingers.includes(fi) && <div style={{ fontSize: 8, color: '#10b981', fontWeight: 700, marginTop: 2 }}>✓</div>}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-        {/* ── STEP: ERROR ── */}
-        {step === 'error' && (
-          <div style={{ borderRadius: 20, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(244,63,94,0.2)', boxShadow: '0 4px 24px rgba(244,63,94,0.08)', padding: 40, textAlign: 'center' }}>
-            <div style={{ width: 80, height: 80, borderRadius: '50%', margin: '0 auto 20px', background: 'rgba(244,63,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <AlertCircle size={36} color="#e11d48" />
+                {fpStep === 'scanning' && (
+                  <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                    <div style={{ width: 80, height: 80, borderRadius: '50%', margin: '0 auto 16px', background: 'rgba(99,102,241,0.08)', border: '2px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'scan-ring 1.2s ease-out infinite' }}>
+                      <Fingerprint size={40} color="#6366f1" style={{ animation: 'scan-pulse 1.2s ease-in-out infinite' }} />
+                    </div>
+                    <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Scanning {selectedFinger !== null ? fingerLabels[selectedFinger] : ''}…</p>
+                    <div style={{ height: 5, borderRadius: 99, background: 'rgba(226,232,240,0.8)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: 99, width: `${scanProgress}%`, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', transition: 'width 0.1s linear' }} />
+                    </div>
+                  </div>
+                )}
+
+                {fpStep === 'success' && (
+                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <CheckCircle size={40} color="#10b981" style={{ margin: '0 auto 12px', display: 'block' }} />
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{selectedFinger !== null ? fingerLabels[selectedFinger] : 'Finger'} enrolled!</p>
+                    <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>{enrolledFingers.length} of 10 enrolled</p>
+                    <button onClick={resetScan} style={{ padding: '8px 20px', borderRadius: 10, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.06)', color: '#6366f1', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      Enroll Another
+                    </button>
+                  </div>
+                )}
+
+                {fpStep === 'error' && (
+                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                    <AlertCircle size={36} color="#e11d48" style={{ margin: '0 auto 12px', display: 'block' }} />
+                    <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>{fpError}</p>
+                    <button onClick={resetScan} style={{ padding: '8px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <RotateCcw size={12} /> Try Again
+                    </button>
+                  </div>
+                )}
+
+                {fpError && fpStep === 'select' && (
+                  <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <AlertCircle size={13} color="#b45309" />
+                    <span style={{ fontSize: 12, color: '#b45309' }}>{fpError}</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>Scan Failed</h2>
-            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 28 }}>{errorMsg}</p>
-            <button onClick={resetScan} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 22px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', margin: '0 auto', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}>
-              <RotateCcw size={14} /> Try Again
+          )}
+        </div>
+
+        {/* Done button */}
+        <div style={{ marginTop: 28, display: 'flex', justifyContent: 'flex-end' }}>
+          <Link href={`/clients/${id}`} style={{ textDecoration: 'none' }}>
+            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 24px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 16px rgba(16,185,129,0.35)' }}>
+              Done <ChevronRight size={14} />
             </button>
-          </div>
-        )}
-
-        {/* Enrolled summary */}
-        {enrolledFingers.length > 0 && step === 'select' && (
-          <div style={{ marginTop: 16, padding: '14px 18px', borderRadius: 14, background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <CheckCircle size={14} color="#059669" />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#059669' }}>{enrolledFingers.length} finger{enrolledFingers.length !== 1 ? 's' : ''} enrolled</span>
-            </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {enrolledFingers.map(fi => (
-                <span key={fi} style={{ padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, background: 'rgba(16,185,129,0.12)', color: '#059669', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  {fingerLabels[fi]}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Instructions */}
-        {step === 'select' && (
-          <div style={{ marginTop: 16, padding: '14px 18px', borderRadius: 14, background: 'rgba(248,250,252,0.7)', border: '1px solid rgba(226,232,240,0.6)' }}>
-            <h4 style={{ fontSize: 12, fontWeight: 700, color: '#64748b', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tips for best results</h4>
-            <ul style={{ margin: 0, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {['Place your finger flat — avoid edges or angles', 'Dry your hands before scanning', 'Enroll at least 2 fingers for backup access', 'Re-enroll if check-in fails regularly'].map(tip => (
-                <li key={tip} style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>{tip}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+          </Link>
+        </div>
 
       </div>
     </AppShell>
