@@ -34,11 +34,17 @@ function apiBase(): string {
 // ─────────────────────────── Types ───────────────────────────────────
 
 /**
- * Role union (Issue #19 — was `string`, now a discriminated union).
- * Add roles here as the backend evolves; all switch/if-chains on role
- * will now get exhaustiveness feedback from TypeScript.
+ * Role union — union of all role strings the backend can return.
+ * Aligned with nav-config.ts so role comparisons across the app type-check.
  */
-export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist';
+export type Role =
+  | 'admin'
+  | 'manager'
+  | 'staff'
+  | 'trainer'
+  | 'receptionist'
+  | 'reception'
+  | 'member';
 
 export type User = {
   id: string;
