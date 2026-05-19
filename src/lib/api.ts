@@ -128,11 +128,14 @@ export type Payment = {
 export type Trainer = {
   id: string;
   name: string;
+  role?: string;
   email?: string;
   phone?: string;
+  mobile?: string;
   is_active?: boolean;
   commission?: number;
   specialization?: string;
+  photo_url?: string;
   joining_date?: string;
   created_at?: string;
   updated_at?: string;
@@ -147,6 +150,7 @@ export type Attendance = {
   time?: string;
   type?: string;
   status?: string;
+  notes?: string;
   created_at?: string;
   [key: string]: unknown;
 };
