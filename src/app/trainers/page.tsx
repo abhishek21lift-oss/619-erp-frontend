@@ -63,30 +63,34 @@ const COACHES = [
 ];
 
 const FILTERS = [
-  { id: 'all',  label: 'All Coaches',    count: 6 },
-  { id: 'active', label: 'Active',       count: 4 },
-  { id: 'leave',  label: 'On Leave',     count: 1 },
-  { id: 'top',    label: 'Top Performers', count: 3 },
-  { id: 'new',    label: 'New Coaches',  count: 2 },
+  { id: 'all',    label: 'All Coaches',     count: 6 },
+  { id: 'active', label: 'Active',          count: 4 },
+  { id: 'leave',  label: 'On Leave',        count: 1 },
+  { id: 'top',    label: 'Top Performers',  count: 3 },
+  { id: 'new',    label: 'New Coaches',     count: 2 },
 ];
 
 // ── Status dot ───────────────────────────────────────────────────────
 function StatusDot({ status }: { status: string }) {
   const cfg = {
-    online: { color: '#10b981', pulse: true, label: 'Online' },
-    away:   { color: '#f59e0b', pulse: false, label: 'Away' },
-    leave:  { color: '#94a3b8', pulse: false, label: 'On Leave' },
-    offline:{ color: '#ef4444', pulse: false, label: 'Offline' },
+    online:  { color: '#10b981', pulse: true,  label: 'Online' },
+    away:    { color: '#f59e0b', pulse: false, label: 'Away' },
+    leave:   { color: '#94a3b8', pulse: false, label: 'On Leave' },
+    offline: { color: '#ef4444', pulse: false, label: 'Offline' },
   }[status] ?? { color: '#94a3b8', pulse: false, label: 'Unknown' };
   return (
     <span className="relative flex h-3 w-3">
-      {cfg.pulse && <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-40" style={{ background: cfg.color }} />}
-      <span className="relative h-3 w-3 rounded-full" style={{ background: cfg.color, border: '2px solid white' }} />
+      {cfg.pulse && (
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-40"
+          style={{ background: cfg.color }} />
+      )}
+      <span className="relative h-3 w-3 rounded-full"
+        style={{ background: cfg.color, border: '2px solid white' }} />
     </span>
   );
 }
 
-// ── Mini sparkline (fake svg) ─────────────────────────────────────────
+// ── Mini sparkline ────────────────────────────────────────────────────
 function Sparkline({ color }: { color: string }) {
   const pts = [30, 45, 38, 60, 52, 68, 55, 75, 62, 82];
   const max = Math.max(...pts), min = Math.min(...pts);
@@ -105,7 +109,6 @@ function Sparkline({ color }: { color: string }) {
 
 // ── Coach card (grid view) ────────────────────────────────────────────
 function CoachCard({ coach }: { coach: typeof COACHES[0] }) {
-  const clientPct = Math.round((coach.clients / coach.maxClients) * 100);
   return (
     <motion.div
       layout
@@ -121,14 +124,10 @@ function CoachCard({ coach }: { coach: typeof COACHES[0] }) {
         backdropFilter: 'blur(20px)',
       }}
     >
-      {/* Color top strip */}
       <div className="h-1 w-full" style={{ background: `linear-gradient(90deg,${coach.color},${coach.color}88)` }} />
-
       <div className="p-5">
-        {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            {/* Avatar */}
             <div className="relative flex h-12 w-12 items-center justify-center rounded-[16px] text-[14px] font-[800] text-white"
               style={{ background: `linear-gradient(135deg,${coach.color},${coach.color}bb)`, boxShadow: `0 4px 14px ${coach.color}35` }}>
               {coach.initials}
@@ -139,13 +138,14 @@ function CoachCard({ coach }: { coach: typeof COACHES[0] }) {
               <p className="mt-0.5 text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{coach.role}</p>
             </div>
           </div>
-          <button className="flex h-7 w-7 items-center justify-center rounded-[8px] opacity-0 transition-all group-hover:opacity-100"
-            style={{ background: 'rgba(15,23,42,0.05)' }}>
+          <button
+            className="flex h-7 w-7 items-center justify-center rounded-[8px] opacity-0 transition-all group-hover:opacity-100"
+            style={{ background: 'rgba(15,23,42,0.05)' }}
+          >
             <MoreHorizontal size={14} style={{ color: 'rgb(100,116,139)' }} />
           </button>
         </div>
 
-        {/* Specialization chips */}
         <div className="mt-3 flex flex-wrap gap-1.5">
           {coach.specializations.map((s) => (
             <span key={s} className="rounded-full px-2.5 py-1 text-[10.5px] font-[650]"
@@ -155,12 +155,11 @@ function CoachCard({ coach }: { coach: typeof COACHES[0] }) {
           ))}
         </div>
 
-        {/* Metrics row */}
         <div className="mt-4 grid grid-cols-3 gap-2">
           {[
-            { label: 'Clients',     value: `${coach.clients}/${coach.maxClients}`, icon: <Users size={11} /> },
-            { label: 'Sessions',    value: coach.sessions,                          icon: <Activity size={11} /> },
-            { label: 'Rating',      value: coach.rating,                            icon: <Star size={11} /> },
+            { label: 'Clients',  value: `${coach.clients}/${coach.maxClients}`, icon: <Users size={11} /> },
+            { label: 'Sessions', value: coach.sessions,                          icon: <Activity size={11} /> },
+            { label: 'Rating',   value: coach.rating,                            icon: <Star size={11} /> },
           ].map((m) => (
             <div key={m.label} className="rounded-[11px] px-2.5 py-2 text-center"
               style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(15,23,42,0.05)' }}>
@@ -171,7 +170,6 @@ function CoachCard({ coach }: { coach: typeof COACHES[0] }) {
           ))}
         </div>
 
-        {/* Performance bar */}
         <div className="mt-4">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-[650]" style={{ color: 'rgb(100,116,139)' }}>Performance</span>
@@ -183,7 +181,6 @@ function CoachCard({ coach }: { coach: typeof COACHES[0] }) {
           </div>
         </div>
 
-        {/* Sparkline + revenue */}
         <div className="mt-3 flex items-end justify-between">
           <div>
             <p className="text-[10.5px]" style={{ color: 'rgb(148,163,184)' }}>Monthly trend</p>
@@ -195,7 +192,6 @@ function CoachCard({ coach }: { coach: typeof COACHES[0] }) {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="mt-4 flex gap-2">
           <Link href={`/trainers/${coach.id}`}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-[11px] py-2.5 text-[12px] font-[700] transition-all hover:brightness-95 active:scale-95"
@@ -225,20 +221,17 @@ function CoachRow({ coach }: { coach: typeof COACHES[0] }) {
       onMouseEnter={(e) => (e.currentTarget.style.border = '1px solid rgba(15,23,42,0.07)')}
       onMouseLeave={(e) => (e.currentTarget.style.border = '1px solid transparent')}
     >
-      {/* Avatar */}
       <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[13px] font-[800] text-white"
         style={{ background: `linear-gradient(135deg,${coach.color},${coach.color}bb)` }}>
         {coach.initials}
         <span className="absolute -bottom-0.5 -right-0.5"><StatusDot status={coach.status} /></span>
       </div>
 
-      {/* Name + role */}
       <div className="w-44 shrink-0">
         <p className="text-[13.5px] font-[720]" style={{ color: 'rgb(15,23,42)' }}>{coach.name}</p>
         <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{coach.role}</p>
       </div>
 
-      {/* Chips */}
       <div className="hidden flex-1 flex-wrap gap-1 lg:flex">
         {coach.specializations.slice(0, 2).map((s) => (
           <span key={s} className="rounded-full px-2 py-0.5 text-[10.5px] font-[650]"
@@ -246,7 +239,6 @@ function CoachRow({ coach }: { coach: typeof COACHES[0] }) {
         ))}
       </div>
 
-      {/* Stats */}
       <div className="hidden grid-cols-4 gap-6 text-center sm:grid">
         {[
           { label: 'Clients', value: `${coach.clients}/${coach.maxClients}` },
@@ -261,7 +253,6 @@ function CoachRow({ coach }: { coach: typeof COACHES[0] }) {
         ))}
       </div>
 
-      {/* Action */}
       <Link href={`/trainers/${coach.id}`}
         className="ml-auto flex items-center gap-1 rounded-[10px] px-3.5 py-2 text-[12px] font-[700] transition-all hover:brightness-95 active:scale-95"
         style={{ background: `${coach.color}10`, color: coach.color }}>
@@ -272,13 +263,22 @@ function CoachRow({ coach }: { coach: typeof COACHES[0] }) {
 }
 
 // ── KPI widget ───────────────────────────────────────────────────────
-function KPI({ label, value, sub, icon, color }: { label: string; value: string; sub: string; icon: React.ReactNode; color: string }) {
+function KPI({
+  label, value, sub, icon, color,
+}: {
+  label: string; value: string; sub: string; icon: React.ReactNode; color: string;
+}) {
   return (
     <div className="rounded-[18px] p-4"
-      style={{ background: 'rgba(255,255,255,0.88)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 12px rgba(15,23,42,0.06)' }}>
+      style={{
+        background: 'rgba(255,255,255,0.88)',
+        border: '1px solid rgba(255,255,255,0.95)',
+        boxShadow: '0 2px 12px rgba(15,23,42,0.06)',
+      }}>
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
-        <div className="flex h-7 w-7 items-center justify-center rounded-[9px]" style={{ background: `${color}12`, color }}>{icon}</div>
+        <div className="flex h-7 w-7 items-center justify-center rounded-[9px]"
+          style={{ background: `${color}12`, color }}>{icon}</div>
       </div>
       <p className="mt-2 text-[26px] font-[840] tracking-[-0.03em] leading-none" style={{ color: 'rgb(15,23,42)' }}>{value}</p>
       <p className="mt-1 text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{sub}</p>
@@ -297,26 +297,40 @@ export default function MyCoachesPage() {
     if (activeFilter === 'active') list = list.filter((c) => c.status === 'online');
     else if (activeFilter === 'leave') list = list.filter((c) => c.status === 'leave');
     else if (activeFilter === 'top') list = list.filter((c) => c.performance >= 90);
-    else if (activeFilter === 'new') list = list.filter((c) => c.joinDate.includes('2024') || c.joinDate.includes('Dec 2023'));
-    if (search) list = list.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.specializations.some((s) => s.toLowerCase().includes(search.toLowerCase())));
+    else if (activeFilter === 'new')
+      list = list.filter((c) => c.joinDate.includes('2024') || c.joinDate.includes('Dec 2023'));
+    if (search)
+      list = list.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.specializations.some((s) => s.toLowerCase().includes(search.toLowerCase())),
+      );
     return list;
   }, [activeFilter, search]);
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#f8fafc 0%,#f1f5f9 60%,#faf8ff 100%)' }}>
       {/* Header */}
-      <div className="sticky top-0 z-20 border-b" style={{
-        background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(20px)',
-        borderColor: 'rgba(15,23,42,0.07)',
-      }}>
+      <div
+        className="sticky top-0 z-20 border-b"
+        style={{
+          background: 'rgba(255,255,255,0.82)',
+          backdropFilter: 'blur(20px)',
+          borderColor: 'rgba(15,23,42,0.07)',
+        }}
+      >
         <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <div>
             <h1 className="text-[20px] font-[880] tracking-[-0.025em]" style={{ color: 'rgb(15,23,42)' }}>My Coaches</h1>
-            <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>{COACHES.length} coaches · {COACHES.filter((c) => c.status === 'online').length} active now</p>
+            <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>
+              {COACHES.length} coaches · {COACHES.filter((c) => c.status === 'online').length} active now
+            </p>
           </div>
-          <Link href="/trainers/add"
+          <Link
+            href="/trainers/add"
             className="flex items-center gap-2 rounded-[13px] px-4 py-2.5 text-[13px] font-[750] text-white transition-all hover:brightness-105 active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.28)' }}>
+            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.28)' }}
+          >
             <Plus size={15} /> Add Coach
           </Link>
         </div>
@@ -325,48 +339,72 @@ export default function MyCoachesPage() {
       <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
         {/* KPI strip */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <KPI label="Total Coaches" value="6"     sub="All branches"     icon={<Users size={14}/>}    color="#6366f1" />
-          <KPI label="Active Today"  value="4"     sub="In studio now"    icon={<UserCheck size={14}/>} color="#10b981" />
-          <KPI label="Avg Rating"    value="4.75"  sub="Across all coaches" icon={<Star size={14}/>}   color="#f59e0b" />
-          <KPI label="Total Revenue" value="₹5.0L" sub="This month"        icon={<TrendingUp size={14}/>} color="#06b6d4" />
+          <KPI label="Total Coaches" value="6"     sub="All branches"       icon={<Users size={14} />}       color="#6366f1" />
+          <KPI label="Active Today"  value="4"     sub="In studio now"      icon={<UserCheck size={14} />}   color="#10b981" />
+          <KPI label="Avg Rating"    value="4.75"  sub="Across all coaches" icon={<Star size={14} />}        color="#f59e0b" />
+          <KPI label="Total Revenue" value="₹5.0L" sub="This month"         icon={<TrendingUp size={14} />}  color="#06b6d4" />
         </div>
 
         {/* Toolbar */}
         <div className="mb-5 flex flex-wrap items-center gap-3">
-          {/* Search */}
-          <div className="relative flex min-w-[220px] flex-1 items-center gap-2.5 rounded-[13px] px-3.5 py-2.5"
-            style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
+          <div
+            className="relative flex min-w-[220px] flex-1 items-center gap-2.5 rounded-[13px] px-3.5 py-2.5"
+            style={{
+              background: 'rgba(255,255,255,0.85)',
+              border: '1px solid rgba(15,23,42,0.08)',
+              boxShadow: '0 1px 4px rgba(15,23,42,0.04)',
+            }}
+          >
             <Search size={14} style={{ color: 'rgb(148,163,184)', flexShrink: 0 }} />
-            <input value={search} onChange={(e) => setSearch(e.target.value)}
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search coaches or specialization…"
-              className="flex-1 bg-transparent text-[13px] font-[500] outline-none" style={{ color: 'rgb(15,23,42)' }} />
+              className="flex-1 bg-transparent text-[13px] font-[500] outline-none"
+              style={{ color: 'rgb(15,23,42)' }}
+            />
           </div>
 
-          {/* Filters */}
           <div className="flex gap-1.5 overflow-x-auto">
             {FILTERS.map((f) => (
-              <button key={f.id} onClick={() => setActiveFilter(f.id)}
+              <button
+                key={f.id}
+                onClick={() => setActiveFilter(f.id)}
                 className="flex shrink-0 items-center gap-1.5 rounded-[11px] px-3.5 py-2 text-[12px] font-[700] transition-all"
                 style={{
                   background: activeFilter === f.id ? 'rgba(99,102,241,0.10)' : 'rgba(255,255,255,0.75)',
                   color: activeFilter === f.id ? '#4f46e5' : 'rgb(100,116,139)',
-                  border: activeFilter === f.id ? '1.5px solid rgba(99,102,241,0.22)' : '1.5px solid rgba(15,23,42,0.07)',
-                }}>
+                  border: activeFilter === f.id
+                    ? '1.5px solid rgba(99,102,241,0.22)'
+                    : '1.5px solid rgba(15,23,42,0.07)',
+                }}
+              >
                 {f.label}
-                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-[800]"
-                  style={{ background: activeFilter === f.id ? 'rgba(99,102,241,0.15)' : 'rgba(15,23,42,0.07)' }}>
+                <span
+                  className="rounded-full px-1.5 py-0.5 text-[10px] font-[800]"
+                  style={{
+                    background: activeFilter === f.id
+                      ? 'rgba(99,102,241,0.15)'
+                      : 'rgba(15,23,42,0.07)',
+                  }}
+                >
                   {f.count}
                 </span>
               </button>
             ))}
           </div>
 
-          {/* View toggle */}
           <div className="ml-auto flex overflow-hidden rounded-[11px]" style={{ border: '1px solid rgba(15,23,42,0.09)' }}>
             {(['grid', 'list'] as const).map((v) => (
-              <button key={v} onClick={() => setViewMode(v)}
+              <button
+                key={v}
+                onClick={() => setViewMode(v)}
                 className="flex h-9 w-9 items-center justify-center transition-all"
-                style={{ background: viewMode === v ? 'rgba(99,102,241,0.10)' : 'transparent', color: viewMode === v ? '#4f46e5' : 'rgb(148,163,184)' }}>
+                style={{
+                  background: viewMode === v ? 'rgba(99,102,241,0.10)' : 'transparent',
+                  color: viewMode === v ? '#4f46e5' : 'rgb(148,163,184)',
+                }}
+              >
                 {v === 'grid' ? <Grid3X3 size={15} /> : <List size={15} />}
               </button>
             ))}
@@ -376,11 +414,46 @@ export default function MyCoachesPage() {
         {/* Coach grid / list */}
         <AnimatePresence mode="wait">
           {viewMode === 'grid' ? (
-            <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            >
               {filtered.map((c) => <CoachCard key={c.id} coach={c} />)}
             </motion.div>
           ) : (
-            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            <motion.div
+              key="list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="overflow-hidden rounded-[20px]"
-              style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 16px rgba(1
+              style={{
+                background: 'rgba(255,255,255,0.85)',
+                border: '1px solid rgba(255,255,255,0.95)',
+                boxShadow: '0 2px 16px rgba(15,23,42,0.06)',
+              }}
+            >
+              <div className="divide-y" style={{ divideColor: 'rgba(15,23,42,0.05)' } as React.CSSProperties}>
+                {filtered.map((c) => <CoachRow key={c.id} coach={c} />)}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-[18px]"
+              style={{ background: 'rgba(99,102,241,0.08)' }}>
+              <Users size={24} style={{ color: '#6366f1' }} />
+            </div>
+            <p className="text-[15px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>No coaches found</p>
+            <p className="mt-1 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Try adjusting your search or filters</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
