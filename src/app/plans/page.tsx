@@ -6,7 +6,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { api } from '@/lib/api';
+import { api, type PlanApiResponse } from '@/lib/api';
 import { DEFAULT_PLANS, type StoredPlan, type PlanKind, DURATIONS, type PlanDuration } from '@/lib/plans';
 import { Plus, Edit2, Trash2, Star, Zap, Package, X, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -205,30 +205,34 @@ function PlansContent() {
       const data = await api.plans.list();
       if (Array.isArray(data) && data.length > 0) {
         // Normalize API shape to StoredPlan shape
-        setPlans((data ?? []).map((p: any) => ({
-          id: p.id,
-          kind: (p.kind || 'Membership') as PlanKind,
-          name: p.name,
-          duration: p.duration || 'Monthly',
-          base_amount: Number(p.base_amount || 0),
-          discount: Number(p.discount || 0),
-          final_amount: Number(p.final_amount || 0),
-          sessions_per_week: p.sessions_per_week ?? undefined,
-          features: Array.isArray(p.features) ? p.features : [],
-          popular: Boolean(p.popular),
-        })));
+        setPlans((data ?? []).map((p: unknown) => {
+          const plan = p as Record<string, unknown>;
+          return {
+            id: String(plan.id ?? ''),
+            kind: ((plan.kind as string) || 'Membership') as PlanKind,
+            name: String(plan.name ?? ''),
+            duration: (plan.duration as StoredPlan['duration']) || 'Monthly',
+            base_amount: Number(plan.base_amount ?? 0),
+            discount: Number(plan.discount ?? 0),
+            final_amount: Number(plan.final_amount ?? 0),
+            sessions_per_week: plan.sessions_per_week != null ? Number(plan.sessions_per_week) : undefined,
+            features: Array.isArray(plan.features) ? (plan.features as string[]) : [],
+            popular: Boolean(plan.popular),
+          } satisfies StoredPlan;
+        }));
       } else {
         setPlans(DEFAULT_PLANS);
       }
-    } catch (e: any) {
-      setError(e.message || 'Failed to load plans');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to load plans';
+      setError(msg);
       setPlans(DEFAULT_PLANS);
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { loadPlans(); }, []);
+  useEffect(() => { void loadPlans(); }, []);
 
   function showFlash(msg: string) {
     setFlash(msg);
@@ -238,16 +242,16 @@ function PlansContent() {
   async function handleSave(p: StoredPlan) {
     try {
       if (editing && p.id) {
-        const res = await api.plans.update(p.id, {
+        const res: PlanApiResponse = await api.plans.update(p.id, {
           kind: p.kind, name: p.name, duration: p.duration,
           base_amount: p.base_amount, discount: p.discount,
           final_amount: p.discount > 0 ? p.base_amount - p.discount : p.final_amount,
           sessions_per_week: p.sessions_per_week, features: p.features, popular: p.popular,
         });
-        setPlans((prev) => prev.map((x) => x.id === p.id ? { ...p, ...res.plan } : x));
+        setPlans((prev) => prev.map((x) => x.id === p.id ? { ...p, ...res.plan } as StoredPlan : x));
         showFlash('Plan updated ✓');
       } else {
-        const res = await api.plans.create({
+        const res: PlanApiResponse = await api.plans.create({
           kind: p.kind, name: p.name, duration: p.duration,
           base_amount: p.base_amount, discount: p.discount,
           final_amount: p.discount > 0 ? p.base_amount - p.discount : p.final_amount,
@@ -257,8 +261,9 @@ function PlansContent() {
         showFlash('Plan created ✓');
       }
       setEditing(null); setCreating(null);
-    } catch (e: any) {
-      setError(e.message || 'Save failed');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Save failed';
+      setError(msg);
     }
   }
 
@@ -268,8 +273,9 @@ function PlansContent() {
       await api.plans.delete(id);
       setPlans((prev) => prev.filter((p) => p.id !== id));
       showFlash('Plan deleted');
-    } catch (e: any) {
-      setError(e.message || 'Delete failed');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Delete failed';
+      setError(msg);
     }
   }
 

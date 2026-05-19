@@ -2,20 +2,24 @@
 /**
  * useFaceDetection — face-api.js wrapper
  *
- * @tensorflow/tfjs and face-api.js are installed as npm deps (required for
- * runtime resolution), but they must NEVER be SSR-evaluated.
- *
  * Protection layers:
- *  1. This hook is 'use client' — never runs on server
- *  2. getFaceApi() guards with typeof window check before any import
- *  3. The checkin page wraps CheckInContent in next/dynamic with ssr:false,
- *     so this entire module tree is excluded from the SSR bundle
+ *  1. 'use client' — never evaluated on the server
+ *  2. getFaceApi() guards with typeof window before any dynamic import
+ *  3. CheckInClient wraps CheckInContent in next/dynamic with ssr:false,
+ *     excluding this entire module tree from the SSR bundle
+ *  4. next.config.js marks face-api.js + tfjs as webpack server externals
+ *     (defense-in-depth for the RSC bundle pass)
  *
- * The public/models files serve the actual neural network weights:
- *   tiny_face_detector, face_landmark_68, face_recognition, ssd_mobilenetv1
+ * faceApiRef is typed as the resolved module type, imported lazily so
+ * the static import never reaches the server bundler.
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
+
+// Lazy type — only used at runtime after the dynamic import resolves.
+// We use `typeof import('face-api.js')` so TypeScript can check call sites
+// without actually bundling face-api.js at static analysis time.
+type FaceApiModule = typeof import('face-api.js');
 
 const MODEL_SOURCES = [
   '/models',
@@ -55,13 +59,14 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     setModelStatus(s);
   };
 
-  const faceApiRef = useRef<any>(null);
+  // Typed as FaceApiModule | null — eliminates all `any` usage below
+  const faceApiRef = useRef<FaceApiModule | null>(null);
   const rafRef = useRef<number>(0);
   const lastRunRef = useRef<number>(0);
   const processingRef = useRef(false);
   const detectorRef = useRef<'ssd' | 'tiny'>('tiny');
 
-  const getFaceApi = useCallback(async () => {
+  const getFaceApi = useCallback(async (): Promise<FaceApiModule> => {
     if (faceApiRef.current) return faceApiRef.current;
     // Safety guard — should never reach here on server due to ssr:false wrapper
     if (typeof window === 'undefined') throw new Error('Browser only');
@@ -88,7 +93,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
       await tf.ready();
       console.info('[face] tf backend:', tf.getBackend());
     } catch {
-      try { await tf.setBackend('cpu'); await tf.ready(); } catch {}
+      try { await tf.setBackend('cpu'); await tf.ready(); } catch { /* ignore */ }
     }
 
     const faceapi = await import('face-api.js');
@@ -96,7 +101,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     return faceapi;
   }, []);
 
-  const loadOne = useCallback(async (faceapi: any, base: string) => {
+  const loadOne = useCallback(async (faceapi: FaceApiModule, base: string) => {
     const url = base.replace(/\/$/, '');
     console.info('[face] trying model source:', url);
 
@@ -140,7 +145,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
 
     try {
       const faceapi = await getFaceApi();
-      let lastErr: any = null;
+      let lastErr: unknown = null;
       for (const source of MODEL_SOURCES) {
         try {
           await loadOne(faceapi, source);
@@ -152,8 +157,8 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         }
       }
       throw lastErr ?? new Error('All model sources failed');
-    } catch (err: any) {
-      const msg = err?.message ?? 'Could not load face recognition models';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not load face recognition models';
       setModelError(msg);
       setModelStatusSync('error');
       console.error('[face] model load failed:', err);
@@ -203,7 +208,9 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         const ctx = canvasEl.getContext('2d');
         ctx?.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
-        let detections: any[] = [];
+        // face-api.js returns typed detection arrays; we narrow via length checks below
+        type DetectionWithAll = Awaited<ReturnType<typeof faceapi.detectAllFaces>> extends infer R ? R : never;
+        let detections: DetectionWithAll = [] as unknown as DetectionWithAll;
 
         if (detectorRef.current === 'ssd') {
           try {
@@ -217,7 +224,8 @@ export function useFaceDetection(): UseFaceDetectionReturn {
           }
         }
 
-        if (!detections || detections.length === 0) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!detections || (detections as unknown[]).length === 0) {
           detections = await faceapi
             .detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({
               inputSize: 320,
@@ -227,18 +235,25 @@ export function useFaceDetection(): UseFaceDetectionReturn {
             .withFaceDescriptors();
         }
 
-        if (!detections || detections.length === 0) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!detections || (detections as unknown[]).length === 0) {
           onDetection({ detected: false, multipleFaces: false });
           processingRef.current = false;
           return;
         }
 
-        if (detections.length > 1) {
+        const dArr = detections as Array<{
+          detection: { box: { x: number; y: number; width: number; height: number } };
+          landmarks?: { positions?: Array<{ x: number; y: number }> };
+          descriptor?: Float32Array;
+        }>;
+
+        if (dArr.length > 1) {
           if (ctx) {
             ctx.strokeStyle = '#ef4444';
             ctx.lineWidth = 2;
             ctx.setLineDash([]);
-            detections.forEach((d: any) => {
+            dArr.forEach((d) => {
               const b = d.detection.box;
               ctx.strokeRect(b.x, b.y, b.width, b.height);
             });
@@ -248,7 +263,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
           return;
         }
 
-        const det = detections[0];
+        const det = dArr[0];
         const box = det.detection.box;
 
         if (box.width < MIN_FACE_SIZE_PX) {
@@ -282,7 +297,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         }
 
         const landmarks =
-          det.landmarks?.positions?.map?.((p: any) => ({ x: p.x, y: p.y })) ?? [];
+          det.landmarks?.positions?.map?.((p) => ({ x: p.x, y: p.y })) ?? [];
 
         onDetection({
           detected: true,

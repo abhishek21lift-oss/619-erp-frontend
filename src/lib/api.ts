@@ -152,6 +152,25 @@ export type Trainer = {
   created_at?: string;
 };
 
+// ─── Plan API response types ──────────────────────────────────────────
+
+export type PlanApiResponse = {
+  plan: {
+    id: string;
+    kind?: string;
+    name?: string;
+    duration?: string;
+    base_amount?: number;
+    discount?: number;
+    final_amount?: number;
+    sessions_per_week?: number;
+    features?: string[];
+    popular?: boolean;
+    [key: string]: unknown;
+  };
+  message?: string;
+};
+
 // ─────────────────────────── Core fetch ──────────────────────────────
 
 async function request<T = unknown>(
@@ -328,9 +347,9 @@ export const api = {
     list:   () => request<unknown[]>('/api/plans'),
     get:    (id: string) => request(`/api/plans/${id}`),
     create: (data: Record<string, unknown>) =>
-      request('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
+      request<PlanApiResponse>('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
-      request(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      request<PlanApiResponse>(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/plans/${id}`, { method: 'DELETE' }),
   },
 
@@ -414,18 +433,8 @@ export const api = {
       request(`/api/reports/revenue${buildQs(params)}`),
     members: (params?: Record<string, string>) =>
       request(`/api/reports/members${buildQs(params)}`),
-    /**
-     * Monthly collection breakdown for a given year.
-     * GET /api/reports/monthly?year=YYYY
-     * Returns: Array<{ month_num: string; revenue: string; payment_count: string }>
-     */
     monthly: (year: number | string) =>
       request<unknown[]>(`/api/reports/monthly?year=${year}`),
-    /**
-     * Outstanding dues — all members with a positive balance_amount.
-     * GET /api/reports/dues
-     * Returns: Array<{ id, name, client_id, mobile, trainer_name, balance_amount, pt_end_date, status }>
-     */
     dues: () =>
       request<unknown[]>('/api/reports/dues'),
   },
