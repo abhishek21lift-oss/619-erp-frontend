@@ -2,11 +2,11 @@
 /**
  * AppShell — root layout wrapper for every authenticated page.
  *
- * Updated: dark luxury aesthetic — ambient violet glow behind navbar,
- * deep charcoal page background, mobile bottom-nav safe-area padding.
- *
  * Issue #3 FIX — Hydration-safe matchMedia (useSyncExternalStore)
  * Issue #20 FIX — LazyMotion + domAnimation (smaller bundle)
+ * Issue #XX FIX — Reverted dark bg (#0a0a0e) that hid all page content;
+ *                 page content uses Tailwind light-mode classes (slate-50,
+ *                 text-slate-900, etc.), so the shell must use a light bg.
  */
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { LazyMotion, domAnimation } from 'framer-motion';
@@ -42,23 +42,8 @@ export default function AppShell({ children, title: _title }: AppShellProps) {
 
   return (
     <LazyMotion features={domAnimation} strict>
-      {/*
-       * Dark luxury shell.
-       * bg-[#0a0a0e] = deep charcoal base.
-       * The ambient glow is a fixed pseudo-layer so it stays behind nav
-       * even when page content scrolls.
-       */}
-      <div className="relative min-h-screen" style={{ background: '#0a0a0e' }}>
-
-        {/* Ambient violet glow — fixed, behind everything, pointer-events-none */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-x-0 top-0 z-0"
-          style={{
-            height: 320,
-            background: 'radial-gradient(ellipse 80% 45% at 50% -5%, rgba(124,58,237,0.16) 0%, transparent 70%)',
-          }}
-        />
+      {/* Light shell — content pages use Tailwind light-mode (slate-*) classes */}
+      <div className="relative min-h-screen bg-slate-50">
 
         <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
 
