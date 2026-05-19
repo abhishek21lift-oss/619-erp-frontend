@@ -121,7 +121,7 @@ function Inner() {
       const res = await api.attendance.biometric({ biometric_code: bioCode.trim(), type: 'trainer' });
       const updated = await api.attendance.list({ date, type: 'trainer' });
       setRecords(Array.isArray(updated) ? updated : []);
-      setSuccess(res.message);
+      setSuccess(res.message ?? '');
       setBioCode('');
       setTimeout(() => setSuccess(''), 2200);
     } catch (e: any) {

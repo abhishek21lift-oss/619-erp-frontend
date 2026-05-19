@@ -154,7 +154,7 @@ function AttendanceContent() {
       const res = await api.attendance.biometric({ biometric_code: bioCode.trim(), type: 'client' });
       const updated = await api.attendance.list({ date, type: 'client' });
       setRecords(updated);
-      setSuccess(res.message);
+      setSuccess(res.message ?? '');
       setBioCode('');
       setDirty(true);
       setTimeout(() => setSuccess(''), 2200);

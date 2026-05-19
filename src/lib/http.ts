@@ -68,6 +68,7 @@ const cache    = new Map<string, CacheEntry>();
 export interface FetchOptions extends Omit<RequestInit, 'body'> {
   body?:        unknown;
   ttl?:         number;       // cache TTL in ms (GET only)
+  cacheMs?:     number;       // alias for ttl
   retries?:     number;       // retry count on network error (GET only, default 2)
   signal?:      AbortSignal;
   skipAuth?:    boolean;
@@ -118,9 +119,10 @@ export async function http<T = unknown>(
   }
 
   const cacheKey = method === 'GET' ? url : '';
+  const effectiveTtl = options.ttl ?? options.cacheMs;
 
   // ── Cache hit ──
-  if (cacheKey && options.ttl) {
+  if (cacheKey && effectiveTtl) {
     const hit = cache.get(cacheKey);
     if (hit && hit.expiresAt > Date.now()) return hit.data as T;
   }
@@ -146,8 +148,8 @@ export async function http<T = unknown>(
   const doFetch = async (): Promise<T> => {
     try {
       const result = await fetchOnce<T>(url, init);
-      if (cacheKey && options.ttl) {
-        cache.set(cacheKey, { data: result, expiresAt: Date.now() + options.ttl });
+      if (cacheKey && effectiveTtl) {
+        cache.set(cacheKey, { data: result, expiresAt: Date.now() + effectiveTtl });
       }
       return result;
     } catch (err) {
@@ -168,4 +170,5 @@ export async function http<T = unknown>(
   return promise;
 }
 
+export const request = http;
 export default http;

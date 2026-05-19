@@ -224,7 +224,8 @@ export type LeaveRequest = {
 
 // ─────────────────────────── Core fetch ──────────────────────────────────
 
-async function request<T = unknown>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function request<T = any>(
   path: string,
   options: RequestInit & { skipAuth?: boolean } = {},
 ): Promise<T> {
