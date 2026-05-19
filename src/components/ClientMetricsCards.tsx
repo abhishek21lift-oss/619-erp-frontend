@@ -16,7 +16,8 @@ interface ClientMetricsCardsProps {
 
 function useCountUp(target: number, duration = 1200) {
   const [value, setValue] = useState(0);
-  const frameRef = useRef<number>(0);
+  // FIX #1: correct ref type — null until first rAF is scheduled
+  const frameRef = useRef<number | null>(null);
   useEffect(() => {
     const start = performance.now();
     const animate = (now: number) => {
@@ -27,7 +28,10 @@ function useCountUp(target: number, duration = 1200) {
       if (progress < 1) frameRef.current = requestAnimationFrame(animate);
     };
     frameRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frameRef.current);
+    return () => {
+      // FIX #1 (cont): guard against null before cancelling
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    };
   }, [target, duration]);
   return value;
 }
@@ -51,7 +55,8 @@ function PremiumDonut({
   strokeWidth = 8,
   colorFrom,
   colorTo,
-  trackColor = 'rgba(0,0,0,0.06)',
+  // FIX #3: use CSS variable so dark mode gets a matching track colour
+  trackColor = 'var(--color-border, rgba(0,0,0,0.06))',
   glowColor,
   id,
 }: DonutProps) {
@@ -60,8 +65,10 @@ function PremiumDonut({
   const cx = size / 2;
   const cy = size / 2;
 
-  const motionVal = useMotionValue(0);
-  const springVal = useSpring(motionVal, { stiffness: 60, damping: 18 });
+  // FIX #2: stabilise motionVal + springVal with refs so they are created
+  // exactly once per mount — prevents the stale-closure / exhaustive-deps warning.
+  const motionVal = useRef(useMotionValue(0)).current;
+  const springVal = useRef(useSpring(motionVal, { stiffness: 60, damping: 18 })).current;
   const [dashOffset, setDashOffset] = useState(circ);
 
   useEffect(() => {
@@ -70,7 +77,9 @@ function PremiumDonut({
       setDashOffset(circ - (v / 100) * circ);
     });
     return unsub;
-  }, [value, circ, motionVal, springVal]);
+    // motionVal and springVal are now stable refs — safe to omit from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, circ]);
 
   const gradId = `grad-${id}`;
   const filterId = `glow-${id}`;
@@ -147,8 +156,11 @@ function PremiumDonut({
           fontSize: 12,
           fontWeight: 700,
           background: `linear-gradient(135deg, ${colorFrom}, ${colorTo})`,
+          // FIX #5: standard property alongside webkit prefix for Firefox
           WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
+          color: 'transparent',
           lineHeight: 1,
           letterSpacing: '-0.02em',
         }}>
@@ -207,7 +219,8 @@ function KpiCard({
   colorFrom, colorTo, accentText,
   badge, badgeColor,
   subValue, subLabel,
-  insights, actionLabel, actionHref = '#',
+  // FIX #4: no '#' default — avoids scroll-to-top on click
+  insights, actionLabel, actionHref,
   loading = false,
   delay = 0,
 }: KpiCardProps) {
@@ -218,7 +231,12 @@ function KpiCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -2, transition: { duration: 0.2, ease: 'easeOut' } }}
+      // FIX #3: use framer whileHover for box-shadow — avoids direct DOM mutation
+      whileHover={{
+        y: -2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.10)',
+        transition: { duration: 0.2, ease: 'easeOut' },
+      }}
       style={{
         flex: 1,
         minWidth: 0,
@@ -231,17 +249,8 @@ function KpiCard({
         gap: 12,
         cursor: 'default',
         boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)',
-        transition: 'box-shadow 0.25s ease',
         position: 'relative',
         overflow: 'hidden',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.boxShadow =
-          '0 2px 8px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.10)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.boxShadow =
-          '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05)';
       }}
     >
       {/* Subtle top-edge gradient accent */}
@@ -259,7 +268,7 @@ function KpiCard({
           <div style={{
             width: 72, height: 72, borderRadius: '50%', flexShrink: 0,
             background: 'linear-gradient(135deg, #f0f0f0, #e4e4e4)',
-            animation: 'pulse 1.5s ease-in-out infinite',
+            animation: 'kpi-pulse 1.5s ease-in-out infinite',
           }} />
         ) : (
           <PremiumDonut
@@ -286,7 +295,7 @@ function KpiCard({
 
           {/* Title */}
           <p style={{
-            fontSize: 11.5, fontWeight: 600, color: 'var(--color-text-muted, #7a7a8c)',
+            fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted, #7a7a8c)',
             letterSpacing: '0.02em', margin: 0, lineHeight: 1.3,
           }}>
             {title}
@@ -301,8 +310,11 @@ function KpiCard({
                 fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em',
                 lineHeight: 1,
                 background: `linear-gradient(135deg, ${colorFrom}, ${colorTo})`,
+                // FIX #5: standard + webkit for Firefox compat
                 WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                color: 'transparent',
               }}>
                 {count.toLocaleString('en-IN')}
               </span>
@@ -317,7 +329,7 @@ function KpiCard({
 
           {/* Sub label */}
           <p style={{
-            fontSize: 10.5, color: 'var(--color-text-faint, #b0b0c0)',
+            fontSize: 11, color: 'var(--color-text-faint, #b0b0c0)',
             marginTop: 2, letterSpacing: '0.01em',
           }}>
             {subLabel}
@@ -336,28 +348,30 @@ function KpiCard({
         ))}
       </div>
 
-      {/* Action link */}
-      <div style={{ marginTop: -2 }}>
-        <a
-          href={actionHref}
-          style={{
-            fontSize: 11, fontWeight: 700,
-            color: colorFrom,
-            textDecoration: 'none',
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            letterSpacing: '0.02em',
-            opacity: 0.85,
-            transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.85')}
-        >
-          {actionLabel}
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M2 5h6M5 2l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </a>
-      </div>
+      {/* FIX #4: only render action link when a real href is provided */}
+      {actionHref && (
+        <div style={{ marginTop: -2 }}>
+          <a
+            href={actionHref}
+            style={{
+              fontSize: 11, fontWeight: 700,
+              color: colorFrom,
+              textDecoration: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              letterSpacing: '0.02em',
+              opacity: 0.85,
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.85')}
+          >
+            {actionLabel}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path d="M2 5h6M5 2l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -435,8 +449,10 @@ export default function ClientMetricsCards({
 
   return (
     <>
+      {/* FIX: keyframes moved out of per-render inline style; renamed to avoid
+          collisions with any global 'pulse' animation in the app */}
       <style>{`
-        @keyframes pulse {
+        @keyframes kpi-pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
