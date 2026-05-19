@@ -2,47 +2,37 @@
 //
 // Single source of truth for all navigation.
 // Sidebar, CommandPalette, and Breadcrumbs all consume this file.
-//
-// Icon strings map to Lucide React components inside Sidebar.tsx.
-// Groups: Dashboard → Sales → Members → Training → Staff →
-//         Attendance → Memberships → Finance → Insights → Engagement → Settings.
 
 export type Role = 'admin' | 'manager' | 'reception' | 'trainer' | 'member';
 
 export type NavItem = {
   href: string;
   label: string;
-  icon: string;          // Lucide component name
-  role?: Role;           // single-role restriction
-  roles?: Role[];        // multi-role restriction (takes precedence over `role`)
-  hidden?: boolean;      // hide from sidebar; keep in breadcrumb/command-palette
-  matchPrefix?: string;  // match this prefix for /:id-style routes
-  badge?: string;        // badge-provider key
-  isNew?: boolean;       // show "NEW" pill
-  comingSoon?: boolean;  // render disabled with tooltip
-  children?: NavItem[];  // nested submenu items
+  icon: string;
+  role?: Role;
+  roles?: Role[];
+  hidden?: boolean;
+  matchPrefix?: string;
+  badge?: string;
+  isNew?: boolean;
+  comingSoon?: boolean;
+  children?: NavItem[];
 };
 
 export type NavGroup = {
   id: string;
   label: string;
   icon: string;
-  roles?: Role[];        // optional group-level role restriction
+  roles?: Role[];
   items: NavItem[];
 };
 
-// ─────────────────────────────────────────────────────────────────────
-// Dashboard (above groups)
-// ─────────────────────────────────────────────────────────────────────
 export const DASHBOARD_ITEM: NavItem = {
   href:  '/dashboard',
   label: 'Dashboard',
   icon:  'LayoutDashboard',
 };
 
-// ─────────────────────────────────────────────────────────────────────
-// Main nav groups
-// ─────────────────────────────────────────────────────────────────────
 export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'sales',
@@ -71,12 +61,14 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'training',
-    label: 'Training',
+    label: 'Trainers',
     icon: 'Dumbbell',
     items: [
-      { href: '/trainers',                 label: 'Coaches',         icon: 'UserCog',    role: 'admin' },
-      { href: '/trainer/dashboard',        label: 'My Dashboard',    icon: 'LayoutGrid', role: 'trainer' },
-      { href: '/training/transformations', label: 'Transformations', icon: 'Sparkles',   role: 'admin' },
+      { href: '/trainers/add',              label: 'Add Coaches',         icon: 'UserPlus',   role: 'admin' },
+      { href: '/trainers',                  label: 'My Coaches',          icon: 'UserCog',    role: 'admin' },
+      { href: '/training/transformations',  label: 'Client Transformations', icon: 'Sparkles', role: 'admin' },
+      { href: '/trainers/leave',            label: 'Coach Leave Requests',icon: 'CalendarOff', roles: ['admin', 'manager'], badge: 'pendingLeaves' },
+      { href: '/trainer/dashboard',         label: 'My Dashboard',        icon: 'LayoutGrid', role: 'trainer' },
       { href: '/trainers/[id]', label: 'Coach Profile', icon: 'UserCog', hidden: true, matchPrefix: '/trainers/' },
     ],
   },
@@ -86,11 +78,10 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'UsersRound',
     roles: ['admin', 'manager'],
     items: [
-      { href: '/staff/new',       label: 'Add Staff Account',  icon: 'UserPlus',     roles: ['admin', 'manager'] },
-      { href: '/staff',           label: 'Staff List',          icon: 'UsersRound',   roles: ['admin', 'manager'] },
-      { href: '/settings/staff',  label: 'Staff Access Control',icon: 'ShieldCheck',  role: 'admin' },
-      { href: '/staff/targets',   label: 'Staff Target',        icon: 'Target',       roles: ['admin', 'manager'] },
-      { href: '/trainers/leave',  label: 'Leave Requests',      icon: 'CalendarOff',  roles: ['admin', 'manager'], badge: 'pendingLeaves' },
+      { href: '/staff/new',       label: 'Add Staff Account',   icon: 'UserPlus',     roles: ['admin', 'manager'] },
+      { href: '/staff',           label: 'Staff List',           icon: 'UsersRound',   roles: ['admin', 'manager'] },
+      { href: '/settings/staff',  label: 'Staff Access Control', icon: 'ShieldCheck',  role: 'admin' },
+      { href: '/staff/targets',   label: 'Staff Target',         icon: 'Target',       roles: ['admin', 'manager'] },
     ],
   },
   {
@@ -132,7 +123,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/collection',      label: 'Collection',       icon: 'ArrowUpRight', role: 'admin' },
       { href: '/finance/pl',              label: 'Profit & Loss',    icon: 'BarChart3',    role: 'admin' },
       { href: '/finance/forecast',        label: 'Revenue Forecast', icon: 'TrendingUp',   role: 'admin' },
-      { href: '/finance/trainer-revenue', label: 'Trainer Revenue',  icon: 'Award',        role: 'admin' },
+      { href: '/finance/trainer-revenue', label: 'Coach Revenue',    icon: 'Award',        role: 'admin' },
     ],
   },
   {
@@ -160,9 +151,6 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-// ─────────────────────────────────────────────────────────────────────
-// Settings group (below divider)
-// ─────────────────────────────────────────────────────────────────────
 export const SETTINGS_GROUP: NavGroup = {
   id: 'settings',
   label: 'Settings',
@@ -179,21 +167,15 @@ export const SETTINGS_GROUP: NavGroup = {
   ],
 };
 
-// ─────────────────────────────────────────────────────────────────────
-// Quick actions
-// ─────────────────────────────────────────────────────────────────────
 export const QUICK_ACTIONS = [
   { id: 'qa-add-member',   label: 'Add new member',   icon: 'UserPlus',      href: '/clients/new' },
   { id: 'qa-record-pay',   label: 'Record a payment', icon: 'Wallet',        href: '/payments?new=1' },
   { id: 'qa-mark-att',     label: 'Mark attendance',  icon: 'ClipboardList', href: '/attendance' },
-  { id: 'qa-add-trainer',  label: 'Add coach',        icon: 'UserCog',       href: '/trainers?new=1', role: 'admin' as Role },
+  { id: 'qa-add-trainer',  label: 'Add coach',        icon: 'UserCog',       href: '/trainers/add', role: 'admin' as Role },
   { id: 'qa-face-checkin', label: 'Face check-in',    icon: 'ScanFace',      href: '/checkin' },
   { id: 'qa-add-enquiry',  label: 'Add enquiry',      icon: 'PlusCircle',    href: '/sales/enquiry' },
 ];
 
-// ─────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────
 export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: string }> {
   const out: Array<NavItem & { groupId: string; groupLabel: string }> = [];
   out.push({ ...DASHBOARD_ITEM, groupId: 'dashboard', groupLabel: 'Dashboard' });
