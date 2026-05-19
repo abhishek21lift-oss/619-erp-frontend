@@ -241,6 +241,12 @@ async function request<T = any>(
     ...(options.headers as Record<string, string>),
   };
 
+  if (!options.skipAuth) {
+    let token: string | null = null;
+    try { token = localStorage.getItem('619_token'); } catch { /* SSR */ }
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const init: RequestInit = {
     ...options,
     headers,
