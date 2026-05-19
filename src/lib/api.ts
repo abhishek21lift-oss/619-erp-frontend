@@ -151,6 +151,31 @@ export type Attendance = {
   [key: string]: unknown;
 };
 
+export type StaffMember = {
+  id: string;
+  name: string;
+  role: string;
+  email?: string;
+  phone?: string;
+  is_active?: boolean;
+  [key: string]: unknown;
+};
+
+export type StaffTarget = {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  role: string;
+  month: string;
+  target_revenue: number;
+  target_clients: number;
+  achieved_revenue: number;
+  achieved_clients: number;
+  achieved_sessions?: number;
+  target_sessions?: number;
+  [key: string]: unknown;
+};
+
 export type PlanApiResponse = {
   plan: {
     id: string;
@@ -256,6 +281,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       }),
+    listUsers: () => request<User[]>('/api/auth/users'),
+    createUser: (data: Record<string, unknown>) =>
+      request<User>('/api/auth/users', { method: 'POST', body: JSON.stringify(data) }),
+    toggleUser: (id: string) =>
+      request(`/api/auth/users/${id}/toggle`, { method: 'POST' }),
+    deleteUser: (id: string) =>
+      request(`/api/auth/users/${id}`, { method: 'DELETE' }),
   },
 
   clients: {
@@ -362,14 +394,22 @@ export const api = {
   },
 
   staff: {
-    list:   () => request<unknown[]>('/api/staff'),
-    get:    (id: string) => request(`/api/staff/${id}`),
+    list:   () => request<StaffMember[]>('/api/staff'),
+    get:    (id: string) => request<StaffMember>(`/api/staff/${id}`),
     create: (data: Record<string, unknown>) =>
       request('/api/staff', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
       request(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/staff/${id}`, { method: 'DELETE' }),
     targets: {
+      list: (params?: Record<string, string | number>) => {
+        const qs = params ? buildQs(params) : '';
+        return request<StaffTarget[]>(`/api/staff/targets${qs}`);
+      },
+      create: (data: Record<string, unknown>) =>
+        request('/api/staff/targets', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Record<string, unknown>) =>
+        request(`/api/staff/targets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
       get: (id: string) => request(`/api/staff/${id}/targets`),
       set: (id: string, data: Record<string, unknown>) =>
         request(`/api/staff/${id}/targets`, { method: 'POST', body: JSON.stringify(data) }),
@@ -450,5 +490,29 @@ export const api = {
       request<{ leave: LeaveRequest }>(`/api/leave/${id}/approve`, { method: 'POST' }),
     reject: (id: string, note?: string) =>
       request<{ leave: LeaveRequest }>(`/api/leave/${id}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
+  },
+
+  admin: {
+    importDatabase: async (file: File): Promise<unknown> => {
+      const BASE = apiBase();
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${BASE}/api/admin/import-database`, {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try {
+          const body = await res.json();
+          msg = body?.message ?? body?.error ?? msg;
+        } catch { /* ignore */ }
+        const err = new Error(msg) as Error & { status: number };
+        err.status = res.status;
+        throw err;
+      }
+      return res.json().catch(() => ({}));
+    },
   },
 };
