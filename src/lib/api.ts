@@ -31,20 +31,21 @@ function apiBase(): string {
   }
 }
 
+// Coerces number values to strings for URLSearchParams
+function buildQs(params: Record<string, string | number>): string {
+  return '?' + new URLSearchParams(
+    Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)]))
+  ).toString();
+}
+
 // ─────────────────────────── Types ───────────────────────────────────
 
-/**
- * Role union (Issue #19 — was `string`, now a discriminated union).
- * Add roles here as the backend evolves; all switch/if-chains on role
- * will now get exhaustiveness feedback from TypeScript.
- */
 export type Role = 'admin' | 'staff' | 'trainer' | 'receptionist';
 
 export type User = {
   id: string;
   name?: string;
   email: string;
-  /** Typed as Role union — never a free-form string */
   role?: Role;
   trainer_id?: string;
   is_active?: boolean;
@@ -82,28 +83,35 @@ export type Client = {
   trainer_id?: string;
   trainer_name?: string;
   package_type?: string;
+  membership_plan?: string;
   status?: string;
   balance_amount?: number;
+  balance_due?: number;
   frozen_from?: string;
   frozen_until?: string;
+  freeze_from?: string;
+  freeze_until?: string;
+  is_frozen?: boolean;
   pt_start_date?: string;
   pt_end_date?: string;
   pt_sessions_left?: number;
+  pt_sessions_total?: number;
+  expiry_date?: string;
   subscription_end_date?: string;
   subscription_start_date?: string;
   plan_name?: string;
+  combo_plan?: string;
   photo_url?: string;
   face_descriptor?: number[];
+  biometric_fingers?: string;
   notes?: string;
+  joining_date?: string;
   created_at?: string;
   updated_at?: string;
-  balance_due?: number;
+  paid_amount?: number;
+  final_amount?: number;
 };
 
-/**
- * Payment — Issue #7: id is always string.
- * Backend may return number; we normalise at the API boundary (see `payments.list`).
- */
 export type Payment = {
   /** Always a string — coerced from number at fetch boundary if needed. */
   id: string;
@@ -115,6 +123,59 @@ export type Payment = {
   date: string;
   notes?: string;
   trainer_name?: string;
+};
+
+export type Trainer = {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  is_active?: boolean;
+  commission?: number;
+  specialization?: string;
+  joining_date?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+};
+
+export type Attendance = {
+  id: string | number;
+  client_id?: string;
+  client_name?: string;
+  date?: string;
+  time?: string;
+  type?: string;
+  status?: string;
+  created_at?: string;
+  [key: string]: unknown;
+};
+
+export type PlanApiResponse = {
+  plan: {
+    id: string;
+    kind?: string;
+    name?: string;
+    duration?: string;
+    base_amount?: number;
+    discount?: number;
+    final_amount?: number;
+    sessions_per_week?: number;
+    features?: string[];
+    popular?: boolean;
+    [key: string]: unknown;
+  };
+  message?: string;
+};
+
+export type TrainerSummaryRow = {
+  id: string | number;
+  name: string;
+  active_clients?: number;
+  total_clients?: number;
+  month_revenue?: number;
+  total_revenue?: number;
+  [key: string]: unknown;
 };
 
 // ─────────────────────────── Core fetch ──────────────────────────────
@@ -131,9 +192,6 @@ async function request<T = unknown>(
     ...(options.headers as Record<string, string>),
   };
 
-  // Include credentials so the httpOnly auth cookie is sent automatically.
-  // The in-memory token is used as a bearer fallback for hybrid backends that
-  // still require an Authorization header (legacy deployment support).
   const init: RequestInit = {
     ...options,
     headers,
@@ -157,7 +215,6 @@ async function request<T = unknown>(
   return res.json() as Promise<T>;
 }
 
-// ─── Normalise a raw payment record from the server ──────────────────
 function normalisePayment(raw: Record<string, unknown>): Payment {
   return {
     ...raw,
@@ -179,39 +236,70 @@ export const api = {
       }),
     me: () => request<{ user: User }>('/api/auth/me'),
     logout: () => request('/api/auth/logout', { method: 'POST' }).catch(() => {}),
+    changePassword: (currentPassword: string, newPassword: string) =>
+      request<{ message?: string }>('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+      }),
   },
 
   clients: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    list: (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
       return request<Client[]>(`/api/clients${qs}`);
     },
     get:    (id: string) => request<Client>(`/api/clients/${id}`),
-    create: (data: Partial<Client>) => request<Client>('/api/clients', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Partial<Client>) =>
+    // Record<string,unknown> instead of Partial<Client> so callers may pass null for fields
+    create: (data: Record<string, unknown>) =>
+      request<Client>('/api/clients', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Record<string, unknown>) =>
       request<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/clients/${id}`, { method: 'DELETE' }),
     search: (q: string) => request<Client[]>(`/api/clients/search?q=${encodeURIComponent(q)}`),
+    uploadPhoto: (id: string, dataUrl: string) =>
+      request(`/api/clients/${id}/photo`, { method: 'POST', body: JSON.stringify({ photo: dataUrl }) }),
+    renewSubscription: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/renew-subscription`, { method: 'POST', body: JSON.stringify(data) }),
+    addSubscription: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/add-subscription`, { method: 'POST', body: JSON.stringify(data) }),
+    assignPt: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/assign-pt`, { method: 'POST', body: JSON.stringify(data) }),
+    renewPt: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/renew-pt`, { method: 'POST', body: JSON.stringify(data) }),
+    combo: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/combo`, { method: 'POST', body: JSON.stringify(data) }),
+    upgrade: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/upgrade`, { method: 'POST', body: JSON.stringify(data) }),
+    downgrade: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/downgrade`, { method: 'POST', body: JSON.stringify(data) }),
+    transfer: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/transfer`, { method: 'POST', body: JSON.stringify(data) }),
+    trial: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/trial`, { method: 'POST', body: JSON.stringify(data) }),
+    freeze: (id: string, data: Record<string, unknown>) =>
+      request(`/api/clients/${id}/freeze`, { method: 'POST', body: JSON.stringify(data) }),
+    unfreeze: (id: string) =>
+      request(`/api/clients/${id}/unfreeze`, { method: 'POST' }),
   },
 
   payments: {
-    list: async (params?: Record<string, string>): Promise<Payment[]> => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    list: async (params?: Record<string, string | number>): Promise<Payment[]> => {
+      const qs = params ? buildQs(params) : '';
       const raw = await request<Record<string, unknown>[]>(`/api/payments${qs}`);
       return Array.isArray(raw) ? raw.map(normalisePayment) : [];
     },
     create: (data: Record<string, unknown>) =>
       request('/api/payments', { method: 'POST', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/payments/${id}`, { method: 'DELETE' }),
-    stats:  (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    stats:  (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
       return request(`/api/payments/stats${qs}`);
     },
   },
 
   subscriptions: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    list: (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
       return request<unknown[]>(`/api/subscriptions${qs}`);
     },
     get:         (id: string) => request(`/api/subscriptions/${id}`),
@@ -239,20 +327,20 @@ export const api = {
     list:   () => request<unknown[]>('/api/plans'),
     get:    (id: string) => request(`/api/plans/${id}`),
     create: (data: Record<string, unknown>) =>
-      request('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
+      request<PlanApiResponse>('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
-      request(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      request<PlanApiResponse>(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => request(`/api/plans/${id}`, { method: 'DELETE' }),
   },
 
   trainers: {
-    list:   () => request<unknown[]>('/api/trainers'),
-    get:    (id: string) => request(`/api/trainers/${id}`),
-    create: (data: Record<string, unknown>) =>
+    list:     () => request<Trainer[]>('/api/trainers'),
+    get:      (id: string) => request<Trainer>(`/api/trainers/${id}`),
+    create:   (data: Record<string, unknown>) =>
       request('/api/trainers', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Record<string, unknown>) =>
+    update:   (id: string, data: Record<string, unknown>) =>
       request(`/api/trainers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string) => request(`/api/trainers/${id}`, { method: 'DELETE' }),
+    delete:   (id: string) => request(`/api/trainers/${id}`, { method: 'DELETE' }),
     sessions: (id: string) => request(`/api/trainers/${id}/sessions`),
   },
 
@@ -272,10 +360,14 @@ export const api = {
   },
 
   attendance: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-      return request<unknown[]>(`/api/attendance${qs}`);
+    list: (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
+      return request<Attendance[]>(`/api/attendance${qs}`);
     },
+    mark: (data: Record<string, unknown>) =>
+      request('/api/attendance/mark', { method: 'POST', body: JSON.stringify(data) }),
+    biometric: (data: Record<string, unknown>) =>
+      request('/api/attendance/biometric', { method: 'POST', body: JSON.stringify(data) }),
     create: (data: Record<string, unknown>) =>
       request('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
@@ -283,8 +375,8 @@ export const api = {
   },
 
   checkin: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    list: (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
       return request<unknown[]>(`/api/checkin${qs}`);
     },
     create: (data: Record<string, unknown>) =>
@@ -294,11 +386,13 @@ export const api = {
     enroll: (clientId: string, descriptor: number[]) =>
       request(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
     descriptors: () => request<unknown[]>('/api/checkin/descriptors'),
+    face: (data: Record<string, unknown>) =>
+      request('/api/checkin/face', { method: 'POST', body: JSON.stringify(data) }),
   },
 
   notifications: {
-    list: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    list: (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
       return request<unknown[]>(`/api/notifications${qs}`);
     },
     markRead: (id: string) =>
@@ -308,21 +402,26 @@ export const api = {
   },
 
   dashboard: {
-    stats: () => request('/api/dashboard/stats'),
-    revenue: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    stats:   () => request('/api/dashboard/stats'),
+    revenue: (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
       return request(`/api/dashboard/revenue${qs}`);
     },
+    summary: () => request('/api/dashboard/summary'),
   },
 
   reports: {
-    revenue: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    revenue: (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
       return request(`/api/reports/revenue${qs}`);
     },
-    members: (params?: Record<string, string>) => {
-      const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    members: (params?: Record<string, string | number>) => {
+      const qs = params ? buildQs(params) : '';
       return request(`/api/reports/members${qs}`);
     },
+    monthly: (year: number | string) =>
+      request<unknown[]>(`/api/reports/monthly?year=${year}`),
+    dues: () => request<unknown[]>('/api/reports/dues'),
+    trainerSummary: () => request<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
   },
 };
