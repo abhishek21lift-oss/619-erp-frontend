@@ -32,7 +32,6 @@ type FaceDetection = {
 const MODEL_SOURCES = [
   '/models',
   '/face-models',
-  'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model',
 ];
 
 const RECOGNITION_THRESHOLD = 0.50;
