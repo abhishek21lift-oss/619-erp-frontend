@@ -172,6 +172,7 @@ export const SETTINGS_GROUP: NavGroup = {
     { href: '/settings/biometric',       label: 'Biometric & Face',         icon: 'Fingerprint',   role: 'admin' },
     { href: '/settings/billing',         label: 'GST / Invoice',            icon: 'Receipt',       role: 'admin' },
     { href: '/settings/branding',        label: 'Branding',                 icon: 'Palette',       role: 'admin' },
+    { href: '/settings/integrations',    label: 'Integrations',             icon: 'Zap',           role: 'admin', isNew: true },
     { href: '/settings/import-database', label: 'Import Database',          icon: 'DatabaseBackup',role: 'admin' },
   ],
 };

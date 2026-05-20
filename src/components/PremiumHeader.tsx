@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/lib/nav-config';
 import {
-  Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut, Search,
+  Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut, Search, User,
   Plus, UserPlus, Dumbbell, FileText, CreditCard, UserCheck,
   CalendarPlus, ClipboardList, Salad, Zap, X, Check,
   LayoutDashboard, TrendingUp, Users, Activity, Settings, BarChart2,
@@ -1036,11 +1036,11 @@ function AccountMenuPortal({
       </div>
 
       {([
-        { href: '/settings', icon: <Settings size={13} />, label: 'My Profile' },
-        { href: '/settings', icon: <Settings size={13} />, label: 'Studio Settings' },
+        { href: '/settings/profile', icon: <User size={13} />, label: 'My Profile' },
+        { href: '/settings/studio', icon: <Settings size={13} />, label: 'Studio Settings' },
         { href: '/settings/staff', icon: <Users size={13} />, label: 'Team Management' },
         { href: '/settings/billing', icon: <IndianRupee size={13} />, label: 'Billing' },
-        { href: '/settings/branding', icon: <Zap size={13} />, label: 'Integrations' },
+        { href: '/settings/integrations', icon: <Zap size={13} />, label: 'Integrations' },
       ] as const).map((item) => (
         <button
           type="button"
