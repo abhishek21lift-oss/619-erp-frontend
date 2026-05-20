@@ -656,6 +656,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           WebkitBackdropFilter: 'blur(28px) saturate(2.0)',
           transform: mobileOpen ? 'translateX(0) scale(1)' : 'translateX(calc(-100% - 20px)) scale(0.96)',
           opacity: mobileOpen ? 1 : 0,
+          pointerEvents: mobileOpen ? 'auto' : 'none',
           transition: 'transform 440ms cubic-bezier(0.16,1,0.3,1), opacity 300ms ease',
           willChange: 'transform',
         }}
