@@ -88,7 +88,15 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
       } else throw new Error('Trainer not found');
       if (mRes.status === 'fulfilled') {
         const d = mRes.value as any;
-        setMembers(Array.isArray(d) ? d : (d.members ?? []));
+        const raw = Array.isArray(d) ? d : (d.members ?? []);
+        setMembers(raw.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          status: c.status,
+          membership_plan: c.membership_plan || c.package_type,
+          expiry_date: c.expiry_date || c.pt_end_date,
+          phone: c.phone || c.mobile,
+        })));
       }
     } catch (e: any) {
       setError(e.message || 'Failed to load trainer.');

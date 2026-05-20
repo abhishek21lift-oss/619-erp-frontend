@@ -169,7 +169,7 @@ export const SETTINGS_GROUP: NavGroup = {
 
 export const QUICK_ACTIONS = [
   { id: 'qa-add-member',   label: 'Add new member',   icon: 'UserPlus',      href: '/clients/new' },
-  { id: 'qa-record-pay',   label: 'Record a payment', icon: 'Wallet',        href: '/payments?new=1' },
+  { id: 'qa-record-pay',   label: 'Record a payment', icon: 'Wallet',        href: '/payments' },
   { id: 'qa-mark-att',     label: 'Mark attendance',  icon: 'ClipboardList', href: '/attendance' },
   { id: 'qa-add-trainer',  label: 'Add coach',        icon: 'UserCog',       href: '/trainers/add', role: 'admin' as Role },
   { id: 'qa-face-checkin', label: 'Face check-in',    icon: 'ScanFace',      href: '/checkin' },

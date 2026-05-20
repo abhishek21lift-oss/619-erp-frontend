@@ -28,7 +28,7 @@ function Inner() {
   const [memPlans, setMemPlans] = useState<{name:string;order:number;final:number}[]>([]);
 
   useEffect(() => {
-    api.clients.get(id).then(setClient).catch(console.error).finally(() => setLoading(false));
+    api.clients.get(id).then(setClient).catch(setError).finally(() => setLoading(false));
     const stored = getStoredPlans();
     const ORDER: Record<string,number> = { Monthly:1, Quarterly:2, 'Half Yearly':3, Yearly:4 };
     const mp = stored.filter(p => p.kind === 'Membership').map((p, i) => ({

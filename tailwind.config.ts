@@ -39,11 +39,9 @@ const config: Config = {
       colors: {
         brand: {
           DEFAULT: 'rgb(var(--rgb-brand) / <alpha-value>)',
-          hi: 'rgb(var(--rgb-brand-hi) / <alpha-value>)',
+          hi: 'rgb(var(--rgb-brand-hi, 239 68 68) / <alpha-value>)',
         },
         ink: 'rgb(var(--rgb-text) / <alpha-value>)',
-        ink2: 'rgb(var(--rgb-text-2) / <alpha-value>)',
-        muted: 'rgb(var(--rgb-muted) / <alpha-value>)',
       },
       backdropBlur: {
         xs: '2px',
@@ -51,6 +49,36 @@ const config: Config = {
       },
       borderRadius: {
         glass: '18px',
+      },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'slide-up': {
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'slide-down': {
+          '0%': { opacity: '0', transform: 'translateY(-8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'scale-in': {
+          '0%': { opacity: '0', transform: 'scale(0.96)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 200ms cubic-bezier(0.4,0,0.2,1) both',
+        'slide-up': 'slide-up 300ms cubic-bezier(0.34,1.56,0.64,1) both',
+        'slide-down': 'slide-down 200ms cubic-bezier(0.4,0,0.2,1) both',
+        'scale-in': 'scale-in 200ms cubic-bezier(0.4,0,0.2,1) both',
+        'spin-slow': 'spin 2s linear infinite',
+        shimmer: 'shimmer 1.6s ease infinite',
       },
     },
   },

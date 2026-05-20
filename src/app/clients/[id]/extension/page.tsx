@@ -26,7 +26,7 @@ function Inner() {
   const [activeSubId, setActiveSubId] = useState<string | null>(null);
 
   useEffect(() => {
-    api.clients.get(id).then(setClient).catch(console.error).finally(() => setLoading(false));
+    api.clients.get(id).then(setClient).catch(setError).finally(() => setLoading(false));
     api.subscriptions.list({ client_id: id, status: 'active' }).then((subs: any[]) => {
       if (subs && subs.length > 0) setActiveSubId(String(subs[0].id));
     }).catch(() => {});

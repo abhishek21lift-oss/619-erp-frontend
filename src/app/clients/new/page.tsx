@@ -83,11 +83,11 @@ function NewClientForm() {
           weight: c.weight != null ? String(c.weight) : '',
         };
       });
-    }).catch(console.error);
+    }).catch(setError);
   }, [editId]);
 
   useEffect(() => {
-    api.trainers.list().then(setTrainers).catch(console.error);
+    api.trainers.list().then(setTrainers).catch(setError);
   }, []);
 
   async function submit(e: FormEvent) {

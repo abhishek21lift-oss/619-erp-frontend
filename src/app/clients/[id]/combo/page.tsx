@@ -29,7 +29,7 @@ function Inner() {
   useEffect(() => {
     Promise.all([api.clients.get(id), api.trainers.list().catch(() => [])])
       .then(([c, t]) => { setClient(c); setTrainers(Array.isArray(t) ? t : []); })
-      .catch(console.error).finally(() => setLoading(false));
+      .catch(setError).finally(() => setLoading(false));
   }, [id]);
 
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }

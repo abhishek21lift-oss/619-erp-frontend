@@ -47,13 +47,13 @@ const MEGA_SECTIONS: NavSection[] = [
     columns: [
       { heading: 'Overview', items: [
         { label: 'Overview', href: '/dashboard', description: 'Studio at a glance' },
-        { label: 'Live Activity', href: '/dashboard/live', description: 'Real-time check-ins' },
-        { label: 'Quick Actions', href: '/dashboard/actions', description: 'Fast operations' },
+        { label: 'Live Activity', href: '/dashboard/live-activity', description: 'Real-time check-ins' },
+        { label: 'Quick Actions', href: '/dashboard/quick-actions', description: 'Fast operations' },
       ]},
       { heading: 'Intelligence', items: [
-        { label: 'AI Insights', href: '/dashboard/ai', description: 'Smart recommendations', isNew: true },
+        { label: 'AI Insights', href: '/dashboard/ai-insights', description: 'Smart recommendations', isNew: true },
         { label: 'Tasks', href: '/dashboard/tasks', description: 'Pending work items' },
-        { label: 'Studio Status', href: '/dashboard/status', description: 'System health' },
+        { label: 'Studio Status', href: '/dashboard/studio-status', description: 'System health' },
       ]},
     ],
     spotlight: { title: 'Today', value: '—', sub: 'Members active', accent: '#7c3aed' },
@@ -68,15 +68,15 @@ const MEGA_SECTIONS: NavSection[] = [
     columns: [
       { heading: 'Pipeline', items: [
         { label: 'Leads', href: '/sales/leads', description: 'Prospective members' },
-        { label: 'Enquiries', href: '/sales/enquiries', description: 'Inbound interest' },
-        { label: 'Membership Sales', href: '/sales/memberships', description: 'Plan conversions' },
-        { label: 'PT Sales', href: '/sales/pt', description: 'Personal training deals' },
+        { label: 'Enquiries', href: '/sales/enquiry', description: 'Inbound interest' },
+        { label: 'Membership Sales', href: '/memberships/subscriptions', description: 'Plan conversions' },
+        { label: 'PT Sales', href: '/pt-portal', description: 'Personal training deals' },
       ]},
       { heading: 'Finance', items: [
-        { label: 'POS', href: '/sales/pos', description: 'Point of sale' },
+        { label: 'POS', href: '/payments', description: 'Point of sale' },
         { label: 'Payments', href: '/payments', description: 'Transaction ledger' },
-        { label: 'Invoices', href: '/sales/invoices', description: 'Billing records' },
-        { label: 'Promotions', href: '/sales/promotions', description: 'Offers & discounts' },
+        { label: 'Invoices', href: '/finance/collection', description: 'Billing records' },
+        { label: 'Promotions', href: '/engagement/offers', description: 'Offers & discounts' },
       ]},
     ],
     spotlight: { title: 'This Month', value: '—', sub: 'Revenue collected', accent: '#0369a1' },
@@ -96,8 +96,8 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Member Profiles', href: '/clients', description: 'Individual detail' },
       ]},
       { heading: 'Health & Retention', items: [
-        { label: 'Body Metrics', href: '/members/metrics', description: 'Measurements & progress' },
-        { label: 'Transformations', href: '/members/transformations', description: 'Before & after' },
+        { label: 'Body Metrics', href: '/clients', description: 'Measurements & progress' },
+        { label: 'Transformations', href: '/training/transformations', description: 'Before & after' },
         { label: 'Retention', href: '/insights/renewal', description: 'Churn prevention' },
       ]},
     ],
@@ -112,14 +112,14 @@ const MEGA_SECTIONS: NavSection[] = [
     gradient: 'linear-gradient(135deg,#b45309,#d97706)',
     columns: [
       { heading: 'Clients & Plans', items: [
-        { label: 'PT Clients', href: '/pt/clients', description: 'Active PT members' },
-        { label: 'Workout Plans', href: '/pt/workout-plans', description: 'Custom programs' },
-        { label: 'Diet Plans', href: '/pt/diet-plans', description: 'Nutrition programs' },
-        { label: 'Progress Tracking', href: '/pt/progress', description: 'Performance data' },
+        { label: 'PT Portal', href: '/pt-portal', description: 'Active PT members' },
+        { label: 'Workout Plans', href: '/training/transformations', description: 'Custom programs' },
+        { label: 'Diet Plans', href: '/training/transformations', description: 'Nutrition programs' },
+        { label: 'Progress Tracking', href: '/training/transformations', description: 'Performance data' },
       ]},
       { heading: 'Scheduling & Revenue', items: [
-        { label: 'Session Scheduling', href: '/pt/sessions', description: 'Book PT sessions' },
-        { label: 'Trainer Assignments', href: '/pt/assignments', description: 'Client-trainer match' },
+        { label: 'Session Scheduling', href: '/appointments', description: 'Book PT sessions' },
+        { label: 'Trainer Assignments', href: '/trainers', description: 'Client-trainer match' },
         { label: 'PT Revenue', href: '/finance/trainer-revenue', description: 'Earnings report' },
       ]},
     ],
@@ -134,16 +134,16 @@ const MEGA_SECTIONS: NavSection[] = [
     gradient: 'linear-gradient(135deg,#be185d,#db2777)',
     columns: [
       { heading: 'Staff & Trainers', items: [
-        { label: 'Staff', href: '/operations/staff', description: 'HR management' },
-        { label: 'Trainers', href: '/operations/trainers', description: 'Trainer roster' },
+        { label: 'Staff', href: '/staff', description: 'HR management' },
+        { label: 'Trainers', href: '/trainers', description: 'Trainer roster' },
         { label: 'Attendance', href: '/attendance/staff', description: 'Staff log' },
-        { label: 'Class Scheduling', href: '/operations/classes', description: 'Group sessions' },
+        { label: 'Class Scheduling', href: '/appointments', description: 'Group sessions' },
       ]},
       { heading: 'Facility', items: [
-        { label: 'Equipment', href: '/operations/equipment', description: 'Asset inventory' },
-        { label: 'Maintenance', href: '/operations/maintenance', description: 'Work orders' },
-        { label: 'Access Control', href: '/operations/access', description: 'Entry system' },
-        { label: 'Branches', href: '/operations/branches', description: 'Multi-location' },
+        { label: 'Equipment', href: '/settings', description: 'Asset inventory' },
+        { label: 'Maintenance', href: '/settings', description: 'Work orders' },
+        { label: 'Access Control', href: '/settings/biometric', description: 'Entry system' },
+        { label: 'Branches', href: '/settings/branches', description: 'Multi-location' },
       ]},
     ],
     spotlight: { title: 'Staff On Duty', value: '—', sub: 'Currently present', accent: '#be185d' },
@@ -160,11 +160,11 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Revenue', href: '/finance/collection', description: 'Income tracking' },
         { label: 'P&L', href: '/finance/pl', description: 'Profit & loss' },
         { label: 'Dues', href: '/finance/dues', description: 'Outstanding balances' },
-        { label: 'Payroll', href: '/finance/payroll', description: 'Staff compensation' },
+        { label: 'Payroll', href: '/staff/targets', description: 'Staff compensation' },
       ]},
       { heading: 'Planning', items: [
-        { label: 'Billing', href: '/finance/billing', description: 'Invoice management' },
-        { label: 'Reports', href: '/finance/reports', description: 'Financial summaries' },
+        { label: 'Billing', href: '/settings/billing', description: 'Invoice management' },
+        { label: 'Reports', href: '/reports', description: 'Financial summaries' },
         { label: 'Forecasting', href: '/finance/forecast', description: 'Revenue projections' },
         { label: 'Subscriptions', href: '/memberships/subscriptions', description: 'Plan management' },
       ]},
@@ -180,15 +180,15 @@ const MEGA_SECTIONS: NavSection[] = [
     gradient: 'linear-gradient(135deg,#0d9488,#06b6d4)',
     columns: [
       { heading: 'Performance', items: [
-        { label: 'Revenue Analytics', href: '/insights/revenue', description: 'Income trends' },
+        { label: 'Revenue Analytics', href: '/insights/traffic', description: 'Income trends' },
         { label: 'Retention', href: '/insights/renewal', description: 'Member lifecycle' },
-        { label: 'Churn Analysis', href: '/insights/churn', description: 'Drop-off patterns' },
+        { label: 'Churn Analysis', href: '/insights/renewal', description: 'Drop-off patterns' },
         { label: 'Attendance Analytics', href: '/insights/traffic', description: 'Foot traffic data' },
       ]},
       { heading: 'Intelligence', items: [
         { label: 'Trainer Performance', href: '/insights/sessions', description: 'Coaching metrics' },
-        { label: 'Branch Performance', href: '/operations/branches', description: 'Location comparison' },
-        { label: 'AI Insights', href: '/insights/ai', description: 'Smart patterns', isNew: true },
+        { label: 'Branch Performance', href: '/settings/branches', description: 'Location comparison' },
+        { label: 'AI Insights', href: '/dashboard/ai-insights', description: 'Smart patterns', isNew: true },
         { label: 'Forecasting', href: '/finance/forecast', description: 'Future projections' },
       ]},
     ],
@@ -198,13 +198,13 @@ const MEGA_SECTIONS: NavSection[] = [
 
 const QUICK_ACTIONS = [
   { label: 'Add Member', href: '/clients/new', icon: <UserPlus size={14} />, group: 'Members' },
-  { label: 'New PT Client', href: '/pt/clients/new', icon: <Dumbbell size={14} />, group: 'Training' },
-  { label: 'Create Invoice', href: '/sales/invoices/new', icon: <FileText size={14} />, group: 'Finance' },
-  { label: 'Record Payment', href: '/payments/new', icon: <CreditCard size={14} />, group: 'Finance' },
-  { label: 'Add Lead', href: '/sales/leads/new', icon: <UserCheck size={14} />, group: 'Sales' },
-  { label: 'Schedule Session', href: '/pt/sessions/new', icon: <CalendarPlus size={14} />, group: 'Training' },
-  { label: 'Workout Plan', href: '/pt/workout-plans/new', icon: <ClipboardList size={14} />, group: 'Training' },
-  { label: 'Diet Plan', href: '/pt/diet-plans/new', icon: <Salad size={14} />, group: 'Training' },
+  { label: 'New PT Client', href: '/clients/new', icon: <Dumbbell size={14} />, group: 'Training' },
+  { label: 'Create Invoice', href: '/payments', icon: <FileText size={14} />, group: 'Finance' },
+  { label: 'Record Payment', href: '/payments', icon: <CreditCard size={14} />, group: 'Finance' },
+  { label: 'Add Lead', href: '/sales/enquiry', icon: <UserCheck size={14} />, group: 'Sales' },
+  { label: 'Schedule Session', href: '/appointments', icon: <CalendarPlus size={14} />, group: 'Training' },
+  { label: 'Workout Plan', href: '/pt-portal', icon: <ClipboardList size={14} />, group: 'Training' },
+  { label: 'Diet Plan', href: '/pt-portal', icon: <Salad size={14} />, group: 'Training' },
 ];
 
 const LIVE_PILLS = [
@@ -1084,11 +1084,11 @@ function AccountMenuPortal({
       </div>
 
       {([
-        { href: '/profile', icon: <Users size={13} />, label: 'My Profile' },
+        { href: '/settings', icon: <Settings size={13} />, label: 'My Profile' },
         { href: '/settings', icon: <Settings size={13} />, label: 'Studio Settings' },
-        { href: '/settings/team', icon: <Users size={13} />, label: 'Team Management' },
+        { href: '/settings/staff', icon: <Users size={13} />, label: 'Team Management' },
         { href: '/settings/billing', icon: <IndianRupee size={13} />, label: 'Billing' },
-        { href: '/settings/integrations', icon: <Zap size={13} />, label: 'Integrations' },
+        { href: '/settings/branding', icon: <Zap size={13} />, label: 'Branding' },
       ] as const).map((item) => (
         <button
           type="button"

@@ -18,18 +18,25 @@ function Inner() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [monthly, setMonthly] = useState<any[]>([]);
   const [trainers, setTrainers] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [overheads, setOverheads] = useState<number>(0);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    Promise.all([api.reports.monthly(year), api.trainers.list()])
-      .then(([m, t]: any) => {
+    const from = `${year}-01-01`;
+    const to = `${year}-12-31`;
+    Promise.all([
+      api.reports.monthly(year),
+      api.trainers.list(),
+      api.expenses.list({ from, to, limit: 5000 }),
+    ])
+      .then(([m, t, e]: any) => {
         if (!alive) return;
         setMonthly(Array.isArray(m) ? m : []);
         setTrainers(t || []);
+        setExpenses(e?.expenses ?? []);
       })
       .catch((e) => alive && setError(e.message))
       .finally(() => alive && setLoading(false));
@@ -45,34 +52,27 @@ function Inner() {
       0,
     );
     const annualSalary = monthlySalary * 12;
-    const totalCost = annualSalary + Number(overheads || 0);
+    const overheads = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+    const totalCost = annualSalary + overheads;
     const profit = revenue - totalCost;
     const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
-    return { revenue, annualSalary, totalCost, profit, margin };
-  }, [monthly, trainers, overheads]);
+    return { revenue, annualSalary, overheads, totalCost, profit, margin };
+  }, [monthly, trainers, expenses]);
+
+  const byCategory = useMemo(() => {
+    const map = new Map<string, number>();
+    expenses.forEach((e: any) => {
+      const cat = e.category || 'other';
+      map.set(cat, (map.get(cat) || 0) + Number(e.amount || 0));
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+  }, [expenses]);
 
   return (
     <AppShell>
       <div className="page-main">
-
-          <div className="card mb-3">
-            <div className="card-title">Adjust Overheads</div>
-            <p className="text-muted" style={{ fontSize: 13, marginBottom: 12 }}>
-              Add rent, utilities, marketing & other annual fixed costs. The
-              P&L below recalculates automatically.
-            </p>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <label style={{ marginBottom: 0 }}>Annual Overheads</label>
-              <input
-                className="input"
-                type="number"
-                value={overheads}
-                onChange={(e) => setOverheads(Number(e.target.value || 0))}
-                style={{ maxWidth: 220 }}
-                placeholder="e.g. 600000"
-              />
-            </div>
-          </div>
 
           <div className="card" style={{ padding: 0 }}>
             <div className="table-wrap">
@@ -100,11 +100,24 @@ function Inner() {
                       </td>
                     </tr>
                     <tr>
-                      <td>Less: Overheads (rent, utilities, marketing…)</td>
-                      <td style={{ textAlign: 'right', color: 'var(--danger)' }} className="tabular">
-                        ({fmt(overheads)})
+                      <td style={{ verticalAlign: 'top' }}>Less: Overheads</td>
+                      <td style={{ textAlign: 'right', color: 'var(--danger)', verticalAlign: 'top' }} className="tabular">
+                        ({fmt(totals.overheads)})
                       </td>
                     </tr>
+                    {byCategory.length > 0 && (
+                      <tr>
+                        <td style={{ paddingLeft: 32, fontSize: 13, color: 'var(--muted)' }}>
+                          {byCategory.map(([cat, amt]) => (
+                            <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                              <span>{cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+                              <span className="tabular">{fmt(amt)}</span>
+                            </div>
+                          ))}
+                        </td>
+                        <td />
+                      </tr>
+                    )}
                   </tbody>
                   <tfoot>
                     <tr>

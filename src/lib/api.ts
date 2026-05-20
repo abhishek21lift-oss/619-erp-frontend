@@ -515,6 +515,19 @@ export const api = {
     sessions: (id: string) => request(`/api/trainers/${id}/sessions`),
   },
 
+  expenses: {
+    list:   (params?: Record<string, string | number>) =>
+              request<{ expenses: Record<string, unknown>[]; total: number }>(`/api/expenses${buildQs(params)}`),
+    get:    (id: string) => request<Record<string, unknown>>(`/api/expenses/${id}`),
+    create: (data: Record<string, unknown>) =>
+              request<{ message?: string; expense: Record<string, unknown> }>('/api/expenses', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Record<string, unknown>) =>
+              request<{ message?: string; expense: Record<string, unknown> }>(`/api/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request<{ message?: string }>(`/api/expenses/${id}`, { method: 'DELETE' }),
+    stats:  (params?: Record<string, string | number>) =>
+              request<{ summary: Record<string, unknown>; byCategory: Record<string, unknown>[] }>(`/api/expenses/stats${buildQs(params)}`),
+  },
+
   staff: {
     list: async () => {
       const raw = await request<Record<string, unknown>[]>('/api/staff');
@@ -529,9 +542,6 @@ export const api = {
     targets: {
       list: (params?: Record<string, string | number>) =>
         request<StaffTarget[]>(`/api/staff/targets${buildQs(params)}`),
-      get: (id: string) => request<StaffTarget>(`/api/staff/${id}/targets`),
-      set: (id: string, data: Record<string, unknown>) =>
-        request<StaffTarget>(`/api/staff/${id}/targets`, { method: 'POST', body: JSON.stringify(data) }),
       create: (data: StaffTargetPayload) =>
         request<{ message?: string; target: StaffTarget }>('/api/staff/targets', {
           method: 'POST',
@@ -556,13 +566,14 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    approve: (id: string) =>
+    approve: (id: string, admin_note?: string) =>
       request<{ message?: string; leave: LeaveRequest }>(`/api/leave/${id}/approve`, {
-        method: 'PUT',
+        method: 'POST',
+        body: JSON.stringify({ admin_note }),
       }),
     reject: (id: string, admin_note?: string) =>
       request<{ message?: string; leave: LeaveRequest }>(`/api/leave/${id}/reject`, {
-        method: 'PUT',
+        method: 'POST',
         body: JSON.stringify({ admin_note }),
       }),
   },

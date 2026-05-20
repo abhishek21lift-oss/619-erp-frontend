@@ -100,8 +100,8 @@ function Inner() {
         id: t.id, name: t.name, photo_url: t.photo_url,
         clients_count: tc.length,
         monthly_pt_revenue: monthlyRevenue,
-        incentive_rate: monthlyRevenue >= 50000 ? 50 : 40,
-        incentive_amount: monthlyRevenue >= 50000 ? monthlyRevenue * 0.5 : monthlyRevenue * 0.4,
+        incentive_rate: Number(t.incentive_rate) || 0,
+        incentive_amount: monthlyRevenue * (Number(t.incentive_rate) || 0) / 100,
         revenue_percentage: 0,
       };
     });

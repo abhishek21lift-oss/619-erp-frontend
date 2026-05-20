@@ -42,22 +42,21 @@ import {
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════
-   INJECT KEYFRAMES (once, client-side)
-═══════════════════════════════════════════════════════ */
+   KEYFRAMES (now in shared globals.css)
+   Component-specific extras injected once
+════════════════════════════════════════════════════════ */
 const CSS = `
-@keyframes qa-float-a {
-  0%,100% { transform: translate(0,0) scale(1); }
-  33%      { transform: translate(18px,-14px) scale(1.06); }
-  66%      { transform: translate(-12px,10px) scale(0.96); }
+@keyframes qa-stagger-in {
+  0%   { opacity:0; transform: translateY(24px) scale(0.96); }
+  100% { opacity:1; transform: translateY(0) scale(1); }
 }
-@keyframes qa-float-b {
-  0%,100% { transform: translate(0,0) scale(1); }
-  40%      { transform: translate(-20px,16px) scale(1.05); }
-  75%      { transform: translate(14px,-10px) scale(0.97); }
+@keyframes qa-stat-count {
+  0%   { opacity:0; transform:translateY(6px); }
+  100% { opacity:1; transform:translateY(0); }
 }
-@keyframes qa-float-c {
-  0%,100% { transform: translate(0,0) scale(1); }
-  50%      { transform: translate(10px,20px) scale(1.04); }
+@keyframes qa-ai-badge-in {
+  0%   { opacity:0; transform:scale(0.8) translateY(4px); }
+  100% { opacity:1; transform:scale(1) translateY(0); }
 }
 @keyframes qa-pulse-dot {
   0%,100% { opacity:1; transform: scale(1); }
@@ -71,33 +70,8 @@ const CSS = `
   0%   { transform: translateX(-120%); }
   100% { transform: translateX(260%); }
 }
-@keyframes qa-ripple {
-  0%   { transform: scale(0); opacity:0.6; }
-  100% { transform: scale(4); opacity:0; }
-}
-@keyframes qa-stagger-in {
-  0%   { opacity:0; transform: translateY(24px) scale(0.96); }
-  100% { opacity:1; transform: translateY(0) scale(1); }
-}
-@keyframes qa-border-spin {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 300% 50%; }
-}
-@keyframes qa-stat-count {
-  0%   { opacity:0; transform:translateY(6px); }
-  100% { opacity:1; transform:translateY(0); }
-}
-@keyframes qa-ai-badge-in {
-  0%   { opacity:0; transform:scale(0.8) translateY(4px); }
-  100% { opacity:1; transform:scale(1) translateY(0); }
-}
 @media (prefers-reduced-motion: reduce) {
-  [style*="qa-stagger-in"], [style*="qa-float"], [style*="qa-pulse"],
-  [style*="qa-shimmer"], [style*="qa-ripple"], [style*="qa-border-spin"],
-  [style*="qa-stat-count"], [style*="qa-ai-badge-in"] {
-    animation: none !important;
-    transition: none !important;
-  }
+  [style*="animation"] { animation: none !important; transition: none !important; }
 }
 `;
 
@@ -168,7 +142,7 @@ const ACTIONS: ActionConfig[] = [
     activity: 'Priya Kumar — 2 min ago',
   },
   {
-    href: '/payments?new=1',
+    href: '/payments',
     label: 'Quick Billing',
     desc: 'Raise & record payments instantly.',
     icon: <WalletCards className="h-6 w-6" />,
@@ -274,35 +248,33 @@ function AmbientBg() {
       />
       {/* floating orbs */}
       <div
-        className="absolute -left-20 -top-20 h-64 w-64 rounded-full opacity-25"
+        className="absolute -left-20 -top-20 h-64 w-64 animate-float-a rounded-full opacity-25"
         style={{
           background: 'radial-gradient(circle,rgba(244,114,182,1),transparent 70%)',
           filter: 'blur(48px)',
-          animation: 'qa-float-a 14s ease-in-out infinite',
         }}
       />
       <div
-        className="absolute -bottom-12 -right-12 h-72 w-72 rounded-full opacity-20"
+        className="absolute -bottom-12 -right-12 h-72 w-72 animate-float-b rounded-full opacity-20"
         style={{
           background: 'radial-gradient(circle,rgba(34,211,238,1),transparent 70%)',
           filter: 'blur(52px)',
-          animation: 'qa-float-b 18s ease-in-out infinite',
         }}
       />
       <div
-        className="absolute bottom-10 left-1/3 h-48 w-48 rounded-full opacity-15"
+        className="absolute bottom-10 left-1/3 h-48 w-48 animate-float-c rounded-full opacity-15"
         style={{
           background: 'radial-gradient(circle,rgba(168,85,247,1),transparent 70%)',
           filter: 'blur(40px)',
-          animation: 'qa-float-c 22s ease-in-out infinite',
         }}
       />
       <div
-        className="absolute right-1/4 top-8 h-40 w-40 rounded-full opacity-15"
+        className="absolute right-1/4 top-8 h-40 w-40 animate-float-a rounded-full opacity-15"
         style={{
           background: 'radial-gradient(circle,rgba(251,191,36,1),transparent 70%)',
           filter: 'blur(36px)',
-          animation: 'qa-float-a 16s 4s ease-in-out infinite',
+          animationDuration: '16s',
+          animationDelay: '4s',
         }}
       />
       {/* top edge shine */}
@@ -583,11 +555,10 @@ function ActionCard({
       {hovered && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-[1px] rounded-[inherit]"
+          className="pointer-events-none absolute -inset-[1px] animate-border-spin rounded-[inherit]"
           style={{
             background: `linear-gradient(90deg,transparent,${borderGlow},transparent,${glowA},transparent)`,
             backgroundSize: '300% 100%',
-            animation: 'qa-border-spin 2s linear infinite',
             opacity: 0.4,
           }}
         />
@@ -610,7 +581,7 @@ function ActionCard({
         <span
           key={r.id}
           aria-hidden="true"
-          className="pointer-events-none absolute rounded-full"
+          className="pointer-events-none absolute animate-ripple rounded-full"
           style={{
             left: r.x,
             top: r.y,
@@ -619,7 +590,6 @@ function ActionCard({
             marginLeft: -4,
             marginTop: -4,
             background: borderGlow,
-            animation: 'qa-ripple 0.65s ease-out forwards',
           }}
         />
       ))}

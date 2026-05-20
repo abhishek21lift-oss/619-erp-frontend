@@ -292,27 +292,27 @@ function KpiRow({ d }: { d: DashSummary }) {
       <KpiCard className="kpi-premium" accent="emerald"
         label="Today's revenue" value={fmtINRCompact(todayRevenue)}
         hint={`Month-to-date ${fmtINRCompact(monthRevenue)}`}
-        icon={<TrendingUp className="h-5 w-5" />} href="/finance/revenue" />
+        icon={<TrendingUp className="h-5 w-5" />} href="/finance/collection" />
 
       <KpiCard className="kpi-premium" accent="rose"
         label="Collected payments" value={fmtINRCompact(collectedAmount)}
         hint={`${collectedCountToday.toLocaleString('en-IN')} payments today`}
-        icon={<CreditCard className="h-5 w-5" />} href="/finance/payments/collected" />
+        icon={<CreditCard className="h-5 w-5" />} href="/payments" />
 
       <KpiCard className="kpi-premium" accent="sky"
         label="Pending payments" value={fmtINRCompact(pendingAmount)}
         hint={`${pendingInvoices.toLocaleString('en-IN')} unpaid invoices`}
-        icon={<AlertCircle className="h-5 w-5" />} href="/finance/payments/pending" deltaIs="bad" />
+        icon={<AlertCircle className="h-5 w-5" />} href="/finance/dues" deltaIs="bad" />
 
       <KpiCard className="kpi-premium" accent="violet"
         label="New clients" value={newClientsToday.toLocaleString('en-IN')}
         hint={`${newClientsMonth.toLocaleString('en-IN')} joined this month`}
-        icon={<UserPlus className="h-5 w-5" />} href="/members/new" />
+        icon={<UserPlus className="h-5 w-5" />} href="/clients/new" />
 
       <KpiCard className="kpi-premium" accent="amber"
         label="Renewals" value={renewalsCount.toLocaleString('en-IN')}
         hint="Next 7 days"
-        icon={<CalendarCheck className="h-5 w-5" />} href="/members/renewals" />
+        icon={<CalendarCheck className="h-5 w-5" />} href="/clients" />
     </>
   );
 }

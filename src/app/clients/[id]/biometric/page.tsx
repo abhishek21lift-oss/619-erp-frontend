@@ -54,7 +54,7 @@ function Inner() {
           setFaceEnrolled(true);
         }
       })
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 

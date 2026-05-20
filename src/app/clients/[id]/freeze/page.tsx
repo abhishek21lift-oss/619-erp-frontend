@@ -30,7 +30,7 @@ function Inner() {
         if (c.freeze_until) setForm(f => ({ ...f, until: c.freeze_until?.slice(0, 10) || '' }));
         if (c.freeze_reason) setForm(f => ({ ...f, reason: c.freeze_reason || '' }));
       })
-      .catch(console.error)
+      .catch(setError)
       .finally(() => setLoading(false));
   }, [id]);
 

@@ -28,7 +28,7 @@ function Inner() {
     api.clients.get(id).then((c: any) => {
       setClient(c);
       setForm(f => ({ ...f, package_type: c?.package_type || '' }));
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch(setError).finally(() => setLoading(false));
 
     // Fetch subscriptions to get active sub ID for the downgrade call
     api.subscriptions.list({ client_id: id, status: 'active' }).then((subs: any[]) => {
