@@ -286,7 +286,8 @@ async function request<T = any>(
     let msg = `HTTP ${res.status}`;
     try {
       const body = await res.json();
-      msg = body?.message ?? body?.error ?? msg;
+      const rawErr = body?.message ?? body?.error;
+      msg = typeof rawErr === 'string' ? rawErr : typeof rawErr === 'object' && rawErr ? rawErr.message || JSON.stringify(rawErr) : msg;
     } catch { /* ignore */ }
     const err = new Error(msg) as Error & { status: number };
     err.status = res.status;
