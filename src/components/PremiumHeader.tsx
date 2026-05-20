@@ -1,11 +1,9 @@
 'use client';
 
-import {
-  useEffect, useMemo, useRef, useState, useCallback,
-  useId,
-} from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/lib/nav-config';
 import {
@@ -691,20 +689,20 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             onClick={() => router.push('/dashboard')}
             title="619 Fitness Studio"
           >
-            <img
+            <Image
               src="/619-logo.png"
               alt="619 Fitness Studio"
               width={scrolled ? 34 : 42}
               height={scrolled ? 34 : 42}
               className="logo-img-clean object-contain transition-all duration-300"
               style={{ display: 'block' }}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-                const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
-                if (fb) fb.style.display = 'flex';
+              onError={() => {
+                const el = document.getElementById('logo-fallback');
+                if (el) el.style.display = 'flex';
               }}
             />
             <span
+              id="logo-fallback"
               className="absolute hidden h-full w-full items-center justify-center rounded-[14px] text-[13px] font-black text-white"
               style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}
             >
@@ -831,17 +829,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   mix-blend-mode:multiply on .logo-img-avatar suppresses white canvas.
                 */}
                 <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
-                  <img
-                    src="/619-logo.png"
-                    alt="Account"
-                    className="logo-img-avatar h-full w-full object-contain"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                      const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
-                      if (fb) fb.style.display = 'flex';
-                    }}
-                  />
-                  <span className="hidden h-full w-full items-center justify-center text-[10px] font-black text-slate-700">{initials}</span>
+                  <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-slate-700">{initials}</span>
                 </div>
                 <div className="hidden text-left xl:block">
                   <div className="max-w-[90px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>

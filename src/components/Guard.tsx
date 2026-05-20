@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import type { Role } from '@/lib/nav-config';
@@ -13,6 +13,7 @@ interface Props {
 export default function Guard({ children, role }: Props) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -24,10 +25,13 @@ export default function Guard({ children, role }: Props) {
 
     if (role && user.role !== role) {
       router.replace('/dashboard');
+      return;
     }
+
+    setReady(true);
   }, [user, loading, role, router]);
 
-  if (loading) {
+  if (loading || !ready) {
     return (
       <div
         style={{

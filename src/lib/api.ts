@@ -274,13 +274,22 @@ async function request<T = any>(
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   const init: RequestInit = {
     ...options,
     headers,
     credentials: 'include',
+    signal: controller.signal,
   };
 
-  const res = await fetch(url, init);
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;

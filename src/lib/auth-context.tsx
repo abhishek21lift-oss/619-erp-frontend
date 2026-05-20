@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { api, type User } from './api';
 
 export type Role = 'admin' | 'manager' | 'staff' | 'trainer' | 'receptionist' | 'reception' | 'member';
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function login(email: string, password: string): Promise<void> {
+  const login = useCallback(async function(email: string, password: string): Promise<void> {
     const data = await api.auth.login(email, password);
     if (data.token) {
       setToken(data.token);
@@ -100,15 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(data.user);
     ssSet(SESSION_USER_KEY, JSON.stringify(data.user));
-  }
+  }, []);
 
-  function logout(): void {
-    api.auth.logout?.();
+  const logout = useCallback(function(): void {
+    api.auth.logout?.().catch(() => {});
     setToken(null);
     setUser(null);
     lsDel(TOKEN_KEY);
     ssDel(SESSION_USER_KEY);
-  }
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout }}>
