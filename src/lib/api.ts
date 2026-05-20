@@ -674,10 +674,196 @@ export const api = {
       }),
 
     /** Upload a brand asset (base64 data-URL) and store under `key` */
-    uploadAsset: (image: string, key: string) =>
+      uploadAsset: (image: string, key: string) =>
       request<{ message: string; url: string }>('/api/settings/branding/upload-logo', {
         method: 'POST',
         body: JSON.stringify({ image, key }),
+      }),
+
+    /** Full studio config + branches */
+    getStudio: () =>
+      request<{ settings: Record<string, unknown>; branches: unknown[] }>('/api/settings/studio'),
+
+    /** List branches */
+    getBranches: () =>
+      request<{ id: string; name: string; location: string; status: string; member_count: number }[]>('/api/settings/branches'),
+
+    /** Create a branch */
+    createBranch: (data: { name: string; location?: string }) =>
+      request<{ id: string; name: string; location: string; status: string; member_count: number }>('/api/settings/branches', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    /** Update a branch */
+    updateBranch: (id: string, data: { name?: string; location?: string; status?: string }) =>
+      request<{ id: string; name: string; location: string; status: string }>(`/api/settings/branches/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    /** Get feature flags */
+    getFeatureFlags: () =>
+      request<{ flags: Record<string, unknown>; raw: unknown[] }>('/api/settings/feature-flags'),
+
+    /** Update feature flags */
+    updateFeatureFlags: (data: Record<string, unknown>) =>
+      request<{ message: string }>('/api/settings/feature-flags', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    /** Update generic settings (key-value) */
+    update: (data: Record<string, string>) =>
+      request<{ message: string; count: number }>('/api/settings', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  // ── Invoices ──────────────────────────────────────────────────────
+  invoices: {
+    list: (params?: Record<string, string | number>) =>
+      request<{ invoices: unknown[]; stats: { total: number; paid: number; pending: number; overdue: number } }>(
+        `/api/invoices${buildQs(params)}`,
+      ),
+    get: (id: string) => request<unknown>(`/api/invoices/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request<{ message: string; invoice: unknown }>('/api/invoices', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      request<{ message: string; invoice: unknown }>(`/api/invoices/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    send: (id: string) =>
+      request<{ message: string; invoice: unknown }>(`/api/invoices/${id}/send`, { method: 'POST' }),
+    markPaid: (id: string, data?: { payment_method?: string }) =>
+      request<{ message: string; invoice: unknown }>(`/api/invoices/${id}/mark-paid`, {
+        method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
+      }),
+    remind: (id: string) =>
+      request<{ message: string }>(`/api/invoices/${id}/remind`, { method: 'POST' }),
+    cancel: (id: string) =>
+      request<{ message: string; invoice: unknown }>(`/api/invoices/${id}/cancel`, { method: 'POST' }),
+  },
+
+  // ── Workouts / Exercises ──────────────────────────────────────────
+  workouts: {
+    exercises: {
+      list: (params?: Record<string, string | number>) =>
+        request<unknown[]>(`/api/exercises${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        request<{ message: string; exercise: unknown }>('/api/exercises', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        request<{ message: string; exercise: unknown }>(`/api/exercises/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+      delete: (id: string) =>
+        request<{ message: string }>(`/api/exercises/${id}`, { method: 'DELETE' }),
+    },
+    plans: {
+      list: (params?: Record<string, string | number>) =>
+        request<unknown[]>(`/api/workout-plans${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        request<{ message: string; plan: unknown }>('/api/workout-plans', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        request<{ message: string; plan: unknown }>(`/api/workout-plans/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+      delete: (id: string) =>
+        request<{ message: string }>(`/api/workout-plans/${id}`, { method: 'DELETE' }),
+    },
+    assign: (data: { workout_plan_id: string; client_id: string; start_date?: string; end_date?: string; notes?: string }) =>
+      request<{ message: string; assignment: unknown }>('/api/workout-plans/assign', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    updateProgress: (id: string, data: { progress_pct: number }) =>
+      request<{ message: string; assignment: unknown }>(`/api/workout-plans/assignments/${id}/progress`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  // ── Diet / Nutrition ──────────────────────────────────────────────
+  diet: {
+    meals: {
+      list: (params?: Record<string, string | number>) =>
+        request<unknown[]>(`/api/meals${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        request<{ message: string; meal: unknown }>('/api/meals', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+    },
+    templates: {
+      list: (params?: Record<string, string | number>) =>
+        request<unknown[]>(`/api/diet-templates${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        request<{ message: string; template: unknown }>('/api/diet-templates', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+    },
+    assign: (data: { diet_template_id: string; client_id: string; start_date?: string; end_date?: string; notes?: string }) =>
+      request<{ message: string; assignment: unknown }>('/api/diet-plans/assign', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    tracker: {
+      get: (params: { client_id: string; date?: string }) =>
+        request<{ today: Record<string, unknown>; history: unknown[] }>(`/api/nutrition/tracker${buildQs(params)}`),
+      update: (data: { client_id: string; log_date?: string; calories_consumed?: number; protein_g?: number; carbs_g?: number; fats_g?: number; water_glasses?: number; notes?: string }) =>
+        request<{ message: string; log: unknown }>('/api/nutrition/tracker', {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+    },
+    fitnessProfile: {
+      get: (clientId: string) =>
+        request<unknown>(`/api/fitness-profile/${clientId}`),
+      update: (clientId: string, data: Record<string, unknown>) =>
+        request<{ message: string; profile: unknown }>(`/api/fitness-profile/${clientId}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+    },
+    supplements: {
+      list: () => request<unknown[]>('/api/supplements'),
+    },
+  },
+
+  // ── Renewals ──────────────────────────────────────────────────────
+  renewals: {
+    pipeline: (params?: Record<string, string | number>) =>
+      request<{ members: unknown[]; stats: { expiring_today: number; likely_to_renew: number; high_value_at_risk: number; auto_renewals: number; total_pipeline: number } }>(
+        `/api/renewals/pipeline${buildQs(params)}`,
+      ),
+    churnAlerts: () =>
+      request<unknown[]>('/api/renewals/churn-alerts'),
+    insights: () =>
+      request<{ stats: Record<string, number>; insights: unknown[] }>('/api/renewals/insights'),
+    renew: (id: string, data: Record<string, unknown>) =>
+      request<{ message: string }>(`/api/renewals/${id}/renew`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    reminders: (data?: { days?: number }) =>
+      request<{ message: string; count: number }>('/api/renewals/reminders', {
+        method: 'POST',
+        body: data ? JSON.stringify(data) : undefined,
       }),
   },
 };

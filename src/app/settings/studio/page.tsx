@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings, MapPin, Clock, Globe, IndianRupee, Building2, Shield,
@@ -8,8 +8,9 @@ import {
   MapPin as MapPinIcon, Brain, RefreshCw, Clock as ClockIcon,
   Database, FileText, ChevronRight, CheckCircle2, X, Save,
   Palette, ToggleLeft, Users, Lock, Key, Activity, AlertTriangle,
-  HardDrive, Download, Upload,
+  HardDrive, Download, Upload, Loader, Plus,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
@@ -216,28 +217,156 @@ function AccessRow({ role, permissions }: { role: string; permissions: string })
   );
 }
 
+type Branch = {
+  id: string;
+  name: string;
+  location: string;
+  status: string;
+  member_count: number;
+};
+
 /* ────────────────────────────────────────────────────────────────────
    PAGE
 ──────────────────────────────────────────────────────────────────── */
 export default function StudioSettingsPage() {
-  const [studioName, setStudioName] = useState('619 Fitness Studio');
-  const [location, setLocation] = useState('Lucknow, Uttar Pradesh');
-  const [timezone, setTimezone] = useState('Asia/Kolkata (IST +05:30)');
-  const [currency, setCurrency] = useState('INR (₹)');
-  const [gst, setGst] = useState('18%');
-  const [invoicePrefix, setInvoicePrefix] = useState('INV-619-');
-  const [paymentTerms, setPaymentTerms] = useState('Net 15');
+  const [studioName, setStudioName] = useState('');
+  const [location, setLocation] = useState('');
+  const [timezone, setTimezone] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [gst, setGst] = useState('');
+  const [invoicePrefix, setInvoicePrefix] = useState('');
+  const [paymentTerms, setPaymentTerms] = useState('');
   const [checkInMethod, setCheckInMethod] = useState<'face' | 'pin' | 'otp'>('face');
   const [geoFencing, setGeoFencing] = useState(true);
   const [aiInsights, setAiInsights] = useState(true);
   const [autoRenewals, setAutoRenewals] = useState(true);
   const [smartReminders, setSmartReminders] = useState(true);
   const [autoBackup, setAutoBackup] = useState(true);
-  const [retentionPeriod, setRetentionPeriod] = useState('90 days');
+  const [retentionPeriod, setRetentionPeriod] = useState('');
 
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
+
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchLocation, setNewBranchLocation] = useState('');
+  const [addingBranch, setAddingBranch] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [studioRes, branchesRes] = await Promise.all([
+        api.settings.getStudio(),
+        api.settings.getBranches(),
+      ]);
+      const s = studioRes.settings ?? {};
+      setStudioName(String(s.name ?? s.studio_name ?? ''));
+      setLocation(String(s.location ?? ''));
+      setTimezone(String(s.timezone ?? ''));
+      setCurrency(String(s.currency ?? ''));
+      setGst(String(s.gst ?? s.gst_rate ?? ''));
+      setInvoicePrefix(String(s.invoice_prefix ?? ''));
+      setPaymentTerms(String(s.payment_terms ?? ''));
+      setCheckInMethod((s.check_in_method ?? 'face') as 'face' | 'pin' | 'otp');
+      setGeoFencing(s.geo_fencing !== false);
+      setAiInsights(s.ai_insights !== false);
+      setAutoRenewals(s.auto_renewals !== false);
+      setSmartReminders(s.smart_reminders !== false);
+      setAutoBackup(s.auto_backup !== false);
+      setRetentionPeriod(String(s.retention_period ?? ''));
+
+      setEmailNotif(s.email_notifications !== false);
+      setSmsNotif(s.sms_notifications !== false);
+      setPushNotif(s.push_notifications !== false);
+
+      setBranches(branchesRes as Branch[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load settings');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await api.settings.update({
+        name: studioName,
+        studio_name: studioName,
+        location,
+        timezone,
+        currency,
+        gst,
+        gst_rate: gst,
+        invoice_prefix: invoicePrefix,
+        payment_terms: paymentTerms,
+        check_in_method: checkInMethod,
+        geo_fencing: String(geoFencing),
+        ai_insights: String(aiInsights),
+        auto_renewals: String(autoRenewals),
+        smart_reminders: String(smartReminders),
+        auto_backup: String(autoBackup),
+        retention_period: retentionPeriod,
+        email_notifications: String(emailNotif),
+        sms_notifications: String(smsNotif),
+        push_notifications: String(pushNotif),
+      });
+      setSuccess('Settings saved successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddBranch = async () => {
+    if (!newBranchName.trim()) return;
+    setAddingBranch(true);
+    setError(null);
+    try {
+      await api.settings.createBranch({ name: newBranchName.trim(), location: newBranchLocation.trim() });
+      setNewBranchName('');
+      setNewBranchLocation('');
+      setSuccess('Branch added successfully');
+      setTimeout(() => setSuccess(null), 3000);
+      const branchesRes = await api.settings.getBranches();
+      setBranches(branchesRes as Branch[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add branch');
+    } finally {
+      setAddingBranch(false);
+    }
+  };
+
+  const [showNewBranch, setShowNewBranch] = useState(false);
+  const hasChanges = true;
+
+  if (loading) {
+    return (
+      <Guard role="admin">
+        <AppShell>
+          <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+            <div className="flex flex-col items-center gap-3">
+              <Loader size={24} className="animate-spin" style={{ color: '#dc2626' }} />
+              <p className="text-[13px] font-[500]" style={{ color: 'rgb(148,163,184)' }}>Loading studio settings…</p>
+            </div>
+          </div>
+        </AppShell>
+      </Guard>
+    );
+  }
 
   return (
     <Guard role="admin">
@@ -263,6 +392,28 @@ export default function StudioSettingsPage() {
             </div>
           </div>
 
+          {/* ── ALERTS ── */}
+          {error && (
+            <div className="mx-auto max-w-screen-xl px-5 pt-4 sm:px-8">
+              <div className="mx-auto max-w-3xl flex items-center gap-2.5 rounded-[14px] px-4 py-3 text-[12.5px] font-[500]"
+                style={{ background: 'rgba(239,68,68,0.10)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.20)' }}>
+                <AlertTriangle size={14} />
+                {error}
+                <button onClick={() => setError(null)} className="ml-auto"><X size={14} /></button>
+              </div>
+            </div>
+          )}
+          {success && (
+            <div className="mx-auto max-w-screen-xl px-5 pt-4 sm:px-8">
+              <div className="mx-auto max-w-3xl flex items-center gap-2.5 rounded-[14px] px-4 py-3 text-[12.5px] font-[500]"
+                style={{ background: 'rgba(16,185,129,0.10)', color: '#059669', border: '1px solid rgba(16,185,129,0.20)' }}>
+                <CheckCircle2 size={14} />
+                {success}
+                <button onClick={() => setSuccess(null)} className="ml-auto"><X size={14} /></button>
+              </div>
+            </div>
+          )}
+
           {/* ── MAIN CONTENT ── */}
           <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
             <div className="mx-auto max-w-3xl flex flex-col gap-4">
@@ -279,12 +430,40 @@ export default function StudioSettingsPage() {
               {/* B. Branch Management */}
               <SectionCard title="Branch Management" subtitle="Manage gym locations" icon={<Building2 size={14} style={{ color: '#dc2626' }} />}>
                 <div className="flex flex-col gap-2.5">
-                  <BranchCard name="619 Fitness Studio — HQ" location="Lucknow, Uttar Pradesh" status="active" members={342} />
-                  <BranchCard name="619 Fitness Studio — Gomti Nagar" location="Lucknow, Uttar Pradesh" status="active" members={189} />
-                  <BranchCard name="619 Fitness Studio — Hazratganj" location="Lucknow, Uttar Pradesh" status="inactive" members={0} />
-                  <button className="mt-2 flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12px] font-[660] transition-all hover:bg-slate-50" style={{ color: '#dc2626', background: 'rgba(220,38,38,0.06)', border: '1px dashed rgba(220,38,38,0.20)' }}>
-                    <Building2 size={13} /> Add Branch
-                  </button>
+                  {branches.length === 0 && (
+                    <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>No branches yet.</p>
+                  )}
+                  {branches.map(b => (
+                    <BranchCard
+                      key={b.id}
+                      name={b.name}
+                      location={b.location}
+                      status={b.status as 'active' | 'inactive'}
+                      members={b.member_count}
+                    />
+                  ))}
+                  {showNewBranch && (
+                    <div className="flex flex-col gap-2 rounded-[14px] p-3" style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(15,23,42,0.07)' }}>
+                      <FloatInput label="Branch Name" value={newBranchName} onChange={setNewBranchName} required />
+                      <FloatInput label="Location" value={newBranchLocation} onChange={setNewBranchLocation} />
+                      <div className="flex items-center gap-2 mt-1">
+                        <PremiumButton tone="primary" size="sm" icon={<Plus size={13} />}
+                          onClick={handleAddBranch} disabled={addingBranch || !newBranchName.trim()}>
+                          {addingBranch ? 'Adding…' : 'Add'}
+                        </PremiumButton>
+                        <PremiumButton tone="secondary" size="sm" onClick={() => { setShowNewBranch(false); setNewBranchName(''); setNewBranchLocation(''); }}>
+                          Cancel
+                        </PremiumButton>
+                      </div>
+                    </div>
+                  )}
+                  {!showNewBranch && (
+                    <button onClick={() => setShowNewBranch(true)}
+                      className="mt-2 flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12px] font-[660] transition-all hover:bg-slate-50"
+                      style={{ color: '#dc2626', background: 'rgba(220,38,38,0.06)', border: '1px dashed rgba(220,38,38,0.20)' }}>
+                      <Building2 size={13} /> Add Branch
+                    </button>
+                  )}
                 </div>
               </SectionCard>
 
@@ -393,8 +572,13 @@ export default function StudioSettingsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <PremiumButton tone="secondary" size="sm" icon={<X size={13} />}>Discard</PremiumButton>
-                <PremiumButton tone="primary" size="sm" icon={<Save size={13} />}>Save Changes</PremiumButton>
+                <PremiumButton tone="secondary" size="sm" icon={<RefreshCw size={13} />} onClick={loadData} disabled={loading}>
+                  Reset
+                </PremiumButton>
+                <PremiumButton tone="primary" size="sm" icon={saving ? <Loader size={13} className="animate-spin" /> : <Save size={13} />}
+                  onClick={handleSave} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </PremiumButton>
               </div>
             </div>
           </div>

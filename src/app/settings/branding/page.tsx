@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import Image from 'next/image';
+import { api } from '@/lib/api';
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -43,6 +44,7 @@ import {
   ChevronRight,
   CircleDot,
   GripVertical,
+  AlertCircle,
 } from 'lucide-react';
 
 type ThemeMode = 'dark' | 'light';
@@ -55,6 +57,7 @@ type AssetCard = {
   subtitle: string;
   size: string;
   tone: string;
+  key: string;
 };
 
 const ASSETS: AssetCard[] = [
@@ -63,24 +66,28 @@ const ASSETS: AssetCard[] = [
     subtitle: 'Used in headers, receipts and dashboard surfaces',
     size: 'SVG / 512×512',
     tone: 'from-rose-500/20 via-red-500/10 to-transparent',
+    key: 'primary_logo',
   },
   {
     title: 'App Icon',
     subtitle: 'Launcher icon and PWA application tile',
     size: '1024×1024',
     tone: 'from-red-500/20 via-amber-500/10 to-transparent',
+    key: 'app_icon',
   },
   {
     title: 'Cover Image',
     subtitle: 'Brand hero surface for welcome and marketing pages',
     size: '1600×900',
     tone: 'from-zinc-100/10 via-white/5 to-transparent',
+    key: 'cover_image',
   },
   {
     title: 'Social Share Banner',
     subtitle: 'Used for social embeds and public sharing previews',
     size: '1200×630',
     tone: 'from-fuchsia-500/20 via-red-500/10 to-transparent',
+    key: 'social_share_banner',
   },
 ];
 
@@ -148,14 +155,131 @@ export default function BrandingPage() {
   const [radiusStyle, setRadiusStyle] = React.useState<RadiusStyle>('smooth');
   const [primary, setPrimary] = React.useState('#dc2626');
   const [accent, setAccent] = React.useState('#7c3aed');
-  const [loading] = React.useState(false);
-  const [dirty] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [pageLoading, setPageLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [dirty, setDirty] = React.useState(false);
+  const [uploadingAsset, setUploadingAsset] = React.useState<string | null>(null);
+
+  const savedRef = React.useRef({
+    primary: '#dc2626',
+    accent: '#7c3aed',
+    mode: 'dark' as ThemeMode,
+    typeface: 'Inter' as Typeface,
+    buttonStyle: 'glass' as ButtonStyle,
+    radiusStyle: 'smooth' as RadiusStyle,
+  });
+
+  const fetchBranding = React.useCallback(async () => {
+    setPageLoading(true);
+    setError(null);
+    try {
+      const settings = await api.settings.getBranding();
+      if (settings.primary_color) setPrimary(settings.primary_color);
+      if (settings.accent_color) setAccent(settings.accent_color);
+      if (settings.theme_mode === 'dark' || settings.theme_mode === 'light') setMode(settings.theme_mode);
+      if (['Inter', 'Satoshi', 'Geist'].includes(settings.typeface)) setTypeface(settings.typeface as Typeface);
+      if (['soft', 'solid', 'glass'].includes(settings.button_style)) setButtonStyle(settings.button_style as ButtonStyle);
+      if (['rounded', 'smooth', 'pill'].includes(settings.radius_style)) setRadiusStyle(settings.radius_style as RadiusStyle);
+      savedRef.current = {
+        primary: settings.primary_color || '#dc2626',
+        accent: settings.accent_color || '#7c3aed',
+        mode: (settings.theme_mode === 'dark' || settings.theme_mode === 'light') ? settings.theme_mode : 'dark',
+        typeface: (['Inter', 'Satoshi', 'Geist'].includes(settings.typeface) ? settings.typeface : 'Inter') as Typeface,
+        buttonStyle: (['soft', 'solid', 'glass'].includes(settings.button_style) ? settings.button_style : 'glass') as ButtonStyle,
+        radiusStyle: (['rounded', 'smooth', 'pill'].includes(settings.radius_style) ? settings.radius_style : 'smooth') as RadiusStyle,
+      };
+      setDirty(false);
+    } catch {
+      setError('Failed to load branding settings');
+    } finally {
+      setPageLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchBranding();
+  }, [fetchBranding]);
+
+  const initializedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (initializedRef.current) {
+      setDirty(true);
+    } else {
+      initializedRef.current = true;
+    }
+  }, [mode, typeface, buttonStyle, radiusStyle, primary, accent]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await api.settings.saveBranding({
+        primary_color: primary,
+        accent_color: accent,
+        theme_mode: mode,
+        typeface,
+        button_style: buttonStyle,
+        radius_style: radiusStyle,
+      });
+      savedRef.current = { primary, accent, mode, typeface, buttonStyle, radiusStyle };
+      setDirty(false);
+    } catch {
+      setError('Failed to save branding settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = () => {
+    setPrimary(savedRef.current.primary);
+    setAccent(savedRef.current.accent);
+    setMode(savedRef.current.mode);
+    setTypeface(savedRef.current.typeface);
+    setButtonStyle(savedRef.current.buttonStyle);
+    setRadiusStyle(savedRef.current.radiusStyle);
+    setDirty(false);
+  };
+
+  const handleUpload = async (file: File, key: string) => {
+    setUploadingAsset(key);
+    setError(null);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+      await api.settings.uploadAsset(base64, key);
+    } catch {
+      setError(`Failed to upload ${key}`);
+    } finally {
+      setUploadingAsset(null);
+    }
+  };
+
+  if (pageLoading) {
+    return (
+      <Guard role="admin">
+        <AppShell>
+          <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-28 pt-5 sm:px-6 lg:px-8">
+              <LoadingSkeleton />
+            </div>
+          </div>
+        </AppShell>
+      </Guard>
+    );
+  }
 
   return (
     <Guard role="admin">
       <AppShell>
         <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-28 pt-5 sm:px-6 lg:px-8">
+            {error && <ErrorBanner message={error} onRetry={fetchBranding} />}
+
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
               <HeroBrandHeader primary={primary} accent={accent} />
             </motion.div>
@@ -217,11 +341,11 @@ export default function BrandingPage() {
                 />
               </motion.div>
               <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}>
-                <MediaAssetsSection />
+                <MediaAssetsSection onUpload={handleUpload} uploadingAsset={uploadingAsset} />
               </motion.div>
             </motion.div>
 
-            <FooterActionBar dirty={dirty} loading={loading} />
+            <FooterActionBar dirty={dirty} loading={saving} onSave={handleSave} onReset={handleReset} />
           </div>
         </div>
       </AppShell>
@@ -591,7 +715,20 @@ function BrandCustomization({
   );
 }
 
-function MediaAssetsSection() {
+function MediaAssetsSection({ onUpload, uploadingAsset }: { onUpload: (file: File, key: string) => Promise<void>; uploadingAsset: string | null }) {
+  const fileInputRefs = React.useRef<Record<string, HTMLInputElement | null>>({});
+
+  const handleFileSelect = (key: string) => {
+    fileInputRefs.current[key]?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await onUpload(file, key);
+    e.target.value = '';
+  };
+
   return (
     <section className="rounded-[30px] border border-zinc-200/70 bg-white/80 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition duration-300 hover:shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-6">
       <div className="mb-6 flex items-center justify-between gap-3">
@@ -622,7 +759,11 @@ function MediaAssetsSection() {
           >
             <div className={`rounded-[20px] border border-zinc-200/70 bg-gradient-to-br ${asset.tone} p-4`}>
               <div className="flex h-28 items-center justify-center rounded-[18px] border border-dashed border-zinc-300 bg-white/60">
-                <ImageIcon className="h-8 w-8 text-zinc-400" />
+                {uploadingAsset === asset.key ? (
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent" />
+                ) : (
+                  <ImageIcon className="h-8 w-8 text-zinc-400" />
+                )}
               </div>
             </div>
             <div className="mt-4 flex items-start justify-between gap-3">
@@ -633,8 +774,25 @@ function MediaAssetsSection() {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <PremiumButton label="Replace" icon={<RefreshCw className="h-4 w-4" />} compact />
-              <PremiumButton label="Download" icon={<Download className="h-4 w-4" />} compact />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={(el) => { fileInputRefs.current[asset.key] = el; }}
+                onChange={(e) => handleFileChange(e, asset.key)}
+              />
+              <PremiumButton
+                label={uploadingAsset === asset.key ? 'Uploading…' : 'Replace'}
+                icon={uploadingAsset === asset.key ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent" /> : <RefreshCw className="h-4 w-4" />}
+                compact
+                onClick={() => handleFileSelect(asset.key)}
+                disabled={uploadingAsset === asset.key}
+              />
+              <PremiumButton
+                label="Download"
+                icon={<Download className="h-4 w-4" />}
+                compact
+              />
             </div>
           </motion.div>
         ))}
@@ -643,7 +801,7 @@ function MediaAssetsSection() {
   );
 }
 
-function FooterActionBar({ dirty, loading }: { dirty: boolean; loading: boolean }) {
+function FooterActionBar({ dirty, loading, onSave, onReset }: { dirty: boolean; loading: boolean; onSave: () => void; onReset: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -664,14 +822,24 @@ function FooterActionBar({ dirty, loading }: { dirty: boolean; loading: boolean 
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <FooterButton label="Reset" icon={<CircleOff className="h-4 w-4" />} />
+          <FooterButton label="Reset" icon={<CircleOff className="h-4 w-4" />} onClick={onReset} />
           <FooterButton label="Preview" icon={<Eye className="h-4 w-4" />} />
-          <FooterButton label={loading ? 'Saving…' : 'Save Changes'} icon={<CheckCircle2 className="h-4 w-4" />} primary />
+          <FooterButton
+            label={loading ? 'Saving…' : 'Save Changes'}
+            icon={loading ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <CheckCircle2 className="h-4 w-4" />}
+            primary
+            onClick={onSave}
+            disabled={loading}
+          />
           <FooterButton label="Publish Brand" icon={<ArrowUpRight className="h-4 w-4" />} primary />
         </div>
       </div>
     </motion.div>
   );
+}
+
+function getValidChildren(children: React.ReactNode) {
+  return React.Children.toArray(children).filter(Boolean);
 }
 
 function HeroButton({ label, icon, primary }: { label: string; icon: React.ReactNode; primary?: boolean }) {
@@ -691,12 +859,16 @@ function HeroButton({ label, icon, primary }: { label: string; icon: React.React
   );
 }
 
-function FooterButton({ label, icon, primary }: { label: string; icon: React.ReactNode; primary?: boolean }) {
+function FooterButton({ label, icon, primary, onClick, disabled }: { label: string; icon: React.ReactNode; primary?: boolean; onClick?: () => void; disabled?: boolean }) {
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      onClick={onClick}
+      disabled={disabled}
       className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition duration-300 ${
+        disabled ? 'opacity-60 cursor-not-allowed' : ''
+      } ${
         primary
           ? 'border-transparent bg-[linear-gradient(135deg,#dc2626,#991b1b)] text-white shadow-[0_12px_30px_rgba(220,38,38,0.32)] hover:shadow-[0_16px_40px_rgba(220,38,38,0.4)]'
           : 'border border-white/10 bg-white/10 text-white/85 hover:bg-white/15'
@@ -708,9 +880,13 @@ function FooterButton({ label, icon, primary }: { label: string; icon: React.Rea
   );
 }
 
-function PremiumButton({ label, icon, compact }: { label: string; icon: React.ReactNode; compact?: boolean }) {
+function PremiumButton({ label, icon, compact, onClick, disabled }: { label: string; icon: React.ReactNode; compact?: boolean; onClick?: () => void; disabled?: boolean }) {
   return (
-    <button className={`inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3.5 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-zinc-950 hover:shadow-md ${compact ? 'px-3 py-1.5 text-xs' : ''}`}>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3.5 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-zinc-950 hover:shadow-md ${compact ? 'px-3 py-1.5 text-xs' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+    >
       {icon}
       {label}
     </button>
@@ -835,5 +1011,42 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
         <p className="text-xs text-zinc-500">Live brand color token</p>
       </div>
     </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="animate-pulse space-y-6">
+      <div className="rounded-[32px] bg-zinc-200/60 h-[300px]" />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-[30px] bg-zinc-200/60 h-[420px]" />
+        <div className="rounded-[30px] bg-zinc-200/60 h-[420px]" />
+      </div>
+      <div className="rounded-[30px] bg-zinc-200/60 h-[200px]" />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-[30px] bg-zinc-200/60 h-[520px]" />
+        <div className="rounded-[30px] bg-zinc-200/60 h-[520px]" />
+      </div>
+    </div>
+  );
+}
+
+function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-[16px] border border-red-200 bg-red-50 p-4 flex items-center gap-3"
+    >
+      <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+      <p className="text-sm text-red-700 flex-1">{message}</p>
+      <button
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+      >
+        <RefreshCw className="h-4 w-4" />
+        Retry
+      </button>
+    </motion.div>
   );
 }

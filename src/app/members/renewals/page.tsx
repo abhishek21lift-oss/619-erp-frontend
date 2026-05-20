@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar, Users, RefreshCw, AlertTriangle, Sparkles, ChevronRight,
@@ -18,6 +18,8 @@ import { RevenueCard } from '@/components/premium/RevenueCard';
 import { AnalyticsPanel } from '@/components/premium/AnalyticsPanel';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card';
+import { api } from '@/lib/api';
+import { useAsync } from '@/lib/use-async';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -56,43 +58,89 @@ interface AIInsight {
 }
 
 /* ────────────────────────────────────────────────────────────────────
-   DEMO DATA
+   API TYPES & MAPPERS
 ──────────────────────────────────────────────────────────────────── */
-const AVATAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#dc2626', '#14b8a6'];
+interface ApiRenewalMember {
+  id: string;
+  name: string;
+  plan: string;
+  amount: number;
+  expiry_date: string;
+  days_left: number;
+  status: string;
+  coach?: string;
+  phone?: string;
+  auto_renew: boolean;
+}
+
+interface ApiChurnAlert {
+  id: string;
+  member_name: string;
+  risk_score: number;
+  reason: string;
+  suggested_action: string;
+}
+
+interface ApiInsight {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  action?: { label: string };
+}
+
+const AVATAR_PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#dc2626', '#14b8a6'];
 
 function initials(name: string) {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-const DEMO_MEMBERS: RenewalMember[] = [
-  { id: '1', name: 'Arjun Mehta', initials: 'AM', avatarColor: '#6366f1', plan: 'Elite Monthly', amount: 2999, expiryDate: 'Today', daysLeft: 0, status: 'at-risk', coach: 'Rahul Sharma', phone: '+91 98765 43210', autoRenew: false },
-  { id: '2', name: 'Sanya Kapoor', initials: 'SK', avatarColor: '#10b981', plan: 'Pro Annual', amount: 24999, expiryDate: 'Tomorrow', daysLeft: 1, status: 'pending', coach: 'Priya Mehta', phone: '+91 98765 43211', autoRenew: true },
-  { id: '3', name: 'Rohit Verma', initials: 'RV', avatarColor: '#f59e0b', plan: 'Basic Monthly', amount: 1499, expiryDate: 'In 3 days', daysLeft: 3, status: 'active', coach: 'Amit Verma', phone: '+91 98765 43212', autoRenew: true },
-  { id: '4', name: 'Neha Singh', initials: 'NS', avatarColor: '#ec4899', plan: 'Elite Monthly', amount: 2999, expiryDate: 'In 5 days', daysLeft: 5, status: 'active', coach: 'Neha Gupta', phone: '+91 98765 43213', autoRenew: false },
-  { id: '5', name: 'Vikram Patel', initials: 'VP', avatarColor: '#0ea5e9', plan: 'Pro Monthly', amount: 4999, expiryDate: 'Today', daysLeft: 0, status: 'expired', coach: 'Rahul Sharma', phone: '+91 98765 43214', autoRenew: false },
-  { id: '6', name: 'Ananya Gupta', initials: 'AG', avatarColor: '#8b5cf6', plan: 'Elite Annual', amount: 29999, expiryDate: 'In 2 days', daysLeft: 2, status: 'at-risk', coach: 'Priya Mehta', phone: '+91 98765 43215', autoRenew: false },
-  { id: '7', name: 'Karan Joshi', initials: 'KJ', avatarColor: '#dc2626', plan: 'Pro Monthly', amount: 4999, expiryDate: 'In 7 days', daysLeft: 7, status: 'pending', autoRenew: true },
-  { id: '8', name: 'Isha Sharma', initials: 'IS', avatarColor: '#14b8a6', plan: 'Basic Monthly', amount: 1499, expiryDate: 'Tomorrow', daysLeft: 1, status: 'active', coach: 'Amit Verma', autoRenew: true },
-];
+function stringToColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
 
-const CHURN_ALERTS: ChurnAlert[] = [
-  { id: 'c1', memberName: 'Arjun Mehta', riskScore: 92, reason: 'No visit in 14 days · High-value plan expiring today', suggestedAction: 'Call with exclusive retention offer' },
-  { id: 'c2', memberName: 'Ananya Gupta', riskScore: 85, reason: 'Declined auto-renewal · Annual plan at risk', suggestedAction: 'Offer 15% discount on renewal' },
-  { id: 'c3', memberName: 'Rohit Verma', riskScore: 62, reason: 'Irregular attendance · Basic plan user', suggestedAction: 'Send engagement WhatsApp campaign' },
-];
+function toRenewalMember(raw: ApiRenewalMember): RenewalMember {
+  return {
+    id: raw.id,
+    name: raw.name,
+    initials: initials(raw.name),
+    avatarColor: stringToColor(raw.name),
+    plan: raw.plan,
+    amount: raw.amount,
+    expiryDate: raw.expiry_date,
+    daysLeft: raw.days_left,
+    status: raw.status as RenewalStatus,
+    coach: raw.coach,
+    phone: raw.phone,
+    autoRenew: raw.auto_renew,
+  };
+}
 
-const AI_INSIGHTS: AIInsight[] = [
-  { id: 'i1', title: 'High-value retention opportunity', description: '2 elite plan members (₹59,998 combined) are at risk of churning this week. Prioritize personal outreach.', type: 'warning', action: { label: 'View Members', onClick: () => {} } },
-  { id: 'i2', title: 'Auto-renewal success rate: 89%', description: 'Auto-renewal adoption has increased 12% this quarter. 24 members are set to auto-renew this month.', type: 'positive', action: { label: 'View Auto-Renewals', onClick: () => {} } },
-  { id: 'i3', title: 'Best time to send renewal reminders', description: 'AI recommends sending WhatsApp reminders 5 days before expiry — this yields 34% higher conversion.', type: 'neutral' },
-];
+function toChurnAlert(raw: ApiChurnAlert): ChurnAlert {
+  return {
+    id: raw.id,
+    memberName: raw.member_name,
+    riskScore: raw.risk_score,
+    reason: raw.reason,
+    suggestedAction: raw.suggested_action,
+  };
+}
 
-const KPI_STATS = {
-  expiringToday: 12,
-  likelyToRenew: 8,
-  highValueAtRisk: 3,
-  autoRenewals: 24,
-};
+function toAIInsight(raw: ApiInsight): AIInsight {
+  return {
+    id: raw.id,
+    title: raw.title,
+    description: raw.description,
+    type: (['positive', 'negative', 'neutral', 'warning'] as const).includes(raw.type as AIInsight['type'])
+      ? (raw.type as AIInsight['type'])
+      : 'neutral',
+    action: raw.action ? { label: raw.action.label, onClick: () => {} } : undefined,
+  };
+}
 
 /* ────────────────────────────────────────────────────────────────────
    AVATAR
@@ -234,17 +282,140 @@ function ChurnAlertCard({ alert, index }: { alert: ChurnAlert; index: number }) 
 }
 
 /* ────────────────────────────────────────────────────────────────────
+   SKELETON COMPONENTS
+──────────────────────────────────────────────────────────────────── */
+function Skeleton({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
+  return (
+    <div
+      className={`animate-pulse rounded-[16px] ${className ?? ''}`}
+      style={{ background: 'rgba(15,23,42,0.06)', ...style }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SkeletonLine({ width, className }: { width: string; className?: string }) {
+  return (
+    <div
+      className={`rounded ${className ?? ''}`}
+      style={{ width, height: 12, background: 'rgba(255,255,255,0.5)' }}
+    />
+  );
+}
+
+function SkeletonKpiCard() {
+  return (
+    <Skeleton className="p-4">
+      <SkeletonLine width="5rem" className="mb-2" />
+      <div className="h-7 w-14 rounded" style={{ background: 'rgba(255,255,255,0.5)' }} />
+    </Skeleton>
+  );
+}
+
+function SkeletonMemberCard() {
+  return (
+    <div
+      className="animate-pulse rounded-[18px] px-5 py-4"
+      style={{ background: 'rgba(255,255,255,0.80)', border: '1px solid rgba(15,23,42,0.07)' }}
+    >
+      <div className="flex items-center gap-4">
+        <div className="h-11 w-11 rounded-[12px]" style={{ background: 'rgba(15,23,42,0.06)' }} />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-32 rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+          <div className="h-3 w-24 rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonInsightCard() {
+  return (
+    <div
+      className="animate-pulse rounded-[20px] p-5"
+      style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(15,23,42,0.07)' }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="h-9 w-9 rounded-[10px]" style={{ background: 'rgba(15,23,42,0.06)' }} />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-40 rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+          <div className="h-3 w-full rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+          <div className="h-3 w-3/4 rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonChurnAlertCard() {
+  return (
+    <div
+      className="animate-pulse rounded-[16px] p-4"
+      style={{ background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.10)' }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="h-8 w-8 rounded-[9px]" style={{ background: 'rgba(239,68,68,0.10)' }} />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-28 rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+          <div className="h-3 w-full rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+          <div className="h-3 w-2/3 rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   ERROR BANNER
+──────────────────────────────────────────────────────────────────── */
+function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div
+      className="flex items-center gap-3 rounded-[12px] p-4"
+      style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}
+    >
+      <XCircle size={16} style={{ color: '#ef4444' }} />
+      <p className="flex-1 text-[13px] font-[500]" style={{ color: '#ef4444' }}>{message}</p>
+      <PremiumButton size="sm" tone="danger" onClick={onRetry}>Retry</PremiumButton>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
    PAGE
 ──────────────────────────────────────────────────────────────────── */
 export default function RenewalsPage() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<RenewalStatus | 'all'>('all');
 
+  const pipeline = useAsync(() => api.renewals.pipeline(), []);
+  const churnAsync = useAsync(() => api.renewals.churnAlerts(), []);
+  const insightsAsync = useAsync(() => api.renewals.insights(), []);
+
+  const members: RenewalMember[] = useMemo(() => {
+    if (!Array.isArray(pipeline.data?.members)) return [];
+    return (pipeline.data.members as ApiRenewalMember[]).map(toRenewalMember);
+  }, [pipeline.data]);
+
+  const stats = pipeline.data?.stats ?? { expiring_today: 0, likely_to_renew: 0, high_value_at_risk: 0, auto_renewals: 0 };
+
+  const churnAlerts: ChurnAlert[] = useMemo(() => {
+    if (!Array.isArray(churnAsync.data)) return [];
+    return (churnAsync.data as ApiChurnAlert[]).map(toChurnAlert);
+  }, [churnAsync.data]);
+
+  const aiInsights: AIInsight[] = useMemo(() => {
+    const raw = insightsAsync.data?.insights;
+    if (!Array.isArray(raw)) return [];
+    return (raw as ApiInsight[]).map(toAIInsight);
+  }, [insightsAsync.data]);
+
   const filtered = useMemo(() => {
-    return DEMO_MEMBERS
+    return members
       .filter(m => filterStatus === 'all' || m.status === filterStatus)
       .filter(m => !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.plan.toLowerCase().includes(search.toLowerCase()));
-  }, [filterStatus, search]);
+  }, [filterStatus, search, members]);
 
   const filterChips = [
     { id: 'all' as const, label: 'All Members' },
@@ -286,11 +457,22 @@ export default function RenewalsPage() {
               </div>
 
               {/* KPI Cards */}
+              {pipeline.error && (
+                <div className="mt-5">
+                  <ErrorBanner message="Failed to load renewal KPIs" onRetry={pipeline.refetch} />
+                </div>
+              )}
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <KpiCard label="Expiring Today" value={KPI_STATS.expiringToday} icon={<Calendar size={16} />} accent="rose" delta={8.2} />
-                <KpiCard label="Likely to Renew" value={KPI_STATS.likelyToRenew} icon={<TrendingUp size={16} />} accent="emerald" delta={12.5} />
-                <KpiCard label="High-Value at Risk" value={KPI_STATS.highValueAtRisk} icon={<AlertTriangle size={16} />} accent="amber" delta={-5.1} deltaIs="bad" />
-                <KpiCard label="Auto-Renewals" value={KPI_STATS.autoRenewals} icon={<RefreshCw size={16} />} accent="sky" delta={18.3} />
+                {pipeline.loading
+                  ? [1, 2, 3, 4].map(i => <SkeletonKpiCard key={i} />)
+                  : (
+                    <>
+                      <KpiCard label="Expiring Today" value={stats.expiring_today} icon={<Calendar size={16} />} accent="rose" delta={8.2} />
+                      <KpiCard label="Likely to Renew" value={stats.likely_to_renew} icon={<TrendingUp size={16} />} accent="emerald" delta={12.5} />
+                      <KpiCard label="High-Value at Risk" value={stats.high_value_at_risk} icon={<AlertTriangle size={16} />} accent="amber" delta={-5.1} deltaIs="bad" />
+                      <KpiCard label="Auto-Renewals" value={stats.auto_renewals} icon={<RefreshCw size={16} />} accent="sky" delta={18.3} />
+                    </>
+                  )}
               </div>
             </div>
           </div>
@@ -306,10 +488,28 @@ export default function RenewalsPage() {
                     <Sparkles size={13} style={{ color: '#8b5cf6' }} />
                     <p className="text-[12px] font-[720] uppercase tracking-[0.04em]" style={{ color: 'rgb(148,163,184)' }}>AI Retention Insights</p>
                   </div>
+                  {insightsAsync.error && (
+                    <div className="mb-3">
+                      <ErrorBanner message="Failed to load AI insights" onRetry={insightsAsync.refetch} />
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {AI_INSIGHTS.map((insight, i) => (
-                      <AIInsightCard key={insight.id} {...insight} index={i} />
-                    ))}
+                    {insightsAsync.loading
+                      ? [1, 2].map(i => <SkeletonInsightCard key={i} />)
+                      : aiInsights.length === 0
+                        ? (
+                          <div className="col-span-full">
+                            <EmptyState
+                              icon={<Sparkles size={20} />}
+                              title="No insights yet"
+                              description="AI insights will appear once member data is available."
+                            />
+                          </div>
+                        )
+                        : aiInsights.map((insight, i) => (
+                          <AIInsightCard key={insight.id} {...insight} index={i} />
+                        ))
+                    }
                   </div>
                 </div>
 
@@ -352,20 +552,30 @@ export default function RenewalsPage() {
                   </div>
 
                   {/* Members list */}
+                  {pipeline.error && !pipeline.loading && (
+                    <div className="mb-3">
+                      <ErrorBanner message="Failed to load members" onRetry={pipeline.refetch} />
+                    </div>
+                  )}
                   <div className="flex flex-col gap-2.5">
-                    <AnimatePresence>
-                      {filtered.length === 0 ? (
-                        <EmptyState
-                          icon={<Calendar size={20} />}
-                          title="No members found"
-                          description="No members match the current filter criteria."
-                        />
-                      ) : (
-                        filtered.map((member, i) => (
-                          <MemberRenewalCard key={member.id} member={member} index={i} />
-                        ))
-                      )}
-                    </AnimatePresence>
+                    {pipeline.loading && members.length === 0
+                      ? [1, 2, 3, 4].map(i => <SkeletonMemberCard key={i} />)
+                      : (
+                        <AnimatePresence>
+                          {filtered.length === 0 ? (
+                            <EmptyState
+                              icon={<Calendar size={20} />}
+                              title="No members found"
+                              description="No members match the current filter criteria."
+                            />
+                          ) : (
+                            filtered.map((member, i) => (
+                              <MemberRenewalCard key={member.id} member={member} index={i} />
+                            ))
+                          )}
+                        </AnimatePresence>
+                      )
+                    }
                   </div>
                 </div>
               </div>
@@ -393,10 +603,26 @@ export default function RenewalsPage() {
                       <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>AI-detected churn risks</p>
                     </div>
                   </div>
+                  {churnAsync.error && (
+                    <div className="mb-3">
+                      <ErrorBanner message="Failed to load churn alerts" onRetry={churnAsync.refetch} />
+                    </div>
+                  )}
                   <div className="flex flex-col gap-2.5">
-                    {CHURN_ALERTS.map((alert, i) => (
-                      <ChurnAlertCard key={alert.id} alert={alert} index={i} />
-                    ))}
+                    {churnAsync.loading
+                      ? [1, 2, 3].map(i => <SkeletonChurnAlertCard key={i} />)
+                      : churnAlerts.length === 0
+                        ? (
+                          <EmptyState
+                            icon={<AlertTriangle size={20} />}
+                            title="No alerts"
+                            description="No churn risks detected at this time."
+                          />
+                        )
+                        : churnAlerts.map((alert, i) => (
+                          <ChurnAlertCard key={alert.id} alert={alert} index={i} />
+                        ))
+                    }
                   </div>
                 </div>
 

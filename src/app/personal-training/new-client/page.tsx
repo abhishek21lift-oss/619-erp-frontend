@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useId, useCallback } from 'react';
+import React, { useState, useMemo, useId, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Check, User, Mail, Phone, Calendar, Hash,
@@ -12,6 +12,7 @@ import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { cn } from '@/components/ui/cn';
+import { api } from '@/lib/api';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -61,11 +62,11 @@ const HEALTH_CONDITIONS = [
   'Joint Pain', 'Back Pain', 'Thyroid', 'None',
 ];
 
-const TRAINERS = [
+const FALLBACK_TRAINERS = [
   'Rahul Sharma', 'Priya Mehta', 'Amit Verma', 'Neha Gupta', 'Vikram Singh', 'Sneha Patel',
 ];
 
-const PT_PACKAGES: { id: PTpackage; sessions: number; price: number; popular?: boolean }[] = [
+const FALLBACK_PLANS: { id: PTpackage; sessions: number; price: number; popular?: boolean }[] = [
   { id: 'Starter', sessions: 8, price: 5999 },
   { id: 'Standard', sessions: 16, price: 10999, popular: true },
   { id: 'Premium', sessions: 24, price: 14999 },
@@ -246,6 +247,56 @@ function StepIndicator({ current, onStep }: { current: StepId; onStep: (s: StepI
 }
 
 /* ────────────────────────────────────────────────────────────────────
+   LOADING SKELETON
+──────────────────────────────────────────────────────────────────── */
+function FormSkeleton() {
+  return (
+    <div className="rounded-[22px] p-6 sm:p-8 animate-pulse"
+      style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="h-10 w-10 rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }} />
+        <div>
+          <div className="h-4 w-32 rounded" style={{ background: 'rgba(15,23,42,0.08)' }} />
+          <div className="h-3 w-48 mt-1 rounded" style={{ background: 'rgba(15,23,42,0.05)' }} />
+        </div>
+      </div>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="h-14 rounded-[13px]" style={{ background: 'rgba(15,23,42,0.05)' }} />
+          <div className="h-14 rounded-[13px]" style={{ background: 'rgba(15,23,42,0.05)' }} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="h-14 rounded-[13px]" style={{ background: 'rgba(15,23,42,0.05)' }} />
+          <div className="h-14 rounded-[13px]" style={{ background: 'rgba(15,23,42,0.05)' }} />
+          <div className="h-14 rounded-[13px]" style={{ background: 'rgba(15,23,42,0.05)' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   ERROR STATE
+──────────────────────────────────────────────────────────────────── */
+function DataErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="rounded-[22px] p-8 text-center"
+      style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+      <div className="flex justify-center mb-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[16px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
+          <RefreshCw size={22} style={{ color: '#dc2626' }} />
+        </div>
+      </div>
+      <h3 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Failed to load data</h3>
+      <p className="mt-1 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>{message}</p>
+      <PremiumButton tone="primary" glow icon={<RefreshCw size={13} />} onClick={onRetry} className="mt-4">
+        Retry
+      </PremiumButton>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
    MAIN PAGE
 ──────────────────────────────────────────────────────────────────── */
 export default function NewPTClientPage() {
@@ -260,6 +311,51 @@ function NewClientWizard() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  /* ── API State ── */
+  const [trainers, setTrainers] = useState<string[]>([]);
+  const [plans, setPlans] = useState<{ id: PTpackage; sessions: number; price: number; popular?: boolean }[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState('');
+
+  const fetchData = useCallback(async () => {
+    try {
+      setDataLoading(true);
+      setDataError('');
+      const [trainersRes, plansRes] = await Promise.all([
+        api.trainers.list(),
+        api.plans.list(),
+      ]);
+      setTrainers(
+        Array.isArray(trainersRes)
+          ? trainersRes.map((t: any) => t.name ?? t)
+          : FALLBACK_TRAINERS,
+      );
+      setPlans(
+        Array.isArray(plansRes) && plansRes.length > 0
+          ? plansRes.map((p: any) => ({
+              id: (p.name ?? p.id) as PTpackage,
+              sessions: p.sessions ?? 0,
+              price: p.price ?? 0,
+              popular: p.popular ?? false,
+            }))
+          : FALLBACK_PLANS,
+      );
+    } catch (err: any) {
+      setDataError(err?.message || 'Failed to load data');
+      setTrainers(FALLBACK_TRAINERS);
+      setPlans(FALLBACK_PLANS);
+    } finally {
+      setDataLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const trainerOptions = trainers.length > 0 ? trainers : FALLBACK_TRAINERS;
+  const planOptions = plans.length > 0 ? plans : FALLBACK_PLANS;
 
   const set = useCallback(<K extends keyof FormData>(key: K, val: FormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -296,10 +392,31 @@ function NewClientWizard() {
     setError('');
     if (!form.transformationGoals) { setError('Please describe transformation goals.'); return; }
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setSaving(false);
-    setDone(true);
-    setShowSuccess(true);
+    try {
+      await api.clients.create({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        dob: form.dob,
+        gender: form.gender,
+        goal: form.goal,
+        height: Number(form.height),
+        weight: Number(form.weight),
+        bodyFat: Number(form.bodyFat),
+        healthConditions: form.healthConditions,
+        injuries: form.injuries,
+        trainer_name: form.trainer,
+        package: form.ptPackage,
+        frequency: form.frequency,
+        notes: form.transformationGoals,
+      } as Record<string, unknown>);
+      setDone(true);
+      setShowSuccess(true);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create client');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -311,7 +428,7 @@ function NewClientWizard() {
     }
   };
 
-  const selectedPackage = PT_PACKAGES.find((p) => p.id === form.ptPackage);
+  const selectedPackage = planOptions.find((p) => p.id === form.ptPackage);
   const totalSessions = selectedPackage?.sessions || 0;
 
   /* ── SUCCESS MODAL ── */
@@ -383,372 +500,380 @@ function NewClientWizard() {
       </div>
 
       <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
-        {/* Step Indicator */}
-        <StepIndicator current={step} onStep={(s) => { if (s <= step + 1) { setStep(s); setError(''); } }} />
+        {dataLoading ? (
+          <FormSkeleton />
+        ) : dataError ? (
+          <DataErrorState message={dataError} onRetry={fetchData} />
+        ) : (
+          <>
+            {/* Step Indicator */}
+            <StepIndicator current={step} onStep={(s) => { if (s <= step + 1) { setStep(s); setError(''); } }} />
 
-        {error && (
-          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-            className="mt-4 rounded-[13px] p-3.5 text-[13px] font-[500]"
-            style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239' }}
-          >
-            {error}
-          </motion.div>
-        )}
-
-        {/* Step Content */}
-        <div className="mt-6">
-          <AnimatePresence mode="wait">
-            {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                      <User size={18} style={{ color: '#dc2626' }} />
-                    </div>
-                    <div>
-                      <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Personal Information</h2>
-                      <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Basic details to create the client profile.</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FloatInput label="Full Name" value={form.name} onChange={(v) => set('name', v)} required />
-                      <FloatInput label="Email Address" type="email" value={form.email} onChange={(v) => set('email', v)} required />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <FloatInput label="Phone Number" type="tel" value={form.phone} onChange={(v) => set('phone', v)} required />
-                      <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={(v) => set('dob', v)} />
-                      <div>
-                        <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Gender</p>
-                        <div className="flex gap-2 flex-wrap">
-                          {GENDERS.map((g) => (
-                            <button
-                              key={g}
-                              type="button"
-                              onClick={() => set('gender', g)}
-                              className={cn(
-                                'rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all',
-                                form.gender === g
-                                  ? 'text-white shadow-[0_2px_8px_rgba(220,38,38,0.2)]'
-                                  : 'text-zinc-500 hover:text-zinc-800'
-                              )}
-                              style={{
-                                background: form.gender === g ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'rgba(248,250,252,0.9)',
-                                border: form.gender === g ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
-                              }}
-                            >
-                              {g}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            {error && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                className="mt-4 rounded-[13px] p-3.5 text-[13px] font-[500]"
+                style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239' }}
+              >
+                {error}
               </motion.div>
             )}
 
-            {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                      <Activity size={18} style={{ color: '#dc2626' }} />
-                    </div>
-                    <div>
-                      <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Fitness Profile</h2>
-                      <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Goals, measurements, and health assessment.</p>
-                    </div>
-                  </div>
-                  <div className="space-y-5">
-                    {/* Goals */}
-                    <div>
-                      <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Primary Fitness Goal</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                        {GOALS.map((g) => (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() => set('goal', g)}
-                            className={cn(
-                              'rounded-[14px] p-3.5 text-center transition-all',
-                            )}
-                            style={{
-                              background: form.goal === g ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'rgba(248,250,252,0.9)',
-                              border: form.goal === g ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
-                              boxShadow: form.goal === g ? '0 4px 16px rgba(220,38,38,0.2)' : 'none',
-                              color: form.goal === g ? '#fff' : 'rgb(15,23,42)',
-                            }}
-                          >
-                            <div className="flex justify-center mb-1">
-                              {g === 'Weight Loss' ? <Target size={18} /> : g === 'Muscle Gain' ? <Dumbbell size={18} /> : g === 'Endurance' ? <Heart size={18} /> : <Sparkles size={18} />}
+            {/* Step Content */}
+            <div className="mt-6">
+              <AnimatePresence mode="wait">
+                {step === 1 && (
+                  <motion.div key="step1" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                    <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
+                          <User size={18} style={{ color: '#dc2626' }} />
+                        </div>
+                        <div>
+                          <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Personal Information</h2>
+                          <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Basic details to create the client profile.</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <FloatInput label="Full Name" value={form.name} onChange={(v) => set('name', v)} required />
+                          <FloatInput label="Email Address" type="email" value={form.email} onChange={(v) => set('email', v)} required />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <FloatInput label="Phone Number" type="tel" value={form.phone} onChange={(v) => set('phone', v)} required />
+                          <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={(v) => set('dob', v)} />
+                          <div>
+                            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Gender</p>
+                            <div className="flex gap-2 flex-wrap">
+                              {GENDERS.map((g) => (
+                                <button
+                                  key={g}
+                                  type="button"
+                                  onClick={() => set('gender', g)}
+                                  className={cn(
+                                    'rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all',
+                                    form.gender === g
+                                      ? 'text-white shadow-[0_2px_8px_rgba(220,38,38,0.2)]'
+                                      : 'text-zinc-500 hover:text-zinc-800'
+                                  )}
+                                  style={{
+                                    background: form.gender === g ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'rgba(248,250,252,0.9)',
+                                    border: form.gender === g ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
+                                  }}
+                                >
+                                  {g}
+                                </button>
+                              ))}
                             </div>
-                            <span className="text-[11px] font-[680]">{g}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Body Measurements */}
-                    <p className="mb-2 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Body Measurements</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <FloatInput label="Height (cm)" type="number" value={form.height} onChange={(v) => set('height', v)} required />
-                      <FloatInput label="Weight (kg)" type="number" value={form.weight} onChange={(v) => set('weight', v)} required />
-                      <FloatInput label="Body Fat %" type="number" value={form.bodyFat} onChange={(v) => set('bodyFat', v)} />
-                    </div>
-
-                    {/* Health Conditions */}
-                    <div>
-                      <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Health Conditions</p>
-                      <div className="flex flex-wrap gap-2">
-                        {HEALTH_CONDITIONS.map((cond) => (
-                          <button
-                            key={cond}
-                            type="button"
-                            onClick={() => toggleCondition(cond)}
-                            className={cn(
-                              'rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all',
-                            )}
-                            style={{
-                              background: form.healthConditions.includes(cond) ? 'rgba(220,38,38,0.10)' : 'rgba(248,250,252,0.9)',
-                              border: form.healthConditions.includes(cond) ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                              color: form.healthConditions.includes(cond) ? '#dc2626' : 'rgb(100,116,139)',
-                            }}
-                          >
-                            {form.healthConditions.includes(cond) && <Check size={11} className="inline mr-1" />}
-                            {cond}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Injuries */}
-                    <div>
-                      <p className="mb-2 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Injuries / Medical Notes</p>
-                      <FloatInput label="Describe any injuries or medical concerns" value={form.injuries} onChange={(v) => set('injuries', v)} />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                      <Dumbbell size={18} style={{ color: '#dc2626' }} />
-                    </div>
-                    <div>
-                      <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>PT Assignment</h2>
-                      <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Assign trainer and choose a package.</p>
-                    </div>
-                  </div>
-                  <div className="space-y-5">
-                    {/* Trainer Selector */}
-                    <PremiumSelect
-                      label="Select Trainer"
-                      value={form.trainer}
-                      onChange={(v) => set('trainer', v)}
-                      options={TRAINERS}
-                      placeholder="Choose a personal trainer"
-                    />
-
-                    {/* PT Packages */}
-                    <div>
-                      <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>PT Package</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        {PT_PACKAGES.map((pkg) => (
-                          <button
-                            key={pkg.id}
-                            type="button"
-                            onClick={() => set('ptPackage', pkg.id)}
-                            className={cn(
-                              'relative rounded-[16px] p-4 text-left transition-all',
-                            )}
-                            style={{
-                              background: form.ptPackage === pkg.id ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'rgba(248,250,252,0.9)',
-                              border: form.ptPackage === pkg.id ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
-                              boxShadow: form.ptPackage === pkg.id ? '0 4px 20px rgba(220,38,38,0.25)' : 'none',
-                              color: form.ptPackage === pkg.id ? '#fff' : 'rgb(15,23,42)',
-                            }}
-                          >
-                            {pkg.popular && (
-                              <span className="absolute -top-2 -right-2 rounded-full px-2 py-0.5 text-[9px] font-[800] uppercase tracking-wider"
-                                style={{ background: '#f59e0b', color: '#fff', boxShadow: '0 2px 8px rgba(245,158,11,0.3)' }}>
-                                Popular
-                              </span>
-                            )}
-                            <p className="text-[13px] font-[720]">{pkg.id}</p>
-                            <p className="mt-1 text-[24px] font-[860] tracking-[-0.03em]">
-                              ₹{pkg.price.toLocaleString('en-IN')}
-                            </p>
-                            <p className="mt-1 text-[11px] font-[600]" style={{ opacity: 0.75 }}>
-                              {pkg.sessions} sessions
-                            </p>
-                            <p className="text-[11px]" style={{ opacity: 0.65 }}>
-                              ₹{Math.round(pkg.price / pkg.sessions).toLocaleString('en-IN')} / session
-                            </p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Session Frequency */}
-                    <PremiumSelect
-                      label="Session Frequency"
-                      value={form.frequency}
-                      onChange={(v) => set('frequency', v)}
-                      options={FREQUENCIES}
-                      placeholder="Select weekly frequency"
-                    />
-
-                    {/* Summary */}
-                    {form.trainer && form.ptPackage && form.frequency && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="rounded-[14px] p-4"
-                        style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)' }}
-                      >
-                        <p className="text-[12px] font-[700] tracking-wider uppercase" style={{ color: '#dc2626' }}>Assignment Summary</p>
-                        <div className="mt-2 space-y-1 text-[13px]" style={{ color: 'rgb(100,116,139)' }}>
-                          <p>Trainer: <strong style={{ color: 'rgb(15,23,42)' }}>{form.trainer}</strong></p>
-                          <p>Package: <strong style={{ color: 'rgb(15,23,42)' }}>{form.ptPackage}</strong></p>
-                          <p>Frequency: <strong style={{ color: 'rgb(15,23,42)' }}>{form.frequency}</strong></p>
-                          <p>Estimated duration: <strong style={{ color: 'rgb(15,23,42)' }}>~{Math.round(totalSessions / parseInt(form.frequency || '1'))} weeks</strong></p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {step === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                      <FileText size={18} style={{ color: '#dc2626' }} />
-                    </div>
-                    <div>
-                      <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Review & Confirm</h2>
-                      <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Verify all details before onboarding.</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {[
-                      { title: 'Personal Info', items: [
-                        { k: 'Name', v: form.name },
-                        { k: 'Email', v: form.email },
-                        { k: 'Phone', v: form.phone },
-                        { k: 'DOB', v: form.dob || '—' },
-                        { k: 'Gender', v: form.gender },
-                      ]},
-                      { title: 'Fitness Profile', items: [
-                        { k: 'Goal', v: form.goal },
-                        { k: 'Height', v: `${form.height} cm` },
-                        { k: 'Weight', v: `${form.weight} kg` },
-                        { k: 'Body Fat', v: form.bodyFat ? `${form.bodyFat}%` : '—' },
-                        { k: 'Conditions', v: form.healthConditions.length ? form.healthConditions.join(', ') : 'None' },
-                        { k: 'Injuries', v: form.injuries || 'None' },
-                      ]},
-                      { title: 'PT Assignment', items: [
-                        { k: 'Trainer', v: form.trainer },
-                        { k: 'Package', v: form.ptPackage },
-                        { k: 'Sessions', v: `${totalSessions} sessions` },
-                        { k: 'Frequency', v: form.frequency },
-                        { k: 'Investment', v: selectedPackage ? `₹${selectedPackage.price.toLocaleString('en-IN')}` : '—' },
-                      ]},
-                      { title: 'Photo', items: [
-                        { k: 'Photo Upload', v: photoPreview ? 'Uploaded ✓' : 'Not uploaded' },
-                      ]},
-                    ].map((section) => (
-                      <div key={section.title}
-                        className="rounded-[14px] p-4"
-                        style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(15,23,42,0.07)' }}
-                      >
-                        <p className="text-[11px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>{section.title}</p>
-                        <div className="space-y-1.5">
-                          {section.items.map((item) => (
-                            <div key={item.k} className="flex justify-between">
-                              <span className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>{item.k}</span>
-                              <span className="text-[12px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{item.v}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Transformation Goals */}
-                  <div className="mb-6">
-                    <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Transformation Goals</p>
-                    <FloatInput
-                      label="Describe what the client wants to achieve..."
-                      value={form.transformationGoals}
-                      onChange={(v) => set('transformationGoals', v)}
-                      multiline
-                    />
-                  </div>
-
-                  {/* Photo Upload */}
-                  <div>
-                    <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Client Photo</p>
-                    <label className="relative flex cursor-pointer items-center justify-center rounded-[16px] border-2 border-dashed p-8 transition-all hover:bg-white/50"
-                      style={{ borderColor: 'rgba(220,38,38,0.25)', background: 'rgba(248,250,252,0.7)' }}>
-                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-                      {photoPreview ? (
-                        <div className="text-center">
-                          <img src={photoPreview} alt="Preview" className="mx-auto h-24 w-24 rounded-[14px] object-cover shadow-md" />
-                          <p className="mt-2 text-[12px] font-[600]" style={{ color: '#10b981' }}>Photo uploaded</p>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <div className="flex justify-center mb-2">
-                            <Camera size={28} style={{ color: 'rgb(148,163,184)' }} />
                           </div>
-                          <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>Click to upload client photo</p>
-                          <p className="text-[11px] mt-1" style={{ color: 'rgb(203,213,225)' }}>JPG or PNG, max 5MB</p>
                         </div>
-                      )}
-                    </label>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
 
-        {/* Navigation Bar */}
-        <div className="sticky bottom-0 mt-6 z-40 rounded-[18px] p-4"
-          style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', border: '1px solid rgba(15,23,42,0.07)', boxShadow: '0 -4px 24px rgba(15,23,42,0.06)' }}>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              {step > 1 && (
-                <PremiumButton tone="secondary" icon={<ChevronLeft size={14} />} onClick={handlePrev}>
-                  Back
-                </PremiumButton>
-              )}
-              <span className="text-[12px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>
-                Step {step} of 4 · {STEPS[step - 1].label}
-              </span>
+                {step === 2 && (
+                  <motion.div key="step2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                    <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
+                          <Activity size={18} style={{ color: '#dc2626' }} />
+                        </div>
+                        <div>
+                          <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Fitness Profile</h2>
+                          <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Goals, measurements, and health assessment.</p>
+                        </div>
+                      </div>
+                      <div className="space-y-5">
+                        {/* Goals */}
+                        <div>
+                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Primary Fitness Goal</p>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            {GOALS.map((g) => (
+                              <button
+                                key={g}
+                                type="button"
+                                onClick={() => set('goal', g)}
+                                className={cn(
+                                  'rounded-[14px] p-3.5 text-center transition-all',
+                                )}
+                                style={{
+                                  background: form.goal === g ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'rgba(248,250,252,0.9)',
+                                  border: form.goal === g ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
+                                  boxShadow: form.goal === g ? '0 4px 16px rgba(220,38,38,0.2)' : 'none',
+                                  color: form.goal === g ? '#fff' : 'rgb(15,23,42)',
+                                }}
+                              >
+                                <div className="flex justify-center mb-1">
+                                  {g === 'Weight Loss' ? <Target size={18} /> : g === 'Muscle Gain' ? <Dumbbell size={18} /> : g === 'Endurance' ? <Heart size={18} /> : <Sparkles size={18} />}
+                                </div>
+                                <span className="text-[11px] font-[680]">{g}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Body Measurements */}
+                        <p className="mb-2 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Body Measurements</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <FloatInput label="Height (cm)" type="number" value={form.height} onChange={(v) => set('height', v)} required />
+                          <FloatInput label="Weight (kg)" type="number" value={form.weight} onChange={(v) => set('weight', v)} required />
+                          <FloatInput label="Body Fat %" type="number" value={form.bodyFat} onChange={(v) => set('bodyFat', v)} />
+                        </div>
+
+                        {/* Health Conditions */}
+                        <div>
+                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Health Conditions</p>
+                          <div className="flex flex-wrap gap-2">
+                            {HEALTH_CONDITIONS.map((cond) => (
+                              <button
+                                key={cond}
+                                type="button"
+                                onClick={() => toggleCondition(cond)}
+                                className={cn(
+                                  'rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all',
+                                )}
+                                style={{
+                                  background: form.healthConditions.includes(cond) ? 'rgba(220,38,38,0.10)' : 'rgba(248,250,252,0.9)',
+                                  border: form.healthConditions.includes(cond) ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
+                                  color: form.healthConditions.includes(cond) ? '#dc2626' : 'rgb(100,116,139)',
+                                }}
+                              >
+                                {form.healthConditions.includes(cond) && <Check size={11} className="inline mr-1" />}
+                                {cond}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Injuries */}
+                        <div>
+                          <p className="mb-2 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Injuries / Medical Notes</p>
+                          <FloatInput label="Describe any injuries or medical concerns" value={form.injuries} onChange={(v) => set('injuries', v)} />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {step === 3 && (
+                  <motion.div key="step3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                    <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
+                          <Dumbbell size={18} style={{ color: '#dc2626' }} />
+                        </div>
+                        <div>
+                          <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>PT Assignment</h2>
+                          <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Assign trainer and choose a package.</p>
+                        </div>
+                      </div>
+                      <div className="space-y-5">
+                        {/* Trainer Selector */}
+                        <PremiumSelect
+                          label="Select Trainer"
+                          value={form.trainer}
+                          onChange={(v) => set('trainer', v)}
+                          options={trainerOptions}
+                          placeholder="Choose a personal trainer"
+                        />
+
+                        {/* PT Packages */}
+                        <div>
+                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>PT Package</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            {planOptions.map((pkg) => (
+                              <button
+                                key={pkg.id}
+                                type="button"
+                                onClick={() => set('ptPackage', pkg.id)}
+                                className={cn(
+                                  'relative rounded-[16px] p-4 text-left transition-all',
+                                )}
+                                style={{
+                                  background: form.ptPackage === pkg.id ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'rgba(248,250,252,0.9)',
+                                  border: form.ptPackage === pkg.id ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
+                                  boxShadow: form.ptPackage === pkg.id ? '0 4px 20px rgba(220,38,38,0.25)' : 'none',
+                                  color: form.ptPackage === pkg.id ? '#fff' : 'rgb(15,23,42)',
+                                }}
+                              >
+                                {pkg.popular && (
+                                  <span className="absolute -top-2 -right-2 rounded-full px-2 py-0.5 text-[9px] font-[800] uppercase tracking-wider"
+                                    style={{ background: '#f59e0b', color: '#fff', boxShadow: '0 2px 8px rgba(245,158,11,0.3)' }}>
+                                    Popular
+                                  </span>
+                                )}
+                                <p className="text-[13px] font-[720]">{pkg.id}</p>
+                                <p className="mt-1 text-[24px] font-[860] tracking-[-0.03em]">
+                                  ₹{pkg.price.toLocaleString('en-IN')}
+                                </p>
+                                <p className="mt-1 text-[11px] font-[600]" style={{ opacity: 0.75 }}>
+                                  {pkg.sessions} sessions
+                                </p>
+                                <p className="text-[11px]" style={{ opacity: 0.65 }}>
+                                  ₹{Math.round(pkg.price / pkg.sessions).toLocaleString('en-IN')} / session
+                                </p>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Session Frequency */}
+                        <PremiumSelect
+                          label="Session Frequency"
+                          value={form.frequency}
+                          onChange={(v) => set('frequency', v)}
+                          options={FREQUENCIES}
+                          placeholder="Select weekly frequency"
+                        />
+
+                        {/* Summary */}
+                        {form.trainer && form.ptPackage && form.frequency && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="rounded-[14px] p-4"
+                            style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)' }}
+                          >
+                            <p className="text-[12px] font-[700] tracking-wider uppercase" style={{ color: '#dc2626' }}>Assignment Summary</p>
+                            <div className="mt-2 space-y-1 text-[13px]" style={{ color: 'rgb(100,116,139)' }}>
+                              <p>Trainer: <strong style={{ color: 'rgb(15,23,42)' }}>{form.trainer}</strong></p>
+                              <p>Package: <strong style={{ color: 'rgb(15,23,42)' }}>{form.ptPackage}</strong></p>
+                              <p>Frequency: <strong style={{ color: 'rgb(15,23,42)' }}>{form.frequency}</strong></p>
+                              <p>Estimated duration: <strong style={{ color: 'rgb(15,23,42)' }}>~{Math.round(totalSessions / parseInt(form.frequency || '1'))} weeks</strong></p>
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {step === 4 && (
+                  <motion.div key="step4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                    <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
+                          <FileText size={18} style={{ color: '#dc2626' }} />
+                        </div>
+                        <div>
+                          <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Review & Confirm</h2>
+                          <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Verify all details before onboarding.</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        {[
+                          { title: 'Personal Info', items: [
+                            { k: 'Name', v: form.name },
+                            { k: 'Email', v: form.email },
+                            { k: 'Phone', v: form.phone },
+                            { k: 'DOB', v: form.dob || '—' },
+                            { k: 'Gender', v: form.gender },
+                          ]},
+                          { title: 'Fitness Profile', items: [
+                            { k: 'Goal', v: form.goal },
+                            { k: 'Height', v: `${form.height} cm` },
+                            { k: 'Weight', v: `${form.weight} kg` },
+                            { k: 'Body Fat', v: form.bodyFat ? `${form.bodyFat}%` : '—' },
+                            { k: 'Conditions', v: form.healthConditions.length ? form.healthConditions.join(', ') : 'None' },
+                            { k: 'Injuries', v: form.injuries || 'None' },
+                          ]},
+                          { title: 'PT Assignment', items: [
+                            { k: 'Trainer', v: form.trainer },
+                            { k: 'Package', v: form.ptPackage },
+                            { k: 'Sessions', v: `${totalSessions} sessions` },
+                            { k: 'Frequency', v: form.frequency },
+                            { k: 'Investment', v: selectedPackage ? `₹${selectedPackage.price.toLocaleString('en-IN')}` : '—' },
+                          ]},
+                          { title: 'Photo', items: [
+                            { k: 'Photo Upload', v: photoPreview ? 'Uploaded ✓' : 'Not uploaded' },
+                          ]},
+                        ].map((section) => (
+                          <div key={section.title}
+                            className="rounded-[14px] p-4"
+                            style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(15,23,42,0.07)' }}
+                          >
+                            <p className="text-[11px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>{section.title}</p>
+                            <div className="space-y-1.5">
+                              {section.items.map((item) => (
+                                <div key={item.k} className="flex justify-between">
+                                  <span className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>{item.k}</span>
+                                  <span className="text-[12px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{item.v}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Transformation Goals */}
+                      <div className="mb-6">
+                        <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Transformation Goals</p>
+                        <FloatInput
+                          label="Describe what the client wants to achieve..."
+                          value={form.transformationGoals}
+                          onChange={(v) => set('transformationGoals', v)}
+                          multiline
+                        />
+                      </div>
+
+                      {/* Photo Upload */}
+                      <div>
+                        <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Client Photo</p>
+                        <label className="relative flex cursor-pointer items-center justify-center rounded-[16px] border-2 border-dashed p-8 transition-all hover:bg-white/50"
+                          style={{ borderColor: 'rgba(220,38,38,0.25)', background: 'rgba(248,250,252,0.7)' }}>
+                          <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                          {photoPreview ? (
+                            <div className="text-center">
+                              <img src={photoPreview} alt="Preview" className="mx-auto h-24 w-24 rounded-[14px] object-cover shadow-md" />
+                              <p className="mt-2 text-[12px] font-[600]" style={{ color: '#10b981' }}>Photo uploaded</p>
+                            </div>
+                          ) : (
+                            <div className="text-center">
+                              <div className="flex justify-center mb-2">
+                                <Camera size={28} style={{ color: 'rgb(148,163,184)' }} />
+                              </div>
+                              <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>Click to upload client photo</p>
+                              <p className="text-[11px] mt-1" style={{ color: 'rgb(203,213,225)' }}>JPG or PNG, max 5MB</p>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            <div className="flex gap-3">
-              {step < 4 ? (
-                <PremiumButton tone="primary" icon={<ChevronRight size={14} />} onClick={handleNext} disabled={!canNext}>
-                  Next Step
-                </PremiumButton>
-              ) : (
-                <PremiumButton tone="success" glow icon={saving ? undefined : <Check size={14} />} onClick={handleSubmit} loading={saving} disabled={saving || done}>
-                  {done ? 'Onboarded!' : 'Confirm & Onboard'}
-                </PremiumButton>
-              )}
+
+            {/* Navigation Bar */}
+            <div className="sticky bottom-0 mt-6 z-40 rounded-[18px] p-4"
+              style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', border: '1px solid rgba(15,23,42,0.07)', boxShadow: '0 -4px 24px rgba(15,23,42,0.06)' }}>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  {step > 1 && (
+                    <PremiumButton tone="secondary" icon={<ChevronLeft size={14} />} onClick={handlePrev}>
+                      Back
+                    </PremiumButton>
+                  )}
+                  <span className="text-[12px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>
+                    Step {step} of 4 · {STEPS[step - 1].label}
+                  </span>
+                </div>
+                <div className="flex gap-3">
+                  {step < 4 ? (
+                    <PremiumButton tone="primary" icon={<ChevronRight size={14} />} onClick={handleNext} disabled={!canNext}>
+                      Next Step
+                    </PremiumButton>
+                  ) : (
+                    <PremiumButton tone="success" glow icon={saving ? undefined : <Check size={14} />} onClick={handleSubmit} loading={saving} disabled={saving || done}>
+                      {done ? 'Onboarded!' : 'Confirm & Onboard'}
+                    </PremiumButton>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

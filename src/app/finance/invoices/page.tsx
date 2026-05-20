@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { RevenueCard } from '@/components/premium/RevenueCard';
@@ -15,10 +16,10 @@ import {
   ChevronDown, Eye, Clock, IndianRupee, Filter,
   AlertTriangle, Ban, X, Calendar, CreditCard,
   Building, User, ArrowUpRight, Receipt, Plus,
-  MoreHorizontal, Printer, Mail,
+  MoreHorizontal, Printer, Mail, RefreshCw,
 } from 'lucide-react';
 
-type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'draft';
+type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'draft' | 'cancelled';
 type PaymentMethod = 'upi' | 'credit-card' | 'cash' | 'razorpay' | 'stripe' | 'bank-transfer';
 
 interface Invoice {
@@ -34,116 +35,12 @@ interface Invoice {
   timeline: { action: string; date: string; done: boolean }[];
 }
 
-const INVOICES: Invoice[] = [
-  {
-    id: 'INV-001',
-    memberName: 'Abhishek Katiyar',
-    memberAvatar: 'AK',
-    amount: 45000,
-    date: '15 May 2026',
-    dueDate: '15 Jun 2026',
-    status: 'paid',
-    paymentMethod: 'upi',
-    description: 'Annual Gold Membership — PT 3x/week',
-    timeline: [
-      { action: 'Invoice Created', date: '15 May 2026, 09:23 AM', done: true },
-      { action: 'Invoice Sent', date: '15 May 2026, 09:25 AM', done: true },
-      { action: 'Invoice Viewed', date: '15 May 2026, 02:10 PM', done: true },
-      { action: 'Payment Received', date: '15 May 2026, 02:12 PM', done: true },
-    ],
-  },
-  {
-    id: 'INV-002',
-    memberName: 'Priya Mehta',
-    memberAvatar: 'PM',
-    amount: 28500,
-    date: '10 May 2026',
-    dueDate: '09 Jun 2026',
-    status: 'pending',
-    paymentMethod: 'credit-card',
-    description: 'Monthly Platinum Membership — PT 5x/week',
-    timeline: [
-      { action: 'Invoice Created', date: '10 May 2026, 10:00 AM', done: true },
-      { action: 'Invoice Sent', date: '10 May 2026, 10:02 AM', done: true },
-      { action: 'Invoice Viewed', date: '12 May 2026, 06:30 PM', done: true },
-      { action: 'Payment Received', date: '—', done: false },
-    ],
-  },
-  {
-    id: 'INV-003',
-    memberName: 'Rahul Sharma',
-    memberAvatar: 'RS',
-    amount: 17500,
-    date: '20 Apr 2026',
-    dueDate: '20 May 2026',
-    status: 'overdue',
-    description: 'Monthly Silver Membership — PT 2x/week',
-    timeline: [
-      { action: 'Invoice Created', date: '20 Apr 2026, 08:15 AM', done: true },
-      { action: 'Invoice Sent', date: '20 Apr 2026, 08:16 AM', done: true },
-      { action: 'Reminder Sent', date: '05 May 2026, 10:00 AM', done: true },
-      { action: 'Payment Received', date: '—', done: false },
-    ],
-  },
-  {
-    id: 'INV-004',
-    memberName: 'Neha Gupta',
-    memberAvatar: 'NG',
-    amount: 54000,
-    date: '01 May 2026',
-    dueDate: '01 Jun 2026',
-    status: 'paid',
-    paymentMethod: 'razorpay',
-    description: 'Quarterly Premium Membership — PT 5x/week',
-    timeline: [
-      { action: 'Invoice Created', date: '01 May 2026, 11:00 AM', done: true },
-      { action: 'Invoice Sent', date: '01 May 2026, 11:02 AM', done: true },
-      { action: 'Invoice Viewed', date: '01 May 2026, 01:45 PM', done: true },
-      { action: 'Payment Received', date: '01 May 2026, 01:47 PM', done: true },
-    ],
-  },
-  {
-    id: 'INV-005',
-    memberName: 'Vikram Singh',
-    memberAvatar: 'VS',
-    amount: 9500,
-    date: '18 May 2026',
-    dueDate: '17 Jun 2026',
-    status: 'draft',
-    description: 'Monthly Basic Membership',
-    timeline: [
-      { action: 'Invoice Created', date: '18 May 2026, 04:00 PM', done: true },
-      { action: 'Invoice Sent', date: '—', done: false },
-      { action: 'Invoice Viewed', date: '—', done: false },
-      { action: 'Payment Received', date: '—', done: false },
-    ],
-  },
-  {
-    id: 'INV-006',
-    memberName: 'Sneha Patel',
-    memberAvatar: 'SP',
-    amount: 32000,
-    date: '05 May 2026',
-    dueDate: '04 Jun 2026',
-    status: 'pending',
-    paymentMethod: 'upi',
-    description: 'Monthly Gold Membership — PT 3x/week',
-    timeline: [
-      { action: 'Invoice Created', date: '05 May 2026, 07:30 AM', done: true },
-      { action: 'Invoice Sent', date: '05 May 2026, 07:32 AM', done: true },
-      { action: 'Invoice Viewed', date: '07 May 2026, 09:15 AM', done: true },
-      { action: 'Payment Received', date: '—', done: false },
-    ],
-  },
-];
-
-const STATUS_TABS: { id: InvoiceStatus | 'all'; label: string; count: number }[] = [
-  { id: 'all', label: 'All Invoices', count: INVOICES.length },
-  { id: 'paid', label: 'Paid', count: INVOICES.filter((i) => i.status === 'paid').length },
-  { id: 'pending', label: 'Pending', count: INVOICES.filter((i) => i.status === 'pending').length },
-  { id: 'overdue', label: 'Overdue', count: INVOICES.filter((i) => i.status === 'overdue').length },
-  { id: 'draft', label: 'Draft', count: INVOICES.filter((i) => i.status === 'draft').length },
-];
+interface InvoiceStats {
+  total: number;
+  paid: number;
+  pending: number;
+  overdue: number;
+}
 
 const PAYMENT_ICONS: Record<PaymentMethod, { label: string; color: string }> = {
   'upi': { label: 'UPI', color: '#7c3aed' },
@@ -172,25 +69,105 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
+function normaliseInvoice(raw: Record<string, unknown>): Invoice {
+  return {
+    id: String(raw.id ?? ''),
+    memberName: String(raw.member_name ?? raw.memberName ?? ''),
+    memberAvatar: String(raw.member_avatar ?? raw.memberAvatar ?? ''),
+    amount: Number(raw.amount ?? 0),
+    date: String(raw.date ?? ''),
+    dueDate: String(raw.due_date ?? raw.dueDate ?? ''),
+    status: (raw.status as InvoiceStatus) ?? 'draft',
+    paymentMethod: (raw.payment_method ?? raw.paymentMethod ?? undefined) as PaymentMethod | undefined,
+    description: String(raw.description ?? raw.description ?? ''),
+    timeline: Array.isArray(raw.timeline)
+      ? raw.timeline.map((t: Record<string, unknown>) => ({
+          action: String(t.action ?? ''),
+          date: String(t.date ?? ''),
+          done: Boolean(t.done),
+        }))
+      : [],
+  };
+}
+
+function SkeletonCard() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col gap-4 rounded-[18px] px-5 py-4 sm:flex-row sm:items-center"
+      style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(15,23,42,0.07)' }}
+    >
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="h-9 w-9 shrink-0 rounded-[10px] bg-slate-200 animate-pulse" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-44 rounded-full bg-slate-200 animate-pulse" />
+          <div className="h-3 w-64 rounded-full bg-slate-100 animate-pulse" />
+        </div>
+      </div>
+      <div className="flex items-center gap-4 sm:gap-6">
+        <div className="space-y-2 text-right">
+          <div className="h-4 w-20 rounded-full bg-slate-200 animate-pulse ml-auto" />
+          <div className="h-3 w-16 rounded-full bg-slate-100 animate-pulse ml-auto" />
+        </div>
+        <div className="flex gap-1.5">
+          <div className="h-8 w-8 rounded-[10px] bg-slate-200 animate-pulse" />
+          <div className="h-8 w-8 rounded-[10px] bg-slate-200 animate-pulse" />
+          <div className="h-8 w-8 rounded-[10px] bg-slate-200 animate-pulse" />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+const KPI_CONFIG = [
+  { label: 'Total Invoiced', key: 'total' as const, icon: <FileText className="h-4 w-4" />, trend: 12.5 },
+  { label: 'Paid', key: 'paid' as const, icon: <CheckCircle2 className="h-4 w-4" />, trend: 8.3 },
+  { label: 'Pending', key: 'pending' as const, icon: <Clock className="h-4 w-4" />, trend: -3.2 },
+  { label: 'Overdue', key: 'overdue' as const, icon: <AlertTriangle className="h-4 w-4" />, trend: -5.1 },
+];
+
 export default function InvoicesPage() {
   const [statusTab, setStatusTab] = React.useState<InvoiceStatus | 'all'>('all');
   const [search, setSearch] = React.useState('');
   const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
+  const [invoices, setInvoices] = React.useState<Invoice[]>([]);
+  const [stats, setStats] = React.useState<InvoiceStats>({ total: 0, paid: 0, pending: 0, overdue: 0 });
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const filtered = React.useMemo(() => {
-    return INVOICES.filter((inv) => {
-      if (statusTab !== 'all' && inv.status !== statusTab) return false;
-      if (search && !inv.memberName.toLowerCase().includes(search.toLowerCase()) && !inv.id.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    });
+  const fetchInvoices = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: Record<string, string | number> = { limit: 100 };
+      if (statusTab !== 'all') params.status = statusTab;
+      if (search) params.search = search;
+      const res = await api.invoices.list(params);
+      setInvoices((res.invoices as Record<string, unknown>[]).map(normaliseInvoice));
+      setStats(res.stats);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load invoices');
+    } finally {
+      setLoading(false);
+    }
   }, [statusTab, search]);
 
-  const stats = React.useMemo(() => ({
-    total: INVOICES.reduce((s, i) => s + i.amount, 0),
-    paid: INVOICES.filter((i) => i.status === 'paid').reduce((s, i) => s + i.amount, 0),
-    pending: INVOICES.filter((i) => i.status === 'pending').reduce((s, i) => s + i.amount, 0),
-    overdue: INVOICES.filter((i) => i.status === 'overdue').reduce((s, i) => s + i.amount, 0),
-  }), []);
+  React.useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
+
+  const statusTabs = React.useMemo(() => {
+    const counts: Record<string, number> = { all: invoices.length, paid: 0, pending: 0, overdue: 0, draft: 0, cancelled: 0 };
+    invoices.forEach((i) => { if (i.status in counts) counts[i.status]++; });
+    return [
+      { id: 'all' as const, label: 'All Invoices', count: counts.all },
+      { id: 'paid' as const, label: 'Paid', count: counts.paid },
+      { id: 'pending' as const, label: 'Pending', count: counts.pending },
+      { id: 'overdue' as const, label: 'Overdue', count: counts.overdue },
+      { id: 'draft' as const, label: 'Draft', count: counts.draft },
+    ];
+  }, [invoices]);
 
   return (
     <Guard>
@@ -199,18 +176,13 @@ export default function InvoicesPage() {
           <Header stats={stats} />
           <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 sm:px-6 lg:px-8">
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {([
-                { label: 'Total Invoiced', value: fmtCurrency(stats.total), trend: 12.5, icon: <FileText className="h-4 w-4" /> },
-                { label: 'Paid', value: fmtCurrency(stats.paid), trend: 8.3, icon: <CheckCircle2 className="h-4 w-4" /> },
-                { label: 'Pending', value: fmtCurrency(stats.pending), trend: -3.2, icon: <Clock className="h-4 w-4" /> },
-                { label: 'Overdue', value: fmtCurrency(stats.overdue), trend: -5.1, icon: <AlertTriangle className="h-4 w-4" /> },
-              ] as const).map((kpi, i) => (
-                <RevenueCard key={kpi.label} label={kpi.label} value={kpi.value} trend={kpi.trend} icon={kpi.icon} index={i} />
+              {KPI_CONFIG.map((kpi, i) => (
+                <RevenueCard key={kpi.label} label={kpi.label} value={fmtCurrency(stats[kpi.key])} trend={kpi.trend} icon={kpi.icon} index={i} />
               ))}
             </div>
 
             <div className="mb-5 flex flex-wrap items-center gap-3">
-              {STATUS_TABS.map((tab) => (
+              {statusTabs.map((tab) => (
                 <motion.button
                   key={tab.id}
                   onClick={() => setStatusTab(tab.id)}
@@ -238,26 +210,49 @@ export default function InvoicesPage() {
               </div>
             </div>
 
-            <AnimatePresence mode="wait">
-              {filtered.length === 0 ? (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center py-24 text-center"
-                >
-                  <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[24px]" style={{ background: 'rgba(220,38,38,0.08)' }}>
-                    <FileText size={36} style={{ color: '#dc2626' }} />
-                  </div>
-                  <p className="text-[20px] font-[780] tracking-tight" style={{ color: 'rgb(15,23,42)' }}>No invoices found</p>
-                  <p className="mt-2 max-w-xs text-[14px]" style={{ color: 'rgb(148,163,184)' }}>{search ? 'Try adjusting your search terms.' : 'Create your first invoice to start tracking payments.'}</p>
-                  <PremiumButton tone="primary" icon={<Plus className="h-4 w-4" />} className="mt-6">Create Invoice</PremiumButton>
-                </motion.div>
-              ) : (
-                <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-                  {filtered.map((invoice, i) => (
-                    <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} />
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {loading && invoices.length === 0 ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            ) : error ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center py-24 text-center"
+              >
+                <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[24px]" style={{ background: 'rgba(220,38,38,0.08)' }}>
+                  <AlertTriangle size={36} style={{ color: '#dc2626' }} />
+                </div>
+                <p className="text-[20px] font-[780] tracking-tight" style={{ color: 'rgb(15,23,42)' }}>Failed to load invoices</p>
+                <p className="mt-2 max-w-xs text-[14px]" style={{ color: 'rgb(148,163,184)' }}>{error}</p>
+                <PremiumButton tone="primary" icon={<RefreshCw className="h-4 w-4" />} className="mt-6" onClick={fetchInvoices}>
+                  Retry
+                </PremiumButton>
+              </motion.div>
+            ) : (
+              <AnimatePresence mode="wait">
+                {invoices.length === 0 ? (
+                  <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex flex-col items-center justify-center py-24 text-center"
+                  >
+                    <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[24px]" style={{ background: 'rgba(220,38,38,0.08)' }}>
+                      <FileText size={36} style={{ color: '#dc2626' }} />
+                    </div>
+                    <p className="text-[20px] font-[780] tracking-tight" style={{ color: 'rgb(15,23,42)' }}>No invoices found</p>
+                    <p className="mt-2 max-w-xs text-[14px]" style={{ color: 'rgb(148,163,184)' }}>{search ? 'Try adjusting your search terms.' : 'Create your first invoice to start tracking payments.'}</p>
+                    <PremiumButton tone="primary" icon={<Plus className="h-4 w-4" />} className="mt-6">Create Invoice</PremiumButton>
+                  </motion.div>
+                ) : (
+                  <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+                    {invoices.map((invoice, i) => (
+                      <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
           </div>
 
           <PremiumModal
@@ -282,7 +277,7 @@ export default function InvoicesPage() {
   );
 }
 
-function Header({ stats }: { stats: { total: number; paid: number; pending: number; overdue: number } }) {
+function Header({ stats }: { stats: InvoiceStats }) {
   return (
     <div className="border-b" style={{ background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(20px)', borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8">
@@ -319,6 +314,7 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
     pending: { color: '#d97706', bg: 'rgba(217,119,6,0.08)', dot: '#f59e0b' },
     overdue: { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', dot: '#ef4444' },
     draft: { color: '#6b7280', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
+    cancelled: { color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#cbd5e1' },
   };
 
   const cfg = statusCfg[invoice.status];
@@ -471,7 +467,7 @@ function InvoiceDetail({ invoice }: { invoice: Invoice }) {
 
       <div className="flex gap-2">
         <PremiumButton tone="primary" icon={<Download className="h-4 w-4" />} size="sm">Download PDF</PremiumButton>
-        {invoice.status !== 'paid' && (
+        {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
           <PremiumButton tone="secondary" icon={<Send className="h-4 w-4" />} size="sm">Send Reminder</PremiumButton>
         )}
         {invoice.status === 'pending' && (

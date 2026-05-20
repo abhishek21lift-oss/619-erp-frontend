@@ -1,19 +1,20 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Settings, Mail, Phone, MapPin, Clock, Activity, Shield,
   Bell, Smartphone, Laptop, Monitor, Moon, Sun, Globe,
   ChevronRight, CheckCircle2, XCircle, Lock, Key, Eye, EyeOff,
   RefreshCw, LogOut, ShieldCheck, AlertTriangle, Sparkles,
-  History, Calendar, Fingerprint, Copy, Edit3,
+  History, Calendar, Fingerprint, Copy, Edit3, Loader2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { StatusPill } from '@/components/premium/StatusPill';
 import { PremiumTable } from '@/components/premium/PremiumTable';
+import { api } from '@/lib/api';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -48,18 +49,9 @@ interface Session {
 }
 
 /* ────────────────────────────────────────────────────────────────────
-   DEMO DATA
+   PLACEHOLDER DEMO DATA — replace with real API endpoints when
+   they become available
 ──────────────────────────────────────────────────────────────────── */
-const PROFILE = {
-  name: 'Abhishek Katiyar',
-  email: 'abhishek@619fitness.com',
-  role: 'Admin',
-  phone: '+91 98765 43210',
-  location: 'Lucknow, Uttar Pradesh',
-  timezone: 'Asia/Kolkata (IST +05:30)',
-  memberSince: 'January 2023',
-};
-
 const ACTIVITY_HISTORY: ActivityItem[] = [
   { id: 'a1', action: 'Login', detail: 'Authenticated from Chrome on Windows', timestamp: '2 mins ago', icon: <LogOut size={12} />, color: '#10b981' },
   { id: 'a2', action: 'Setting Change', detail: 'Updated studio branding preferences', timestamp: '1 hr ago', icon: <Settings size={12} />, color: '#6366f1' },
@@ -237,31 +229,33 @@ function SectionCard({ title, subtitle, icon, children }: {
 /* ────────────────────────────────────────────────────────────────────
    PROFILE CARD
 ──────────────────────────────────────────────────────────────────── */
-function ProfileCard() {
+function ProfileCard({ name, email, role, phone, location }: {
+  name: string; email: string; role: string; phone: string; location: string;
+}) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className="rounded-[22px] p-6 text-center"
       style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 4px 24px rgba(15,23,42,0.07)' }}>
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[18px] text-[26px] font-[800] text-white"
         style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-        {initials(PROFILE.name)}
+        {initials(name)}
       </div>
-      <h2 className="mt-4 text-[20px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>{PROFILE.name}</h2>
+      <h2 className="mt-4 text-[20px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>{name}</h2>
       <div className="mt-1 flex items-center justify-center gap-2">
         <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-[660]"
           style={{ background: 'rgba(99,102,241,0.10)', color: '#6366f1' }}>
-          <ShieldCheck size={10} /> {PROFILE.role}
+          <ShieldCheck size={10} /> {role}
         </span>
       </div>
       <div className="mt-4 flex flex-col items-center gap-1.5">
         <div className="flex items-center gap-2 text-[12.5px]" style={{ color: 'rgb(100,116,139)' }}>
-          <Mail size={12} /> {PROFILE.email}
+          <Mail size={12} /> {email}
         </div>
         <div className="flex items-center gap-2 text-[12.5px]" style={{ color: 'rgb(100,116,139)' }}>
-          <Phone size={12} /> {PROFILE.phone}
+          <Phone size={12} /> {phone}
         </div>
         <div className="flex items-center gap-2 text-[12.5px]" style={{ color: 'rgb(100,116,139)' }}>
-          <MapPin size={12} /> {PROFILE.location}
+          <MapPin size={12} /> {location}
         </div>
       </div>
       <div className="mt-5 flex justify-center gap-2">
@@ -273,14 +267,73 @@ function ProfileCard() {
 }
 
 /* ────────────────────────────────────────────────────────────────────
+   LOADING SKELETON
+──────────────────────────────────────────────────────────────────── */
+function ProfileSkeleton() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 size={32} className="animate-spin" style={{ color: '#6366f1' }} />
+        <p className="text-[13px] font-[500]" style={{ color: 'rgb(148,163,184)' }}>Loading profile…</p>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   ERROR DISPLAY
+──────────────────────────────────────────────────────────────────── */
+function ProfileError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex flex-col items-center gap-3 rounded-[22px] px-8 py-10 text-center"
+        style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+        <div className="flex h-12 w-12 items-center justify-center rounded-[14px]" style={{ background: 'rgba(239,68,68,0.10)' }}>
+          <AlertTriangle size={22} style={{ color: '#ef4444' }} />
+        </div>
+        <div>
+          <p className="text-[15px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Failed to load profile</p>
+          <p className="mt-1 text-[12px]" style={{ color: 'rgb(148,163,184)' }}>{message}</p>
+        </div>
+        <PremiumButton tone="primary" size="sm" icon={<RefreshCw size={13} />} onClick={onRetry}>
+          Retry
+        </PremiumButton>
+      </div>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
    PAGE
 ──────────────────────────────────────────────────────────────────── */
 export default function ProfilePage() {
   const [tab, setTab] = useState<'overview' | 'security'>('overview');
 
-  const [name, setName] = useState(PROFILE.name);
-  const [email, setEmail] = useState(PROFILE.email);
-  const [phone, setPhone] = useState(PROFILE.phone);
+  /* ── API state ─────────────────────────────────────────────────── */
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
+
+  const [profile, setProfile] = useState({
+    name: '',
+    email: '',
+    role: 'Admin',
+    phone: '+91 98765 43210',
+    location: 'Lucknow, Uttar Pradesh',
+    timezone: 'Asia/Kolkata (IST +05:30)',
+    memberSince: 'January 2023',
+  });
+
+  /* ── Saving state ──────────────────────────────────────────────── */
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaveMsg, setProfileSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [changingPw, setChangingPw] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  /* ── Form fields ───────────────────────────────────────────────── */
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('+91 98765 43210');
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -309,6 +362,94 @@ export default function ProfilePage() {
       {show ? <EyeOff size={13} style={{ color: 'rgb(148,163,184)' }} /> : <Eye size={13} style={{ color: 'rgb(148,163,184)' }} />}
     </button>
   );
+
+  /* ── Fetch profile on mount ────────────────────────────────────── */
+  const loadProfile = useMemo(() => {
+    return () => {
+      setPageLoading(true);
+      setPageError(null);
+      api.auth.me()
+        .then(res => {
+          if (res?.user) {
+            const u = res.user;
+            setProfile(prev => ({
+              ...prev,
+              name: u.name ?? prev.name,
+              email: u.email,
+              role: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : prev.role,
+            }));
+            setName(u.name ?? '');
+            setEmail(u.email);
+          }
+        })
+        .catch(err => setPageError(err.message ?? 'Could not load profile'))
+        .finally(() => setPageLoading(false));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  /* ── Save personal info ────────────────────────────────────────── */
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    setProfileSaveMsg(null);
+    try {
+      // Use api.settings.update() as a generic way to persist profile
+      // preferences until a dedicated api.auth.updateProfile() endpoint exists.
+      await api.settings.update({ name, email, phone });
+      setProfile(prev => ({ ...prev, name, email, phone }));
+      setProfileSaveMsg({ type: 'success', text: 'Profile updated successfully' });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save profile';
+      setProfileSaveMsg({ type: 'error', text: msg });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  /* ── Change password ───────────────────────────────────────────── */
+  const handleChangePassword = async () => {
+    setChangingPw(true);
+    setPwMsg(null);
+    try {
+      await api.auth.changePassword(currentPw, newPw);
+      setPwMsg({ type: 'success', text: 'Password changed successfully' });
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to change password';
+      setPwMsg({ type: 'error', text: msg });
+    } finally {
+      setChangingPw(false);
+    }
+  };
+
+  /* ── Loading / Error screens ──────────────────────────────────── */
+  if (pageLoading) {
+    return (
+      <Guard>
+        <AppShell>
+          <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+            <ProfileSkeleton />
+          </div>
+        </AppShell>
+      </Guard>
+    );
+  }
+
+  if (pageError) {
+    return (
+      <Guard>
+        <AppShell>
+          <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+            <ProfileError message={pageError} onRetry={loadProfile} />
+          </div>
+        </AppShell>
+      </Guard>
+    );
+  }
 
   return (
     <Guard>
@@ -362,7 +503,13 @@ export default function ProfilePage() {
 
                   {/* LEFT: Profile Card */}
                   <div className="flex flex-col gap-5">
-                    <ProfileCard />
+                    <ProfileCard
+                      name={profile.name}
+                      email={profile.email}
+                      role={profile.role}
+                      phone={profile.phone}
+                      location={profile.location}
+                    />
 
                     {/* Quick Stats */}
                     <div className="rounded-[18px] p-5" style={{ background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(15,23,42,0.07)', boxShadow: '0 1px 6px rgba(15,23,42,0.05)' }}>
@@ -372,7 +519,7 @@ export default function ProfilePage() {
                       </div>
                       <div className="space-y-3">
                         {[
-                          { label: 'Member Since', value: PROFILE.memberSince, color: '#6366f1' },
+                          { label: 'Member Since', value: profile.memberSince, color: '#6366f1' },
                           { label: 'Login Sessions', value: '3 active', color: '#10b981' },
                           { label: 'Devices', value: '3 connected', color: '#0ea5e9' },
                           { label: 'Security Score', value: '92/100', color: '#8b5cf6' },
@@ -395,6 +542,24 @@ export default function ProfilePage() {
                         <FloatInput label="Email Address" type="email" value={email} onChange={setEmail} required />
                         <FloatInput label="Phone Number" value={phone} onChange={setPhone} required />
                       </div>
+
+                      {profileSaveMsg && (
+                        <div className={`mt-3 flex items-center gap-2 rounded-[11px] px-3 py-2 text-[12px] font-[600] ${
+                          profileSaveMsg.type === 'success' ? 'text-emerald-700' : 'text-red-700'
+                        }`}
+                          style={{
+                            background: profileSaveMsg.type === 'success' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                            border: profileSaveMsg.type === 'success' ? '1px solid rgba(16,185,129,0.20)' : '1px solid rgba(239,68,68,0.20)',
+                          }}>
+                          {profileSaveMsg.type === 'success' ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                          {profileSaveMsg.text}
+                        </div>
+                      )}
+
+                      <PremiumButton tone="primary" size="sm" icon={savingProfile ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                        className="mt-3 w-full justify-center" disabled={savingProfile} onClick={handleSaveProfile}>
+                        {savingProfile ? 'Saving…' : 'Save Changes'}
+                      </PremiumButton>
                     </SectionCard>
 
                     {/* Notification Preferences */}
@@ -559,10 +724,24 @@ export default function ProfilePage() {
                         </div>
                       </div>
 
+                      {pwMsg && (
+                        <div className={`flex items-center gap-2 rounded-[11px] px-3 py-2 text-[12px] font-[600] ${
+                          pwMsg.type === 'success' ? 'text-emerald-700' : 'text-red-700'
+                        }`}
+                          style={{
+                            background: pwMsg.type === 'success' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                            border: pwMsg.type === 'success' ? '1px solid rgba(16,185,129,0.20)' : '1px solid rgba(239,68,68,0.20)',
+                          }}>
+                          {pwMsg.type === 'success' ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                          {pwMsg.text}
+                        </div>
+                      )}
+
                       <PremiumButton tone="primary" size="md" className="w-full justify-center mt-1"
-                        disabled={!currentPw || !newPw || !match}
-                        icon={<Key size={14} />}>
-                        Update Password
+                        disabled={!currentPw || !newPw || !match || changingPw}
+                        icon={changingPw ? <Loader2 size={14} className="animate-spin" /> : <Key size={14} />}
+                        onClick={handleChangePassword}>
+                        {changingPw ? 'Updating…' : 'Update Password'}
                       </PremiumButton>
                     </div>
                   </SectionCard>

@@ -15,6 +15,7 @@ import {
   Sparkles, RefreshCw, ToggleLeft, ToggleRight, Link2,
   Landmark, Plus, Printer,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 type PaymentMethod = 'upi' | 'card' | 'cash' | 'razorpay' | 'stripe';
 
@@ -22,7 +23,7 @@ interface Member {
   id: string;
   name: string;
   email: string;
-  plan: string;
+  plan?: string;
 }
 
 interface Invoice {
@@ -31,21 +32,6 @@ interface Invoice {
   date: string;
   status: string;
 }
-
-const MEMBERS: Member[] = [
-  { id: 'M001', name: 'Abhishek Katiyar', email: 'abhishek@example.com', plan: 'Annual Gold — PT 3x/wk' },
-  { id: 'M002', name: 'Priya Mehta', email: 'priya@example.com', plan: 'Monthly Platinum — PT 5x/wk' },
-  { id: 'M003', name: 'Rahul Sharma', email: 'rahul@example.com', plan: 'Monthly Silver — PT 2x/wk' },
-  { id: 'M004', name: 'Neha Gupta', email: 'neha@example.com', plan: 'Quarterly Premium — PT 5x/wk' },
-  { id: 'M005', name: 'Vikram Singh', email: 'vikram@example.com', plan: 'Monthly Basic' },
-  { id: 'M006', name: 'Sneha Patel', email: 'sneha@example.com', plan: 'Monthly Gold — PT 3x/wk' },
-];
-
-const INVOICES: Invoice[] = [
-  { id: 'INV-002', amount: 28500, date: '10 May 2026', status: 'pending' },
-  { id: 'INV-003', amount: 17500, date: '20 Apr 2026', status: 'overdue' },
-  { id: 'INV-006', amount: 32000, date: '05 May 2026', status: 'pending' },
-];
 
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: React.ReactNode; color: string; bg: string }[] = [
   { id: 'upi', label: 'UPI', icon: <Smartphone className="h-5 w-5" />, color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
@@ -90,8 +76,26 @@ export default function RecordPaymentPage() {
   const [saving, setSaving] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [showInvoicePanel, setShowInvoicePanel] = React.useState(false);
+  const [members, setMembers] = React.useState<Member[]>([]);
+  const [invoices, setInvoices] = React.useState<Invoice[]>([]);
 
-  const filteredMembers = MEMBERS.filter((m) =>
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [clientsData, invoicesData] = await Promise.all([
+          api.clients.list(),
+          api.invoices.list({ status: 'pending' }),
+        ]);
+        setMembers(clientsData as Member[]);
+        setInvoices((invoicesData as { invoices: Invoice[] }).invoices || []);
+      } catch (err) {
+        console.error('Failed to load data', err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const filteredMembers = members.filter((m) =>
     m.name.toLowerCase().includes(memberQuery.toLowerCase()) ||
     m.email.toLowerCase().includes(memberQuery.toLowerCase())
   );
@@ -107,19 +111,39 @@ export default function RecordPaymentPage() {
   const handleSubmit = async () => {
     if (!validate()) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setSaving(false);
-    setStep('success');
-    setTimeout(() => {
-      setStep('form');
-      setSelectedMember(null);
-      setSelectedInvoice(null);
-      setAmount('');
-      setNotes('');
-      setPartialPayment(false);
-      setSplitPayment(false);
-      setSplitRows([{ method: 'upi', amount: '' }]);
-    }, 3000);
+    try {
+      const paymentData: Record<string, unknown> = {
+        client_id: selectedMember!.id,
+        amount: parseFloat(amount),
+        method: paymentMethod,
+        date: new Date().toISOString().split('T')[0],
+        notes: notes || undefined,
+        generate_receipt: generateReceipt,
+      };
+      if (selectedInvoice) paymentData.invoice_id = selectedInvoice.id;
+      if (splitPayment) {
+        paymentData.splits = splitRows.map((r) => ({
+          method: r.method,
+          amount: parseFloat(r.amount),
+        }));
+      }
+      await api.payments.create(paymentData);
+      setStep('success');
+      setTimeout(() => {
+        setStep('form');
+        setSelectedMember(null);
+        setSelectedInvoice(null);
+        setAmount('');
+        setNotes('');
+        setPartialPayment(false);
+        setSplitPayment(false);
+        setSplitRows([{ method: 'upi', amount: '' }]);
+      }, 3000);
+    } catch (err) {
+      console.error('Payment failed', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addSplitRow = () => {
@@ -453,7 +477,7 @@ export default function RecordPaymentPage() {
             size="sm"
           >
             <div className="space-y-2">
-              {INVOICES.map((inv) => (
+              {invoices.map((inv) => (
                 <motion.button
                   key={inv.id}
                   onClick={() => { setSelectedInvoice(inv); setShowInvoicePanel(false); }}
@@ -566,7 +590,7 @@ function MemberSelector({
             </div>
             <div className="flex-1">
               <p className="text-[13.5px] font-[620]" style={{ color: 'rgb(15,23,42)' }}>{selected.name}</p>
-              <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{selected.email} · {selected.plan}</p>
+              <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{selected.email}{selected.plan ? ` · ${selected.plan}` : ''}</p>
             </div>
           </>
         ) : (

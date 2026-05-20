@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar, Clock, List, LayoutGrid, ChevronLeft, ChevronRight,
@@ -16,6 +16,7 @@ import { FloatingPanel } from '@/components/premium/FloatingPanel';
 import { StatusPill } from '@/components/premium/StatusPill';
 import { PremiumTable } from '@/components/premium/PremiumTable';
 import { cn } from '@/components/ui/cn';
+import { api } from '@/lib/api';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -54,18 +55,8 @@ interface NewSessionData {
 /* ────────────────────────────────────────────────────────────────────
    CONSTANTS
 ──────────────────────────────────────────────────────────────────── */
-const CLIENTS = ['Abhishek Katiyar', 'Rahul Sharma', 'Priya Mehta', 'Neha Gupta', 'Ravi Patel', 'Sneha Singh', 'Amit Kumar', 'Deepika Roy'];
-const TRAINERS = ['Rahul Sharma', 'Priya Mehta', 'Amit Verma', 'Neha Gupta', 'Vikram Singh', 'Sneha Patel'];
-
-const DEMO_SESSIONS: PTSession[] = [
-  { id: '1', client: 'Abhishek Katiyar', trainer: 'Rahul Sharma', date: '2026-05-20', time: '06:00', duration: 60, type: '1-on-1', status: 'scheduled', notes: 'Focus on chest & triceps', recurring: true, clientAvatar: 'AK' },
-  { id: '2', client: 'Priya Mehta', trainer: 'Amit Verma', date: '2026-05-20', time: '07:30', duration: 45, type: 'Assessment', status: 'scheduled', notes: 'Initial fitness assessment', recurring: false, clientAvatar: 'PM' },
-  { id: '3', client: 'Neha Gupta', trainer: 'Priya Mehta', date: '2026-05-20', time: '09:00', duration: 60, type: '1-on-1', status: 'completed', notes: 'Leg day - squats & deadlifts', recurring: true, clientAvatar: 'NG' },
-  { id: '4', client: 'Ravi Patel', trainer: 'Vikram Singh', date: '2026-05-20', time: '10:30', duration: 60, type: 'Group', status: 'scheduled', notes: 'Group HIIT session', recurring: true, clientAvatar: 'RP' },
-  { id: '5', client: 'Sneha Singh', trainer: 'Sneha Patel', date: '2026-05-19', time: '17:00', duration: 60, type: '1-on-1', status: 'cancelled', notes: 'Cancelled - client sick', recurring: false, clientAvatar: 'SS' },
-  { id: '6', client: 'Amit Kumar', trainer: 'Rahul Sharma', date: '2026-05-21', time: '06:00', duration: 60, type: '1-on-1', status: 'scheduled', notes: 'Upper body push', recurring: true, clientAvatar: 'AK2' },
-  { id: '7', client: 'Deepika Roy', trainer: 'Priya Mehta', date: '2026-05-21', time: '08:00', duration: 30, type: 'Assessment', status: 'scheduled', notes: 'Monthly progress assessment', recurring: false, clientAvatar: 'DR' },
-];
+const FALLBACK_CLIENTS = ['Abhishek Katiyar', 'Rahul Sharma', 'Priya Mehta', 'Neha Gupta', 'Ravi Patel', 'Sneha Singh', 'Amit Kumar', 'Deepika Roy'];
+const FALLBACK_TRAINERS = ['Rahul Sharma', 'Priya Mehta', 'Amit Verma', 'Neha Gupta', 'Vikram Singh', 'Sneha Patel'];
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -95,6 +86,31 @@ function initials(name: string) {
 
 const AVATAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#dc2626', '#14b8a6'];
 
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   LOADING SKELETON
+──────────────────────────────────────────────────────────────────── */
+function SessionsSkeleton() {
+  return (
+    <div className="rounded-[20px] p-5 animate-pulse"
+      style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+      <div className="h-3 w-32 rounded mb-4" style={{ background: 'rgba(15,23,42,0.08)' }} />
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center gap-3 mb-3">
+          <div className="h-9 w-9 rounded-[10px]" style={{ background: 'rgba(15,23,42,0.06)' }} />
+          <div className="flex-1">
+            <div className="h-3 w-28 rounded" style={{ background: 'rgba(15,23,42,0.06)' }} />
+            <div className="h-2.5 w-40 mt-1.5 rounded" style={{ background: 'rgba(15,23,42,0.04)' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ────────────────────────────────────────────────────────────────────
    PAGE
 ──────────────────────────────────────────────────────────────────── */
@@ -104,13 +120,60 @@ export default function ScheduleSessionPage() {
 
 function SchedulePageContent() {
   const [view, setView] = useState<ViewMode>('calendar');
-  const [sessions, setSessions] = useState<PTSession[]>(DEMO_SESSIONS);
+  const [sessions, setSessions] = useState<PTSession[]>([]);
   const [search, setSearch] = useState('');
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 4, 20));
-  const [selectedDate, setSelectedDate] = useState<string>('2026-05-20');
+
+  const today = todayStr();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string>(today);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSessionPanel, setShowSessionPanel] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
+
+  /* ── API State ── */
+  const [trainerList, setTrainerList] = useState<{ id: string; name: string }[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState('');
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      setSessionsLoading(true);
+      setSessionsError('');
+      const trainers = await api.trainers.list();
+      const trainerArr = Array.isArray(trainers) ? trainers : [];
+      setTrainerList(trainerArr);
+      const allSessionsData = trainerArr.length > 0
+        ? (await Promise.all(
+            trainerArr.map((t: any) =>
+              api.trainers.sessions(t.id ?? t).catch(() => [])
+            )
+          )).flat()
+        : [];
+      setSessions(allSessionsData.map((s: any) => ({
+        id: String(s.id ?? ''),
+        client: s.client?.name ?? s.client_name ?? s.client ?? '',
+        trainer: s.trainer?.name ?? s.trainer_name ?? s.trainer ?? '',
+        date: s.date ?? '',
+        time: s.time ?? '',
+        duration: s.duration ?? 60,
+        type: s.type ?? '1-on-1',
+        status: s.status ?? 'scheduled',
+        notes: s.notes ?? '',
+        recurring: s.recurring ?? false,
+        clientAvatar: initials(s.client?.name ?? s.client_name ?? s.client ?? ''),
+      })));
+    } catch (err: any) {
+      setSessionsError(err?.message || 'Failed to load sessions');
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
+
+  const [selectedTrainerFilter, setSelectedTrainerFilter] = useState('');
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -118,10 +181,12 @@ function SchedulePageContent() {
   const firstDay = getFirstDayOfMonth(year, month);
 
   const filteredSessions = useMemo(() => {
-    return sessions.filter((s) =>
-      !search || s.client.toLowerCase().includes(search.toLowerCase()) || s.trainer.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [sessions, search]);
+    return sessions.filter((s) => {
+      if (search && !s.client.toLowerCase().includes(search.toLowerCase()) && !s.trainer.toLowerCase().includes(search.toLowerCase())) return false;
+      if (selectedTrainerFilter && s.trainer !== selectedTrainerFilter) return false;
+      return true;
+    });
+  }, [sessions, search, selectedTrainerFilter]);
 
   const sessionsForDate = useMemo(() => {
     return filteredSessions.filter((s) => s.date === selectedDate).sort((a, b) => a.time.localeCompare(b.time));
@@ -142,7 +207,29 @@ function SchedulePageContent() {
     setCurrentDate(new Date(year, month + dir, 1));
   };
 
-  const handleCreateSession = (data: NewSessionData) => {
+  /* ── Clients for modal ── */
+  const [modalClients, setModalClients] = useState<string[]>([]);
+  const [modalClientsLoading, setModalClientsLoading] = useState(false);
+
+  const fetchClientsForTrainer = useCallback(async (trainerName: string) => {
+    const trainer = trainerList.find((t) => t.name === trainerName);
+    if (!trainer) { setModalClients(FALLBACK_CLIENTS); return; }
+    try {
+      setModalClientsLoading(true);
+      const clients = await api.clients.list({ trainer_id: trainer.id });
+      setModalClients(
+        Array.isArray(clients) && clients.length > 0
+          ? clients.map((c: any) => c.name ?? c)
+          : FALLBACK_CLIENTS,
+      );
+    } catch {
+      setModalClients(FALLBACK_CLIENTS);
+    } finally {
+      setModalClientsLoading(false);
+    }
+  }, [trainerList]);
+
+  const handleCreateSession = async (data: NewSessionData) => {
     const hasConflict = sessions.some(
       (s) => s.date === data.date && s.trainer === data.trainer && s.time === data.time && s.status === 'scheduled'
     );
@@ -157,13 +244,18 @@ function SchedulePageContent() {
       status: 'scheduled',
       clientAvatar: initials(data.client),
     };
+    try {
+      // Session creation not available via API yet — using local state
+    } catch {}
     setSessions((prev) => [newSession, ...prev]);
     setShowCreateModal(false);
   };
 
-  const updateSessionStatus = (id: string, status: SessionStatus) => {
+  const updateSessionStatus = async (id: string, status: SessionStatus) => {
     setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
   };
+
+  const trainerFilterOptions = ['', ...trainerList.map((t) => t.name)];
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
@@ -223,6 +315,17 @@ function SchedulePageContent() {
                 className="flex-1 bg-transparent text-[12px] font-[500] outline-none" style={{ color: 'rgb(15,23,42)' }} />
             </div>
 
+            {/* Trainer Filter */}
+            <div className="flex items-center gap-1.5 rounded-[10px] px-2.5 py-1"
+              style={{ background: 'rgba(255,255,255,0.88)', border: '1px solid rgba(15,23,42,0.08)' }}>
+              <Train size={12} style={{ color: 'rgb(148,163,184)' }} />
+              <select value={selectedTrainerFilter} onChange={(e) => setSelectedTrainerFilter(e.target.value)}
+                className="bg-transparent text-[11px] font-[500] outline-none" style={{ color: 'rgb(15,23,42)' }}>
+                <option value="">All Trainers</option>
+                {trainerList.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
+              </select>
+            </div>
+
             {/* Date Nav */}
             <div className="flex items-center gap-1.5">
               <button onClick={() => navigateMonth(-1)} className="flex h-7 w-7 items-center justify-center rounded-[8px] transition hover:bg-white/80">
@@ -241,304 +344,322 @@ function SchedulePageContent() {
 
       {/* ── MAIN CONTENT ── */}
       <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
-        <AnimatePresence mode="wait">
-          {/* ── CALENDAR VIEW ── */}
-          {view === 'calendar' && (
-            <motion.div key="calendar" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
-              {/* Calendar Grid */}
-              <div className="rounded-[20px] p-5" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                <div className="grid grid-cols-7 gap-1 mb-2">
-                  {WEEKDAYS.map((d) => (
-                    <div key={d} className="text-center text-[11px] font-[700] uppercase tracking-wider py-2" style={{ color: 'rgb(148,163,184)' }}>{d}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {Array.from({ length: firstDay }).map((_, i) => (
-                    <div key={`empty-${i}`} className="h-[54px] sm:h-[68px]" />
-                  ))}
-                  {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day = i + 1;
-                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const isSelected = selectedDate === dateStr;
-                    const isToday = dateStr === '2026-05-20';
-                    const daySessions = filteredSessions.filter((s) => s.date === dateStr);
-                    return (
-                      <button
-                        key={day}
-                        onClick={() => setSelectedDate(dateStr)}
-                        className={cn(
-                          'relative rounded-[12px] p-1 text-left transition-all',
-                        )}
-                        style={{
-                          background: isSelected ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : isToday ? 'rgba(220,38,38,0.06)' : 'transparent',
-                          border: isToday && !isSelected ? '1.5px solid rgba(220,38,38,0.20)' : '1.5px solid transparent',
-                          minHeight: 54,
-                        }}
-                      >
-                        <span className={cn(
-                          'flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-[700]',
-                          isSelected ? 'text-white' : '',
-                        )}
-                          style={{ color: isSelected ? '#fff' : 'rgb(15,23,42)' }}>
-                          {day}
-                        </span>
-                        {daySessions.length > 0 && (
-                          <div className="flex gap-0.5 mt-0.5 flex-wrap">
-                            {daySessions.slice(0, 3).map((s) => (
-                              <div key={s.id}
-                                className="h-1 w-1.5 rounded-full"
-                                style={{ background: s.status === 'scheduled' ? '#dc2626' : s.status === 'completed' ? '#10b981' : '#9ca3af' }}
-                              />
-                            ))}
-                            {daySessions.length > 3 && (
-                              <span className="text-[8px] font-[700]" style={{ color: 'rgb(148,163,184)' }}>+{daySessions.length - 3}</span>
-                            )}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+        {sessionsLoading ? (
+          <SessionsSkeleton />
+        ) : sessionsError ? (
+          <div className="rounded-[20px] p-8 text-center"
+            style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+            <div className="flex justify-center mb-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-[16px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
+                <RefreshCw size={22} style={{ color: '#dc2626' }} />
               </div>
-
-              {/* Sessions for selected date */}
-              <div>
+            </div>
+            <h3 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Failed to load sessions</h3>
+            <p className="mt-1 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>{sessionsError}</p>
+            <PremiumButton tone="primary" glow icon={<RefreshCw size={13} />} onClick={fetchSessions} className="mt-4">
+              Retry
+            </PremiumButton>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            {/* ── CALENDAR VIEW ── */}
+            {view === 'calendar' && (
+              <motion.div key="calendar" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
+                {/* Calendar Grid */}
                 <div className="rounded-[20px] p-5" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                  <p className="text-[12px] font-[700] uppercase tracking-wider mb-4" style={{ color: 'rgb(148,163,184)' }}>
-                    Sessions · {selectedDate}
-                  </p>
-                  {sessionsForDate.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
-                        <Calendar size={20} style={{ color: '#dc2626' }} />
-                      </div>
-                      <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>No sessions scheduled</p>
-                      <p className="text-[11px] mt-1" style={{ color: 'rgb(203,213,225)' }}>Book a session to get started</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {sessionsForDate.map((session, idx) => (
-                        <motion.div
-                          key={session.id}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.04 }}
-                          className="flex items-center gap-3 rounded-[14px] p-3.5 transition-all cursor-pointer hover:bg-white/50"
-                          style={{ background: 'rgba(248,250,252,0.8)', border: '1px solid rgba(15,23,42,0.06)' }}
-                          onClick={() => setShowSessionPanel(session.id)}
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {WEEKDAYS.map((d) => (
+                      <div key={d} className="text-center text-[11px] font-[700] uppercase tracking-wider py-2" style={{ color: 'rgb(148,163,184)' }}>{d}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {Array.from({ length: firstDay }).map((_, i) => (
+                      <div key={`empty-${i}`} className="h-[54px] sm:h-[68px]" />
+                    ))}
+                    {Array.from({ length: daysInMonth }).map((_, i) => {
+                      const day = i + 1;
+                      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const isSelected = selectedDate === dateStr;
+                      const isToday = dateStr === today;
+                      const daySessions = filteredSessions.filter((s) => s.date === dateStr);
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => setSelectedDate(dateStr)}
+                          className={cn(
+                            'relative rounded-[12px] p-1 text-left transition-all',
+                          )}
+                          style={{
+                            background: isSelected ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : isToday ? 'rgba(220,38,38,0.06)' : 'transparent',
+                            border: isToday && !isSelected ? '1.5px solid rgba(220,38,38,0.20)' : '1.5px solid transparent',
+                            minHeight: 54,
+                          }}
                         >
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[11px] font-[700] text-white"
-                            style={{ background: AVATAR_COLORS[parseInt(session.id) % AVATAR_COLORS.length] }}>
-                            {session.clientAvatar}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[12.5px] font-[680]" style={{ color: 'rgb(15,23,42)' }}>{session.client}</p>
-                            <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{session.time} · {session.duration}min · {session.trainer}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
-                              style={{ background: `${TYPE_COLORS[session.type]}12`, color: TYPE_COLORS[session.type] }}>
-                              {session.type}
-                            </span>
-                            <StatusPill status={session.status} />
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── TIMELINE VIEW ── */}
-          {view === 'timeline' && (
-            <motion.div key="timeline" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="rounded-[20px] p-6" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                <p className="text-[12px] font-[700] uppercase tracking-wider mb-5" style={{ color: 'rgb(148,163,184)' }}>
-                  Timeline · {selectedDate}
-                </p>
-                <div className="relative">
-                  <div className="absolute left-[15px] top-0 bottom-0 w-0.5" style={{ background: 'rgba(15,23,42,0.08)' }} />
-                  {sessionsForDate.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
-                        <Clock size={20} style={{ color: '#dc2626' }} />
-                      </div>
-                      <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>No sessions on this day</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {sessionsForDate.map((session, idx) => (
-                        <motion.div
-                          key={session.id}
-                          initial={{ opacity: 0, x: -12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.06 }}
-                          className="relative flex gap-5 cursor-pointer group"
-                          onClick={() => setShowSessionPanel(session.id)}
-                        >
-                          <div className="flex flex-col items-center shrink-0 w-[60px]">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 z-10"
-                              style={{
-                                background: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#fff',
-                                borderColor: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#dc2626',
-                              }}>
-                              {session.status === 'completed' ? <CheckCircle2 size={12} color="white" /> : <span className="text-[10px] font-[800]" style={{ color: '#dc2626' }}>{session.time.split(':')[0]}</span>}
+                          <span className={cn(
+                            'flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-[700]',
+                            isSelected ? 'text-white' : '',
+                          )}
+                            style={{ color: isSelected ? '#fff' : 'rgb(15,23,42)' }}>
+                            {day}
+                          </span>
+                          {daySessions.length > 0 && (
+                            <div className="flex gap-0.5 mt-0.5 flex-wrap">
+                              {daySessions.slice(0, 3).map((s) => (
+                                <div key={s.id}
+                                  className="h-1 w-1.5 rounded-full"
+                                  style={{ background: s.status === 'scheduled' ? '#dc2626' : s.status === 'completed' ? '#10b981' : '#9ca3af' }}
+                                />
+                              ))}
+                              {daySessions.length > 3 && (
+                                <span className="text-[8px] font-[700]" style={{ color: 'rgb(148,163,184)' }}>+{daySessions.length - 3}</span>
+                              )}
                             </div>
-                            <span className="mt-1 text-[10px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>{session.time}</span>
-                          </div>
-                          <div className="flex-1 rounded-[14px] p-3.5 transition-all border"
-                            style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(15,23,42,0.08)' }}>
-                            <div className="flex items-center justify-between gap-3">
-                              <div>
-                                <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{session.client}</p>
-                                <p className="text-[11px] mt-0.5" style={{ color: 'rgb(148,163,184)' }}>
-                                  {session.trainer} · {session.duration}min · {session.type}
-                                </p>
-                              </div>
-                              <StatusPill status={session.status} />
-                            </div>
-                            {session.notes && (
-                              <p className="mt-2 text-[11.5px] italic" style={{ color: 'rgb(148,163,184)' }}>{session.notes}</p>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
 
-          {/* ── WEEKLY VIEW ── */}
-          {view === 'weekly' && (
-            <motion.div key="weekly" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="rounded-[20px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                <div className="grid grid-cols-7 border-b" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
-                  {WEEKDAYS.map((day, i) => {
-                    const dateStr = weekDates[i];
-                    const isToday = dateStr === '2026-05-20';
-                    return (
-                      <div key={day} className={cn('p-3 text-center border-r', i === 6 && 'border-r-0')}
-                        style={{ borderColor: 'rgba(15,23,42,0.07)', background: isToday ? 'rgba(220,38,38,0.04)' : 'transparent' }}>
-                        <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{day}</p>
-                        <p className={cn('text-[16px] font-[800] mt-0.5', isToday && 'text-[#dc2626]')}
-                          style={{ color: isToday ? '#dc2626' : 'rgb(15,23,42)' }}>
-                          {dateStr.split('-')[2]}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="grid grid-cols-7">
-                  {weekDates.map((dateStr, colIdx) => {
-                    const daySessions = filteredSessions.filter((s) => s.date === dateStr);
-                    return (
-                      <div key={dateStr} className={cn('p-2 border-r min-h-[200px]', colIdx === 6 && 'border-r-0')}
-                        style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
-                        {daySessions.length === 0 ? (
-                          <p className="text-[10px] text-center mt-6" style={{ color: 'rgb(203,213,225)' }}>No sessions</p>
-                        ) : (
-                          <div className="space-y-1">
-                            {daySessions.map((s) => (
-                              <div key={s.id}
-                                className="rounded-[8px] p-2 cursor-pointer transition-all hover:opacity-80"
-                                style={{
-                                  background: s.status === 'scheduled' ? 'rgba(220,38,38,0.10)' : s.status === 'completed' ? 'rgba(16,185,129,0.10)' : 'rgba(156,163,175,0.10)',
-                                  border: '1px solid rgba(15,23,42,0.06)',
-                                }}
-                                onClick={() => setShowSessionPanel(s.id)}
-                              >
-                                <p className="text-[10px] font-[700] truncate" style={{ color: 'rgb(15,23,42)' }}>{s.client}</p>
-                                <p className="text-[9px]" style={{ color: 'rgb(148,163,184)' }}>{s.time} · {s.duration}min</p>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── DAILY VIEW ── */}
-          {view === 'daily' && (
-            <motion.div key="daily" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
-                <PremiumTable
-                  columns={[
-                    { key: 'client', header: 'Client', render: (s: PTSession) => (
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-[9px] text-[10px] font-[700] text-white"
-                          style={{ background: AVATAR_COLORS[parseInt(s.id) % AVATAR_COLORS.length] }}>{s.clientAvatar}</div>
-                        <div>
-                          <p className="text-[12.5px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>{s.client}</p>
-                        </div>
-                      </div>
-                    )},
-                    { key: 'trainer', header: 'Trainer', render: (s: PTSession) => (
-                      <div className="flex items-center gap-2">
-                        <Train size={12} style={{ color: 'rgb(148,163,184)' }} />
-                        <span className="text-[12px]" style={{ color: 'rgb(100,116,139)' }}>{s.trainer}</span>
-                      </div>
-                    )},
-                    { key: 'time', header: 'Time', render: (s: PTSession) => (
-                      <div className="flex items-center gap-2">
-                        <Clock size={12} style={{ color: 'rgb(148,163,184)' }} />
-                        <span className="text-[12px] font-[600]" style={{ color: 'rgb(15,23,42)' }}>{s.time}</span>
-                        <span className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>({s.duration}min)</span>
-                      </div>
-                    )},
-                    { key: 'type', header: 'Type', render: (s: PTSession) => (
-                      <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
-                        style={{ background: `${TYPE_COLORS[s.type]}12`, color: TYPE_COLORS[s.type] }}>
-                        {s.type}
-                      </span>
-                    )},
-                    { key: 'status', header: 'Status', render: (s: PTSession) => <StatusPill status={s.status} /> },
-                  ]}
-                  data={sessionsForDate}
-                  keyExtractor={(s) => s.id}
-                  emptyMessage="No sessions found"
-                />
+                {/* Sessions for selected date */}
                 <div>
                   <div className="rounded-[20px] p-5" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-                    <p className="text-[12px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>Trainer Availability</p>
-                    <div className="space-y-3">
-                      {TRAINERS.map((trainer, i) => {
-                        const busySessions = sessionsForDate.filter((s) => s.trainer === trainer && s.status === 'scheduled');
-                        return (
-                          <div key={trainer} className="flex items-center gap-3">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-[8px] text-[9px] font-[700] text-white"
-                              style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
-                              {initials(trainer)}
+                    <p className="text-[12px] font-[700] uppercase tracking-wider mb-4" style={{ color: 'rgb(148,163,184)' }}>
+                      Sessions · {selectedDate}
+                    </p>
+                    {sessionsForDate.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
+                          <Calendar size={20} style={{ color: '#dc2626' }} />
+                        </div>
+                        <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>No sessions scheduled</p>
+                        <p className="text-[11px] mt-1" style={{ color: 'rgb(203,213,225)' }}>Book a session to get started</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {sessionsForDate.map((session, idx) => (
+                          <motion.div
+                            key={session.id}
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.04 }}
+                            className="flex items-center gap-3 rounded-[14px] p-3.5 transition-all cursor-pointer hover:bg-white/50"
+                            style={{ background: 'rgba(248,250,252,0.8)', border: '1px solid rgba(15,23,42,0.06)' }}
+                            onClick={() => setShowSessionPanel(session.id)}
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[11px] font-[700] text-white"
+                              style={{ background: AVATAR_COLORS[parseInt(session.id) % AVATAR_COLORS.length] }}>
+                              {session.clientAvatar}
                             </div>
-                            <div className="flex-1">
-                              <p className="text-[11.5px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{trainer}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12.5px] font-[680]" style={{ color: 'rgb(15,23,42)' }}>{session.client}</p>
+                              <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{session.time} · {session.duration}min · {session.trainer}</p>
                             </div>
-                            {busySessions.length > 0 ? (
-                              <span className="text-[10px] font-[600] rounded-full px-2 py-0.5" style={{ background: 'rgba(245,158,11,0.10)', color: '#d97706' }}>
-                                {busySessions.length} booked
+                            <div className="flex items-center gap-2">
+                              <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
+                                style={{ background: `${TYPE_COLORS[session.type]}12`, color: TYPE_COLORS[session.type] }}>
+                                {session.type}
                               </span>
-                            ) : (
-                              <span className="text-[10px] font-[600] rounded-full px-2 py-0.5" style={{ background: 'rgba(16,185,129,0.10)', color: '#059669' }}>
-                                Available
-                              </span>
-                            )}
+                              <StatusPill status={session.status} />
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── TIMELINE VIEW ── */}
+            {view === 'timeline' && (
+              <motion.div key="timeline" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <div className="rounded-[20px] p-6" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                  <p className="text-[12px] font-[700] uppercase tracking-wider mb-5" style={{ color: 'rgb(148,163,184)' }}>
+                    Timeline · {selectedDate}
+                  </p>
+                  <div className="relative">
+                    <div className="absolute left-[15px] top-0 bottom-0 w-0.5" style={{ background: 'rgba(15,23,42,0.08)' }} />
+                    {sessionsForDate.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
+                          <Clock size={20} style={{ color: '#dc2626' }} />
+                        </div>
+                        <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>No sessions on this day</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {sessionsForDate.map((session, idx) => (
+                          <motion.div
+                            key={session.id}
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.06 }}
+                            className="relative flex gap-5 cursor-pointer group"
+                            onClick={() => setShowSessionPanel(session.id)}
+                          >
+                            <div className="flex flex-col items-center shrink-0 w-[60px]">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 z-10"
+                                style={{
+                                  background: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#fff',
+                                  borderColor: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#dc2626',
+                                }}>
+                                {session.status === 'completed' ? <CheckCircle2 size={12} color="white" /> : <span className="text-[10px] font-[800]" style={{ color: '#dc2626' }}>{session.time.split(':')[0]}</span>}
+                              </div>
+                              <span className="mt-1 text-[10px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>{session.time}</span>
+                            </div>
+                            <div className="flex-1 rounded-[14px] p-3.5 transition-all border"
+                              style={{ background: 'rgba(255,255,255,0.85)', borderColor: 'rgba(15,23,42,0.08)' }}>
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{session.client}</p>
+                                  <p className="text-[11px] mt-0.5" style={{ color: 'rgb(148,163,184)' }}>
+                                    {session.trainer} · {session.duration}min · {session.type}
+                                  </p>
+                                </div>
+                                <StatusPill status={session.status} />
+                              </div>
+                              {session.notes && (
+                                <p className="mt-2 text-[11.5px] italic" style={{ color: 'rgb(148,163,184)' }}>{session.notes}</p>
+                              )}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── WEEKLY VIEW ── */}
+            {view === 'weekly' && (
+              <motion.div key="weekly" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <div className="rounded-[20px] overflow-hidden" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                  <div className="grid grid-cols-7 border-b" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
+                    {WEEKDAYS.map((day, i) => {
+                      const dateStr = weekDates[i];
+                      const isToday = dateStr === today;
+                      return (
+                        <div key={day} className={cn('p-3 text-center border-r', i === 6 && 'border-r-0')}
+                          style={{ borderColor: 'rgba(15,23,42,0.07)', background: isToday ? 'rgba(220,38,38,0.04)' : 'transparent' }}>
+                          <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{day}</p>
+                          <p className={cn('text-[16px] font-[800] mt-0.5', isToday && 'text-[#dc2626]')}
+                            style={{ color: isToday ? '#dc2626' : 'rgb(15,23,42)' }}>
+                            {dateStr.split('-')[2]}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="grid grid-cols-7">
+                    {weekDates.map((dateStr, colIdx) => {
+                      const daySessions = filteredSessions.filter((s) => s.date === dateStr);
+                      return (
+                        <div key={dateStr} className={cn('p-2 border-r min-h-[200px]', colIdx === 6 && 'border-r-0')}
+                          style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
+                          {daySessions.length === 0 ? (
+                            <p className="text-[10px] text-center mt-6" style={{ color: 'rgb(203,213,225)' }}>No sessions</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {daySessions.map((s) => (
+                                <div key={s.id}
+                                  className="rounded-[8px] p-2 cursor-pointer transition-all hover:opacity-80"
+                                  style={{
+                                    background: s.status === 'scheduled' ? 'rgba(220,38,38,0.10)' : s.status === 'completed' ? 'rgba(16,185,129,0.10)' : 'rgba(156,163,175,0.10)',
+                                    border: '1px solid rgba(15,23,42,0.06)',
+                                  }}
+                                  onClick={() => setShowSessionPanel(s.id)}
+                                >
+                                  <p className="text-[10px] font-[700] truncate" style={{ color: 'rgb(15,23,42)' }}>{s.client}</p>
+                                  <p className="text-[9px]" style={{ color: 'rgb(148,163,184)' }}>{s.time} · {s.duration}min</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── DAILY VIEW ── */}
+            {view === 'daily' && (
+              <motion.div key="daily" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
+                  <PremiumTable
+                    columns={[
+                      { key: 'client', header: 'Client', render: (s: PTSession) => (
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-[9px] text-[10px] font-[700] text-white"
+                            style={{ background: AVATAR_COLORS[parseInt(s.id) % AVATAR_COLORS.length] }}>{s.clientAvatar}</div>
+                          <div>
+                            <p className="text-[12.5px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>{s.client}</p>
                           </div>
-                        );
-                      })}
+                        </div>
+                      )},
+                      { key: 'trainer', header: 'Trainer', render: (s: PTSession) => (
+                        <div className="flex items-center gap-2">
+                          <Train size={12} style={{ color: 'rgb(148,163,184)' }} />
+                          <span className="text-[12px]" style={{ color: 'rgb(100,116,139)' }}>{s.trainer}</span>
+                        </div>
+                      )},
+                      { key: 'time', header: 'Time', render: (s: PTSession) => (
+                        <div className="flex items-center gap-2">
+                          <Clock size={12} style={{ color: 'rgb(148,163,184)' }} />
+                          <span className="text-[12px] font-[600]" style={{ color: 'rgb(15,23,42)' }}>{s.time}</span>
+                          <span className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>({s.duration}min)</span>
+                        </div>
+                      )},
+                      { key: 'type', header: 'Type', render: (s: PTSession) => (
+                        <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
+                          style={{ background: `${TYPE_COLORS[s.type]}12`, color: TYPE_COLORS[s.type] }}>
+                          {s.type}
+                        </span>
+                      )},
+                      { key: 'status', header: 'Status', render: (s: PTSession) => <StatusPill status={s.status} /> },
+                    ]}
+                    data={sessionsForDate}
+                    keyExtractor={(s) => s.id}
+                    emptyMessage="No sessions found"
+                  />
+                  <div>
+                    <div className="rounded-[20px] p-5" style={{ background: 'rgba(255,255,255,0.82)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                      <p className="text-[12px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>Trainer Availability</p>
+                      <div className="space-y-3">
+                        {trainerList.map((trainer, i) => {
+                          const busySessions = sessionsForDate.filter((s) => s.trainer === trainer.name && s.status === 'scheduled');
+                          return (
+                            <div key={trainer.id} className="flex items-center gap-3">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-[8px] text-[9px] font-[700] text-white"
+                                style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}>
+                                {initials(trainer.name)}
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[11.5px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{trainer.name}</p>
+                              </div>
+                              {busySessions.length > 0 ? (
+                                <span className="text-[10px] font-[600] rounded-full px-2 py-0.5" style={{ background: 'rgba(245,158,11,0.10)', color: '#d97706' }}>
+                                  {busySessions.length} booked
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-[600] rounded-full px-2 py-0.5" style={{ background: 'rgba(16,185,129,0.10)', color: '#059669' }}>
+                                  Available
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
 
       {/* ── CREATE SESSION MODAL ── */}
@@ -548,6 +669,10 @@ function SchedulePageContent() {
         onConfirm={handleCreateSession}
         conflict={conflict}
         onDismissConflict={() => setConflict(false)}
+        trainerOptions={trainerList.map((t) => t.name)}
+        clientOptions={modalClients}
+        clientOptionsLoading={modalClientsLoading}
+        onTrainerChange={fetchClientsForTrainer}
       />
 
       {/* ── SESSION DETAIL PANEL ── */}
@@ -566,12 +691,15 @@ function SchedulePageContent() {
 ──────────────────────────────────────────────────────────────────── */
 function CreateSessionModal({
   open, onClose, onConfirm, conflict, onDismissConflict,
+  trainerOptions, clientOptions, clientOptionsLoading, onTrainerChange,
 }: {
   open: boolean; onClose: () => void; onConfirm: (data: NewSessionData) => void;
   conflict: boolean; onDismissConflict: () => void;
+  trainerOptions: string[]; clientOptions: string[]; clientOptionsLoading: boolean;
+  onTrainerChange: (trainer: string) => void;
 }) {
   const [form, setForm] = useState<NewSessionData>({
-    client: '', trainer: '', date: '2026-05-20', time: '06:00',
+    client: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00',
     duration: 60, type: '1-on-1', notes: '', recurring: false,
   });
   const [step, setStep] = useState(1);
@@ -584,13 +712,20 @@ function CreateSessionModal({
     }
     onConfirm(form);
     setStep(1);
-    setForm({ client: '', trainer: '', date: '2026-05-20', time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
+    setForm({ client: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
   };
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => { setStep(1); setForm({ client: '', trainer: '', date: '2026-05-20', time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false }); }, 200);
+    setTimeout(() => { setStep(1); setForm({ client: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false }); }, 200);
   };
+
+  const onTrainerSelect = (t: string) => {
+    setForm((f) => ({ ...f, trainer: t, client: '' }));
+    onTrainerChange(t);
+  };
+
+  const resolvedClients = clientOptions.length > 0 ? clientOptions : FALLBACK_CLIENTS;
 
   return (
     <PremiumModal
@@ -628,28 +763,36 @@ function CreateSessionModal({
           {/* Client */}
           <div>
             <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Client *</p>
-            <div className="grid grid-cols-2 gap-2">
-              {CLIENTS.map((c) => (
-                <button key={c} type="button" onClick={() => setForm((f) => ({ ...f, client: c }))}
-                  className="rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
-                  style={{
-                    background: form.client === c ? 'rgba(220,38,38,0.10)' : 'rgba(248,250,252,0.9)',
-                    border: form.client === c ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                    color: form.client === c ? '#dc2626' : 'rgb(100,116,139)',
-                  }}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
+            {clientOptionsLoading ? (
+              <div className="grid grid-cols-2 gap-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-9 rounded-[10px] animate-pulse" style={{ background: 'rgba(15,23,42,0.06)' }} />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {resolvedClients.map((c) => (
+                  <button key={c} type="button" onClick={() => setForm((f) => ({ ...f, client: c }))}
+                    className="rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
+                    style={{
+                      background: form.client === c ? 'rgba(220,38,38,0.10)' : 'rgba(248,250,252,0.9)',
+                      border: form.client === c ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
+                      color: form.client === c ? '#dc2626' : 'rgb(100,116,139)',
+                    }}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Trainer */}
           <div>
             <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Trainer *</p>
             <div className="grid grid-cols-2 gap-2">
-              {TRAINERS.map((t) => (
-                <button key={t} type="button" onClick={() => setForm((f) => ({ ...f, trainer: t }))}
+              {(trainerOptions.length > 0 ? trainerOptions : FALLBACK_TRAINERS).map((t) => (
+                <button key={t} type="button" onClick={() => onTrainerSelect(t)}
                   className="rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
                   style={{
                     background: form.trainer === t ? 'rgba(220,38,38,0.10)' : 'rgba(248,250,252,0.9)',
