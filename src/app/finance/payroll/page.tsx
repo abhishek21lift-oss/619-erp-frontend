@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import {
-  Users, Download, FileText, MoreHorizontal, Search, Filter,
-  TrendingUp, TrendingDown, Sparkles, ChevronDown, Check, X,
-  Clock, CheckCircle2, AlertCircle, Circle,
+  Users, Download, FileText, Search,
+  TrendingUp, Sparkles, Check, X,
+  Clock, CheckCircle2, AlertCircle,
   Zap, Crown, ArrowUpRight, ArrowDownRight,
-  IndianRupee, Calendar, Target, Activity,
+  IndianRupee, Target, Activity,
   Play, ChevronRight, Eye, Edit3, Printer,
-  Star, Award, BarChart3, Banknote, CreditCard,
+  Award, BarChart3, Banknote,
   RefreshCw, Plus, Send,
 } from 'lucide-react';
 
@@ -112,7 +112,7 @@ const AI_INSIGHTS = [
     color: '#f59e0b',
     bg: 'rgba(245,158,11,0.08)',
     title: 'Attendance Anomaly Detected',
-    body: 'Vikram Patel\'s attendance dropped to 79% this month vs 94% last month. Review schedule or check for personal reasons.',
+    body: "Vikram Patel's attendance dropped to 79% this month vs 94% last month. Review schedule or check for personal reasons.",
     tag: 'Anomaly',
     tagColor: '#f59e0b',
   },
@@ -359,8 +359,8 @@ function IconBtn({ icon, label, onClick }: { icon: React.ReactNode; label: strin
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'transparent', color: '#94a3b8',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(15,23,42,0.06)'; (e.currentTarget as HTMLElement).style.color = '#334155'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#94a3b8'; }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(15,23,42,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#334155'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; }}
     >
       {icon}
     </motion.button>
@@ -448,7 +448,7 @@ function Inner() {
                     Payroll Management
                   </h1>
                   <p style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 3 }}>
-                    Automated salary processing, incentives & payout intelligence
+                    Automated salary processing, incentives &amp; payout intelligence
                   </p>
                 </div>
               </div>
@@ -562,8 +562,8 @@ function Inner() {
                           exit={{ opacity: 0, y: -6 }}
                           transition={{ delay: idx * 0.04 }}
                           style={{ borderBottom: '1px solid rgba(15,23,42,0.05)', cursor: 'default' }}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(109,40,217,0.03)'}
-                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(109,40,217,0.03)')}
+                          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
                         >
                           <td style={{ padding: '14px 16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
@@ -754,7 +754,7 @@ function Inner() {
           {/* ════════════════ RIGHT SIDEBAR ═════════════════ */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* ── PAYROLL CALENDAR ─────────────────────── */}
+            {/* ── PAYROLL CALENDAR ─────────────────────────── */}
             <Card style={{ padding: '20px 20px' }}>
               <SectionHeader title="Payroll Calendar" sub="May — Jun 2026" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -789,7 +789,7 @@ function Inner() {
               </div>
             </Card>
 
-            {/* ── TOP PERFORMERS ───────────────────────── */}
+            {/* ── TOP PERFORMERS ───────────────────────────── */}
             <Card style={{ padding: '20px 20px' }}>
               <SectionHeader
                 title="Top Performers"
@@ -836,7 +836,7 @@ function Inner() {
               </div>
             </Card>
 
-            {/* ── QUICK ACTIONS ────────────────────────── */}
+            {/* ── QUICK ACTIONS ────────────────────────────── */}
             <Card style={{ padding: '20px 20px' }}>
               <SectionHeader title="Quick Actions" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -871,7 +871,7 @@ function Inner() {
               </div>
             </Card>
 
-            {/* ── EXPENSE BREAKDOWN ────────────────────── */}
+            {/* ── EXPENSE BREAKDOWN ────────────────────────── */}
             <Card style={{ padding: '20px 20px' }}>
               <SectionHeader title="Cost Breakdown" sub="May 2026 payroll" />
               <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 18 }}>
@@ -988,7 +988,7 @@ function Inner() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  <Send size={15} /> Confirm & Process
+                  <Send size={15} /> Confirm &amp; Process
                 </motion.button>
               </div>
             </motion.div>
