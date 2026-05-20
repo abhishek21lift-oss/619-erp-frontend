@@ -260,7 +260,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
   }, []);
 
   // Close on navigation
-  useEffect(() => { onMobileClose?.(); }, [onMobileClose, path]);
+  useEffect(() => { onMobileClose?.(); }, [path]);
 
   // Focus search when drawer opens
   useEffect(() => {

@@ -8,7 +8,7 @@
  * Issue #YY FIX — Sidebar rendered via React Portal to escape stacking
  *                  context; fixes iOS Safari fixed-position blink/flicker.
  */
-import { useState, useEffect, useSyncExternalStore, useRef } from 'react';
+import { useState, useEffect, useSyncExternalStore, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { LazyMotion, domAnimation } from 'framer-motion';
 import Sidebar from './Sidebar';
@@ -46,10 +46,12 @@ export default function AppShell({ children, title: _title }: AppShellProps) {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
+  const handleMobileClose = useCallback(() => setMobileOpen(false), []);
+
   const sidebar = (
     <Sidebar
       mobileOpen={mobileOpen}
-      onMobileClose={() => setMobileOpen(false)}
+      onMobileClose={handleMobileClose}
     />
   );
 
