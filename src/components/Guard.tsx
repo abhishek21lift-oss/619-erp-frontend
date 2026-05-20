@@ -23,7 +23,8 @@ export default function Guard({ children, role }: Props) {
       return;
     }
 
-    if (role && user.role !== role) {
+    // Admins can access any role-restricted page; non-admins must match exactly.
+    if (role && user.role !== role && user.role !== 'admin') {
       router.replace('/dashboard');
       return;
     }
@@ -84,7 +85,7 @@ export default function Guard({ children, role }: Props) {
     );
   }
 
-  if (!user || (role && user.role !== role)) {
+  if (!user || (role && user.role !== role && user.role !== 'admin')) {
     return null;
   }
 
