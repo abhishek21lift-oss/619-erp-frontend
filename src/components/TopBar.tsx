@@ -1,17 +1,15 @@
 'use client';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import Breadcrumbs from './Breadcrumbs';
 import NotificationBell from './NotificationBell';
+import { Search } from 'lucide-react';
 
 type Props = {
-  /** Optional page title — falls back to a greeting if omitted. */
   title?: string;
-  /** Optional subline — falls back to today's date if omitted. */
   subtitle?: string;
-  /** Slot for page-level primary action button(s). */
   actions?: React.ReactNode;
-  /** Hide breadcrumbs (e.g. on the root dashboard where they'd say "Home › Dashboard"). */
   hideBreadcrumbs?: boolean;
 };
 
@@ -48,34 +46,36 @@ export default function TopBar({ title, subtitle, actions, hideBreadcrumbs }: Pr
     );
   }
 
-  const initials = (user?.name || 'U')
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
-    <div className="topbar v2">
+    <div
+      className="topbar v2"
+      style={{
+        background: 'rgba(255,255,255,0.55)',
+        backdropFilter: 'blur(20px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(140%)',
+        borderBottom: '1px solid rgba(255,255,255,0.35)',
+      }}
+    >
       <div className="topbar-left">
         {!hideBreadcrumbs && <Breadcrumbs />}
         <div className="topbar-titles">
-          <div className="topbar-title">{title || greet(user?.name)}</div>
-          <div className="topbar-sub">{subtitle || todayString()}</div>
+          <div className="topbar-title" style={{ fontWeight: 700 }}>{title || greet(user?.name)}</div>
+          <div className="topbar-sub" style={{ opacity: 0.65 }}>{subtitle || todayString()}</div>
         </div>
       </div>
 
       <div className="topbar-right">
         <button
           type="button"
-          className="topbar-search-trigger"
+          className="topbar-search-trigger glass-btn"
           onClick={openPalette}
           aria-label="Open search (Cmd+K)"
+          style={{ height: 34, borderRadius: 9999, gap: 6, padding: '0 12px' }}
         >
-          <span aria-hidden style={{ opacity: 0.75 }}>⌕</span>
-          <span className="topbar-search-text">Search anything</span>
-          <kbd className="topbar-kbd">{isMac ? '⌘' : 'Ctrl'}</kbd>
-          <kbd className="topbar-kbd">K</kbd>
+          <Search size={12} style={{ opacity: 0.6 }} />
+          <span className="topbar-search-text" style={{ fontSize: 12 }}>Search anything</span>
+          <kbd className="topbar-kbd" style={{ fontSize: 10, padding: '1px 5px', background: 'rgba(255,255,255,0.70)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 5 }}>{isMac ? '⌘' : 'Ctrl'}</kbd>
+          <kbd className="topbar-kbd" style={{ fontSize: 10, padding: '1px 5px', background: 'rgba(255,255,255,0.70)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 5 }}>K</kbd>
         </button>
 
         <NotificationBell />
@@ -84,12 +84,29 @@ export default function TopBar({ title, subtitle, actions, hideBreadcrumbs }: Pr
 
         <button
           type="button"
-          className="topbar-avatar"
+          className="topbar-avatar glass-btn"
           aria-label="Account"
           onClick={() => router.push('/settings')}
           title={user?.name || 'Account'}
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            padding: 2,
+          }}
         >
-          {initials}
+          <Image
+            src="/619-logo.png"
+            alt="Profile"
+            width={28}
+            height={28}
+            className="logo-img-avatar object-contain"
+            style={{ display: 'block', borderRadius: '50%' }}
+          />
         </button>
       </div>
     </div>

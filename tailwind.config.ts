@@ -28,7 +28,14 @@ const config: Config = {
     // icon backgrounds
     'bg-white/25', 'bg-white/15',
     'backdrop-blur-md',
+    'backdrop-blur-glassy',
+    'backdrop-blur-glassier',
+    'backdrop-blur-glassiest',
     'ring-1', 'ring-white/40', 'ring-white/25',
+    'border-white/20', 'border-white/30', 'border-white/40', 'border-white/50',
+    'border-white/60', 'border-white/70', 'border-white/80',
+    'bg-white/30', 'bg-white/40', 'bg-white/50', 'bg-white/60', 'bg-white/70',
+    'bg-white/75', 'bg-white/80', 'bg-white/85', 'bg-white/90',
   ],
   theme: {
     extend: {
@@ -46,9 +53,14 @@ const config: Config = {
       backdropBlur: {
         xs: '2px',
         glass: '18px',
+        glassy: '20px',
+        glassier: '28px',
+        glassiest: '36px',
       },
       borderRadius: {
         glass: '18px',
+        glassier: '22px',
+        glassiest: '28px',
       },
       keyframes: {
         'fade-in': {
@@ -71,6 +83,14 @@ const config: Config = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        'glass-in': {
+          '0%': { opacity: '0', backdropFilter: 'blur(0px)', transform: 'scale(0.98) translateY(-4px)' },
+          '100%': { opacity: '1', backdropFilter: 'blur(28px)', transform: 'scale(1) translateY(0)' },
+        },
+        'glass-float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-2px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 200ms cubic-bezier(0.4,0,0.2,1) both',
@@ -79,6 +99,8 @@ const config: Config = {
         'scale-in': 'scale-in 200ms cubic-bezier(0.4,0,0.2,1) both',
         'spin-slow': 'spin 2s linear infinite',
         shimmer: 'shimmer 1.6s ease infinite',
+        'glass-in': 'glass-in 300ms cubic-bezier(0.34,1.56,0.64,1) both',
+        'glass-float': 'glass-float 3s ease-in-out infinite',
       },
     },
   },

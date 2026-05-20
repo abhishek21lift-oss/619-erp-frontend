@@ -16,10 +16,9 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/components/ui';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Props { onMenuClick?: () => void; }
 
-interface MegaItem { label: string; href: string; description?: string; isNew?: boolean; }
+interface MegaItem { label: string; href: string; description?: string; isNew?: boolean; icon?: React.ReactNode; }
 interface MegaColumn { heading?: string; items: MegaItem[]; }
 interface SpotlightCard { title: string; value: string; sub: string; accent: string; }
 interface NavSection {
@@ -33,12 +32,11 @@ interface NavSection {
   spotlight?: SpotlightCard;
 }
 
-// ─── Mega Menu Config ─────────────────────────────────────────────────────────
 const MEGA_SECTIONS: NavSection[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
-    icon: <LayoutDashboard size={13} />,
+    icon: <LayoutDashboard size={12} />,
     accent: '#7c3aed',
     glow: 'rgba(124,58,237,0.18)',
     gradient: 'linear-gradient(135deg,#7c3aed,#6d28d9)',
@@ -59,7 +57,7 @@ const MEGA_SECTIONS: NavSection[] = [
   {
     id: 'sales',
     label: 'Sales',
-    icon: <TrendingUp size={13} />,
+    icon: <TrendingUp size={12} />,
     accent: '#0369a1',
     glow: 'rgba(3,105,161,0.18)',
     gradient: 'linear-gradient(135deg,#0369a1,#0891b2)',
@@ -82,7 +80,7 @@ const MEGA_SECTIONS: NavSection[] = [
   {
     id: 'members',
     label: 'Members',
-    icon: <Users size={13} />,
+    icon: <Users size={12} />,
     accent: '#0f766e',
     glow: 'rgba(15,118,110,0.18)',
     gradient: 'linear-gradient(135deg,#0f766e,#059669)',
@@ -104,7 +102,7 @@ const MEGA_SECTIONS: NavSection[] = [
   {
     id: 'training',
     label: 'Training',
-    icon: <Dumbbell size={13} />,
+    icon: <Dumbbell size={12} />,
     accent: '#b45309',
     glow: 'rgba(180,83,9,0.18)',
     gradient: 'linear-gradient(135deg,#b45309,#d97706)',
@@ -126,7 +124,7 @@ const MEGA_SECTIONS: NavSection[] = [
   {
     id: 'operations',
     label: 'Operations',
-    icon: <Activity size={13} />,
+    icon: <Activity size={12} />,
     accent: '#be185d',
     glow: 'rgba(190,24,93,0.18)',
     gradient: 'linear-gradient(135deg,#be185d,#db2777)',
@@ -149,7 +147,7 @@ const MEGA_SECTIONS: NavSection[] = [
   {
     id: 'finance',
     label: 'Finance',
-    icon: <IndianRupee size={13} />,
+    icon: <IndianRupee size={12} />,
     accent: '#1d4ed8',
     glow: 'rgba(29,78,216,0.18)',
     gradient: 'linear-gradient(135deg,#1d4ed8,#2563eb)',
@@ -172,7 +170,7 @@ const MEGA_SECTIONS: NavSection[] = [
   {
     id: 'analytics',
     label: 'Analytics',
-    icon: <BarChart2 size={13} />,
+    icon: <BarChart2 size={12} />,
     accent: '#0d9488',
     glow: 'rgba(13,148,136,0.18)',
     gradient: 'linear-gradient(135deg,#0d9488,#06b6d4)',
@@ -211,55 +209,30 @@ const LIVE_PILLS = [
   { label: 'Sync', color: '#3b82f6', pulse: false },
 ];
 
-// ─── Framer Motion variants ───────────────────────────────────────────────────
 const megaVariants = {
-  hidden: {
-    opacity: 0,
-    y: -8,
-    scale: 0.975,
-    filter: 'blur(4px)',
-  },
+  hidden: { opacity: 0, y: -8, scale: 0.975, filter: 'blur(4px)' },
   visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    filter: 'blur(0px)',
-    transition: {
-      type: 'spring' as const,
-      stiffness: 420,
-      damping: 30,
-      mass: 0.6,
-    },
+    opacity: 1, y: 0, scale: 1, filter: 'blur(0px)',
+    transition: { type: 'spring' as const, stiffness: 420, damping: 30, mass: 0.6 },
   },
   exit: {
-    opacity: 0,
-    y: -6,
-    scale: 0.982,
-    filter: 'blur(2px)',
-    transition: {
-      duration: 0.14,
-      ease: [0.16, 1, 0.3, 1],
-    },
+    opacity: 0, y: -6, scale: 0.982, filter: 'blur(2px)',
+    transition: { duration: 0.14, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
 };
 
 const dropVariants = {
   hidden: { opacity: 0, y: -6, scale: 0.975 },
   visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
+    opacity: 1, y: 0, scale: 1,
     transition: { type: 'spring' as const, stiffness: 440, damping: 28, mass: 0.5 },
   },
   exit: {
-    opacity: 0,
-    y: -4,
-    scale: 0.985,
-    transition: { duration: 0.12, ease: [0.16, 1, 0.3, 1] },
+    opacity: 0, y: -4, scale: 0.985,
+    transition: { duration: 0.12, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
 };
 
-// ─── Portal-rendered Mega Menu ────────────────────────────────────────────────
 interface MegaPortalProps {
   section: NavSection;
   anchorRef: React.RefObject<HTMLButtonElement | null>;
@@ -277,7 +250,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
 
   useEffect(() => {
     if (!anchorRef.current) return;
-
     const update = () => {
       const rect = anchorRef.current!.getBoundingClientRect();
       setPos({
@@ -286,7 +258,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
         width: section.spotlight ? 640 : 480,
       });
     };
-
     update();
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
@@ -303,9 +274,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
         !menuRef.current.contains(e.target as Node) &&
         anchorRef.current &&
         !anchorRef.current.contains(e.target as Node)
-      ) {
-        onClose();
-      }
+      ) { onClose(); }
     };
     document.addEventListener('mousedown', handleDown);
     return () => document.removeEventListener('mousedown', handleDown);
@@ -314,7 +283,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
   if (!mounted) return null;
 
   const menuWidth = section.spotlight ? 640 : 480;
-
   const safeLeft = Math.min(
     pos.left,
     typeof window !== 'undefined' ? window.innerWidth - menuWidth - 16 : pos.left,
@@ -334,11 +302,11 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
         left: safeLeft,
         width: menuWidth,
         zIndex: 9999,
-        background: 'rgba(255,255,255,0.97)',
-        border: '1px solid rgba(255,255,255,0.75)',
-        boxShadow: `0 32px 80px rgba(15,23,42,0.14), 0 12px 32px ${section.glow}, inset 0 1px 0 rgba(255,255,255,0.9)`,
-        backdropFilter: 'blur(28px)',
-        WebkitBackdropFilter: 'blur(28px)',
+        background: 'rgba(255,255,255,0.85)',
+        border: '1px solid rgba(255,255,255,0.65)',
+        boxShadow: `0 32px 80px rgba(15,23,42,0.12), 0 12px 32px ${section.glow}, inset 0 1px 0 rgba(255,255,255,0.90)`,
+        backdropFilter: 'blur(32px)',
+        WebkitBackdropFilter: 'blur(32px)',
         borderRadius: 22,
         transformOrigin: 'top left',
         willChange: 'transform, opacity',
@@ -349,7 +317,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
         className="h-[3px] w-full rounded-t-[22px]"
         style={{ background: section.gradient }}
       />
-
       <div className="flex gap-0 p-4">
         <div className={cn('flex gap-3', section.spotlight ? 'flex-1' : 'w-full')}>
           {section.columns.map((col, ci) => (
@@ -357,7 +324,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
               {col.heading && (
                 <div
                   className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.15em]"
-                  style={{ color: section.accent }}
+                  style={{ color: section.accent, opacity: 0.8 }}
                 >
                   {col.heading}
                 </div>
@@ -371,7 +338,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                     onClick={() => { router.push(item.href); onClose(); }}
                     className={cn(
                       'group/item flex w-full items-start gap-2.5 rounded-[12px] px-2.5 py-2 text-left transition-all duration-150',
-                      ia ? 'font-semibold' : 'hover:bg-slate-50/80',
+                      ia ? 'font-semibold' : 'hover:bg-white/70',
                     )}
                     style={ia ? { background: section.glow.replace('0.18', '0.10') } : {}}
                   >
@@ -380,10 +347,10 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border text-[12px] font-bold transition-all',
                         ia
                           ? 'border-violet-200 bg-violet-50 text-violet-600'
-                          : 'border-slate-200 bg-white text-slate-400 group-hover/item:border-violet-100 group-hover/item:bg-violet-50/50 group-hover/item:text-violet-500',
+                          : 'border-white/60 bg-white/80 text-slate-400 group-hover/item:border-violet-100 group-hover/item:bg-violet-50/50 group-hover/item:text-violet-500 backdrop-blur-sm',
                       )}
                     >
-                      {item.icon}
+                      {item.icon || <span className="text-[11px] font-bold opacity-60">{item.label[0]}</span>}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-semibold" style={{ color: ia ? 'var(--text-primary, #0f172a)' : undefined }}>
@@ -400,13 +367,13 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
             </div>
           ))}
         </div>
-
         {section.spotlight && (
           <div
             className="ml-3 flex w-[148px] shrink-0 flex-col justify-between rounded-[16px] p-4"
             style={{
               background: `linear-gradient(145deg, ${section.glow.replace('0.18', '0.10')}, ${section.glow.replace('0.18', '0.04')})`,
               border: `1px solid ${section.glow.replace('0.18', '0.20')}`,
+              backdropFilter: 'blur(8px)',
             }}
           >
             <div
@@ -423,7 +390,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
             </div>
             <button
               type="button"
-              className="mt-3 w-full rounded-[10px] py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
+              className="mt-3 w-full rounded-[10px] py-2 text-[11px] font-bold text-white transition-all hover:opacity-90 hover:shadow-lg"
               style={{ background: section.gradient }}
               onClick={() => { router.push(section.columns[0].items[0].href); onClose(); }}
             >
@@ -437,7 +404,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function PremiumHeader({ onMenuClick }: Props) {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -453,7 +419,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   const anchorRefs = useRef<Record<string, React.RefObject<HTMLButtonElement | null>>>({});
   MEGA_SECTIONS.forEach((s) => {
     if (!anchorRefs.current[s.id]) {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
       anchorRefs.current[s.id] = { current: null };
     }
   });
@@ -553,20 +518,11 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           aria-expanded={opened}
           aria-haspopup="true"
           className={cn(
-            'group relative inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full px-[12px] text-[12px] font-semibold tracking-[0.01em] transition-all duration-200',
-            active
-              ? 'text-white shadow-lg'
-              : 'text-slate-500 hover:text-slate-900',
+            'glass-nav-pill',
+            active && 'glass-nav-pill-active',
           )}
-          style={active ? {
-            background: section.gradient,
-            boxShadow: `0 4px 16px ${section.glow}, 0 1px 3px rgba(0,0,0,0.1)`,
-            transform: 'translateY(-1px)',
-          } : {
-            background: opened ? section.glow.replace('0.18', '0.09') : 'transparent',
-          }}
         >
-          <span className={cn('shrink-0 opacity-70 transition-opacity group-hover:opacity-100', active && 'opacity-90')}>
+          <span className={cn('shrink-0', active ? 'opacity-100' : 'opacity-60 transition-opacity group-hover:opacity-90')}>
             {section.icon}
           </span>
           <span>{section.label}</span>
@@ -574,16 +530,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             animate={{ rotate: opened ? 180 : 0 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             className="shrink-0"
-            style={{ display: 'inline-flex', opacity: 0.5 }}
+            style={{ display: 'inline-flex', opacity: 0.4 }}
           >
             <ChevronDown size={10} />
           </motion.span>
-          {!active && (
-            <span
-              className="absolute bottom-0 left-1/2 h-[2px] w-0 -translate-x-1/2 rounded-full transition-all duration-200 group-hover:w-[60%]"
-              style={{ background: section.gradient }}
-            />
-          )}
         </button>
       </div>
     );
@@ -601,122 +551,131 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           70%  { box-shadow: 0 0 0 5px currentColor; opacity:0; }
           100% { box-shadow: 0 0 0 0 currentColor; opacity:0; }
         }
+        @keyframes glass-shine {
+          0% { background-position: 200% 50%; }
+          100% { background-position: -200% 50%; }
+        }
         .logo-glow { animation: brand-glow 3.5s ease-in-out infinite; }
         .pill-pulse { animation: pulse-ring 2.2s cubic-bezier(0.455,0.03,0.515,0.955) infinite; }
-
-        /*
-         * FIX: White background removal via CSS (no transparent PNG needed)
-         *
-         * Previous approach used mix-blend-mode:multiply which visually hid the
-         * white background by blending it with the page — but only works on pure
-         * white surfaces and breaks on any colored/dark background.
-         *
-         * New approach: mix-blend-mode is removed entirely.
-         * Instead we use SVG feComponentTransfer via a CSS filter to knock out
-         * near-white pixels (luminance > ~0.92) making them transparent.
-         * This works on any background color.
-         *
-         * The SVG filter is inlined as a data URI so no external file is needed.
-         * drop-shadow is applied separately for the glow effect.
-         *
-         * Note: if you later replace /619-logo.png with a proper transparent PNG,
-         * just remove the .logo-img-clean class entirely — no other change needed.
-         */
         .logo-img-clean {
           mix-blend-mode: multiply;
           filter: contrast(1.08) saturate(1.1);
         }
-
-        /* Account avatar: always use multiply so white bg blends with white circle */
         .logo-img-avatar {
           mix-blend-mode: multiply;
           filter: contrast(1.05);
         }
-
         .nav-scroll::-webkit-scrollbar { display: none; }
         .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .glass-edge {
+          position: relative;
+        }
+        .glass-edge::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 1px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.30) 40%, rgba(255,255,255,0.10) 70%, transparent 100%);
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+        }
+        .glass-edge-dark::before {
+          background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 40%, transparent 70%, transparent 100%);
+        }
       `}</style>
 
       <header
         className={cn(
-          'fixed inset-x-0 top-0 z-[100] transition-all duration-300',
+          'fixed inset-x-0 top-0 z-[100] transition-all duration-500',
           scrolled
-            ? 'border-b border-slate-200/60 bg-white/[0.97] backdrop-blur-2xl'
-            : 'border-b border-slate-100/80 bg-white/[0.92] backdrop-blur-xl',
+            ? 'h-[58px]'
+            : 'h-[66px]',
         )}
         style={{
-          WebkitBackdropFilter: scrolled ? 'blur(28px)' : 'blur(20px)',
+          background: scrolled
+            ? 'rgba(255,255,255,0.78)'
+            : 'rgba(255,255,255,0.55)',
+          backdropFilter: scrolled ? 'blur(32px) saturate(160%)' : 'blur(20px) saturate(140%)',
+          WebkitBackdropFilter: scrolled ? 'blur(32px) saturate(160%)' : 'blur(20px) saturate(140%)',
+          borderBottom: scrolled
+            ? '1px solid rgba(255,255,255,0.50)'
+            : '1px solid rgba(255,255,255,0.25)',
           boxShadow: scrolled
-            ? '0 1px 0 rgba(15,23,42,0.07), 0 8px 32px rgba(15,23,42,0.05)'
-            : '0 1px 0 rgba(15,23,42,0.04), 0 4px 20px rgba(15,23,42,0.03)',
+            ? '0 1px 0 rgba(15,23,42,0.05), 0 8px 32px rgba(15,23,42,0.06)'
+            : '0 1px 0 rgba(15,23,42,0.02), 0 4px 20px rgba(15,23,42,0.03)',
         }}
       >
         <div
           ref={headerRef}
           className={cn(
-            'mx-auto flex w-full max-w-[1680px] items-center px-3 transition-all duration-300 sm:px-4 lg:px-5',
-            scrolled ? 'h-[56px]' : 'h-[64px]',
+            'mx-auto flex w-full max-w-[1680px] items-center px-3 transition-all duration-500 sm:px-4 lg:px-5',
+            scrolled ? 'h-[58px]' : 'h-[66px]',
           )}
         >
-          {/* ── Left section: hamburger + logo ──────────────────────────── */}
-          <div className="flex flex-1 items-center gap-2">
-            {/* Mobile hamburger */}
+          {/* ── Left section: hamburger + brand ──────────────────────── */}
+          <div className="flex flex-1 items-center gap-2.5">
             <button
               type="button"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md lg:hidden"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl glass-btn lg:hidden"
               onClick={onMenuClick}
               aria-label="Open navigation menu"
             >
-              <Menu size={16} />
+              <Menu size={15} />
             </button>
 
-            {/* Brand logo */}
-            {/*
-              FIX: The white background issue.
-              The logo PNG has a white canvas. We suppress it with mix-blend-mode:multiply
-              on a white navbar background — white × white = white (invisible).
-              The actual logo content (dark deer silhouette, red oval) is dark enough
-              that multiply preserves it correctly.
-              The container background is set to white so multiply has a clean base.
-              This is the most reliable CSS-only fix for a white-background PNG on a white surface.
-            */}
-            <div
-              className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center rounded-[14px]"
-              style={{
-                width: scrolled ? 38 : 46,
-                height: scrolled ? 38 : 46,
-                background: '#ffffff',
-                transition: 'width 0.3s, height 0.3s',
-              }}
-              onClick={() => router.push('/dashboard')}
-              title="619 Fitness Studio"
-            >
-              <Image
-                src="/619-logo.png"
-                alt="619 Fitness Studio"
-                width={scrolled ? 34 : 42}
-                height={scrolled ? 34 : 42}
-                className="logo-img-clean object-contain transition-all duration-300"
-                style={{ display: 'block' }}
-                onError={() => {
-                  const el = document.getElementById('logo-fallback');
-                  if (el) el.style.display = 'flex';
+            {/* Brand logo + text */}
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push('/dashboard')}>
+              <div
+                className="logo-glow relative flex shrink-0 items-center justify-center rounded-[14px] overflow-hidden"
+                style={{
+                  width: scrolled ? 36 : 44,
+                  height: scrolled ? 36 : 44,
+                  background: 'rgba(255,255,255,0.90)',
+                  border: '1px solid rgba(255,255,255,0.60)',
+                  boxShadow: '0 2px 12px rgba(220,38,38,0.15), 0 1px 3px rgba(15,23,42,0.06)',
+                  transition: 'width 0.4s, height 0.4s',
                 }}
-              />
-              <span
-                id="logo-fallback"
-                className="absolute hidden h-full w-full items-center justify-center rounded-[14px] text-[13px] font-black text-white"
-                style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}
+                title="619 Fitness Studio"
               >
-                619
-              </span>
+                <Image
+                  src="/619-logo.png"
+                  alt="619 Fitness Studio"
+                  width={scrolled ? 32 : 40}
+                  height={scrolled ? 32 : 40}
+                  className="logo-img-clean object-contain transition-all duration-400"
+                  style={{ display: 'block' }}
+                  onError={() => {
+                    const el = document.getElementById('logo-fallback');
+                    if (el) el.style.display = 'flex';
+                  }}
+                />
+                <span
+                  id="logo-fallback"
+                  className="absolute hidden h-full w-full items-center justify-center rounded-[14px] text-[13px] font-black text-white"
+                  style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}
+                >
+                  619
+                </span>
+              </div>
+
+              <div className="hidden lg:block" style={{ marginLeft: 2 }}>
+                <div className="text-[13px] font-extrabold tracking-tight leading-none" style={{ color: 'var(--text-primary)' }}>
+                  619 FITNESS STUDIO
+                </div>
+                <div className="mt-[3px] text-[9.5px] font-semibold tracking-[0.22em] uppercase" style={{ color: 'var(--text-muted)', opacity: 0.75 }}>
+                  Management OS
+                </div>
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="mx-1 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
+            <div className="glass-divider hidden lg:block" style={{ marginLeft: 2 }} />
           </div>
 
-          {/* ── Center nav ───────────────────────────────────────────────── */}
+          {/* ── Center nav ───────────────────────────────────────────── */}
           <nav
             aria-label="Primary navigation"
             className="nav-scroll hidden overflow-x-auto lg:flex lg:items-center lg:justify-center"
@@ -726,7 +685,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             </div>
           </nav>
 
-          {/* ── Right section ────────────────────────────────────────────── */}
+          {/* ── Right section ────────────────────────────────────────── */}
           <div className="flex flex-1 items-center justify-end gap-1.5">
 
             {/* Live pills */}
@@ -734,19 +693,20 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               {LIVE_PILLS.map((pill, i) => (
                 <div
                   key={i}
-                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold"
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold"
                   style={{
-                    borderColor: `${pill.color}30`,
-                    background: `${pill.color}0a`,
+                    background: `${pill.color}0d`,
+                    border: `1px solid ${pill.color}25`,
                     color: pill.color,
+                    backdropFilter: 'blur(8px)',
                   }}
                 >
-                  <span className="relative flex h-[6px] w-[6px] shrink-0 items-center justify-center">
-                    <span className="h-[6px] w-[6px] rounded-full" style={{ background: pill.color }} />
+                  <span className="relative flex h-[5px] w-[5px] shrink-0 items-center justify-center">
+                    <span className="h-[5px] w-[5px] rounded-full" style={{ background: pill.color }} />
                     {pill.pulse && (
                       <span
-                        className="pill-pulse absolute h-[6px] w-[6px] rounded-full"
-                        style={{ color: `${pill.color}50`, animationDelay: `${i * 0.6}s` }}
+                        className="pill-pulse absolute h-[5px] w-[5px] rounded-full"
+                        style={{ color: `${pill.color}40`, animationDelay: `${i * 0.6}s` }}
                       />
                     )}
                   </span>
@@ -759,41 +719,41 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-              className="hidden h-[36px] w-[200px] items-center justify-between rounded-full border border-slate-200/80 bg-white/80 px-3.5 backdrop-blur-sm transition-all duration-150 hover:border-violet-300/60 hover:bg-white hover:shadow-[0_2px_16px_rgba(124,58,237,0.10)] 2xl:inline-flex"
+              className="hidden h-[34px] w-[180px] items-center justify-between rounded-full glass-btn px-3 2xl:inline-flex"
             >
-              <span className="flex items-center gap-2 text-[12px] text-slate-400">
-                <Search size={12} className="shrink-0" />
+              <span className="flex items-center gap-2 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                <Search size={11} className="shrink-0" />
                 <span>Search anything…</span>
               </span>
-              <kbd className="rounded-md border border-slate-200 bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.06)]">
+              <kbd className="rounded-md border px-1.5 py-0.5 text-[9.5px] font-semibold" style={{ background: 'rgba(255,255,255,0.70)', borderColor: 'rgba(255,255,255,0.40)', color: 'var(--text-muted)' }}>
                 ⌘K
               </kbd>
             </button>
 
-            {/* Search icon */}
+            {/* Search icon (mobile) */}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-              className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)] 2xl:hidden"
+              className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full glass-btn 2xl:hidden"
               aria-label="Search"
             >
-              <Search size={14} />
+              <Search size={13} />
             </button>
 
-            {/* Quick actions */}
+            {/* Quick actions New button */}
             <div className="shrink-0">
               <button
                 ref={quickAnchorRef}
                 type="button"
                 onClick={() => setShowQuick((v) => !v)}
                 aria-expanded={showQuick}
-                className="inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-bold text-white transition-all duration-150 hover:opacity-90 hover:shadow-lg active:scale-[0.97]"
+                className="inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-bold text-white transition-all duration-200 hover:opacity-95 hover:shadow-lg active:scale-[0.97]"
                 style={{
                   background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-                  boxShadow: '0 4px 14px rgba(124,58,237,0.30)',
+                  boxShadow: '0 4px 14px rgba(124,58,237,0.30), inset 0 1px 0 rgba(255,255,255,0.20)',
                 }}
               >
-                <Plus size={13} className="shrink-0" />
+                <Plus size={12} className="shrink-0" />
                 <span className="hidden sm:inline">New</span>
               </button>
             </div>
@@ -801,47 +761,59 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             {/* Theme toggle */}
             <button
               type="button"
-              className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
+              className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full glass-btn"
               onClick={toggleTheme}
               aria-label="Toggle theme"
             >
-              {hydrated ? (theme === 'light' ? <Moon size={14} /> : <Sun size={14} />) : <span style={{ width: 14 }} />}
+              {hydrated ? (
+                <motion.span
+                  key={theme}
+                  initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                >
+                  {theme === 'light' ? <Moon size={13} /> : <Sun size={13} />}
+                </motion.span>
+              ) : <span style={{ width: 13 }} />}
             </button>
 
             {/* Notifications */}
             <button
               type="button"
-              className="relative inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-rose-200 hover:text-rose-500 hover:shadow-[0_2px_10px_rgba(239,68,68,0.10)]"
+              className="relative inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full glass-btn"
               aria-label="Notifications"
             >
-              <Bell size={14} />
-              <span className="absolute right-[9px] top-[9px] h-[6px] w-[6px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
+              <Bell size={13} />
+              <span className="absolute right-[8px] top-[8px] h-[5px] w-[5px] rounded-full bg-rose-500" style={{ boxShadow: '0 0 0 2px rgba(255,255,255,0.90)' }} />
             </button>
 
-            {/* Admin profile */}
+            {/* Profile */}
             <div className="shrink-0">
               <button
                 ref={accountAnchorRef}
                 type="button"
                 onClick={() => setOpenMenu(openMenu === 'account' ? null : 'account')}
                 aria-expanded={openMenu === 'account'}
-                className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all hover:border-violet-200 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
+                className="inline-flex h-[34px] items-center gap-2 rounded-full glass-btn pl-1 pr-3"
               >
-                {/*
-                  Account avatar: small 26px circle with white bg.
-                  mix-blend-mode:multiply on .logo-img-avatar suppresses white canvas.
-                */}
-                <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
-                  <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-slate-700">{initials}</span>
+                <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.90)', border: '1px solid rgba(255,255,255,0.40)' }}>
+                  <Image
+                    src="/619-logo.png"
+                    alt="Profile"
+                    width={22}
+                    height={22}
+                    className="logo-img-avatar object-contain"
+                    style={{ display: 'block' }}
+                  />
                 </div>
                 <div className="hidden text-left xl:block">
-                  <div className="max-w-[90px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
-                  <div className="mt-0.5 text-[10px] capitalize tracking-wide text-slate-400">{roleLabel}</div>
+                  <div className="max-w-[90px] truncate text-[11px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{accountLabel}</div>
+                  <div className="mt-0.5 text-[9.5px] capitalize tracking-wide" style={{ color: 'var(--text-muted)' }}>{roleLabel}</div>
                 </div>
                 <motion.span
                   animate={{ rotate: openMenu === 'account' ? 180 : 0 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  style={{ display: 'inline-flex', color: 'rgb(148 163 184)' }}
+                  style={{ display: 'inline-flex', color: 'var(--text-muted)' }}
                 >
                   <ChevronDown size={10} />
                 </motion.span>
@@ -851,7 +823,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         </div>
       </header>
 
-      {/* ── Portal-rendered Mega Menus ─────────────────────────────────────── */}
       <AnimatePresence mode="wait">
         {MEGA_SECTIONS.map((section) =>
           openMenu === section.id ? (
@@ -867,12 +838,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         )}
       </AnimatePresence>
 
-      {/* ── Quick Actions Portal ───────────────────────────────────────────── */}
       <AnimatePresence>
         {showQuick && <QuickActionsPortal anchorRef={quickAnchorRef} onClose={() => setShowQuick(false)} router={router} />}
       </AnimatePresence>
 
-      {/* ── Account Menu Portal ────────────────────────────────────────────── */}
       <AnimatePresence>
         {openMenu === 'account' && (
           <AccountMenuPortal
@@ -890,11 +859,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   );
 }
 
-// ─── Quick Actions Portal ─────────────────────────────────────────────────────
 function QuickActionsPortal({
-  anchorRef,
-  onClose,
-  router,
+  anchorRef, onClose, router,
 }: {
   anchorRef: React.RefObject<HTMLButtonElement | null>;
   onClose: () => void;
@@ -947,11 +913,11 @@ function QuickActionsPortal({
         right: pos.right,
         width: 240,
         zIndex: 9999,
-        background: 'rgba(255,255,255,0.97)',
-        border: '1px solid rgba(124,58,237,0.12)',
-        boxShadow: '0 20px 56px rgba(15,23,42,0.12), 0 4px 16px rgba(124,58,237,0.10)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
+        background: 'rgba(255,255,255,0.88)',
+        border: '1px solid rgba(255,255,255,0.60)',
+        boxShadow: '0 20px 56px rgba(15,23,42,0.10), 0 4px 16px rgba(124,58,237,0.08), inset 0 1px 0 rgba(255,255,255,0.85)',
+        backdropFilter: 'blur(28px)',
+        WebkitBackdropFilter: 'blur(28px)',
         borderRadius: 20,
         padding: 6,
         transformOrigin: 'top right',
@@ -962,15 +928,16 @@ function QuickActionsPortal({
       <div className="mb-1.5 h-[3px] rounded-full" style={{ background: 'linear-gradient(90deg,#7c3aed,#4f46e5)' }} />
       {['Members', 'Finance', 'Training', 'Sales'].map((group) => (
         <div key={group}>
-          <div className="px-3 py-1 text-[9.5px] font-bold uppercase tracking-[0.18em] text-slate-400">{group}</div>
+          <div className="px-3 py-1 text-[9.5px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>{group}</div>
           {QUICK_ACTIONS.filter((a) => a.group === group).map((action) => (
             <button
               type="button"
-          key={action.label}
-          onClick={() => { router.push(action.href); onClose(); }}
-              className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-violet-50 hover:text-violet-700"
+              key={action.label}
+              onClick={() => { router.push(action.href); onClose(); }}
+              className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-left text-[13px] font-semibold transition-all hover:bg-violet-50/80 hover:text-violet-700"
+              style={{ color: 'var(--text-secondary)' }}
             >
-              <span className="text-violet-500">{action.icon}</span>
+              <span style={{ color: '#7c3aed' }}>{action.icon}</span>
               {action.label}
             </button>
           ))}
@@ -981,7 +948,6 @@ function QuickActionsPortal({
   );
 }
 
-// ─── Account Menu Portal ──────────────────────────────────────────────────────
 function AccountMenuPortal({
   anchorRef, onClose, router, logout, initials, accountLabel, roleLabel,
 }: {
@@ -1038,13 +1004,13 @@ function AccountMenuPortal({
         position: 'absolute',
         top: pos.top,
         right: pos.right,
-        width: 220,
+        width: 228,
         zIndex: 9999,
-        background: 'rgba(255,255,255,0.97)',
-        border: '1px solid rgba(255,255,255,0.75)',
-        boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
+        background: 'rgba(255,255,255,0.88)',
+        border: '1px solid rgba(255,255,255,0.60)',
+        boxShadow: '0 20px 60px rgba(15,23,42,0.10), 0 4px 16px rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.85)',
+        backdropFilter: 'blur(28px)',
+        WebkitBackdropFilter: 'blur(28px)',
         borderRadius: 18,
         padding: 6,
         transformOrigin: 'top right',
@@ -1052,13 +1018,20 @@ function AccountMenuPortal({
         isolation: 'isolate',
       }}
     >
-      <div className="mb-1.5 flex items-center gap-3 rounded-[14px] bg-gradient-to-br from-slate-50 to-slate-100 p-3">
-        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-black text-slate-700">
-          {initials}
+      <div className="mb-1.5 flex items-center gap-3 rounded-[14px] p-3" style={{ background: 'rgba(255,255,255,0.50)', border: '1px solid rgba(255,255,255,0.35)' }}>
+        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.90)', border: '1px solid rgba(255,255,255,0.40)' }}>
+          <Image
+            src="/619-logo.png"
+            alt="Profile"
+            width={32}
+            height={32}
+            className="logo-img-avatar object-contain"
+            style={{ display: 'block' }}
+          />
         </div>
         <div>
-          <div className="text-[13px] font-bold text-slate-900">{accountLabel}</div>
-          <div className="text-[11px] capitalize text-slate-500">{roleLabel}</div>
+          <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{accountLabel}</div>
+          <div className="text-[11px] capitalize" style={{ color: 'var(--text-muted)' }}>{roleLabel}</div>
         </div>
       </div>
 
@@ -1067,33 +1040,36 @@ function AccountMenuPortal({
         { href: '/settings', icon: <Settings size={13} />, label: 'Studio Settings' },
         { href: '/settings/staff', icon: <Users size={13} />, label: 'Team Management' },
         { href: '/settings/billing', icon: <IndianRupee size={13} />, label: 'Billing' },
-        { href: '/settings/branding', icon: <Zap size={13} />, label: 'Branding' },
+        { href: '/settings/branding', icon: <Zap size={13} />, label: 'Integrations' },
       ] as const).map((item) => (
         <button
           type="button"
           key={item.label}
           onClick={() => { router.push(item.href); onClose(); }}
-          className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
+          className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold transition-all hover:bg-white/70"
+          style={{ color: 'var(--text-secondary)' }}
         >
-          <span className="text-slate-400">{item.icon}</span>
+          <span style={{ color: 'var(--text-muted)' }}>{item.icon}</span>
           {item.label}
         </button>
       ))}
 
-      <div className="mx-2 my-1 h-px bg-slate-100" />
+      <div className="mx-2 my-1 h-px" style={{ background: 'var(--border)' }} />
 
       <button
         type="button"
         onClick={() => { router.push('/reset-password'); onClose(); }}
-        className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
+        className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold transition-all hover:bg-white/70"
+        style={{ color: 'var(--text-secondary)' }}
       >
-        <KeyRound size={13} className="text-slate-400" />
+        <KeyRound size={13} style={{ color: 'var(--text-muted)' }} />
         Reset Password
       </button>
       <button
         type="button"
         onClick={() => { logout(); router.push('/login'); }}
-        className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-rose-600 transition-all hover:bg-rose-50"
+        className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold transition-all hover:bg-rose-50/80"
+        style={{ color: '#e11d48' }}
       >
         <LogOut size={13} />
         Log Out
