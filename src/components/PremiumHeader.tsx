@@ -9,7 +9,7 @@ import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/
 import {
   Menu, Moon, Sun, Bell, ChevronDown, KeyRound, LogOut, Search,
   Plus, UserPlus, Dumbbell, FileText, CreditCard, UserCheck,
-  CalendarPlus, ClipboardList, Salad, Zap, X,
+  CalendarPlus, ClipboardList, Salad, Zap, X, Check,
   LayoutDashboard, TrendingUp, Users, Activity, Settings, BarChart2,
   IndianRupee,
 } from 'lucide-react';
