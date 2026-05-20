@@ -314,9 +314,16 @@ async function requestFormData<T = unknown>(
   const BASE = apiBase();
   const url = path.startsWith('http') ? path : `${BASE}${path}`;
 
+  const headers: Record<string, string> = {};
+  try {
+    const token = localStorage.getItem('619_token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  } catch { /* SSR */ }
+
   const res = await fetch(url, {
     method: 'POST',
     body: formData,
+    headers,
     credentials: 'include',
   });
 
@@ -377,7 +384,7 @@ export const api = {
     changePassword: (currentPassword: string, newPassword: string) =>
       request<{ message?: string }>('/api/auth/change-password', {
         method: 'POST',
-        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+        body: JSON.stringify({ currentPassword, newPassword }),
       }),
     listUsers: () => request<User[]>('/api/auth/users'),
     createUser: (data: {
@@ -617,11 +624,11 @@ export const api = {
 
   notifications: {
     list: (params?: Record<string, string>) =>
-      request<unknown[]>(`/api/notifications${buildQs(params)}`),
+      request<unknown[]>(`/api/v1/notifications${buildQs(params)}`),
     markRead: (id: string) =>
-      request(`/api/notifications/${id}/read`, { method: 'PATCH' }),
+      request(`/api/v1/notifications/${id}/read`, { method: 'PATCH' }),
     markAllRead: () =>
-      request('/api/notifications/read-all', { method: 'PATCH' }),
+      request('/api/v1/notifications/read-all', { method: 'PATCH' }),
   },
 
   dashboard: {
@@ -755,43 +762,43 @@ export const api = {
   workouts: {
     exercises: {
       list: (params?: Record<string, string | number>) =>
-        request<unknown[]>(`/api/exercises${buildQs(params)}`),
+        request<unknown[]>(`/api/workouts/exercises${buildQs(params)}`),
       create: (data: Record<string, unknown>) =>
-        request<{ message: string; exercise: unknown }>('/api/exercises', {
+        request<{ message: string; exercise: unknown }>('/api/workouts/exercises', {
           method: 'POST',
           body: JSON.stringify(data),
         }),
       update: (id: string, data: Record<string, unknown>) =>
-        request<{ message: string; exercise: unknown }>(`/api/exercises/${id}`, {
+        request<{ message: string; exercise: unknown }>(`/api/workouts/exercises/${id}`, {
           method: 'PUT',
           body: JSON.stringify(data),
         }),
       delete: (id: string) =>
-        request<{ message: string }>(`/api/exercises/${id}`, { method: 'DELETE' }),
+        request<{ message: string }>(`/api/workouts/exercises/${id}`, { method: 'DELETE' }),
     },
     plans: {
       list: (params?: Record<string, string | number>) =>
-        request<unknown[]>(`/api/workout-plans${buildQs(params)}`),
+        request<unknown[]>(`/api/workouts/plans${buildQs(params)}`),
       create: (data: Record<string, unknown>) =>
-        request<{ message: string; plan: unknown }>('/api/workout-plans', {
+        request<{ message: string; plan: unknown }>('/api/workouts/plans', {
           method: 'POST',
           body: JSON.stringify(data),
         }),
       update: (id: string, data: Record<string, unknown>) =>
-        request<{ message: string; plan: unknown }>(`/api/workout-plans/${id}`, {
+        request<{ message: string; plan: unknown }>(`/api/workouts/plans/${id}`, {
           method: 'PUT',
           body: JSON.stringify(data),
         }),
       delete: (id: string) =>
-        request<{ message: string }>(`/api/workout-plans/${id}`, { method: 'DELETE' }),
+        request<{ message: string }>(`/api/workouts/plans/${id}`, { method: 'DELETE' }),
     },
     assign: (data: { workout_plan_id: string; client_id: string; start_date?: string; end_date?: string; notes?: string }) =>
-      request<{ message: string; assignment: unknown }>('/api/workout-plans/assign', {
+      request<{ message: string; assignment: unknown }>('/api/workouts/assign', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     updateProgress: (id: string, data: { progress_pct: number }) =>
-      request<{ message: string; assignment: unknown }>(`/api/workout-plans/assignments/${id}/progress`, {
+      request<{ message: string; assignment: unknown }>(`/api/workouts/assignments/${id}/progress`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
