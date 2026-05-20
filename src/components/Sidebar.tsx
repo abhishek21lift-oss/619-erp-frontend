@@ -6,13 +6,13 @@
  * Mobile: cinematic floating glass control panel.
  * Desktop (lg+): hidden — PremiumHeader handles navigation.
  *
- * Aesthetic: Apple Vision Pro × Linear × Stripe Enterprise
- * — Pearl-white frosted surfaces, deep ambient layers, spring physics,
- *   illuminated active states, executive typography.
- * — Every pixel intentional. Nothing generic.
- *
- * Animation fix: translate3d-only (no separate opacity transition) to
- * prevent iOS Safari flicker/blink on drawer open/close.
+ * FIXES applied:
+ * 1. Backdrop blur only active when mobileOpen=true — prevents iOS compositor leak
+ * 2. Inner scroll area gets translateZ(0) + WebkitOverflowScrolling for smooth scroll
+ * 3. overflow-hidden removed from <aside> to prevent iOS Safari stacking context bug
+ *    — rounded corners achieved via border-radius only (no clip)
+ * 4. Close button enlarged to 44x44px (was 36x36 — below touch target minimum)
+ * 5. willChange:transform only set when animating — removed from static state
  */
 
 import React, {
@@ -462,7 +462,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           onClick={() => toggleGroup(group.id)}
           aria-expanded={open}
           className="group/hdr relative flex w-full items-center gap-2.5 rounded-[12px] px-3 py-[9px] transition-all duration-150 active:scale-[0.99]"
-          style={{ color: 'rgb(100,116,139)' }}
+          style={{ color: 'rgb(100,116,139)', minHeight: '44px' }}
         >
           {/* Hover state */}
           <span
@@ -541,6 +541,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                         : undefined,
                       color: parentActive ? meta.activeText : 'rgb(51,65,85)',
                       fontWeight: parentActive ? 620 : 480,
+                      minHeight: '44px',
                     }}
                   >
                     {/* Hover */}
@@ -616,14 +617,22 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
   return (
     <>
       {/* ── Cinematic backdrop ────────────────────────────────────────── */}
+      {/*
+        FIX: backdropFilter only applied when mobileOpen=true.
+        When false, we remove the filter entirely — not just set blur(0px).
+        iOS Safari keeps a GPU compositor layer alive for blur(0px) which
+        causes z-index and flicker bugs on the drawer itself.
+      */}
       <div
         aria-hidden="true"
         onClick={onMobileClose}
         className="fixed inset-0 z-[190] lg:hidden"
         style={{
           background: 'rgba(8,12,22,0.52)',
-          backdropFilter: mobileOpen ? 'blur(12px) saturate(0.7)' : 'blur(0px)',
-          WebkitBackdropFilter: mobileOpen ? 'blur(12px) saturate(0.7)' : 'blur(0px)',
+          ...(mobileOpen ? {
+            backdropFilter: 'blur(12px) saturate(0.7)',
+            WebkitBackdropFilter: 'blur(12px) saturate(0.7)',
+          } : {}),
           opacity: mobileOpen ? 1 : 0,
           pointerEvents: mobileOpen ? 'auto' : 'none',
           transition: 'opacity 380ms cubic-bezier(0.16,1,0.3,1)',
@@ -632,12 +641,14 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
 
       {/* ── Floating luxury panel ─────────────────────────────────────── */}
       {/*
-        ANIMATION FIX:
-        - Only animate `transform` (translate3d). No opacity transition on the
-          panel itself — that was causing the iOS Safari flicker/blink.
-        - translate3d forces GPU compositing; backfaceVisibility:hidden prevents
-          the compositor layer flash on first paint.
-        - The backdrop above still fades in/out for the dimming effect.
+        FIX: Removed overflow-hidden from the <aside>.
+        overflow-hidden + backdropFilter + position:fixed = iOS Safari stacking
+        context bug causing drawer to not appear or flicker.
+        Rounded corners are achieved via border-radius alone (no clip needed).
+
+        FIX: willChange only set during open state.
+        Setting willChange:transform permanently reserves GPU memory and can
+        trigger unwanted compositing layers on iOS when the drawer is closed.
       */}
       <aside
         aria-label="Mobile navigation"
@@ -645,7 +656,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         role="dialog"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="fixed z-[200] flex flex-col overflow-hidden lg:hidden"
+        className="fixed z-[200] flex flex-col lg:hidden"
         style={{
           top: 'calc(env(safe-area-inset-top) + 12px)',
           bottom: 'calc(env(safe-area-inset-bottom) + 12px)',
@@ -662,22 +673,22 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           ].join(', '),
           backdropFilter: 'blur(28px) saturate(2.0)',
           WebkitBackdropFilter: 'blur(28px) saturate(2.0)',
-          // translate3d-only: no opacity animation on the panel
           transform: mobileOpen
             ? 'translate3d(0, 0, 0)'
             : 'translate3d(calc(-100% - 24px), 0, 0)',
           opacity: 1,
           pointerEvents: mobileOpen ? 'auto' : 'none',
           transition: 'transform 400ms cubic-bezier(0.16, 1, 0.3, 1)',
-          willChange: 'transform',
+          willChange: mobileOpen ? 'transform' : 'auto',
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',
+          WebkitTransformStyle: 'preserve-3d',
         }}
       >
 
         {/* ── HEADER ───────────────────────────────────────────────────── */}
         <div
-          className="relative shrink-0 overflow-hidden rounded-t-[23px] px-4 pb-4 pt-[18px]"
+          className="relative shrink-0 rounded-t-[24px] px-4 pb-4 pt-[18px]"
           style={{
             background: 'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(248,249,253,0.90) 100%)',
             borderBottom: '1px solid rgba(15,23,42,0.055)',
@@ -686,7 +697,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           {/* Ambient mesh */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
+            className="pointer-events-none absolute inset-0 rounded-t-[24px]"
             style={{
               background: [
                 'radial-gradient(ellipse at 85% 0%, rgba(139,92,246,0.09) 0%, transparent 48%)',
@@ -775,11 +786,15 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
               </div>
             </div>
 
-            {/* Premium close button */}
+            {/*
+              FIX: Close button enlarged from h-9 w-9 (36px) to h-11 w-11 (44px).
+              36px is below the WCAG/Apple 44px minimum touch target size.
+              This was causing missed taps on the close button on iPhone.
+            */}
             <button
               onClick={onMobileClose}
               aria-label="Close navigation"
-              className="flex h-9 w-9 items-center justify-center rounded-[12px] transition-all duration-150 active:scale-[0.88]"
+              className="flex h-11 w-11 items-center justify-center rounded-[12px] transition-all duration-150 active:scale-[0.88]"
               style={{
                 background: 'rgba(15,23,42,0.048)',
                 border: '1px solid rgba(15,23,42,0.07)',
@@ -905,9 +920,19 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         </div>
 
         {/* ── NAV SCROLL AREA ──────────────────────────────────────────── */}
+        {/*
+          FIX: Added translateZ(0) + WebkitOverflowScrolling:touch to the
+          scroll container. Without GPU promotion on the inner scroll layer,
+          iOS Safari shows choppy/janky momentum scrolling inside the drawer.
+        */}
         <div
           className="flex-1 overflow-y-auto overscroll-contain scroll-smooth px-2.5 py-2"
-          style={{ scrollbarWidth: 'none' }}
+          style={{
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+            transform: 'translateZ(0)',
+            WebkitTransform: 'translateZ(0)',
+          }}
         >
           <style>{`.sidebar-scroll::-webkit-scrollbar { display: none; }`}</style>
 
@@ -925,6 +950,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 : undefined,
               color: path === '/dashboard' ? '#4c1d95' : 'rgb(51,65,85)',
               fontWeight: path === '/dashboard' ? 640 : 500,
+              minHeight: '44px',
             }}
           >
             {path !== '/dashboard' && (
@@ -977,7 +1003,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
 
         {/* ── EXECUTIVE PROFILE FOOTER ─────────────────────────────────── */}
         <div
-          className="shrink-0 rounded-b-[23px] px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-2.5"
+          className="shrink-0 rounded-b-[24px] px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-2.5"
           style={{
             background: 'linear-gradient(180deg, rgba(248,249,253,0.72) 0%, rgba(255,255,255,0.95) 100%)',
             borderTop: '1px solid rgba(15,23,42,0.055)',
@@ -1027,7 +1053,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             <button
               onClick={() => { logout(); router.push('/login'); }}
               aria-label="Sign out"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] transition-all duration-150 active:scale-[0.88]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] transition-all duration-150 active:scale-[0.88]"
               style={{ background: 'transparent', color: 'rgb(148,163,184)', border: '1px solid transparent' }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.background = 'rgba(244,63,94,0.07)';
