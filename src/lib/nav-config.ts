@@ -52,6 +52,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/clients',           label: 'All Members',   icon: 'Users' },
       { href: '/members/active',    label: 'Active',        icon: 'UserCheck' },
+      { href: '/members/renewals',  label: 'Renewals',      icon: 'RefreshCw',     badge: 'expiringCount', isNew: true },
       { href: '/members/expiring',  label: 'Expiring Soon', icon: 'CalendarClock', badge: 'expiringCount' },
       { href: '/members/lapsed',    label: 'Lapsed',        icon: 'UserX' },
       { href: '/members/birthdays', label: 'Birthdays',     icon: 'Cake',          badge: 'birthdaysToday' },
@@ -68,6 +69,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/trainers',                  label: 'My Coaches',          icon: 'UserCog',    role: 'admin' },
       { href: '/training/transformations',  label: 'Client Transformations', icon: 'Sparkles', role: 'admin' },
       { href: '/trainers/leave',            label: 'Coach Leave Requests',icon: 'CalendarOff', roles: ['admin', 'manager'], badge: 'pendingLeaves' },
+      { href: '/personal-training/new-client', label: 'New PT Client',   icon: 'UserPlus',   role: 'admin', isNew: true },
+      { href: '/personal-training/schedule-session', label: 'Schedule Session', icon: 'Calendar', role: 'admin', isNew: true },
+      { href: '/personal-training/workout-plans', label: 'Workout Plans', icon: 'Dumbbell',   role: 'admin', isNew: true },
+      { href: '/personal-training/diet-plans', label: 'Diet Plans',      icon: 'Apple',      role: 'admin', isNew: true },
       { href: '/trainer/dashboard',         label: 'My Dashboard',        icon: 'LayoutGrid', role: 'trainer' },
       { href: '/trainers/[id]', label: 'Coach Profile', icon: 'UserCog', hidden: true, matchPrefix: '/trainers/' },
     ],
@@ -119,6 +124,8 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'IndianRupee',
     items: [
       { href: '/payments',                label: 'Payments',         icon: 'Wallet' },
+      { href: '/finance/invoices',        label: 'Invoices',         icon: 'FileText',     isNew: true },
+      { href: '/finance/record-payment',  label: 'Record Payment',   icon: 'Wallet',       isNew: true },
       { href: '/finance/dues',            label: 'Outstanding Dues', icon: 'AlertCircle',  badge: 'duesCount' },
       { href: '/finance/collection',      label: 'Collection',       icon: 'ArrowUpRight', role: 'admin' },
       { href: '/finance/pl',              label: 'Profit & Loss',    icon: 'BarChart3',    role: 'admin' },
@@ -158,6 +165,8 @@ export const SETTINGS_GROUP: NavGroup = {
   items: [
     { href: '/pt-portal',                label: 'PERSONAL TRAINING PORTAL', icon: 'Sparkles',      roles: ['admin', 'manager', 'trainer'], isNew: true },
     { href: '/settings',                 label: 'General',                  icon: 'Settings' },
+    { href: '/settings/studio',          label: 'Studio Settings',          icon: 'Building2',     role: 'admin', isNew: true },
+    { href: '/settings/profile',         label: 'My Profile',               icon: 'User',          isNew: true },
     { href: '/settings/branches',        label: 'Branches',                 icon: 'Building2',     role: 'admin' },
     { href: '/settings/staff',           label: 'Staff & Access',           icon: 'ShieldCheck',   role: 'admin' },
     { href: '/settings/biometric',       label: 'Biometric & Face',         icon: 'Fingerprint',   role: 'admin' },
@@ -169,7 +178,7 @@ export const SETTINGS_GROUP: NavGroup = {
 
 export const QUICK_ACTIONS = [
   { id: 'qa-add-member',   label: 'Add new member',   icon: 'UserPlus',      href: '/clients/new' },
-  { id: 'qa-record-pay',   label: 'Record a payment', icon: 'Wallet',        href: '/payments' },
+  { id: 'qa-record-pay',   label: 'Record a payment', icon: 'Wallet',        href: '/finance/record-payment' },
   { id: 'qa-mark-att',     label: 'Mark attendance',  icon: 'ClipboardList', href: '/attendance' },
   { id: 'qa-add-trainer',  label: 'Add coach',        icon: 'UserCog',       href: '/trainers/add', role: 'admin' as Role },
   { id: 'qa-face-checkin', label: 'Face check-in',    icon: 'ScanFace',      href: '/checkin' },

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import Image from 'next/image';
@@ -25,6 +26,23 @@ import {
   Type,
   Upload,
   Wand2,
+  Zap,
+  BarChart3,
+  Target,
+  Hash,
+  Globe,
+  Smartphone,
+  LayoutDashboard,
+  CreditCard,
+  Menu,
+  UserCheck,
+  Layers,
+  Droplets,
+  Contrast,
+  Award,
+  ChevronRight,
+  CircleDot,
+  GripVertical,
 } from 'lucide-react';
 
 type ThemeMode = 'dark' | 'light';
@@ -66,6 +84,63 @@ const ASSETS: AssetCard[] = [
   },
 ];
 
+const BRAND_METRICS = [
+  { label: 'Identity Score', value: 96, icon: <Award className="h-4 w-4" />, color: '#dc2626' },
+  { label: 'Consistency', value: 94, icon: <Contrast className="h-4 w-4" />, color: '#7c3aed' },
+  { label: 'Contrast Ratio', value: 91, icon: <Droplets className="h-4 w-4" />, color: '#0ea5e9' },
+  { label: 'Mobile Readiness', value: 98, icon: <Smartphone className="h-4 w-4" />, color: '#10b981' },
+];
+
+const FRAMER_UP = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+};
+
+function RadialScoreChart({ score, size = 140 }: { score: number; size?: number }) {
+  const radius = size / 2 - 12;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+  const strokeWidth = 8;
+
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={strokeWidth} />
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="url(#brandGradient)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        />
+        <defs>
+          <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#dc2626" />
+            <stop offset="50%" stopColor="#fb7185" />
+            <stop offset="100%" stopColor="#7c3aed" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.8, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute flex flex-col items-center justify-center"
+      >
+        <span className="text-[28px] font-[820] tracking-tight text-white">{score}</span>
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/50">Brand Score</span>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function BrandingPage() {
   const [mode, setMode] = React.useState<ThemeMode>('dark');
   const [typeface, setTypeface] = React.useState<Typeface>('Inter');
@@ -79,34 +154,72 @@ export default function BrandingPage() {
   return (
     <Guard role="admin">
       <AppShell>
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(220,38,38,0.16),_transparent_26%),linear-gradient(180deg,_rgba(10,10,10,0.98),_rgba(18,18,20,1)_28%,_rgba(247,247,248,0.92)_100%)] text-zinc-950 dark:text-white">
+        <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-28 pt-5 sm:px-6 lg:px-8">
-            <HeroBrandHeader primary={primary} accent={accent} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+              <HeroBrandHeader primary={primary} accent={accent} />
+            </motion.div>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-              <BrandIdentityPanel primary={primary} accent={accent} />
-              <BrandHealthPanel />
-            </section>
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+              }}
+              className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]"
+            >
+              <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}>
+                <BrandIdentityPanel primary={primary} accent={accent} />
+              </motion.div>
+              <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}>
+                <BrandHealthPanel />
+              </motion.div>
+            </motion.div>
 
-            <LivePreviewSection primary={primary} accent={accent} mode={mode} />
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+              }}
+            >
+              <LivePreviewSection primary={primary} accent={accent} mode={mode} />
+            </motion.div>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-              <BrandCustomization
-                mode={mode}
-                setMode={setMode}
-                typeface={typeface}
-                setTypeface={setTypeface}
-                buttonStyle={buttonStyle}
-                setButtonStyle={setButtonStyle}
-                radiusStyle={radiusStyle}
-                setRadiusStyle={setRadiusStyle}
-                primary={primary}
-                setPrimary={setPrimary}
-                accent={accent}
-                setAccent={setAccent}
-              />
-              <MediaAssetsSection />
-            </section>
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-40px' }}
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+              }}
+              className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]"
+            >
+              <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}>
+                <BrandCustomization
+                  mode={mode}
+                  setMode={setMode}
+                  typeface={typeface}
+                  setTypeface={setTypeface}
+                  buttonStyle={buttonStyle}
+                  setButtonStyle={setButtonStyle}
+                  radiusStyle={radiusStyle}
+                  setRadiusStyle={setRadiusStyle}
+                  primary={primary}
+                  setPrimary={setPrimary}
+                  accent={accent}
+                  setAccent={setAccent}
+                />
+              </motion.div>
+              <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}>
+                <MediaAssetsSection />
+              </motion.div>
+            </motion.div>
 
             <FooterActionBar dirty={dirty} loading={loading} />
           </div>
@@ -119,11 +232,16 @@ export default function BrandingPage() {
 function HeroBrandHeader({ primary, accent }: { primary: string; accent: string }) {
   return (
     <section className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(9,9,11,0.96),rgba(38,7,12,0.92),rgba(24,24,27,0.92))] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-8 lg:p-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(220,38,38,0.28),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(124,58,237,0.18),transparent_20%),radial-gradient(circle_at_60%_85%,rgba(255,255,255,0.06),transparent_18%)]" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(220,38,38,0.28),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(124,58,237,0.18),transparent_20%),radial-gradient(circle_at_60%_85%,rgba(255,255,255,0.06),transparent_18%)]"
+      />
       <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:22px_22px]" />
-      <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+      <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
         <div className="space-y-6 text-white">
-          <div className="flex flex-wrap items-center gap-3">
+          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-md">
               <ShieldCheck className="h-3.5 w-3.5" />
               Primary Brand
@@ -132,13 +250,23 @@ function HeroBrandHeader({ primary, accent }: { primary: string; accent: string 
               <Sparkles className="h-3.5 w-3.5" />
               Luxury identity system
             </span>
-          </div>
+          </motion.div>
 
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/10 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-xl">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="flex flex-col gap-5 sm:flex-row sm:items-center"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/10 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-xl"
+            >
               <div className="absolute inset-0 rounded-[28px] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.22),transparent_42%)]" />
               <Image src="/619-logo.png" alt="619 Fitness Studio logo" width={66} height={66} className="relative h-16 w-16 object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.4)]" />
-            </div>
+            </motion.div>
             <div className="min-w-0 flex-1">
               <p className="text-sm uppercase tracking-[0.25em] text-white/50">Brand identity control center</p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-[3.35rem] lg:leading-[1.05]">619 Fitness Studio</h1>
@@ -150,40 +278,48 @@ function HeroBrandHeader({ primary, accent }: { primary: string; accent: string 
                 <span>Last updated 2 hours ago</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="flex flex-wrap gap-3">
-            <PremiumButton label="Edit Branding" icon={<PenSquare className="h-4 w-4" />} primary />
-            <PremiumButton label="Upload Logo" icon={<Upload className="h-4 w-4" />} />
-            <PremiumButton label="Preview Brand" icon={<Eye className="h-4 w-4" />} />
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap gap-3"
+          >
+            <HeroButton label="Edit Branding" icon={<PenSquare className="h-4 w-4" />} primary />
+            <HeroButton label="Upload Logo" icon={<Upload className="h-4 w-4" />} />
+            <HeroButton label="Preview Brand" icon={<Eye className="h-4 w-4" />} />
+          </motion.div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+          className="flex flex-col items-center gap-4"
+        >
           <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl transition duration-300 group-hover:translate-y-[-2px]">
-            <p className="text-xs uppercase tracking-[0.24em] text-white/45">Brand palette</p>
-            <div className="mt-4 flex items-center gap-3">
-              <ColorBubble color={primary} label="Primary Crimson" />
-              <ColorBubble color="#111111" label="Matte Black" />
-              <ColorBubble color="#f5f5f5" label="Soft White" ring />
-              <ColorBubble color={accent} label="Accent Violet" />
-            </div>
-            <p className="mt-4 text-sm text-white/65">Tuned for premium admin surfaces with strong contrast and luxury depth.</p>
+            <RadialScoreChart score={96} size={140} />
+            <p className="mt-2 text-center text-xs text-white/50">Overall brand health indicator</p>
           </div>
-          <div className="rounded-[24px] border border-white/10 bg-white/10 p-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl transition duration-300 group-hover:translate-y-[-2px]">
-            <p className="text-xs uppercase tracking-[0.24em] text-white/45">Brand state</p>
-            <div className="mt-4 flex items-end justify-between gap-4">
-              <div>
-                <div className="text-3xl font-semibold">96%</div>
-                <div className="mt-1 text-sm text-white/60">Identity completeness</div>
-              </div>
-              <div className="rounded-2xl bg-white/10 px-3 py-2 text-xs text-white/70">Publish ready</div>
-            </div>
-            <div className="mt-4 h-2 rounded-full bg-white/10">
-              <div className="h-2 rounded-full bg-[linear-gradient(90deg,#dc2626,#fb7185,#7c3aed)]" style={{ width: '96%' }} />
-            </div>
+          <div className="grid w-full grid-cols-2 gap-3">
+            {BRAND_METRICS.slice(0, 2).map((metric) => (
+              <motion.div
+                key={metric.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + Math.random() * 0.2 }}
+                className="rounded-[16px] border border-white/10 bg-white/10 p-3 text-center backdrop-blur-xl transition duration-200 hover:bg-white/15"
+              >
+                <span className="mx-auto mb-1.5 flex h-6 w-6 items-center justify-center rounded-[8px]" style={{ background: `${metric.color}25`, color: metric.color }}>
+                  {metric.icon}
+                </span>
+                <p className="text-[17px] font-[760] text-white">{metric.value}%</p>
+                <p className="text-[10px] text-white/50">{metric.label}</p>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -191,53 +327,75 @@ function HeroBrandHeader({ primary, accent }: { primary: string; accent: string 
 
 function BrandIdentityPanel({ primary, accent }: { primary: string; accent: string }) {
   return (
-    <section className="rounded-[30px] border border-zinc-200/70 bg-white/70 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition duration-300 hover:shadow-[0_18px_60px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-white/5 dark:shadow-[0_10px_50px_rgba(0,0,0,0.25)] sm:p-6">
+    <section className="rounded-[30px] border border-zinc-200/70 bg-white/80 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition duration-300 hover:shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-6">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-white/45">Brand identity panel</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white">Core brand system</h2>
+          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Brand identity panel</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">Core brand system</h2>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/10 dark:text-white/80">
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:-translate-y-0.5 hover:shadow-md"
+        >
           <PenSquare className="h-4 w-4" />
           Edit
-        </button>
+        </motion.button>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[26px] border border-zinc-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(244,244,245,0.92))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.04))]">
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="rounded-[26px] border border-zinc-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(244,244,245,0.92))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
+        >
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-zinc-700 dark:text-white/80">Logo preview</p>
-            <button className="rounded-full border border-zinc-200 bg-white p-2 text-zinc-500 transition hover:text-zinc-950 dark:border-white/10 dark:bg-white/10 dark:text-white/60 dark:hover:text-white">
+            <p className="text-sm font-medium text-zinc-700">Logo preview</p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="rounded-full border border-zinc-200 bg-white p-2 text-zinc-500 transition hover:text-zinc-950"
+            >
               <Upload className="h-4 w-4" />
-            </button>
+            </motion.button>
           </div>
-          <div className="mt-5 rounded-[24px] border border-dashed border-zinc-300 bg-[radial-gradient(circle_at_top,_rgba(220,38,38,0.08),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,248,249,0.9))] p-6 text-center dark:border-white/10 dark:bg-[radial-gradient(circle_at_top,_rgba(220,38,38,0.18),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))]">
-            <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(24,24,27,0.96),rgba(56,10,18,0.88))] shadow-[0_20px_50px_rgba(0,0,0,0.25)]">
+          <div className="mt-5 rounded-[24px] border border-dashed border-zinc-300 bg-[radial-gradient(circle_at_top,_rgba(220,38,38,0.08),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,248,249,0.9))] p-6 text-center">
+            <motion.div
+              initial={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              className="mx-auto flex h-28 w-28 items-center justify-center rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(24,24,27,0.96),rgba(56,10,18,0.88))] shadow-[0_20px_50px_rgba(0,0,0,0.25)]"
+            >
               <Image src="/619-logo.png" alt="619 studio brand logo" width={82} height={82} className="h-20 w-20 object-contain" />
-            </div>
-            <p className="mt-5 text-sm font-medium text-zinc-800 dark:text-white/80">Drag & drop logo asset</p>
-            <p className="mt-2 text-sm text-zinc-500 dark:text-white/50">Supports SVG, PNG and transparent WebP for platform surfaces.</p>
+            </motion.div>
+            <p className="mt-5 text-sm font-medium text-zinc-800">Drag & drop logo asset</p>
+            <p className="mt-2 text-sm text-zinc-500">Supports SVG, PNG and transparent WebP for platform surfaces.</p>
             <div className="mt-5 flex justify-center gap-3">
               <PremiumButton label="Replace" icon={<RefreshCw className="h-4 w-4" />} compact />
               <PremiumButton label="Upload New" icon={<Plus className="h-4 w-4" />} compact />
             </div>
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <DetailCard label="Studio Name" value="619 Fitness Studio" icon={<PenSquare className="h-4 w-4" />} />
           <DetailCard label="Location" value="Lucknow, Uttar Pradesh" icon={<MapPin className="h-4 w-4" />} />
           <DetailCard label="Brand Theme" value="Luxury Crimson / Matte Black" icon={<SwatchBook className="h-4 w-4" />} />
           <DetailCard label="Typography" value="Inter with elevated tracking" icon={<Type className="h-4 w-4" />} />
-          <div className="rounded-[22px] border border-zinc-200/70 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-white/5 sm:col-span-2">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-[22px] border border-zinc-200/70 bg-white/80 p-4 shadow-sm sm:col-span-2"
+          >
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-zinc-800 dark:text-white/80">Brand Description</p>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-white/45">High-performance luxury fitness operating system</p>
+                <p className="text-sm font-medium text-zinc-800">Brand Description</p>
+                <p className="mt-1 text-sm text-zinc-500">High-performance luxury fitness operating system</p>
               </div>
-              <PenSquare className="h-4 w-4 text-zinc-400 dark:text-white/35" />
+              <PenSquare className="h-4 w-4 text-zinc-400" />
             </div>
-            <p className="text-sm leading-6 text-zinc-600 dark:text-white/60">
+            <p className="text-sm leading-6 text-zinc-600">
               619 Fitness Studio blends elite coaching energy with premium digital surfaces — creating a sharp, confident brand experience for members, trainers and operators.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -246,75 +404,139 @@ function BrandIdentityPanel({ primary, accent }: { primary: string; accent: stri
               <ColorSwatch color="#f4f4f5" name="Surface" light />
               <ColorSwatch color={accent} name="Accent" />
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
   );
 }
 
-function LivePreviewSection({ primary, accent, mode }: { primary: string; accent: string; mode: ThemeMode }) {
+function BrandHealthPanel() {
+  const items = [
+    { title: 'Brand completeness', value: '96%', state: 'Excellent', width: '96%', icon: <Award className="h-4 w-4" /> },
+    { title: 'Missing assets', value: '1', state: 'Needs social banner alt export', width: '72%', icon: <Target className="h-4 w-4" /> },
+    { title: 'Theme consistency', value: '94%', state: 'Aligned across app surfaces', width: '94%', icon: <BarChart3 className="h-4 w-4" /> },
+    { title: 'Mobile optimization', value: '98%', state: 'Strong on compact devices', width: '98%', icon: <Smartphone className="h-4 w-4" /> },
+    { title: 'Contrast score', value: 'AA+', state: 'Accessible and balanced', width: '91%', icon: <Contrast className="h-4 w-4" /> },
+  ];
+
   return (
-    <section className="rounded-[30px] border border-zinc-200/70 bg-white/75 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_10px_50px_rgba(0,0,0,0.25)] sm:p-6">
+    <section className="rounded-[30px] border border-zinc-200/70 bg-white/80 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition duration-300 hover:shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-6">
+      <div className="mb-5">
+        <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Brand health</p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">Consistency analytics</h2>
+      </div>
+      <AnimatePresence>
+        <div className="space-y-3">
+          {items.map((item, i) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, x: -10 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08, duration: 0.4 }}
+              className="group rounded-[22px] border border-zinc-200/70 bg-white/90 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-zinc-100 text-zinc-600 transition-colors group-hover:bg-red-50 group-hover:text-red-600">
+                    {item.icon}
+                  </span>
+                  <div>
+                    <p className="text-sm font-medium text-zinc-800">{item.title}</p>
+                    <p className="mt-0.5 text-sm text-zinc-500">{item.state}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-zinc-950">{item.value}</p>
+                  <CheckCircle2 className="ml-auto mt-1 h-3.5 w-3.5 text-emerald-500" />
+                </div>
+              </div>
+              <div className="mt-4 h-2.5 rounded-full bg-zinc-100">
+                <motion.div
+                  initial={{ width: 0 }}
+                  whileInView={{ width: item.width }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  className="h-2.5 rounded-full bg-[linear-gradient(90deg,#dc2626,#fb7185,#7c3aed)]"
+                />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </AnimatePresence>
+    </section>
+  );
+}
+
+function LivePreviewSection({ primary, accent, mode }: { primary: string; accent: string; mode: ThemeMode }) {
+  const items = [
+    { title: 'Dashboard header', subtitle: 'Command center surface', type: 'dashboard' as const },
+    { title: 'Membership card', subtitle: 'Member-facing identity', type: 'compact' as const },
+    { title: 'App sidebar', subtitle: 'Navigation treatment', type: 'sidebar' as const },
+    { title: 'Payment receipt', subtitle: 'Trust and consistency', type: 'receipt' as const },
+    { title: 'Mobile check-in', subtitle: 'Fast front-desk moment', type: 'mobile' as const },
+  ];
+
+  return (
+    <section className="rounded-[30px] border border-zinc-200/70 bg-white/80 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-white/45">Live brand preview</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white">How the brand appears across the platform</h2>
+          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Live brand preview</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">How the brand appears across the platform</h2>
         </div>
-        <div className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-600 dark:border-white/10 dark:bg-white/10 dark:text-white/60">
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-600 shadow-sm"
+        >
           Preview mode: {mode}
-        </div>
+        </motion.div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <MiniMockCard title="Dashboard header" subtitle="Command center surface" primary={primary} accent={accent} />
-        <MiniMockCard title="Membership card" subtitle="Member-facing identity" primary={primary} accent={accent} compact />
-        <MiniMockCard title="App sidebar" subtitle="Navigation treatment" primary={primary} accent={accent} sidebar />
-        <MiniMockCard title="Payment receipt" subtitle="Trust and consistency" primary={primary} accent={accent} receipt />
-        <MiniMockCard title="Mobile check-in" subtitle="Fast front-desk moment" primary={primary} accent={accent} mobile />
+        {items.map((item, i) => (
+          <motion.div
+            key={item.title}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.08, duration: 0.4 }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
+          >
+            <MiniMockCard title={item.title} subtitle={item.subtitle} primary={primary} accent={accent} type={item.type} />
+          </motion.div>
+        ))}
       </div>
     </section>
   );
 }
 
 function BrandCustomization({
-  mode,
-  setMode,
-  typeface,
-  setTypeface,
-  buttonStyle,
-  setButtonStyle,
-  radiusStyle,
-  setRadiusStyle,
-  primary,
-  setPrimary,
-  accent,
-  setAccent,
+  mode, setMode, typeface, setTypeface, buttonStyle, setButtonStyle,
+  radiusStyle, setRadiusStyle, primary, setPrimary, accent, setAccent,
 }: {
-  mode: ThemeMode;
-  setMode: (v: ThemeMode) => void;
-  typeface: Typeface;
-  setTypeface: (v: Typeface) => void;
-  buttonStyle: ButtonStyle;
-  setButtonStyle: (v: ButtonStyle) => void;
-  radiusStyle: RadiusStyle;
-  setRadiusStyle: (v: RadiusStyle) => void;
-  primary: string;
-  setPrimary: (v: string) => void;
-  accent: string;
-  setAccent: (v: string) => void;
+  mode: ThemeMode; setMode: (v: ThemeMode) => void;
+  typeface: Typeface; setTypeface: (v: Typeface) => void;
+  buttonStyle: ButtonStyle; setButtonStyle: (v: ButtonStyle) => void;
+  radiusStyle: RadiusStyle; setRadiusStyle: (v: RadiusStyle) => void;
+  primary: string; setPrimary: (v: string) => void;
+  accent: string; setAccent: (v: string) => void;
 }) {
   return (
-    <section className="rounded-[30px] border border-zinc-200/70 bg-white/75 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_10px_50px_rgba(0,0,0,0.25)] sm:p-6">
+    <section className="rounded-[30px] border border-zinc-200/70 bg-white/80 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition duration-300 hover:shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-6">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-white/45">Brand customization</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white">Premium visual controls</h2>
+          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Brand customization</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">Premium visual controls</h2>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/10 dark:text-white/80">
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:-translate-y-0.5 hover:shadow-md"
+        >
           <Wand2 className="h-4 w-4" />
           Auto-balance
-        </button>
+        </motion.button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -338,15 +560,24 @@ function BrandCustomization({
         </SettingCard>
       </div>
 
-      <div className="mt-5 rounded-[24px] border border-zinc-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(245,245,246,0.92))] p-5 dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="mt-5 rounded-[24px] border border-zinc-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(245,245,246,0.92))] p-5"
+      >
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-zinc-800 dark:text-white/80">Live customization preview</p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-white/45">Changes update this sample instantly</p>
+            <p className="text-sm font-medium text-zinc-800">Live customization preview</p>
+            <p className="mt-1 text-sm text-zinc-500">Changes update this sample instantly</p>
           </div>
-          <Palette className="h-5 w-5 text-zinc-400 dark:text-white/35" />
+          <Palette className="h-5 w-5 text-zinc-400" />
         </div>
-        <div className="mt-4 rounded-[22px] border border-white/10 p-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.2)]" style={{ background: `linear-gradient(135deg, ${primary}, ${accent})` }}>
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          className="mt-4 rounded-[22px] border border-white/10 p-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.2)]"
+          style={{ background: `linear-gradient(135deg, ${primary}, ${accent})` }}
+        >
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-white/60">619 Fitness Studio</p>
@@ -354,84 +585,58 @@ function BrandCustomization({
             </div>
             <button className="rounded-full bg-white/15 px-4 py-2 text-sm backdrop-blur-md">Primary CTA</button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
 
 function MediaAssetsSection() {
   return (
-    <section className="rounded-[30px] border border-zinc-200/70 bg-white/75 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_10px_50px_rgba(0,0,0,0.25)] sm:p-6">
+    <section className="rounded-[30px] border border-zinc-200/70 bg-white/80 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition duration-300 hover:shadow-[0_18px_60px_rgba(15,23,42,0.12)] sm:p-6">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-white/45">Media & assets</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white">Platform-ready asset library</h2>
+          <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">Media & assets</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">Platform-ready asset library</h2>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/10 dark:text-white/80">
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:-translate-y-0.5 hover:shadow-md"
+        >
           <Upload className="h-4 w-4" />
           Upload all
-        </button>
+        </motion.button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {ASSETS.map((asset) => (
-          <div key={asset.title} className="group rounded-[24px] border border-zinc-200/70 bg-white/85 p-4 transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-white/5">
-            <div className={`rounded-[20px] border border-zinc-200/70 bg-gradient-to-br ${asset.tone} p-4 dark:border-white/10`}>
-              <div className="flex h-28 items-center justify-center rounded-[18px] border border-dashed border-zinc-300 bg-white/60 dark:border-white/10 dark:bg-black/20">
-                <ImageIcon className="h-8 w-8 text-zinc-400 dark:text-white/30" />
+        {ASSETS.map((asset, i) => (
+          <motion.div
+            key={asset.title}
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.08, duration: 0.4 }}
+            whileHover={{ y: -3, transition: { duration: 0.2 } }}
+            className="group rounded-[24px] border border-zinc-200/70 bg-white/90 p-4 shadow-sm transition-all duration-200 hover:shadow-[0_16px_40px_rgba(15,23,42,0.12)]"
+          >
+            <div className={`rounded-[20px] border border-zinc-200/70 bg-gradient-to-br ${asset.tone} p-4`}>
+              <div className="flex h-28 items-center justify-center rounded-[18px] border border-dashed border-zinc-300 bg-white/60">
+                <ImageIcon className="h-8 w-8 text-zinc-400" />
               </div>
             </div>
             <div className="mt-4 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-semibold text-zinc-900 dark:text-white">{asset.title}</h3>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-white/45">{asset.subtitle}</p>
-                <p className="mt-3 text-xs uppercase tracking-[0.2em] text-zinc-400 dark:text-white/35">Recommended {asset.size}</p>
+                <h3 className="text-base font-semibold text-zinc-900">{asset.title}</h3>
+                <p className="mt-1 text-sm text-zinc-500">{asset.subtitle}</p>
+                <p className="mt-3 text-xs uppercase tracking-[0.2em] text-zinc-400">Recommended {asset.size}</p>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <PremiumButton label="Replace" icon={<RefreshCw className="h-4 w-4" />} compact />
               <PremiumButton label="Download" icon={<Download className="h-4 w-4" />} compact />
             </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function BrandHealthPanel() {
-  const items = [
-    { title: 'Brand completeness', value: '96%', state: 'Excellent', width: '96%' },
-    { title: 'Missing assets', value: '1', state: 'Needs social banner alt export', width: '72%' },
-    { title: 'Theme consistency', value: '94%', state: 'Aligned across app surfaces', width: '94%' },
-    { title: 'Mobile optimization', value: '98%', state: 'Strong on compact devices', width: '98%' },
-    { title: 'Contrast score', value: 'AA+', state: 'Accessible and balanced', width: '91%' },
-  ];
-
-  return (
-    <section className="rounded-[30px] border border-zinc-200/70 bg-white/75 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_10px_50px_rgba(0,0,0,0.25)] sm:p-6">
-      <div className="mb-5">
-        <p className="text-xs uppercase tracking-[0.24em] text-zinc-500 dark:text-white/45">Brand health</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 dark:text-white">Consistency analytics</h2>
-      </div>
-      <div className="space-y-4">
-        {items.map((item) => (
-          <div key={item.title} className="rounded-[22px] border border-zinc-200/70 bg-white/85 p-4 dark:border-white/10 dark:bg-white/5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-zinc-800 dark:text-white/80">{item.title}</p>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-white/45">{item.state}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-semibold text-zinc-950 dark:text-white">{item.value}</p>
-                <CheckCircle2 className="ml-auto mt-1 h-4 w-4 text-emerald-500" />
-              </div>
-            </div>
-            <div className="mt-4 h-2 rounded-full bg-zinc-200 dark:bg-white/10">
-              <div className="h-2 rounded-full bg-[linear-gradient(90deg,#dc2626,#fb7185,#7c3aed)]" style={{ width: item.width }} />
-            </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>
@@ -440,61 +645,81 @@ function BrandHealthPanel() {
 
 function FooterActionBar({ dirty, loading }: { dirty: boolean; loading: boolean }) {
   return (
-    <div className="sticky bottom-4 z-20">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3, duration: 0.5 }}
+      className="sticky bottom-4 z-20"
+    >
       <div className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,23,0.82),rgba(20,20,23,0.7))] px-4 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="flex items-center gap-3 text-white">
-          <span className={`inline-flex h-2.5 w-2.5 rounded-full ${dirty ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.8)]' : 'bg-emerald-400'}`} />
+          <motion.span
+            animate={{ scale: dirty ? [1, 1.2, 1] : 1 }}
+            transition={{ repeat: dirty ? Infinity : 0, duration: 2 }}
+            className={`inline-flex h-2.5 w-2.5 rounded-full ${dirty ? 'bg-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.8)]' : 'bg-emerald-400'}`}
+          />
           <div>
             <p className="text-sm font-medium">{dirty ? 'Unsaved brand changes' : 'All brand changes saved'}</p>
             <p className="text-xs text-white/55">Publishing updates your platform identity across admin and member surfaces.</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <PremiumButton label="Reset" icon={<CircleOff className="h-4 w-4" />} compact dark />
-          <PremiumButton label="Preview" icon={<Eye className="h-4 w-4" />} compact dark />
-          <PremiumButton label={loading ? 'Saving…' : 'Save Changes'} icon={<CheckCircle2 className="h-4 w-4" />} compact primary />
-          <PremiumButton label="Publish Brand" icon={<ArrowUpRight className="h-4 w-4" />} compact primary />
+          <FooterButton label="Reset" icon={<CircleOff className="h-4 w-4" />} />
+          <FooterButton label="Preview" icon={<Eye className="h-4 w-4" />} />
+          <FooterButton label={loading ? 'Saving…' : 'Save Changes'} icon={<CheckCircle2 className="h-4 w-4" />} primary />
+          <FooterButton label="Publish Brand" icon={<ArrowUpRight className="h-4 w-4" />} primary />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-function PremiumButton({
-  label,
-  icon,
-  primary,
-  compact,
-  dark,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  primary?: boolean;
-  compact?: boolean;
-  dark?: boolean;
-}) {
-  const base = compact ? 'px-3.5 py-2 text-sm' : 'px-4 py-2.5 text-sm';
-  const tone = primary
-    ? 'border-transparent bg-[linear-gradient(135deg,#dc2626,#991b1b)] text-white shadow-[0_12px_30px_rgba(220,38,38,0.32)] hover:shadow-[0_16px_40px_rgba(220,38,38,0.4)]'
-    : dark
-      ? 'border-white/10 bg-white/10 text-white/85 hover:bg-white/15'
-      : 'border-zinc-200 bg-white/80 text-zinc-700 hover:bg-white hover:text-zinc-950 dark:border-white/10 dark:bg-white/10 dark:text-white/80 dark:hover:bg-white/15';
-
+function HeroButton({ label, icon, primary }: { label: string; icon: React.ReactNode; primary?: boolean }) {
   return (
-    <button className={`inline-flex items-center gap-2 rounded-full border ${base} font-medium transition duration-300 hover:-translate-y-0.5 ${tone}`}>
+    <motion.button
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition duration-300 ${
+        primary
+          ? 'border-transparent bg-[linear-gradient(135deg,#dc2626,#991b1b)] text-white shadow-[0_12px_30px_rgba(220,38,38,0.32)] hover:shadow-[0_16px_40px_rgba(220,38,38,0.4)]'
+          : 'border border-white/10 bg-white/10 text-white/85 hover:bg-white/15'
+      }`}
+    >
+      {icon}
+      {label}
+    </motion.button>
+  );
+}
+
+function FooterButton({ label, icon, primary }: { label: string; icon: React.ReactNode; primary?: boolean }) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition duration-300 ${
+        primary
+          ? 'border-transparent bg-[linear-gradient(135deg,#dc2626,#991b1b)] text-white shadow-[0_12px_30px_rgba(220,38,38,0.32)] hover:shadow-[0_16px_40px_rgba(220,38,38,0.4)]'
+          : 'border border-white/10 bg-white/10 text-white/85 hover:bg-white/15'
+      }`}
+    >
+      {icon}
+      {label}
+    </motion.button>
+  );
+}
+
+function PremiumButton({ label, icon, compact }: { label: string; icon: React.ReactNode; compact?: boolean }) {
+  return (
+    <button className={`inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/80 px-3.5 py-2 text-sm font-medium text-zinc-700 transition duration-300 hover:-translate-y-0.5 hover:bg-white hover:text-zinc-950 hover:shadow-md ${compact ? 'px-3 py-1.5 text-xs' : ''}`}>
       {icon}
       {label}
     </button>
   );
 }
 
-function ColorBubble({ color, label, ring }: { color: string; label: string; ring?: boolean }) {
-  return <div title={label} className={`h-10 w-10 rounded-full ${ring ? 'ring-1 ring-white/30' : ''}`} style={{ background: color }} />;
-}
-
 function ColorSwatch({ color, name, light }: { color: string; name: string; light?: boolean }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 dark:border-white/10 dark:bg-white/10 dark:text-white/75">
+    <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700">
       <span className={`h-4 w-4 rounded-full ${light ? 'ring-1 ring-zinc-300' : ''}`} style={{ background: color }} />
       {name}
     </div>
@@ -503,44 +728,42 @@ function ColorSwatch({ color, name, light }: { color: string; name: string; ligh
 
 function DetailCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] border border-zinc-200/70 bg-white/80 p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="rounded-[22px] border border-zinc-200/70 bg-white/85 p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+    >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-zinc-800 dark:text-white/80">{label}</p>
-        <span className="text-zinc-400 dark:text-white/35">{icon}</span>
+        <p className="text-sm font-medium text-zinc-800">{label}</p>
+        <span className="text-zinc-400">{icon}</span>
       </div>
-      <p className="mt-3 text-base font-semibold text-zinc-950 dark:text-white">{value}</p>
-    </div>
+      <p className="mt-3 text-base font-semibold text-zinc-950">{value}</p>
+    </motion.div>
   );
 }
 
-function MiniMockCard({
-  title,
-  subtitle,
-  primary,
-  accent,
-  compact,
-  sidebar,
-  receipt,
-  mobile,
-}: {
-  title: string;
-  subtitle: string;
-  primary: string;
-  accent: string;
-  compact?: boolean;
-  sidebar?: boolean;
-  receipt?: boolean;
-  mobile?: boolean;
+function MiniMockCard({ title, subtitle, primary, accent, type }: {
+  title: string; subtitle: string; primary: string; accent: string;
+  type: 'dashboard' | 'compact' | 'sidebar' | 'receipt' | 'mobile';
 }) {
+  const heightMap = {
+    dashboard: 'min-h-[140px]',
+    compact: 'min-h-[120px]',
+    sidebar: 'min-h-[130px]',
+    receipt: 'min-h-[128px]',
+    mobile: 'min-h-[220px]',
+  };
+
   return (
-    <div className="group rounded-[24px] border border-zinc-200/70 bg-white/85 p-4 transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-white/5">
+    <div className="group rounded-[24px] border border-zinc-200/70 bg-white/90 p-4 shadow-sm transition-all duration-200 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
       <div className="mb-3">
-        <p className="text-sm font-medium text-zinc-800 dark:text-white/80">{title}</p>
-        <p className="mt-1 text-xs text-zinc-500 dark:text-white/45">{subtitle}</p>
+        <p className="text-sm font-medium text-zinc-800">{title}</p>
+        <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>
       </div>
-      <div className={`overflow-hidden rounded-[20px] border border-white/10 bg-zinc-950 p-3 text-white ${mobile ? 'mx-auto max-w-[170px]' : ''}`}>
+      <div className={`overflow-hidden rounded-[20px] border border-white/10 bg-zinc-950 p-3 text-white ${type === 'mobile' ? 'mx-auto max-w-[170px]' : ''}`}>
         <div className="rounded-[16px] p-3" style={{ background: `linear-gradient(135deg, ${primary}, ${accent})` }}>
-          <div className={`rounded-[14px] bg-black/35 p-3 backdrop-blur-md ${sidebar ? 'min-h-[130px]' : compact ? 'min-h-[120px]' : receipt ? 'min-h-[128px]' : mobile ? 'min-h-[220px]' : 'min-h-[140px]'}`}>
+          <div className={`rounded-[14px] bg-black/35 p-3 backdrop-blur-md ${heightMap[type]}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-xl bg-white/15" />
@@ -549,7 +772,7 @@ function MiniMockCard({
                   <div className="mt-2 h-2 w-10 rounded-full bg-white/30" />
                 </div>
               </div>
-              {mobile ? <Monitor className="h-4 w-4 text-white/60" /> : <Palette className="h-4 w-4 text-white/60" />}
+              {type === 'mobile' ? <Monitor className="h-4 w-4 text-white/60" /> : <Palette className="h-4 w-4 text-white/60" />}
             </div>
             <div className="mt-4 space-y-2">
               <div className="h-2.5 rounded-full bg-white/70" />
@@ -569,32 +792,30 @@ function MiniMockCard({
 
 function SettingCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[22px] border border-zinc-200/70 bg-white/85 p-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-      <p className="text-sm font-medium text-zinc-800 dark:text-white/80">{title}</p>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-white/45">{subtitle}</p>
+    <div className="rounded-[22px] border border-zinc-200/70 bg-white/88 p-4 shadow-sm">
+      <p className="text-sm font-medium text-zinc-800">{title}</p>
+      <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
       <div className="mt-4">{children}</div>
     </div>
   );
 }
 
-function Segmented<T extends string>({
-  value,
-  onChange,
-  options,
-}: {
+function Segmented<T extends string>({ value, onChange, options }: {
   value: T;
   onChange: (v: T) => void;
   options: { id: T; label: string; icon?: React.ReactNode }[];
 }) {
   return (
-    <div className="grid grid-cols-3 gap-2 rounded-[18px] border border-zinc-200 bg-zinc-50 p-1 dark:border-white/10 dark:bg-black/20">
+    <div className="grid grid-cols-3 gap-2 rounded-[18px] border border-zinc-200 bg-zinc-50 p-1">
       {options.map((option) => {
         const active = option.id === value;
         return (
           <button
             key={option.id}
             onClick={() => onChange(option.id)}
-            className={`inline-flex items-center justify-center gap-2 rounded-[14px] px-3 py-2 text-sm font-medium transition ${active ? 'bg-white text-zinc-950 shadow-sm dark:bg-white/12 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:text-white/45 dark:hover:text-white/75'}`}
+            className={`inline-flex items-center justify-center gap-2 rounded-[14px] px-3 py-2 text-sm font-medium transition ${
+              active ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'
+            }`}
           >
             {option.icon}
             {option.label}
@@ -607,11 +828,11 @@ function Segmented<T extends string>({
 
 function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-[18px] border border-zinc-200 bg-zinc-50 px-3 py-3 dark:border-white/10 dark:bg-black/20">
+    <div className="flex items-center gap-3 rounded-[18px] border border-zinc-200 bg-zinc-50 px-3 py-3">
       <input value={value} onChange={(e) => onChange(e.target.value)} type="color" className="h-10 w-14 cursor-pointer rounded-xl border-0 bg-transparent p-0" />
       <div>
-        <p className="text-sm font-medium text-zinc-900 dark:text-white">{value}</p>
-        <p className="text-xs text-zinc-500 dark:text-white/45">Live brand color token</p>
+        <p className="text-sm font-medium text-zinc-900">{value}</p>
+        <p className="text-xs text-zinc-500">Live brand color token</p>
       </div>
     </div>
   );
