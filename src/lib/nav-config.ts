@@ -131,7 +131,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/pl',              label: 'Profit & Loss',    icon: 'BarChart3',    role: 'admin' },
       { href: '/finance/forecast',        label: 'Revenue Forecast', icon: 'TrendingUp',   role: 'admin' },
       { href: '/finance/trainer-revenue', label: 'Coach Revenue',    icon: 'Award',        role: 'admin' },
-      { href: '/finance/payroll',         label: 'Payroll',          icon: 'IndianRupee',  role: 'admin', isNew: true },
+      { href: '/finance/payroll',         label: 'Payroll',          icon: 'IndianRupee',  isNew: true },
     ],
   },
   {
@@ -159,12 +159,30 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+export const PT_OS_NAV: NavGroup = {
+  id: 'pt-os',
+  label: 'PT Operating System',
+  icon: 'Sparkles',
+  roles: ['admin', 'manager', 'trainer'],
+  items: [
+    { href: '/pt-os/dashboard',  label: 'Mission Control', icon: 'LayoutDashboard', roles: ['admin', 'manager', 'trainer'] },
+    { href: '/pt-os/clients',    label: 'PT Clients',      icon: 'Users',           roles: ['admin', 'manager', 'trainer'] },
+    { href: '/pt-os/trainers',   label: 'PT Trainers',     icon: 'Dumbbell',        roles: ['admin', 'manager'] },
+    { href: '/pt-os/programs',   label: 'Programs',        icon: 'Layers',          roles: ['admin', 'manager', 'trainer'] },
+    { href: '/pt-os/sessions',   label: 'Sessions',        icon: 'Calendar',        roles: ['admin', 'manager', 'trainer'] },
+    { href: '/pt-os/finance',    label: 'PT Finance',      icon: 'IndianRupee',     roles: ['admin', 'manager'] },
+    { href: '/pt-os/analytics',  label: 'Analytics',       icon: 'BarChart3',       roles: ['admin', 'manager'] },
+    { href: '/pt-os/automation', label: 'Automation',      icon: 'Bot',             roles: ['admin'] },
+  ],
+};
+
 export const SETTINGS_GROUP: NavGroup = {
   id: 'settings',
   label: 'Settings',
   icon: 'Settings',
   items: [
-    { href: '/pt-portal',                label: 'PERSONAL TRAINING PORTAL', icon: 'Sparkles',      roles: ['admin', 'manager', 'trainer'], isNew: true },
+    { href: '/pt-os/dashboard',          label: 'PT OPERATING SYSTEM',       icon: 'Sparkles',      roles: ['admin', 'manager', 'trainer'], isNew: true },
+    { href: '/pt-portal',                label: 'PT Portal (Legacy)',        icon: 'Dumbbell',      roles: ['admin', 'manager', 'trainer'] },
     { href: '/settings',                 label: 'General',                  icon: 'Settings' },
     { href: '/settings/studio',          label: 'Studio Settings',          icon: 'Building2',     role: 'admin', isNew: true },
     { href: '/settings/profile',         label: 'My Profile',               icon: 'User',          isNew: true },
@@ -173,6 +191,7 @@ export const SETTINGS_GROUP: NavGroup = {
     { href: '/settings/biometric',       label: 'Biometric & Face',         icon: 'Fingerprint',   role: 'admin' },
     { href: '/settings/billing',         label: 'GST / Invoice',            icon: 'Receipt',       role: 'admin' },
     { href: '/settings/branding',        label: 'Branding',                 icon: 'Palette',       role: 'admin' },
+    { href: '/settings/integrations',    label: 'Integrations',             icon: 'Zap',           role: 'admin', isNew: true },
     { href: '/settings/import-database', label: 'Import Database',          icon: 'DatabaseBackup',role: 'admin' },
   ],
 };
@@ -199,6 +218,7 @@ export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: st
       }
     }
   }
+  for (const it of PT_OS_NAV.items) out.push({ ...it, groupId: PT_OS_NAV.id, groupLabel: PT_OS_NAV.label });
   for (const it of SETTINGS_GROUP.items) out.push({ ...it, groupId: SETTINGS_GROUP.id, groupLabel: SETTINGS_GROUP.label });
   return out;
 }
