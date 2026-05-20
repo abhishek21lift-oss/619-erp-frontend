@@ -131,6 +131,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/pl',              label: 'Profit & Loss',    icon: 'BarChart3',    role: 'admin' },
       { href: '/finance/forecast',        label: 'Revenue Forecast', icon: 'TrendingUp',   role: 'admin' },
       { href: '/finance/trainer-revenue', label: 'Coach Revenue',    icon: 'Award',        role: 'admin' },
+      { href: '/finance/payroll',         label: 'Payroll',          icon: 'IndianRupee',  role: 'admin', isNew: true },
     ],
   },
   {
