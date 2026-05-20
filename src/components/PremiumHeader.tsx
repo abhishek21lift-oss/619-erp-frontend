@@ -654,77 +654,80 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         <div
           ref={headerRef}
           className={cn(
-            'mx-auto flex w-full max-w-[1680px] items-center gap-2 px-3 transition-all duration-300 sm:px-4 lg:px-5',
+            'mx-auto flex w-full max-w-[1680px] items-center px-3 transition-all duration-300 sm:px-4 lg:px-5',
             scrolled ? 'h-[56px]' : 'h-[64px]',
           )}
         >
-          {/* ── Mobile hamburger ─────────────────────────────────────────── */}
-          <button
-            type="button"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md lg:hidden"
-            onClick={onMenuClick}
-            aria-label="Open navigation menu"
-          >
-            <Menu size={16} />
-          </button>
-
-          {/* ── Brand logo ───────────────────────────────────────────────── */}
-          {/*
-            FIX: The white background issue.
-            The logo PNG has a white canvas. We suppress it with mix-blend-mode:multiply
-            on a white navbar background — white × white = white (invisible).
-            The actual logo content (dark deer silhouette, red oval) is dark enough
-            that multiply preserves it correctly.
-            The container background is set to white so multiply has a clean base.
-            This is the most reliable CSS-only fix for a white-background PNG on a white surface.
-          */}
-          <div
-            className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center rounded-[14px]"
-            style={{
-              width: scrolled ? 38 : 46,
-              height: scrolled ? 38 : 46,
-              background: '#ffffff',
-              transition: 'width 0.3s, height 0.3s',
-            }}
-            onClick={() => router.push('/dashboard')}
-            title="619 Fitness Studio"
-          >
-            <Image
-              src="/619-logo.png"
-              alt="619 Fitness Studio"
-              width={scrolled ? 34 : 42}
-              height={scrolled ? 34 : 42}
-              className="logo-img-clean object-contain transition-all duration-300"
-              style={{ display: 'block' }}
-              onError={() => {
-                const el = document.getElementById('logo-fallback');
-                if (el) el.style.display = 'flex';
-              }}
-            />
-            <span
-              id="logo-fallback"
-              className="absolute hidden h-full w-full items-center justify-center rounded-[14px] text-[13px] font-black text-white"
-              style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}
+          {/* ── Left section: hamburger + logo ──────────────────────────── */}
+          <div className="flex flex-1 items-center gap-2">
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md lg:hidden"
+              onClick={onMenuClick}
+              aria-label="Open navigation menu"
             >
-              619
-            </span>
-          </div>
+              <Menu size={16} />
+            </button>
 
-          {/* Divider */}
-          <div className="mx-1 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
+            {/* Brand logo */}
+            {/*
+              FIX: The white background issue.
+              The logo PNG has a white canvas. We suppress it with mix-blend-mode:multiply
+              on a white navbar background — white × white = white (invisible).
+              The actual logo content (dark deer silhouette, red oval) is dark enough
+              that multiply preserves it correctly.
+              The container background is set to white so multiply has a clean base.
+              This is the most reliable CSS-only fix for a white-background PNG on a white surface.
+            */}
+            <div
+              className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center rounded-[14px]"
+              style={{
+                width: scrolled ? 38 : 46,
+                height: scrolled ? 38 : 46,
+                background: '#ffffff',
+                transition: 'width 0.3s, height 0.3s',
+              }}
+              onClick={() => router.push('/dashboard')}
+              title="619 Fitness Studio"
+            >
+              <Image
+                src="/619-logo.png"
+                alt="619 Fitness Studio"
+                width={scrolled ? 34 : 42}
+                height={scrolled ? 34 : 42}
+                className="logo-img-clean object-contain transition-all duration-300"
+                style={{ display: 'block' }}
+                onError={() => {
+                  const el = document.getElementById('logo-fallback');
+                  if (el) el.style.display = 'flex';
+                }}
+              />
+              <span
+                id="logo-fallback"
+                className="absolute hidden h-full w-full items-center justify-center rounded-[14px] text-[13px] font-black text-white"
+                style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}
+              >
+                619
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="mx-1 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
+          </div>
 
           {/* ── Center nav ───────────────────────────────────────────────── */}
           <nav
             aria-label="Primary navigation"
-            className="nav-scroll hidden min-w-0 flex-1 overflow-x-auto lg:flex lg:items-center"
+            className="nav-scroll hidden overflow-x-auto lg:flex lg:items-center lg:justify-center"
           >
-            <div className="flex items-center gap-0.5 pr-2">
+            <div className="flex items-center gap-0.5">
               {MEGA_SECTIONS.map(renderSection)}
             </div>
           </nav>
 
-          {/* ── Right cluster ─────────────────────────────────────────────── */}
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          {/* ── Right section ────────────────────────────────────────────── */}
+          <div className="flex flex-1 items-center justify-end gap-1.5">
 
             {/* Live pills */}
             <div className="hidden items-center gap-1.5 2xl:flex">
