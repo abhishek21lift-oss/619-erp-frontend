@@ -2,13 +2,14 @@
 /**
  * AppShell — root layout wrapper for every authenticated page.
  *
- * Issue #3 FIX — Hydration-safe matchMedia (useSyncExternalStore)
+ * Issue #3  FIX — Hydration-safe matchMedia (useSyncExternalStore)
  * Issue #20 FIX — LazyMotion + domAnimation (smaller bundle)
- * Issue #XX FIX — Reverted dark bg (#0a0a0e) that hid all page content;
- *                 page content uses Tailwind light-mode classes (slate-50,
- *                 text-slate-900, etc.), so the shell must use a light bg.
+ * Issue #XX FIX — Reverted dark bg that hid all page content
+ * Issue #YY FIX — Sidebar rendered via React Portal to escape stacking
+ *                  context; fixes iOS Safari fixed-position blink/flicker.
  */
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useState, useEffect, useSyncExternalStore, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { LazyMotion, domAnimation } from 'framer-motion';
 import Sidebar from './Sidebar';
 import PremiumHeader from './PremiumHeader';
@@ -31,14 +32,26 @@ function useIsDesktop():      boolean { return useSyncExternalStore(subscribe, g
 
 export default function AppShell({ children, title: _title }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isDesktop = useIsDesktop();
 
+  // Wait for client mount before portaling (avoid SSR mismatch)
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => { if (isDesktop) setMobileOpen(false); }, [isDesktop]);
+
   useEffect(() => {
     if (typeof document === 'undefined') return;
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
+
+  const sidebar = (
+    <Sidebar
+      mobileOpen={mobileOpen}
+      onMobileClose={() => setMobileOpen(false)}
+    />
+  );
 
   return (
     <LazyMotion features={domAnimation} strict>
@@ -47,10 +60,12 @@ export default function AppShell({ children, title: _title }: AppShellProps) {
 
         <PremiumHeader onMenuClick={() => setMobileOpen(true)} />
 
-        <Sidebar
-          mobileOpen={mobileOpen}
-          onMobileClose={() => setMobileOpen(false)}
-        />
+        {/*
+          Sidebar is portaled to document.body so it escapes this div's
+          stacking context. This prevents iOS Safari fixed+transform blink.
+          On SSR / before mount, render inline as fallback.
+        */}
+        {mounted ? createPortal(sidebar, document.body) : sidebar}
 
         <main
           id="main-content"

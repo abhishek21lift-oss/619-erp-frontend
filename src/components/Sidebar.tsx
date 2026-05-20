@@ -10,6 +10,9 @@
  * — Pearl-white frosted surfaces, deep ambient layers, spring physics,
  *   illuminated active states, executive typography.
  * — Every pixel intentional. Nothing generic.
+ *
+ * Animation fix: translate3d-only (no separate opacity transition) to
+ * prevent iOS Safari flicker/blink on drawer open/close.
  */
 
 import React, {
@@ -623,11 +626,19 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           WebkitBackdropFilter: mobileOpen ? 'blur(12px) saturate(0.7)' : 'blur(0px)',
           opacity: mobileOpen ? 1 : 0,
           pointerEvents: mobileOpen ? 'auto' : 'none',
-          transition: 'opacity 380ms cubic-bezier(0.16,1,0.3,1), backdrop-filter 380ms ease',
+          transition: 'opacity 380ms cubic-bezier(0.16,1,0.3,1)',
         }}
       />
 
       {/* ── Floating luxury panel ─────────────────────────────────────── */}
+      {/*
+        ANIMATION FIX:
+        - Only animate `transform` (translate3d). No opacity transition on the
+          panel itself — that was causing the iOS Safari flicker/blink.
+        - translate3d forces GPU compositing; backfaceVisibility:hidden prevents
+          the compositor layer flash on first paint.
+        - The backdrop above still fades in/out for the dimming effect.
+      */}
       <aside
         aria-label="Mobile navigation"
         aria-modal="true"
@@ -641,10 +652,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           left: '10px',
           width: 'min(312px, calc(100vw - 52px))',
           borderRadius: '24px',
-          /* Layered pearl glass surface */
-          background: [
-            'linear-gradient(160deg, rgba(255,255,255,0.975) 0%, rgba(246,247,251,0.965) 100%)',
-          ].join(', '),
+          background: 'linear-gradient(160deg, rgba(255,255,255,0.975) 0%, rgba(246,247,251,0.965) 100%)',
           boxShadow: [
             '0 40px 100px rgba(8,12,22,0.26)',
             '0 12px 28px rgba(8,12,22,0.12)',
@@ -654,11 +662,16 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           ].join(', '),
           backdropFilter: 'blur(28px) saturate(2.0)',
           WebkitBackdropFilter: 'blur(28px) saturate(2.0)',
-          transform: mobileOpen ? 'translateX(0) scale(1)' : 'translateX(calc(-100% - 20px)) scale(0.96)',
-          opacity: mobileOpen ? 1 : 0,
+          // translate3d-only: no opacity animation on the panel
+          transform: mobileOpen
+            ? 'translate3d(0, 0, 0)'
+            : 'translate3d(calc(-100% - 24px), 0, 0)',
+          opacity: 1,
           pointerEvents: mobileOpen ? 'auto' : 'none',
-          transition: 'transform 440ms cubic-bezier(0.16,1,0.3,1), opacity 300ms ease',
+          transition: 'transform 400ms cubic-bezier(0.16, 1, 0.3, 1)',
           willChange: 'transform',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
         }}
       >
 
@@ -670,7 +683,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             borderBottom: '1px solid rgba(15,23,42,0.055)',
           }}
         >
-          {/* Ambient mesh — restrained, not loud */}
+          {/* Ambient mesh */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0"
@@ -685,7 +698,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
 
           {/* Brand + Close row */}
           <div className="relative flex items-center justify-between">
-            {/* Holographic logo tile + wordmark */}
             <div className="flex items-center gap-3">
               <div
                 className="relative flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-[14px]"
@@ -707,7 +719,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                   className="object-contain"
                   priority
                 />
-                {/* Live status beacon */}
                 <span className="absolute bottom-[4px] right-[4px] flex h-[9px] w-[9px]">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40" />
                   <span
@@ -789,7 +800,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.75)',
             }}
           >
-            {/* Animated pulse */}
             <span className="relative flex h-[8px] w-[8px] shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-35" style={{ animationDuration: '2s' }} />
               <span
@@ -821,7 +831,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           </div>
         </div>
 
-        {/* ── SEARCH ────────────────────────────────────────────────────── */}
+        {/* ── SEARCH ───────────────────────────────────────────────────── */}
         <div className="shrink-0 px-3 pt-3 pb-1.5">
           <div
             className="relative flex items-center gap-3 rounded-[15px] px-3.5 py-3 transition-all duration-250"
@@ -835,21 +845,10 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 : '0 1px 4px rgba(15,23,42,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
             }}
           >
-            {/* Animated search / command icon */}
             {searchFocused ? (
-              <Command
-                size={13}
-                strokeWidth={2}
-                className="shrink-0 transition-all duration-200"
-                style={{ color: '#7c3aed' }}
-              />
+              <Command size={13} strokeWidth={2} className="shrink-0" style={{ color: '#7c3aed' }} />
             ) : (
-              <Search
-                size={13}
-                strokeWidth={2.1}
-                className="shrink-0"
-                style={{ color: 'rgb(148,163,184)' }}
-              />
+              <Search size={13} strokeWidth={2.1} className="shrink-0" style={{ color: 'rgb(148,163,184)' }} />
             )}
             <input
               ref={searchRef}
@@ -871,17 +870,13 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 onClick={() => setSearch('')}
                 aria-label="Clear search"
                 className="flex h-[18px] w-[18px] items-center justify-center rounded-full transition-all duration-150 active:scale-90"
-                style={{
-                  background: 'rgba(15,23,42,0.07)',
-                  color: 'rgb(100,116,139)',
-                }}
+                style={{ background: 'rgba(15,23,42,0.07)', color: 'rgb(100,116,139)' }}
               >
                 <X size={9} strokeWidth={2.5} />
               </button>
             )}
           </div>
 
-          {/* Search results */}
           {search.trim() && searchResults.length > 0 && (
             <div
               className="mt-1.5 overflow-hidden rounded-[16px]"
@@ -892,17 +887,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
               }}
             >
               <div className="px-3.5 pt-2.5 pb-0.5">
-                <span
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 800,
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
-                    color: 'rgb(148,163,184)',
-                  }}
-                >
-                  Results
-                </span>
+                <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgb(148,163,184)' }}>Results</span>
               </div>
               <div className="px-2 pb-2 space-y-[2px]">
                 {searchResults.map((item, idx) => renderItem(item, idx, (item as any).groupId))}
@@ -912,28 +897,21 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           {search.trim() && searchResults.length === 0 && (
             <div
               className="mt-1.5 rounded-[14px] px-4 py-3 text-center"
-              style={{
-                background: 'rgba(255,255,255,0.80)',
-                border: '1px solid rgba(15,23,42,0.07)',
-                fontSize: '13px',
-                color: 'rgb(148,163,184)',
-              }}
+              style={{ background: 'rgba(255,255,255,0.80)', border: '1px solid rgba(15,23,42,0.07)', fontSize: '13px', color: 'rgb(148,163,184)' }}
             >
               No pages found
             </div>
           )}
         </div>
 
-        {/* ── NAV SCROLL AREA ───────────────────────────────────────────── */}
+        {/* ── NAV SCROLL AREA ──────────────────────────────────────────── */}
         <div
           className="flex-1 overflow-y-auto overscroll-contain scroll-smooth px-2.5 py-2"
           style={{ scrollbarWidth: 'none' }}
         >
-          <style>{`
-            .sidebar-scroll::-webkit-scrollbar { display: none; }
-          `}</style>
+          <style>{`.sidebar-scroll::-webkit-scrollbar { display: none; }`}</style>
 
-          {/* Dashboard — hero standalone item */}
+          {/* Dashboard hero item */}
           <Link
             href="/dashboard"
             aria-current={path === '/dashboard' ? 'page' : undefined}
@@ -950,99 +928,47 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             }}
           >
             {path !== '/dashboard' && (
-              <span
-                className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                style={{ background: 'rgba(15,23,42,0.030)' }}
-              />
+              <span className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-200 group-hover:opacity-100" style={{ background: 'rgba(15,23,42,0.030)' }} />
             )}
             {path === '/dashboard' && (
-              <span
-                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full"
-                style={{
-                  width: '3px',
-                  height: '18px',
-                  background: '#7c3aed',
-                  boxShadow: '0 0 8px rgba(139,92,246,0.40)',
-                }}
-              />
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full" style={{ width: '3px', height: '18px', background: '#7c3aed', boxShadow: '0 0 8px rgba(139,92,246,0.40)' }} />
             )}
             <span
               className="relative flex shrink-0 items-center justify-center"
               style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '10px',
+                width: '30px', height: '30px', borderRadius: '10px',
                 background: path === '/dashboard' ? 'rgba(139,92,246,0.12)' : 'rgba(15,23,42,0.042)',
-                boxShadow: path === '/dashboard'
-                  ? '0 1px 6px rgba(139,92,246,0.20), inset 0 1px 0 rgba(255,255,255,0.6)'
-                  : 'inset 0 1px 0 rgba(255,255,255,0.7)',
+                boxShadow: path === '/dashboard' ? '0 1px 6px rgba(139,92,246,0.20), inset 0 1px 0 rgba(255,255,255,0.6)' : 'inset 0 1px 0 rgba(255,255,255,0.7)',
                 color: path === '/dashboard' ? '#6d28d9' : 'rgba(71,85,105,0.75)',
               }}
             >
               <LayoutDashboard size={13} strokeWidth={1.5} />
             </span>
-            <span
-              className="flex-1 truncate leading-none"
-              style={{ fontSize: '13.5px', letterSpacing: '-0.01em' }}
-            >
-              Dashboard
-            </span>
-            {path === '/dashboard' && (
-              <Zap
-                size={10}
-                strokeWidth={2.2}
-                style={{ color: '#8b5cf6', flexShrink: 0 }}
-              />
-            )}
+            <span className="flex-1 truncate leading-none" style={{ fontSize: '13.5px', letterSpacing: '-0.01em' }}>Dashboard</span>
+            {path === '/dashboard' && <Zap size={10} strokeWidth={2.2} style={{ color: '#8b5cf6', flexShrink: 0 }} />}
           </Link>
 
           {/* Modules divider */}
           <div className="mx-1 mb-3 flex items-center gap-2.5" aria-hidden="true">
             <div className="h-px flex-1" style={{ background: 'rgba(15,23,42,0.07)' }} />
-            <span
-              style={{
-                fontSize: '8.5px',
-                fontWeight: 800,
-                letterSpacing: '0.24em',
-                textTransform: 'uppercase',
-                color: 'rgb(203,213,225)',
-              }}
-            >
-              Modules
-            </span>
+            <span style={{ fontSize: '8.5px', fontWeight: 800, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgb(203,213,225)' }}>Modules</span>
             <div className="h-px flex-1" style={{ background: 'rgba(15,23,42,0.07)' }} />
           </div>
 
-          {/* Main nav groups */}
           {NAV_GROUPS.map((group) => {
-            const groupItems = group.items.filter(
-              (i) => isVisibleForRole(i, user?.role) && !i.hidden
-            );
+            const groupItems = group.items.filter((i) => isVisibleForRole(i, user?.role) && !i.hidden);
             return renderGroup(group, groupItems);
           })}
 
           {/* System divider */}
           <div className="mx-1 my-3 flex items-center gap-2.5" aria-hidden="true">
             <div className="h-px flex-1" style={{ background: 'rgba(15,23,42,0.07)' }} />
-            <span
-              style={{
-                fontSize: '8.5px',
-                fontWeight: 800,
-                letterSpacing: '0.24em',
-                textTransform: 'uppercase',
-                color: 'rgb(203,213,225)',
-              }}
-            >
-              System
-            </span>
+            <span style={{ fontSize: '8.5px', fontWeight: 800, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'rgb(203,213,225)' }}>System</span>
             <div className="h-px flex-1" style={{ background: 'rgba(15,23,42,0.07)' }} />
           </div>
 
-          {/* Settings group */}
           {(() => {
-            const items = SETTINGS_GROUP.items.filter(
-              (i) => isVisibleForRole(i, user?.role) && !i.hidden
-            );
+            const items = SETTINGS_GROUP.items.filter((i) => isVisibleForRole(i, user?.role) && !i.hidden);
             return renderGroup(SETTINGS_GROUP, items);
           })()}
 
@@ -1062,13 +988,9 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             style={{
               background: 'rgba(255,255,255,0.82)',
               border: '1px solid rgba(15,23,42,0.068)',
-              boxShadow: [
-                '0 2px 10px rgba(15,23,42,0.05)',
-                'inset 0 1px 0 rgba(255,255,255,0.9)',
-              ].join(', '),
+              boxShadow: ['0 2px 10px rgba(15,23,42,0.05)', 'inset 0 1px 0 rgba(255,255,255,0.9)'].join(', '),
             }}
           >
-            {/* Gradient avatar */}
             <button
               onClick={() => { onMobileClose?.(); router.push('/settings'); }}
               aria-label="Go to settings"
@@ -1080,48 +1002,20 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
               }}
             >
               {initials}
-              {/* Online dot */}
-              <span
-                className="absolute flex"
-                style={{
-                  bottom: '-2px',
-                  right: '-2px',
-                  width: '10px',
-                  height: '10px',
-                }}
-              >
+              <span className="absolute flex" style={{ bottom: '-2px', right: '-2px', width: '10px', height: '10px' }}>
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30" style={{ animationDuration: '2.5s' }} />
-                <span
-                  className="relative h-[10px] w-[10px] rounded-full bg-emerald-400"
-                  style={{
-                    border: '1.5px solid rgba(255,255,255,1)',
-                    boxShadow: '0 0 0 2px rgba(52,211,153,0.18)',
-                  }}
-                />
+                <span className="relative h-[10px] w-[10px] rounded-full bg-emerald-400" style={{ border: '1.5px solid rgba(255,255,255,1)', boxShadow: '0 0 0 2px rgba(52,211,153,0.18)' }} />
               </span>
             </button>
 
-            {/* User identity */}
             <div className="min-w-0 flex-1">
-              <div
-                className="truncate leading-none"
-                style={{ fontSize: '13px', fontWeight: 680, color: 'rgb(15,23,42)', letterSpacing: '-0.01em' }}
-              >
+              <div className="truncate leading-none" style={{ fontSize: '13px', fontWeight: 680, color: 'rgb(15,23,42)', letterSpacing: '-0.01em' }}>
                 {user?.name || 'User'}
               </div>
               <div className="mt-[7px] flex items-center gap-1.5">
                 <span
                   className="rounded-full leading-none"
-                  style={{
-                    padding: '2.5px 7px',
-                    fontSize: '9px',
-                    fontWeight: 800,
-                    letterSpacing: '0.10em',
-                    textTransform: 'uppercase',
-                    color: '#6d28d9',
-                    background: 'rgba(139,92,246,0.09)',
-                    border: '1px solid rgba(139,92,246,0.16)',
-                  }}
+                  style={{ padding: '2.5px 7px', fontSize: '9px', fontWeight: 800, letterSpacing: '0.10em', textTransform: 'uppercase', color: '#6d28d9', background: 'rgba(139,92,246,0.09)', border: '1px solid rgba(139,92,246,0.16)' }}
                 >
                   {user?.role || 'Staff'}
                 </span>
@@ -1130,16 +1024,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
               </div>
             </div>
 
-            {/* Sign out */}
             <button
               onClick={() => { logout(); router.push('/login'); }}
               aria-label="Sign out"
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] transition-all duration-150 active:scale-[0.88]"
-              style={{
-                background: 'transparent',
-                color: 'rgb(148,163,184)',
-                border: '1px solid transparent',
-              }}
+              style={{ background: 'transparent', color: 'rgb(148,163,184)', border: '1px solid transparent' }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.background = 'rgba(244,63,94,0.07)';
                 (e.currentTarget as HTMLElement).style.color = '#e11d48';
