@@ -70,11 +70,10 @@ const MAX_VISIBLE = 5;
 const DEFAULT_DURATION = 4500;
 const EXIT_ANIM_MS = 220;
 
-function uuid() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-  return `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+import { uuid as generateUuid } from '@/lib/uuid';
+
+function toastId() {
+  return generateUuid() || `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -106,7 +105,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const addToast = React.useCallback(
     (message: string, type: ToastType, options?: ToastOptions): string => {
-      const id = uuid();
+      const id = toastId();
       const duration =
         options?.duration === undefined ? DEFAULT_DURATION : options.duration;
 

@@ -45,8 +45,8 @@ function MemberDashboard() {
     (async () => {
       try {
         const [me, b] = await Promise.all([
-          fetch('/api/v1/auth/me').then((r) => r.json()),
-          fetch('/api/v1/bookings').then((r) => r.json()),
+          fetch('/api/auth/me').then((r) => r.json()),
+          fetch('/api/bookings').then((r) => r.json()),
         ]);
         setMembership(me?.data?.membership ?? mockMembership);
         const todayDate = new Date().toISOString().slice(0, 10);

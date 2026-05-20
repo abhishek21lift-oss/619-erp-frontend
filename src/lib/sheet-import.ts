@@ -72,6 +72,8 @@ function loadSheetJS(): Promise<any> {
     const s = document.createElement('script');
     s.src = SHEETJS_CDN;
     s.async = true;
+    s.crossOrigin = 'anonymous';
+    s.integrity = 'sha512-LfS4E5NKQ+U6HrDqphY54ZmR1wX/AVT8BiNCJ2vFRCgY/JkPE3n8KBksHpmj2vwS+CGjWQ38QzJ6nY+zBGw9g==';
     s.onload = () => resolve((window as any).XLSX);
     s.onerror = () =>
       reject(new Error('Failed to load SheetJS from CDN'));

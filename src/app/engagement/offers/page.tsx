@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Tag, Percent, IndianRupee, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users } from 'lucide-react';
+import { uuid } from '@/lib/uuid';
 
 interface Offer { id:string; name:string; type:'percent'|'flat'|'free'; value:number; code:string; plan:string; validFrom:string; validUntil:string; usageLimit:number; used:number; status:'active'|'expired'|'draft'; }
 
@@ -29,7 +30,7 @@ function OffersContent() {
 
   function copyCode(code:string){ navigator.clipboard.writeText(code); setCopied(code); setTimeout(()=>setCopied(''),2000); }
   function addOffer(e:React.FormEvent){ e.preventDefault();
-    setOffers(p=>[...p,{id:crypto.randomUUID(),...form,used:0,status:'draft'}]);
+    setOffers(p=>[...p,{id:uuid(),...form,used:0,status:'draft'}]);
     setForm({name:'',type:'percent',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50}); setShowForm(false);
   }
   function genCode(){ const r=Math.random().toString(36).slice(2,8).toUpperCase(); setForm(f=>({...f,code:r})); }

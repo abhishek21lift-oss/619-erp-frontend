@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Bell, Send, Users, CheckCircle2, Clock, Plus, Trash2, MessageSquare, RefreshCw } from 'lucide-react';
+import { uuid } from '@/lib/uuid';
 import { api } from '@/lib/api';
 
 const TYPES = ['Birthday 🎂', 'Expiry Reminder ⚠️', 'Due Reminder 💳', 'Anniversary 🎉', 'General 📢', 'Custom'];
@@ -33,7 +34,7 @@ function NContent() {
     e.preventDefault(); if(!form.title||!form.body) return;
     setSending(true); await new Promise(r=>setTimeout(r,900));
     const rcpt = form.audience==='All Active Members'?memberCount:Math.max(1,Math.floor(memberCount*0.4));
-    setItems(prev=>[{id:crypto.randomUUID(),...form,status:'sent',created_at:new Date().toISOString(),recipients:rcpt},...prev]);
+    setItems(prev=>[{id:uuid(),...form,status:'sent',created_at:new Date().toISOString(),recipients:rcpt},...prev]);
     setForm({title:'',body:'',type:TYPES[0],audience:AUDIENCES[0]});
     setSending(false); setShowForm(false);
     setFlash(`✓ Notification sent to ${rcpt} members`); setTimeout(()=>setFlash(''),4000);

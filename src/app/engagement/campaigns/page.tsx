@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Send, Target, TrendingUp, Users, Plus, Edit2, Trash2, Calendar, CheckCircle2, Clock, PauseCircle } from 'lucide-react';
+import { uuid } from '@/lib/uuid';
 
 const STATUS_COLOR:Record<string,string> = { Active:'var(--success)', Draft:'var(--text-muted)', Scheduled:'var(--warning)', Paused:'var(--info)', Completed:'var(--accent)' };
 const CHANNELS = ['WhatsApp','SMS','Email','In-App','All Channels'];
@@ -30,7 +31,7 @@ function CampaignContent() {
   const convRate=totalSent>0?((totalConv/totalSent)*100).toFixed(1):'0';
 
   function addCampaign(e:React.FormEvent){ e.preventDefault();
-    setCampaigns(p=>[...p,{id:crypto.randomUUID(),...form,status:'Draft',sent:0,opened:0,converted:0}]);
+    setCampaigns(p=>[...p,{id:uuid(),...form,status:'Draft',sent:0,opened:0,converted:0}]);
     setForm({name:'',goal:'',channel:CHANNELS[0],audience:'',start:'',end:''}); setShowForm(false);
   }
 
