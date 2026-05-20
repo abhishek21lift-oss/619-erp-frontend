@@ -1,303 +1,225 @@
 'use client';
 
-import * as React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import {
-  CalendarPlus, ChevronRight, ClipboardList, CreditCard,
-  Dumbbell, FileText, LayoutDashboard, Pin, Salad,
-  Sparkles, UserCheck, UserPlus, Users, Zap,
-} from 'lucide-react';
-import AppShell from '@/components/AppShell';
+import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
-import { cn } from '@/components/ui';
+import AppShell from '@/components/AppShell';
+import {
+  UserPlus, Dumbbell, FileText, CreditCard, CalendarPlus,
+  ClipboardList, Salad, Target, ScanFace, Download,
+  ChevronRight, Zap, Star, Clock, ArrowRight, Search,
+  TrendingUp, Bell, Pin
+} from 'lucide-react';
 
-// ─── Actions config ───────────────────────────────────────────
-const PRIMARY_ACTIONS = [
-  {
-    id:'add-member',
-    label:'Add Member',
-    description:'Register a new gym member and set up their subscription',
-    href:'/clients/new',
-    icon:<UserPlus size={28}/>,
-    gradient:'from-violet-500 to-violet-700',
-    glow:'rgba(124,58,237,0.25)',
-    accent:'violet',
-    pinned:true,
-  },
-  {
-    id:'new-pt',
-    label:'New PT Client',
-    description:'Assign a personal trainer to a member and start their PT journey',
-    href:'/pt/clients/new',
-    icon:<Dumbbell size={28}/>,
-    gradient:'from-amber-500 to-orange-600',
-    glow:'rgba(245,158,11,0.25)',
-    accent:'amber',
-    pinned:true,
-  },
-  {
-    id:'create-invoice',
-    label:'Create Invoice',
-    description:'Generate a new billing invoice for services rendered',
-    href:'/sales/invoices/new',
-    icon:<FileText size={28}/>,
-    gradient:'from-sky-500 to-blue-600',
-    glow:'rgba(14,165,233,0.25)',
-    accent:'sky',
-    pinned:true,
-  },
-  {
-    id:'record-payment',
-    label:'Record Payment',
-    description:'Log an incoming payment and update member account balance',
-    href:'/payments/new',
-    icon:<CreditCard size={28}/>,
-    gradient:'from-emerald-500 to-teal-600',
-    glow:'rgba(16,185,129,0.25)',
-    accent:'emerald',
-    pinned:false,
-  },
-  {
-    id:'schedule-session',
-    label:'Schedule Session',
-    description:'Book a personal training session with a specific time slot',
-    href:'/pt/sessions/new',
-    icon:<CalendarPlus size={28}/>,
-    gradient:'from-rose-500 to-pink-600',
-    glow:'rgba(244,63,94,0.25)',
-    accent:'rose',
-    pinned:false,
-  },
-  {
-    id:'workout-plan',
-    label:'Workout Plan',
-    description:'Design a custom workout program for a member',
-    href:'/pt/workout-plans/new',
-    icon:<ClipboardList size={28}/>,
-    gradient:'from-indigo-500 to-purple-600',
-    glow:'rgba(99,102,241,0.25)',
-    accent:'indigo',
-    pinned:false,
-  },
-  {
-    id:'diet-plan',
-    label:'Diet Plan',
-    description:'Create a personalised nutrition plan for a member',
-    href:'/pt/diet-plans/new',
-    icon:<Salad size={28}/>,
-    gradient:'from-lime-500 to-green-600',
-    glow:'rgba(132,204,22,0.25)',
-    accent:'lime',
-    pinned:false,
-  },
-  {
-    id:'add-lead',
-    label:'Add Lead',
-    description:'Log a prospective member inquiry and begin follow-up',
-    href:'/sales/leads/new',
-    icon:<UserCheck size={28}/>,
-    gradient:'from-cyan-500 to-sky-600',
-    glow:'rgba(6,182,212,0.25)',
-    accent:'cyan',
-    pinned:false,
-  },
-  {
-    id:'checkin',
-    label:'Start Check-In',
-    description:'Open the biometric face-recognition check-in station',
-    href:'/checkin',
-    icon:<Users size={28}/>,
-    gradient:'from-violet-600 to-fuchsia-600',
-    glow:'rgba(192,38,211,0.25)',
-    accent:'fuchsia',
-    pinned:false,
-  },
-  {
-    id:'export',
-    label:'Export Report',
-    description:'Download financial or member data as a CSV or PDF',
-    href:'/reports',
-    icon:<Zap size={28}/>,
-    gradient:'from-slate-600 to-slate-800',
-    glow:'rgba(71,85,105,0.20)',
-    accent:'slate',
-    pinned:false,
-  },
+/* ─── types ───────────────────────────────────────────────── */
+interface Action {
+  id: string;
+  label: string;
+  desc: string;
+  icon: React.ElementType;
+  href: string;
+  color: string;
+  bg: string;
+  border: string;
+  glow: string;
+  tag?: string;
+  pinned?: boolean;
+}
+
+/* ─── actions ─────────────────────────────────────────────── */
+const ACTIONS: Action[] = [
+  { id:'add-member',   label:'Add Member',        desc:'Enroll a new gym member',         icon:UserPlus,     href:'/clients/new',               color:'text-emerald-600', bg:'from-emerald-50 to-teal-50',    border:'border-emerald-100', glow:'hover:shadow-emerald-100', tag:'Popular', pinned:true },
+  { id:'new-pt',       label:'New PT Client',     desc:'Assign personal trainer',         icon:Dumbbell,     href:'/clients/new',               color:'text-violet-600',  bg:'from-violet-50 to-purple-50',   border:'border-violet-100',  glow:'hover:shadow-violet-100',  tag:'Popular', pinned:true },
+  { id:'invoice',      label:'Create Invoice',    desc:'Generate member invoice',         icon:FileText,     href:'/payments',                  color:'text-blue-600',    bg:'from-blue-50 to-sky-50',        border:'border-blue-100',    glow:'hover:shadow-blue-100' },
+  { id:'payment',      label:'Record Payment',    desc:'Log a cash/UPI payment',          icon:CreditCard,   href:'/payments',                  color:'text-amber-600',   bg:'from-amber-50 to-yellow-50',    border:'border-amber-100',   glow:'hover:shadow-amber-100', tag:'Quick' },
+  { id:'session',      label:'Schedule Session',  desc:'Book a PT or group session',      icon:CalendarPlus, href:'/appointments',              color:'text-teal-600',    bg:'from-teal-50 to-cyan-50',       border:'border-teal-100',    glow:'hover:shadow-teal-100' },
+  { id:'workout',      label:'Create Workout',    desc:'Design a workout plan',           icon:ClipboardList,href:'/clients',                   color:'text-orange-600',  bg:'from-orange-50 to-amber-50',    border:'border-orange-100',  glow:'hover:shadow-orange-100' },
+  { id:'diet',         label:'Create Diet Plan',  desc:'Build a nutrition program',       icon:Salad,        href:'/clients',                   color:'text-lime-600',    bg:'from-lime-50 to-green-50',      border:'border-lime-100',    glow:'hover:shadow-lime-100' },
+  { id:'lead',         label:'Add Lead',          desc:'Capture a new prospect',          icon:Target,       href:'/clients/new',               color:'text-rose-600',    bg:'from-rose-50 to-pink-50',       border:'border-rose-100',    glow:'hover:shadow-rose-100', tag:'New' },
+  { id:'checkin',      label:'Start Check-In',    desc:'Open face-recognition kiosk',     icon:ScanFace,     href:'/checkin',                   color:'text-indigo-600',  bg:'from-indigo-50 to-violet-50',   border:'border-indigo-100',  glow:'hover:shadow-indigo-100', tag:'Live', pinned:true },
+  { id:'report',       label:'Export Report',     desc:'Download analytics PDF',          icon:Download,     href:'/reports',                   color:'text-slate-600',   bg:'from-slate-50 to-gray-50',      border:'border-slate-200',   glow:'hover:shadow-slate-100' },
 ];
 
+const RECENT = ['add-member', 'payment', 'checkin'];
 const AI_SUGGESTIONS = [
-  { label:'Send renewal reminders',  desc:'14 members expiring this week',    href:'/engagement/whatsapp',     badge:'Urgent' },
-  { label:'Review outstanding dues',  desc:'₹42K pending from 8 members',     href:'/finance/dues',            badge:'Finance' },
-  { label:'PT conversion follow-up',  desc:'6 trial members ready to convert', href:'/sales/leads',             badge:'Sales' },
+  { label:'Send renewal reminders', desc:'8 members expire this week', icon:Bell, color:'text-amber-600' },
+  { label:'Review overdue dues', desc:'₹24,500 pending collection', icon:TrendingUp, color:'text-rose-600' },
+  { label:'Schedule PT review', desc:'3 clients due for assessment', icon:Dumbbell, color:'text-violet-600' },
 ];
 
-const RECENT_ACTIONS = [
-  { label:'Added member — Rahul Sharma',    time:'2m ago',  href:'/clients/new' },
-  { label:'Recorded ₹4,500 payment',        time:'11m ago', href:'/payments/new' },
-  { label:'Scheduled PT session',           time:'32m ago', href:'/pt/sessions/new' },
-];
-
-// ─── Page ─────────────────────────────────────────────────────
+/* ─── component ───────────────────────────────────────────── */
 export default function QuickActionsPage() {
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [hover, setHover] = useState<string | null>(null);
+
+  const filtered = ACTIONS.filter(a =>
+    a.label.toLowerCase().includes(search.toLowerCase()) ||
+    a.desc.toLowerCase().includes(search.toLowerCase())
+  );
+  const pinned = filtered.filter(a => a.pinned);
+  const rest   = filtered.filter(a => !a.pinned);
+
   return (
     <Guard>
-      <QuickActionsContent />
+      <AppShell>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/20 px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+            <Link href="/dashboard" className="hover:text-slate-700 transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-slate-700">Quick Actions</span>
+          </nav>
+
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200">
+                  <Zap className="w-4 h-4 text-white" />
+                </div>
+                <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Quick Actions</h1>
+              </div>
+              <p className="text-sm text-slate-500">Command center for fast operations · 619 Fitness Studio</p>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search actions…"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-300 transition-all shadow-sm"
+            />
+          </div>
+
+          {/* Pinned / Primary Actions */}
+          {pinned.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Pin className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pinned</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {pinned.map(a => (
+                  <ActionCard key={a.id} action={a} hover={hover} setHover={setHover} large onClick={() => router.push(a.href)} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* All Actions Grid */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Star className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">All Actions</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {rest.map(a => (
+                <ActionCard key={a.id} action={a} hover={hover} setHover={setHover} onClick={() => router.push(a.href)} />
+              ))}
+            </div>
+          </section>
+
+          {/* Recent + AI Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Recent */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/80 p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-semibold text-slate-700">Recently Used</span>
+              </div>
+              <div className="space-y-2">
+                {ACTIONS.filter(a => RECENT.includes(a.id)).map(a => (
+                  <button
+                    key={a.id}
+                    onClick={() => router.push(a.href)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group"
+                  >
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${a.bg} border ${a.border} flex items-center justify-center`}>
+                      <a.icon className={`w-4 h-4 ${a.color}`} />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium text-slate-700">{a.label}</p>
+                      <p className="text-xs text-slate-400">{a.desc}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Suggestions */}
+            <div className="bg-gradient-to-br from-violet-50/80 to-purple-50/60 backdrop-blur-sm rounded-2xl border border-violet-200/60 p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                  <Zap className="w-3 h-3 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-violet-900">AI Suggested Actions</span>
+              </div>
+              <div className="space-y-2">
+                {AI_SUGGESTIONS.map(s => (
+                  <div key={s.label} className="flex items-center gap-3 p-3 rounded-xl bg-white/60 border border-white/80 hover:bg-white/90 transition-colors cursor-pointer">
+                    <s.icon className={`w-4 h-4 ${s.color} flex-shrink-0`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-700 truncate">{s.label}</p>
+                      <p className="text-xs text-slate-400 truncate">{s.desc}</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </AppShell>
     </Guard>
   );
 }
 
-function QuickActionsContent() {
-  const [pinned, setPinned] = React.useState<Set<string>>(
-    new Set(PRIMARY_ACTIONS.filter(a => a.pinned).map(a => a.id))
-  );
-
-  return (
-    <AppShell>
-      <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6">
-
-        {/* Breadcrumb */}
-        <nav className="mb-5 flex items-center gap-1.5 text-xs text-slate-400 pt-4">
-          <LayoutDashboard size={12} />
-          <Link href="/dashboard" className="hover:text-slate-700 transition-colors">Dashboard</Link>
-          <ChevronRight size={10} />
-          <span className="text-slate-700 font-medium">Quick Actions</span>
-        </nav>
-
-        {/* Header */}
-        <header className="mb-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 shadow-lg shadow-violet-200">
-              <Zap size={20} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Quick Actions</h1>
-              <p className="text-slate-500 text-sm">Mission control · fast operational shortcuts</p>
-            </div>
-          </div>
-        </header>
-
-        {/* AI Suggestions banner */}
-        <div className="mb-8 rounded-2xl border border-violet-200/80 bg-gradient-to-r from-violet-50 to-indigo-50 px-5 py-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles size={14} className="text-violet-600" />
-            <span className="text-xs font-bold text-violet-700 uppercase tracking-wider">AI Suggested Actions</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {AI_SUGGESTIONS.map(s => (
-              <Link key={s.label} href={s.href}
-                className="group flex items-center justify-between rounded-xl bg-white/70 border border-violet-100 px-3.5 py-2.5 hover:bg-white hover:shadow-sm hover:border-violet-300 transition-all">
-                <div>
-                  <p className="text-sm font-semibold text-slate-800 group-hover:text-violet-800">{s.label}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{s.desc}</p>
-                </div>
-                <span className="ml-3 shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">{s.badge}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Pinned */}
-        {pinned.size > 0 && (
-          <section className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <Pin size={13} className="text-slate-400" />
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pinned</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {PRIMARY_ACTIONS.filter(a => pinned.has(a.id)).map(action => (
-                <ActionCard key={action.id} action={action} isPinned={pinned.has(action.id)}
-                  onTogglePin={() => {
-                    setPinned(prev => {
-                      const next = new Set(prev);
-                      if (next.has(action.id)) next.delete(action.id);
-                      else next.add(action.id);
-                      return next;
-                    });
-                  }} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* All actions */}
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">All Actions</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {PRIMARY_ACTIONS.filter(a => !pinned.has(a.id)).map(action => (
-              <ActionCard key={action.id} action={action} isPinned={false}
-                onTogglePin={() => {
-                  setPinned(prev => {
-                    const next = new Set(prev);
-                    next.add(action.id);
-                    return next;
-                  });
-                }} />
-            ))}
-          </div>
-        </section>
-
-        {/* Recent */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recent Actions</span>
-          </div>
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm divide-y divide-slate-50">
-            {RECENT_ACTIONS.map(r => (
-              <Link key={r.label} href={r.href}
-                className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/60 transition-colors">
-                <span className="text-sm font-medium text-slate-700">{r.label}</span>
-                <span className="text-xs text-slate-400">{r.time}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-      </div>
-    </AppShell>
-  );
-}
-
-// ─── Action Card ──────────────────────────────────────────────
-function ActionCard({ action, isPinned, onTogglePin }: {
-  action: typeof PRIMARY_ACTIONS[0];
-  isPinned: boolean;
-  onTogglePin: () => void;
+/* ─── sub-component ────────────────────────────────────────── */
+function ActionCard({
+  action, hover, setHover, onClick, large = false
+}: {
+  action: Action;
+  hover: string | null;
+  setHover: (id: string | null) => void;
+  onClick: () => void;
+  large?: boolean;
 }) {
+  const isHovered = hover === action.id;
   return (
-    <div className="group relative rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-      {/* Glow bg */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{ background: `radial-gradient(circle at 50% 0%, ${action.glow}, transparent 70%)` }} />
-
-      <div className="relative p-5">
-        <div className="flex items-start justify-between mb-4">
-          <div className={cn('flex h-14 w-14 items-center justify-center rounded-2xl text-white bg-gradient-to-br shadow-lg', action.gradient)}
-            style={{ boxShadow: `0 8px 24px ${action.glow}` }}>
-            {action.icon}
-          </div>
-          <button onClick={onTogglePin}
-            className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-lg border text-[10px] transition-all',
-              isPinned
-                ? 'bg-violet-50 border-violet-200 text-violet-600'
-                : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-violet-200 hover:text-violet-500'
-            )}>
-            <Pin size={11} />
-          </button>
-        </div>
-        <h3 className="text-base font-bold text-slate-900 mb-1">{action.label}</h3>
-        <p className="text-xs text-slate-500 leading-relaxed mb-4">{action.description}</p>
-        <Link href={action.href}
-          className={cn(
-            'inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-white bg-gradient-to-r shadow-sm hover:shadow-md transition-all duration-200',
-            action.gradient
-          )}>
-          Open
-          <ChevronRight size={12} />
-        </Link>
+    <button
+      onMouseEnter={() => setHover(action.id)}
+      onMouseLeave={() => setHover(null)}
+      onClick={onClick}
+      className={`relative w-full text-left rounded-2xl bg-gradient-to-br ${action.bg} border ${action.border} ${
+        large ? 'p-6' : 'p-4'
+      } transition-all duration-200 hover:shadow-lg ${action.glow} hover:-translate-y-0.5 group overflow-hidden`}
+    >
+      {/* Tag */}
+      {action.tag && (
+        <span className="absolute top-3 right-3 text-xs font-semibold text-slate-500 bg-white/70 px-2 py-0.5 rounded-full border border-slate-200/60">
+          {action.tag}
+        </span>
+      )}
+      {/* Icon */}
+      <div className={`${
+        large ? 'w-12 h-12 mb-4 rounded-xl' : 'w-9 h-9 mb-3 rounded-lg'
+      } bg-white border ${action.border} flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform`}>
+        <action.icon className={`${large ? 'w-6 h-6' : 'w-4 h-4'} ${action.color}`} />
       </div>
-    </div>
+      <p className={`font-semibold text-slate-800 ${large ? 'text-base mb-1' : 'text-sm'}`}>{action.label}</p>
+      {large && <p className="text-xs text-slate-500">{action.desc}</p>}
+      {/* Arrow on hover */}
+      <ArrowRight className={`absolute bottom-4 right-4 w-4 h-4 text-slate-300 transition-all ${
+        isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1'
+      }`} />
+    </button>
   );
 }

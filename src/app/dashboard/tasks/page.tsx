@@ -1,294 +1,263 @@
 'use client';
 
-import * as React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import {
-  AlertCircle, CalendarDays, CheckCircle2, ChevronRight,
-  Circle, Clock, Flag, GripVertical, KanbanSquare,
-  LayoutDashboard, LayoutList, Plus, User, X,
-} from 'lucide-react';
-import AppShell from '@/components/AppShell';
 import Guard from '@/components/Guard';
-import { cn } from '@/components/ui';
+import AppShell from '@/components/AppShell';
+import {
+  CheckSquare, Plus, ChevronRight, Filter, Search,
+  Calendar, List, Columns, Grid, Flag, User, Clock,
+  MoreHorizontal, CircleDashed, CircleCheck, Circle,
+  AlertTriangle, ArrowUpRight, Zap, Tag
+} from 'lucide-react';
 
-// ─── Types ────────────────────────────────────────────────────
-type Priority = 'critical' | 'high' | 'medium' | 'low';
-type Status   = 'todo' | 'in_progress' | 'review' | 'done';
-type ViewMode = 'kanban' | 'list';
+/* ─── types ───────────────────────────────────────────────── */
+type Status = 'todo' | 'in-progress' | 'done';
+type Priority = 'urgent' | 'high' | 'medium' | 'low';
+type View = 'kanban' | 'list';
 
 interface Task {
   id: string;
   title: string;
-  category: string;
-  priority: Priority;
+  desc?: string;
   status: Status;
-  assignee?: string;
-  due?: string;
-  tags?: string[];
+  priority: Priority;
+  assignee: string;
+  due: string;
+  category: string;
+  tags: string[];
 }
 
-// ─── Mock tasks ───────────────────────────────────────────────
+/* ─── mock data ───────────────────────────────────────────── */
 const TASKS: Task[] = [
-  { id:'t1',  title:'Send renewal WhatsApp to 14 expiring members', category:'Member',     priority:'critical', status:'todo',        assignee:'Rahul',    due:'Today',     tags:['urgent','crm'] },
-  { id:'t2',  title:'Collect ₹42,000 outstanding dues',             category:'Finance',    priority:'critical', status:'in_progress', assignee:'Admin',    due:'Today',     tags:['finance'] },
-  { id:'t3',  title:'Repair treadmill #3 — belt slipping',          category:'Maintenance',priority:'high',     status:'todo',        assignee:'Suresh',   due:'Tomorrow',  tags:['equipment'] },
-  { id:'t4',  title:'Review Priya Mehta\'s 3-month progress',       category:'PT',         priority:'high',     status:'in_progress', assignee:'Trainer',  due:'Today',     tags:['pt'] },
-  { id:'t5',  title:'Approve new Gold plan pricing',                category:'Admin',      priority:'high',     status:'review',      assignee:'Admin',    due:'This week', tags:['plans'] },
-  { id:'t6',  title:'Update CCTV footage archive',                  category:'Operations', priority:'medium',   status:'todo',        assignee:'Suresh',   due:'This week', tags:['ops'] },
-  { id:'t7',  title:'Follow up on 6 trial conversion leads',        category:'Sales',      priority:'medium',   status:'in_progress', assignee:'Sales',    due:'This week', tags:['sales'] },
-  { id:'t8',  title:'Print new membership cards batch',             category:'Admin',      priority:'medium',   status:'review',      assignee:'Admin',    due:'This week', tags:['admin'] },
-  { id:'t9',  title:'Monthly P&L review with management',           category:'Finance',    priority:'high',     status:'todo',        assignee:'Admin',    due:'This week', tags:['finance'] },
-  { id:'t10', title:'Replace 5 broken dumbbell collars',            category:'Maintenance',priority:'low',      status:'done',        assignee:'Suresh',   due:'Done',      tags:['equipment'] },
-  { id:'t11', title:'Create June offer campaigns on WhatsApp',      category:'Marketing',  priority:'medium',   status:'done',        assignee:'Admin',    due:'Done',      tags:['marketing'] },
-  { id:'t12', title:'Onboard 2 new trainers — orientation done',    category:'HR',         priority:'low',      status:'done',        assignee:'Admin',    due:'Done',      tags:['hr'] },
+  { id:'t1', title:'Follow up with Ankit Joshi renewal', desc:'Membership expires in 2 days. Call and offer discount.', status:'todo', priority:'urgent', assignee:'Vikram', due:'Today', category:'Renewal', tags:['Follow-up','Revenue'] },
+  { id:'t2', title:'Fix treadmill #3 belt', desc:'Member reported slipping. Needs maintenance check.', status:'todo', priority:'high', assignee:'Staff', due:'Today', category:'Maintenance', tags:['Equipment'] },
+  { id:'t3', title:'Collect dues from 8 members', desc:'Total: ₹38,400 outstanding. Send WhatsApp reminders.', status:'in-progress', priority:'urgent', assignee:'Sneha', due:'Today', category:'Finance', tags:['Dues','Finance'] },
+  { id:'t4', title:'Update diet plans for PT batch', desc:'3 clients need updated macro targets for June.', status:'in-progress', priority:'medium', assignee:'Nisha', due:'Tomorrow', category:'Training', tags:['PT','Nutrition'] },
+  { id:'t5', title:'Review new trainer applications', desc:'2 applicants pending HR review from last week.', status:'todo', priority:'medium', assignee:'Admin', due:'23 May', category:'HR', tags:['Staff'] },
+  { id:'t6', title:'Approve April expense report', desc:'Pending sign-off from management.', status:'in-progress', priority:'high', assignee:'Admin', due:'Today', category:'Finance', tags:['Approval'] },
+  { id:'t7', title:'Send birthday messages', desc:'5 members have birthdays this week.', status:'done', priority:'low', assignee:'Sneha', due:'Done', category:'Engagement', tags:['CRM'] },
+  { id:'t8', title:'Post workout content reel', desc:'619 weekly reel — legs day theme.', status:'done', priority:'medium', assignee:'Admin', due:'Done', category:'Marketing', tags:['Social'] },
+  { id:'t9', title:'Schedule AC maintenance', desc:'Annual servicing due for main hall units.', status:'todo', priority:'low', assignee:'Staff', due:'26 May', category:'Maintenance', tags:['Facility'] },
+  { id:'t10', title:'Onboard 3 new PT clients', desc:'Walk-throughs scheduled for this week.', status:'in-progress', priority:'high', assignee:'Vikram', due:'Tomorrow', category:'Training', tags:['PT','New'] },
 ];
 
-const PRIORITY_CONFIG: Record<Priority, { label:string; color:string; dot:string; flag:string }> = {
-  critical: { label:'Critical', color:'text-rose-700',   dot:'bg-rose-500',   flag:'text-rose-500' },
-  high:     { label:'High',     color:'text-amber-700',  dot:'bg-amber-500',  flag:'text-amber-500' },
-  medium:   { label:'Medium',   color:'text-sky-700',    dot:'bg-sky-500',    flag:'text-sky-500' },
-  low:      { label:'Low',      color:'text-slate-500',  dot:'bg-slate-400',  flag:'text-slate-400' },
+const COLS: { id: Status; label: string; icon: React.ElementType; color: string; count: number }[] = [
+  { id:'todo',        label:'To Do',      icon:CircleDashed, color:'text-slate-500', count: TASKS.filter(t=>t.status==='todo').length },
+  { id:'in-progress', label:'In Progress',icon:Circle,       color:'text-amber-500', count: TASKS.filter(t=>t.status==='in-progress').length },
+  { id:'done',        label:'Done',       icon:CircleCheck,  color:'text-emerald-500', count: TASKS.filter(t=>t.status==='done').length },
+];
+
+const PCOLORS: Record<Priority, string> = {
+  urgent:'bg-rose-100 text-rose-700 border-rose-200',
+  high:  'bg-orange-100 text-orange-700 border-orange-200',
+  medium:'bg-amber-100 text-amber-700 border-amber-200',
+  low:   'bg-slate-100 text-slate-500 border-slate-200',
 };
 
-const STATUS_COLUMNS: { id: Status; label: string; color: string; bg: string }[] = [
-  { id:'todo',        label:'To Do',       color:'text-slate-600',  bg:'bg-slate-100' },
-  { id:'in_progress', label:'In Progress', color:'text-violet-700', bg:'bg-violet-100' },
-  { id:'review',      label:'Review',      color:'text-amber-700',  bg:'bg-amber-100' },
-  { id:'done',        label:'Done',        color:'text-emerald-700',bg:'bg-emerald-100' },
-];
-
-// ─── Page ─────────────────────────────────────────────────────
+/* ─── component ───────────────────────────────────────────── */
 export default function TasksPage() {
+  const [view, setView] = useState<View>('kanban');
+  const [search, setSearch] = useState('');
+  const [filterPriority, setFilterPriority] = useState<Priority | 'all'>('all');
+
+  const filtered = TASKS.filter(t =>
+    (filterPriority === 'all' || t.priority === filterPriority) &&
+    (t.title.toLowerCase().includes(search.toLowerCase()) ||
+     t.category.toLowerCase().includes(search.toLowerCase()))
+  );
+
   return (
     <Guard>
-      <TasksContent />
+      <AppShell>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50/80 px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+            <Link href="/dashboard" className="hover:text-slate-700 transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-slate-700">Tasks</span>
+          </nav>
+
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-200">
+                  <CheckSquare className="w-4 h-4 text-white" />
+                </div>
+                <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Tasks</h1>
+                <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">{TASKS.filter(t=>t.status!=='done').length} open</span>
+              </div>
+              <p className="text-sm text-slate-500">Internal operations management · 619 Fitness Studio</p>
+            </div>
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-all shadow-md">
+              <Plus className="w-4 h-4" />
+              New Task
+            </button>
+          </div>
+
+          {/* Toolbar */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search tasks…"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-300 transition-all shadow-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Priority filter */}
+              {(['all','urgent','high','medium','low'] as (Priority | 'all')[]).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setFilterPriority(p)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold capitalize transition-all ${
+                    filterPriority === p ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  {p === 'all' ? 'All' : p}
+                </button>
+              ))}
+              {/* View toggle */}
+              <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <button
+                  onClick={() => setView('kanban')}
+                  className={`p-2 transition-colors ${view==='kanban' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
+                  title="Kanban view"
+                >
+                  <Columns className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setView('list')}
+                  className={`p-2 transition-colors ${view==='list' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
+                  title="List view"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Kanban View */}
+          {view === 'kanban' && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {COLS.map(col => (
+                <div key={col.id} className="bg-slate-50/80 rounded-2xl border border-slate-200/80 overflow-hidden">
+                  {/* Column header */}
+                  <div className="px-4 py-3 border-b border-slate-200/60 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <col.icon className={`w-4 h-4 ${col.color}`} />
+                      <span className="text-sm font-semibold text-slate-700">{col.label}</span>
+                    </div>
+                    <span className="text-xs font-bold text-slate-400 bg-white border border-slate-200 w-6 h-6 rounded-full flex items-center justify-center">{filtered.filter(t=>t.status===col.id).length}</span>
+                  </div>
+                  {/* Cards */}
+                  <div className="p-3 space-y-2 min-h-[200px]">
+                    {filtered.filter(t => t.status === col.id).map(task => (
+                      <TaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* List View */}
+          {view === 'list' && (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    {['Task','Category','Priority','Assignee','Due',''].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filtered.map(task => (
+                    <tr key={task.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-4 py-3">
+                        <div className="flex items-start gap-2">
+                          {task.status === 'done' ? <CircleCheck className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" /> :
+                           task.status === 'in-progress' ? <Circle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> :
+                           <CircleDashed className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />}
+                          <div>
+                            <p className={`text-sm font-medium ${task.status==='done' ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.title}</p>
+                            {task.desc && <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{task.desc}</p>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">{task.category}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize ${PCOLORS[task.priority]}`}>{task.priority}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+                            <span className="text-xs font-bold text-slate-600">{task.assignee[0]}</span>
+                          </div>
+                          <span className="text-xs text-slate-600">{task.assignee}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-medium ${
+                          task.due === 'Today' ? 'text-rose-600' :
+                          task.due === 'Tomorrow' ? 'text-amber-600' :
+                          task.due === 'Done' ? 'text-emerald-600' : 'text-slate-500'
+                        }`}>{task.due}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-slate-100">
+                          <MoreHorizontal className="w-4 h-4 text-slate-400" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+        </div>
+      </AppShell>
     </Guard>
   );
 }
 
-function TasksContent() {
-  const [tasks, setTasks] = React.useState<Task[]>(TASKS);
-  const [view, setView] = React.useState<ViewMode>('kanban');
-  const [filterPriority, setFilterPriority] = React.useState<Priority|'all'>('all');
-  const [showNewTask, setShowNewTask] = React.useState(false);
-  const [newTitle, setNewTitle] = React.useState('');
-
-  const filtered = tasks.filter(t =>
-    filterPriority === 'all' || t.priority === filterPriority
-  );
-
-  const byStatus = (s: Status) => filtered.filter(t => t.status === s);
-
-  const stats = {
-    total: tasks.length,
-    done:  tasks.filter(t => t.status === 'done').length,
-    critical: tasks.filter(t => t.priority === 'critical' && t.status !== 'done').length,
-  };
-
-  const toggleDone = (id: string) => {
-    setTasks(prev => prev.map(t =>
-      t.id === id ? { ...t, status: t.status === 'done' ? 'todo' : 'done' } : t
-    ));
-  };
-
-  const addTask = () => {
-    if (!newTitle.trim()) return;
-    const newTask: Task = {
-      id: `t${Date.now()}`,
-      title: newTitle.trim(),
-      category: 'Admin',
-      priority: 'medium',
-      status: 'todo',
-      assignee: 'Admin',
-      due: 'This week',
-    };
-    setTasks(prev => [newTask, ...prev]);
-    setNewTitle('');
-    setShowNewTask(false);
-  };
-
+/* ─── TaskCard ─────────────────────────────────────────────── */
+function TaskCard({ task }: { task: Task }) {
   return (
-    <AppShell>
-      <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6">
-
-        {/* Breadcrumb */}
-        <nav className="mb-5 flex items-center gap-1.5 text-xs text-slate-400 pt-4">
-          <LayoutDashboard size={12} />
-          <Link href="/dashboard" className="hover:text-slate-700 transition-colors">Dashboard</Link>
-          <ChevronRight size={10} />
-          <span className="text-slate-700 font-medium">Tasks</span>
-        </nav>
-
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Tasks</h1>
-            <p className="text-slate-500 text-sm mt-0.5">
-              {stats.done}/{stats.total} complete
-              {stats.critical > 0 && (
-                <span className="ml-2 text-rose-600 font-semibold">· {stats.critical} critical open</span>
-              )}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* View toggle */}
-            <div className="flex items-center bg-slate-100 rounded-xl p-1">
-              <button onClick={() => setView('kanban')}
-                className={cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
-                  view==='kanban' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500')}>
-                <KanbanSquare size={13}/> Kanban
-              </button>
-              <button onClick={() => setView('list')}
-                className={cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
-                  view==='list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500')}>
-                <LayoutList size={13}/> List
-              </button>
-            </div>
-            <button onClick={() => setShowNewTask(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-violet-700 shadow-sm shadow-violet-200 transition-all">
-              <Plus size={13}/> New Task
-            </button>
-          </div>
-        </header>
-
-        {/* New task modal */}
-        {showNewTask && (
-          <div className="mb-6 rounded-2xl border border-violet-200 bg-violet-50/80 p-4">
-            <div className="flex items-center gap-3">
-              <input
-                autoFocus
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                onKeyDown={e => { if(e.key==='Enter') addTask(); if(e.key==='Escape') setShowNewTask(false); }}
-                placeholder="Task title… (Enter to save, Esc to cancel)"
-                className="flex-1 rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500/30 transition-all"
-              />
-              <button onClick={addTask} className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-700 transition-colors">Add</button>
-              <button onClick={() => setShowNewTask(false)} className="text-slate-400 hover:text-slate-700"><X size={16}/></button>
-            </div>
-          </div>
-        )}
-
-        {/* Priority filters */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
-          {(['all','critical','high','medium','low'] as const).map(p => (
-            <button key={p} onClick={() => setFilterPriority(p)}
-              className={cn(
-                'whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-all',
-                filterPriority === p
-                  ? 'bg-violet-600 text-white shadow-sm'
-                  : 'bg-white border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
-              )}>
-              {p === 'all' ? `All (${tasks.length})` : p}
-            </button>
-          ))}
-        </div>
-
-        {/* Kanban view */}
-        {view === 'kanban' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            {STATUS_COLUMNS.map(col => (
-              <div key={col.id}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={cn('rounded-lg px-2.5 py-1 text-xs font-bold', col.bg, col.color)}>
-                    {col.label}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">{byStatus(col.id).length}</span>
-                </div>
-                <div className="space-y-2">
-                  {byStatus(col.id).map(task => (
-                    <KanbanCard key={task.id} task={task} onToggle={() => toggleDone(task.id)} />
-                  ))}
-                  {byStatus(col.id).length === 0 && (
-                    <div className="rounded-2xl border-2 border-dashed border-slate-200 py-8 text-center">
-                      <p className="text-xs text-slate-400">Nothing here</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* List view */}
-        {view === 'list' && (
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-            <div className="grid grid-cols-[1fr,auto,auto,auto,auto] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Task</span><span>Priority</span><span>Status</span><span>Assignee</span><span>Due</span>
-            </div>
-            {filtered.map(task => (
-              <div key={task.id}
-                className="grid grid-cols-[1fr,auto,auto,auto,auto] items-center gap-4 px-5 py-3.5 border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
-                <div className="flex items-center gap-3 min-w-0">
-                  <button onClick={() => toggleDone(task.id)}
-                    className={cn('shrink-0 transition-colors', task.status==='done' ? 'text-emerald-500' : 'text-slate-300 hover:text-slate-500')}>
-                    {task.status === 'done' ? <CheckCircle2 size={16}/> : <Circle size={16}/>}
-                  </button>
-                  <span className={cn('text-sm font-medium truncate', task.status==='done' && 'line-through text-slate-400')}>{task.title}</span>
-                </div>
-                <span className={cn('flex items-center gap-1 text-xs font-semibold', PRIORITY_CONFIG[task.priority].color)}>
-                  <Flag size={11} className={PRIORITY_CONFIG[task.priority].flag} />{PRIORITY_CONFIG[task.priority].label}
-                </span>
-                <span className={cn(
-                  'rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                  task.status==='done'        ? 'bg-emerald-50 text-emerald-700' :
-                  task.status==='in_progress' ? 'bg-violet-50 text-violet-700' :
-                  task.status==='review'      ? 'bg-amber-50 text-amber-700' :
-                                               'bg-slate-100 text-slate-600'
-                )}>
-                  {task.status.replace('_',' ')}
-                </span>
-                <span className="flex items-center gap-1 text-xs text-slate-500">
-                  <User size={11} />{task.assignee}
-                </span>
-                <span className="flex items-center gap-1 text-xs text-slate-400">
-                  <Clock size={11} />{task.due}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-      </div>
-    </AppShell>
-  );
-}
-
-// ─── Kanban Card ──────────────────────────────────────────────
-function KanbanCard({ task, onToggle }: { task: Task; onToggle: () => void }) {
-  const p = PRIORITY_CONFIG[task.priority];
-  return (
-    <div className={cn(
-      'group rounded-2xl bg-white border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-4',
-      task.status === 'done' ? 'border-emerald-100 opacity-70' : 'border-slate-100'
-    )}>
+    <div className="bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer group">
       <div className="flex items-start justify-between gap-2 mb-2">
-        <span className={cn('flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide', p.color)}>
-          <span className={cn('h-1.5 w-1.5 rounded-full', p.dot)} />
-          {p.label}
-        </span>
-        <button onClick={onToggle}
-          className={cn('shrink-0 transition-colors', task.status==='done' ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-500')}>
-          <CheckCircle2 size={15}/>
+        <p className={`text-sm font-medium leading-snug ${
+          task.status === 'done' ? 'line-through text-slate-400' : 'text-slate-800'
+        }`}>{task.title}</p>
+        <button className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          <MoreHorizontal className="w-3.5 h-3.5 text-slate-400" />
         </button>
       </div>
-      <p className={cn('text-sm font-medium text-slate-800 leading-snug mb-3', task.status==='done' && 'line-through text-slate-400')}>
-        {task.title}
-      </p>
+      {task.desc && <p className="text-xs text-slate-400 mb-3 line-clamp-2">{task.desc}</p>}
       <div className="flex items-center justify-between">
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">{task.category}</span>
         <div className="flex items-center gap-1.5">
-          {task.assignee && (
-            <span className="flex items-center gap-1 text-[10px] text-slate-400">
-              <User size={10}/>{task.assignee}
-            </span>
-          )}
-          {task.due && task.due !== 'Done' && (
-            <span className={cn('flex items-center gap-1 text-[10px] font-medium',
-              task.due==='Today' ? 'text-rose-600' : 'text-slate-400')}>
-              <CalendarDays size={10}/>{task.due}
-            </span>
-          )}
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize ${PCOLORS[task.priority]}`}>
+            {task.priority}
+          </span>
+          <span className="text-xs text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">{task.category}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+            <span className="text-xs font-bold text-slate-600">{task.assignee[0]}</span>
+          </div>
+          <span className={`text-xs font-medium ${
+            task.due === 'Today' ? 'text-rose-500' :
+            task.due === 'Tomorrow' ? 'text-amber-500' :
+            task.due === 'Done' ? 'text-emerald-500' : 'text-slate-400'
+          }`}>{task.due}</span>
         </div>
       </div>
     </div>

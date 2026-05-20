@@ -1,301 +1,273 @@
 'use client';
 
-import * as React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import {
-  AlertTriangle, ArrowRight, BarChart2, Brain,
-  ChevronRight, Flame, LayoutDashboard,
-  Lightbulb, Sparkles, TrendingDown, TrendingUp, Users, Zap,
-} from 'lucide-react';
-import AppShell from '@/components/AppShell';
 import Guard from '@/components/Guard';
-import { cn } from '@/components/ui';
+import AppShell from '@/components/AppShell';
+import {
+  Brain, TrendingUp, TrendingDown, AlertTriangle, Users,
+  CreditCard, Target, Zap, ChevronRight, ArrowUpRight,
+  RefreshCw, Sparkles, BarChart2, Activity, MessageSquare,
+  ChevronDown, CheckCircle2
+} from 'lucide-react';
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+} from 'recharts';
 
-// ─── Types ────────────────────────────────────────────────────
-interface InsightCard {
-  id: string;
-  priority: 'critical' | 'warning' | 'positive' | 'info';
-  category: string;
-  title: string;
-  body: string;
-  metric?: string;
-  metricDelta?: string;
-  metricPositive?: boolean;
-  action?: string;
-  actionHref?: string;
-  icon: React.ReactNode;
-}
+/* ─── mock data ───────────────────────────────────────────── */
+const REVENUE_DATA = [
+  { month:'Nov', actual:182000, predicted:null },
+  { month:'Dec', actual:204000, predicted:null },
+  { month:'Jan', actual:195000, predicted:null },
+  { month:'Feb', actual:221000, predicted:null },
+  { month:'Mar', actual:238000, predicted:null },
+  { month:'Apr', actual:251000, predicted:null },
+  { month:'May', actual:243000, predicted:null },
+  { month:'Jun', actual:null,   predicted:268000 },
+  { month:'Jul', actual:null,   predicted:285000 },
+  { month:'Aug', actual:null,   predicted:296000 },
+];
 
-// ─── Mock insights ────────────────────────────────────────────
-const INSIGHTS: InsightCard[] = [
+const INSIGHTS = [
   {
-    id:'i1',
-    priority:'critical',
-    category:'Churn Risk',
+    id:'churn', type:'warning', priority:'high',
     title:'12 members likely to churn',
-    body:'Members who haven\'t checked in for 21+ days and have a subscription expiring in 14 days. Immediate outreach recommended.',
-    metric:'12 at-risk',
-    metricDelta:'+3 vs last week',
-    metricPositive:false,
-    action:'View members',
-    actionHref:'/insights/renewal',
-    icon:<AlertTriangle size={20}/>,
+    desc:'These members have not visited in 18+ days and their memberships expire within 10 days.',
+    action:'View Members', actionHref:'/clients',
+    icon:TrendingDown, color:'text-rose-600', bg:'from-rose-50 to-pink-50', border:'border-rose-200', dot:'bg-rose-500'
   },
   {
-    id:'i2',
-    priority:'positive',
-    category:'Sales Growth',
-    title:'PT conversions up 18% this month',
-    body:'Trial session completions are converting to full PT packages at a higher rate. Trainer Rahul has the best conversion ratio at 74%.',
-    metric:'+18%',
-    metricDelta:'vs previous month',
-    metricPositive:true,
-    action:'View PT report',
-    actionHref:'/finance/trainer-revenue',
-    icon:<TrendingUp size={20}/>,
+    id:'pt-conv', type:'success', priority:'medium',
+    title:'PT conversions up 18%',
+    desc:'Free trial completions have driven a strong uptick in paid personal training packages this month.',
+    action:'View PT Clients', actionHref:'/clients',
+    icon:TrendingUp, color:'text-emerald-600', bg:'from-emerald-50 to-teal-50', border:'border-emerald-200', dot:'bg-emerald-500'
   },
   {
-    id:'i3',
-    priority:'positive',
-    category:'Revenue Forecast',
-    title:'Revenue projected to increase 22% next week',
-    body:'Based on scheduled renewals, pending invoices, and historical patterns, next week shows strong revenue signals — 8 renewals and 3 PT packages due.',
-    metric:'₹1.8L forecast',
-    metricDelta:'+22% projected',
-    metricPositive:true,
-    action:'View forecast',
-    actionHref:'/finance/forecast',
-    icon:<BarChart2 size={20}/>,
+    id:'revenue', type:'insight', priority:'medium',
+    title:'Revenue may increase next week',
+    desc:'Based on renewal patterns, ₹65,000+ in renewals are expected next week from 14 members.',
+    action:'View Forecast', actionHref:'/finance/forecast',
+    icon:TrendingUp, color:'text-blue-600', bg:'from-blue-50 to-sky-50', border:'border-blue-200', dot:'bg-blue-500'
   },
   {
-    id:'i4',
-    priority:'warning',
-    category:'Capacity',
-    title:'Peak hours overloaded — 6–8 PM slot',
-    body:'Evening slots are consistently at 95%+ capacity. Consider staggered session starts or a new batch for Tuesday/Thursday to improve member experience.',
-    metric:'95% capacity',
-    metricDelta:'Mon–Fri 6–8 PM',
-    metricPositive:false,
-    action:'View attendance',
-    actionHref:'/insights/traffic',
-    icon:<Flame size={20}/>,
+    id:'peak', type:'warning', priority:'low',
+    title:'Peak hours overloaded',
+    desc:'7–8 AM sees 78% capacity utilisation. Consider staggering PT sessions during this window.',
+    action:'View Attendance', actionHref:'/attendance',
+    icon:Activity, color:'text-amber-600', bg:'from-amber-50 to-yellow-50', border:'border-amber-200', dot:'bg-amber-500'
   },
   {
-    id:'i5',
-    priority:'info',
-    category:'Retention',
-    title:'Retention rate stable at 78%',
-    body:'30-day rolling retention is holding steady. Members on PT plans show 91% retention vs 68% for gym-only. Cross-selling PT is the highest-impact retention lever.',
-    metric:'78%',
-    metricDelta:'30-day retention',
-    metricPositive:true,
-    action:'View retention',
-    actionHref:'/insights/renewal',
-    icon:<Users size={20}/>,
+    id:'dues', type:'alert', priority:'high',
+    title:'₹84,200 in outstanding dues',
+    desc:'24 members have unpaid balances. Automated WhatsApp reminders recommended.',
+    action:'View Dues', actionHref:'/finance/dues',
+    icon:AlertTriangle, color:'text-orange-600', bg:'from-orange-50 to-amber-50', border:'border-orange-200', dot:'bg-orange-500'
   },
   {
-    id:'i6',
-    priority:'warning',
-    category:'Finance',
-    title:'₹42,000 in outstanding dues — 8 members',
-    body:'8 members have overdue balances averaging ₹5,250 each. 3 accounts are 30+ days overdue. Automated WhatsApp reminders can be triggered from the Engagement module.',
-    metric:'₹42K',
-    metricDelta:'8 accounts',
-    metricPositive:false,
-    action:'Send reminders',
-    actionHref:'/finance/dues',
-    icon:<TrendingDown size={20}/>,
+    id:'retention', type:'insight', priority:'medium',
+    title:'Retention rate at 84% — above target',
+    desc:'Monthly retention has held above 80% for 4 consecutive months. New onboarding flow is working.',
+    action:'View Insights', actionHref:'/insights/renewal',
+    icon:CheckCircle2, color:'text-teal-600', bg:'from-teal-50 to-cyan-50', border:'border-teal-200', dot:'bg-teal-500'
   },
 ];
 
-const METRICS = [
-  { label:'AI Confidence',  value:'94%',     sub:'Model accuracy',      color:'violet' },
-  { label:'Data Points',    value:'12,840',  sub:'Last 90 days',        color:'sky' },
-  { label:'Predictions',    value:'6',       sub:'Active insights',     color:'emerald' },
-  { label:'Actions Taken',  value:'18',      sub:'From AI suggestions', color:'amber' },
+const AI_METRICS = [
+  { label:'Churn Risk Score', value:'2.4/10', status:'Low Risk', icon:Users, statusColor:'text-emerald-600', statusBg:'bg-emerald-50' },
+  { label:'Revenue Confidence', value:'91%', status:'High Accuracy', icon:BarChart2, statusColor:'text-blue-600', statusBg:'bg-blue-50' },
+  { label:'Retention Forecast', value:'86%', status:'+2% vs last month', icon:Target, statusColor:'text-teal-600', statusBg:'bg-teal-50' },
+  { label:'PT Conversion Rate', value:'34%', status:'+18% growth', icon:Zap, statusColor:'text-violet-600', statusBg:'bg-violet-50' },
 ];
 
-const PRIORITY_STYLES = {
-  critical: {
-    border: 'border-rose-200',
-    badge:  'bg-rose-50 text-rose-700 ring-rose-200',
-    icon:   'bg-rose-100 text-rose-600',
-    bar:    'bg-rose-500',
-    glow:   'rgba(244,63,94,0.07)',
-  },
-  warning: {
-    border: 'border-amber-200',
-    badge:  'bg-amber-50 text-amber-700 ring-amber-200',
-    icon:   'bg-amber-100 text-amber-600',
-    bar:    'bg-amber-500',
-    glow:   'rgba(245,158,11,0.07)',
-  },
-  positive: {
-    border: 'border-emerald-200',
-    badge:  'bg-emerald-50 text-emerald-700 ring-emerald-200',
-    icon:   'bg-emerald-100 text-emerald-600',
-    bar:    'bg-emerald-500',
-    glow:   'rgba(16,185,129,0.07)',
-  },
-  info: {
-    border: 'border-sky-200',
-    badge:  'bg-sky-50 text-sky-700 ring-sky-200',
-    icon:   'bg-sky-100 text-sky-600',
-    bar:    'bg-sky-500',
-    glow:   'rgba(14,165,233,0.07)',
-  },
-};
+type Priority = 'all' | 'high' | 'medium' | 'low';
 
-// ─── Page ─────────────────────────────────────────────────────
+/* ─── component ───────────────────────────────────────────── */
 export default function AIInsightsPage() {
+  const [filter, setFilter] = useState<Priority>('all');
+  const [chat, setChat] = useState('');
+
+  const visible = INSIGHTS.filter(i => filter === 'all' || i.priority === filter);
+
   return (
     <Guard>
-      <AIInsightsContent />
-    </Guard>
-  );
-}
+      <AppShell>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-function AIInsightsContent() {
-  const [filter, setFilter] = React.useState<'all'|'critical'|'warning'|'positive'|'info'>('all');
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+            <Link href="/dashboard" className="hover:text-slate-700 transition-colors">Dashboard</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-slate-700">AI Insights</span>
+          </nav>
 
-  const filtered = INSIGHTS.filter(i => filter === 'all' || i.priority === filter);
-
-  return (
-    <AppShell>
-      <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6">
-
-        {/* Breadcrumb */}
-        <nav className="mb-5 flex items-center gap-1.5 text-xs text-slate-400 pt-4">
-          <LayoutDashboard size={12} />
-          <Link href="/dashboard" className="hover:text-slate-700 transition-colors">Dashboard</Link>
-          <ChevronRight size={10} />
-          <span className="text-slate-700 font-medium">AI Insights</span>
-        </nav>
-
-        {/* Hero header */}
-        <header className="relative rounded-3xl overflow-hidden mb-10 px-8 py-8"
-          style={{
-            background:'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(99,102,241,0.06) 50%, rgba(14,165,233,0.05) 100%)',
-            border:'1px solid rgba(124,58,237,0.15)',
-          }}>
-          <div className="absolute inset-0 opacity-30" style={{
-            backgroundImage:'radial-gradient(circle at 80% 20%, rgba(124,58,237,0.15) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(99,102,241,0.10) 0%, transparent 50%)'
-          }} />
-          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-xl shadow-violet-200">
-                <Brain size={26} className="text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">AI Insights</h1>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-600 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wide">
-                    <Sparkles size={9} /> BETA
-                  </span>
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200">
+                  <Brain className="w-4 h-4 text-white" />
                 </div>
-                <p className="text-slate-500 text-sm">Predictive analytics · 619 Fitness Intelligence Engine</p>
+                <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">AI Insights</h1>
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-50 border border-violet-200 text-xs font-semibold text-violet-700">
+                  <Sparkles className="w-3 h-3" />
+                  Powered by AI
+                </span>
               </div>
+              <p className="text-sm text-slate-500">Intelligent business analytics · 619 Fitness Studio</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {METRICS.map(m => (
-                <div key={m.label} className="rounded-2xl bg-white/60 border border-white/80 backdrop-blur-sm px-3.5 py-3 text-center">
-                  <p className="text-xl font-bold text-slate-900 tabular-nums">{m.value}</p>
-                  <p className="text-[10px] font-medium text-slate-500 mt-0.5">{m.label}</p>
-                  <p className="text-[10px] text-slate-400">{m.sub}</p>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-all shadow-sm">
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
+
+          {/* AI Metric Strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {AI_METRICS.map(m => (
+              <div key={m.label} className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <m.icon className="w-5 h-5 text-slate-400" />
+                  <span className={`text-xs font-semibold ${m.statusColor} ${m.statusBg} px-2 py-0.5 rounded-full`}>{m.status}</span>
+                </div>
+                <p className="text-2xl font-bold text-slate-900 tracking-tight">{m.value}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{m.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Main content: Insights + Chat */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Insights Feed */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Filter */}
+              <div className="flex items-center gap-2">
+                {(['all','high','medium','low'] as Priority[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setFilter(p)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
+                      filter === p
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    {p === 'all' ? 'All Insights' : `${p} Priority`}
+                  </button>
+                ))}
+              </div>
+
+              {/* Cards */}
+              {visible.map((insight, idx) => (
+                <div
+                  key={insight.id}
+                  className={`bg-gradient-to-br ${insight.bg} border ${insight.border} rounded-2xl p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5`}
+                  style={{ animationDelay: `${idx * 60}ms` }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-white/80 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <insight.icon className={`w-5 h-5 ${insight.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <h3 className="text-sm font-semibold text-slate-800">{insight.title}</h3>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                          insight.priority === 'high' ? 'bg-rose-100 text-rose-700' :
+                          insight.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+                          'bg-slate-100 text-slate-500'
+                        }`}>
+                          {insight.priority}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed mb-3">{insight.desc}</p>
+                      <Link
+                        href={insight.actionHref}
+                        className={`inline-flex items-center gap-1.5 text-xs font-semibold ${insight.color} hover:opacity-80 transition-opacity`}
+                      >
+                        {insight.action}
+                        <ArrowUpRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        </header>
 
-        {/* Filter pills */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
-          {(['all','critical','warning','positive','info'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={cn(
-                'whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-all',
-                filter === f
-                  ? 'bg-violet-600 text-white shadow-sm shadow-violet-200'
-                  : 'bg-white border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
-              )}>
-              {f === 'all' ? `All (${INSIGHTS.length})` : f}
-            </button>
-          ))}
-        </div>
+            {/* Right sidebar */}
+            <div className="space-y-4">
 
-        {/* Insights grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {filtered.map((insight, i) => {
-            const s = PRIORITY_STYLES[insight.priority];
-            return (
-              <div key={insight.id}
-                className={cn('group relative rounded-2xl bg-white border shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden', s.border)}
-                style={{ background: `linear-gradient(160deg, ${s.glow}, transparent 60%)` }}
-              >
-                {/* priority bar */}
-                <div className={cn('absolute top-0 left-0 right-0 h-0.5', s.bar)} />
-
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', s.icon)}>
-                        {insight.icon}
-                      </div>
-                      <div>
-                        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1', s.badge)}>
-                          {insight.category}
-                        </span>
-                      </div>
-                    </div>
-                    {insight.metric && (
-                      <div className="text-right shrink-0">
-                        <p className={cn('text-lg font-bold tabular-nums', insight.metricPositive ? 'text-emerald-700' : 'text-rose-700')}>
-                          {insight.metric}
-                        </p>
-                        <p className="text-[10px] text-slate-400">{insight.metricDelta}</p>
-                      </div>
-                    )}
+              {/* Revenue forecast chart */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/80 p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Revenue Forecast</p>
+                    <p className="text-xs text-slate-400">6-month prediction</p>
                   </div>
-
-                  <h3 className="text-base font-bold text-slate-900 mb-2">{insight.title}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed mb-4">{insight.body}</p>
-
-                  {insight.action && insight.actionHref && (
-                    <Link href={insight.actionHref}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700 hover:text-violet-900 transition-colors">
-                      {insight.action} <ArrowRight size={12} />
-                    </Link>
-                  )}
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                </div>
+                <ResponsiveContainer width="100%" height={140}>
+                  <AreaChart data={REVENUE_DATA} margin={{ top:4, right:4, left:-28, bottom:0 }}>
+                    <defs>
+                      <linearGradient id="actGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="predGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="month" tick={{ fontSize:10, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize:10, fill:'#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, '']} labelStyle={{ fontSize:11 }} contentStyle={{ fontSize:11, borderRadius:8, border:'1px solid #e2e8f0' }} />
+                    <Area type="monotone" dataKey="actual" stroke="#8b5cf6" strokeWidth={2} fill="url(#actGrad)" dot={false} name="Actual" />
+                    <Area type="monotone" dataKey="predicted" stroke="#06b6d4" strokeWidth={2} strokeDasharray="5 3" fill="url(#predGrad)" dot={false} name="Predicted" />
+                  </AreaChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-4 mt-3">
+                  <span className="flex items-center gap-1.5 text-xs text-slate-500"><span className="w-3 h-0.5 bg-violet-500 inline-block rounded" />Actual</span>
+                  <span className="flex items-center gap-1.5 text-xs text-slate-500"><span className="w-3 h-0.5 bg-cyan-500 inline-block rounded border-dashed" />Predicted</span>
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        {/* AI assistant footer */}
-        <div className="mt-10 rounded-2xl border border-violet-200/60 bg-gradient-to-r from-violet-50/80 to-indigo-50/80 px-6 py-5">
-          <div className="flex items-center gap-3 mb-2">
-            <Lightbulb size={16} className="text-violet-600" />
-            <span className="text-sm font-bold text-violet-800">619 Intelligence Engine</span>
-            <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-600">Powered by pattern analysis</span>
-          </div>
-          <p className="text-sm text-slate-600">
-            Insights are generated from your last 90 days of operational data — check-ins, payments, PT sessions, and lead flow.
-            Refresh daily for the freshest predictions.
-          </p>
-          <div className="mt-3 flex items-center gap-3">
-            <Link href="/insights/renewal"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-700 transition-colors">
-              <Zap size={12} /> Deep Analysis
-            </Link>
-            <Link href="/finance/forecast"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-violet-200 bg-white px-4 py-2 text-xs font-bold text-violet-700 hover:bg-violet-50 transition-colors">
-              Revenue Forecast
-            </Link>
+              {/* AI Assistant */}
+              <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl border border-violet-200/60 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                    <MessageSquare className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-violet-900">Ask AI Assistant</span>
+                </div>
+                <div className="space-y-2 mb-3">
+                  {['Why are members churning?', 'What drove PT growth?', 'Forecast next month revenue'].map(q => (
+                    <button
+                      key={q}
+                      onClick={() => setChat(q)}
+                      className="w-full text-left text-xs text-violet-700 bg-white/70 border border-violet-200/60 rounded-xl px-3 py-2 hover:bg-white transition-colors"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={chat}
+                    onChange={e => setChat(e.target.value)}
+                    placeholder="Ask anything about your gym…"
+                    className="flex-1 text-xs px-3 py-2 rounded-xl bg-white border border-violet-200/60 focus:outline-none focus:ring-2 focus:ring-violet-300/40 placeholder:text-violet-400 text-slate-700"
+                  />
+                  <button className="px-3 py-2 rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 transition-colors">
+                    Ask
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
-
-      </div>
-    </AppShell>
+      </AppShell>
+    </Guard>
   );
 }
