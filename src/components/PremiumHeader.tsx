@@ -369,7 +369,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                 return (
                   <button
                     type="button"
-                    key={item.href}
+                    key={item.label}
                     onClick={() => { router.push(item.href); onClose(); }}
                     className={cn(
                       'group/item flex w-full items-start gap-2.5 rounded-[12px] px-2.5 py-2 text-left transition-all duration-150',
@@ -377,27 +377,25 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                     )}
                     style={ia ? { background: section.glow.replace('0.18', '0.10') } : {}}
                   >
-                    <div>
-                      <div
-                        className="text-[13px] font-semibold leading-snug"
-                        style={{ color: ia ? section.accent : '#1e293b' }}
-                      >
+                    <div
+                      className={cn(
+                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border text-[12px] font-bold transition-all',
+                        ia
+                          ? 'border-violet-200 bg-violet-50 text-violet-600'
+                          : 'border-slate-200 bg-white text-slate-400 group-hover/item:border-violet-100 group-hover/item:bg-violet-50/50 group-hover/item:text-violet-500',
+                      )}
+                    >
+                      {item.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-semibold" style={{ color: ia ? 'var(--text-primary, #0f172a)' : undefined }}>
                         {item.label}
-                        {item.isNew && (
-                          <span
-                            className="ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white"
-                            style={{ background: section.gradient }}
-                          >
-                            New
-                          </span>
-                        )}
                       </div>
                       {item.description && (
-                        <div className="mt-0.5 text-[11px] text-slate-400 group-hover/item:text-slate-500">
-                          {item.description}
-                        </div>
+                        <div className="mt-0.5 truncate text-[11px] text-slate-400">{item.description}</div>
                       )}
                     </div>
+                    {ia && <Check size={12} className="mt-2 shrink-0 text-violet-500" />}
                   </button>
                 );
               })}
@@ -626,18 +624,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
          * Note: if you later replace /619-logo.png with a proper transparent PNG,
          * just remove the .logo-img-clean class entirely — no other change needed.
          */
-        .logo-img-clean {
-          /* Remove white bg: use CSS filter to make near-white pixels transparent */
-          mix-blend-mode: normal;
-          /* Boost contrast slightly so the deer silhouette stays crisp */
-          filter: contrast(1.05) drop-shadow(0 1px 3px rgba(15,23,42,0.08));
-          /* Ensure PNG whites are visually suppressed on white navbar via multiply */
-          /* We keep the container background transparent so multiply shows the logo cleanly */
-        }
-
-        /* On the navbar (white/near-white surface) we use multiply to suppress the
-           white canvas of the JPG/PNG. On colored surfaces this needs a true transparent PNG.
-           This is the best CSS-only solution without a transparent asset. */
         .logo-img-clean {
           mix-blend-mode: multiply;
           filter: contrast(1.08) saturate(1.1);
@@ -989,8 +975,8 @@ function QuickActionsPortal({
           {QUICK_ACTIONS.filter((a) => a.group === group).map((action) => (
             <button
               type="button"
-              key={action.href}
-              onClick={() => { router.push(action.href); onClose(); }}
+          key={action.label}
+          onClick={() => { router.push(action.href); onClose(); }}
               className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-violet-50 hover:text-violet-700"
             >
               <span className="text-violet-500">{action.icon}</span>
@@ -1094,7 +1080,7 @@ function AccountMenuPortal({
       ] as const).map((item) => (
         <button
           type="button"
-          key={item.href}
+          key={item.label}
           onClick={() => { router.push(item.href); onClose(); }}
           className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold text-slate-700 transition-all hover:bg-slate-50"
         >

@@ -79,10 +79,6 @@ const nextConfig = {
   // correct Next.js 15 API (replaces experimental.serverComponentsExternalPackages).
   serverExternalPackages: [
     '@vladmandic/face-api',
-    '@tensorflow/tfjs',
-    '@tensorflow/tfjs-core',
-    '@tensorflow/tfjs-backend-webgl',
-    '@tensorflow/tfjs-backend-cpu',
     'canvas',
   ],
 
@@ -123,10 +119,6 @@ const nextConfig = {
       config.externals = [
         ...existing,
         '@vladmandic/face-api',
-        '@tensorflow/tfjs',
-        '@tensorflow/tfjs-core',
-        '@tensorflow/tfjs-backend-webgl',
-        '@tensorflow/tfjs-backend-cpu',
         'canvas',
       ];
     }

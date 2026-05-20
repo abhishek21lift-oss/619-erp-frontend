@@ -1,5 +1,3 @@
-'use client';
-
 import type { Role } from '@/lib/nav-config';
 
 export type ModuleFieldType = 'text' | 'number' | 'date' | 'select' | 'textarea';

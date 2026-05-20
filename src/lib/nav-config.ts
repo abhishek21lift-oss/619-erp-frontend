@@ -3,7 +3,7 @@
 // Single source of truth for all navigation.
 // Sidebar, CommandPalette, and Breadcrumbs all consume this file.
 
-export type Role = 'admin' | 'manager' | 'reception' | 'trainer' | 'member';
+export type Role = 'admin' | 'manager' | 'staff' | 'reception' | 'receptionist' | 'trainer' | 'member';
 
 export type NavItem = {
   href: string;
