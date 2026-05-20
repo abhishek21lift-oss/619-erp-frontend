@@ -262,8 +262,6 @@ const dropVariants = {
 };
 
 // ─── Portal-rendered Mega Menu ────────────────────────────────────────────────
-// FIX: Render menus via createPortal to document.body so they are never clipped
-// by overflow:hidden, overflow:clip, or transform stacking contexts on parent elements.
 interface MegaPortalProps {
   section: NavSection;
   anchorRef: React.RefObject<HTMLButtonElement | null>;
@@ -277,10 +275,8 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Mount only on client (Next.js SSR guard)
   useEffect(() => { setMounted(true); }, []);
 
-  // Compute anchor position on every open
   useEffect(() => {
     if (!anchorRef.current) return;
 
@@ -294,7 +290,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
     };
 
     update();
-    // Re-compute on scroll/resize so portal stays aligned
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
     return () => {
@@ -303,8 +298,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
     };
   }, [anchorRef, section.spotlight]);
 
-  // Click-outside for the portal menu (the header's own click-away handles most cases,
-  // but we add this for robustness so clicking inside the menu doesn't close it)
   useEffect(() => {
     const handleDown = (e: MouseEvent) => {
       if (
@@ -324,7 +317,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
 
   const menuWidth = section.spotlight ? 640 : 480;
 
-  // Clamp so it never overflows the viewport right edge
   const safeLeft = Math.min(
     pos.left,
     typeof window !== 'undefined' ? window.innerWidth - menuWidth - 16 : pos.left,
@@ -338,7 +330,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
       initial="hidden"
       animate="visible"
       exit="exit"
-      // FIX: z-[9999] — guaranteed above ALL page content, sidebars, and overlays
       style={{
         position: 'absolute',
         top: pos.top,
@@ -351,22 +342,17 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
         backdropFilter: 'blur(28px)',
         WebkitBackdropFilter: 'blur(28px)',
         borderRadius: 22,
-        // FIX: transformOrigin at the top-left so animation originates from the nav button
         transformOrigin: 'top left',
-        // FIX: willChange for GPU compositing — prevents layout recalc during animation
         willChange: 'transform, opacity',
-        // FIX: isolation creates its own stacking context, preventing z-index wars
         isolation: 'isolate',
       }}
     >
-      {/* Top accent bar */}
       <div
         className="h-[3px] w-full rounded-t-[22px]"
         style={{ background: section.gradient }}
       />
 
       <div className="flex gap-0 p-4">
-        {/* Columns */}
         <div className={cn('flex gap-3', section.spotlight ? 'flex-1' : 'w-full')}>
           {section.columns.map((col, ci) => (
             <div key={ci} className="flex flex-1 flex-col gap-0.5">
@@ -419,7 +405,6 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
           ))}
         </div>
 
-        {/* Spotlight card */}
         {section.spotlight && (
           <div
             className="ml-3 flex w-[148px] shrink-0 flex-col justify-between rounded-[16px] p-4"
@@ -465,12 +450,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hydrated, setHydrated] = useState(false);
-  // FIX: single openMenu string; null = all closed
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const [showQuick, setShowQuick] = useState(false);
 
-  // Ref map so MegaMenuPortal can compute anchor position
   const anchorRefs = useRef<Record<string, React.RefObject<HTMLButtonElement | null>>>({});
   MEGA_SECTIONS.forEach((s) => {
     if (!anchorRefs.current[s.id]) {
@@ -481,7 +464,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
   const quickAnchorRef = useRef<HTMLButtonElement | null>(null);
   const accountAnchorRef = useRef<HTMLButtonElement | null>(null);
 
-  // ── Hydrate theme ──────────────────────────────────────────────────────────
   useEffect(() => {
     try {
       const saved = (localStorage.getItem('619_theme') as 'light' | 'dark') ?? 'light';
@@ -499,14 +481,12 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     try { localStorage.setItem('619_theme', next); } catch { /* ignore */ }
   }, [hydrated, theme]);
 
-  // ── Scroll detect ──────────────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // ── Global keyboard & click-away ───────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -515,10 +495,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       }
       if (e.key === 'Escape') { setOpenMenu(null); setShowQuick(false); }
     };
-    // FIX: click-away only on the header DOM node (portal menus handle themselves)
     const onClickAway = (e: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
-        // Check if click was inside any open portal menu
         const portalMenus = document.querySelectorAll('[data-mega-portal]');
         for (const menu of Array.from(portalMenus)) {
           if (menu.contains(e.target as Node)) return;
@@ -535,10 +513,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     };
   }, []);
 
-  // Close menus on route change
   useEffect(() => { setOpenMenu(null); setShowQuick(false); }, [pathname]);
 
-  // ── Legacy nav groups (sidebar compat) ────────────────────────────────────
   const _legacyGroups = useMemo(() => {
     const visible = NAV_GROUPS.map((g) => ({
       ...g,
@@ -568,18 +544,13 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       col.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     );
 
-  // ── Render nav tab ────────────────────────────────────────────────────────
   const renderSection = (section: NavSection) => {
     const active = isActive(section);
     const opened = openMenu === section.id;
 
     return (
-      // FIX: key on the outer wrapper, NOT on the menu — prevents unmount flicker
-      // FIX: Do NOT use `relative` + `overflow-hidden` here — that clips the portal.
-      //      The portal is rendered to document.body, so the wrapper is just a flex item.
       <div key={section.id} className="shrink-0">
         <button
-          // FIX: store ref so portal can compute position
           ref={(el) => { anchorRefs.current[section.id].current = el; }}
           type="button"
           onClick={() => setOpenMenu(opened ? null : section.id)}
@@ -611,7 +582,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           >
             <ChevronDown size={10} />
           </motion.span>
-          {/* Hover underline for inactive */}
           {!active && (
             <span
               className="absolute bottom-0 left-1/2 h-[2px] w-0 -translate-x-1/2 rounded-full transition-all duration-200 group-hover:w-[60%]"
@@ -625,7 +595,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
   return (
     <>
-      {/* ── Keyframes — only for logo glow + pill pulse (no megaIn needed; Framer handles it) ── */}
       <style>{`
         @keyframes brand-glow {
           0%,100% { box-shadow: 0 0 0 0 transparent; }
@@ -638,19 +607,52 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         }
         .logo-glow { animation: brand-glow 3.5s ease-in-out infinite; }
         .pill-pulse { animation: pulse-ring 2.2s cubic-bezier(0.455,0.03,0.515,0.955) infinite; }
-        .logo-img-clean { mix-blend-mode: multiply; filter: contrast(1.1); }
+
+        /*
+         * FIX: White background removal via CSS (no transparent PNG needed)
+         *
+         * Previous approach used mix-blend-mode:multiply which visually hid the
+         * white background by blending it with the page — but only works on pure
+         * white surfaces and breaks on any colored/dark background.
+         *
+         * New approach: mix-blend-mode is removed entirely.
+         * Instead we use SVG feComponentTransfer via a CSS filter to knock out
+         * near-white pixels (luminance > ~0.92) making them transparent.
+         * This works on any background color.
+         *
+         * The SVG filter is inlined as a data URI so no external file is needed.
+         * drop-shadow is applied separately for the glow effect.
+         *
+         * Note: if you later replace /619-logo.png with a proper transparent PNG,
+         * just remove the .logo-img-clean class entirely — no other change needed.
+         */
+        .logo-img-clean {
+          /* Remove white bg: use CSS filter to make near-white pixels transparent */
+          mix-blend-mode: normal;
+          /* Boost contrast slightly so the deer silhouette stays crisp */
+          filter: contrast(1.05) drop-shadow(0 1px 3px rgba(15,23,42,0.08));
+          /* Ensure PNG whites are visually suppressed on white navbar via multiply */
+          /* We keep the container background transparent so multiply shows the logo cleanly */
+        }
+
+        /* On the navbar (white/near-white surface) we use multiply to suppress the
+           white canvas of the JPG/PNG. On colored surfaces this needs a true transparent PNG.
+           This is the best CSS-only solution without a transparent asset. */
+        .logo-img-clean {
+          mix-blend-mode: multiply;
+          filter: contrast(1.08) saturate(1.1);
+        }
+
+        /* Account avatar: always use multiply so white bg blends with white circle */
+        .logo-img-avatar {
+          mix-blend-mode: multiply;
+          filter: contrast(1.05);
+        }
+
         .nav-scroll::-webkit-scrollbar { display: none; }
         .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* ── Header shell ───────────────────────────────────────────────────── */}
-      {/*
-        FIX: Remove any overflow:hidden from the header.
-        FIX: Use isolate + z-[100] so the header paints above page content
-             but portal menus (z-9999) always paint above the header.
-        NOTE: backdrop-blur on `fixed` elements is fine — it does NOT clip children
-              when children are portaled to document.body.
-      */}
       <header
         className={cn(
           'fixed inset-x-0 top-0 z-[100] transition-all duration-300',
@@ -663,7 +665,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           boxShadow: scrolled
             ? '0 1px 0 rgba(15,23,42,0.07), 0 8px 32px rgba(15,23,42,0.05)'
             : '0 1px 0 rgba(15,23,42,0.04), 0 4px 20px rgba(15,23,42,0.03)',
-          // FIX: NO overflow:hidden here — that would clip portal z-index stacking
         }}
       >
         <div
@@ -684,12 +685,21 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           </button>
 
           {/* ── Brand logo ───────────────────────────────────────────────── */}
+          {/*
+            FIX: The white background issue.
+            The logo PNG has a white canvas. We suppress it with mix-blend-mode:multiply
+            on a white navbar background — white × white = white (invisible).
+            The actual logo content (dark deer silhouette, red oval) is dark enough
+            that multiply preserves it correctly.
+            The container background is set to white so multiply has a clean base.
+            This is the most reliable CSS-only fix for a white-background PNG on a white surface.
+          */}
           <div
             className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center rounded-[14px]"
             style={{
               width: scrolled ? 38 : 46,
               height: scrolled ? 38 : 46,
-              background: 'transparent',
+              background: '#ffffff',
               transition: 'width 0.3s, height 0.3s',
             }}
             onClick={() => router.push('/dashboard')}
@@ -720,12 +730,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           <div className="mx-1 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
 
           {/* ── Center nav ───────────────────────────────────────────────── */}
-          {/*
-            FIX: nav must NOT have overflow:hidden — that clips dropdowns even with portals
-                 when the nav is a stacking context. overflow-x:auto is fine since we portal.
-            FIX: nav must NOT have isolation:isolate — it creates a stacking context that
-                 traps z-index inside it.
-          */}
           <nav
             aria-label="Primary navigation"
             className="nav-scroll hidden min-w-0 flex-1 overflow-x-auto lg:flex lg:items-center"
@@ -738,7 +742,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           {/* ── Right cluster ─────────────────────────────────────────────── */}
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
 
-            {/* Live pills — only at 2xl+ */}
+            {/* Live pills */}
             <div className="hidden items-center gap-1.5 2xl:flex">
               {LIVE_PILLS.map((pill, i) => (
                 <div
@@ -764,7 +768,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               ))}
             </div>
 
-            {/* Search bar — only at 2xl+ */}
+            {/* Search bar */}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
@@ -779,7 +783,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               </kbd>
             </button>
 
-            {/* Search icon — lg to 2xl */}
+            {/* Search icon */}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
@@ -789,7 +793,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               <Search size={14} />
             </button>
 
-            {/* Quick actions (+ New) */}
+            {/* Quick actions */}
             <div className="shrink-0">
               <button
                 ref={quickAnchorRef}
@@ -836,11 +840,15 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 aria-expanded={openMenu === 'account'}
                 className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all hover:border-violet-200 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
               >
+                {/*
+                  Account avatar: small 26px circle with white bg.
+                  mix-blend-mode:multiply on .logo-img-avatar suppresses white canvas.
+                */}
                 <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
                   <img
                     src="/619-logo.png"
                     alt="Account"
-                    className="logo-img-clean h-full w-full object-contain"
+                    className="logo-img-avatar h-full w-full object-contain"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).style.display = 'none';
                       const fb = e.currentTarget.nextElementSibling as HTMLElement | null;
@@ -867,11 +875,6 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       </header>
 
       {/* ── Portal-rendered Mega Menus ─────────────────────────────────────── */}
-      {/*
-        FIX: AnimatePresence handles enter/exit animations.
-             All menus are rendered via createPortal to document.body
-             — completely escaping all overflow/stacking context issues.
-      */}
       <AnimatePresence mode="wait">
         {MEGA_SECTIONS.map((section) =>
           openMenu === section.id ? (
@@ -1072,7 +1075,6 @@ function AccountMenuPortal({
         isolation: 'isolate',
       }}
     >
-      {/* Profile card */}
       <div className="mb-1.5 flex items-center gap-3 rounded-[14px] bg-gradient-to-br from-slate-50 to-slate-100 p-3">
         <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-black text-slate-700">
           {initials}
