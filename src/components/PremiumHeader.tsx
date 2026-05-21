@@ -11,7 +11,7 @@ import {
   Plus, UserPlus, Dumbbell, FileText, CreditCard, UserCheck,
   CalendarPlus, ClipboardList, Salad, Zap, X, Check,
   LayoutDashboard, TrendingUp, Users, Activity, Settings, BarChart2,
-  IndianRupee,
+  IndianRupee, Sparkles,
 } from 'lucide-react';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { cn } from '@/components/ui';
@@ -1042,7 +1042,20 @@ function AccountMenuPortal({
         </div>
       </div>
 
-      {([  
+      <button
+        type="button"
+        onClick={() => { router.push('/pt-os/dashboard'); onClose(); }}
+        className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold transition-all hover:bg-white/70"
+        style={{ color: 'var(--accent)' }}
+      >
+        <Sparkles size={13} style={{ color: 'var(--accent)' }} />
+        PT Operating System
+        <span className="ml-auto rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-700">NEW</span>
+      </button>
+
+      <div className="mx-2 my-1 h-px bg-slate-100" />
+
+      {([
         { href: '/settings', icon: <Settings size={13} />, label: 'My Profile' },
         { href: '/settings', icon: <Settings size={13} />, label: 'Studio Settings' },
         { href: '/settings/staff', icon: <Users size={13} />, label: 'Team Management' },
