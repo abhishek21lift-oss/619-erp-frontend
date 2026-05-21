@@ -800,7 +800,13 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all hover:border-violet-200 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
               >
                 <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
-                  <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-slate-700">{initials}</span>
+                  <Image
+                    src="/619-logo.png"
+                    alt="619"
+                    width={26}
+                    height={26}
+                    className="logo-img-avatar h-full w-full object-contain"
+                  />
                 </div>
                 <div className="hidden text-left xl:block">
                   <div className="max-w-[90px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
@@ -1021,8 +1027,14 @@ function AccountMenuPortal({
       }}
     >
       <div className="mb-1.5 flex items-center gap-3 rounded-[14px] bg-gradient-to-br from-slate-50 to-slate-100 p-3">
-        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-black text-slate-700">
-          {initials}
+        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
+          <Image
+            src="/619-logo.png"
+            alt="619"
+            width={36}
+            height={36}
+            className="logo-img-avatar h-full w-full object-contain"
+          />
         </div>
         <div>
           <div className="text-[13px] font-bold text-slate-900">{accountLabel}</div>
@@ -1030,7 +1042,7 @@ function AccountMenuPortal({
         </div>
       </div>
 
-      {([
+      {([  
         { href: '/settings', icon: <Settings size={13} />, label: 'My Profile' },
         { href: '/settings', icon: <Settings size={13} />, label: 'Studio Settings' },
         { href: '/settings/staff', icon: <Users size={13} />, label: 'Team Management' },
