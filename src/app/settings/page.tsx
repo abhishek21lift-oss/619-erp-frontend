@@ -2,8 +2,6 @@
 
 import React, { useState, useMemo, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Guard from '@/components/Guard';
-import { api } from '@/lib/api';
 import {
   Users, UserPlus, Shield, Key, Search, Filter, MoreHorizontal,
   Eye, EyeOff, ChevronDown, Check, X, Mail, Lock, User,
@@ -33,7 +31,14 @@ interface Account {
 /* ────────────────────────────────────────────────────────────────────
    DEMO DATA
 ──────────────────────────────────────────────────────────────────── */
-const DEMO_ACCOUNTS: Account[] = [];
+const DEMO_ACCOUNTS: Account[] = [
+  { id: '1', name: 'Abhishek Katiyar', email: 'abhishek@619fitness.com', role: 'admin', status: 'active', lastLogin: '2 mins ago', avatar: null, mfa: true },
+  { id: '2', name: 'Rahul Sharma', email: 'rahul@619fitness.com', role: 'coach', status: 'active', linkedCoach: 'Rahul Sharma', lastLogin: '1 hr ago', avatar: null, mfa: false },
+  { id: '3', name: 'Priya Mehta', email: 'priya@619fitness.com', role: 'coach', status: 'active', linkedCoach: 'Priya Mehta', lastLogin: 'Yesterday', avatar: null, mfa: true },
+  { id: '4', name: 'Neha Gupta', email: 'neha@619fitness.com', role: 'manager', status: 'active', lastLogin: '3 hrs ago', avatar: null, mfa: true },
+  { id: '5', name: 'Ravi Patel', email: 'ravi@619fitness.com', role: 'receptionist', status: 'pending', lastLogin: 'Never', avatar: null, mfa: false },
+  { id: '6', name: 'Sneha Singh', email: 'sneha@619fitness.com', role: 'receptionist', status: 'suspended', lastLogin: '2 wks ago', avatar: null, mfa: false },
+];
 
 const COACHES = ['Rahul Sharma', 'Priya Mehta', 'Amit Verma', 'Neha Gupta', 'Vikram Singh', 'Sneha Patel'];
 
@@ -474,41 +479,27 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
   const [coach,    setCoach]    = useState('');
   const [saving,   setSaving]   = useState(false);
   const [done,     setDone]     = useState(false);
-  const [error,    setError]    = useState('');
 
   const strength = useMemo(() => pwStrength(password), [password]);
-
-  // Map local UI role names to API role values
-  const toApiRole = (r: Role): 'admin' | 'manager' | 'trainer' | 'reception' | 'member' => {
-    if (r === 'coach') return 'trainer';
-    if (r === 'receptionist') return 'reception';
-    return r as 'admin' | 'manager';
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) return;
     setSaving(true);
-    setError('');
-    try {
-      const result = await api.auth.createUser({ name, email, password, role: toApiRole(role) });
-      const account: Account = {
-        id: result.user.id,
-        name, email, role, status: 'active',
-        linkedCoach: coach || undefined,
-        lastLogin: 'Never', avatar: null, mfa: false,
-      };
-      onCreated(account);
-      setDone(true);
-      setTimeout(() => {
-        setDone(false);
-        setName(''); setEmail(''); setPassword(''); setRole('receptionist'); setCoach('');
-      }, 1800);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create account');
-    } finally {
-      setSaving(false);
-    }
+    await new Promise((r) => setTimeout(r, 800));
+    const account: Account = {
+      id: Date.now().toString(),
+      name, email, role, status: 'active',
+      linkedCoach: coach || undefined,
+      lastLogin: 'Never', avatar: null, mfa: false,
+    };
+    onCreated(account);
+    setSaving(false);
+    setDone(true);
+    setTimeout(() => {
+      setDone(false);
+      setName(''); setEmail(''); setPassword(''); setRole('receptionist'); setCoach('');
+    }, 1800);
   };
 
   return (
@@ -584,12 +575,6 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
       </div>
 
       {/* Submit */}
-      {error && (
-        <p className="rounded-[10px] px-3 py-2 text-[12.5px] font-[600]"
-          style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.20)' }}>
-          {error}
-        </p>
-      )}
       <motion.button
         type="submit"
         disabled={saving || done}
@@ -653,22 +638,14 @@ function ChangePasswordPanel() {
     { label: 'At least one special character', ok: /[^A-Za-z0-9]/.test(next) },
   ];
 
-  const [error, setError] = useState('');
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cur || !next || !match) return;
     setSaving(true);
-    setError('');
-    try {
-      await api.auth.changePassword(cur, next);
-      setDone(true);
-      setTimeout(() => { setDone(false); setCur(''); setNext(''); setConf(''); }, 2200);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to change password');
-    } finally {
-      setSaving(false);
-    }
+    await new Promise((r) => setTimeout(r, 900));
+    setSaving(false);
+    setDone(true);
+    setTimeout(() => { setDone(false); setCur(''); setNext(''); setConf(''); }, 2200);
   };
 
   const pwSuffix = (show: boolean, toggle: () => void) => (
@@ -747,13 +724,6 @@ function ChangePasswordPanel() {
         ))}
       </div>
 
-      {error && (
-        <p className="rounded-[10px] px-3 py-2 text-[12.5px] font-[600]"
-          style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.20)' }}>
-          {error}
-        </p>
-      )}
-
       <motion.button
         type="submit"
         disabled={saving || done || !cur || !next || !match}
@@ -794,7 +764,7 @@ function ChangePasswordPanel() {
 /* ────────────────────────────────────────────────────────────────────
    PAGE
 ──────────────────────────────────────────────────────────────────── */
-function AccountManagementPage() {
+export default function AccountManagementPage() {
   const [accounts, setAccounts] = useState<Account[]>(DEMO_ACCOUNTS);
   const [tab, setTab] = useState<'accounts' | 'password'>('accounts');
   const [search, setSearch] = useState('');
@@ -1031,13 +1001,5 @@ function AccountManagementPage() {
         }
       `}</style>
     </div>
-  );
-}
-
-export default function SettingsPage() {
-  return (
-    <Guard>
-      <AccountManagementPage />
-    </Guard>
   );
 }
