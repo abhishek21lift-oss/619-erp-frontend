@@ -47,7 +47,6 @@ export default function AiCoachingLayer({ insights, onDismiss }: AiCoachingLayer
 
   return (
     <>
-      {/* Floating trigger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
@@ -68,7 +67,6 @@ export default function AiCoachingLayer({ insights, onDismiss }: AiCoachingLayer
         )}
       </button>
 
-      {/* Panel */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -79,7 +77,6 @@ export default function AiCoachingLayer({ insights, onDismiss }: AiCoachingLayer
             className="fixed bottom-0 right-0 z-50 h-[calc(100vh-80px)] w-80 border-l backdrop-blur-2xl shadow-2xl overflow-y-auto"
             style={{ background: 'rgba(5,5,5,0.95)', borderColor: 'rgba(255,255,255,0.06)' }}
           >
-            {/* Header */}
             <div className="sticky top-0 z-10 flex items-center justify-between p-4" style={{ background: 'rgba(5,5,5,0.98)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: RED_SOFT }}>
@@ -95,7 +92,6 @@ export default function AiCoachingLayer({ insights, onDismiss }: AiCoachingLayer
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-3 space-y-2">
               {active.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -147,7 +143,6 @@ export default function AiCoachingLayer({ insights, onDismiss }: AiCoachingLayer
               })}
             </div>
 
-            {/* Footer */}
             <div className="sticky bottom-0 p-3" style={{ background: 'rgba(5,5,5,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex items-center justify-between text-[10px] text-white/20">
                 <span>Signals update in real-time</span>
