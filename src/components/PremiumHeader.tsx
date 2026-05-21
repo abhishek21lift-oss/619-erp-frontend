@@ -603,19 +603,17 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         }
         .logo-glow { animation: brand-glow 3.5s ease-in-out infinite; }
         .pill-pulse { animation: pulse-ring 2.2s cubic-bezier(0.455,0.03,0.515,0.955) infinite; }
+        .logo-img-clean { mix-blend-mode: multiply; filter: contrast(1.08) saturate(1.1); }
+        .logo-img-avatar { mix-blend-mode: multiply; filter: contrast(1.05); }
 
-        .logo-img-clean {
-          mix-blend-mode: multiply;
-          filter: contrast(1.08) saturate(1.1);
+        /* Nav focus ring — keyboard users see a clear indicator */
+        .nav-btn:focus-visible {
+          outline: 2px solid #7c3aed;
+          outline-offset: 2px;
+          border-radius: 9999px;
         }
-
-        .logo-img-avatar {
-          mix-blend-mode: multiply;
-          filter: contrast(1.05);
-        }
-
-        .nav-scroll::-webkit-scrollbar { display: none; }
-        .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Prevent iOS tap highlight */
+        .nav-btn { -webkit-tap-highlight-color: transparent; }
       `}</style>
 
       <header
@@ -632,150 +630,143 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             : '0 1px 0 rgba(15,23,42,0.04), 0 4px 20px rgba(15,23,42,0.03)',
         }}
       >
+        {/*
+          3-column CSS grid: [shrink-to-fit | fill remaining | shrink-to-fit]
+          Guarantees left ↔ center ↔ right never overlap at any viewport width.
+        */}
         <div
           ref={headerRef}
           className={cn(
-            'mx-auto flex w-full max-w-[1680px] items-center px-3 transition-all duration-300 sm:px-4 lg:px-5',
+            'mx-auto grid w-full max-w-[1680px] grid-cols-[auto_1fr_auto] items-center gap-x-2 px-3 transition-[height] duration-300 sm:px-4 lg:px-5',
             scrolled ? 'h-[56px]' : 'h-[64px]',
           )}
         >
-          {/* ── Left section: hamburger + logo ──────────────────────────── */}
-          <div className="flex flex-1 items-center gap-2">
-            {/* Mobile hamburger */}
+
+          {/* ── Col 1: brand ──────────────────────────────────────────────── */}
+          <div className="flex items-center gap-2">
+            {/* Mobile / tablet hamburger */}
             <button
               type="button"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md lg:hidden"
+              className="nav-btn inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md lg:hidden"
               onClick={onMenuClick}
               aria-label="Open navigation menu"
+              aria-haspopup="true"
             >
               <Menu size={16} />
             </button>
 
-            {/* Brand logo */}
-            <div
-              className="logo-glow relative flex shrink-0 cursor-pointer items-center justify-center rounded-[14px]"
-              style={{
-                width: scrolled ? 38 : 46,
-                height: scrolled ? 38 : 46,
-                background: '#ffffff',
-                transition: 'width 0.3s, height 0.3s',
-              }}
+            {/* Brand logo — clickable, keyboard-accessible */}
+            <button
+              type="button"
+              className="logo-glow nav-btn relative flex shrink-0 items-center justify-center rounded-[14px] bg-white transition-[width,height] duration-300"
+              style={{ width: scrolled ? 38 : 46, height: scrolled ? 38 : 46 }}
               onClick={() => router.push('/dashboard')}
-              title="619 Fitness Studio"
+              aria-label="619 Fitness Studio — go to dashboard"
             >
               <Image
                 src="/619-logo.png"
-                alt="619 Fitness Studio"
-                width={scrolled ? 34 : 42}
-                height={scrolled ? 34 : 42}
-                className="logo-img-clean object-contain transition-all duration-300"
+                alt=""
+                aria-hidden="true"
+                width={scrolled ? 32 : 40}
+                height={scrolled ? 32 : 40}
+                className="logo-img-clean object-contain"
                 style={{ display: 'block' }}
-                onError={() => {
-                  const el = document.getElementById('logo-fallback');
-                  if (el) el.style.display = 'flex';
-                }}
               />
               <span
-                id="logo-fallback"
-                className="absolute hidden h-full w-full items-center justify-center rounded-[14px] text-[13px] font-black text-white"
+                aria-hidden="true"
+                className="absolute inset-0 hidden items-center justify-center rounded-[14px] text-[13px] font-black text-white"
                 style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}
               >
                 619
               </span>
-            </div>
+            </button>
 
-            {/* Divider */}
-            <div className="mx-1 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200 to-transparent lg:block" />
+            {/* Visual separator — desktop only */}
+            <div aria-hidden="true" className="mx-0.5 hidden h-7 w-px shrink-0 bg-gradient-to-b from-transparent via-slate-200/70 to-transparent lg:block" />
           </div>
 
-          {/* ── Center nav ───────────────────────────────────────────────── */}
+          {/* ── Col 2: primary nav (desktop) ──────────────────────────────── */}
           <nav
             aria-label="Primary navigation"
-            className="nav-scroll hidden overflow-x-auto lg:flex lg:items-center lg:justify-center"
+            className="hidden min-w-0 lg:flex lg:items-center lg:justify-center"
           >
-            <div className="flex items-center gap-0.5">
+            {/*
+              flex-wrap is intentionally off — items shrink-to-fit via px compression.
+              Gap-0.5 keeps items tight on 1024-1280 px viewports.
+            */}
+            <div className="flex items-center gap-0.5 overflow-hidden">
               {MEGA_SECTIONS.map(renderSection)}
             </div>
           </nav>
 
-          {/* ── Right section ────────────────────────────────────────────── */}
-          <div className="flex flex-1 items-center justify-end gap-1.5">
+          {/* ── Col 3: actions ────────────────────────────────────────────── */}
+          <div className="flex items-center justify-end gap-1">
 
-            {/* Live pills */}
-            <div className="hidden items-center gap-1.5 2xl:flex">
+            {/* Live-status pills — only on very wide screens to avoid crowding */}
+            <div aria-hidden="true" className="hidden items-center gap-1.5 xl:flex 2xl:flex">
               {LIVE_PILLS.map((pill, i) => (
                 <div
                   key={i}
-                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold"
-                  style={{
-                    borderColor: `${pill.color}30`,
-                    background: `${pill.color}0a`,
-                    color: pill.color,
-                  }}
+                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold xl:gap-1.5 xl:px-2.5 xl:py-1 xl:text-[10.5px]"
+                  style={{ borderColor: `${pill.color}30`, background: `${pill.color}0a`, color: pill.color }}
                 >
-                  <span className="relative flex h-[6px] w-[6px] shrink-0 items-center justify-center">
-                    <span className="h-[6px] w-[6px] rounded-full" style={{ background: pill.color }} />
+                  <span className="relative flex h-[5px] w-[5px] shrink-0">
+                    <span className="h-full w-full rounded-full" style={{ background: pill.color }} />
                     {pill.pulse && (
                       <span
-                        className="pill-pulse absolute h-[6px] w-[6px] rounded-full"
+                        className="pill-pulse absolute inset-0 rounded-full"
                         style={{ color: `${pill.color}50`, animationDelay: `${i * 0.6}s` }}
                       />
                     )}
                   </span>
-                  {pill.label}
+                  <span className="hidden 2xl:inline">{pill.label}</span>
                 </div>
               ))}
             </div>
 
-            {/* Search bar */}
+            {/* Search — wide bar on xl+, icon-button below xl */}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-              className="hidden h-[36px] w-[200px] items-center justify-between rounded-full border border-slate-200/80 bg-white/80 px-3.5 backdrop-blur-sm transition-all duration-150 hover:border-violet-300/60 hover:bg-white hover:shadow-[0_2px_16px_rgba(124,58,237,0.10)] 2xl:inline-flex"
-            >
-              <span className="flex items-center gap-2 text-[12px] text-slate-400">
-                <Search size={12} className="shrink-0" />
-                <span>Search anything…</span>
-              </span>
-              <kbd className="rounded-md border border-slate-200 bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.06)]">
-                ⌘K
-              </kbd>
-            </button>
-
-            {/* Search icon */}
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
-              className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)] 2xl:hidden"
               aria-label="Search"
+              className="nav-btn hidden h-[34px] w-[180px] items-center justify-between rounded-full border border-slate-200/80 bg-white/80 px-3 backdrop-blur-sm transition-all duration-150 hover:border-violet-300/60 hover:bg-white hover:shadow-[0_2px_16px_rgba(124,58,237,0.10)] xl:inline-flex 2xl:w-[200px] 2xl:px-3.5"
+            >
+              <span className="flex items-center gap-1.5 text-[11.5px] text-slate-400">
+                <Search size={11} className="shrink-0" />
+                <span>Search…</span>
+              </span>
+              <kbd className="rounded border border-slate-200 bg-white/90 px-1.5 py-0.5 text-[9.5px] font-semibold text-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.06)]">⌘K</kbd>
+            </button>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('619-cmd-palette'))}
+              aria-label="Search"
+              className="nav-btn inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 xl:hidden"
             >
               <Search size={14} />
             </button>
 
-            {/* Quick actions */}
-            <div className="shrink-0">
-              <button
-                ref={quickAnchorRef}
-                type="button"
-                onClick={() => setShowQuick((v) => !v)}
-                aria-expanded={showQuick}
-                className="inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-bold text-white transition-all duration-150 hover:opacity-90 hover:shadow-lg active:scale-[0.97]"
-                style={{
-                  background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
-                  boxShadow: '0 4px 14px rgba(124,58,237,0.30)',
-                }}
-              >
-                <Plus size={13} className="shrink-0" />
-                <span className="hidden sm:inline">New</span>
-              </button>
-            </div>
+            {/* Quick-add */}
+            <button
+              ref={quickAnchorRef}
+              type="button"
+              onClick={() => setShowQuick((v) => !v)}
+              aria-expanded={showQuick}
+              aria-haspopup="true"
+              aria-label="Quick add"
+              className="nav-btn inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-bold text-white transition-all duration-150 hover:opacity-90 hover:shadow-lg active:scale-[0.97] sm:px-3.5 sm:text-[12.5px]"
+              style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', boxShadow: '0 4px 14px rgba(124,58,237,0.28)' }}
+            >
+              <Plus size={13} className="shrink-0" />
+              <span className="hidden sm:inline">New</span>
+            </button>
 
-            {/* Theme toggle */}
+            {/* Theme toggle — hidden on mobile to save space */}
             <button
               type="button"
-              className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
               onClick={toggleTheme}
-              aria-label="Toggle theme"
+              aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              className="nav-btn hidden h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-violet-200 hover:text-violet-600 sm:inline-flex"
             >
               {hydrated ? (theme === 'light' ? <Moon size={14} /> : <Sun size={14} />) : <span style={{ width: 14 }} />}
             </button>
@@ -783,44 +774,47 @@ export default function PremiumHeader({ onMenuClick }: Props) {
             {/* Notifications */}
             <button
               type="button"
-              className="relative inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-rose-200 hover:text-rose-500 hover:shadow-[0_2px_10px_rgba(239,68,68,0.10)]"
               aria-label="Notifications"
+              className="nav-btn relative inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-slate-200/80 bg-white/90 text-slate-500 backdrop-blur-sm transition-all hover:border-rose-200 hover:text-rose-500"
             >
               <Bell size={14} />
-              <span className="absolute right-[9px] top-[9px] h-[6px] w-[6px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
+              <span aria-hidden="true" className="absolute right-[9px] top-[9px] h-[5px] w-[5px] rounded-full bg-rose-500 ring-[1.5px] ring-white" />
             </button>
 
-            {/* Admin profile */}
-            <div className="shrink-0">
-              <button
-                ref={accountAnchorRef}
-                type="button"
-                onClick={() => setOpenMenu(openMenu === 'account' ? null : 'account')}
-                aria-expanded={openMenu === 'account'}
-                className="inline-flex h-[36px] items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 pl-1.5 pr-3 backdrop-blur-sm transition-all hover:border-violet-200 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)]"
+            {/* Account / profile */}
+            <button
+              ref={accountAnchorRef}
+              type="button"
+              onClick={() => setOpenMenu(openMenu === 'account' ? null : 'account')}
+              aria-expanded={openMenu === 'account'}
+              aria-haspopup="true"
+              aria-label="Account menu"
+              className="nav-btn inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/90 pl-1 pr-2 backdrop-blur-sm transition-all hover:border-violet-200 hover:shadow-[0_2px_10px_rgba(124,58,237,0.10)] sm:gap-2 sm:pl-1.5 sm:pr-3"
+            >
+              <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white sm:h-[26px] sm:w-[26px]">
+                <Image
+                  src="/619-logo.png"
+                  alt=""
+                  aria-hidden="true"
+                  width={26}
+                  height={26}
+                  className="logo-img-avatar h-full w-full object-contain"
+                />
+              </div>
+              {/* Label — only at 1280px+ to avoid crowding at 1024-1280px */}
+              <div className="hidden min-w-0 text-left xl:block">
+                <div className="max-w-[80px] truncate text-[11px] font-bold leading-none text-slate-900">{accountLabel}</div>
+                <div className="mt-0.5 text-[9.5px] capitalize tracking-wide text-slate-400">{roleLabel}</div>
+              </div>
+              <motion.span
+                animate={{ rotate: openMenu === 'account' ? 180 : 0 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                aria-hidden="true"
+                style={{ display: 'inline-flex', color: 'rgb(148 163 184)' }}
               >
-                <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white">
-                  <Image
-                    src="/619-logo.png"
-                    alt="619"
-                    width={26}
-                    height={26}
-                    className="logo-img-avatar h-full w-full object-contain"
-                  />
-                </div>
-                <div className="hidden text-left xl:block">
-                  <div className="max-w-[90px] truncate text-[11.5px] font-bold leading-none text-slate-900">{accountLabel}</div>
-                  <div className="mt-0.5 text-[10px] capitalize tracking-wide text-slate-400">{roleLabel}</div>
-                </div>
-                <motion.span
-                  animate={{ rotate: openMenu === 'account' ? 180 : 0 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  style={{ display: 'inline-flex', color: 'rgb(148 163 184)' }}
-                >
-                  <ChevronDown size={10} />
-                </motion.span>
-              </button>
-            </div>
+                <ChevronDown size={10} />
+              </motion.span>
+            </button>
           </div>
         </div>
       </header>
