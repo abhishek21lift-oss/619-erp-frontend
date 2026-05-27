@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /api/
+Disallow: /admin/
+Disallow: /reset-password
+Disallow: /wireframes.html
+Allow: /
+
+Sitemap: https://619fitness.in/sitemap.xml
