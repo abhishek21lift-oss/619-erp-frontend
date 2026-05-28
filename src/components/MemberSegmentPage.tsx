@@ -196,7 +196,7 @@ function MemberCard({ c, accent }: { c: Client; accent: string }) {
         <Link href={`/clients/${c.id}`} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '8px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: 'white', fontSize: 12, fontWeight: 600, color: '#475569', textDecoration: 'none', transition: 'all 150ms ease' }}>
           <Eye size={11} /> View
         </Link>
-        <Link href={`/clients/${c.id}/renew`} style={{ width: 34, height: 34, borderRadius: 12, border: `1.5px solid ${accent}30`, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, textDecoration: 'none' }}>
+        <Link href={`/clients/${c.id}/renew-subscription`} style={{ width: 34, height: 34, borderRadius: 12, border: `1.5px solid ${accent}30`, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, textDecoration: 'none' }}>
           <RefreshCw size={12} />
         </Link>
         {phone && (

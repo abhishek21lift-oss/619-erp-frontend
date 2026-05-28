@@ -276,7 +276,7 @@ export const api = {
     changePassword: (currentPassword: string, newPassword: string) =>
       http<{ message?: string }>('/api/auth/change-password', {
         method: 'POST',
-        body: JSON.stringify({ currentPassword, newPassword }),
+        body: { currentPassword, newPassword },
       }),
     listUsers: () => http<User[]>('/api/auth/users'),
     createUser: (data: {

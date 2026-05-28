@@ -2,11 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { NavItem } from '@/lib/nav-config';
 
-export default function SidebarItem({ item }: any) {
+interface SidebarItemProps {
+  item: NavItem;
+}
+
+export default function SidebarItem({ item }: SidebarItemProps) {
   const pathname = usePathname();
   const active = pathname === item.href;
-  const Icon = item.icon;
 
   return (
     <Link
@@ -15,7 +19,6 @@ export default function SidebarItem({ item }: any) {
         active ? 'bg-black text-white' : 'hover:bg-gray-100'
       }`}
     >
-      <Icon size={18} />
       <span>{item.label}</span>
     </Link>
   );
