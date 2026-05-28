@@ -17,10 +17,7 @@ export default function TrialSessionsPage() {
 
   const leads = useAsync(() => api.leads.list({ status: 'interested' }).then(r => r.data), []);
   const trainers = useAsync(() => api.trainers.list(), []);
-  const trials = useAsync(() => {
-    const all: any[] = [];
-    return all;
-  }, []);
+  const trials = useAsync(() => Promise.resolve([]), []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
