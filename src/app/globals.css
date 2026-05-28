@@ -36,7 +36,7 @@
   --teal-soft:     rgba(13, 148, 136, 0.08);
 
   /* ── Surface palette ─────────────────────────────────────────── */
-  --bg-canvas:     #f4f5f7;
+  --bg-canvas:     #F5F5F7;
   --bg-base:       #f8f9fb;
   --bg-card:       #ffffff;
   --bg-elevated:   #ffffff;
@@ -1590,4 +1590,23 @@ a[href="/pt-portal"], button[data-href="/pt-portal"] { font-weight:900; letter-s
   .hero619-title {
     font-size: 1.3rem;
   }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   RESPONSIVE APPLE-STYLE HELPERS
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+  .responsive-grid { grid-template-columns: 1fr !important; }
+  .responsive-stack { flex-direction: column !important; }
+  .responsive-gap { gap: 0.75rem !important; }
+  .overflow-mobile { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .hide-tablet { display: none !important; }
+}
+
+@media (min-width: 1025px) {
+  .hide-desktop { display: none !important; }
 }

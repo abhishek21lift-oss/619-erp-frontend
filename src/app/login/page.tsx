@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Dumbbell } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, login, loading } = useAuth();
@@ -41,138 +41,54 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', background: '#e8e4df' }}>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #dc2626', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+      <div className="flex items-center justify-center h-screen bg-[#F5F5F7]">
+        <div className="w-10 h-10 rounded-full border-[3px] border-[#dc2626] border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div style={{
-      minHeight: '100dvh',
-      position: 'relative',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px 16px',
-      fontFamily: 'Inter, sans-serif',
-      overflow: 'hidden',
-      background: `
-        radial-gradient(ellipse at 20% 50%, rgba(180,170,160,0.4) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(160,150,140,0.3) 0%, transparent 40%),
-        radial-gradient(ellipse at 60% 80%, rgba(140,130,120,0.2) 0%, transparent 40%),
-        #d6d0c8
-      `,
-    }}>
-
-      {/* Concrete texture overlay */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E")`, opacity: 0.6, pointerEvents: 'none' }} />
-
-      {/* Cracks / lines overlay */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Cpath d='M120 80 Q200 150 180 250 Q160 320 220 400' stroke='rgba(100,80,60,0.12)' fill='none' strokeWidth='1.5'/%3E%3Cpath d='M450 20 Q480 100 460 200 Q440 280 500 380' stroke='rgba(100,80,60,0.08)' fill='none' strokeWidth='1'/%3E%3Cpath d='M600 100 Q650 180 640 300' stroke='rgba(80,60,40,0.1)' fill='none' strokeWidth='1'/%3E%3C/svg%3E")`, pointerEvents: 'none', opacity: 0.8 }} />
-
-      {/* Logo watermark — top right */}
-      <div aria-hidden style={{ position: 'absolute', top: '-5%', right: '-5%', width: '42vw', maxWidth: 520, opacity: 0.09, pointerEvents: 'none', transform: 'scaleX(-1)' }}>
-        <Image src="/619-logo.png" alt="" width={520} height={520} style={{ width: '100%', height: 'auto', filter: 'grayscale(1)' }} />
-      </div>
-
-      {/* Red + black brush strokes — bottom left */}
-      <div aria-hidden style={{ position: 'absolute', bottom: '-2%', left: '-2%', width: '38vw', maxWidth: 480, pointerEvents: 'none', zIndex: 0 }}>
-        <svg viewBox="0 0 480 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="160" cy="130" rx="180" ry="55" fill="#dc2626" fillOpacity="0.85" transform="rotate(-12 160 130)"/>
-          <ellipse cx="200" cy="155" rx="140" ry="35" fill="#991b1b" fillOpacity="0.7" transform="rotate(-8 200 155)"/>
-          <ellipse cx="80" cy="160" rx="100" ry="28" fill="#1a1a1a" fillOpacity="0.75" transform="rotate(-15 80 160)"/>
-          <ellipse cx="120" cy="175" rx="80" ry="18" fill="#0a0a0a" fillOpacity="0.6" transform="rotate(-10 120 175)"/>
-        </svg>
-      </div>
-
-      {/* Login card */}
-      <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 440 }}>
-
-        {/* Logo + title */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
-          <Image
-            src="/619-logo.png"
-            alt="ABHI-DESK"
-            width={110}
-            height={110}
-            style={{ objectFit: 'contain', marginBottom: 14, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.25))' }}
-          />
-          <h1 style={{
-            margin: 0,
-            fontSize: 24,
-            fontWeight: 800,
-            letterSpacing: '0.18em',
-            color: '#1a1a1a',
-            textAlign: 'center',
-            fontFamily: 'Inter, sans-serif',
-          }}>
-            ABHI-DESK
-          </h1>
+    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center p-6">
+      <div className="w-full max-w-[400px]">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1d1d1f] shadow-lg mb-4">
+            <Dumbbell size={28} className="text-white" strokeWidth={1.5} />
+          </div>
+          <h1 className="text-[22px] font-bold tracking-[-0.02em] text-[#1d1d1f]">619 Fitness</h1>
+          <p className="text-[13px] text-[#86868b] mt-1">Studio Management Portal</p>
         </div>
 
         {/* Card */}
-        <div style={{
-          background: 'rgba(255,255,255,0.97)',
-          borderRadius: 16,
-          border: '2px solid #dc2626',
-          padding: '32px 32px 24px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(220,38,38,0.15)',
-        }}>
-
-          {/* Error */}
+        <div className="rounded-3xl bg-white p-7 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.03)]">
           {error && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 18, fontWeight: 500 }}>
+            <div className="flex items-center gap-2 rounded-xl bg-[rgba(220,38,38,0.06)] border border-[rgba(220,38,38,0.12)] px-4 py-3 text-[13px] font-medium text-[#dc2626] mb-5">
               {error}
             </div>
           )}
 
-          <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {/* Email */}
+          <form onSubmit={submit} className="space-y-5">
             <div>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>
-                Email address
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                  required
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    padding: '12px 44px 12px 14px',
-                    border: '1.5px solid #d1d5db',
-                    borderRadius: 10, fontSize: 15,
-                    outline: 'none', transition: 'border-color 150ms',
-                    fontFamily: 'Inter, sans-serif',
-                    background: '#fafafa',
-                  }}
-                  onFocus={e => (e.currentTarget.style.borderColor = '#dc2626')}
-                  onBlur={e => (e.currentTarget.style.borderColor = '#d1d5db')}
-                />
-                <span style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
-                </span>
-              </div>
+              <label className="block text-[13px] font-semibold text-[#1d1d1f] mb-2">Email address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="you@example.com"
+                required
+                className="w-full h-12 px-4 rounded-xl border border-[rgba(0,0,0,0.04)] bg-[#f5f5f7] text-[15px] text-[#1d1d1f] outline-none transition-all duration-150 placeholder:text-[#86868b]/50 focus:border-[#dc2626]/30 focus:bg-white focus:shadow-[0_0_0_3px_rgba(220,38,38,0.06)]"
+              />
             </div>
 
-            {/* Password */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <label style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>
-                  Password
-                </label>
-                <Link
-                  href="/reset-password"
-                  style={{ fontSize: 13, color: '#dc2626', fontWeight: 500, textDecoration: 'none' }}
-                >
-                  Forgot password?
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[13px] font-semibold text-[#1d1d1f]">Password</label>
+                <Link href="/reset-password" className="text-[12px] font-medium text-[#dc2626] hover:text-[#b91c1c] transition-colors">
+                  Forgot?
                 </Link>
               </div>
-              <div style={{ position: 'relative' }}>
+              <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'}
                   value={password}
@@ -180,66 +96,32 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   placeholder="••••••••••"
                   required
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    padding: '12px 44px 12px 14px',
-                    border: '1.5px solid #d1d5db',
-                    borderRadius: 10, fontSize: 15,
-                    outline: 'none', transition: 'border-color 150ms',
-                    fontFamily: 'Inter, sans-serif',
-                    background: '#fafafa',
-                  }}
-                  onFocus={e => (e.currentTarget.style.borderColor = '#dc2626')}
-                  onBlur={e => (e.currentTarget.style.borderColor = '#d1d5db')}
+                  className="w-full h-12 px-4 pr-11 rounded-xl border border-[rgba(0,0,0,0.04)] bg-[#f5f5f7] text-[15px] text-[#1d1d1f] outline-none transition-all duration-150 placeholder:text-[#86868b]/50 focus:border-[#dc2626]/30 focus:bg-white focus:shadow-[0_0_0_3px_rgba(220,38,38,0.06)]"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(p => !p)}
-                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 2 }}
-                >
-                  {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
+                <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] transition-colors">
+                  {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            {/* Sign in button */}
             <button
               type="submit"
               disabled={busy}
-              style={{
-                width: '100%', padding: '14px',
-                background: busy ? '#ef4444' : '#dc2626',
-                color: '#fff', border: 'none',
-                borderRadius: 10, fontSize: 16,
-                fontWeight: 700, cursor: busy ? 'wait' : 'pointer',
-                letterSpacing: '0.02em',
-                transition: 'background 150ms, transform 100ms',
-                fontFamily: 'Inter, sans-serif',
-                boxShadow: '0 4px 14px rgba(220,38,38,0.4)',
-              }}
-              onMouseEnter={e => !busy && (e.currentTarget.style.background = '#b91c1c')}
-              onMouseLeave={e => !busy && (e.currentTarget.style.background = '#dc2626')}
+              className="w-full h-12 rounded-xl bg-[#dc2626] text-white text-[15px] font-semibold transition-all duration-150 hover:bg-[#b91c1c] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(220,38,38,0.25)]"
             >
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 
-          {/* Help text */}
-          <p style={{ margin: '20px 0 0', textAlign: 'center', fontSize: 13, color: '#6b7280' }}>
+          <p className="mt-6 text-center text-[12px] text-[#86868b]">
             Having trouble? Contact your gym administrator.
           </p>
         </div>
 
-        {/* Footer */}
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'rgba(0,0,0,0.45)', letterSpacing: '0.03em' }}>
-          © {new Date().getFullYear()} ABHI-DESK. All rights reserved.
+        <p className="text-center mt-6 text-[11px] text-[#86868b]/60 tracking-[0.03em]">
+          &copy; {new Date().getFullYear()} 619 Fitness. All rights reserved.
         </p>
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        input:focus { outline: none; }
-      `}</style>
     </div>
   );
 }
