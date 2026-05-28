@@ -63,7 +63,7 @@ export default function TrialSessionsPage() {
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
                   style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }}>
                   <option value="">Select interested lead...</option>
-                  {(leads as any[] || []).map((l: any) => (
+                  {((leads.data || []) as any[]).map((l: any) => (
                     <option key={l.id} value={l.id}>{l.name} {l.mobile ? `(${l.mobile})` : ''}</option>
                   ))}
                 </select>

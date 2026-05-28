@@ -172,7 +172,7 @@ export default function AutomationPage() {
             <div className="rounded-[20px] p-6" style={{ background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
               <h2 className="text-[18px] font-[760] mb-4" style={{ color: 'rgb(15,23,42)' }}>Recent Communication Logs</h2>
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {(logs as any[] || []).map((l: any) => (
+                {((logs.data || []) as any[]).map((l: any) => (
                   <div key={l.id} className="rounded-[10px] p-3 flex items-center justify-between"
                     style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.04)' }}>
                     <div className="min-w-0 flex-1">
@@ -191,7 +191,7 @@ export default function AutomationPage() {
                     </div>
                   </div>
                 ))}
-                {(!logs || (logs as any[]).length === 0) && (
+                {(!logs.data || (logs.data as any[]).length === 0) && (
                   <p className="text-center py-6 text-sm" style={{ color: 'rgb(148,163,184)' }}>No communication logs yet.</p>
                 )}
               </div>
