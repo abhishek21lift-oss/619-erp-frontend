@@ -132,7 +132,7 @@ export default function PtPackagesPage() {
                 <span>{pkg.duration_days} days</span>
               </div>
               {pkg.description && <p className="mt-2 text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{pkg.description}</p>}
-              {!pkg.is_active && <Badge className="mt-2" tone="error">Inactive</Badge>}
+              {!pkg.is_active && <Badge className="mt-2" tone="danger">Inactive</Badge>}
             </motion.div>
           ))}
         </div>
