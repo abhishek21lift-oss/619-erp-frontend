@@ -7,7 +7,11 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Dumbbell, UserPlus, CalendarCheck, Activity, ArrowUpRight } from 'lucide-react';
+import {
+  TrendingUp, Users, Dumbbell, UserPlus, CalendarCheck, Activity, ArrowUpRight,
+  PlusCircle, ScanFace, DollarSign, ClipboardList,
+} from 'lucide-react';
+import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
 
 const COLORS = {
@@ -63,17 +67,17 @@ function Sparkline({ color }: { color: string }) {
 }
 
 function PremiumKpiCard({
-  label, value, hint, growth, icon, gradient, color, accentLight, index = 0,
+  label, value, hint, growth, icon, gradient, color, accentLight, index = 0, href,
 }: {
   label: string; value: string; hint?: string; growth?: string; icon: React.ReactNode;
-  gradient: string; color: string; accentLight: string; index?: number;
+  gradient: string; color: string; accentLight: string; index?: number; href?: string;
 }) {
-  return (
+  const card = (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative overflow-hidden rounded-[24px] bg-white/70 backdrop-blur-[20px] saturate-[160%] border border-white/25 shadow-[0_8px_32px_rgba(11,11,15,0.06)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(11,11,15,0.10)] hover:-translate-y-0.5"
+      className="group relative overflow-hidden rounded-[24px] bg-white/70 backdrop-blur-[20px] saturate-[160%] border border-white/25 shadow-[0_8px_32px_rgba(11,11,15,0.06)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(11,11,15,0.10)] hover:-translate-y-0.5 cursor-pointer"
     >
       <div className={cn('absolute inset-0 opacity-[0.03] bg-gradient-to-br', gradient)} />
       <div className="relative p-4">
@@ -108,6 +112,9 @@ function PremiumKpiCard({
       </div>
     </motion.div>
   );
+
+  if (href) return <Link href={href}>{card}</Link>;
+  return card;
 }
 
 const revenueData = [
@@ -189,6 +196,45 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function DashboardAnalytics() {
   return (
     <section className="space-y-6">
+      {/* Quick Action Buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href="/pt-os/new-client"
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] px-4 py-2.5 text-[12px] font-bold text-white shadow-[0_4px_12px_rgba(139,92,246,0.25)] transition-all duration-200 hover:shadow-[0_6px_20px_rgba(139,92,246,0.35)] hover:-translate-y-0.5"
+        >
+          <Dumbbell size={14} strokeWidth={2} />
+          PT OS
+        </Link>
+        <Link
+          href="/clients/new"
+          className="inline-flex items-center gap-2 rounded-xl bg-white/80 backdrop-blur-[20px] border border-white/30 px-4 py-2.5 text-[12px] font-bold text-[#0B0B0F] shadow-[0_2px_8px_rgba(11,11,15,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(11,11,15,0.08)] hover:-translate-y-0.5"
+        >
+          <PlusCircle size={14} strokeWidth={1.8} />
+          Add Member
+        </Link>
+        <Link
+          href="/sales/enquiry"
+          className="inline-flex items-center gap-2 rounded-xl bg-white/80 backdrop-blur-[20px] border border-white/30 px-4 py-2.5 text-[12px] font-bold text-[#0B0B0F] shadow-[0_2px_8px_rgba(11,11,15,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(11,11,15,0.08)] hover:-translate-y-0.5"
+        >
+          <UserPlus size={14} strokeWidth={1.8} />
+          New Lead
+        </Link>
+        <Link
+          href="/checkin"
+          className="inline-flex items-center gap-2 rounded-xl bg-white/80 backdrop-blur-[20px] border border-white/30 px-4 py-2.5 text-[12px] font-bold text-[#0B0B0F] shadow-[0_2px_8px_rgba(11,11,15,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(11,11,15,0.08)] hover:-translate-y-0.5"
+        >
+          <ScanFace size={14} strokeWidth={1.8} />
+          Check-In
+        </Link>
+        <Link
+          href="/finance/record-payment"
+          className="inline-flex items-center gap-2 rounded-xl bg-white/80 backdrop-blur-[20px] border border-white/30 px-4 py-2.5 text-[12px] font-bold text-[#0B0B0F] shadow-[0_2px_8px_rgba(11,11,15,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(11,11,15,0.08)] hover:-translate-y-0.5"
+        >
+          <DollarSign size={14} strokeWidth={1.8} />
+          Record Payment
+        </Link>
+      </div>
+
       {/* Hero KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <PremiumKpiCard
@@ -201,6 +247,7 @@ export function DashboardAnalytics() {
           color="#8B5CF6"
           accentLight="rgba(139,92,246,0.10)"
           index={0}
+          href="/finance"
         />
         <PremiumKpiCard
           label="Active Members"
@@ -212,6 +259,7 @@ export function DashboardAnalytics() {
           color="#3B82F6"
           accentLight="rgba(59,130,246,0.10)"
           index={1}
+          href="/members/active"
         />
         <PremiumKpiCard
           label="PT Revenue"
@@ -223,6 +271,7 @@ export function DashboardAnalytics() {
           color="#10B981"
           accentLight="rgba(16,185,129,0.10)"
           index={2}
+          href="/pt-os/packages"
         />
         <PremiumKpiCard
           label="New Leads"
@@ -234,6 +283,7 @@ export function DashboardAnalytics() {
           color="#F59E0B"
           accentLight="rgba(245,158,11,0.10)"
           index={3}
+          href="/sales/leads"
         />
         <PremiumKpiCard
           label="Today's Attendance"
@@ -245,6 +295,7 @@ export function DashboardAnalytics() {
           color="#EC4899"
           accentLight="rgba(236,72,153,0.10)"
           index={4}
+          href="/attendance"
         />
         <PremiumKpiCard
           label="Attendance %"
@@ -256,6 +307,7 @@ export function DashboardAnalytics() {
           color="#06B6D4"
           accentLight="rgba(6,182,212,0.10)"
           index={5}
+          href="/attendance/reports"
         />
       </div>
 
