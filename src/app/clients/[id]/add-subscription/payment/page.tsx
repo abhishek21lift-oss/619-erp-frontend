@@ -89,11 +89,35 @@ function Inner() {
   const totalMrp = planRows.reduce((s: number, r: any) => s + (parseFloat(r.basePrice) || 0), 0);
   const totalNet = planRows.reduce((s: number, r: any) => s + (parseFloat(r.sellingPrice) || 0), 0);
   const totalDiscount = Math.max(0, totalMrp - totalNet);
+  const receivedNum = parseFloat(receivedAmount) || 0;
+  const balanceNum  = Math.max(0, totalNet - receivedNum);
+
+  const balColor = balanceNum === 0 ? '#10B981' : receivedNum > 0 ? '#F59E0B' : '#EF4444';
+
+  const statusIcons: Record<string, { icon: React.ReactNode; cls: string }> = {
+    PAID:     { icon: <CheckCircle2 size={11} />,     cls: 'bg-[rgba(16,185,129,0.10)] text-[#10B981]' },
+    PARTIAL:  { icon: <CheckCircle2 size={11} />,     cls: 'bg-[rgba(245,158,11,0.10)] text-[#F59E0B]' },
+    PENDING:  { icon: <CheckCircle2 size={11} />,     cls: 'bg-[rgba(239,68,68,0.10)] text-[#EF4444]' },
+    REFUNDED: { icon: <CheckCircle2 size={11} />,     cls: 'bg-[rgba(100,116,139,0.10)] text-[#64748B]' },
+  };
+  const payStatus = balanceNum === 0 ? 'PAID' : receivedNum > 0 ? 'PARTIAL' : 'PENDING';
+  const { icon: statusIcon, cls: statusClass } = statusIcons[paymentStatus] || statusIcons.PENDING;
 
   async function handleSubmit() {
     setSaving(true);
     try {
-      const result = await api.clients.addSubscription(id, planData);
+      const payload = {
+        ...planData,
+        sale_amount:    totalNet,
+        paid_amount:    receivedNum,
+        balance_amount: balanceNum,
+        payment_status: paymentStatus,
+        payment_method: paymentMethod,
+        receipt_no:     receiptNo,
+        receipt_date:   receiptDate,
+        notes:          receiptNotes || notes || null,
+      };
+      const result = await api.clients.addSubscription(id, payload);
       toast.success(result?.message || 'Subscription added successfully!');
       sessionStorage.removeItem('subscription_plan_data');
       setTimeout(() => router.push(`/clients/${id}`), 900);
@@ -341,12 +365,26 @@ function Inner() {
                     <td className="py-3.5 px-5 text-right font-bold text-[#EF4444]">{totalDiscount > 0 ? `-${fmt(totalDiscount)}` : '—'}</td>
                     <td className="py-3.5 px-5 text-right font-bold text-[#0B0B0F]">{fmt(totalNet)}</td>
                   </tr>
-                  <tr className="bg-[rgba(16,185,129,0.04)]">
-                    <td colSpan={5} className="py-3.5 px-5 font-semibold text-[#10B981]">Payment Status</td>
-                    <td colSpan={2} className="py-3.5 px-5 text-right">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(16,185,129,0.10)] px-3 py-1 text-[11px] font-bold text-[#10B981]">
-                        <CheckCircle2 size={11} />
-                        PAID
+                  <tr className="bg-[rgba(16,185,129,0.03)]">
+                    <td colSpan={5} className="py-3 px-5 font-semibold text-[#0B0B0F]">Sale Amount</td>
+                    <td colSpan={2} className="py-3 px-5 text-right font-bold text-[#0B0B0F]">{fmt(totalNet)}</td>
+                  </tr>
+                  <tr className="bg-[rgba(59,130,246,0.03)]">
+                    <td colSpan={5} className="py-3 px-5 font-semibold text-[#0B0B0F]">Paid Amount</td>
+                    <td colSpan={2} className="py-3 px-5 text-right font-bold text-[#10B981]">{fmt(parseFloat(receivedAmount) || 0)}</td>
+                  </tr>
+                  <tr className="bg-[rgba(239,68,68,0.03)]">
+                    <td colSpan={5} className="py-3 px-5 font-semibold text-[#0B0B0F]">Balance Amount</td>
+                    <td colSpan={2} className="py-3 px-5 text-right font-bold" style={{ color: balColor }}>
+                      {fmt(Math.max(0, totalNet - (parseFloat(receivedAmount) || 0)))}
+                    </td>
+                  </tr>
+                  <tr className="bg-[rgba(245,158,11,0.03)]">
+                    <td colSpan={5} className="py-3 px-5 font-semibold text-[#0B0B0F]">Payment Status</td>
+                    <td colSpan={2} className="py-3 px-5 text-right">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold ${statusClass}`}>
+                        {statusIcon}
+                        {paymentStatus}
                       </span>
                     </td>
                   </tr>
