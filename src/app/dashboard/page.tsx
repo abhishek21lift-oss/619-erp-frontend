@@ -35,9 +35,6 @@ function DashboardContent() {
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
           <div className="relative flex items-center justify-between gap-3 px-5 py-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-white/20 backdrop-blur-sm">
-                <span className="text-[13px] font-bold text-white">DS</span>
-              </div>
               <h1 className="text-[17px] sm:text-[19px] font-extrabold tracking-[-0.02em] text-white leading-none uppercase">
                 Dashboard
               </h1>
