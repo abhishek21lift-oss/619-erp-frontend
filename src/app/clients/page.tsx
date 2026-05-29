@@ -470,7 +470,8 @@ export default function ClientsPage() {
   const [sortDir, setSortDir]       = useState<SortDir>('asc');
   const [page, setPage]             = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
-  const [deleting, setDeleting]     = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
 
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -640,8 +641,8 @@ export default function ClientsPage() {
       await api.clients.delete(String(deleteTarget.id));
       setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch (e: any) {
-      alert(`Delete failed: ${e.message}`);
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : 'Failed to delete member');
     } finally {
       setDeleting(false);
     }
@@ -1190,6 +1191,11 @@ export default function ClientsPage() {
                 Are you sure you want to permanently delete <strong style={{ color: '#0f172a' }}>{deleteTarget.name}</strong>?
                 This action cannot be undone.
               </p>
+              {deleteError && (
+                <p style={{ fontSize: 12, color: '#ef4444', marginBottom: 12, padding: '8px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: 8 }}>
+                  {deleteError}
+                </p>
+              )}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => setDeleteTarget(null)}

@@ -101,7 +101,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           iconLeft && <span className="shrink-0">{iconLeft}</span>
         )}
         {children}
-        {iconRight && !loading && <span className="shrink-0">{iconRight}</span>}
+        {iconRight && <span className="shrink-0">{iconRight}</span>}
       </button>
     );
   },
