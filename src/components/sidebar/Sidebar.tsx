@@ -7,15 +7,14 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
-import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
+import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
 import {
   LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
   ClipboardList, ScanFace, User, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
   LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
   List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
-  Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, UsersRound,
-  Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
+  UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote,
 } from 'lucide-react';
 
@@ -25,8 +24,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
   List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
-  Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, UsersRound,
-  Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
+  UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote,
 };
 
@@ -41,21 +39,17 @@ function SidebarNav() {
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const groups = NAV_GROUPS.filter(g => isGroupVisibleForRole(g, user?.role)).map(g => ({
-    ...g,
-    items: g.items.filter(i => isVisibleForRole(i, user?.role)).flatMap(i =>
-      i.children
-        ? i.children.filter(c => isVisibleForRole(c, user?.role))
-        : [i]
-    ),
-  })).filter(g => g.items.length > 0);
-
-  const settingsItems = SETTINGS_GROUP.items.filter(i => isVisibleForRole(i, user?.role));
-
   const navItems = [
     { items: [], label: 'Dashboard', id: 'dashboard', icon: 'LayoutDashboard', single: true, href: '/dashboard' },
-    ...groups.map(g => ({ ...g, single: false, href: '' })),
-    ...(settingsItems.length ? [{ items: settingsItems, label: 'Settings', id: 'settings', icon: 'Settings', single: false, href: '' }] : []),
+    ...NAV_GROUPS.filter(g => isGroupVisibleForRole(g, user?.role)).map(g => ({
+      ...g,
+      items: g.items.filter(i => isVisibleForRole(i, user?.role)).flatMap(i =>
+        i.children
+          ? i.children.filter(c => isVisibleForRole(c, user?.role))
+          : [i]
+      ),
+      single: false, href: '',
+    })).filter(g => g.items.length > 0),
   ];
 
   const toggleGroup = (id: string) => {
@@ -64,8 +58,8 @@ function SidebarNav() {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
-  const anyChildActive = (items: typeof groups[0]['items']) =>
-    items.some(i => isActive(i.href) || (i.children?.some(c => isActive(c.href))));
+  const anyChildActive = (items: { href?: string; children?: { href?: string }[] }[]) =>
+    items.some(i => isActive(i.href || '') || (i.children?.some(c => isActive(c.href || ''))));
 
   return (
     <div className="space-y-1.5 px-2">
