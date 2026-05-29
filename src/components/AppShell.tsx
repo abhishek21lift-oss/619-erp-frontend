@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Menu, Search, LogOut, Bell } from 'lucide-react';
+import { Menu, Search, LogOut, Bell, Settings } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname, useRouter } from 'next/navigation';
@@ -152,7 +152,7 @@ export default function AppShell({ children, title }: AppShellProps) {
                     onFocus={() => {
                       if (searchQuery.trim()) setSearchOpen(searchResults.length > 0);
                     }}
-                    placeholder="Search anything — leads, members, reports..."
+                    placeholder="Search members, leads, PT clients, invoices..."
                     className="relative w-full rounded-xl border-0 bg-[#F1F5F9] py-2.5 pl-10 pr-4 text-[13px] text-[#0B0B0F] placeholder-[#94A3B8] outline-none transition-all duration-200 focus:bg-white focus:shadow-[0_0_0_1px_rgba(59,130,246,0.3),0_4px_16px_rgba(59,130,246,0.12)]"
                   />
                 </div>
@@ -189,6 +189,15 @@ export default function AppShell({ children, title }: AppShellProps) {
 
             {/* Spacer */}
             <div className="flex-1" />
+
+            {/* Settings icon */}
+            <button
+              type="button"
+              aria-label="Settings"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#86868b] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1d1d1f]"
+            >
+              <Settings size={17} strokeWidth={1.5} />
+            </button>
 
             {/* Notification bell */}
             <button

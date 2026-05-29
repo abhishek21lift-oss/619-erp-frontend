@@ -7,30 +7,29 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, Dumbbell, UserPlus, CalendarCheck, RefreshCw, Fingerprint, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, Users, Dumbbell, UserPlus, CalendarCheck, Activity, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
 
 const COLORS = {
+  purple: '#8B5CF6',
   blue: '#3B82F6',
-  cyan: '#06B6D4',
   emerald: '#10B981',
   amber: '#F59E0B',
-  coral: '#EF4444',
-  purple: '#8B5CF6',
   pink: '#EC4899',
+  cyan: '#06B6D4',
   indigo: '#6366F1',
 };
 
-const GRADIENTS = {
+const GRADIENTS: Record<string, string> = {
+  purple: 'from-[#8B5CF6] to-[#7C3AED]',
   blue: 'from-[#3B82F6] to-[#2563EB]',
-  cyan: 'from-[#06B6D4] to-[#0891B2]',
   emerald: 'from-[#10B981] to-[#059669]',
   amber: 'from-[#F59E0B] to-[#D97706]',
-  coral: 'from-[#EF4444] to-[#DC2626]',
-  purple: 'from-[#8B5CF6] to-[#7C3AED]',
+  pink: 'from-[#EC4899] to-[#DB2777]',
+  cyan: 'from-[#06B6D4] to-[#0891B2]',
 };
 
-const PIE_COLORS = ['#3B82F6', '#06B6D4', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1', '#EF4444'];
+const PIE_COLORS = ['#8B5CF6', '#3B82F6', '#06B6D4', '#10B981', '#F59E0B', '#EC4899', '#6366F1', '#EF4444'];
 
 function GlassCard({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
@@ -47,11 +46,27 @@ function GlassCard({ className, children, ...props }: React.HTMLAttributes<HTMLD
   );
 }
 
+const sparklineData = [
+  { v: 12 }, { v: 18 }, { v: 14 }, { v: 22 }, { v: 19 }, { v: 28 }, { v: 24 }, { v: 32 }, { v: 27 }, { v: 35 },
+];
+
+function Sparkline({ color }: { color: string }) {
+  return (
+    <div className="h-[36px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={sparklineData}>
+          <Line type="monotone" dataKey="v" stroke={color} strokeWidth={1.8} dot={false} activeDot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function PremiumKpiCard({
-  label, value, hint, icon, gradient, color, index = 0,
+  label, value, hint, growth, icon, gradient, color, accentLight, index = 0,
 }: {
-  label: string; value: string; hint?: string; icon: React.ReactNode;
-  gradient: string; color: string; index?: number;
+  label: string; value: string; hint?: string; growth?: string; icon: React.ReactNode;
+  gradient: string; color: string; accentLight: string; index?: number;
 }) {
   return (
     <motion.div
@@ -60,34 +75,36 @@ function PremiumKpiCard({
       transition={{ duration: 0.4, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
       className="group relative overflow-hidden rounded-[24px] bg-white/70 backdrop-blur-[20px] saturate-[160%] border border-white/25 shadow-[0_8px_32px_rgba(11,11,15,0.06)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(11,11,15,0.10)] hover:-translate-y-0.5"
     >
-      <div className={cn(
-        'absolute inset-0 opacity-[0.03] bg-gradient-to-br',
-        gradient,
-      )} />
-      <div className="relative p-5">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#4A4E57]">
-            {label}
-          </p>
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-[0_4px_12px_rgba(59,130,246,0.15)]"
-            style={{ background: `linear-gradient(135deg, ${color}, ${color}dd)` }}
-          >
-            {React.cloneElement(icon as React.ReactElement<{size?: number; strokeWidth?: number; color?: string}>, { size: 18, strokeWidth: 1.5, color: 'white' })}
-          </span>
+      <div className={cn('absolute inset-0 opacity-[0.03] bg-gradient-to-br', gradient)} />
+      <div className="relative p-4">
+        <div className="flex items-start justify-between gap-3 mb-2.5">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+              style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}
+            >
+              {React.cloneElement(icon as React.ReactElement<{size?: number; strokeWidth?: number; color?: string}>, { size: 15, strokeWidth: 1.8, color: 'white' })}
+            </span>
+            <p className="text-[10px] font-bold uppercase tracking-[0.10em] text-[#4A4E57]">
+              {label}
+            </p>
+          </div>
+          {growth && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-[rgba(16,185,129,0.08)] px-1.5 py-0.5 text-[9px] font-bold text-[#10B981]">
+              <ArrowUpRight size={8} strokeWidth={2.5} />
+              {growth}
+            </span>
+          )}
         </div>
-        <div className="mt-3 flex items-end justify-between gap-2">
-          <span className="text-[28px] font-bold tracking-[-0.03em] text-[#0B0B0F] tabular-nums leading-none">
-            {value}
-          </span>
-          <span className="inline-flex items-center gap-0.5 rounded-full bg-[rgba(59,130,246,0.08)] px-2 py-0.5 text-[11px] font-bold text-[#3B82F6]">
-            <ArrowUpRight size={10} strokeWidth={2.5} />
-            12.5%
-          </span>
-        </div>
+        <span className="text-[22px] font-bold tracking-[-0.03em] text-[#0B0B0F] tabular-nums leading-none">
+          {value}
+        </span>
         {hint && (
-          <p className="mt-2 text-[12px] text-[#4A4E57]">{hint}</p>
+          <p className="mt-1 text-[11px] text-[#4A4E57]">{hint}</p>
         )}
+        <div className="mt-2" style={{ opacity: 0.6 }}>
+          <Sparkline color={color} />
+        </div>
       </div>
     </motion.div>
   );
@@ -112,35 +129,26 @@ const trendData = [
 ];
 
 const membershipDist = [
-  { name: 'Monthly', value: 185 },
-  { name: 'Quarterly', value: 95 },
-  { name: 'Yearly', value: 62 },
-  { name: 'PT Only', value: 48 },
-  { name: 'Trial', value: 28 },
+  { name: 'Active Members', value: 185 },
+  { name: 'Trial Members', value: 38 },
+  { name: 'Lapsed Members', value: 28 },
+  { name: 'Monthly', value: 62 },
+  { name: 'Quarterly', value: 48 },
 ];
 
 const ptDist = [
-  { name: 'PT 12', value: 52 },
-  { name: 'PT 24', value: 38 },
-  { name: 'PT 36', value: 25 },
-  { name: 'PT 48', value: 18 },
-  { name: 'PT 96', value: 8 },
-];
-
-const trainerData = [
-  { name: 'Rajesh', revenue: 420000, clients: 28 },
-  { name: 'Priya', revenue: 385000, clients: 24 },
-  { name: 'Amit', revenue: 350000, clients: 22 },
-  { name: 'Neha', revenue: 310000, clients: 20 },
-  { name: 'Vikram', revenue: 280000, clients: 18 },
+  { name: '12 Sessions', value: 52 },
+  { name: '24 Sessions', value: 38 },
+  { name: '36 Sessions', value: 25 },
+  { name: 'Others', value: 26 },
 ];
 
 const recentActivity = [
-  { time: '2m ago', event: 'New member enrolled', detail: 'Rahul Sharma - Monthly', type: 'success' },
-  { time: '15m ago', event: 'PT session completed', detail: 'Amit with Trainer Priya', type: 'info' },
-  { time: '1h ago', event: 'Payment received', detail: '₹12,000 - Sneha Patel', type: 'success' },
-  { time: '2h ago', event: 'Lead converted', detail: 'Vikram Joshi → Trial', type: 'info' },
-  { time: '3h ago', event: 'Renewal processed', detail: 'Deepak Kumar - Yearly', type: 'success' },
+  { time: '2m ago', event: 'New member joined', detail: 'Rahul Sharma - Monthly Premium', type: 'success' },
+  { time: '15m ago', event: 'PT package renewed', detail: 'Amit with Trainer Priya - 24 Sessions', type: 'info' },
+  { time: '1h ago', event: 'Check-in completed', detail: 'Sneha Patel - QR check-in', type: 'success' },
+  { time: '2h ago', event: 'New lead added', detail: 'Vikram Joshi — Walk-in Enquiry', type: 'info' },
+  { time: '3h ago', event: 'Renewal processed', detail: 'Deepak Kumar - Yearly Premium', type: 'success' },
   { time: '4h ago', event: 'Attendance alert', detail: '85% capacity at peak hour', type: 'warning' },
 ];
 
@@ -150,8 +158,16 @@ const typeStyles: Record<string, string> = {
   warning: 'bg-[rgba(245,158,11,0.10)] text-[#F59E0B]',
 };
 
+const typeDotColors: Record<string, string> = {
+  success: '#10B981',
+  info: '#3B82F6',
+  warning: '#F59E0B',
+};
+
 function fmtINR(n: number) {
-  return '₹' + (n / 100000).toFixed(1) + 'L';
+  if (n >= 10000000) return '₹' + (n / 10000000).toFixed(1) + 'Cr';
+  if (n >= 100000) return '₹' + (n / 100000).toFixed(1) + 'L';
+  return '₹' + (n / 1000).toFixed(0) + 'K';
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -161,7 +177,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p className="text-[12px] font-semibold text-[#0B0B0F] mb-1">{label}</p>
         {payload.map((entry: any, i: number) => (
           <p key={i} className="text-[12px]" style={{ color: entry.color }}>
-            {entry.name}: <span className="font-bold">{entry.name === 'revenue' ? fmtINR(entry.value) : entry.value.toLocaleString()}</span>
+            {entry.name}: <span className="font-bold">{typeof entry.value === 'number' && entry.value > 1000 ? fmtINR(entry.value) : entry.value}</span>
           </p>
         ))}
       </div>
@@ -178,55 +194,67 @@ export function DashboardAnalytics() {
         <PremiumKpiCard
           label="Total Revenue"
           value="₹1.72Cr"
-          hint="vs ₹1.48Cr last month"
+          hint="Monthly revenue growth"
+          growth="12.5%"
           icon={<TrendingUp />}
-          gradient="from-[#3B82F6] to-[#2563EB]"
-          color="#3B82F6"
+          gradient="from-[#8B5CF6] to-[#7C3AED]"
+          color="#8B5CF6"
+          accentLight="rgba(139,92,246,0.10)"
           index={0}
         />
         <PremiumKpiCard
           label="Active Members"
           value="342"
           hint="87% retention rate"
+          growth="8.2%"
           icon={<Users />}
-          gradient="from-[#06B6D4] to-[#0891B2]"
-          color="#06B6D4"
+          gradient="from-[#3B82F6] to-[#2563EB]"
+          color="#3B82F6"
+          accentLight="rgba(59,130,246,0.10)"
           index={1}
         />
         <PremiumKpiCard
           label="PT Revenue"
           value="₹48.2L"
           hint="28% of total revenue"
+          growth="6.8%"
           icon={<Dumbbell />}
           gradient="from-[#10B981] to-[#059669]"
           color="#10B981"
+          accentLight="rgba(16,185,129,0.10)"
           index={2}
         />
         <PremiumKpiCard
           label="New Leads"
           value="128"
           hint="34% conversion rate"
+          growth="11.3%"
           icon={<UserPlus />}
           gradient="from-[#F59E0B] to-[#D97706]"
           color="#F59E0B"
+          accentLight="rgba(245,158,11,0.10)"
           index={3}
         />
         <PremiumKpiCard
           label="Today's Attendance"
           value="187"
           hint="72% of active members"
+          growth="5.4%"
           icon={<CalendarCheck />}
-          gradient="from-[#8B5CF6] to-[#7C3AED]"
-          color="#8B5CF6"
+          gradient="from-[#EC4899] to-[#DB2777]"
+          color="#EC4899"
+          accentLight="rgba(236,72,153,0.10)"
           index={4}
         />
         <PremiumKpiCard
-          label="Renewal Rate"
+          label="Attendance %"
           value="91%"
           hint="↑ 5% from last quarter"
-          icon={<RefreshCw />}
-          gradient="from-[#6366F1] to-[#4F46E5]"
-          color="#6366F1"
+          growth="3.1%"
+          icon={<Activity />}
+          gradient="from-[#06B6D4] to-[#0891B2]"
+          color="#06B6D4"
+          accentLight="rgba(6,182,212,0.10)"
           index={5}
         />
       </div>
@@ -240,7 +268,7 @@ export function DashboardAnalytics() {
               <h3 className="text-[15px] font-semibold text-[#0B0B0F]">Monthly Revenue</h3>
               <p className="text-[12px] text-[#4A4E57] mt-0.5">Revenue trend over the last 6 months</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(16,185,129,0.08)] px-2.5 py-1 text-[11px] font-bold text-[#10B981]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(139,92,246,0.08)] px-2.5 py-1 text-[11px] font-bold text-[#8B5CF6]">
               <TrendingUp size={11} />
               +16.2%
             </span>
@@ -250,21 +278,21 @@ export function DashboardAnalytics() {
               <BarChart data={revenueData} barCategoryGap="20%">
                 <defs>
                   <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.85} />
-                    <stop offset="100%" stopColor="#2563EB" stopOpacity={0.45} />
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.45} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(11,11,15,0.05)" vertical={false} />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#4A4E57' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#4A4E57' }} tickFormatter={(v) => `${(v/100000).toFixed(0)}L`} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59,130,246,0.04)' }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(139,92,246,0.04)' }} />
                 <Bar dataKey="revenue" fill="url(#barGrad)" radius={[8, 8, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </GlassCard>
 
-        {/* Revenue Trend Line Chart */}
+        {/* Revenue vs Target Line Chart */}
         <GlassCard className="p-5 sm:p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -293,21 +321,21 @@ export function DashboardAnalytics() {
         </GlassCard>
       </div>
 
-      {/* Donut Charts + Activity Row */}
+      {/* Distribution + Activity Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Membership Distribution */}
         <GlassCard className="p-5 sm:p-6">
           <h3 className="text-[15px] font-semibold text-[#0B0B0F] mb-1">Membership Distribution</h3>
-          <p className="text-[12px] text-[#4A4E57] mb-4">Breakdown by plan type</p>
-          <div className="h-[220px]">
+          <p className="text-[12px] text-[#4A4E57] mb-4">Member segmentation overview</p>
+          <div className="relative h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={membershipDist}
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
+                  innerRadius={52}
+                  outerRadius={82}
                   paddingAngle={3}
                   strokeWidth={2}
                   stroke="rgba(255,255,255,0.5)"
@@ -320,13 +348,18 @@ export function DashboardAnalytics() {
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#8B5CF6]/10 to-[#3B82F6]/10">
+                <Users size={18} className="text-[#8B5CF6]" strokeWidth={1.5} />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-3">
+          <div className="grid grid-cols-2 gap-1.5 mt-3">
             {membershipDist.map((item, i) => (
               <div key={item.name} className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: PIE_COLORS[i] }} />
-                <span className="text-[11px] text-[#4A4E57] truncate">{item.name}</span>
-                <span className="ml-auto text-[11px] font-bold text-[#0B0B0F]">{item.value}</span>
+                <span className="text-[10px] text-[#4A4E57] truncate">{item.name}</span>
+                <span className="ml-auto text-[10px] font-bold text-[#0B0B0F]">{item.value}</span>
               </div>
             ))}
           </div>
@@ -335,16 +368,16 @@ export function DashboardAnalytics() {
         {/* PT Package Distribution */}
         <GlassCard className="p-5 sm:p-6">
           <h3 className="text-[15px] font-semibold text-[#0B0B0F] mb-1">PT Package Distribution</h3>
-          <p className="text-[12px] text-[#4A4E57] mb-4">Personal training plan breakdown</p>
-          <div className="h-[220px]">
+          <p className="text-[12px] text-[#4A4E57] mb-4">Package sales analysis</p>
+          <div className="relative h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={ptDist}
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
+                  innerRadius={52}
+                  outerRadius={82}
                   paddingAngle={3}
                   strokeWidth={2}
                   stroke="rgba(255,255,255,0.5)"
@@ -357,13 +390,18 @@ export function DashboardAnalytics() {
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#10B981]/10 to-[#3B82F6]/10">
+                <Dumbbell size={18} className="text-[#10B981]" strokeWidth={1.5} />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-3">
+          <div className="grid grid-cols-2 gap-1.5 mt-3">
             {ptDist.map((item, i) => (
               <div key={item.name} className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: PIE_COLORS[(i + 2) % PIE_COLORS.length] }} />
-                <span className="text-[11px] text-[#4A4E57] truncate">{item.name}</span>
-                <span className="ml-auto text-[11px] font-bold text-[#0B0B0F]">{item.value}</span>
+                <span className="text-[10px] text-[#4A4E57] truncate">{item.name}</span>
+                <span className="ml-auto text-[10px] font-bold text-[#0B0B0F]">{item.value}</span>
               </div>
             ))}
           </div>
@@ -372,7 +410,7 @@ export function DashboardAnalytics() {
         {/* Recent Activity */}
         <GlassCard className="p-5 sm:p-6">
           <h3 className="text-[15px] font-semibold text-[#0B0B0F] mb-1">Recent Activity</h3>
-          <p className="text-[12px] text-[#4A4E57] mb-4">Latest studio events</p>
+          <p className="text-[12px] text-[#4A4E57] mb-4">Real-time studio operations</p>
           <div className="space-y-3">
             {recentActivity.map((activity, i) => (
               <motion.div
@@ -382,10 +420,13 @@ export function DashboardAnalytics() {
                 transition={{ delay: i * 0.05 }}
                 className="flex items-start gap-3 group"
               >
-                <span className="mt-0.5 h-2 w-2 rounded-full shrink-0" style={{
-                  background: activity.type === 'success' ? '#10B981' : activity.type === 'info' ? '#3B82F6' : '#F59E0B',
-                  boxShadow: `0 0 6px ${activity.type === 'success' ? 'rgba(16,185,129,0.4)' : activity.type === 'info' ? 'rgba(59,130,246,0.4)' : 'rgba(245,158,11,0.4)'}`,
-                }} />
+                <span
+                  className="mt-0.5 h-2 w-2 rounded-full shrink-0"
+                  style={{
+                    background: typeDotColors[activity.type],
+                    boxShadow: `0 0 6px ${typeDotColors[activity.type]}66`,
+                  }}
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] font-medium text-[#0B0B0F]">{activity.event}</p>
                   <p className="text-[11px] text-[#4A4E57]">{activity.detail}</p>
@@ -396,38 +437,6 @@ export function DashboardAnalytics() {
           </div>
         </GlassCard>
       </div>
-
-      {/* Trainer Performance Bar Chart */}
-      <GlassCard className="p-5 sm:p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h3 className="text-[15px] font-semibold text-[#0B0B0F]">Trainer Performance</h3>
-            <p className="text-[12px] text-[#4A4E57] mt-0.5">Revenue generated by each trainer this month</p>
-          </div>
-        </div>
-        <div className="h-[200px] sm:h-[240px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={trainerData} layout="vertical" barCategoryGap="25%">
-              <defs>
-                <linearGradient id="trainerBar" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#06B6D4" stopOpacity={0.85} />
-                  <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.55} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(11,11,15,0.05)" horizontal={false} />
-              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#4A4E57' }} tickFormatter={(v) => `${(v/100000).toFixed(0)}L`} />
-              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#0B0B0F' }} width={60} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(6,182,212,0.04)' }} />
-              <Bar dataKey="revenue" fill="url(#trainerBar)" radius={[0, 8, 8, 0]} maxBarSize={36} label={{
-                position: 'right',
-                fontSize: 11,
-                fill: '#4A4E57',
-                formatter: (v: number) => fmtINR(v),
-              }} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </GlassCard>
     </section>
   );
 }

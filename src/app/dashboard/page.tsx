@@ -37,7 +37,7 @@ function DashboardContent() {
             </div>
             <div>
               <h1 className="text-[20px] sm:text-[22px] font-bold leading-tight tracking-[-0.025em] text-[#0B0B0F]">
-                Dashboard
+                Dashboard ✨
               </h1>
               <p className="text-[12px] text-[#4A4E57] mt-0.5">
                 Your premium command center
