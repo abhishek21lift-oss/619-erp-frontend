@@ -156,6 +156,7 @@ export default function AppShell({ children, title }: AppShellProps) {
             <button
               type="button"
               aria-label="Open sidebar"
+              aria-expanded={sidebarOpen}
               onClick={() => setSidebarOpen(true)}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#86868b] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1d1d1f] lg:hidden"
             >
@@ -368,7 +369,7 @@ export default function AppShell({ children, title }: AppShellProps) {
 
           <main
             id="main-content"
-            className="mx-auto w-full max-w-[1800px] flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8"
+            className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8"
           >
             {title && (
               <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[#1d1d1f]">

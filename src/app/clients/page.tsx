@@ -671,7 +671,7 @@ export default function ClientsPage() {
   return (
     <Guard>
       <AppShell>
-        <div style={{ minHeight: '100vh', background: '#f1f4f9' }}>
+        <div style={{ minHeight: '100dvh', background: '#f1f4f9' }}>
 
           {/* ── Ambient background blobs ── */}
           <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
@@ -771,7 +771,7 @@ export default function ClientsPage() {
             {/* ── KPI Grid — 4 across on desktop, 2 on mobile ── */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
               gap: 10,
               marginBottom: 20,
             }}>

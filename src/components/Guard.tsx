@@ -59,8 +59,8 @@ export default function Guard({ children, role }: Props) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '100vh',
-          background: 'var(--bg-1)',
+          minHeight: '100dvh',
+          background: '#F8FAFC',
         }}
       >
         <div
@@ -77,22 +77,25 @@ export default function Guard({ children, role }: Props) {
               height: 44,
               borderRadius: 12,
               background:
-                'linear-gradient(135deg, var(--brand) 0%, var(--brand-lo) 100%)',
+                'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 22,
-              boxShadow: '0 8px 24px var(--brand-glow)',
-              animation: 'pulse-glow 1.4s ease-in-out infinite',
+              boxShadow: '0 8px 24px rgba(59,130,246,0.25)',
             }}
           >
-            🏋️
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
           </div>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid rgba(59,130,246,0.15)', borderTopColor: '#3B82F6', animation: 'spin 0.8s linear infinite' }} />
 
           <div
             style={{
               fontSize: 11,
-              color: 'var(--muted)',
+              color: '#6B7280',
               letterSpacing: '2px',
               textTransform: 'uppercase',
               fontWeight: 700,

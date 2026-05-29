@@ -43,7 +43,7 @@ const config: Config = {
       colors: {
         brand: {
           DEFAULT: 'rgb(var(--rgb-brand) / <alpha-value>)',
-          hi: 'rgb(var(--rgb-brand-hi, 239 68 68) / <alpha-value>)',
+          hi: 'rgb(var(--rgb-brand-hi, 96 165 250) / <alpha-value>)',
         },
         ink: 'rgb(var(--rgb-text) / <alpha-value>)',
       },
