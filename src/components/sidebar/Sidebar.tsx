@@ -183,11 +183,11 @@ export default function Sidebar({
       )}
     >
       <div className="flex shrink-0 items-center border-b border-[rgba(11,11,15,0.05)] px-5 py-6">
-        <Link href="/dashboard" className="flex items-center gap-4 group">
-          <img src="/logo.png" alt="619 Fitness" className="h-12 w-12 rounded-xl object-cover shadow-[0_2px_12px_rgba(0,0,0,0.10)]" />
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <img src="/logo.png" alt="619 Fitness" className="h-14 w-14 rounded-xl object-cover shadow-[0_2px_12px_rgba(0,0,0,0.10)]" />
           <div>
-            <h2 className="text-[20px] font-extrabold tracking-tight text-[#0B0B0F] leading-none">619 FITNESS</h2>
-            <p className="mt-0.5 text-[13px] font-semibold text-[#4A4E57] tracking-[0.06em]">STUDIO</p>
+            <h2 className="text-[16px] font-extrabold tracking-tight text-[#0B0B0F] leading-none">619 FITNESS</h2>
+            <p className="mt-0.5 text-[11px] font-semibold text-[#4A4E57] tracking-[0.06em]">STUDIO</p>
           </div>
         </Link>
         {isMobile && (
