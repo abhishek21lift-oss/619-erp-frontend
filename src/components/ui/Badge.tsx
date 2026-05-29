@@ -17,13 +17,13 @@ type Tone =
   | 'purple';
 
 const TONES: Record<Tone, string> = {
-  neutral: 'bg-slate-100 text-slate-700 ring-slate-200',
-  success: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  warning: 'bg-amber-50 text-amber-700 ring-amber-200',
-  danger: 'bg-red-50 text-red-700 ring-red-200',
-  info: 'bg-sky-50 text-sky-700 ring-sky-200',
-  brand: 'bg-rose-50 text-rose-700 ring-rose-200',
-  purple: 'bg-violet-50 text-violet-700 ring-violet-200',
+  neutral: 'bg-[#F1F5F9] text-[#4A4E57] ring-[#E2E8F0]',
+  success: 'bg-[rgba(16,185,129,0.08)] text-[#10B981] ring-[rgba(16,185,129,0.20)]',
+  warning: 'bg-[rgba(245,158,11,0.08)] text-[#F59E0B] ring-[rgba(245,158,11,0.20)]',
+  danger: 'bg-[rgba(239,68,68,0.08)] text-[#EF4444] ring-[rgba(239,68,68,0.20)]',
+  info: 'bg-[rgba(59,130,246,0.08)] text-[#3B82F6] ring-[rgba(59,130,246,0.20)]',
+  brand: 'bg-[rgba(59,130,246,0.08)] text-[#3B82F6] ring-[rgba(59,130,246,0.20)]',
+  purple: 'bg-[rgba(139,92,246,0.08)] text-[#8B5CF6] ring-[rgba(139,92,246,0.20)]',
 };
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {

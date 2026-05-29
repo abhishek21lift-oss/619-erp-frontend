@@ -4,29 +4,23 @@ const config: Config = {
   content: ['./src/**/*.{ts,tsx,js,jsx}'],
   darkMode: 'class',
   safelist: [
-    // KPI Card gradient backgrounds — stored in JS object, cannot be statically detected
     'bg-gradient-to-br',
-    'from-rose-500', 'via-pink-500', 'to-red-500',
-    'from-emerald-500', 'via-teal-500', 'to-green-600',
-    'from-amber-500', 'via-orange-500', 'to-yellow-500',
-    'from-sky-500', 'via-blue-500', 'to-indigo-500',
-    'from-violet-500', 'via-purple-500', 'to-fuchsia-500',
-    'from-orange-500', 'via-red-500', 'to-rose-600',
-    'from-slate-700', 'via-slate-800', 'to-zinc-900',
-    // glow shadows
-    'shadow-[0_8px_32px_-8px_rgba(244,63,94,0.45)]',
+    // glow shadows (KpiCard)
+    'shadow-[0_8px_32px_-8px_rgba(59,130,246,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(245,158,11,0.45)]',
-    'shadow-[0_8px_32px_-8px_rgba(14,165,233,0.45)]',
+    'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]',
-    'shadow-[0_8px_32px_-8px_rgba(249,115,22,0.45)]',
-    'shadow-[0_8px_32px_-8px_rgba(71,85,105,0.5)]',
+    'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]',
+    'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]',
     // decorative blobs
-    'bg-rose-300/30', 'bg-emerald-300/30', 'bg-amber-300/30',
-    'bg-sky-300/30', 'bg-violet-300/30', 'bg-orange-300/30',
-    'bg-slate-400/20',
-    // icon backgrounds
-    'bg-white/25', 'bg-white/15',
+    'bg-blue-300/30', 'bg-emerald-300/30', 'bg-amber-300/30',
+    'bg-cyan-300/30', 'bg-violet-300/30', 'bg-red-300/30',
+    'bg-slate-500/20',
+    // glass utility classes
+    'bg-white/25', 'bg-white/15', 'bg-white/30', 'bg-white/40',
+    'bg-white/50', 'bg-white/60', 'bg-white/70', 'bg-white/75',
+    'bg-white/80', 'bg-white/85', 'bg-white/90',
     'backdrop-blur-md',
     'backdrop-blur-glassy',
     'backdrop-blur-glassier',
@@ -34,8 +28,6 @@ const config: Config = {
     'ring-1', 'ring-white/40', 'ring-white/25',
     'border-white/20', 'border-white/30', 'border-white/40', 'border-white/50',
     'border-white/60', 'border-white/70', 'border-white/80',
-    'bg-white/30', 'bg-white/40', 'bg-white/50', 'bg-white/60', 'bg-white/70',
-    'bg-white/75', 'bg-white/80', 'bg-white/85', 'bg-white/90',
   ],
   theme: {
     extend: {

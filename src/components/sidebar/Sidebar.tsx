@@ -1,9 +1,11 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
 import {
@@ -52,11 +54,11 @@ function SidebarNav() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {navItems.map(group => (
         <div key={group.id}>
           {group.label && (
-            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#86868b]">
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9CA3AF]">
               {group.label}
             </p>
           )}
@@ -69,21 +71,24 @@ function SidebarNav() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-all duration-150',
+                    'relative flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-all duration-150',
                     active
-                      ? 'bg-[#1d1d1f] text-white shadow-sm'
-                      : 'text-[#86868b] hover:bg-[rgba(0,0,0,0.03)] hover:text-[#1d1d1f]',
+                      ? 'bg-[rgba(59,130,246,0.10)] text-[#3B82F6] font-semibold shadow-[inset_3px_0_0_#3B82F6]'
+                      : 'text-[#4A4E57] hover:bg-[rgba(59,130,246,0.06)] hover:text-[#3B82F6]',
                   )}
                 >
-                  {Icon && <Icon size={16} strokeWidth={1.5} className="shrink-0" />}
+                  {active && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[18px] w-[3px] rounded-r-full bg-[#3B82F6] shadow-[0_0_8px_rgba(59,130,246,0.40)]" />
+                  )}
+                  {Icon && <Icon size={16} strokeWidth={active ? 2 : 1.5} className={cn('shrink-0', active && 'text-[#3B82F6]')} />}
                   <span className="truncate">{item.label}</span>
                   {item.badge && (
-                    <span className="ml-auto rounded-full bg-[#dc2626] px-1.5 py-0.5 text-[9px] font-bold text-white">
+                    <span className="ml-auto rounded-full bg-[#3B82F6] px-1.5 py-0.5 text-[9px] font-bold text-white">
                       {item.badge}
                     </span>
                   )}
                   {item.isNew && (
-                    <span className="ml-auto rounded-full bg-[rgba(220,38,38,0.08)] px-1.5 py-0.5 text-[9px] font-bold text-[#dc2626]">
+                    <span className="ml-auto rounded-full bg-[rgba(59,130,246,0.08)] px-1.5 py-0.5 text-[9px] font-bold text-[#3B82F6]">
                       NEW
                     </span>
                   )}
@@ -109,26 +114,27 @@ export default function Sidebar({
       data-sidebar={variant}
       className={cn(
         !isMobile && [
-          'fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r backdrop-blur-xl',
+          'fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r',
           'lg:flex xl:w-72',
-          'bg-white/95 border-[rgba(0,0,0,0.04)]',
+          'bg-white/75 backdrop-blur-[20px] saturate-[160%] border-[rgba(11,11,15,0.05)]',
+          'shadow-[0_0_0_1px_rgba(255,255,255,0.5)_inset,0_8px_32px_rgba(11,11,15,0.06)]',
         ],
         isMobile && [
           'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r shadow-2xl',
           'transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
-          'bg-white border-[rgba(0,0,0,0.04)]',
+          'bg-white/80 backdrop-blur-[20px] border-[rgba(11,11,15,0.05)]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ],
       )}
     >
-      <div className="flex shrink-0 items-center justify-between border-b border-[rgba(0,0,0,0.04)] px-5 py-6">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#1d1d1f] text-[11px] font-bold tracking-tight text-white shadow-sm">
+      <div className="flex shrink-0 items-center justify-between border-b border-[rgba(11,11,15,0.05)] px-5 py-6">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3B82F6] to-[#2563EB] text-[12px] font-bold tracking-tight text-white shadow-[0_4px_12px_rgba(59,130,246,0.30)] transition-all duration-200 group-hover:shadow-[0_6px_20px_rgba(59,130,246,0.40)] group-hover:scale-105">
             619
           </div>
           <div>
-            <h2 className="text-[15px] font-semibold tracking-tight text-[#1d1d1f]">619 Fitness</h2>
-            <p className="text-[12px] text-[#86868b]">Studio Dashboard</p>
+            <h2 className="text-[15px] font-semibold tracking-tight text-[#0B0B0F]">619 Fitness</h2>
+            <p className="text-[12px] text-[#4A4E57]">Command Center</p>
           </div>
         </Link>
         {isMobile && (
@@ -136,19 +142,24 @@ export default function Sidebar({
             type="button"
             aria-label="Close sidebar"
             onClick={onMobileClose}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-[#86868b] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1d1d1f]"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-[#4A4E57] transition-colors hover:bg-[rgba(59,130,246,0.06)] hover:text-[#3B82F6]"
           >
             <X size={16} />
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-5">
+      <div className="flex-1 overflow-y-auto px-3 py-5 scrollbar-thin">
         <SidebarNav />
       </div>
 
-      <div className="shrink-0 border-t border-[rgba(0,0,0,0.04)] px-5 py-4">
-        <p className="text-[12px] text-[#86868b]">v3.0.1</p>
+      <div className="shrink-0 border-t border-[rgba(11,11,15,0.05)] px-5 py-4">
+        <p className="text-[12px] text-[#4A4E57]">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_rgba(16,185,129,0.40)]" />
+            v4.0 — Premium
+          </span>
+        </p>
       </div>
     </aside>
   );

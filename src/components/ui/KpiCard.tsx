@@ -13,13 +13,13 @@ import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { cn } from './cn';
 
 type Accent =
-  | 'rose'
+  | 'blue'
   | 'emerald'
   | 'amber'
-  | 'sky'
-  | 'violet'
-  | 'orange'
-  | 'slate';
+  | 'cyan'
+  | 'purple'
+  | 'coral'
+  | 'graphite';
 
 const ACCENTS: Record<
   Accent,
@@ -30,47 +30,47 @@ const ACCENTS: Record<
     decorative: string; // decorative blob color
   }
 > = {
-  rose: {
-    bg: 'bg-gradient-to-br from-rose-500 via-pink-500 to-red-500',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(244,63,94,0.45)]',
+  blue: {
+    bg: 'bg-gradient-to-br from-[#3B82F6] via-[#2563EB] to-[#1D4ED8]',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(59,130,246,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-rose-300/30',
+    decorative: 'bg-blue-300/30',
   },
   emerald: {
-    bg: 'bg-gradient-to-br from-emerald-500 via-teal-500 to-green-600',
+    bg: 'bg-gradient-to-br from-[#10B981] via-[#059669] to-[#047857]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
     decorative: 'bg-emerald-300/30',
   },
   amber: {
-    bg: 'bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-500',
+    bg: 'bg-gradient-to-br from-[#F59E0B] via-[#D97706] to-[#B45309]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(245,158,11,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
     decorative: 'bg-amber-300/30',
   },
-  sky: {
-    bg: 'bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(14,165,233,0.45)]',
+  cyan: {
+    bg: 'bg-gradient-to-br from-[#06B6D4] via-[#0891B2] to-[#0E7490]',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-sky-300/30',
+    decorative: 'bg-cyan-300/30',
   },
-  violet: {
-    bg: 'bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500',
+  purple: {
+    bg: 'bg-gradient-to-br from-[#8B5CF6] via-[#7C3AED] to-[#6D28D9]',
     glow: 'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
     decorative: 'bg-violet-300/30',
   },
-  orange: {
-    bg: 'bg-gradient-to-br from-orange-500 via-red-500 to-rose-600',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(249,115,22,0.45)]',
+  coral: {
+    bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]',
     iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40',
-    decorative: 'bg-orange-300/30',
+    decorative: 'bg-red-300/30',
   },
-  slate: {
-    bg: 'bg-gradient-to-br from-slate-700 via-slate-800 to-zinc-900',
-    glow: 'shadow-[0_8px_32px_-8px_rgba(71,85,105,0.5)]',
+  graphite: {
+    bg: 'bg-gradient-to-br from-[#17181C] via-[#2A2D35] to-[#0B0B0F]',
+    glow: 'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]',
     iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25',
-    decorative: 'bg-slate-400/20',
+    decorative: 'bg-slate-500/20',
   },
 };
 

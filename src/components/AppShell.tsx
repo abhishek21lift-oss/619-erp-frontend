@@ -15,7 +15,7 @@ export default function AppShell({ children, title }: AppShellProps) {
 
   return (
     <LazyMotion features={domAnimation} strict>
-      <div className="flex min-h-screen bg-[#F5F5F7]">
+      <div className="flex min-h-screen bg-[#F8FAFC]">
         <Sidebar
           mobileOpen={sidebarOpen}
           onMobileClose={() => setSidebarOpen(false)}
