@@ -37,7 +37,7 @@ export default function PtOsButton() {
           'inset 0 -1px 0 rgba(0,0,0,0.10)',
         ].join(', '),
       }}
-      onClick={() => router.push('/pt-portal')}
+      onClick={() => router.push('/pt-os')}
     >
       {/* Glass reflection overlay — top highlight */}
       <span

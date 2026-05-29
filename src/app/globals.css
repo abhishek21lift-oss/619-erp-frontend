@@ -1350,7 +1350,7 @@ select.form-control { cursor: pointer; }
 .pt-report-list li { padding:12px 14px; border-radius:16px; background:var(--accent-soft); color:var(--text-primary); font-weight:600; }
 
 /* standout sidebar nav item */
-a[href="/pt-portal"], button[data-href="/pt-portal"] { font-weight:900; letter-spacing:.02em; }
+a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.02em; }
 
 @media (max-width: 1180px) {
   .pt-workspace { grid-template-columns:1fr; }

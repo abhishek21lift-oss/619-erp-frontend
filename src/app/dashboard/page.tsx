@@ -39,11 +39,11 @@ function DashboardContent() {
                 Dashboard
               </h1>
               <Link
-                href="/pt-portal"
+                href="/pt-os"
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#8B5CF6] to-[#6D28D9] px-4 py-1.5 text-[13px] sm:text-[14px] font-extrabold text-white/95 shadow-[0_4px_16px_rgba(139,92,246,0.30)] transition-all duration-200 hover:shadow-[0_6px_24px_rgba(139,92,246,0.45)] hover:-translate-y-0.5 leading-none"
               >
                 <Sparkles size={14} strokeWidth={2.2} />
-                PT PORTAL
+                PT OS
               </Link>
             </div>
             <motion.button

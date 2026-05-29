@@ -70,7 +70,7 @@ const MEGA_SECTIONS: NavSection[] = [
           { label: 'Enquiry List', href: '/sales/enquiries', description: 'View all enquiries' },
         ]},
         { label: 'Membership Sales', href: '/memberships/subscriptions', description: 'Plan conversions' },
-        { label: 'PT Sales', href: '/pt-portal', description: 'Personal training deals' },
+        { label: 'PT OS', href: '/pt-os', description: 'Personal training system' },
       ]},
       { heading: 'Finance', items: [
         { label: 'POS', href: '/payments', description: 'Point of sale terminal' },
@@ -123,7 +123,7 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Leave Requests', href: '/trainers/leave', description: 'Pending approvals' },
       ]},
       { heading: 'PT Programs', items: [
-        { label: 'PT Portal', href: '/pt-portal', description: 'Active PT members' },
+        { label: 'PT OS', href: '/pt-os', description: 'Personal training operating system' },
         { label: 'New PT Client', href: '/pt-os/new-client', description: 'Start a PT program' },
         { label: 'Workout Plans', href: '/pt-os/workout-plans', description: 'Custom programs' },
         { label: 'Diet Plans', href: '/pt-os/diet-plans', description: 'Nutrition programs' },
@@ -205,7 +205,7 @@ const MEGA_SECTIONS: NavSection[] = [
 ];
 
 const QUICK_ACTIONS = [
-  { label: 'New PT Client',    href: '/pt-portal',              icon: <Dumbbell size={14} />,     group: 'Coaches' },
+  { label: 'PT OS Dashboard', href: '/pt-os',                  icon: <Dumbbell size={14} />,     group: 'Coaches' },
   { label: 'Create Invoice',   href: '/finance/invoices',       icon: <FileText size={14} />,     group: 'Finance'  },
   { label: 'Record Payment',   href: '/finance/record-payment', icon: <CreditCard size={14} />,   group: 'Finance'  },
   { label: 'Add Lead',         href: '/sales/enquiry',          icon: <UserCheck size={14} />,    group: 'Sales'    },
