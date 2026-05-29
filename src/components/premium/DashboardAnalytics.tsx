@@ -199,13 +199,6 @@ export function DashboardAnalytics() {
       {/* Quick Action Buttons */}
       <div className="flex flex-wrap items-center gap-2">
         <Link
-          href="/pt-os"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] px-4 py-2.5 text-[12px] font-bold text-white shadow-[0_4px_12px_rgba(139,92,246,0.25)] transition-all duration-200 hover:shadow-[0_6px_20px_rgba(139,92,246,0.35)] hover:-translate-y-0.5"
-        >
-          <Dumbbell size={14} strokeWidth={2} />
-          PT OS
-        </Link>
-        <Link
           href="/clients/new"
           className="inline-flex items-center gap-2 rounded-xl bg-white/80 backdrop-blur-[20px] border border-white/30 px-4 py-2.5 text-[12px] font-bold text-[#0B0B0F] shadow-[0_2px_8px_rgba(11,11,15,0.04)] transition-all duration-200 hover:shadow-[0_4px_16px_rgba(11,11,15,0.08)] hover:-translate-y-0.5"
         >

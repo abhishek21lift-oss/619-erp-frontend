@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { RefreshCw, LayoutDashboard } from 'lucide-react';
+import { RefreshCw, Dumbbell } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -40,6 +41,13 @@ function DashboardContent() {
               <h1 className="text-[17px] sm:text-[19px] font-extrabold tracking-[-0.02em] text-white leading-none uppercase">
                 Dashboard
               </h1>
+              <Link
+                href="/pt-os"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1 text-[11px] font-bold text-white/90 transition-all duration-200 hover:bg-white/25 hover:text-white hover:shadow-[0_0_16px_rgba(255,255,255,0.15)]"
+              >
+                <Dumbbell size={12} strokeWidth={2} />
+                PT OS
+              </Link>
             </div>
             <motion.button
               whileHover={{ scale: 1.06 }}
