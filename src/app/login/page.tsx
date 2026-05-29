@@ -3,7 +3,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, login, loading } = useAuth();
@@ -31,8 +31,8 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await login(email.trim(), password);
-    } catch (err: any) {
-      setError(err?.message || 'Login failed. Please check your credentials.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
     } finally {
       setBusy(false);
     }

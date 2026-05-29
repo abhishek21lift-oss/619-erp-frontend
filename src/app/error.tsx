@@ -1,24 +1,25 @@
 'use client';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { RotateCcw, AlertTriangle } from 'lucide-react';
 
 export default function RootError({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <Guard>
       <AppShell>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16 }}>
-          <div style={{ fontSize: 48, color: '#f87171' }}>!</div>
-          <h2 style={{ fontSize: 20, fontWeight: 600, color: '#0f172a' }}>Something went wrong</h2>
-          <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', maxWidth: 400 }}>
+        <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
+          <div className="grid h-14 w-14 place-items-center rounded-full bg-[#FEF2F2] text-[#EF4444]">
+            <AlertTriangle className="h-7 w-7" />
+          </div>
+          <h2 className="text-xl font-bold text-[#0B0B0F]">Something went wrong</h2>
+          <p className="max-w-sm text-sm text-[#6B7280]">
             {error.message || 'An unexpected error occurred. Please try again.'}
           </p>
           <button
             onClick={reset}
-            style={{
-              padding: '8px 20px', borderRadius: 8, border: 'none',
-              background: '#7c3aed', color: '#fff', fontSize: 14, cursor: 'pointer',
-            }}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_16px_rgba(220,38,38,0.25)] transition-all duration-200 hover:shadow-[0_8px_24px_rgba(220,38,38,0.35)]"
           >
+            <RotateCcw className="h-4 w-4" strokeWidth={2} />
             Try again
           </button>
         </div>
