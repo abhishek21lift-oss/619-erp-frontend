@@ -102,6 +102,7 @@ function NewClientForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (step < totalSteps) return;
     if (!f.first_name.trim()) return setError('First name is required');
     if (!f.gender) return setError('Gender is required');
     setSaving(true); setError('');
@@ -226,7 +227,7 @@ function NewClientForm() {
                 </div>
               )}
 
-              <form id="member-form" onSubmit={handleSubmit}>
+              <form id="member-form" onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}>
                 <div className="space-y-5">
                   {/* Step 1 */}
                   <div className={`member-section-step ${step === 1 ? 'active' : ''}`}>
