@@ -129,11 +129,8 @@ export default function Sidebar({
     >
       <div className="flex shrink-0 items-center justify-between border-b border-[rgba(11,11,15,0.05)] px-5 py-5">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#3B82F6] to-[#2563EB] text-[11px] font-bold tracking-tight text-white shadow-[0_4px_12px_rgba(59,130,246,0.30)] transition-all duration-200 group-hover:shadow-[0_6px_20px_rgba(59,130,246,0.40)] group-hover:scale-105">
-              619
-            </div>
-            <img src="/logo.png" alt="" className="absolute -right-1.5 -top-1.5 h-4 w-4 rounded-full object-cover ring-2 ring-white" />
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="619 Fitness" className="h-9 w-9 rounded-xl object-cover shadow-[0_2px_8px_rgba(0,0,0,0.08)]" />
           </div>
           <div>
             <h2 className="text-[14px] font-bold tracking-tight text-[#0B0B0F] leading-tight">619 FITNESS</h2>
