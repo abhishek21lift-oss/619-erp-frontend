@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -9,21 +9,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
 import {
-  LayoutDashboard, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
+  LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
   ClipboardList, ScanFace, User, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
   LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
   List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, UsersRound,
+  Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
+  CalendarCheck, Package, Banknote,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  LayoutDashboard, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
+  LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
   ClipboardList, ScanFace, User, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
   LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
   List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
-  Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup,
+  Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, UsersRound,
+  Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
+  CalendarCheck, Package, Banknote,
 };
 
 interface SidebarProps {
@@ -35,6 +39,7 @@ interface SidebarProps {
 function SidebarNav() {
   const { user } = useAuth();
   const pathname = usePathname();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const groups = NAV_GROUPS.filter(g => isGroupVisibleForRole(g, user?.role)).map(g => ({
     ...g,
@@ -48,56 +53,112 @@ function SidebarNav() {
   const settingsItems = SETTINGS_GROUP.items.filter(i => isVisibleForRole(i, user?.role));
 
   const navItems = [
-    { items: [{ ...DASHBOARD_ITEM, label: 'Dashboard' }], label: '', id: 'dashboard' },
-    ...groups,
-    ...(settingsItems.length ? [{ items: settingsItems, label: 'Settings', id: 'settings' }] : []),
+    { items: [], label: 'Dashboard', id: 'dashboard', icon: 'LayoutDashboard', single: true, href: '/dashboard' },
+    ...groups.map(g => ({ ...g, single: false, href: '' })),
+    ...(settingsItems.length ? [{ items: settingsItems, label: 'Settings', id: 'settings', icon: 'Settings', single: false, href: '' }] : []),
   ];
 
+  const toggleGroup = (id: string) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+
+  const anyChildActive = (items: typeof groups[0]['items']) =>
+    items.some(i => isActive(i.href) || (i.children?.some(c => isActive(c.href))));
+
   return (
-    <div className="space-y-4">
-      {navItems.map(group => (
-        <div key={group.id}>
-          {group.label && (
-            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#9CA3AF]">
-              {group.label}
-            </p>
-          )}
-          <div className="space-y-0.5">
-            {group.items.map(item => {
-              const Icon = ICON_MAP[item.icon];
-              const active = pathname === item.href || pathname.startsWith(item.href + '/');
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'relative flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-all duration-150',
-                    active
-                      ? 'bg-[rgba(59,130,246,0.10)] text-[#3B82F6] font-semibold shadow-[inset_3px_0_0_#3B82F6]'
-                      : 'text-[#4A4E57] hover:bg-[rgba(59,130,246,0.06)] hover:text-[#3B82F6]',
-                  )}
+    <div className="space-y-1.5 px-2">
+      {/* Dashboard — single link */}
+      <Link
+        href="/dashboard"
+        className={cn(
+          'flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-all duration-150',
+          isActive('/dashboard')
+            ? 'bg-[rgba(59,130,246,0.10)] text-[#3B82F6] font-semibold'
+            : 'text-[#4A4E57] hover:bg-[rgba(59,130,246,0.06)] hover:text-[#3B82F6]',
+        )}
+      >
+        <LayoutDashboard size={17} strokeWidth={isActive('/dashboard') ? 2 : 1.5} />
+        <span>Dashboard</span>
+      </Link>
+
+      {/* Group buttons with dropdowns */}
+      {navItems.slice(1).map(group => {
+        const GroupIcon = ICON_MAP[group.icon] || LayoutDashboard;
+        const open = expanded[group.id] ?? anyChildActive(group.items);
+        const hasActiveChild = anyChildActive(group.items);
+
+        return (
+          <div key={group.id}>
+            <button
+              onClick={() => toggleGroup(group.id)}
+              className={cn(
+                'flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-all duration-150',
+                hasActiveChild
+                  ? 'bg-[rgba(59,130,246,0.10)] text-[#3B82F6] font-semibold'
+                  : 'text-[#4A4E57] hover:bg-[rgba(59,130,246,0.06)] hover:text-[#3B82F6]',
+              )}
+            >
+              <GroupIcon size={17} strokeWidth={hasActiveChild ? 2 : 1.5} />
+              <span className="flex-1 text-left">{group.label}</span>
+              <ChevronDown
+                size={14}
+                strokeWidth={1.5}
+                className={cn(
+                  'shrink-0 text-[#9CA3AF] transition-transform duration-200',
+                  open && 'rotate-180',
+                )}
+              />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {open && (
+                <motion.div
+                  key={`${group.id}-items`}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  className="overflow-hidden"
                 >
-                  {active && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 h-[18px] w-[3px] rounded-r-full bg-[#3B82F6] shadow-[0_0_8px_rgba(59,130,246,0.40)]" />
-                  )}
-                  {Icon && <Icon size={16} strokeWidth={active ? 2 : 1.5} className={cn('shrink-0', active && 'text-[#3B82F6]')} />}
-                  <span className="truncate">{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-auto rounded-full bg-[#3B82F6] px-1.5 py-0.5 text-[9px] font-bold text-white">
-                      {item.badge}
-                    </span>
-                  )}
-                  {item.isNew && (
-                    <span className="ml-auto rounded-full bg-[rgba(59,130,246,0.08)] px-1.5 py-0.5 text-[9px] font-bold text-[#3B82F6]">
-                      NEW
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                  <div className="ml-3 mt-0.5 space-y-0.5 border-l-2 border-[rgba(59,130,246,0.15)] pl-2">
+                    {group.items.map(item => {
+                      const ItemIcon = ICON_MAP[item.icon];
+                      const active = isActive(item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={cn(
+                            'relative flex items-center gap-2.5 rounded-[8px] px-3 py-2 text-[12px] font-medium transition-all duration-150',
+                            active
+                              ? 'bg-[rgba(59,130,246,0.10)] text-[#3B82F6] font-semibold'
+                              : 'text-[#4A4E57] hover:bg-[rgba(59,130,246,0.06)] hover:text-[#3B82F6]',
+                          )}
+                        >
+                          {ItemIcon && <ItemIcon size={14} strokeWidth={active ? 2 : 1.5} className="shrink-0" />}
+                          <span className="truncate">{item.label}</span>
+                          {item.badge && (
+                            <span className="ml-auto rounded-full bg-[#3B82F6] px-1.5 py-0.5 text-[8px] font-bold text-white">
+                              {item.badge}
+                            </span>
+                          )}
+                          {item.isNew && (
+                            <span className="ml-auto rounded-full bg-[rgba(59,130,246,0.08)] px-1.5 py-0.5 text-[8px] font-bold text-[#3B82F6] shrink-0">
+                              NEW
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
