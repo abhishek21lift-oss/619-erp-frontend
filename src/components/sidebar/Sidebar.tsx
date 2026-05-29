@@ -188,7 +188,7 @@ const GROUP_THEMES: Record<string, GroupTheme> = {
   },
 };
 
-function SidebarNav() {
+function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const { user } = useAuth();
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -220,6 +220,7 @@ function SidebarNav() {
       {/* Dashboard — single link */}
       <Link
         href="/dashboard"
+        onClick={onLinkClick}
         className={cn(
           'relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-bold tracking-wide transition-all duration-150 overflow-hidden group',
           isActive('/dashboard')
@@ -359,6 +360,7 @@ function SidebarNav() {
                         <Link
                           key={item.href}
                           href={item.href}
+                          onClick={onLinkClick}
                           className="relative flex items-center gap-2.5 rounded-[8px] px-3 py-2 text-[12px] font-medium transition-all duration-150 overflow-hidden"
                           style={{
                             color: active ? theme.borderColor : '#4A4E57',
@@ -467,7 +469,7 @@ export default function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-5 scrollbar-thin">
-        <SidebarNav />
+        <SidebarNav onLinkClick={isMobile ? onMobileClose : undefined} />
       </div>
 
       <div className="shrink-0 border-t border-[rgba(11,11,15,0.05)] px-5 py-3">

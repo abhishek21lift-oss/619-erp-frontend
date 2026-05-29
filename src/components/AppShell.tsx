@@ -131,7 +131,14 @@ export default function AppShell({ children, title }: AppShellProps) {
   return (
     <LazyMotion features={domAnimation} strict>
       <div className="flex min-h-screen bg-[#F8FAFC]">
+        {/* Desktop sidebar — always visible on lg+ */}
+        <div className="hidden lg:block">
+          <Sidebar variant="desktop" />
+        </div>
+
+        {/* Mobile sidebar — overlay */}
         <Sidebar
+          variant="mobile"
           mobileOpen={sidebarOpen}
           onMobileClose={() => setSidebarOpen(false)}
         />
@@ -164,7 +171,7 @@ export default function AppShell({ children, title }: AppShellProps) {
                 <div className="flex items-center">
                   <Search
                     size={16}
-                    className="absolute left-3.5 z-10 text-[#4A4E57]"
+                    className="absolute left-3.5 z-10 text-[#4A4E57] hidden sm:block"
                     strokeWidth={1.5}
                   />
                   <input
@@ -174,8 +181,8 @@ export default function AppShell({ children, title }: AppShellProps) {
                     onFocus={() => {
                       if (searchQuery.trim()) setSearchOpen(searchResults.length > 0);
                     }}
-                    placeholder="Search members, leads, PT clients, invoices..."
-                    className="relative w-full rounded-xl border-0 bg-[#F1F5F9] py-2.5 pl-10 pr-4 text-[13px] text-[#0B0B0F] placeholder-[#94A3B8] outline-none transition-all duration-200 focus:bg-white focus:shadow-[0_0_0_1px_rgba(59,130,246,0.3),0_4px_16px_rgba(59,130,246,0.12)]"
+                    placeholder="Search..."
+                    className="relative w-full rounded-xl border-0 bg-[#F1F5F9] py-2.5 sm:pl-10 pl-3 pr-4 text-[13px] text-[#0B0B0F] outline-none transition-all duration-200 focus:bg-white focus:shadow-[0_0_0_1px_rgba(59,130,246,0.3),0_4px_16px_rgba(59,130,246,0.12)] placeholder-[#94A3B8]"
                   />
                 </div>
               </div>
