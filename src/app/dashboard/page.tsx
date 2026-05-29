@@ -40,9 +40,9 @@ function DashboardContent() {
               </h1>
               <Link
                 href="/pt-os"
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1 text-[11px] font-bold text-white/90 transition-all duration-200 hover:bg-white/25 hover:text-white hover:shadow-[0_0_16px_rgba(255,255,255,0.15)]"
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#F59E0B] to-[#EF4444] px-4 py-1.5 text-[17px] sm:text-[19px] font-extrabold text-white shadow-[0_4px_16px_rgba(245,158,11,0.30)] transition-all duration-200 hover:shadow-[0_6px_24px_rgba(245,158,11,0.45)] hover:-translate-y-0.5 leading-none"
               >
-                <Dumbbell size={12} strokeWidth={2} />
+                <Dumbbell size={16} strokeWidth={2.2} />
                 PT OS
               </Link>
             </div>
