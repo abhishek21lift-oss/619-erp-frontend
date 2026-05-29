@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Menu, Search, LogOut, Bell, Settings } from 'lucide-react';
+import { Menu, Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, User } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { cn } from '@/components/ui/cn';
 import Sidebar from './sidebar/Sidebar';
 
 interface AppShellProps {
@@ -17,10 +19,25 @@ export default function AppShell({ children, title }: AppShellProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ label: string; href: string }[]>([]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  const settingsLinks = [
+    { href: '/settings', label: 'General', icon: Settings },
+    { href: '/settings/studio', label: 'Studio Settings', icon: Building2 },
+    { href: '/settings/profile', label: 'My Profile', icon: User },
+    { href: '/settings/branches', label: 'Branches', icon: Building2 },
+    { href: '/settings/staff', label: 'Staff & Access', icon: ShieldCheck },
+    { href: '/settings/biometric', label: 'Biometric & Face', icon: Fingerprint },
+    { href: '/settings/billing', label: 'GST / Invoice', icon: Receipt },
+    { href: '/settings/branding', label: 'Branding', icon: Palette },
+    { href: '/settings/integrations', label: 'Integrations', icon: Zap },
+    { href: '/settings/import-database', label: 'Import Database', icon: DatabaseBackup },
+  ];
 
   const handleLogout = async () => {
     await logout();
@@ -68,6 +85,9 @@ export default function AppShell({ children, title }: AppShellProps) {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setSearchOpen(false);
+      }
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -190,14 +210,54 @@ export default function AppShell({ children, title }: AppShellProps) {
             {/* Spacer */}
             <div className="flex-1" />
 
-            {/* Settings icon */}
-            <button
-              type="button"
-              aria-label="Settings"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#86868b] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1d1d1f]"
-            >
-              <Settings size={17} strokeWidth={1.5} />
-            </button>
+            {/* Settings dropdown */}
+            <div ref={settingsRef} className="relative">
+              <button
+                type="button"
+                aria-label="Settings"
+                onClick={() => setSettingsOpen(s => !s)}
+                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#86868b] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1d1d1f]"
+              >
+                <Settings size={17} strokeWidth={1.5} />
+              </button>
+              <AnimatePresence>
+                {settingsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                    transition={{ duration: 0.12, ease: 'easeOut' }}
+                    className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)]"
+                  >
+                    <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9CA3AF]">
+                      Settings
+                    </div>
+                    <div className="pb-2">
+                      {settingsLinks.map((link) => {
+                        const Icon = link.icon;
+                        const active = pathname === link.href;
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setSettingsOpen(false)}
+                            className={cn(
+                              'flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition-colors',
+                              active
+                                ? 'bg-[rgba(59,130,246,0.08)] text-[#3B82F6]'
+                                : 'text-[#4A4E57] hover:bg-[rgba(59,130,246,0.04)] hover:text-[#0B0B0F]',
+                            )}
+                          >
+                            <Icon size={14} strokeWidth={1.5} />
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Notification bell */}
             <button
