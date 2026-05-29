@@ -51,7 +51,6 @@ export default function AppShell({ children, title }: AppShellProps) {
     { label: 'Leads', href: '/leads', keywords: 'leads prospects inquiries' },
     { label: 'Members', href: '/members', keywords: 'members clients customers' },
     { label: 'Attendance', href: '/attendance', keywords: 'attendance check-in sign-in' },
-    { label: 'Personal Training', href: '/personal-training', keywords: 'personal training pt sessions' },
     { label: 'Session Booking', href: '/session-booking', keywords: 'session booking schedule appointments' },
     { label: 'Progress Tracking', href: '/progress-tracking', keywords: 'progress tracking measurements goals' },
     { label: 'Finance', href: '/finance', keywords: 'finance payments billing invoices' },
