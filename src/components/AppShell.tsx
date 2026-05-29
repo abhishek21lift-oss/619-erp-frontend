@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Menu, Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, User } from 'lucide-react';
+import { Menu, Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname, useRouter } from 'next/navigation';
@@ -20,11 +20,13 @@ export default function AppShell({ children, title }: AppShellProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ label: string; href: string }[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const settingsLinks = [
     { href: '/settings', label: 'General', icon: Settings },
@@ -89,6 +91,9 @@ export default function AppShell({ children, title }: AppShellProps) {
       if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
         setSettingsOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -123,8 +128,6 @@ export default function AppShell({ children, title }: AppShellProps) {
     setSearchResults([]);
     router.push(href);
   };
-
-  const initials = (user?.name || user?.email || 'U').charAt(0).toUpperCase();
 
   return (
     <LazyMotion features={domAnimation} strict>
@@ -269,26 +272,55 @@ export default function AppShell({ children, title }: AppShellProps) {
               <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#EF4444] shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
             </button>
 
-            {/* Profile + logout */}
-            <div className="flex items-center gap-2 border-l border-[rgba(0,0,0,0.06)] pl-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#3B82F6] to-[#2563EB] text-[10px] font-bold text-white shadow-[0_2px_6px_rgba(59,130,246,0.25)]">
-                {initials}
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-[12px] font-semibold leading-tight text-[#0B0B0F]">
-                  {user?.name || user?.email || 'User'}
-                </p>
-                <p className="text-[10px] leading-tight text-[#4A4E57] capitalize">
-                  {user?.role || '—'}
-                </p>
-              </div>
+            {/* Profile dropdown */}
+            <div ref={profileRef} className="relative">
               <button
-                onClick={handleLogout}
-                aria-label="Sign out"
-                className="ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#4A4E57] transition-all duration-150 hover:bg-[rgba(239,68,68,0.08)] hover:text-[#EF4444]"
+                onClick={() => setProfileOpen(s => !s)}
+                className="flex items-center gap-2 border-l border-[rgba(0,0,0,0.06)] pl-3 transition-colors hover:opacity-80"
               >
-                <LogOut size={13} strokeWidth={1.5} />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#3B82F6] to-[#2563EB] shadow-[0_2px_6px_rgba(59,130,246,0.25)] overflow-hidden">
+                  <img src="/logo.png" alt="619" className="h-5 w-5 object-contain" />
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-[12px] font-semibold leading-tight text-[#0B0B0F]">619 FITNESS STUDIO</p>
+                  <p className="text-[10px] leading-tight text-[#4A4E57] capitalize">{user?.role || '—'}</p>
+                </div>
+                <ChevronDown size={12} strokeWidth={1.5} className="text-[#9CA3AF] shrink-0" />
               </button>
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                    transition={{ duration: 0.12, ease: 'easeOut' }}
+                    className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)]"
+                  >
+                    <div className="px-3 py-2.5 border-b border-[rgba(0,0,0,0.04)]">
+                      <p className="text-[12px] font-semibold text-[#0B0B0F]">{user?.name || 'Admin'}</p>
+                      <p className="text-[10px] text-[#4A4E57] capitalize">{user?.email || '—'}</p>
+                    </div>
+                    <div className="py-1">
+                      <Link href="/settings/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[#4A4E57] hover:bg-[rgba(59,130,246,0.04)] hover:text-[#0B0B0F] transition-colors">
+                        <User size={14} strokeWidth={1.5} /> My Profile
+                      </Link>
+                      <Link href="/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[#4A4E57] hover:bg-[rgba(59,130,246,0.04)] hover:text-[#0B0B0F] transition-colors">
+                        <Settings size={14} strokeWidth={1.5} /> Account Settings
+                      </Link>
+                      <Link href="/settings/staff" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[#4A4E57] hover:bg-[rgba(59,130,246,0.04)] hover:text-[#0B0B0F] transition-colors">
+                        <ShieldCheck size={14} strokeWidth={1.5} /> Manage Users
+                      </Link>
+                      <Link href="/help" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[#4A4E57] hover:bg-[rgba(59,130,246,0.04)] hover:text-[#0B0B0F] transition-colors">
+                        <HelpCircle size={14} strokeWidth={1.5} /> Help & Support
+                      </Link>
+                      <hr className="my-1 border-[rgba(0,0,0,0.04)]" />
+                      <button onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[#EF4444] hover:bg-[rgba(239,68,68,0.04)] transition-colors">
+                        <LogOut size={14} strokeWidth={1.5} /> Logout
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </header>
 
