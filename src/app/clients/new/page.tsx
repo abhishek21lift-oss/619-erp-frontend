@@ -166,10 +166,12 @@ function NewClientForm() {
               </div>
               <div className="flex gap-2 flex-wrap shrink-0">
                 <button type="button" onClick={() => router.back()} className="h-11 rounded-xl bg-white px-4 text-[13px] font-semibold text-[#86868b] border border-[rgba(0,0,0,0.04)] transition-colors hover:bg-[#f5f5f7]">Back</button>
-                <button type="submit" form="member-form" disabled={saving} className="h-11 rounded-xl bg-[#dc2626] px-5 text-[13px] font-semibold text-white transition-all hover:bg-[#b91c1c] disabled:opacity-50 inline-flex items-center gap-2">
-                  <Sparkles size={14} />
-                  {saving ? 'Saving...' : (isEditMode ? 'Update Member' : 'Save Member')}
-                </button>
+                {step === totalSteps && (
+                  <button type="submit" form="member-form" disabled={saving} className="h-11 rounded-xl bg-[#dc2626] px-5 text-[13px] font-semibold text-white transition-all hover:bg-[#b91c1c] disabled:opacity-50 inline-flex items-center gap-2">
+                    <Sparkles size={14} />
+                    {saving ? 'Saving...' : (isEditMode ? 'Update Member' : 'Add Member')}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -412,7 +414,7 @@ function NewClientForm() {
                       </button>
                     )}
                     {step < totalSteps ? (
-                      <button type="button" className="h-11 rounded-xl bg-[#1d1d1f] px-5 text-[13px] font-semibold text-white transition-all hover:bg-[#333] inline-flex items-center gap-1.5" style={{ opacity: canAdvance() ? 1 : 0.4 }} onClick={() => { if (canAdvance()) setStep(s => s + 1); }} disabled={!canAdvance()}>
+                      <button type="button" className="h-11 rounded-xl bg-[#1d1d1f] px-5 text-[13px] font-semibold text-white transition-all hover:bg-[#333] inline-flex items-center gap-1.5" style={{ opacity: canAdvance() ? 1 : 0.4 }} onClick={(e) => { e.preventDefault(); if (canAdvance()) setStep(s => s + 1); }} disabled={!canAdvance()}>
                         Continue <ArrowRight size={14} />
                       </button>
                     ) : (
