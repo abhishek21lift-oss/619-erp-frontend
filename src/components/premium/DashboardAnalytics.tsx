@@ -199,7 +199,7 @@ export function DashboardAnalytics() {
       {/* Quick Action Buttons */}
       <div className="flex flex-wrap items-center gap-2">
         <Link
-          href="/pt-os/new-client"
+          href="/pt-os"
           className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] px-4 py-2.5 text-[12px] font-bold text-white shadow-[0_4px_12px_rgba(139,92,246,0.25)] transition-all duration-200 hover:shadow-[0_6px_20px_rgba(139,92,246,0.35)] hover:-translate-y-0.5"
         >
           <Dumbbell size={14} strokeWidth={2} />
