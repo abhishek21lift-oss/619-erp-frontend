@@ -10,6 +10,7 @@ interface RailRow {
   highlight?: boolean;
   strikethrough?: boolean;
   muted?: boolean;
+  color?: string;
 }
 
 export interface SummaryRailProps {
@@ -18,7 +19,7 @@ export interface SummaryRailProps {
   rows?: RailRow[];
   total?: { label: string; value: string | number } | number;
   hideTotal?: boolean;
-  items?: Array<{ label: string; value: string | number; highlight?: boolean; strikethrough?: boolean; muted?: boolean }>;
+  items?: Array<{ label: string; value: string | number; highlight?: boolean; strikethrough?: boolean; muted?: boolean; color?: string }>;
   client?: any;
   children?: ReactNode;
 }
@@ -49,10 +50,10 @@ export function SummaryRail({
             <span className={row.muted ? 'text-slate-400' : 'text-slate-600'}>{row.label}</span>
             <span className={[
               'font-semibold',
-              row.highlight ? 'text-indigo-600' : '',
+              row.highlight && !row.color ? 'text-indigo-600' : '',
               row.strikethrough ? 'line-through text-slate-400 font-normal' : '',
               row.muted ? 'text-slate-400' : 'text-slate-900',
-            ].join(' ')}>
+            ].join(' ')} style={row.color ? { color: row.color } : undefined}>
               {row.value}
             </span>
           </motion.div>
