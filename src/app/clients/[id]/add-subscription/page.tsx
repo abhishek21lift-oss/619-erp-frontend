@@ -135,36 +135,25 @@ function Inner() {
   const discount = Math.max(0, mrp - net);
   const fmt      = (n: number) => '₹\u202f' + n.toLocaleString('en-IN');
 
-  // ── Submit ──
+  // ── Submit → redirect to payment details page ──
   async function handleSubmit() {
     setError(''); setSuccess('');
     const { error: ve } = validatePlanRows(planRows);
     if (ve) { setError(ve); toast.error(ve); return; }
-    setSaving(true);
-    try {
-      const body = {
-        plan_rows: planRows.map(r => ({
-          plan:         r.plan,
-          startDate:    r.startDate,
-          endDate:      r.endDate,
-          basePrice:    parseFloat(r.basePrice)    || 0,
-          sellingPrice: parseFloat(r.sellingPrice) || 0,
-          coupon:       r.coupon || null,
-        })),
-        group_id:       groupId || null,
-        payment_method: paymentMethod,
-      };
-      const result = await api.clients.addSubscription(id, body);
-      const msg = result?.message || 'Subscription added successfully!';
-      setSuccess(msg);
-      toast.success(msg);
-      setTimeout(() => router.push(`/clients/${id}`), 900);
-    } catch (err: any) {
-      const msg = err?.message || 'Failed to add subscription. Please try again.';
-      setError(msg); toast.error(msg);
-    } finally {
-      setSaving(false);
-    }
+    const body = {
+      plan_rows: planRows.map(r => ({
+        plan:         r.plan,
+        startDate:    r.startDate,
+        endDate:      r.endDate,
+        basePrice:    parseFloat(r.basePrice)    || 0,
+        sellingPrice: parseFloat(r.sellingPrice) || 0,
+        coupon:       r.coupon || null,
+      })),
+      group_id:       groupId || null,
+      payment_method: paymentMethod,
+    };
+    sessionStorage.setItem('subscription_plan_data', JSON.stringify(body));
+    router.push(`/clients/${id}/add-subscription/payment`);
   }
 
   // ── Loading state ──
