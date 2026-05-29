@@ -19,7 +19,13 @@ type Accent =
   | 'cyan'
   | 'purple'
   | 'coral'
-  | 'graphite';
+  | 'graphite'
+  // backward-compat aliases
+  | 'rose'
+  | 'sky'
+  | 'violet'
+  | 'orange'
+  | 'slate';
 
 const ACCENTS: Record<
   Accent,
@@ -72,6 +78,12 @@ const ACCENTS: Record<
     iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25',
     decorative: 'bg-slate-500/20',
   },
+  // backward-compat aliases
+  rose:   { bg: 'bg-gradient-to-br from-[#3B82F6] via-[#2563EB] to-[#1D4ED8]', glow: 'shadow-[0_8px_32px_-8px_rgba(59,130,246,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decorative: 'bg-blue-300/30' },
+  sky:    { bg: 'bg-gradient-to-br from-[#06B6D4] via-[#0891B2] to-[#0E7490]', glow: 'shadow-[0_8px_32px_-8px_rgba(6,182,212,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decorative: 'bg-cyan-300/30' },
+  violet: { bg: 'bg-gradient-to-br from-[#8B5CF6] via-[#7C3AED] to-[#6D28D9]', glow: 'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decorative: 'bg-violet-300/30' },
+  orange: { bg: 'bg-gradient-to-br from-[#EF4444] via-[#DC2626] to-[#B91C1C]', glow: 'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]', iconBg: 'bg-white/25 backdrop-blur-md ring-1 ring-white/40', decorative: 'bg-red-300/30' },
+  slate:  { bg: 'bg-gradient-to-br from-[#17181C] via-[#2A2D35] to-[#0B0B0F]', glow: 'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]', iconBg: 'bg-white/15 backdrop-blur-md ring-1 ring-white/25', decorative: 'bg-slate-500/20' },
 };
 
 export interface KpiCardProps {

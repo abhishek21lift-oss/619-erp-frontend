@@ -5,7 +5,7 @@ const config: Config = {
   darkMode: 'class',
   safelist: [
     'bg-gradient-to-br',
-    // glow shadows (KpiCard)
+    // glow shadows (KpiCard — new)
     'shadow-[0_8px_32px_-8px_rgba(59,130,246,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(16,185,129,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(245,158,11,0.45)]',
@@ -13,6 +13,11 @@ const config: Config = {
     'shadow-[0_8px_32px_-8px_rgba(139,92,246,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(239,68,68,0.45)]',
     'shadow-[0_8px_32px_-8px_rgba(42,45,53,0.5)]',
+    // glow shadows (KpiCard — backward compat)
+    'shadow-[0_8px_32px_-8px_rgba(244,63,94,0.45)]',
+    'shadow-[0_8px_32px_-8px_rgba(14,165,233,0.45)]',
+    'shadow-[0_8px_32px_-8px_rgba(249,115,22,0.45)]',
+    'shadow-[0_8px_32px_-8px_rgba(71,85,105,0.5)]',
     // decorative blobs
     'bg-blue-300/30', 'bg-emerald-300/30', 'bg-amber-300/30',
     'bg-cyan-300/30', 'bg-violet-300/30', 'bg-red-300/30',
