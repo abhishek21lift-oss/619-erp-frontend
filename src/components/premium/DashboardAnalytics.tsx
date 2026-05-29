@@ -73,7 +73,7 @@ function PremiumKpiCard({
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-[0_4px_12px_rgba(59,130,246,0.15)]"
             style={{ background: `linear-gradient(135deg, ${color}, ${color}dd)` }}
           >
-            {React.cloneElement(icon as React.ReactElement, { size: 18, strokeWidth: 1.5, color: 'white' })}
+            {React.cloneElement(icon as React.ReactElement<{size?: number; strokeWidth?: number; color?: string}>, { size: 18, strokeWidth: 1.5, color: 'white' })}
           </span>
         </div>
         <div className="mt-3 flex items-end justify-between gap-2">
