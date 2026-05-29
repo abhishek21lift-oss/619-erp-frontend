@@ -1,8 +1,7 @@
 // frontend/src/components/ErrorBoundary.tsx
 //
 // Catches render errors so the entire app doesn't whiteout when one page
-// throws. Wrap pages individually for the best UX, or wrap the root layout
-// once for global protection.
+// throws. Also auto-reloads on chunk loading errors (common after redeploys).
 //
 // Why a class component? React only supports getDerivedStateFromError /
 // componentDidCatch on classes — there is no Hooks API for this.
@@ -12,6 +11,32 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+
+/* ── Global chunk-load error handler ── */
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    const msg = e.message ?? '';
+    if (
+      msg.includes('Loading chunk') ||
+      msg.includes('ChunkLoadError') ||
+      msg.includes('Failed to fetch dynamically imported module')
+    ) {
+      console.warn('[ChunkError] detected — reloading', msg);
+      window.location.reload();
+    }
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    const msg = e.reason?.message ?? '';
+    if (
+      msg.includes('Loading chunk') ||
+      msg.includes('ChunkLoadError') ||
+      msg.includes('Failed to fetch')
+    ) {
+      console.warn('[ChunkError] unhandled rejection — reloading', msg);
+      window.location.reload();
+    }
+  });
+}
 
 interface Props {
   children: React.ReactNode;
@@ -33,11 +58,18 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // Always log so the failure isn't silent in dev.
     if (typeof console !== 'undefined') {
       console.error('[ErrorBoundary]', error, info);
     }
     this.props.onError?.(error, info);
+
+    // Auto-reload on chunk errors after a brief delay
+    if (
+      error.message?.includes('Loading chunk') ||
+      error.message?.includes('ChunkLoadError')
+    ) {
+      setTimeout(() => window.location.reload(), 200);
+    }
   }
 
   reset = () => this.setState({ error: null });
