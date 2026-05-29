@@ -221,14 +221,53 @@ function SidebarNav() {
       <Link
         href="/dashboard"
         className={cn(
-          'flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-all duration-150',
+          'relative flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-bold tracking-wide transition-all duration-150 overflow-hidden group',
           isActive('/dashboard')
-            ? 'bg-[rgba(59,130,246,0.10)] text-[#3B82F6] font-semibold'
-            : 'text-[#4A4E57] hover:bg-[rgba(59,130,246,0.06)] hover:text-[#3B82F6]',
+            ? 'text-white shadow-[0_4px_16px_rgba(59,130,246,0.25)]'
+            : 'text-[#4A4E57] hover:text-[#3B82F6]',
         )}
+        style={{
+          background: isActive('/dashboard')
+            ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #7C3AED 100%)'
+            : undefined,
+        }}
       >
-        <LayoutDashboard size={17} strokeWidth={isActive('/dashboard') ? 2 : 1.5} />
-        <span>Dashboard</span>
+        {/* Shimmer hover overlay */}
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[10px]"
+          style={{
+            background: !isActive('/dashboard')
+              ? 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(124,58,237,0.04))'
+              : undefined,
+          }}
+        />
+        {isActive('/dashboard') && (
+          <div className="absolute inset-0 rounded-[10px] bg-white/10" />
+        )}
+        <div
+          className={cn(
+            'flex h-[26px] w-[26px] items-center justify-center rounded-[7px] shrink-0 transition-all duration-200 relative z-10',
+            isActive('/dashboard')
+              ? 'bg-white/20'
+              : 'group-hover:bg-[rgba(59,130,246,0.10)]',
+          )}
+        >
+          <LayoutDashboard
+            size={15}
+            strokeWidth={isActive('/dashboard') ? 2.5 : 1.5}
+            className={isActive('/dashboard') ? 'text-white' : 'text-[#6B7280] group-hover:text-[#3B82F6]'}
+          />
+        </div>
+        <span className={cn('relative z-10', isActive('/dashboard') ? 'font-extrabold' : 'font-bold')}>
+          Dashboard
+        </span>
+        {isActive('/dashboard') && (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-0.5 z-10">
+            <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse" />
+            <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-pulse" style={{ animationDelay: '0.2s' }} />
+            <span className="h-1.5 w-1.5 rounded-full bg-white/20 animate-pulse" style={{ animationDelay: '0.4s' }} />
+          </div>
+        )}
       </Link>
 
       {/* Group buttons with dropdowns */}
