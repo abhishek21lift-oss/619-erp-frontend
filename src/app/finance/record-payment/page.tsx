@@ -179,7 +179,7 @@ export default function RecordPaymentPage() {
               ) : (
                 <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
                   {/* Member Selector */}
-                  <SectionCard icon={<User className="h-4 w-4" />} title="Member" subtitle="Select the member making the payment">
+                  <SectionCard icon={<User className="h-4 w-4" />} title="Member" subtitle="Select the member making the payment" className={memberSearchOpen ? 'relative z-20' : ''}>
                     <MemberSelector
                       selected={selectedMember}
                       onSelect={(m) => { setSelectedMember(m); setMemberSearchOpen(false); }}
@@ -538,12 +538,12 @@ function Header() {
   );
 }
 
-function SectionCard({ icon, title, subtitle, children }: { icon: React.ReactNode; title: string; subtitle: string; children: React.ReactNode }) {
+function SectionCard({ icon, title, subtitle, children, className = '' }: { icon: React.ReactNode; title: string; subtitle: string; children: React.ReactNode; className?: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-[22px] bg-white/85 p-5 shadow-[0_2px_20px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-all duration-200 hover:shadow-[0_6px_24px_rgba(15,23,42,0.09)]"
+      className={`rounded-[22px] bg-white/85 p-5 shadow-[0_2px_20px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-all duration-200 hover:shadow-[0_6px_24px_rgba(15,23,42,0.09)] ${className}`}
       style={{ border: '1px solid rgba(255,255,255,0.95)' }}
     >
       <div className="mb-4 flex items-center gap-3">
