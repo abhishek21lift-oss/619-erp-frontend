@@ -51,7 +51,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Members',
     icon: 'Users',
     items: [
-      { href: '/clients/new',       label: 'Create Member',   icon: 'UserPlus' },
+      { href: '/clients/new',       label: 'Add Member',   icon: 'UserPlus' },
       { href: '/clients',           label: 'My Members',      icon: 'Users' },
       { href: '/members/active',    label: 'Active Members',  icon: 'UserCheck' },
       { href: '/members/renewals',  label: 'Renewals',        icon: 'RefreshCw',     badge: 'renewalsCount' },

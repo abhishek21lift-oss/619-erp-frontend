@@ -416,7 +416,7 @@ function NewClientForm() {
                       </button>
                     ) : (
                       <button type="submit" className="h-11 rounded-xl bg-[#dc2626] px-5 text-[13px] font-semibold text-white transition-all hover:bg-[#b91c1c] disabled:opacity-50 inline-flex items-center gap-1.5" disabled={saving}>
-                        {saving ? 'Saving...' : (isEditMode ? 'Update Member' : 'Create Member')}
+                        {saving ? 'Saving...' : (isEditMode ? 'Update Member' : 'Add Member')}
                       </button>
                     )}
                     <button type="button" className="h-11 rounded-xl bg-white px-4 text-[13px] font-semibold text-[#86868b] border border-[rgba(0,0,0,0.04)] transition-colors hover:bg-[#f5f5f7]" onClick={() => router.back()}>Cancel</button>
