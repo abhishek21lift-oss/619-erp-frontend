@@ -77,10 +77,10 @@ function PremiumKpiCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative overflow-hidden rounded-[24px] bg-white/70 backdrop-blur-[20px] saturate-[160%] border border-white/25 shadow-[0_8px_32px_rgba(11,11,15,0.06)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(11,11,15,0.10)] hover:-translate-y-0.5 cursor-pointer"
+      className="group relative flex flex-col overflow-hidden rounded-[24px] bg-white/70 backdrop-blur-[20px] saturate-[160%] border border-white/25 shadow-[0_8px_32px_rgba(11,11,15,0.06)] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(11,11,15,0.10)] hover:-translate-y-0.5 cursor-pointer h-full"
     >
       <div className={cn('absolute inset-0 opacity-[0.03] bg-gradient-to-br', gradient)} />
-      <div className="relative p-4">
+      <div className="relative flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-3 mb-2.5">
           <div className="flex items-center gap-2.5">
             <span
@@ -94,19 +94,21 @@ function PremiumKpiCard({
             </p>
           </div>
           {growth && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-[rgba(16,185,129,0.08)] px-1.5 py-0.5 text-[9px] font-bold text-[#10B981]">
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-[rgba(16,185,129,0.08)] px-1.5 py-0.5 text-[9px] font-bold text-[#10B981] shrink-0">
               <ArrowUpRight size={8} strokeWidth={2.5} />
               {growth}
             </span>
           )}
         </div>
-        <span className="text-[22px] font-bold tracking-[-0.03em] text-[#0B0B0F] tabular-nums leading-none">
-          {value}
-        </span>
-        {hint && (
-          <p className="mt-1 text-[11px] text-[#4A4E57]">{hint}</p>
-        )}
-        <div className="mt-2" style={{ opacity: 0.6 }}>
+        <div className="flex-1">
+          <span className="text-[22px] font-bold tracking-[-0.03em] text-[#0B0B0F] tabular-nums leading-none">
+            {value}
+          </span>
+          {hint && (
+            <p className="mt-1 text-[11px] text-[#4A4E57]">{hint}</p>
+          )}
+        </div>
+        <div className="mt-auto" style={{ opacity: 0.6 }}>
           <Sparkline color={color} />
         </div>
       </div>
@@ -229,7 +231,7 @@ export function DashboardAnalytics() {
       </div>
 
       {/* Hero KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 auto-rows-fr">
         <PremiumKpiCard
           label="Total Revenue"
           value="₹1.72Cr"
