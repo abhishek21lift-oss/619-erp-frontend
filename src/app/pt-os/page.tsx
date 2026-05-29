@@ -175,7 +175,7 @@ function PremiumHero() {
               <Sparkles size={16} style={{ color: '#a78bfa' }} />
             </div>
             <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#a78bfa' }}>
-              PT OS
+              PERSONAL TRAINING
             </span>
           </div>
           <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#ffffff' }}>
@@ -417,7 +417,7 @@ export default function PtOsDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-[18px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Quick Actions</h2>
-                  <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Frequently used PT OS features</p>
+                  <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Frequently used PERSONAL TRAINING features</p>
                 </div>
                 <ChevronRight size={18} style={{ color: 'rgb(203,213,225)' }} />
               </div>

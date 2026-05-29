@@ -856,7 +856,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 <Search size={14} />
               </button>
 
-              {/* Quick actions — PT OS */}
+              {/* Quick actions — PERSONAL TRAINING */}
               <div className="shrink-0">
                 <button
                   ref={quickAnchorRef}
@@ -870,7 +870,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   }}
                 >
                   <Plus size={13} className="shrink-0" />
-                  <span className="hidden sm:inline">PT OS</span>
+                  <span className="hidden sm:inline">PERSONAL TRAINING</span>
                 </button>
               </div>
 

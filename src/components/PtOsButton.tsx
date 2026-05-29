@@ -10,8 +10,8 @@ export default function PtOsButton() {
       type="button"
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
-      aria-label="PT OS — Personal Training Operating System"
-      title="PT OS"
+      aria-label="PERSONAL TRAINING — Personal Training Operating System"
+      title="PERSONAL TRAINING"
       className="group relative shrink-0"
       style={{
         width: 38,
