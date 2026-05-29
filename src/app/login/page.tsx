@@ -55,7 +55,7 @@ export default function LoginPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1d1d1f] shadow-lg mb-4">
             <Dumbbell size={28} className="text-white" strokeWidth={1.5} />
           </div>
-          <h1 className="text-[22px] font-bold tracking-[-0.02em] text-[#1d1d1f]">619 Fitness</h1>
+          <h1 className="text-[22px] font-bold tracking-[-0.02em] text-[#1d1d1f]">619 Fitness <span style="color:#dc2626;font-size:11px">v4.0</span></h1>
           <p className="text-[13px] text-[#86868b] mt-1">Studio Management Portal</p>
         </div>
 
