@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft, X, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
@@ -107,7 +107,14 @@ export default function Sidebar({
   onMobileClose,
   variant = 'desktop',
 }: SidebarProps) {
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const isMobile = variant === 'mobile';
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login');
+  };
 
   return (
     <aside
@@ -153,13 +160,32 @@ export default function Sidebar({
         <SidebarNav />
       </div>
 
-      <div className="shrink-0 border-t border-[rgba(11,11,15,0.05)] px-5 py-4">
-        <p className="text-[12px] text-[#4A4E57]">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_rgba(16,185,129,0.40)]" />
-            v4.0 — Premium
-          </span>
-        </p>
+      <div className="shrink-0 border-t border-[rgba(11,11,15,0.05)]">
+        {/* User profile */}
+        <div className="flex items-center gap-3 px-5 py-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#3B82F6] to-[#2563EB] text-[10px] font-bold text-white shadow-[0_2px_6px_rgba(59,130,246,0.25)]">
+            {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="truncate text-[12px] font-semibold text-[#0B0B0F]">{user?.name || user?.email || 'User'}</p>
+            <p className="truncate text-[10px] text-[#4A4E57] capitalize">{user?.role || '—'}</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            aria-label="Sign out"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#4A4E57] transition-all duration-150 hover:bg-[rgba(239,68,68,0.08)] hover:text-[#EF4444]"
+          >
+            <LogOut size={13} strokeWidth={1.5} />
+          </button>
+        </div>
+        <div className="border-t border-[rgba(11,11,15,0.05)] px-5 py-2.5">
+          <p className="text-[11px] text-[#4A4E57]">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] shadow-[0_0_6px_rgba(16,185,129,0.40)]" />
+              v4.0 — Premium
+            </span>
+          </p>
+        </div>
       </div>
     </aside>
   );
