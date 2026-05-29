@@ -86,7 +86,15 @@ export default function RecordPaymentPage() {
           api.clients.list(),
           api.invoices.list({ status: 'pending' }),
         ]);
-        setMembers(clientsData as Member[]);
+        const raw = clientsData as any;
+        const memberList = Array.isArray(raw)
+          ? raw
+          : raw?.data
+            ? (Array.isArray(raw.data) ? raw.data : [])
+            : raw?.clients
+              ? (Array.isArray(raw.clients) ? raw.clients : [])
+              : [];
+        setMembers(memberList as Member[]);
         setInvoices((invoicesData as { invoices: Invoice[] }).invoices || []);
       } catch (err) {
         console.error('Failed to load data', err);
