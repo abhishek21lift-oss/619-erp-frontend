@@ -215,14 +215,50 @@ export default function AppShell({ children, title }: AppShellProps) {
 
             {/* Settings dropdown */}
             <div ref={settingsRef} className="relative">
-              <button
+              <motion.button
                 type="button"
                 aria-label="Settings"
                 onClick={() => setSettingsOpen(s => !s)}
-                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#86868b] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1d1d1f]"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200"
+                style={{
+                  background: settingsOpen
+                    ? 'linear-gradient(135deg, #3B82F6, #2563EB)'
+                    : undefined,
+                  boxShadow: settingsOpen
+                    ? '0 4px 12px rgba(59,130,246,0.30)'
+                    : undefined,
+                }}
               >
-                <Settings size={17} strokeWidth={1.5} />
-              </button>
+                {/* Default state gradient border */}
+                {!settingsOpen && (
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#3B82F6]/20 via-[#8B5CF6]/15 to-[#06B6D4]/20 p-[1.5px]">
+                    <div className="h-full w-full rounded-[10.5px] bg-white" />
+                  </div>
+                )}
+                {/* Hover gradient overlay */}
+                <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-200 bg-gradient-to-br from-[#3B82F6]/10 via-[#8B5CF6]/8 to-[#06B6D4]/10" />
+                {/* Active glow ring */}
+                {settingsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#3B82F6]/20 via-[#8B5CF6]/15 to-[#06B6D4]/20 animate-pulse"
+                  />
+                )}
+                <motion.div
+                  animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className={settingsOpen ? 'text-white' : 'text-[#86868b]'}
+                >
+                  <Settings
+                    size={16}
+                    strokeWidth={settingsOpen ? 2 : 1.5}
+                    className="relative z-10"
+                  />
+                </motion.div>
+              </motion.button>
               <AnimatePresence>
                 {settingsOpen && (
                   <motion.div
