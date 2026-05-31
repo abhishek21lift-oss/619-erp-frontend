@@ -35,6 +35,8 @@ function ssDel(key: string): void {
   try { localStorage.removeItem(key); } catch { /* noop */ }
 }
 
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user,    setUser]    = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,15 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
   }, []);
 
-  // ── FIX (Route Integrity R-05 + R-11):
-  //    Listen for the 'session-expired' CustomEvent fired by http.ts when
-  //    any API call returns a 401. We handle the redirect here using the
-  //    Next.js router (soft navigation) instead of window.location.href
-  //    (hard reload). This eliminates:
-  //      1. The race between http.ts hard-redirect and Guard.tsx soft-redirect
-  //      2. The stale _redirecting=true flag — resetRedirectLock() is called
-  //         inside login() so subsequent 401s will fire again correctly.
-  // ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
     function onSessionExpired() {
       _clearSession();
@@ -114,6 +107,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('session-expired', onSessionExpired);
     return () => window.removeEventListener('session-expired', onSessionExpired);
   }, [_clearSession, router]);
+
+  // Idle session timeout
+  useEffect(() => {
+    if (!user) return;
+    let idleTimer: ReturnType<typeof setTimeout>;
+    function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        _clearSession();
+        router.replace('/login');
+      }, SESSION_TIMEOUT_MS);
+    }
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(e => window.addEventListener(e, resetIdleTimer));
+    resetIdleTimer();
+    return () => {
+      clearTimeout(idleTimer);
+      events.forEach(e => window.removeEventListener(e, resetIdleTimer));
+    };
+  }, [user, _clearSession, router]);
 
   const login = useCallback(async function (email: string, password: string): Promise<void> {
     const data = await api.auth.login(email, password);

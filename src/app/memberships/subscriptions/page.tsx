@@ -7,7 +7,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api, Client } from '@/lib/api';
 import { fmtDate, fmtMoney } from '@/lib/format';
-import { StoredPlan, PlanKind, PlanDuration, DURATIONS, DEFAULT_PLANS, PLANS_KEY, getStoredPlans, savePlans } from '@/lib/plans';
+import { StoredPlan, PlanKind, PlanDuration, DURATIONS, DEFAULT_PLANS, getStoredPlans } from '@/lib/plans';
 import { DonutChart } from '@/components/ui/DonutChart';
 
 const containerVariants = {
@@ -70,7 +70,7 @@ function SubscriptionsContent() {
   }, []);
 
   useEffect(() => {
-    if (plans.length > 0) savePlans(plans);
+    // Plans are now read-only from DEFAULT_PLANS
   }, [plans]);
 
   function showFlash(msg: string) {
@@ -126,7 +126,6 @@ function SubscriptionsContent() {
   function resetAll() {
     if (!confirm('Reset ALL plans to defaults? All custom plans will be lost.')) return;
     setPlans(DEFAULT_PLANS);
-    savePlans(DEFAULT_PLANS);
     showFlash('All plans reset to defaults');
   }
 

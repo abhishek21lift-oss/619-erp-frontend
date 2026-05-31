@@ -2,9 +2,6 @@
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-// Hardcoded fallback — used when NEXT_PUBLIC_API_URL is not set on Vercel
-const BACKEND_FALLBACK = 'https://six19-erp-api.onrender.com';
-
 const STRICT_CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -128,15 +125,19 @@ const nextConfig = {
       { source: '/models/:path*', destination: '/models/:path*' },
     ];
 
-    // Local dev — no proxy needed
     if (!IS_PROD) {
       return passThrough;
     }
 
-    // Production: use env var if set, otherwise fall back to hardcoded backend URL
     const backendUrl = (
-      (process.env.NEXT_PUBLIC_API_URL || '').trim().replace(/\/+$/, '')
-    ) || BACKEND_FALLBACK;
+      process.env.NEXT_PUBLIC_API_URL || ''
+    ).trim().replace(/\/+$/, '');
+
+    if (!backendUrl) {
+      throw new Error(
+        'NEXT_PUBLIC_API_URL is not set. Set it in Vercel project settings or .env.local'
+      );
+    }
 
     return [
       ...passThrough,

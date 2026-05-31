@@ -100,9 +100,11 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
       <p className="text-sm text-slate-500 dark:text-white/50">
         We logged the error. You can retry, or head back to the dashboard.
       </p>
-      <pre className="mt-2 max-h-32 w-full overflow-auto rounded-lg bg-slate-50 p-3 text-left text-[11px] text-slate-500 dark:bg-white/5 dark:text-white/50">
-        {error.message}
-      </pre>
+      {process.env.NODE_ENV !== 'production' && (
+        <pre className="mt-2 max-h-32 w-full overflow-auto rounded-lg bg-slate-50 p-3 text-left text-[11px] text-slate-500 dark:bg-white/5 dark:text-white/50">
+          {error.message}
+        </pre>
+      )}
       <div className="mt-2 flex gap-2">
         <button
           onClick={reset}

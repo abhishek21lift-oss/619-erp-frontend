@@ -1,5 +1,6 @@
 'use client';
 
+import { http } from '@/lib/http';
 import type { ModuleConfig, ModuleRecord } from '@/lib/module-config';
 
 type ListResponse = {
@@ -7,63 +8,27 @@ type ListResponse = {
   source: 'api';
 };
 
-function apiBase() {
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return '';
-  }
-  const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');
-  if (!raw) {
-    throw new Error(
-      '[619-erp] NEXT_PUBLIC_API_URL is not set. ' +
-      'Copy .env.example to .env.local and set NEXT_PUBLIC_API_URL=http://localhost:5000'
-    );
-  }
-  return raw;
-}
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${apiBase()}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    let message = `API ${res.status}`;
-    try {
-      const body = await res.json();
-      message = body?.message || body?.error || message;
-    } catch { /* ignore */ }
-    const err = new Error(message) as Error & { status?: number };
-    err.status = res.status;
-    throw err;
-  }
-  return res.json() as Promise<T>;
-}
-
 export const moduleService = {
   async list(config: ModuleConfig): Promise<ListResponse> {
-    const records = await request<ModuleRecord[]>(`/api/modules/${config.key}`);
+    const records = await http<ModuleRecord[]>(`/api/modules/${config.key}`);
     return { records, source: 'api' };
   },
 
   async create(config: ModuleConfig, payload: Omit<ModuleRecord, 'id' | 'createdAt'>): Promise<ModuleRecord> {
-    return request<ModuleRecord>(`/api/modules/${config.key}`, {
+    return http<ModuleRecord>(`/api/modules/${config.key}`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     });
   },
 
   async update(config: ModuleConfig, id: string, patch: Partial<ModuleRecord>): Promise<ModuleRecord> {
-    return request<ModuleRecord>(`/api/modules/${config.key}/${id}`, {
+    return http<ModuleRecord>(`/api/modules/${config.key}/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(patch),
+      body: patch,
     });
   },
 
   async remove(config: ModuleConfig, id: string): Promise<void> {
-    await request<{ message: string }>(`/api/modules/${config.key}/${id}`, { method: 'DELETE' });
+    await http<{ message: string }>(`/api/modules/${config.key}/${id}`, { method: 'DELETE' });
   },
 };

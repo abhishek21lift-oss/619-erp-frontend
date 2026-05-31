@@ -1,11 +1,3 @@
-/**
- * Shared Membership Plans utility
- * Plans are stored in localStorage under PLANS_KEY.
- * All form pages read from here so plans stay in sync.
- */
-
-export const PLANS_KEY = '619_plans_v1';
-
 export type PlanKind = 'Membership' | 'PT';
 export type PlanDuration = 'Monthly' | 'Quarterly' | 'Half Yearly' | 'Yearly';
 
@@ -35,42 +27,22 @@ export const DEFAULT_PLANS: StoredPlan[] = [
   { id: 'pt-year', kind: 'PT', name: 'PT Annual', duration: 'Yearly', base_amount: 55000, discount: 10000, final_amount: 45000, sessions_per_week: 3, features: ['144+ PT sessions', 'Premium plan & diet', 'Quarterly body comp tests', 'Supplements consult', 'Priority slot booking'] },
 ];
 
-/** Read plans from localStorage (SSR-safe). Returns DEFAULT_PLANS if none saved. */
 export function getStoredPlans(): StoredPlan[] {
-  if (typeof window === 'undefined') return DEFAULT_PLANS;
-  try {
-    const raw = localStorage.getItem(PLANS_KEY);
-    if (raw) {
-      const parsed: StoredPlan[] = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch { /* ignore */ }
   return DEFAULT_PLANS;
 }
 
-export function savePlans(plans: StoredPlan[]): void {
-  if (typeof window === 'undefined') return;
-  try { localStorage.setItem(PLANS_KEY, JSON.stringify(plans)); } catch { /* ignore */ }
+export function getMembershipPlanNames(): string[] {
+  return DEFAULT_PLANS.filter((p) => p.kind === 'Membership').map((p) => p.name);
 }
 
-/** Names of Membership plans (for dropdowns) */
-export function getMembershipPlanNames(plans: StoredPlan[]): string[] {
-  const names = plans.filter((p) => p.kind === 'Membership').map((p) => p.name);
-  return names.length > 0 ? names : ['Monthly', 'Quarterly', 'Half Yearly', 'Yearly'];
+export function getPTPlanNames(): string[] {
+  return DEFAULT_PLANS.filter((p) => p.kind === 'PT').map((p) => p.name);
 }
 
-/** Names of PT plans (for dropdowns) */
-export function getPTPlanNames(plans: StoredPlan[]): string[] {
-  const names = plans.filter((p) => p.kind === 'PT').map((p) => p.name);
-  return names.length > 0 ? names : ['PT Monthly', 'PT Quarterly', 'PT Half-Yearly', 'PT Annual'];
+export function getPlanPrice(name: string): number {
+  return DEFAULT_PLANS.find((p) => p.name === name)?.final_amount ?? 0;
 }
 
-/** Get price for a plan by name */
-export function getPlanPrice(plans: StoredPlan[], name: string): number {
-  return plans.find((p) => p.name === name)?.final_amount ?? 0;
-}
-
-/** Get plan object by name */
-export function getPlanByName(plans: StoredPlan[], name: string): StoredPlan | undefined {
-  return plans.find((p) => p.name === name);
+export function getPlanByName(name: string): StoredPlan | undefined {
+  return DEFAULT_PLANS.find((p) => p.name === name);
 }

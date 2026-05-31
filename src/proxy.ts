@@ -53,10 +53,7 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const token =
-    req.cookies.get('auth-token')?.value ||
-    req.cookies.get('token')?.value ||
-    req.cookies.get('session')?.value;
+  const token = req.cookies.get('token')?.value;
 
   if (!token) {
     const loginUrl = req.nextUrl.clone();
@@ -64,6 +61,14 @@ export function proxy(req: NextRequest) {
     if (pathname !== '/') {
       loginUrl.searchParams.set('redirect', pathname);
     }
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Basic JWT format validation: 3 base64 segments separated by dots
+  const segments = token.split('.');
+  if (segments.length !== 3 || !segments.every(s => s.length > 0)) {
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = '/login';
     return NextResponse.redirect(loginUrl);
   }
 
