@@ -1,0 +1,2 @@
+member_name,mobile,email,gender,dob,address,joining_date,package_type,trainer_name,final_amount,paid_amount,payment_method,status
+John Doe,9876543210,john@example.com,Male,1998-05-10,Lucknow,2026-05-01,3 Months,Coach Rahul,5000,5000,Cash,Active
