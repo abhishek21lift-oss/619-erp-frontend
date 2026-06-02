@@ -14,10 +14,11 @@ export interface MonthlyTargetGaugeProps {
   current: number;
   target: number;
   className?: string;
+  onClick?: () => void;
 }
 
 export const MonthlyTargetGauge = React.forwardRef<HTMLDivElement, MonthlyTargetGaugeProps>(
-  function MonthlyTargetGauge({ current, target, className }, ref) {
+  function MonthlyTargetGauge({ current, target, className, onClick }, ref) {
     const prefersReducedMotion = useReducedMotion();
     const size = 180;
     const stroke = 12;
@@ -50,9 +51,14 @@ export const MonthlyTargetGauge = React.forwardRef<HTMLDivElement, MonthlyTarget
     return (
       <div
         ref={ref}
+        onClick={onClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
         className={
           'flex flex-col items-center gap-3 rounded-3xl border border-[var(--border)] bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-yellow-500/5 p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] ' +
-          (className ?? '')
+          (className ?? '') +
+          (onClick ? ' cursor-pointer transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)]' : '')
         }
       >
         <p className="text-[11px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">

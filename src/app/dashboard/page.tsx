@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, RefreshCw,
@@ -58,6 +59,7 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
+  const router = useRouter();
   const [period, setPeriod] = React.useState('Last 7 Days');
   const { data, loading, error, refresh } = useDashboardData(period);
 
@@ -108,7 +110,7 @@ function DashboardContent() {
             />
           )}
 
-          {data && <DashboardBody data={data} />}
+          {data && <DashboardBody data={data} router={router} />}
         </div>
       </div>
     </AppShell>
@@ -146,7 +148,7 @@ function QuickActions() {
   );
 }
 
-function DashboardBody({ data }: { data: DashboardData }) {
+function DashboardBody({ data, router }: { data: DashboardData; router: ReturnType<typeof useRouter> }) {
   const c = data.clients;
   const r = data.revenue;
   const totalDues = data.total_dues;
@@ -183,6 +185,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           format={formatINRShort}
           trend={revenueSpark}
           index={0}
+          onClick={() => router.push('/finance/record-payment')}
         />
         <PremiumKpiCard
           label="Collected Payments"
@@ -193,6 +196,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           format={formatINRShort}
           trend={revenueSpark}
           index={1}
+          onClick={() => router.push('/payments')}
         />
         <PremiumKpiCard
           label="Pending Payments"
@@ -203,6 +207,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           format={formatINRShort}
           trend={duesSpark}
           index={2}
+          onClick={() => router.push('/finance/dues')}
         />
         <PremiumKpiCard
           label="Upcoming Renewals"
@@ -211,6 +216,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           icon={<RefreshCw size={18} strokeWidth={2} />}
           trend={renewalsSpark}
           index={3}
+          onClick={() => router.push('/members/expiring')}
         />
       </motion.div>
 
@@ -226,6 +232,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           gradient="pink"
           icon={<UserPlus size={20} strokeWidth={2} />}
           index={0}
+          onClick={() => router.push('/clients/new')}
         />
         <ActivityCard
           title="Renewals"
@@ -233,6 +240,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           gradient="violet"
           icon={<RefreshCw size={20} strokeWidth={2} />}
           index={1}
+          onClick={() => router.push('/members/renewals')}
         />
         <ActivityCard
           title="Upgrades"
@@ -240,6 +248,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           gradient="amber"
           icon={<Activity size={20} strokeWidth={2} />}
           index={2}
+          onClick={() => router.push('/memberships/subscriptions')}
         />
         <ActivityCard
           title="Check-ins"
@@ -247,6 +256,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           gradient="cyan"
           icon={<CheckCircle size={20} strokeWidth={2} />}
           index={3}
+          onClick={() => router.push('/attendance')}
         />
       </motion.div>
 
@@ -264,6 +274,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           gradient="pink"
           icon={<Users size={20} strokeWidth={2} />}
           index={0}
+          onClick={() => router.push('/clients')}
         />
         <ClientOverviewCard
           label="Active Clients"
@@ -273,6 +284,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           gradient="violet"
           icon={<Activity size={20} strokeWidth={2} />}
           index={1}
+          onClick={() => router.push('/members/active')}
         />
         <ClientOverviewCard
           label="Inactive Clients"
@@ -282,6 +294,7 @@ function DashboardBody({ data }: { data: DashboardData }) {
           gradient="cyan"
           icon={<Users size={20} strokeWidth={2} />}
           index={2}
+          onClick={() => router.push('/members/lapsed')}
         />
       </motion.div>
 
@@ -321,11 +334,13 @@ function DashboardBody({ data }: { data: DashboardData }) {
           percentage={collectedPct}
           collected={collected}
           pending={totalDues}
+          onClick={() => router.push('/finance/collection')}
         />
         <ClientGrowthWidget
           data={data.monthly_chart.map((m) => ({ month: m.month, new: m.count, lost: 0 }))}
+          onClick={() => router.push('/insights/traffic')}
         />
-        <MonthlyTargetGauge current={current} target={target} />
+        <MonthlyTargetGauge current={current} target={target} onClick={() => router.push('/finance/forecast')} />
       </motion.div>
     </>
   );

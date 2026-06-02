@@ -64,11 +64,12 @@ export interface PremiumKpiCardProps {
   format?: (n: number) => string;
   index?: number;
   className?: string;
+  onClick?: () => void;
 }
 
 export const PremiumKpiCard = React.forwardRef<HTMLDivElement, PremiumKpiCardProps>(
   function PremiumKpiCard(
-    { label, value, prefix, growth, trend, icon, gradient, format, index = 0, className },
+    { label, value, prefix, growth, trend, icon, gradient, format, index = 0, className, onClick },
     ref,
   ) {
     const gradientCss = GRADIENT_MAP[gradient];
@@ -90,11 +91,16 @@ export const PremiumKpiCard = React.forwardRef<HTMLDivElement, PremiumKpiCardPro
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
         whileHover={{ y: -4, scale: 1.01 }}
+        onClick={onClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
         className={cn(
           'group relative flex flex-col overflow-hidden rounded-3xl',
           'border border-[var(--border)] bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-card)] backdrop-blur-xl',
           'shadow-[0_10px_40px_rgba(0,0,0,0.08)]',
           'transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)]',
+          onClick && 'cursor-pointer',
           className,
         )}
         style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}

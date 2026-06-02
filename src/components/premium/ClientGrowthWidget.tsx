@@ -7,10 +7,11 @@ export interface ClientGrowthWidgetProps {
   data: { month: string; new: number; lost: number }[];
   className?: string;
   height?: number;
+  onClick?: () => void;
 }
 
 export const ClientGrowthWidget = React.forwardRef<HTMLDivElement, ClientGrowthWidgetProps>(
-  function ClientGrowthWidget({ data, className, height = 220 }, ref) {
+  function ClientGrowthWidget({ data, className, height = 220, onClick }, ref) {
     const prefersReducedMotion = useReducedMotion();
     const max = Math.max(1, ...data.map((d) => d.new + d.lost));
     const padding = { top: 20, right: 12, bottom: 32, left: 36 };
@@ -40,11 +41,15 @@ export const ClientGrowthWidget = React.forwardRef<HTMLDivElement, ClientGrowthW
           if (typeof ref === 'function') ref(node);
           else if (ref) ref.current = node;
         }}
+        onClick={onClick}
+        role={onClick ? 'button' : 'img'}
+        tabIndex={onClick ? 0 : undefined}
+        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
         className={
           'rounded-3xl border border-[var(--border)] bg-gradient-to-br from-violet-500/5 via-purple-500/5 to-fuchsia-500/5 p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] ' +
-          (className ?? '')
+          (className ?? '') +
+          (onClick ? ' cursor-pointer transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)]' : '')
         }
-        role="img"
         aria-label="Client growth over the last 6 months"
       >
           <div className="mb-4 flex items-center justify-between">

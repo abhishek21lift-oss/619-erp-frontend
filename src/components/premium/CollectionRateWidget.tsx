@@ -8,6 +8,7 @@ export interface CollectionRateWidgetProps {
   collected: number;
   pending: number;
   className?: string;
+  onClick?: () => void;
 }
 
 function formatINR(n: number): string {
@@ -18,7 +19,7 @@ function formatINR(n: number): string {
 }
 
 export const CollectionRateWidget = React.forwardRef<HTMLDivElement, CollectionRateWidgetProps>(
-  function CollectionRateWidget({ percentage, collected, pending, className }, ref) {
+  function CollectionRateWidget({ percentage, collected, pending, className, onClick }, ref) {
     const prefersReducedMotion = useReducedMotion();
     const size = 200;
     const stroke = 14;
@@ -49,9 +50,14 @@ export const CollectionRateWidget = React.forwardRef<HTMLDivElement, CollectionR
     return (
       <div
         ref={ref}
+        onClick={onClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
         className={
           'flex flex-col items-center gap-4 rounded-3xl border border-[var(--border)] bg-gradient-to-br from-emerald-500/5 via-green-500/5 to-teal-500/5 p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] ' +
-          (className ?? '')
+          (className ?? '') +
+          (onClick ? ' cursor-pointer transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)]' : '')
         }
       >
         <div className="relative" style={{ width: size, height: size }}>

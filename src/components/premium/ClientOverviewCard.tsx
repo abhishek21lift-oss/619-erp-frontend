@@ -43,10 +43,11 @@ export interface ClientOverviewCardProps {
   gradient: ClientOverviewGradient;
   className?: string;
   index?: number;
+  onClick?: () => void;
 }
 
 export const ClientOverviewCard = React.forwardRef<HTMLDivElement, ClientOverviewCardProps>(
-  function ClientOverviewCard({ label, total, percentage, trend, icon, gradient, className, index = 0 }, ref) {
+  function ClientOverviewCard({ label, total, percentage, trend, icon, gradient, className, index = 0, onClick }, ref) {
     const prefersReducedMotion = useReducedMotion();
     const palette = GRADIENT_MAP[gradient];
     const size = 120;
@@ -84,9 +85,14 @@ export const ClientOverviewCard = React.forwardRef<HTMLDivElement, ClientOvervie
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
         whileHover={{ y: -4, scale: 1.01 }}
+        onClick={onClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
         className={cn(
           'group relative flex flex-col items-center overflow-hidden rounded-3xl border border-[var(--border)] p-6 backdrop-blur-xl',
           'shadow-[0_10px_40px_rgba(0,0,0,0.08)] transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)]',
+          onClick && 'cursor-pointer',
           className,
         )}
         style={{ background: palette.bg, boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}
