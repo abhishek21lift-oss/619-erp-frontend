@@ -78,6 +78,17 @@ export type Client = {
   interested_in?: string;
 };
 
+export type DuesItem = {
+  id: string;
+  name?: string;
+  client_id?: string;
+  mobile?: string;
+  balance_amount?: number;
+  pt_end_date?: string;
+  status?: string;
+  trainer_name?: string;
+};
+
 export type Payment = {
   id: string;
   receipt_no?: string;
@@ -538,7 +549,7 @@ export const api = {
     monthly: (year: number | string) =>
       http<unknown[]>(`/api/reports/monthly?year=${year}`),
     dues: () =>
-      http<unknown[]>('/api/reports/dues'),
+      http<DuesItem[]>('/api/reports/dues'),
     trainerSummary: () =>
       http<TrainerSummaryRow[]>('/api/reports/trainer-summary'),
   },

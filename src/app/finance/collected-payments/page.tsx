@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
-  Smartphone, CreditCard, Receipt, CalendarDays, RefreshCw,
+  Smartphone, CreditCard, Receipt, CalendarDays, RefreshCw, Inbox,
 } from 'lucide-react';
 
 const fmtINR = (n: number) => '₹' + n.toLocaleString('en-IN');
@@ -38,10 +38,23 @@ function Inner() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const searchRef = useRef('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<'date' | 'amount'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
+
+  const handleSearch = useCallback((val: string) => {
+    searchRef.current = val;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(searchRef.current);
+      setPage(0);
+    }, 250);
+  }, []);
+
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -100,6 +113,7 @@ function Inner() {
 
   return (
     <AppShell>
+      <style>{`@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }`}</style>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
@@ -132,8 +146,7 @@ function Inner() {
             <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
             <input
               placeholder="Search by client, receipt, notes..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              onChange={(e) => handleSearch(e.target.value)}
               style={{ width: '100%', padding: '10px 14px 10px 36px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, background: 'white', outline: 'none', color: 'var(--text-primary)' }}
             />
           </div>
@@ -169,10 +182,28 @@ function Inner() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={6} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>Loading payments...</td></tr>
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={i}><td colSpan={6} style={{ padding: '14px 20px' }}>
+                      <div style={{ height: 13, width: ['40%', '15%', '12%', '18%', '15%'][i % 5], borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                    </td></tr>
+                  ))
                 ) : paged.length === 0 ? (
-                  <tr><td colSpan={6} style={{ padding: 48, textAlign: 'center', color: 'var(--text-disabled)', fontSize: 14 }}>
-                    <div style={{ fontSize: 13 }}>No payments found</div>
+                  <tr><td colSpan={6} style={{ padding: 64, textAlign: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Inbox size={24} color="#94a3b8" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>No payments found</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{search ? 'Try a different search term.' : 'Record your first payment to get started.'}</div>
+                      </div>
+                      {!search && (
+                        <button onClick={() => router.push('/finance/record-payment')}
+                          style={{ marginTop: 8, padding: '8px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: 'linear-gradient(135deg,#0ea5e9,#6366f1)', color: 'white', boxShadow: '0 2px 8px rgba(14,165,233,0.35)' }}>
+                          + Record Payment
+                        </button>
+                      )}
+                    </div>
                   </td></tr>
                 ) : (
                   paged.map((p) => (

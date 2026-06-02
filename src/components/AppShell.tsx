@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Menu, Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -332,7 +333,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                   className="flex h-7 w-7 items-center justify-center rounded-lg shadow-[0_2px_6px_var(--brand-glow)] overflow-hidden"
                   style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
                 >
-                  <img src="/logo.png" alt="619" className="h-5 w-5 object-contain" />
+                    <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-[12px] font-semibold leading-tight text-[var(--text-primary)]">619 FITNESS STUDIO</p>

@@ -2,9 +2,10 @@
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-// TODO: replace 'unsafe-inline' with per-request nonce-based script-src
-// once Next.js supports nonces across streaming SSR (track issue #51192).
-// For now: dev keeps inline/eval so HMR + face-api work; prod is tight.
+// TODO (CSP): replace 'unsafe-inline' with per-request nonce-based script-src
+// once Next.js supports nonces across streaming SSR (track next.js issue #51192).
+// Until then, strict CSP with unsafe-inline is the best we can do without breaking
+// Next.js chunk loading and framer-motion's runtime injection.
 const STRICT_CSP_DEV = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -88,6 +89,9 @@ const nextConfig = {
 
   images: {
     formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+    ],
   },
 
   webpack(config, { isServer }) {

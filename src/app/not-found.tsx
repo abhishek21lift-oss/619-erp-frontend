@@ -1,22 +1,24 @@
-// M-03 fix: App-level branded 404 page.
-// Without this file, Next.js App Router shows a raw default 404 for all unmatched routes.
 import Link from 'next/link';
 
 export default function NotFound() {
   return (
-    <div
-      style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'Inter, sans-serif',
-        background: '#f5f4f0',
-        padding: '24px',
-        textAlign: 'center',
-      }}
-    >
+    <>
+      <a href="#main-content" className="skip-link" style={{ position: 'absolute', top: '-999px', left: 0, zIndex: 9999, padding: '8px 16px', background: '#fff', color: '#111', fontWeight: 600, borderRadius: '0 0 8px 0' }}>
+        Skip to main content
+      </a>
+      <div id="main-content"
+        style={{
+          minHeight: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'Inter, sans-serif',
+          background: '#f5f4f0',
+          padding: '24px',
+          textAlign: 'center',
+        }}
+      >
       <div
         style={{
           fontSize: 96,
@@ -69,6 +71,7 @@ export default function NotFound() {
       >
         ← Go to Dashboard
       </Link>
-    </div>
+      </div>
+    </>
   );
 }

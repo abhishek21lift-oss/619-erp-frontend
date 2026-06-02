@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ChevronDown, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
@@ -302,7 +303,7 @@ export default function Sidebar({
             <div className="relative">
               <div className="h-[52px] w-[52px] rounded-xl bg-gradient-to-br from-[var(--brand-lo)] via-[var(--brand)] to-purple-500 p-[2px] shadow-[0_4px_20px_var(--brand-glow)] transition-all duration-300 group-hover:shadow-[0_6px_28px_var(--brand-glow-2)]">
                 <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
-                  <img src="/logo.png" alt="" className="h-10 w-10 rounded-lg object-cover" />
+                  <Image src="/logo.png" alt="619 Fitness" width={40} height={40} className="h-10 w-10 rounded-lg object-cover" />
                 </div>
               </div>
 

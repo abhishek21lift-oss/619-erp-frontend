@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import type { DuesItem } from '@/lib/api';
 import {
   Search, AlertTriangle, CheckCircle2, TrendingDown,
   MessageCircle, Users, Banknote, RefreshCw,
@@ -13,7 +14,7 @@ export default function OutstandingDuesPage() {
   return <Guard role="admin"><Inner /></Guard>;
 }
 
-const fmt = (n: any) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const fmt = (n: number | string) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 function fmtCompact(n: number) {
   if (n >= 100_000) return '₹' + (n / 100_000).toFixed(1) + 'L';
   if (n >= 1_000)   return '₹' + (n / 1_000).toFixed(1) + 'K';
@@ -49,10 +50,22 @@ function riskLevel(amount: number): { label: string; color: string; bg: string }
 }
 
 function Inner() {
-  const [dues, setDues]   = useState<any[]>([]);
+  const [dues, setDues]   = useState<DuesItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [search, setSearch]   = useState('');
+  const searchRef = useRef('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearch = useCallback((val: string) => {
+    searchRef.current = val;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(searchRef.current);
+    }, 250);
+  }, []);
+
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
   const fetchDues = () => {
     setLoading(true);
@@ -68,26 +81,25 @@ function Inner() {
   const filtered = useMemo(() => {
     if (!search) return dues;
     const s = search.toLowerCase();
-    return dues.filter((d: any) =>
+    return dues.filter((d) =>
       (d.name || '').toLowerCase().includes(s) ||
       (d.client_id || '').toLowerCase().includes(s) ||
       (d.mobile || '').includes(search)
     );
   }, [dues, search]);
 
-  const total = filtered.reduce((s: number, d: any) => s + Number(d.balance_amount || 0), 0);
-  const highRisk = filtered.filter((d: any) => Number(d.balance_amount || 0) >= 10000).length;
-  const medRisk  = filtered.filter((d: any) => { const a = Number(d.balance_amount || 0); return a >= 3000 && a < 10000; }).length;
+  const total = filtered.reduce((s, d) => s + Number(d.balance_amount || 0), 0);
+  const highRisk = filtered.filter((d) => Number(d.balance_amount || 0) >= 10000).length;
+  const medRisk  = filtered.filter((d) => { const a = Number(d.balance_amount || 0); return a >= 3000 && a < 10000; }).length;
 
   return (
     <AppShell>
       <style>{`
         @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         @keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        .dues-page { animation: fadeInUp 0.4s ease; }
-        .dues-table tr:hover td { background: #fafbff; }
+        .dues-row:hover td { background: #fafbff; }
       `}</style>
-      <div className="dues-page" style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px', animation: 'fadeInUp 0.4s ease' }}>
 
         {/* ── Page Header ── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
@@ -120,7 +132,7 @@ function Inner() {
           <div style={{ position: 'absolute', top: '30%', left: '20%', width: 100, height: 100, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
           <div className="flex items-center justify-between relative" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
-              <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px' }}>Total Outstanding Amount</p>
+              <h2 style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px' }}>Total Outstanding Amount</h2>
               <div className="bg-gradient-to-r from-white via-amber-100 to-orange-100 bg-clip-text text-transparent"
                 style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>{fmtCompact(total)}</div>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '8px 0 0' }}>{filtered.length} member{filtered.length !== 1 ? 's' : ''} with pending dues</p>
@@ -147,8 +159,9 @@ function Inner() {
             { label: 'High Risk Members', value: String(highRisk), sub: 'Balance ≥ ₹10,000', icon: <AlertTriangle size={18} />, accent: '#ef4444' },
             { label: 'Recovery Progress', value: dues.length > 0 ? Math.round(((dues.length - filtered.length) / (dues.length || 1)) * 100) + '%' : '—', sub: 'vs total base', icon: <TrendingDown size={18} />, accent: '#10b981' },
           ].map((k) => (
-            <div key={k.label}
-              style={{ background: 'white', borderRadius: 20, padding: '22px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', overflow: 'hidden', transition: 'all 200ms ease' }}
+            <div key={k.label} tabIndex={0} role="button"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              style={{ background: 'white', borderRadius: 20, padding: '22px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', overflow: 'hidden', transition: 'all 200ms ease', cursor: 'default' }}
               onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}>
               <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: `linear-gradient(90deg,${k.accent},${k.accent}88)`, borderRadius: '0 0 3px 3px', opacity: 0.8 }} />
@@ -168,7 +181,7 @@ function Inner() {
         <div style={{ background: 'white', borderRadius: 18, border: '1px solid #f1f5f9', padding: '14px 18px', marginBottom: 16, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
           <div style={{ position: 'relative', maxWidth: 340 }}>
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)' }} />
-            <input type="search" placeholder="Search member, ID or mobile" value={search} onChange={(e) => setSearch(e.target.value)}
+            <input type="search" placeholder="Search member, ID or mobile" onChange={(e) => handleSearch(e.target.value)}
               style={{ width: '100%', padding: '9px 12px 9px 34px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 13, color: 'var(--text-primary)', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }} />
           </div>
         </div>
@@ -197,7 +210,7 @@ function Inner() {
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table className="dues-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                     {['Member', 'Mobile', 'Coach', 'Balance Due', 'Expiry', 'Risk', 'Status', ''].map((h, i) => (
@@ -206,12 +219,12 @@ function Inner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((d: any) => {
+                  {filtered.map((d) => {
                     const amt  = Number(d.balance_amount || 0);
                     const risk = riskLevel(amt);
-                    const initials = (d.name || '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+                    const initials = (d.name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
                     return (
-                      <tr key={d.id} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 150ms' }}>
+                      <tr key={d.id} className="dues-row" style={{ borderBottom: '1px solid #f8fafc', transition: 'background 150ms' }}>
                         <td style={{ padding: '14px 16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ width: 36, height: 36, borderRadius: '50%', background: nameGradient(d.name || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'white', flexShrink: 0 }}>{initials}</div>
