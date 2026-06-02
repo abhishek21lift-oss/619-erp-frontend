@@ -43,6 +43,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Target',
     items: [
       { href: '/sales/leads',              label: 'Lead Inbox',         icon: 'Inbox',        badge: 'leadsCount' },
+      { href: '/sales/today',              label: "Today's Sale",       icon: 'IndianRupee',  isNew: true },
       { href: '/sales/sources',            label: 'Lead Sources',       icon: 'PieChart',     role: 'admin' },
       { href: '/sales/funnel',             label: 'Conversion Funnel',  icon: 'Filter',       role: 'admin' },
       { href: '/sales/enquiry',            label: 'Add Enquiry',        icon: 'PlusCircle' },
