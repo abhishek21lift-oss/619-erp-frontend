@@ -43,7 +43,6 @@ function Inner() {
   const r = data?.revenue;
   const payments = data?.recent_payments ?? [];
 
-  const payments = data?.recent_payments ?? [];
   const totalToday = r?.today ?? 0;
   const methodTotals = React.useMemo(() => {
     const map: Record<string, number> = {};
