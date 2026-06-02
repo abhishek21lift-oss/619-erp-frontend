@@ -31,7 +31,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 type GroupTheme = {
   gradient: string;
-  gradientHover: string;
+  lightBg: string;
   borderColor: string;
   iconBg: string;
   iconColor: string;
@@ -51,15 +51,15 @@ const hexToRgba = (hex: string, alpha: number) => {
 };
 
 const buildTheme = (color: string): GroupTheme => ({
-  gradient: `linear-gradient(135deg, ${color} 0%, ${hexToRgba(color, 0.85)} 100%)`,
-  gradientHover: hexToRgba(color, 0.08),
+  gradient: `linear-gradient(135deg, ${color} 0%, ${hexToRgba(color, 0.7)} 100%)`,
+  lightBg: hexToRgba(color, 0.08),
   borderColor: color,
-  iconBg: color,
+  iconBg: `linear-gradient(135deg, ${color}, ${hexToRgba(color, 0.75)})`,
   iconColor: '#ffffff',
-  activeBg: color,
-  subBorder: hexToRgba(color, 0.40),
-  subActiveBg: hexToRgba(color, 0.12),
-  badgeBg: color,
+  activeBg: hexToRgba(color, 0.1),
+  subBorder: hexToRgba(color, 0.3),
+  subActiveBg: hexToRgba(color, 0.1),
+  badgeBg: `linear-gradient(135deg, ${color}, ${hexToRgba(color, 0.75)})`,
   badgeText: '#ffffff',
 });
 
@@ -107,7 +107,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
     items.some(i => isActive(i.href || '') || (i.children?.some(c => isActive(c.href || ''))));
 
   return (
-    <div className="space-y-1 px-2">
+    <div className="space-y-[3px] px-2">
       {/* Dashboard — premium hero link */}
       <Link
         href="/dashboard"
@@ -124,7 +124,6 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
             : 'transparent',
         }}
       >
-        {/* Animated gradient border glow */}
         <div
           className="absolute inset-0 rounded-[12px] opacity-0 group-hover:opacity-100 transition-all duration-500"
           style={{
@@ -133,15 +132,13 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
               : undefined,
           }}
         />
-        {/* Active overlay shimmer */}
         {isActive('/dashboard') && (
           <motion.div
             className="absolute inset-0 rounded-[12px]"
-            animate={{ background: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.08)'] }}
+            animate={{ background: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0.08)'] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           />
         )}
-        {/* Glowing ring */}
         {isActive('/dashboard') && (
           <div
             className="absolute -inset-[1px] rounded-[13px] opacity-60"
@@ -152,7 +149,6 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
             }}
           />
         )}
-        {/* Dashboard icon */}
         <div
           className={cn(
             'flex h-[28px] w-[28px] items-center justify-center rounded-[8px] shrink-0 transition-all duration-300 relative z-10',
@@ -173,7 +169,6 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
         <span className={cn('relative z-10', isActive('/dashboard') ? 'font-extrabold tracking-wide' : 'font-bold')}>
           Dashboard
         </span>
-        {/* Active pulsing indicators */}
         {isActive('/dashboard') && (
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 z-10">
             {[0, 1, 2].map((i) => (
@@ -188,7 +183,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
       </Link>
 
       {/* Section divider */}
-      <div className="px-1 pt-2 pb-1">
+      <div className="px-1 pt-1 pb-[2px]">
         <div className="h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
       </div>
 
@@ -215,7 +210,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                     : undefined,
               }}
             >
-              {/* Left color strip — taller, glow */}
+              {/* Left color strip */}
               <div
                 className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-300"
                 style={{
@@ -226,10 +221,10 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                 }}
               />
 
-              {/* Hover gradient overlay — stronger than before */}
+              {/* Hover gradient overlay */}
               <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[11px]"
-                style={{ background: theme.gradientHover }}
+                style={{ background: theme.lightBg }}
               />
 
               {/* Active shimmer scan */}
@@ -253,20 +248,16 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                   color: hasActiveChild ? theme.borderColor : 'var(--text-muted)',
                 }}
               >
-                {/* Colorful icon container — solid gradient when active */}
+                {/* Icon container */}
                 <div
                   className={cn(
                     'flex h-[28px] w-[28px] items-center justify-center rounded-[8px] shrink-0 transition-all duration-300',
-                    hasActiveChild || open
+                    (hasActiveChild || open)
                       ? 'shadow-[0_0_10px_rgba(0,0,0,0.08)]'
                       : 'group-hover:bg-white/10',
                   )}
                   style={{
-                    background: hasActiveChild
-                      ? theme.iconBg
-                      : open
-                        ? theme.iconBg
-                        : 'transparent',
+                    background: (hasActiveChild || open) ? theme.iconBg : 'transparent',
                   }}
                 >
                   <GroupIcon
@@ -282,7 +273,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                 {/* Label */}
                 <span className="flex-1 text-left">{group.label}</span>
 
-                {/* Chevron with color */}
+                {/* Chevron */}
                 <ChevronDown
                   size={13}
                   strokeWidth={2}
@@ -306,10 +297,8 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                   className="overflow-hidden"
                 >
                   <div
-                    className="ml-6 mt-1 space-y-0.5 border-l-2 pl-2"
-                    style={{
-                      borderColor: theme.subBorder,
-                    }}
+                    className="ml-6 mt-1 space-y-[2px] border-l-2 pl-2"
+                    style={{ borderColor: theme.subBorder }}
                   >
                     {group.items.map((item, idx) => {
                       const ItemIcon = ICON_MAP[item.icon];
@@ -344,7 +333,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                           <div
                             className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-[8px]"
                             style={{
-                              background: !active ? theme.gradientHover : undefined,
+                              background: !active ? theme.lightBg : undefined,
                             }}
                           />
 
@@ -363,14 +352,26 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                                 size={13}
                                 strokeWidth={active ? 2.2 : 1.5}
                                 style={{
-                                  color: active ? theme.iconColor : 'var(--sidebar-icon)',
+                                  color: active ? '#ffffff' : 'var(--sidebar-icon)',
                                 }}
                               />
                             )}
                           </div>
 
                           {/* Label */}
-                          <span className="truncate relative z-10">{item.label}</span>
+                          <span
+                            className={cn(
+                              'truncate relative z-10 transition-all duration-200',
+                              active && 'font-semibold tracking-wide',
+                            )}
+                            style={{
+                              color: active
+                                ? theme.borderColor
+                                : 'var(--text-muted)',
+                            }}
+                          >
+                            {item.label}
+                          </span>
 
                           {/* Badge / NEW indicator */}
                           {(item.badge || item.isNew) && (
@@ -428,29 +429,40 @@ export default function Sidebar({
         ],
       )}
     >
-      {/* Header with brand gradient accent */}
-      <div className="relative shrink-0 px-5 py-6">
-        {/* Gradient accent bar */}
-        <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-[var(--brand-lo)]" />
+      {/* Brand header */}
+      <div className="relative shrink-0 px-5 pb-3 pt-6">
+        <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r from-[var(--brand-lo)] via-[#60A5FA] to-[var(--brand-lo)] opacity-70" />
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-3 group">
             <div className="relative">
-              <img
-                src="/logo.png"
-                alt="619 Fitness"
-                className="h-14 w-14 rounded-xl object-cover shadow-[0_4px_16px_var(--brand-glow)] transition-all duration-300 group-hover:shadow-[0_4px_20px_var(--brand-glow-2)]"
-              />
-              <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[var(--success)] shadow-[0_0_6px_var(--success)] ring-2 ring-[var(--bg-white)]" />
+              <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-[var(--brand-lo)] to-[var(--brand)] p-[2px] shadow-[0_4px_16px_var(--brand-glow)] transition-all duration-300 group-hover:shadow-[0_4px_20px_var(--brand-glow-2)]">
+                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
+                  <img
+                    src="/logo.png"
+                    alt="619 Fitness"
+                    className="h-11 w-11 rounded-[8px] object-cover"
+                  />
+                </div>
+              </div>
+              <motion.span
+                className="absolute -bottom-0.5 -right-0.5 flex h-[14px] w-[14px]"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-50" />
+                <span className="relative inline-flex h-[14px] w-[14px] rounded-full bg-[var(--success)] ring-2 ring-[var(--bg-white)] shadow-[0_0_6px_var(--success)]" />
+              </motion.span>
             </div>
             <div>
               <h2 className="text-[16px] font-extrabold tracking-tight text-[var(--text-primary)] leading-none">
                 <span
                   className="bg-clip-text text-transparent"
-                  style={{ backgroundImage: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
+                  style={{ backgroundImage: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #93C5FD 100%)' }}
                 >619</span>
-                {' '}FITNESS
+                {' '}
+                <span className="tracking-[0.04em]">FITNESS</span>
               </h2>
-              <p className="mt-0.5 text-[11px] font-semibold text-[var(--text-muted)] tracking-[0.06em] uppercase">
+              <p className="mt-[3px] text-[10px] font-semibold text-[var(--text-muted)] tracking-[0.08em] uppercase">
                 Studio Management
               </p>
             </div>
@@ -473,17 +485,17 @@ export default function Sidebar({
         <SidebarNav onLinkClick={isMobile ? onMobileClose : undefined} />
       </div>
 
-      {/* Footer with gradient top border */}
-      <div className="relative shrink-0 px-4 py-3">
+      {/* Footer */}
+      <div className="relative shrink-0 px-4 pb-4 pt-3">
         <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] text-[var(--text-muted)]">
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-[10px] text-[var(--text-muted)] font-medium tracking-wider uppercase">
             <span className="inline-flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-40" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--success)] shadow-[0_0_6px_var(--success)]" />
               </span>
-              Premium — v4.0
+              Premium · v4.0
             </span>
           </p>
           <div className="flex items-center gap-1">
@@ -492,7 +504,7 @@ export default function Sidebar({
               aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
               className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] text-[var(--text-muted)] transition-all hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]"
             >
-              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+              {theme === 'light' ? <Moon size={13} /> : <Sun size={13} />}
             </button>
           </div>
         </div>
