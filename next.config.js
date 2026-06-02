@@ -2,7 +2,22 @@
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-const STRICT_CSP = [
+// TODO: replace 'unsafe-inline' with per-request nonce-based script-src
+// once Next.js supports nonces across streaming SSR (track issue #51192).
+// For now: dev keeps inline/eval so HMR + face-api work; prod is tight.
+const STRICT_CSP_DEV = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
+  "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https: wss:",
+  "media-src 'self' blob:",
+  "worker-src blob:",
+  "frame-ancestors 'none'",
+].join('; ');
+
+const STRICT_CSP_PROD = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
@@ -14,7 +29,7 @@ const STRICT_CSP = [
   "frame-ancestors 'none'",
 ].join('; ');
 
-const CHECKIN_CSP = [
+const CHECKIN_CSP_DEV = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
@@ -25,6 +40,23 @@ const CHECKIN_CSP = [
   "worker-src blob:",
   "frame-ancestors 'none'",
 ].join('; ');
+
+const CHECKIN_CSP_PROD = [
+  "default-src 'self'",
+  // face-api needs a worker; eval only in dev. prod still requires
+  // 'unsafe-inline' for Next.js streamed chunks until nonce work lands.
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
+  "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https: wss:",
+  "media-src 'self' blob:",
+  "worker-src blob:",
+  "frame-ancestors 'none'",
+].join('; ');
+
+const STRICT_CSP = IS_PROD ? STRICT_CSP_PROD : STRICT_CSP_DEV;
+const CHECKIN_CSP = IS_PROD ? CHECKIN_CSP_PROD : CHECKIN_CSP_DEV;
 
 const BASE_SECURITY_HEADERS = [
   { key: 'X-Content-Type-Options',    value: 'nosniff' },

@@ -1,10 +1,5 @@
-import RoutePlaceholderPage from '@/components/RoutePlaceholderPage';
+import { notFound } from 'next/navigation';
 
-export default function CatchAllPage() {
-  return (
-    <RoutePlaceholderPage
-      title="Coming Soon"
-      description="This module is under development and will be available in an upcoming release."
-    />
-  );
+export default function CatchAll() {
+  notFound();
 }

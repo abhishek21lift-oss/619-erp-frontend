@@ -59,12 +59,12 @@ function Inner() {
   });
 
   useEffect(() => {
-    Promise.all([api.clients.get(id), api.trainers.list().catch(() => [])])
+    Promise.all([api.clients.get(id), api.trainers.list().catch((err: any) => { toast.error(err?.message || 'Failed to load trainers'); return []; })])
       .then(([c, t]) => {
         setClient(c);
         setTrainers(Array.isArray(t) ? t : []);
       })
-      .catch((e: any) => setError(e.message))
+      .catch((e: any) => { setError(e.message); toast.error(e.message || 'Failed to load'); })
       .finally(() => setLoading(false));
     const stored = getStoredPlans();
     const pt = stored.filter(p => p.kind === 'PT').map(p => ({
@@ -73,7 +73,7 @@ function Inner() {
       color: '#8B5CF6', gradient: 'from-violet-500 to-purple-500', icon: Dumbbell,
     }));
     if (pt.length > 0) setPtPlans(pt);
-  }, [id]);
+  }, [id, toast]);
 
   function set(field: string, value: string | string[]) {
     setForm(f => ({ ...f, [field]: value }));

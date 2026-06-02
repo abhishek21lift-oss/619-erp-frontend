@@ -17,6 +17,7 @@ import { StatusPill } from '@/components/premium/StatusPill';
 import { PremiumTable } from '@/components/premium/PremiumTable';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -131,6 +132,7 @@ function SchedulePageContent() {
   const [trainerList, setTrainerList] = useState<{ id: string; name: string }[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [sessionsError, setSessionsError] = useState('');
+  const { toast } = useToast();
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -142,7 +144,7 @@ function SchedulePageContent() {
       const allSessionsData = trainerArr.length > 0
         ? (await Promise.all(
             trainerArr.map((t: any) =>
-              api.trainers.sessions(t.id ?? t).catch(() => [])
+              api.trainers.sessions(t.id ?? t).catch((err) => { toast.error(err?.message || 'Failed to load sessions'); return []; })
             )
           )).flat()
         : [];
@@ -164,7 +166,7 @@ function SchedulePageContent() {
     } finally {
       setSessionsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchSessions();

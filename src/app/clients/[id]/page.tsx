@@ -766,7 +766,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
         {/* Delete step 1 */}
         {deleteStep === 1 && (
-          <div onClick={() => setDeleteStep(0)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div role="presentation" onClick={() => setDeleteStep(0)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, borderRadius: 24, background: 'var(--bg-card)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', boxShadow: '0 32px 80px rgba(0,0,0,0.15)', padding: 32, animation: 'fade-in 0.28s ease both' }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(244,63,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}><Trash2 size={24} color="#e11d48" /></div>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>Delete member?</h3>
@@ -781,7 +781,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
         {/* Delete step 2 */}
         {deleteStep === 2 && (
-          <div onClick={() => setDeleteStep(0)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div role="presentation" onClick={() => setDeleteStep(0)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 440, borderRadius: 24, background: 'var(--bg-card)', backdropFilter: 'blur(20px)', border: '2px solid rgba(244,63,94,0.3)', boxShadow: '0 32px 80px rgba(244,63,94,0.15)', padding: 32, animation: 'fade-in 0.28s ease both' }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(244,63,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}><AlertCircle size={24} color="#e11d48" /></div>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: '#e11d48', marginBottom: 8 }}>Final confirmation</h3>

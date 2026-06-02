@@ -1,15 +1,9 @@
 import { http } from './http';
+import type { Role } from './roles';
+
+export { ROLES, normaliseRole, hasRole, isAdminOrManager } from './roles';
 
 // ─────────────────────────── Types ───────────────────────────────────
-
-export type Role =
-  | 'admin'
-  | 'manager'
-  | 'staff'
-  | 'trainer'
-  | 'receptionist'
-  | 'reception'
-  | 'member';
 
 export type User = {
   id: string;

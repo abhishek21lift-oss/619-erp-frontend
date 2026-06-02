@@ -176,6 +176,11 @@ function MemberRenewalCard({ member, index }: { member: RenewalMember; index: nu
       }}
       whileHover={{ boxShadow: '0 4px 20px rgba(15,23,42,0.09)', borderColor: 'rgba(15,23,42,0.11)' }}
       onClick={() => setExpanded(v => !v)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(v => !v); } }}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      aria-label={`${member.name} renewal details`}
     >
       <div className="flex items-center gap-4">
         <MemberAvatar name={member.name} color={member.avatarColor} size={44} />

@@ -2,7 +2,11 @@
 // Single source of truth for all navigation.
 // Sidebar, CommandPalette, and Breadcrumbs all consume this file.
 
-export type Role = 'admin' | 'manager' | 'staff' | 'reception' | 'receptionist' | 'trainer' | 'member';
+import { normaliseRole } from './roles';
+import type { Role } from './roles';
+
+export { ROLES, normaliseRole, hasRole, isAdminOrManager } from './roles';
+export type { Role } from './roles';
 
 export type NavItem = {
   href: string;
@@ -238,14 +242,14 @@ export function findItemByPath(pathname: string): (NavItem & { groupId: string; 
 
 export function isVisibleForRole(item: NavItem, userRole?: string): boolean {
   if (item.hidden) return false;
-  const role = userRole === 'receptionist' ? 'reception' : userRole;
+  const role = normaliseRole(userRole);
   if (item.roles?.length) return !!role && (item.roles as string[]).includes(role);
   if (item.role)          return role === item.role;
   return true;
 }
 
 export function isGroupVisibleForRole(group: NavGroup, userRole?: string): boolean {
-  const role = userRole === 'receptionist' ? 'reception' : userRole;
+  const role = normaliseRole(userRole);
   if (group.roles?.length) return !!role && (group.roles as string[]).includes(role);
   return true;
 }

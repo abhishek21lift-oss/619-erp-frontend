@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 interface StaffTarget {
   id: string;
@@ -65,13 +66,14 @@ function Inner() {
   const [form, setForm] = useState({ staff_id: '', target_revenue: '', target_clients: '', target_sessions: '' });
   const [submitting, setSubmitting] = useState(false);
   const [formErr, setFormErr] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     Promise.all([
-      api.staff.targets?.list({ month }).catch(() => []),
-      api.staff.list().catch(() => []),
+      api.staff.targets?.list({ month }).catch((err) => { toast.error(err?.message || 'Failed to load targets'); return []; }),
+      api.staff.list().catch((err) => { toast.error(err?.message || 'Failed to load staff'); return []; }),
     ]).then(([tgs, st]) => {
       if (!alive) return;
       setTargets(Array.isArray(tgs) ? tgs : []);
@@ -79,7 +81,7 @@ function Inner() {
     }).catch(e => alive && setError(e.message || 'Failed to load targets'))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [month]);
+  }, [month, toast]);
 
   function flash(msg: string) { setSuccess(msg); setTimeout(() => setSuccess(''), 2200); }
 

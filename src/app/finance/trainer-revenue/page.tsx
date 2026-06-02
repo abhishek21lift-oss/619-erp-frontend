@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 export default function TrainerRevenuePage() {
   return (
@@ -48,6 +49,7 @@ function Inner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedTrainer, setSelectedTrainer] = useState<any | null>(null);
+  const { toast } = useToast();
 
   const now = new Date();
   const curYear = now.getFullYear();
@@ -62,8 +64,8 @@ function Inner() {
     let alive = true;
     setLoading(true);
     Promise.all([
-      api.trainers.list().catch(() => []),
-      api.clients.list({ limit: 2000 }).catch(() => []),
+      api.trainers.list().catch((err) => { toast.error(err?.message || 'Failed to load trainers'); return []; }),
+      api.clients.list({ limit: 2000 }).catch((err) => { toast.error(err?.message || 'Failed to load clients'); return []; }),
     ])
       .then(([td, cd]) => {
         if (!alive) return;
@@ -75,7 +77,7 @@ function Inner() {
       .catch((e) => alive && setError(e.message))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, []);
+  }, [toast]);
 
   const trainerRevenueData = useMemo((): TrainerData[] => {
     const ptClients = clients.filter((c: any) =>

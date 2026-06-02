@@ -5,10 +5,16 @@ import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
+function NewStaffRedirect() {
+  const router = useRouter();
+  useEffect(() => { router.replace('/settings/staff/new'); }, [router]);
+  return null;
+}
+
 export default function AddStaffAccountPage() {
   return (
     <Guard>
-      <Inner />
+      <NewStaffRedirect />
     </Guard>
   );
 }

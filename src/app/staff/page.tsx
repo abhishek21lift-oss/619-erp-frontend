@@ -1,8 +1,15 @@
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+
+function StaffRedirect() {
+  const router = useRouter();
+  useEffect(() => { router.replace('/settings/staff'); }, [router]);
+  return null;
+}
 
 /* ─── types ──────────────────────────────────────────────────────── */
 interface StaffMember {
@@ -63,7 +70,11 @@ const ROLES_ALL = ['all', 'admin', 'manager', 'trainer', 'receptionist', 'accoun
 
 /* ─── page root ──────────────────────────────────────────────────── */
 export default function StaffListPage() {
-  return <Guard><Inner /></Guard>;
+  return (
+    <Guard>
+      <StaffRedirect />
+    </Guard>
+  );
 }
 
 /* ─── main inner ─────────────────────────────────────────────────── */

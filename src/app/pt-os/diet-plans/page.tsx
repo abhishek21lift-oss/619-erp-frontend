@@ -15,6 +15,7 @@ import { StatusPill } from '@/components/premium/StatusPill';
 import { RevenueCard } from '@/components/premium/RevenueCard';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -154,6 +155,7 @@ function DietPlansContent() {
   const [mealCalendar, setMealCalendar] = useState<{ date: string; calories: number; protein: number; meals: number }[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
+  const { toast } = useToast();
 
   const today = todayStr();
 
@@ -162,10 +164,10 @@ function DietPlansContent() {
       setDataLoading(true);
       setDataError('');
       const [mealsRes, templatesRes, supplementsRes, trainersRes] = await Promise.all([
-        api.diet.meals.list().catch(() => []),
-        api.diet.templates.list().catch(() => []),
-        api.diet.supplements.list().catch(() => []),
-        api.trainers.list().catch(() => []),
+        api.diet.meals.list().catch((err) => { toast.error(err?.message || 'Failed to load meals'); return []; }),
+        api.diet.templates.list().catch((err) => { toast.error(err?.message || 'Failed to load templates'); return []; }),
+        api.diet.supplements.list().catch((err) => { toast.error(err?.message || 'Failed to load supplements'); return []; }),
+        api.trainers.list().catch((err) => { toast.error(err?.message || 'Failed to load trainers'); return []; }),
       ]);
       setMeals(
         Array.isArray(mealsRes)
@@ -214,7 +216,7 @@ function DietPlansContent() {
       if (Array.isArray(trainersRes)) {
         const allClients = (await Promise.all(
           trainersRes.map((t: any) =>
-            api.clients.list({ trainer_id: t.id ?? t }).catch(() => [])
+            api.clients.list({ trainer_id: t.id ?? t }).catch((err) => { toast.error(err?.message || 'Failed to load clients'); return []; })
           )
         )).flat();
         setClients(
@@ -234,7 +236,7 @@ function DietPlansContent() {
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchData();
@@ -250,8 +252,8 @@ function DietPlansContent() {
     async function loadClientData() {
       try {
         const [trackerRes, profileRes] = await Promise.all([
-          api.diet.tracker.get({ client_id: selectedClient }).catch(() => null),
-          api.diet.fitnessProfile.get(selectedClient).catch(() => null),
+          api.diet.tracker.get({ client_id: selectedClient }).catch((err) => { toast.error(err?.message || 'Failed to load tracker'); return null; }),
+          api.diet.fitnessProfile.get(selectedClient).catch((err) => { toast.error(err?.message || 'Failed to load profile'); return null; }),
         ]);
         if (cancelled) return;
         if (trackerRes) {

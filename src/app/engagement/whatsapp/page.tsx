@@ -4,6 +4,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { MessageCircle, Send, Users, CheckCircle2, Phone, Clock, ExternalLink, Search, X } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 const TEMPLATES = [
   { id:'renewal', name:'Renewal Reminder', body:'Hi {name}! 👋 Your membership at 619 Fitness Studio expires on {date}. Renew today and keep your fitness streak going! Call us: 8756562188' },
@@ -24,10 +25,11 @@ function WAContent() {
   const [template, setTemplate] = useState(TEMPLATES[0]);
   const [customMsg, setCustomMsg] = useState('');
   const [sent, setSent] = useState(0);
+  const { toast } = useToast();
 
   useEffect(()=>{
-    api.clients.list({status:'active'}).then((d:any)=>{setMembers(Array.isArray(d)?d:[]); setLoading(false);}).catch(()=>setLoading(false));
-  },[]);
+    api.clients.list({status:'active'}).then((d:any)=>{setMembers(Array.isArray(d)?d:[]); setLoading(false);}).catch((err:any)=>{toast.error(err?.message || 'Failed to load members'); setLoading(false);});
+  },[toast]);
 
   const filtered = search.trim() ? members.filter(m=>(m.name||'').toLowerCase().includes(search.toLowerCase())||(m.mobile||'').includes(search)) : members;
   const toggleSelect = (id:string)=>setSelected(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
@@ -84,7 +86,16 @@ function WAContent() {
             <div style={{maxHeight:480,overflowY:'auto'}}>
               {loading?<div style={{padding:32,textAlign:'center',color:'var(--text-muted)'}}>Loading members…</div>:
               filtered.map(m=>(
-                <div key={m.id} onClick={()=>toggleSelect(m.id)} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 16px',borderBottom:'1px solid var(--border)',cursor:'pointer',background:selected.includes(m.id)?'var(--brand-soft)':'transparent',transition:'background 150ms'}}>
+                <div
+                  key={m.id}
+                  onClick={()=>toggleSelect(m.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSelect(m.id); } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selected.includes(m.id)}
+                  aria-label={`Select ${m.name}`}
+                  style={{display:'flex',alignItems:'center',gap:12,padding:'11px 16px',borderBottom:'1px solid var(--border)',cursor:'pointer',background:selected.includes(m.id)?'var(--brand-soft)':'transparent',transition:'background 150ms'}}
+                >
                   <input type="checkbox" checked={selected.includes(m.id)} onChange={()=>toggleSelect(m.id)} onClick={e=>e.stopPropagation()}/>
                   <div style={{width:34,height:34,borderRadius:'50%',background:'var(--brand-soft)',color:'var(--brand)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,flexShrink:0}}>
                     {m.photo_url?<img src={m.photo_url} alt={m.name} style={{width:34,height:34,borderRadius:'50%',objectFit:'cover'}}/>:(m.name||'?').slice(0,2).toUpperCase()}

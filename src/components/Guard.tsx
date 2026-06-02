@@ -3,37 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import type { Role } from '@/lib/nav-config';
+import { hasRole, normaliseRole } from '@/lib/roles';
+import type { Role } from '@/lib/roles';
 
 interface Props {
   children: React.ReactNode;
   role?: Role;
   roles?: Role[];
-}
-
-/**
- * Normalise legacy role aliases so Guard comparisons are consistent.
- *
- * FIX (Route Integrity R-04):
- * nav-config.ts maps 'receptionist' → 'reception' when deciding nav visibility,
- * but Guard was doing a raw string comparison. A user whose JWT contained
- * role='receptionist' (old tokens or direct DB values) would fail the Guard
- * check for pages that declare role="reception", bouncing them to /dashboard.
- *
- * We apply the same normalisation here so Guard + nav-config + backend all
- * agree on the canonical role string.
- */
-function normaliseRole(role: string | undefined): string | undefined {
-  if (role === 'receptionist') return 'reception';
-  return role;
-}
-
-function isAllowed(userRole: string | undefined, requiredRole: Role | undefined, requiredRoles: Role[] | undefined): boolean {
-  if (!requiredRole && !requiredRoles) return true;
-  if (userRole === 'admin') return true;
-  if (requiredRoles) return requiredRoles.includes(userRole as Role);
-  if (requiredRole) return userRole === requiredRole;
-  return true;
 }
 
 export default function Guard({ children, role, roles }: Props) {
@@ -49,10 +25,7 @@ export default function Guard({ children, role, roles }: Props) {
       return;
     }
 
-    const userRole = normaliseRole(user.role);
-    const requiredRole = normaliseRole(role) as Role | undefined;
-
-    if (!isAllowed(userRole, requiredRole, roles)) {
+    if (!hasRole(user.role, roles ?? role)) {
       router.replace('/dashboard');
       return;
     }
@@ -116,10 +89,7 @@ export default function Guard({ children, role, roles }: Props) {
     );
   }
 
-  const userRole = normaliseRole(user?.role);
-  const requiredRole = normaliseRole(role) as Role | undefined;
-
-  if (!user || !isAllowed(userRole, requiredRole, roles)) {
+  if (!user || !hasRole(user.role, roles ?? role)) {
     return null;
   }
 

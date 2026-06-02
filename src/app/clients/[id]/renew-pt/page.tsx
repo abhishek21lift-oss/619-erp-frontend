@@ -34,16 +34,17 @@ function Inner() {
   const [form, setForm] = useState({ renew_plan: '', membership: '', trainer_id: '', secondary_trainer_ids: [] as string[], total_sessions: '', start_date: '', end_date: '', base_price: '', selling_price: '', coupon: '', group_id: '' });
 
   useEffect(() => {
-    Promise.all([api.clients.get(id), api.trainers.list().catch(() => [])])
+    Promise.all([api.clients.get(id), api.trainers.list().catch((err: any) => { toast.error(err?.message || 'Failed to load trainers'); return []; })])
       .then(([c, t]) => { setClient(c); setTrainers(Array.isArray(t) ? t : []); })
-      .catch((e: any) => setError(e.message)).finally(() => setLoading(false));
+      .catch((e: any) => { setError(e.message); toast.error(e.message || 'Failed to load'); })
+      .finally(() => setLoading(false));
     const stored = getStoredPlans();
     const pt = stored.filter(p => p.kind === 'PT').map(p => ({ name: p.name, base: p.base_amount, final: p.final_amount }));
     setPtPlans(pt.length > 0 ? pt : [
       { name: 'PT Monthly', base: 6000, final: 6000 }, { name: 'PT Quarterly', base: 16500, final: 15000 },
       { name: 'PT Half-Yearly', base: 30000, final: 26000 }, { name: 'PT Annual', base: 55000, final: 45000 },
     ]);
-  }, [id]);
+  }, [id, toast]);
 
   function set(field: string, value: string | string[]) { setForm(f => ({ ...f, [field]: value })); }
 

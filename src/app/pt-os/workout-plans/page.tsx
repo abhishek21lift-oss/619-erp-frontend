@@ -13,6 +13,7 @@ import { PremiumButton } from '@/components/premium/PremiumButton';
 import { StatusPill } from '@/components/premium/StatusPill';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 /* ────────────────────────────────────────────────────────────────────
    TYPES
@@ -135,6 +136,7 @@ function WorkoutPlansContent() {
   const [clients, setClients] = useState<string[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
+  const { toast } = useToast();
 
   /* ── Builder State ── */
   const [buildingExercises, setBuildingExercises] = useState<
@@ -152,9 +154,9 @@ function WorkoutPlansContent() {
       setDataLoading(true);
       setDataError('');
       const [exercisesRes, plansRes, trainersRes] = await Promise.all([
-        api.workouts.exercises.list().catch(() => []),
-        api.workouts.plans.list().catch(() => []),
-        api.trainers.list().catch(() => []),
+        api.workouts.exercises.list().catch((err) => { toast.error(err?.message || 'Failed to load exercises'); return []; }),
+        api.workouts.plans.list().catch((err) => { toast.error(err?.message || 'Failed to load plans'); return []; }),
+        api.trainers.list().catch((err) => { toast.error(err?.message || 'Failed to load trainers'); return []; }),
       ]);
       setExercises(
         Array.isArray(exercisesRes)
@@ -190,7 +192,7 @@ function WorkoutPlansContent() {
       if (Array.isArray(trainersRes)) {
         const allClients = (await Promise.all(
           trainersRes.map((t: any) =>
-            api.clients.list({ trainer_id: t.id ?? t }).catch(() => [])
+            api.clients.list({ trainer_id: t.id ?? t }).catch((err) => { toast.error(err?.message || 'Failed to load clients'); return []; })
           )
         )).flat();
         setClients(
@@ -209,7 +211,7 @@ function WorkoutPlansContent() {
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchData();

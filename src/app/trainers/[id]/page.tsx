@@ -129,7 +129,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   /* ── Loading ── */
   if (loading) {
     return (
-      <Guard>
+      <Guard roles={['admin', 'manager']}>
         <AppShell title="Trainer Profile">
           <div className="page-container">
             <div className="skeleton" style={{ height: 180, borderRadius: 12, marginBottom: 16 }} />
@@ -142,7 +142,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
 
   if (error || !trainer) {
     return (
-      <Guard role="admin">
+      <Guard roles={['admin', 'manager']}>
         <AppShell title="Trainer Profile">
           <div className="page-container">
             <div className="empty-state">
@@ -157,7 +157,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   }
 
     return (
-      <Guard role="admin">
+      <Guard roles={['admin', 'manager']}>
       <AppShell title="Trainer Profile">
         <div className="page-container animate-fade-in">
 
@@ -331,7 +331,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
 
         {/* ── Delete Modal ── */}
         {deleteConfirm && (
-          <div className="modal-backdrop" onClick={() => setDeleteConfirm(false)}>
+          <div className="modal-backdrop" role="presentation" onClick={() => setDeleteConfirm(false)}>
             <div className="modal animate-slide-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
               <div className="modal-header">
                 <h3 className="modal-title">Remove Trainer</h3>

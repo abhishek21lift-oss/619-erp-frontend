@@ -156,7 +156,7 @@ export default function SecurityPage() {
       {/* MFA Modal */}
       {mfaModal && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => { setMfaModal(false); setMfaCode(''); }} />
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" role="presentation" onClick={() => { setMfaModal(false); setMfaCode(''); }} />
           <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-md mx-auto bg-[#1A1A1A] border border-white/10 rounded-2xl p-6 shadow-2xl">
             {step === 'qr' && (
               <div className="space-y-4">

@@ -3,8 +3,8 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { useRouter } from 'next/navigation';
 import { api, type User } from './api';
 import { resetRedirectLock } from './http';
-
-export type Role = 'admin' | 'manager' | 'staff' | 'trainer' | 'receptionist' | 'reception' | 'member';
+import type { Role } from './roles';
+export type { Role } from './roles';
 
 interface Ctx {
   user: User | null;

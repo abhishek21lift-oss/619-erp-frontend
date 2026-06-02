@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { ArrowLeft, Save } from 'lucide-react';
 
 export default function EditTrainerPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,6 +15,7 @@ export default function EditTrainerPage({ params }: { params: Promise<{ id: stri
 
 function EditContent({ id }: { id: string }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [form, setForm] = useState({
     name: '', mobile: '', email: '', specialization: '',
     status: 'active', notes: '', incentive_rate: '',
@@ -35,8 +37,8 @@ function EditContent({ id }: { id: string }) {
         incentive_rate: t.incentive_rate != null ? String(t.incentive_rate) : '',
       });
       setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [id]);
+    }).catch((err: any) => { toast.error(err?.message || 'Failed to load trainer'); setLoading(false); });
+  }, [id, toast]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();

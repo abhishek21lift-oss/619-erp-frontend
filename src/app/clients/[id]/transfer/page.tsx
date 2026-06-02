@@ -23,10 +23,11 @@ function Inner() {
   const [form, setForm] = useState({ trainer_id: '', reason: '' });
 
   useEffect(() => {
-    Promise.all([api.clients.get(id), api.trainers.list().catch(() => [])])
+    Promise.all([api.clients.get(id), api.trainers.list().catch((err: any) => { toast.error(err?.message || 'Failed to load trainers'); return []; })])
       .then(([c, t]) => { setClient(c); setTrainers(Array.isArray(t) ? t : []); })
-      .catch(setError).finally(() => setLoading(false));
-  }, [id]);
+      .catch((err: any) => { setError(err?.message || 'Failed to load'); toast.error(err?.message || 'Failed to load'); })
+      .finally(() => setLoading(false));
+  }, [id, toast]);
 
   function set(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
 

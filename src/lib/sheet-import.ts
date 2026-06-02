@@ -7,13 +7,68 @@
 // • Loads SheetJS (xlsx) from CDN on first use - no npm install
 // • Heuristic header → form-field mapper, so column names like
 //   "Mobile", "Phone No", "Contact" all map to `mobile`, etc.
-// • Caches the parsed rows in localStorage so the user doesn't
-//   have to re-import on every visit.
+// • Caches the parsed rows in sessionStorage, encrypted with a
+//   per-tab AES-GCM key (Web Crypto). The key is non-extractable
+//   and held in module scope, so the cache is unreadable after
+//   the tab closes — that's the whole point of sessionStorage.
 // -------------------------------------------------------------
 
 const STORAGE_KEY = '619erp.sheetData.v1';
 const SHEETJS_CDN =
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+
+// Web Crypto key is held in module scope: lives for the lifetime of
+// the tab, never persisted, never extractable. We also keep the most
+// recently imported cache in memory so synchronous lookups (during
+// the same tick the import was triggered) still work.
+let sheetKey: CryptoKey | null = null;
+let lastCache: SheetCache | null = null;
+function getSheetKey(): CryptoKey | null {
+  if (sheetKey) return sheetKey;
+  if (typeof window === 'undefined') return null;
+  const c = window.crypto?.subtle;
+  if (!c) return null;
+  // Fire-and-forget: synchronously return null while the key is being
+  // generated; the next call (after the microtask) will pick it up.
+  c.generateKey({ name: 'AES-GCM', length: 256 }, false /* non-extractable */, ['encrypt', 'decrypt'])
+    .then((k) => { sheetKey = k; })
+    .catch(() => { sheetKey = null; });
+  return sheetKey;
+}
+
+function bytesToB64(bytes: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+function b64ToBytes(b64: string): Uint8Array {
+  const s = atob(b64);
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+
+async function encryptCache(cache: SheetCache): Promise<string | null> {
+  const key = getSheetKey();
+  if (!key || !window.crypto?.subtle) return null;
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const plaintext = new TextEncoder().encode(JSON.stringify(cache));
+  const ct = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+  const ivCt = new Uint8Array(iv.length + ct.byteLength);
+  ivCt.set(iv, 0);
+  ivCt.set(new Uint8Array(ct), iv.length);
+  return bytesToB64(ivCt);
+}
+
+async function decryptCache(b64: string): Promise<SheetCache | null> {
+  const key = getSheetKey();
+  if (!key || !window.crypto?.subtle) return null;
+  const ivCt = b64ToBytes(b64);
+  const iv = ivCt.slice(0, 12);
+  const ct = ivCt.slice(12);
+  const pt = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(pt)) as SheetCache;
+}
 
 // ── Public types ─────────────────────────────────────────────
 export interface SheetMember {
@@ -242,31 +297,60 @@ export async function importSheetFile(file: File): Promise<SheetCache> {
     fileName: file.name,
     rowCount: rows.length,
   };
+  // Per-tab encrypted cache. If Web Crypto is unavailable we still
+  // surface the data to the caller, but the cache isn't persisted.
+  // Residual risk: an attacker with same-origin script access can
+  // read the in-memory key; this only protects against passive
+  // inspection of the storage layer (e.g. shared kiosk profiles).
+  lastCache = cache;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
+    if (window.crypto?.subtle) {
+      getSheetKey();
+      encryptCache(cache).then((b64) => {
+        if (b64) sessionStorage.setItem(STORAGE_KEY, b64);
+      });
+    } else {
+      console.warn('[sheet-import] Web Crypto unavailable — sheet cache not persisted');
+    }
   } catch {/* quota — ignore */}
   return cache;
 }
 
-export function getSheetCache(): SheetCache | null {
+export function getSheetCacheSync(): SheetCache | null {
   if (typeof window === 'undefined') return null;
+  if (lastCache) return lastCache;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as SheetCache;
+    if (raw.startsWith('{')) return JSON.parse(raw) as SheetCache;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getSheetCache(): Promise<SheetCache | null> {
+  if (typeof window === 'undefined') return null;
+  if (lastCache) return lastCache;
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    if (raw.startsWith('{')) return JSON.parse(raw) as SheetCache;
+    return await decryptCache(raw);
   } catch {
     return null;
   }
 }
 
 export function clearSheetCache() {
-  if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY);
+  if (typeof window !== 'undefined') sessionStorage.removeItem(STORAGE_KEY);
+  lastCache = null;
 }
 
 export function lookupByMobile(mobile: string): SheetMember | null {
   const m = normalizeMobile(mobile);
   if (m.length < 10) return null;
-  const cache = getSheetCache();
+  const cache = getSheetCacheSync();
   if (!cache) return null;
   return cache.rows.find(r => r.mobile === m) ?? null;
 }
@@ -274,7 +358,7 @@ export function lookupByMobile(mobile: string): SheetMember | null {
 export function searchByName(query: string, limit = 10): SheetMember[] {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return [];
-  const cache = getSheetCache();
+  const cache = getSheetCacheSync();
   if (!cache) return [];
   const out: SheetMember[] = [];
   for (const r of cache.rows) {
