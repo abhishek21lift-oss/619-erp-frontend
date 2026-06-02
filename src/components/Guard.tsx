@@ -41,7 +41,7 @@ export default function Guard({ children, role, roles }: Props) {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '100dvh',
-          background: '#F8FAFC',
+          background: 'var(--bg-canvas)',
         }}
       >
         <div
@@ -57,12 +57,11 @@ export default function Guard({ children, role, roles }: Props) {
               width: 44,
               height: 44,
               borderRadius: 12,
-              background:
-                'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+              background: 'var(--brand-lo)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 8px 24px rgba(59,130,246,0.25)',
+              boxShadow: '0 8px 24px var(--brand-glow)',
             }}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -71,12 +70,12 @@ export default function Guard({ children, role, roles }: Props) {
               <path d="M2 12l10 5 10-5" />
             </svg>
           </div>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid rgba(59,130,246,0.15)', borderTopColor: '#3B82F6', animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--brand-soft)', borderTopColor: 'var(--brand-lo)', animation: 'spin 0.8s linear infinite' }} />
 
           <div
             style={{
               fontSize: 11,
-              color: '#6B7280',
+              color: 'var(--text-muted)',
               letterSpacing: '2px',
               textTransform: 'uppercase',
               fontWeight: 700,

@@ -50,10 +50,10 @@ export default function TopBar({ title, subtitle, actions, hideBreadcrumbs }: Pr
     <div
       className="topbar v2"
       style={{
-        background: 'rgba(255,255,255,0.55)',
+        background: 'var(--topbar-bg)',
         backdropFilter: 'blur(20px) saturate(140%)',
         WebkitBackdropFilter: 'blur(20px) saturate(140%)',
-        borderBottom: '1px solid rgba(255,255,255,0.35)',
+        borderBottom: '1px solid var(--topbar-border)',
       }}
     >
       <div className="topbar-left">
@@ -74,8 +74,8 @@ export default function TopBar({ title, subtitle, actions, hideBreadcrumbs }: Pr
         >
           <Search size={12} style={{ opacity: 0.6 }} />
           <span className="topbar-search-text" style={{ fontSize: 12 }}>Search anything</span>
-          <kbd className="topbar-kbd" style={{ fontSize: 10, padding: '1px 5px', background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 5 }}>{isMac ? '⌘' : 'Ctrl'}</kbd>
-          <kbd className="topbar-kbd" style={{ fontSize: 10, padding: '1px 5px', background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 5 }}>K</kbd>
+          <kbd className="topbar-kbd" style={{ fontSize: 10, padding: '1px 5px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 5 }}>{isMac ? '⌘' : 'Ctrl'}</kbd>
+          <kbd className="topbar-kbd" style={{ fontSize: 10, padding: '1px 5px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 5 }}>K</kbd>
         </button>
 
         <NotificationBell />

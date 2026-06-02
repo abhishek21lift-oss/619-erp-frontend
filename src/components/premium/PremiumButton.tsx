@@ -17,10 +17,10 @@ interface PremiumButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonE
 
 const TONES: Record<Tone, { bg: string; hover: string; text: string; shadow: string }> = {
   primary: {
-    bg: 'bg-[linear-gradient(135deg,#dc2626,#b91c1c)]',
+    bg: 'bg-[var(--danger)]',
     hover: 'hover:brightness-110',
     text: 'text-white',
-    shadow: 'shadow-[0_8px_24px_rgba(220,38,38,0.3)] hover:shadow-[0_12px_32px_rgba(220,38,38,0.4)]',
+    shadow: 'shadow-[0_8px_24px_var(--brand-glow)] hover:shadow-[0_12px_32px_var(--brand-glow-2)]',
   },
   secondary: {
     bg: 'bg-white/80 backdrop-blur-xl border border-white/60',
@@ -35,16 +35,16 @@ const TONES: Record<Tone, { bg: string; hover: string; text: string; shadow: str
     shadow: '',
   },
   danger: {
-    bg: 'bg-[linear-gradient(135deg,#ef4444,#dc2626)]',
+    bg: 'bg-[var(--danger)]',
     hover: 'hover:brightness-110',
     text: 'text-white',
-    shadow: 'shadow-[0_8px_24px_rgba(239,68,68,0.3)] hover:shadow-[0_12px_32px_rgba(239,68,68,0.4)]',
+    shadow: 'shadow-[0_8px_24px_var(--brand-glow)] hover:shadow-[0_12px_32px_var(--brand-glow-2)]',
   },
   success: {
-    bg: 'bg-[linear-gradient(135deg,#10b981,#059669)]',
+    bg: 'bg-[var(--success)]',
     hover: 'hover:brightness-110',
     text: 'text-white',
-    shadow: 'shadow-[0_8px_24px_rgba(16,185,129,0.3)] hover:shadow-[0_12px_32px_rgba(16,185,129,0.4)]',
+    shadow: 'shadow-[0_8px_24px_var(--brand-glow)] hover:shadow-[0_12px_32px_var(--brand-glow-2)]',
   },
 };
 

@@ -116,7 +116,7 @@ function PremiumKpiCard({
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.07 + 0.3 }}
-              className="inline-flex items-center gap-0.5 rounded-full bg-[rgba(16,185,129,0.10)] px-2 py-0.5 text-[9px] font-bold text-[#10B981] shrink-0 border border-[rgba(16,185,129,0.15)]"
+              className="inline-flex items-center gap-0.5 rounded-full bg-[var(--success)]/10 px-2 py-0.5 text-[9px] font-bold text-[var(--success)] shrink-0 border border-[var(--success)]/20"
             >
               <ArrowUpRight size={9} strokeWidth={3} />
               {growth}
@@ -325,11 +325,11 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
         aria-label="Quick actions"
       >
         {[
-          { href: '/clients/new', icon: PlusCircle, label: 'Add Member', color: '#8B5CF6' },
-          { href: '/sales/enquiry', icon: UserPlus, label: 'New Lead', color: '#3B82F6' },
-          { href: '/checkin', icon: ScanFace, label: 'Check-In', color: '#06B6D4' },
-          { href: '/finance/record-payment', icon: DollarSign, label: 'Record Payment', color: '#10B981' },
-          { href: '/pt-os', icon: Sparkles, label: 'PT OS', color: '#F59E0B' },
+          { href: '/clients/new', icon: PlusCircle, label: 'Add Member', color: 'var(--brand-lo)' },
+          { href: '/sales/enquiry', icon: UserPlus, label: 'New Lead', color: 'var(--brand-lo)' },
+          { href: '/checkin', icon: ScanFace, label: 'Check-In', color: 'var(--accent)' },
+          { href: '/finance/record-payment', icon: DollarSign, label: 'Record Payment', color: 'var(--success)' },
+          { href: '/pt-os', icon: Sparkles, label: 'PT OS', color: 'var(--warning)' },
         ].map((btn, i) => (
           <motion.div
             key={btn.href}
@@ -366,8 +366,8 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           hint="Monthly revenue growth"
           growth={revenueGrowth}
           icon={<TrendingUp size={15} strokeWidth={2} color="white" />}
-          gradient="from-[#8B5CF6] to-[#7C3AED]"
-          color={VIBRANT.violet}
+          gradient="from-[var(--brand-lo)] to-[var(--brand-hi)]"
+          color='var(--brand-lo)'
           index={0}
           href="/finance/collection"
         />
@@ -377,8 +377,8 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           hint={`${dd.active_pt_clients} PT clients`}
           growth={computeGrowth(c.active, c.active - c.new_this_month)}
           icon={<Users size={15} strokeWidth={2} color="white" />}
-          gradient="from-[#3B82F6] to-[#2563EB]"
-          color={VIBRANT.blue}
+          gradient="from-[var(--brand-lo)] to-[var(--brand-hi)]"
+          color='var(--brand-lo)'
           index={1}
           href="/members/active"
         />
@@ -388,8 +388,8 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           hint={`${dd.active_pt_clients} active PT clients`}
           growth={revenueGrowth}
           icon={<Dumbbell size={15} strokeWidth={2} color="white" />}
-          gradient="from-[#10B981] to-[#059669]"
-          color={VIBRANT.emerald}
+          gradient="from-[var(--brand-lo)] to-[var(--brand-hi)]"
+          color='var(--brand-lo)'
           index={2}
           href="/pt-os"
         />
@@ -399,8 +399,8 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           hint={`${c.total} total members`}
           growth={computeGrowth(c.new_this_month, Math.max(c.new_this_month - 5, 1))}
           icon={<UserPlus size={15} strokeWidth={2} color="white" />}
-          gradient="from-[#F59E0B] to-[#D97706]"
-          color={VIBRANT.amber}
+          gradient="from-[var(--brand-lo)] to-[var(--brand-hi)]"
+          color='var(--brand-lo)'
           index={3}
           href="/sales/leads"
         />
@@ -410,8 +410,8 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           hint={`${c.active > 0 ? Math.round((dd.attendance_today / c.active) * 100) : 0}% of active`}
           growth={computeGrowth(dd.attendance_today, Math.round(dd.attendance_today * 0.95))}
           icon={<CalendarCheck size={15} strokeWidth={2} color="white" />}
-          gradient="from-[#EC4899] to-[#DB2777]"
-          color={VIBRANT.pink}
+          gradient="from-[var(--brand-lo)] to-[var(--brand-hi)]"
+          color='var(--brand-lo)'
           index={4}
           href="/attendance"
         />
@@ -421,8 +421,8 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           hint={`${dd.expiring_soon} expiring soon`}
           growth={computeGrowth(dd.total_dues, Math.max(dd.total_dues - 50000, 1))}
           icon={<Wallet size={15} strokeWidth={2} color="white" />}
-          gradient="from-[#06B6D4] to-[#0891B2]"
-          color={VIBRANT.cyan}
+          gradient="from-[var(--brand-lo)] to-[var(--brand-hi)]"
+          color='var(--brand-lo)'
           index={5}
           href="/finance/dues"
         />
@@ -439,7 +439,7 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="text-[15px] font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--brand-lo)]">
                   <TrendingUp size={12} strokeWidth={2.5} color="white" />
                 </span>
                 Monthly Revenue
@@ -450,7 +450,7 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[rgba(139,92,246,0.10)] to-[rgba(99,102,241,0.10)] px-3 py-1 text-[11px] font-bold text-[#8B5CF6] border border-[rgba(139,92,246,0.15)]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--brand-soft)] px-3 py-1 text-[11px] font-bold text-[var(--brand-lo)] border border-[var(--border)]"
             >
               <TrendingUp size={11} />
               {revenueGrowth}
@@ -497,7 +497,7 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="text-[15px] font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-[#3B82F6] to-[#06B6D4]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--accent)]">
                   <Target size={12} strokeWidth={2.5} color="white" />
                 </span>
                 Monthly Revenue Trend
@@ -546,7 +546,7 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
             height={200}
             centerValue={String(c.active + c.expired + c.frozen + c.new_this_month)}
             centerLabel="Total Members"
-            icon={<Users size={16} className="text-[#8B5CF6]" strokeWidth={1.5} />}
+            icon={<Users size={16} className="text-[var(--brand-lo)]" strokeWidth={1.5} />}
           />
           <DonutLegend data={membershipDist} />
         </motion.div>
@@ -569,7 +569,7 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
             height={200}
             centerValue={String(52 + 38 + 25 + 26)}
             centerLabel="Total Packages"
-            icon={<Dumbbell size={16} className="text-[#10B981]" strokeWidth={1.5} />}
+            icon={<Dumbbell size={16} className="text-[var(--success)]" strokeWidth={1.5} />}
           />
           <DonutLegend data={ptDist} palette={['#3B82F6', '#F59E0B', '#EC4899', '#6366F1']} />
         </motion.div>
@@ -584,7 +584,7 @@ export function DashboardAnalytics({ refreshKey }: { refreshKey?: number }) {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-[#10B981] to-[#059669]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--success)]">
                   <Wallet size={12} strokeWidth={2.5} color="white" />
                 </span>
                 Recent Payments

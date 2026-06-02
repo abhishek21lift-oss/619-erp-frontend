@@ -14,7 +14,7 @@ type Size = 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    'bg-gradient-to-r from-[#dc2626] to-[#b91c1c] text-white shadow-[0_12px_24px_rgba(220,38,38,0.30)] hover:shadow-[0_18px_32px_rgba(220,38,38,0.40)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-[#dc2626]',
+    'bg-[var(--danger)] text-white shadow-[0_12px_24px_var(--brand-glow)] hover:shadow-[0_18px_32px_var(--brand-glow-2)] hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-[var(--danger)]',
   secondary:
     'bg-white/88 text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/80 hover:bg-white hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-slate-400 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:hover:bg-white/10',
   outline:
@@ -69,7 +69,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium',
           'transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#1E1F24]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]',
           'disabled:cursor-not-allowed disabled:opacity-60',
           fullWidth && 'w-full',
           SIZES[size],

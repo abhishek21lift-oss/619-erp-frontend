@@ -68,10 +68,10 @@ export default function BrandLogo({
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#ffffff',
-        border: '2px solid rgba(225, 29, 72, 0.35)',
+        background: 'var(--bg-white)',
+        border: '2px solid color-mix(in srgb, var(--danger) 35%, transparent)',
         boxShadow:
-          '0 0 16px rgba(225, 29, 72, 0.30), 0 2px 8px rgba(15,23,42,0.15)',
+          '0 0 16px var(--brand-glow), 0 2px 8px var(--border)',
         flexShrink: 0,
       }}
     >

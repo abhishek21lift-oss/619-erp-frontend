@@ -130,7 +130,7 @@ export default function AppShell({ children, title }: AppShellProps) {
 
   return (
     <LazyMotion features={domAnimation} strict>
-      <div className="flex min-h-screen bg-[#F8FAFC]">
+      <div className="flex min-h-screen bg-[var(--bg-canvas)]">
         {/* Desktop sidebar — always visible on lg+ */}
         <div className="hidden lg:block">
           <Sidebar variant="desktop" />
@@ -151,14 +151,14 @@ export default function AppShell({ children, title }: AppShellProps) {
         )}
 
         <div className="flex flex-1 flex-col lg:pl-64 xl:pl-72">
-          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-[rgba(0,0,0,0.04)] bg-white/80 px-4 backdrop-blur-2xl sm:px-6 lg:px-8 dark:border-[rgba(255,255,255,0.06)] dark:bg-[#1A1B1E]/80">
+          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] px-4 backdrop-blur-2xl sm:px-6 lg:px-8">
             {/* Mobile menu button */}
             <button
               type="button"
               aria-label="Open sidebar"
               aria-expanded={sidebarOpen}
               onClick={() => setSidebarOpen(true)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#86868b] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1d1d1f] lg:hidden"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] lg:hidden"
             >
               <Menu size={18} />
             </button>
@@ -166,8 +166,8 @@ export default function AppShell({ children, title }: AppShellProps) {
             {/* Premium colorful search bar */}
             <div ref={searchRef} className="relative flex-1 max-w-[520px]">
               <div className="relative">
-                <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-[#3B82F6] via-[#8B5CF6] to-[#06B6D4] p-[1px]">
-                  <div className="h-full w-full rounded-xl bg-white dark:bg-[#1E1F24]" />
+                <div className="pointer-events-none absolute inset-0 rounded-xl border border-[var(--border)] p-[1px]">
+                  <div className="h-full w-full rounded-xl bg-[var(--bg-base)]" />
                 </div>
                 <div className="flex items-center">
                   <Search
@@ -183,7 +183,7 @@ export default function AppShell({ children, title }: AppShellProps) {
                       if (searchQuery.trim()) setSearchOpen(searchResults.length > 0);
                     }}
                     placeholder="Search..."
-                    className="relative w-full rounded-xl border-0 bg-[#F1F5F9] py-2.5 sm:pl-10 pl-3 pr-4 text-[13px] text-[var(--text-primary)] outline-none transition-all duration-200 focus:bg-white focus:shadow-[0_0_0_1px_rgba(59,130,246,0.3),0_4px_16px_rgba(59,130,246,0.12)] placeholder-[#94A3B8] dark:bg-[#2A2B30] dark:focus:bg-[#1E1F24]"
+                    className="relative w-full rounded-xl border-0 bg-[var(--bg-subtle)] py-2.5 sm:pl-10 pl-3 pr-4 text-[13px] text-[var(--text-primary)] outline-none transition-all duration-200 focus:bg-[var(--bg-base)] focus:shadow-[0_0_0_1px_var(--border-focus),0_4px_16px_var(--brand-glow)] placeholder-[var(--text-disabled)]"
                   />
                 </div>
               </div>
@@ -196,16 +196,16 @@ export default function AppShell({ children, title }: AppShellProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
                     transition={{ duration: 0.15, ease: 'easeOut' }}
-                    className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden rounded-xl border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_8px_32px_rgba(0,0,0,0.10)] dark:border-[rgba(255,255,255,0.08)] dark:bg-[#1E1F24]"
+                    className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_8px_32px_var(--brand-glow)]"
                   >
                     <div className="max-h-[280px] overflow-y-auto py-1.5">
                       {searchResults.map((r) => (
                         <button
                           key={r.href}
                           onClick={() => navigateTo(r.href)}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] transition-colors hover:bg-[rgba(59,130,246,0.06)]"
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
                         >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-[#3B82F6]/10 to-[#8B5CF6]/10 text-[10px] font-medium text-[var(--text-muted)]">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--brand-soft)] text-[10px] font-medium text-[var(--sidebar-icon)]">
                             {r.label.charAt(0)}
                           </span>
                           {r.label}
@@ -231,33 +231,33 @@ export default function AppShell({ children, title }: AppShellProps) {
                 className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200"
                 style={{
                   background: settingsOpen
-                    ? 'linear-gradient(135deg, #3B82F6, #2563EB)'
+                    ? 'var(--brand-lo)'
                     : undefined,
                   boxShadow: settingsOpen
-                    ? '0 4px 12px rgba(59,130,246,0.30)'
+                    ? '0 4px 12px var(--brand-glow)'
                     : undefined,
                 }}
               >
                 {/* Default state gradient border */}
                 {!settingsOpen && (
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#3B82F6]/20 via-[#8B5CF6]/15 to-[#06B6D4]/20 p-[1.5px]">
-                    <div className="h-full w-full rounded-[10.5px] bg-white dark:bg-[#1E1F24]" />
+                  <div className="absolute inset-0 rounded-xl border border-[var(--border)] p-[1.5px]">
+                    <div className="h-full w-full rounded-[10.5px] bg-[var(--bg-base)]" />
                   </div>
                 )}
-                {/* Hover gradient overlay */}
-                <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-200 bg-gradient-to-br from-[#3B82F6]/10 via-[#8B5CF6]/8 to-[#06B6D4]/10" />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-200 bg-[var(--bg-hover)]" />
                 {/* Active glow ring */}
                 {settingsOpen && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#3B82F6]/20 via-[#8B5CF6]/15 to-[#06B6D4]/20 animate-pulse"
+                    className="absolute inset-0 rounded-xl bg-[var(--brand-soft)] animate-pulse"
                   />
                 )}
                 <motion.div
                   animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className={settingsOpen ? 'text-white' : 'text-[#86868b]'}
+                  className={settingsOpen ? 'text-white' : 'text-[var(--text-muted)]'}
                 >
                   <Settings
                     size={16}
@@ -273,7 +273,7 @@ export default function AppShell({ children, title }: AppShellProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.96 }}
                     transition={{ duration: 0.12, ease: 'easeOut' }}
-                    className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:border-[rgba(255,255,255,0.08)] dark:bg-[#1E1F24]"
+                    className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_var(--brand-glow)]"
                   >
                     <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">
                       Settings
@@ -290,8 +290,8 @@ export default function AppShell({ children, title }: AppShellProps) {
                             className={cn(
                               'flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition-colors',
                               active
-                                ? 'bg-[rgba(59,130,246,0.08)] text-[#3B82F6]'
-                                : 'text-[var(--text-muted)] hover:bg-[rgba(59,130,246,0.04)] hover:text-[var(--text-primary)]',
+                                ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
+                                : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]',
                             )}
                           >
                             <Icon size={14} strokeWidth={1.5} />
@@ -309,19 +309,19 @@ export default function AppShell({ children, title }: AppShellProps) {
             <button
               type="button"
               aria-label="Notifications"
-              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#86868b] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#1d1d1f]"
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             >
               <Bell size={17} strokeWidth={1.5} />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#EF4444] shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--danger)] shadow-[0_0_6px_var(--danger)]" />
             </button>
 
             {/* Profile dropdown */}
             <div ref={profileRef} className="relative">
               <button
                 onClick={() => setProfileOpen(s => !s)}
-                className="flex items-center gap-2 border-l border-[rgba(0,0,0,0.06)] pl-3 transition-colors hover:opacity-80"
+                className="flex items-center gap-2 border-l border-[var(--border)] pl-3 transition-colors hover:opacity-80"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#3B82F6] to-[#2563EB] shadow-[0_2px_6px_rgba(59,130,246,0.25)] overflow-hidden">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand-lo)] shadow-[0_2px_6px_var(--brand-glow)] overflow-hidden">
                   <img src="/logo.png" alt="619" className="h-5 w-5 object-contain" />
                 </div>
                 <div className="hidden sm:block text-left">
@@ -337,27 +337,27 @@ export default function AppShell({ children, title }: AppShellProps) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.96 }}
                     transition={{ duration: 0.12, ease: 'easeOut' }}
-                    className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:border-[rgba(255,255,255,0.08)] dark:bg-[#1E1F24]"
+                    className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_var(--brand-glow)]"
                   >
-                    <div className="px-3 py-2.5 border-b border-[rgba(0,0,0,0.04)]">
+                    <div className="px-3 py-2.5 border-b border-[var(--border)]">
                       <p className="text-[12px] font-semibold text-[var(--text-primary)]">{user?.name || 'Admin'}</p>
                       <p className="text-[10px] text-[var(--text-muted)] capitalize">{user?.email || '—'}</p>
                     </div>
                     <div className="py-1">
-                      <Link href="/settings/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[rgba(59,130,246,0.04)] hover:text-[var(--text-primary)] transition-colors">
+                      <Link href="/settings/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                         <User size={14} strokeWidth={1.5} /> My Profile
                       </Link>
-                      <Link href="/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[rgba(59,130,246,0.04)] hover:text-[var(--text-primary)] transition-colors">
+                      <Link href="/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                         <Settings size={14} strokeWidth={1.5} /> Account Settings
                       </Link>
-                      <Link href="/settings/staff" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[rgba(59,130,246,0.04)] hover:text-[var(--text-primary)] transition-colors">
+                      <Link href="/settings/staff" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                         <ShieldCheck size={14} strokeWidth={1.5} /> Manage Users
                       </Link>
-                      <Link href="/help" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[rgba(59,130,246,0.04)] hover:text-[var(--text-primary)] transition-colors">
+                      <Link href="/help" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                         <HelpCircle size={14} strokeWidth={1.5} /> Help & Support
                       </Link>
-                      <hr className="my-1 border-[rgba(0,0,0,0.04)]" />
-                      <button onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[#EF4444] hover:bg-[rgba(239,68,68,0.04)] transition-colors">
+                      <hr className="my-1 border-[var(--border)]" />
+                      <button onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger)] hover:bg-[var(--danger)]/5 transition-colors">
                         <LogOut size={14} strokeWidth={1.5} /> Logout
                       </button>
                     </div>
@@ -372,7 +372,7 @@ export default function AppShell({ children, title }: AppShellProps) {
             className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8"
           >
             {title && (
-              <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[#1d1d1f]">
+              <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 {title}
               </h1>
             )}

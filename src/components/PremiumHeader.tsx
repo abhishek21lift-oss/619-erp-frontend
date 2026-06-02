@@ -38,9 +38,9 @@ const MEGA_SECTIONS: NavSection[] = [
     id: 'dashboard',
     label: 'Dashboard',
     icon: <LayoutDashboard size={13} />,
-    accent: '#FF1744',
-    glow: 'rgba(255,23,68,0.18)',
-    gradient: 'linear-gradient(135deg,#FF1744,#b71c1c)',
+    accent: 'var(--brand-lo)',
+    glow: 'var(--brand-glow)',
+    gradient: 'var(--brand-lo)',
     columns: [
       { heading: 'Overview', items: [
         { label: 'Overview', href: '/dashboard', description: 'Studio at a glance' },
@@ -53,15 +53,15 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Studio Status', href: '/dashboard/studio-status', description: 'System health' },
       ]},
     ],
-    spotlight: { title: 'Today', value: '—', sub: 'Members active', accent: '#FF1744' },
+    spotlight: { title: 'Today', value: '—', sub: 'Members active', accent: 'var(--brand-lo)' },
   },
   {
     id: 'sales',
     label: 'Sales',
     icon: <TrendingUp size={13} />,
-    accent: '#FF1744',
-    glow: 'rgba(255,23,68,0.15)',
-    gradient: 'linear-gradient(135deg,#FF1744,#c62828)',
+    accent: 'var(--brand-lo)',
+    glow: 'var(--brand-glow)',
+    gradient: 'var(--brand-lo)',
     columns: [
       { heading: 'Pipeline', items: [
         { label: 'Leads', href: '/sales/leads', description: 'Prospective members' },
@@ -78,15 +78,15 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Promotions', href: '/engagement/offers', description: 'Offers & discounts' },
       ]},
     ],
-    spotlight: { title: 'This Month', value: '—', sub: 'Revenue collected', accent: '#FF1744' },
+    spotlight: { title: 'This Month', value: '—', sub: 'Revenue collected', accent: 'var(--brand-lo)' },
   },
   {
     id: 'members',
     label: 'Members',
     icon: <Users size={13} />,
-    accent: '#FF1744',
-    glow: 'rgba(255,23,68,0.15)',
-    gradient: 'linear-gradient(135deg,#FF1744,#d50000)',
+    accent: 'var(--brand-lo)',
+    glow: 'var(--brand-glow)',
+    gradient: 'var(--brand-lo)',
     columns: [
       { heading: 'Roster', items: [
         { label: 'Add Member', href: '/clients/new', description: 'Register new member' },
@@ -104,15 +104,15 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Member Database', href: '/clients', description: 'Advanced search & filters' },
       ]},
     ],
-    spotlight: { title: 'Active Members', value: '—', sub: 'Valid subscriptions', accent: '#FF1744' },
+    spotlight: { title: 'Active Members', value: '—', sub: 'Valid subscriptions', accent: 'var(--brand-lo)' },
   },
   {
     id: 'coaches',
     label: 'Coaches',
     icon: <Dumbbell size={13} />,
-    accent: '#FF1744',
-    glow: 'rgba(255,23,68,0.15)',
-    gradient: 'linear-gradient(135deg,#FF1744,#b71c1c)',
+    accent: 'var(--brand-lo)',
+    glow: 'var(--brand-glow)',
+    gradient: 'var(--brand-lo)',
     columns: [
       { heading: 'Coach Management', items: [
         { label: 'Add Coach', href: '/trainers/add', description: 'Register new coach' },
@@ -126,15 +126,15 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Transformations', href: '/training/transformations', description: 'Client transformations' },
       ]},
     ],
-    spotlight: { title: 'Active Coaches', value: '—', sub: 'On duty', accent: '#FF1744' },
+    spotlight: { title: 'Active Coaches', value: '—', sub: 'On duty', accent: 'var(--brand-lo)' },
   },
   {
     id: 'operations',
     label: 'Operations',
     icon: <Activity size={13} />,
-    accent: '#FF1744',
-    glow: 'rgba(255,23,68,0.15)',
-    gradient: 'linear-gradient(135deg,#FF1744,#c62828)',
+    accent: 'var(--brand-lo)',
+    glow: 'var(--brand-glow)',
+    gradient: 'var(--brand-lo)',
     columns: [
       { heading: 'Staff & Coaches', items: [
         { label: 'Staff', href: '/staff', description: 'HR management' },
@@ -149,15 +149,15 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Branches', href: '/settings/branches', description: 'Multi-location' },
       ]},
     ],
-    spotlight: { title: 'Staff On Duty', value: '—', sub: 'Currently present', accent: '#FF1744' },
+    spotlight: { title: 'Staff On Duty', value: '—', sub: 'Currently present', accent: 'var(--brand-lo)' },
   },
   {
     id: 'finance',
     label: 'Finance',
     icon: <IndianRupee size={13} />,
-    accent: '#FF1744',
-    glow: 'rgba(255,23,68,0.15)',
-    gradient: 'linear-gradient(135deg,#FF1744,#b71c1c)',
+    accent: 'var(--brand-lo)',
+    glow: 'var(--brand-glow)',
+    gradient: 'var(--brand-lo)',
     columns: [
       { heading: 'Revenue & Expenses', items: [
         { label: 'Revenue', href: '/finance/collection', description: 'Income tracking' },
@@ -172,15 +172,15 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Subscriptions', href: '/memberships/subscriptions', description: 'Plan management' },
       ]},
     ],
-    spotlight: { title: 'Outstanding Dues', value: '—', sub: 'Pending collection', accent: '#FF1744' },
+    spotlight: { title: 'Outstanding Dues', value: '—', sub: 'Pending collection', accent: 'var(--brand-lo)' },
   },
   {
     id: 'analytics',
     label: 'Analytics',
     icon: <BarChart2 size={13} />,
-    accent: '#FF1744',
-    glow: 'rgba(255,23,68,0.15)',
-    gradient: 'linear-gradient(135deg,#FF1744,#c62828)',
+    accent: 'var(--brand-lo)',
+    glow: 'var(--brand-glow)',
+    gradient: 'var(--brand-lo)',
     columns: [
       { heading: 'Performance', items: [
         { label: 'Revenue Analytics', href: '/finance/collection', description: 'Income trends' },
@@ -195,7 +195,7 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Forecasting', href: '/finance/forecast', description: 'Future projections' },
       ]},
     ],
-    spotlight: { title: 'Retention Rate', value: '—', sub: 'Last 30 days', accent: '#FF1744' },
+    spotlight: { title: 'Retention Rate', value: '—', sub: 'Last 30 days', accent: 'var(--brand-lo)' },
   },
 ];
 
@@ -211,9 +211,9 @@ const QUICK_ACTIONS: QuickAction[] = [
 ];
 
 const LIVE_PILLS = [
-  { label: 'Studio Live', color: '#FF1744', pulse: true },
-  { label: 'AI Active', color: '#FF1744', pulse: true },
-  { label: 'Sync', color: '#FF1744', pulse: false },
+  { label: 'Studio Live', color: 'var(--brand-lo)', pulse: true },
+  { label: 'AI Active', color: 'var(--brand-lo)', pulse: true },
+  { label: 'Sync', color: 'var(--brand-lo)', pulse: false },
 ];
 
 const megaVariants: Variants = {
@@ -318,8 +318,8 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
         width: menuWidth,
         zIndex: 9999,
         background: 'var(--bg-card)',
-        border: '1px solid rgba(0,0,0,0.04)',
-        boxShadow: '0 32px 80px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.06)',
+        border: '1px solid var(--border)',
+        boxShadow: '0 32px 80px var(--brand-glow), 0 8px 24px var(--brand-glow-2)',
         backdropFilter: 'blur(32px)',
         WebkitBackdropFilter: 'blur(32px)',
         borderRadius: 22,
@@ -338,12 +338,12 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
           {section.columns.map((col, ci) => (
             <div key={ci} className="flex flex-1 flex-col gap-0.5">
                   {col.heading && (
-                <div
-                  className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.15em]"
-                  style={{ color: '#dc2626' }}
-                >
-                  {col.heading}
-                </div>
+                  <div
+                    className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.15em]"
+                    style={{ color: 'var(--brand-lo)' }}
+                  >
+                    {col.heading}
+                  </div>
               )}
               {col.items.map((item) => {
                 if (item.children) {
@@ -355,7 +355,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                         type="button"
                         onClick={() => setSubOpen(prev => ({ ...prev, [item.label]: !open }))}
                         className="flex w-full items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-all"
-                        style={{ color: '#86868b' }}
+                        style={{ color: 'var(--text-muted)' }}
                       >
                         {item.label}
                         <motion.span
@@ -391,7 +391,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                                   style={ca ? { background: 'var(--border)' } : {}}
                                 >
                                   <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-1.5 truncate text-[12.5px] font-semibold" style={{ color: ca ? '#dc2626' : '#1d1d1f' }}>
+                                    <div className="flex items-center gap-1.5 truncate text-[12.5px] font-semibold" style={{ color: ca ? 'var(--brand-lo)' : 'var(--text-primary)' }}>
                                       {child.label}
                                       {child.isNew && (
                                         <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white" style={{ background: section.gradient }}>
@@ -400,7 +400,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                                       )}
                                     </div>
                                     {child.description && (
-                                      <div className="mt-0.5 truncate text-[10.5px]" style={{ color: '#86868b' }}>{child.description}</div>
+                                      <div className="mt-0.5 truncate text-[10.5px]" style={{ color: 'var(--text-muted)' }}>{child.description}</div>
                                     )}
                                   </div>
                                 </button>
@@ -425,7 +425,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                     style={ia ? { background: 'var(--border)' } : {}}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 truncate text-[13px] font-semibold" style={{ color: ia ? '#dc2626' : '#1d1d1f' }}>
+                      <div className="flex items-center gap-1.5 truncate text-[13px] font-semibold" style={{ color: ia ? 'var(--brand-lo)' : 'var(--text-primary)' }}>
                         {item.label}
                         {item.isNew && (
                           <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white" style={{ background: section.gradient }}>
@@ -434,7 +434,7 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
                         )}
                       </div>
                       {item.description && (
-                        <div className="mt-0.5 truncate text-[11px]" style={{ color: '#86868b' }}>{item.description}</div>
+                        <div className="mt-0.5 truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{item.description}</div>
                       )}
                     </div>
                   </button>
@@ -448,21 +448,21 @@ function MegaMenuPortal({ section, anchorRef, onClose, pathname, router }: MegaP
           <div
             className="ml-3 flex w-[148px] shrink-0 flex-col justify-between rounded-[16px] p-4"
             style={{
-              background: '#f5f5f7',
-              border: '1px solid rgba(0,0,0,0.04)',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border)',
             }}
           >
             <div
               className="mb-1 text-[10px] font-bold uppercase tracking-[0.15em]"
-              style={{ color: '#dc2626' }}
+              style={{ color: 'var(--brand-lo)' }}
             >
               {section.spotlight.title}
             </div>
             <div>
-              <div className="text-[28px] font-black leading-none" style={{ color: '#dc2626' }}>
+              <div className="text-[28px] font-black leading-none" style={{ color: 'var(--brand-lo)' }}>
                 {section.spotlight.value}
               </div>
-              <div className="mt-1 text-[11px]" style={{ color: '#86868b' }}>{section.spotlight.sub}</div>
+              <div className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>{section.spotlight.sub}</div>
             </div>
             <button
               type="button"
@@ -595,15 +595,15 @@ export default function PremiumHeader({ onMenuClick }: Props) {
           aria-haspopup="true"
           className={cn(
             'group relative inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full px-[12px] text-[12px] font-semibold tracking-[0.01em] transition-all duration-200',
-            active ? 'text-white shadow-lg' : 'hover:text-[#1d1d1f]/80',
+            active ? 'text-[var(--text-inverse)]' : 'text-[var(--text-muted)]',
           )}
           style={active ? {
-            background: section.gradient,
-            boxShadow: `0 4px 16px ${section.glow}, 0 1px 3px rgba(0,0,0,0.3)`,
+            background: 'var(--brand-lo)',
+            boxShadow: 'none',
             transform: 'translateY(-1px)',
           } : {
-            background: opened ? 'rgba(220,38,38,0.06)' : 'transparent',
-            color: 'rgba(0,0,0,0.5)',
+            background: opened ? 'var(--brand-soft)' : 'transparent',
+            color: 'var(--text-muted)',
           }}
         >
           <span className={cn('shrink-0 opacity-70 transition-opacity group-hover:opacity-100', active && 'opacity-90')}>
@@ -671,25 +671,25 @@ export default function PremiumHeader({ onMenuClick }: Props) {
         aria-hidden
         className="pointer-events-none fixed inset-x-0 top-0 h-[80px] opacity-40 header-ambient"
         style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,23,68,0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at 50% 0%, var(--brand-glow) 0%, transparent 70%)',
           filter: 'blur(40px)',
           zIndex: 99,
         }}
       />
 
       <header
-        className={cn(
-          'fixed inset-x-0 top-0 z-[100] transition-all duration-300',
-          scrolled
-            ? 'border-b border-[rgba(0,0,0,0.04)] bg-[rgba(255,255,255,0.92)] backdrop-blur-2xl'
-            : 'border-b border-[rgba(0,0,0,0.03)] bg-[rgba(255,255,255,0.85)] backdrop-blur-xl',
-        )}
-        style={{
-          WebkitBackdropFilter: scrolled ? 'blur(32px)' : 'blur(24px)',
-          boxShadow: scrolled
-            ? '0 1px 0 rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08)'
-            : '0 1px 0 rgba(0,0,0,0.03), 0 4px 20px rgba(0,0,0,0.04)',
-        }}
+          className={cn(
+            'fixed inset-x-0 top-0 z-[100] transition-all duration-300',
+            scrolled
+              ? 'border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] backdrop-blur-2xl'
+              : 'border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] backdrop-blur-xl',
+          )}
+          style={{
+            WebkitBackdropFilter: scrolled ? 'blur(32px)' : 'blur(24px)',
+            boxShadow: scrolled
+              ? '0 1px 0 var(--border), 0 8px 32px var(--brand-glow)'
+              : '0 1px 0 var(--border), 0 4px 20px var(--brand-glow-2)',
+          }}
       >
         <div
           ref={headerRef}
@@ -705,8 +705,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl lg:hidden"
               style={{
                 background: 'var(--border)',
-                border: '1px solid rgba(0,0,0,0.06)',
-                color: '#1d1d1f',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
               }}
               onClick={onMenuClick}
               aria-label="Open navigation menu"
@@ -719,8 +719,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               style={{
                 width: scrolled ? 38 : 46,
                 height: scrolled ? 38 : 46,
-                background: '#f5f5f7',
-                border: '1px solid rgba(0,0,0,0.06)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border)',
                 transition: 'width 0.3s, height 0.3s',
               }}
               onClick={() => router.push('/dashboard')}
@@ -741,7 +741,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               <span
                 id="logo-fallback"
                 className="absolute hidden h-full w-full items-center justify-center rounded-[14px] text-[13px] font-black text-white"
-                style={{ background: 'linear-gradient(135deg,#FF1744,#b71c1c)' }}
+                style={{ background: 'var(--brand-lo)' }}
               >
                 AD
               </span>
@@ -749,7 +749,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
 
             <PtOsButton />
 
-            <div className="mx-1 hidden h-7 w-px shrink-0 lg:block" style={{ background: 'linear-gradient(to bottom, transparent, rgba(255,23,68,0.15), transparent)' }} />
+            <div className="mx-1 hidden h-7 w-px shrink-0 lg:block" style={{ background: 'var(--border)' }} />
           </div>
 
           {/* ── Center nav ── */}
@@ -770,19 +770,19 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               {LIVE_PILLS.map((pill, i) => (
                 <div
                   key={i}
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold"
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold border"
                   style={{
-                    borderColor: `${pill.color}30`,
-                    background: `${pill.color}0a`,
-                    color: pill.color,
+                    borderColor: 'var(--border)',
+                    background: 'var(--brand-soft)',
+                    color: 'var(--brand-lo)',
                   }}
                 >
                   <span className="relative flex h-[6px] w-[6px] shrink-0 items-center justify-center">
-                    <span className="h-[6px] w-[6px] rounded-full" style={{ background: pill.color, boxShadow: `0 0 6px ${pill.color}` }} />
+                    <span className="h-[6px] w-[6px] rounded-full" style={{ background: 'var(--brand-lo)', boxShadow: '0 0 6px var(--brand-lo)' }} />
                     {pill.pulse && (
                       <span
                         className="pill-pulse absolute h-[6px] w-[6px] rounded-full"
-                        style={{ color: `${pill.color}50`, animationDelay: `${i * 0.6}s` }}
+                        style={{ color: 'var(--brand-lo)', animationDelay: `${i * 0.6}s` }}
                       />
                     )}
                   </span>
@@ -798,8 +798,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               className="hidden h-[36px] w-[200px] items-center justify-between rounded-full px-3.5 backdrop-blur-sm transition-all duration-150 2xl:inline-flex"
               style={{
                 background: 'var(--border)',
-                border: '1px solid rgba(0,0,0,0.06)',
-                color: 'rgba(0,0,0,0.3)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-muted)',
               }}
             >
               <span className="flex items-center gap-2 text-[12px]">
@@ -808,9 +808,9 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               </span>
               <kbd className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold"
                 style={{
-                  background: 'var(--border)',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  color: 'rgba(0,0,0,0.3)',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
                 }}
               >
                 ⌘K
@@ -825,8 +825,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full backdrop-blur-sm transition-all"
                 style={{
                   background: 'var(--border)',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  color: 'rgba(0,0,0,0.4)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
                 }}
                 aria-label="More actions"
               >
@@ -844,8 +844,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 className="inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full backdrop-blur-sm transition-all 2xl:hidden"
                 style={{
                   background: 'var(--border)',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  color: 'rgba(0,0,0,0.4)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
                 }}
                 aria-label="Search"
               >
@@ -861,8 +861,8 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                   aria-expanded={showQuick}
                   className="inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-bold text-white transition-all duration-150 hover:opacity-90 hover:shadow-lg active:scale-[0.97]"
                   style={{
-                    background: 'linear-gradient(135deg,#FF1744,#b71c1c)',
-                    boxShadow: '0 4px 14px rgba(255,23,68,0.30)',
+                    background: 'var(--brand-lo)',
+                    boxShadow: '0 4px 14px var(--brand-glow)',
                   }}
                 >
                   <Plus size={13} className="shrink-0" />
@@ -877,14 +877,14 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 className="relative inline-flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full backdrop-blur-sm transition-all"
                 style={{
                   background: 'var(--border)',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  color: 'rgba(0,0,0,0.4)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
                 }}
                 aria-label="Notifications"
               >
                 <Bell size={14} />
                 <span className="absolute right-[9px] top-[9px] h-[6px] w-[6px] rounded-full"
-                  style={{ background: '#dc2626', boxShadow: '0 0 0 1.5px white' }}
+                  style={{ background: 'var(--danger)', boxShadow: '0 0 0 1.5px white' }}
                 />
               </button>
             </div>
@@ -898,26 +898,26 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 aria-expanded={openMenu === 'account'}
                 className="inline-flex h-[36px] items-center gap-2 rounded-full pl-1.5 pr-3 backdrop-blur-sm transition-all"
                 style={{
-                  background: 'var(--border)',
-                  border: '1px solid rgba(0,0,0,0.06)',
+                  background: 'var(--topbar-bg)',
+                  border: '1px solid var(--border)',
                 }}
               >
                 <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full"
                   style={{
-                    background: '#f5f5f7',
-                    border: '1px solid rgba(0,0,0,0.06)',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border)',
                   }}
                 >
-                  <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-[#1d1d1f]">{initials}</span>
+                  <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-[var(--text-primary)]">{initials}</span>
                 </div>
                 <div className="hidden text-left xl:block">
-                  <div className="max-w-[90px] truncate text-[11.5px] font-semibold leading-none" style={{ color: '#1d1d1f' }}>{accountLabel}</div>
-                  <div className="mt-0.5 text-[10px] capitalize tracking-wide" style={{ color: '#86868b' }}>{roleLabel}</div>
+                  <div className="max-w-[90px] truncate text-[11.5px] font-semibold leading-none" style={{ color: 'var(--text-primary)' }}>{accountLabel}</div>
+                  <div className="mt-0.5 text-[10px] capitalize tracking-wide" style={{ color: 'var(--text-muted)' }}>{roleLabel}</div>
                 </div>
                 <motion.span
                   animate={{ rotate: openMenu === 'account' ? 180 : 0 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  style={{ display: 'inline-flex', color: '#86868b' }}
+                  style={{ display: 'inline-flex', color: 'var(--text-muted)' }}
                 >
                   <ChevronDown size={10} />
                 </motion.span>
@@ -1028,8 +1028,8 @@ function QuickActionsPortal({
         width: 240,
         zIndex: 9999,
         background: 'var(--bg-card)',
-        border: '1px solid rgba(0,0,0,0.04)',
-        boxShadow: '0 20px 56px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06)',
+        border: '1px solid var(--border)',
+        boxShadow: '0 20px 56px var(--brand-glow), 0 4px 16px var(--brand-glow-2)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
         borderRadius: 20,
@@ -1039,19 +1039,19 @@ function QuickActionsPortal({
         isolation: 'isolate',
       }}
     >
-      <div className="mb-1.5 h-[3px] rounded-full" style={{ background: 'linear-gradient(90deg,#dc2626,#b91c1c)' }} />
+      <div className="mb-1.5 h-[3px] rounded-full" style={{ background: 'var(--brand-lo)' }} />
       {['Finance', 'Coaches', 'Sales'].map((group) => (
         <div key={group}>
-          <div className="px-3 py-1 text-[9.5px] font-bold uppercase tracking-[0.18em]" style={{ color: '#86868b' }}>{group}</div>
+          <div className="px-3 py-1 text-[9.5px] font-bold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>{group}</div>
           {QUICK_ACTIONS.filter((a) => a.group === group && (!a.role || a.role === user?.role)).map((action) => (
             <button
               type="button"
               key={action.label}
               onClick={() => { router.push(action.href); onClose(); }}
               className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2 text-left text-[13px] font-semibold transition-all"
-              style={{ color: '#1d1d1f' }}
+              style={{ color: 'var(--text-primary)' }}
             >
-              <span style={{ color: '#dc2626' }}>{action.icon}</span>
+              <span style={{ color: 'var(--brand-lo)' }}>{action.icon}</span>
               {action.label}
             </button>
           ))}
@@ -1124,8 +1124,8 @@ function AccountMenuPortal({
         width: 220,
         zIndex: 9999,
         background: 'var(--bg-card)',
-        border: '1px solid rgba(0,0,0,0.04)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06)',
+        border: '1px solid var(--border)',
+        boxShadow: '0 20px 60px var(--brand-glow), 0 4px 16px var(--brand-glow-2)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
         borderRadius: 18,
@@ -1137,20 +1137,20 @@ function AccountMenuPortal({
     >
       <div
         className="mb-1.5 flex items-center gap-3 rounded-[14px] p-3"
-        style={{ background: '#f5f5f7', border: '1px solid rgba(0,0,0,0.04)' }}
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
       >
         <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-[11px] font-black"
           style={{
-            background: '#e8e8ed',
-            border: '1px solid rgba(0,0,0,0.04)',
-            color: '#1d1d1f',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border)',
+            color: 'var(--text-primary)',
           }}
         >
           {initials}
         </div>
         <div>
-          <div className="text-[13px] font-bold" style={{ color: '#1d1d1f' }}>{accountLabel}</div>
-          <div className="text-[11px] capitalize" style={{ color: '#86868b' }}>{roleLabel}</div>
+          <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{accountLabel}</div>
+          <div className="text-[11px] capitalize" style={{ color: 'var(--text-muted)' }}>{roleLabel}</div>
         </div>
       </div>
 
@@ -1171,13 +1171,13 @@ function AccountMenuPortal({
               isActive ? '' : ''
             }`}
             style={{
-              color: isActive ? '#dc2626' : '#1d1d1f',
-              background: isActive ? 'var(--border)' : 'transparent',
+              color: isActive ? 'var(--brand-lo)' : 'var(--text-primary)',
+              background: isActive ? 'var(--brand-soft)' : 'transparent',
             }}
           >
-            <span style={{ color: isActive ? '#dc2626' : '#86868b' }}>{item.icon}</span>
+            <span style={{ color: isActive ? 'var(--brand-lo)' : 'var(--text-muted)' }}>{item.icon}</span>
             {item.label}
-            {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#dc2626]" />}
+            {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[var(--brand-lo)]" />}
           </button>
         );
       })}
@@ -1188,9 +1188,9 @@ function AccountMenuPortal({
         type="button"
         onClick={() => { logout(); onClose(); }}
         className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[13px] font-semibold transition-all"
-        style={{ color: '#1d1d1f' }}
+        style={{ color: 'var(--text-primary)' }}
       >
-        <span style={{ color: '#86868b' }}><LogOut size={13} /></span>
+        <span style={{ color: 'var(--text-muted)' }}><LogOut size={13} /></span>
         Sign Out
       </button>
     </motion.div>,

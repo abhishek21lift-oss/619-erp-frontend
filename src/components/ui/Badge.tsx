@@ -17,13 +17,13 @@ type Tone =
   | 'purple';
 
 const TONES: Record<Tone, string> = {
-  neutral: 'bg-[#F1F5F9] dark:bg-[rgba(255,255,255,0.06)] text-[var(--text-muted)] ring-[#E2E8F0] dark:ring-[rgba(255,255,255,0.08)]',
-  success: 'bg-[rgba(16,185,129,0.08)] text-[#10B981] ring-[rgba(16,185,129,0.20)]',
-  warning: 'bg-[rgba(245,158,11,0.08)] text-[#F59E0B] ring-[rgba(245,158,11,0.20)]',
-  danger: 'bg-[rgba(239,68,68,0.08)] text-[#EF4444] ring-[rgba(239,68,68,0.20)]',
-  info: 'bg-[rgba(59,130,246,0.08)] text-[#3B82F6] ring-[rgba(59,130,246,0.20)]',
-  brand: 'bg-[rgba(59,130,246,0.08)] text-[#3B82F6] ring-[rgba(59,130,246,0.20)]',
-  purple: 'bg-[rgba(139,92,246,0.08)] text-[#8B5CF6] ring-[rgba(139,92,246,0.20)]',
+  neutral: 'bg-[var(--bg-subtle)] text-[var(--text-muted)] ring-[var(--border)]',
+  success: 'bg-[var(--success)]/10 text-[var(--success)] ring-[var(--success)]/20',
+  warning: 'bg-[var(--warning)]/10 text-[var(--warning)] ring-[var(--warning)]/20',
+  danger: 'bg-[var(--danger)]/10 text-[var(--danger)] ring-[var(--danger)]/20',
+  info: 'bg-[var(--brand-lo)]/10 text-[var(--brand-lo)] ring-[var(--brand-lo)]/20',
+  brand: 'bg-[var(--brand-lo)]/10 text-[var(--brand-lo)] ring-[var(--brand-lo)]/20',
+  purple: 'bg-[var(--brand-lo)]/10 text-[var(--brand-lo)] ring-[var(--brand-lo)]/20',
 };
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {

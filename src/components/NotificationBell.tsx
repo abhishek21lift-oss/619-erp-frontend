@@ -176,15 +176,15 @@ export default function NotificationBell() {
               minWidth: 16,
               height: 16,
               borderRadius: 999,
-              background: '#e11d48',
-              color: '#fff',
+              background: 'var(--danger)',
+              color: 'var(--text-inverse)',
               fontSize: 9,
               fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               padding: '0 3px',
-              boxShadow: '0 2px 6px rgba(225,29,72,0.35)',
+              boxShadow: '0 2px 6px var(--brand-glow)',
               lineHeight: 1,
             }}
           >
@@ -222,13 +222,13 @@ export default function NotificationBell() {
                   border: 'none',
                   fontSize: 11,
                   fontWeight: 600,
-                  color: '#7c3aed',
+                  color: 'var(--brand-lo)',
                   cursor: 'pointer',
                   padding: '2px 6px',
                   borderRadius: 6,
                   transition: 'background 150ms',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(124,58,237,0.08)')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'color-mix(in srgb, var(--brand-lo) 8%, transparent)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 Mark all read
@@ -256,10 +256,10 @@ export default function NotificationBell() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 340, overflowY: 'auto' }}>
             {visible.map((n) => {
               const toneColors: Record<string, { bg: string; dot: string; text: string }> = {
-                warning: { bg: 'rgba(217,119,6,0.08)', dot: '#d97706', text: '#b45309' },
-                danger: { bg: 'rgba(220,38,38,0.06)', dot: '#dc2626', text: '#b91c1c' },
-                success: { bg: 'rgba(22,163,74,0.08)', dot: '#16a34a', text: '#15803d' },
-                info: { bg: 'rgba(2,132,199,0.08)', dot: '#0284c7', text: '#0369a1' },
+                warning: { bg: 'color-mix(in srgb, var(--warning) 8%, transparent)', dot: 'var(--warning)', text: 'var(--warning)' },
+                danger: { bg: 'color-mix(in srgb, var(--danger) 6%, transparent)', dot: 'var(--danger)', text: 'var(--danger)' },
+                success: { bg: 'color-mix(in srgb, var(--success) 8%, transparent)', dot: 'var(--success)', text: 'var(--success)' },
+                info: { bg: 'color-mix(in srgb, var(--info) 8%, transparent)', dot: 'var(--info)', text: 'var(--info)' },
               };
               const tc = toneColors[n.tone] || toneColors.info;
               return (

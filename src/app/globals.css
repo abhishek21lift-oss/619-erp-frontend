@@ -19,28 +19,28 @@
 :root {
   color-scheme: light;
 
-  /* ── Brand: 619 Ember Crimson ────────────────────────────────── */
-  --brand:        #c8102e;
-  --brand-hi:     #e8192e;
-  --brand-lo:     #9b0c23;
-  --brand-mid:    #b01025;
-  --brand-soft:   rgba(200, 16, 46, 0.08);
-  --brand-glow:   rgba(200, 16, 46, 0.22);
-  --brand-glow-2: rgba(200, 16, 46, 0.10);
-  --rgb-brand:    200 16 46;
-  --rgb-brand-hi: 232 25 46;
+  /* ── Brand ──────────────────────────────────────────────────── */
+  --brand:        #1d1d1f;
+  --brand-hi:     #000000;
+  --brand-lo:     #3a3a3c;
+  --brand-mid:    #2c2c2e;
+  --brand-soft:   rgba(0,0,0,0.06);
+  --brand-glow:   rgba(0,0,0,0.10);
+  --brand-glow-2: rgba(0,0,0,0.04);
+  --rgb-brand:    29 29 31;
+  --rgb-brand-hi: 0 0 0;
 
-  /* ── Luxury Amber-Gold KPI accent ───────────────────────────── */
-  --gold:          #b45309;
-  --gold-hi:       #d97706;
-  --gold-mid:      #c96b1a;
-  --gold-soft:     rgba(180, 83, 9, 0.09);
-  --gold-glow:     rgba(180, 83, 9, 0.18);
+  /* ── Gold ───────────────────────────────────────────────────── */
+  --gold:          #6b7280;
+  --gold-hi:       #4b5563;
+  --gold-mid:      #5a6370;
+  --gold-soft:     rgba(107,114,128,0.08);
+  --gold-glow:     rgba(107,114,128,0.14);
 
-  /* ── Accent teal (charts / secondary data) ───────────────────── */
-  --accent:        #0f766e;
-  --accent-hi:     #14b8a6;
-  --accent-soft:   rgba(15, 118, 110, 0.08);
+  /* ── Accent ─────────────────────────────────────────────────── */
+  --accent:        #6b7280;
+  --accent-hi:     #4b5563;
+  --accent-soft:   rgba(107,114,128,0.08);
 
   /* ── Surface palette (warm porcelain) ───────────────────────── */
   --bg-canvas:     #f7f6f3;
@@ -68,18 +68,18 @@
   --rgb-text:       12 10 8;
 
   /* ── Status / semantic ───────────────────────────────────────── */
-  --success:        #047857;
-  --success-bg:     rgba(4, 120, 87, 0.08);
-  --success-border: rgba(4, 120, 87, 0.16);
-  --warning:        #b45309;
-  --warning-bg:     rgba(180, 83, 9, 0.08);
-  --warning-border: rgba(180, 83, 9, 0.16);
-  --danger:         #c8102e;
-  --danger-bg:      rgba(200, 16, 46, 0.07);
-  --danger-border:  rgba(200, 16, 46, 0.15);
-  --info:           #0f766e;
-  --info-bg:        rgba(15, 118, 110, 0.08);
-  --info-border:    rgba(15, 118, 110, 0.16);
+  --success:        #5a7d6a;
+  --success-bg:     rgba(90, 125, 106, 0.08);
+  --success-border: rgba(90, 125, 106, 0.16);
+  --warning:        #8a7d5a;
+  --warning-bg:     rgba(138, 125, 90, 0.08);
+  --warning-border: rgba(138, 125, 90, 0.16);
+  --danger:         #8a5a5a;
+  --danger-bg:      rgba(138, 90, 90, 0.07);
+  --danger-border:  rgba(138, 90, 90, 0.15);
+  --info:           #5a6d8a;
+  --info-bg:        rgba(90, 109, 138, 0.08);
+  --info-border:    rgba(90, 109, 138, 0.16);
   --neutral-bg:     rgba(82, 78, 73, 0.07);
 
   /* ── Sidebar ─────────────────────────────────────────────────── */
@@ -115,9 +115,9 @@
   --shadow-md:  0 10px 22px -3px rgba(8,7,6,0.09), 0 4px 8px -2px rgba(8,7,6,0.04);
   --shadow-lg:  0 22px 34px -5px rgba(8,7,6,0.10), 0 10px 14px -5px rgba(8,7,6,0.04);
   --shadow-xl:  0 32px 64px -12px rgba(8,7,6,0.18);
-  --shadow-brand:      0 4px 20px rgba(200,16,46,0.28), 0 1px 6px rgba(200,16,46,0.16);
-  --shadow-brand-lg:   0 8px 32px rgba(200,16,46,0.32), 0 2px 8px rgba(200,16,46,0.18);
-  --shadow-gold:       0 4px 16px rgba(180,83,9,0.22), 0 1px 4px rgba(180,83,9,0.14);
+  --shadow-brand:      0 4px 20px var(--brand-glow), 0 1px 6px var(--brand-glow-2);
+  --shadow-brand-lg:   0 8px 32px var(--brand-glow), 0 2px 8px var(--brand-glow-2);
+  --shadow-gold:       0 4px 16px var(--gold-glow), 0 1px 4px var(--gold-soft);
   --shadow-card:       0 1px 2px rgba(8,7,6,0.04), 0 4px 16px rgba(8,7,6,0.05);
   --shadow-card-hover: 0 2px 8px rgba(8,7,6,0.06), 0 12px 32px rgba(8,7,6,0.08);
 
@@ -136,9 +136,9 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ── Gradients ───────────────────────────────────────────────── */
-  --gradient-brand:  linear-gradient(135deg, #e8192e 0%, #c8102e 50%, #9b0c23 100%);
-  --gradient-brand-h:linear-gradient(135deg, #e8192e 0%, #b01025 100%);
-  --gradient-gold:   linear-gradient(135deg, #d97706 0%, #b45309 60%, #92400e 100%);
+  --gradient-brand:  linear-gradient(135deg, var(--brand-hi) 0%, var(--brand) 50%, var(--brand-lo) 100%);
+  --gradient-brand-h:linear-gradient(135deg, var(--brand-hi) 0%, var(--brand-mid) 100%);
+  --gradient-gold:   linear-gradient(135deg, var(--gold-hi) 0%, var(--gold) 60%, var(--gold-mid) 100%);
   --gradient-glass:  linear-gradient(135deg, rgba(255,255,255,0.76) 0%, rgba(255,255,255,0.36) 100%);
   --gradient-canvas: linear-gradient(160deg, #f7f6f3 0%, #f2f0ec 100%);
   --gradient-surface:linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.82) 100%);
@@ -155,27 +155,27 @@
 [data-theme="dark"], .dark {
   color-scheme: dark;
 
-  /* Brand ember crimson — warmer, richer on obsidian */
-  --brand:        #ff2d4e;
-  --brand-hi:     #ff5068;
-  --brand-lo:     #e8192e;
-  --brand-mid:    #f01e3a;
-  --brand-soft:   rgba(255, 45, 78, 0.13);
-  --brand-glow:   rgba(255, 45, 78, 0.30);
-  --brand-glow-2: rgba(255, 45, 78, 0.12);
-  --rgb-brand:    255 45 78;
-  --rgb-brand-hi: 255 80 104;
+  /* Brand */
+  --brand:        #f5f5f7;
+  --brand-hi:     #ffffff;
+  --brand-lo:     #a1a1a6;
+  --brand-mid:    #d1d1d6;
+  --brand-soft:   rgba(255,255,255,0.08);
+  --brand-glow:   rgba(255,255,255,0.12);
+  --brand-glow-2: rgba(255,255,255,0.05);
+  --rgb-brand:    245 245 247;
+  --rgb-brand-hi: 255 255 255;
 
-  /* Luxury amber-gold — rich honey on dark */
-  --gold:          #f59e0b;
-  --gold-hi:       #fbbf24;
-  --gold-mid:      #e68a00;
-  --gold-soft:     rgba(245, 158, 11, 0.13);
-  --gold-glow:     rgba(245, 158, 11, 0.24);
+  /* Gold */
+  --gold:          #9ca3af;
+  --gold-hi:       #d1d5db;
+  --gold-mid:      #a3abb6;
+  --gold-soft:     rgba(156,163,175,0.10);
+  --gold-glow:     rgba(156,163,175,0.16);
 
-  --accent:        #2dd4bf;
-  --accent-hi:     #5eead4;
-  --accent-soft:   rgba(45, 212, 191, 0.10);
+  --accent:        #9ca3af;
+  --accent-hi:     #d1d5db;
+  --accent-soft:   rgba(156,163,175,0.10);
 
   /* True obsidian surface stack — warm-dark, never cold */
   --bg-canvas:    #080706;
@@ -198,25 +198,25 @@
   --text-inverse:   #080706;
   --rgb-text:       245 243 240;
 
-  --success:        #34d399;
-  --success-bg:     rgba(52, 211, 153, 0.10);
-  --success-border: rgba(52, 211, 153, 0.20);
-  --warning:        #f59e0b;
-  --warning-bg:     rgba(245, 158, 11, 0.10);
-  --warning-border: rgba(245, 158, 11, 0.22);
-  --danger:         #ff2d4e;
-  --danger-bg:      rgba(255, 45, 78, 0.10);
-  --danger-border:  rgba(255, 45, 78, 0.22);
-  --info:           #2dd4bf;
-  --info-bg:        rgba(45, 212, 191, 0.10);
-  --info-border:    rgba(45, 212, 191, 0.20);
+  --success:        #6b9a7a;
+  --success-bg:     rgba(107, 154, 122, 0.10);
+  --success-border: rgba(107, 154, 122, 0.20);
+  --warning:        #9a8d6b;
+  --warning-bg:     rgba(154, 141, 107, 0.10);
+  --warning-border: rgba(154, 141, 107, 0.22);
+  --danger:         #9a6b6b;
+  --danger-bg:      rgba(154, 107, 107, 0.10);
+  --danger-border:  rgba(154, 107, 107, 0.22);
+  --info:           #6b7d9a;
+  --info-bg:        rgba(107, 125, 154, 0.10);
+  --info-border:    rgba(107, 125, 154, 0.20);
   --neutral-bg:     rgba(255, 255, 255, 0.055);
 
   /* Obsidian sidebar — premium depth */
   --sidebar-bg:          rgba(12, 10, 8, 0.96);
   --sidebar-border:      rgba(255, 255, 255, 0.048);
-  --sidebar-item-hover:  rgba(255, 45, 78, 0.09);
-  --sidebar-item-active: rgba(255, 45, 78, 0.16);
+  --sidebar-item-hover:  rgba(255, 255, 255, 0.06);
+  --sidebar-item-active: rgba(255, 255, 255, 0.10);
   --sidebar-text:        #dedad6;
   --sidebar-text-muted:  #a09b96;
   --sidebar-icon:        #6e6a65;
@@ -232,9 +232,9 @@
   --shadow-md:    0 10px 22px -3px rgba(0,0,0,0.58), 0 4px 8px -2px rgba(0,0,0,0.36);
   --shadow-lg:    0 22px 34px -5px rgba(0,0,0,0.64), 0 10px 14px -5px rgba(0,0,0,0.36);
   --shadow-xl:    0 32px 64px -12px rgba(0,0,0,0.76);
-  --shadow-brand:      0 4px 20px rgba(255,45,78,0.36), 0 1px 6px rgba(255,45,78,0.22);
-  --shadow-brand-lg:   0 8px 36px rgba(255,45,78,0.42), 0 2px 10px rgba(255,45,78,0.26);
-  --shadow-gold:       0 4px 18px rgba(245,158,11,0.30), 0 1px 4px rgba(245,158,11,0.18);
+  --shadow-brand:      0 4px 20px var(--brand-glow), 0 1px 6px var(--brand-glow-2);
+  --shadow-brand-lg:   0 8px 36px var(--brand-glow), 0 2px 10px var(--brand-glow-2);
+  --shadow-gold:       0 4px 18px var(--gold-glow), 0 1px 4px var(--gold-soft);
   --shadow-card:       0 1px 3px rgba(0,0,0,0.36), 0 4px 16px rgba(0,0,0,0.22);
   --shadow-card-hover: 0 2px 8px rgba(0,0,0,0.46), 0 12px 32px rgba(0,0,0,0.34);
 
@@ -244,9 +244,9 @@
   --glass-shadow: 0 8px 40px rgba(0,0,0,0.52);
   --glass-ring:   rgba(255, 255, 255, 0.048);
 
-  --gradient-brand:  linear-gradient(135deg, #ff5068 0%, #ff2d4e 50%, #e8192e 100%);
-  --gradient-brand-h:linear-gradient(135deg, #ff5068 0%, #f01e3a 100%);
-  --gradient-gold:   linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+  --gradient-brand:  linear-gradient(135deg, var(--brand-hi) 0%, var(--brand) 50%, var(--brand-lo) 100%);
+  --gradient-brand-h:linear-gradient(135deg, var(--brand-hi) 0%, var(--brand-mid) 100%);
+  --gradient-gold:   linear-gradient(135deg, var(--gold-hi) 0%, var(--gold) 50%, var(--gold-mid) 100%);
   --gradient-glass:  linear-gradient(135deg, rgba(255,255,255,0.058) 0%, rgba(255,255,255,0.018) 100%);
   --gradient-canvas: linear-gradient(160deg, #080706 0%, #100e0c 100%);
   --gradient-surface:linear-gradient(180deg, rgba(24,21,18,0.96) 0%, rgba(18,16,13,0.88) 100%);
@@ -701,13 +701,13 @@ body {
 .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 .btn-danger    { background: var(--danger); color: #fff; }
-.btn-danger:hover { background: var(--brand-lo); box-shadow: 0 4px 14px rgba(200,16,46,0.28); }
+.btn-danger:hover { background: var(--brand-lo); box-shadow: 0 4px 14px var(--brand-glow); }
 
 .btn-success   { background: var(--success); color: #fff; }
 .btn-success:hover { filter: brightness(0.92); }
 
 .btn-gold      { background: var(--gradient-gold); color: #fff; box-shadow: var(--shadow-gold); }
-.btn-gold:hover { filter: brightness(0.94); box-shadow: 0 6px 22px rgba(180,83,9,0.30); transform: translateY(-1px); }
+.btn-gold:hover { filter: brightness(0.94); box-shadow: 0 6px 22px var(--gold-glow); transform: translateY(-1px); }
 
 /* ════════════════════════════════════════════════════════════════════
    FORMS
@@ -832,9 +832,9 @@ select.form-control { cursor: pointer; }
 .badge-danger  { background: var(--danger-bg);   color: var(--danger);  border: 1px solid var(--danger-border);  }
 .badge-info    { background: var(--info-bg);     color: var(--info);    border: 1px solid var(--info-border);    }
 .badge-neutral { background: var(--neutral-bg);  color: var(--text-muted); border: 1px solid var(--border-2);   }
-.badge-brand   { background: var(--brand-soft);  color: var(--brand);   border: 1px solid rgba(200,16,46,0.18); }
-.badge-gold    { background: var(--gold-soft);   color: var(--gold);    border: 1px solid rgba(180,83,9,0.22);  }
-.badge-accent  { background: var(--accent-soft); color: var(--accent);  border: 1px solid rgba(15,118,110,0.20);}
+.badge-brand   { background: var(--brand-soft);  color: var(--brand);   border: 1px solid var(--brand-soft); }
+.badge-gold    { background: var(--gold-soft);   color: var(--gold);    border: 1px solid var(--gold-soft); }
+.badge-accent  { background: var(--accent-soft); color: var(--accent);  border: 1px solid var(--accent-soft);}
 .badge-dot::before { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1125,8 +1125,8 @@ select.form-control { cursor: pointer; }
    ════════════════════════════════════════════════════════════════════ */
 /* Luxury amber-gold — revenue / financial KPIs */
 .kpi-gold {
-  background: linear-gradient(135deg, rgba(180,83,9,0.09) 0%, rgba(217,119,6,0.04) 100%);
-  border-color: rgba(180,83,9,0.20);
+  background: linear-gradient(135deg, var(--gold-soft) 0%, transparent 100%);
+  border-color: var(--gold-soft);
   box-shadow: var(--shadow-gold);
 }
 .kpi-gold .stat-card-value,
@@ -1135,9 +1135,9 @@ select.form-control { cursor: pointer; }
 
 /* Ember crimson — active members / sessions */
 .kpi-brand {
-  background: linear-gradient(135deg, rgba(200,16,46,0.09) 0%, rgba(155,12,35,0.04) 100%);
-  border-color: rgba(200,16,46,0.18);
-  box-shadow: 0 4px 16px rgba(200,16,46,0.14);
+  background: linear-gradient(135deg, var(--brand-soft) 0%, transparent 100%);
+  border-color: var(--brand-soft);
+  box-shadow: 0 4px 16px var(--brand-glow);
 }
 .kpi-brand .stat-card-value { color: var(--brand); }
 .kpi-brand .stat-card-icon  { background: var(--brand-soft); color: var(--brand); }
@@ -1152,8 +1152,8 @@ select.form-control { cursor: pointer; }
 
 /* Teal — chart / engagement KPIs */
 .kpi-teal {
-  background: linear-gradient(135deg, rgba(15,118,110,0.09) 0%, rgba(15,118,110,0.03) 100%);
-  border-color: rgba(15,118,110,0.18);
+  background: linear-gradient(135deg, var(--accent-soft) 0%, transparent 100%);
+  border-color: var(--accent-soft);
 }
 .kpi-teal .stat-card-value { color: var(--accent); }
 .kpi-teal .stat-card-icon  { background: var(--accent-soft); color: var(--accent); }
@@ -1346,11 +1346,11 @@ select.form-control { cursor: pointer; }
 /* Fit accent helpers — v6 premium */
 @supports (color: oklch(0.5 0.2 0)) {
   :root {
-    --fit-accent-1: linear-gradient(135deg, #e8192e 0%, #9b0c23 100%);
-    --fit-accent-2: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-    --fit-accent-3: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+    --fit-accent-1: linear-gradient(135deg, var(--brand-hi) 0%, var(--brand-lo) 100%);
+    --fit-accent-2: linear-gradient(135deg, var(--gold-hi) 0%, var(--gold) 100%);
+    --fit-accent-3: linear-gradient(135deg, var(--accent) 0%, var(--accent-hi) 100%);
     --fit-accent-4: linear-gradient(135deg, #047857 0%, #10b981 100%);
-    --fit-accent-5: linear-gradient(135deg, #c8102e 0%, #b45309 100%);
+    --fit-accent-5: linear-gradient(135deg, var(--brand) 0%, var(--gold) 100%);
     --fit-glass: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.72));
   }
 }
