@@ -22,7 +22,6 @@ import { RevenueTrendChart } from '@/components/premium/RevenueTrendChart';
 import { CollectionRateWidget } from '@/components/premium/CollectionRateWidget';
 import { ClientGrowthWidget } from '@/components/premium/ClientGrowthWidget';
 import { MonthlyTargetGauge } from '@/components/premium/MonthlyTargetGauge';
-import { BusinessSummary } from '@/components/premium/BusinessSummary';
 import { DashboardSkeleton } from '@/components/premium/DashboardSkeleton';
 import { DashboardEmptyState } from '@/components/premium/DashboardEmptyState';
 
@@ -169,12 +168,6 @@ function DashboardBody({ data }: { data: DashboardData }) {
 
   return (
     <>
-      <BusinessSummary
-        revenue={r.today}
-        newClients={c.new_this_month}
-        renewals={data.pending_renewals}
-      />
-
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
