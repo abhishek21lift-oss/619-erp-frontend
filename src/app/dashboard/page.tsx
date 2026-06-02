@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-  LayoutDashboard, Search, Bell, RefreshCw,
+  LayoutDashboard, RefreshCw,
   CheckCircle, Clock, UserPlus, Users, DollarSign, Activity,
   UserPlus as UserPlusIcon, ScanFace, PlusCircle, Sparkles,
   TrendingUp,
@@ -13,7 +13,6 @@ import {
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { useAuth } from '@/lib/auth-context';
 import { useDashboardData, type DashboardData } from '@/lib/hooks/useDashboardData';
 import { PremiumKpiCard } from '@/components/premium/PremiumKpiCard';
 import { DateRangeFilter } from '@/components/premium/DateRangeFilter';
@@ -60,7 +59,6 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { user } = useAuth();
   const [period, setPeriod] = React.useState('Last 7 Days');
   const { data, loading, error, refresh } = useDashboardData(period);
 
@@ -75,11 +73,6 @@ function DashboardContent() {
     [],
   );
 
-  const initial = React.useMemo(
-    () => (user?.name || user?.email || 'A').charAt(0).toUpperCase(),
-    [user?.name, user?.email],
-  );
-
   return (
     <AppShell>
       <div className="relative">
@@ -90,7 +83,7 @@ function DashboardContent() {
             style={{ background: blob }}
           />
         ))}
-        <StickyHeader today={today} initial={initial} loading={loading} onRefresh={refresh} />
+        <StickyHeader today={today} loading={loading} onRefresh={refresh} />
         <div className="relative z-10 mt-4 space-y-6 max-w-[1600px] mx-auto pb-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <DateRangeFilter value={period} onChange={setPeriod} />
@@ -116,12 +109,10 @@ function DashboardContent() {
 
 function StickyHeader({
   today,
-  initial,
   loading,
   onRefresh,
 }: {
   today: string;
-  initial: string;
   loading: boolean;
   onRefresh: () => void;
 }) {
@@ -143,21 +134,6 @@ function StickyHeader({
           </div>
         </div>
 
-        <div className="hidden md:block flex-1 max-w-[480px]">
-          <div className="relative group">
-            <Search
-              size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] transition-colors group-focus-within:text-violet-400"
-              strokeWidth={1.8}
-            />
-            <input
-              type="text"
-              placeholder="Search clients, payments, plans..."
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] py-2 pl-10 pr-4 text-[13px] text-[var(--text-primary)] outline-none transition-all duration-200 focus:bg-[var(--bg-card)] focus:border-violet-400 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] placeholder-[var(--text-disabled)]"
-            />
-          </div>
-        </div>
-
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
@@ -172,21 +148,6 @@ function StickyHeader({
               className={loading ? 'animate-spin' : ''}
             />
           </button>
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-muted)] transition-all duration-200 hover:bg-gradient-to-br hover:from-amber-500/10 hover:to-pink-500/10 hover:text-amber-400 hover:border-amber-400/30"
-          >
-            <Bell size={15} strokeWidth={1.8} />
-            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-pink-500 to-rose-400 shadow-[0_0_8px_rgba(236,72,153,0.6)]" />
-          </button>
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-white text-[12px] font-bold shadow-[0_4px_16px_rgba(139,92,246,0.40)]"
-            style={{ background: 'linear-gradient(135deg, #EC4899, #8B5CF6, #06B6D4)' }}
-            aria-label="Profile"
-          >
-            {initial}
-          </div>
         </div>
       </div>
     </div>
