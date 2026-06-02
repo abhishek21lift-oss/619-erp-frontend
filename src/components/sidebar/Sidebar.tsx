@@ -305,11 +305,7 @@ export default function Sidebar({
                   <img src="/logo.png" alt="" className="h-10 w-10 rounded-lg object-cover" />
                 </div>
               </div>
-              <motion.span className="absolute -bottom-[2px] -right-[2px] flex h-3.5 w-3.5"
-                animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-50" />
-                <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-[var(--success)] ring-[2.5px] ring-[var(--bg-white)] shadow-[0_0_8px_var(--success)]" />
-              </motion.span>
+
             </div>
             <div>
               <h2 className="text-[17px] font-extrabold tracking-tight text-[var(--text-primary)] leading-none">

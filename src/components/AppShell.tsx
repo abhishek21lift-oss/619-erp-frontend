@@ -169,30 +169,22 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                 {headerLeft}
               </div>
             )}
-            {/* Premium colorful search bar */}
-            <div ref={searchRef} className="relative flex-1 max-w-[520px]">
-              <div className="relative">
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-xl p-[1.5px]"
-                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #06B6D4 100%)' }}
-                >
-                  <div className="h-full w-full rounded-xl bg-[var(--bg-base)]" />
+            {/* Premium search bar */}
+            <div ref={searchRef} className="relative flex-1 max-w-[480px]">
+              <div className="group relative">
+                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[var(--brand-lo)] via-[var(--brand)] to-cyan-400 p-[1.5px] opacity-60 transition-opacity duration-300 group-focus-within:opacity-100">
+                  <div className="h-full w-full rounded-2xl bg-[var(--bg-base)]" />
                 </div>
-                <div className="flex items-center">
-                  <Search
-                    size={16}
-                    className="absolute left-3.5 z-10 text-[var(--brand)] hidden sm:block"
-                    strokeWidth={1.8}
-                  />
+                <div className="relative flex items-center">
+                  <Search size={15} strokeWidth={2}
+                    className="absolute left-3.5 z-10 text-[var(--text-disabled)] transition-colors duration-200 group-focus-within:text-[var(--brand)]" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
-                    onFocus={() => {
-                      if (searchQuery.trim()) setSearchOpen(searchResults.length > 0);
-                    }}
-                    placeholder="Search..."
-                    className="relative w-full rounded-xl border-0 bg-[var(--bg-subtle)] py-2.5 sm:pl-10 pl-3 pr-4 text-[13px] text-[var(--text-primary)] outline-none transition-all duration-200 focus:bg-[var(--bg-base)] focus:shadow-[0_0_0_1px_var(--border-focus),0_4px_16px_var(--brand-glow)] placeholder-[var(--text-disabled)]"
+                    onFocus={() => { if (searchQuery.trim()) setSearchOpen(searchResults.length > 0); }}
+                    placeholder="Search pages, members, payments..."
+                    className="relative w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] py-[10px] sm:pl-10 pl-3 pr-4 text-[13px] text-[var(--text-primary)] outline-none transition-all duration-200 placeholder-[var(--text-disabled)] focus:border-transparent focus:bg-[var(--bg-base)] focus:shadow-[0_0_0_1.5px_var(--brand),0_8px_24px_var(--brand-glow)]"
                   />
                 </div>
               </div>
@@ -201,25 +193,31 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
               <AnimatePresence>
                 {searchOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
-                    className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_8px_32px_var(--brand-glow)]"
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_rgba(0,0,0,0.08),0_0_0_1px_rgba(255,255,255,0.5)_inset] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.03)_inset]"
                   >
-                    <div className="max-h-[280px] overflow-y-auto py-1.5">
-                      {searchResults.map((r) => (
-                        <button
-                          key={r.href}
-                          onClick={() => navigateTo(r.href)}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)]"
-                        >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--brand-soft)] text-[10px] font-medium text-[var(--sidebar-icon)]">
-                            {r.label.charAt(0)}
-                          </span>
-                          {r.label}
-                        </button>
-                      ))}
+                    <div className="max-h-[300px] overflow-y-auto py-2">
+                      {searchResults.length === 0 ? (
+                        <div className="px-4 py-6 text-center text-[13px] text-[var(--text-disabled)]">
+                          No results found
+                        </div>
+                      ) : (
+                        searchResults.map((r) => (
+                          <button
+                            key={r.href}
+                            onClick={() => navigateTo(r.href)}
+                            className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] transition-all duration-150 hover:bg-[var(--brand-soft)] hover:pl-5"
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--brand-lo)] to-[var(--brand)] text-[10px] font-bold text-white shadow-[0_2px_6px_var(--brand-glow)]">
+                              {r.label.charAt(0)}
+                            </span>
+                            <span className="font-medium">{r.label}</span>
+                          </button>
+                        ))
+                      )}
                     </div>
                   </motion.div>
                 )}
