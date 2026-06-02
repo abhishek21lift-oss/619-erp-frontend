@@ -12,9 +12,10 @@ import Sidebar from './sidebar/Sidebar';
 interface AppShellProps {
   children: React.ReactNode;
   title?: string;
+  headerLeft?: React.ReactNode;
 }
 
-export default function AppShell({ children, title }: AppShellProps) {
+export default function AppShell({ children, title, headerLeft }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -163,6 +164,11 @@ export default function AppShell({ children, title }: AppShellProps) {
               <Menu size={18} />
             </button>
 
+            {headerLeft && (
+              <div className="flex items-center gap-3 shrink-0">
+                {headerLeft}
+              </div>
+            )}
             {/* Premium colorful search bar */}
             <div ref={searchRef} className="relative flex-1 max-w-[520px]">
               <div className="relative">
