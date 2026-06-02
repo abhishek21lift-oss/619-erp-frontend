@@ -51,14 +51,14 @@ const hexToRgba = (hex: string, alpha: number) => {
 };
 
 const buildTheme = (color: string): GroupTheme => ({
-  gradient: `linear-gradient(135deg, ${color} 0%, ${hexToRgba(color, 0.7)} 100%)`,
-  lightBg: hexToRgba(color, 0.08),
+  gradient: `linear-gradient(135deg, ${color}22 0%, ${hexToRgba(color, 0.06)} 100%)`,
+  lightBg: hexToRgba(color, 0.06),
   borderColor: color,
-  iconBg: `linear-gradient(135deg, ${color}, ${hexToRgba(color, 0.75)})`,
+  iconBg: `linear-gradient(135deg, ${color}, ${hexToRgba(color, 0.7)})`,
   iconColor: '#ffffff',
-  activeBg: hexToRgba(color, 0.1),
-  subBorder: hexToRgba(color, 0.3),
-  subActiveBg: hexToRgba(color, 0.1),
+  activeBg: hexToRgba(color, 0.08),
+  subBorder: hexToRgba(color, 0.25),
+  subActiveBg: hexToRgba(color, 0.08),
   badgeBg: `linear-gradient(135deg, ${color}, ${hexToRgba(color, 0.75)})`,
   badgeText: '#ffffff',
 });
@@ -107,58 +107,50 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
     items.some(i => isActive(i.href || '') || (i.children?.some(c => isActive(c.href || ''))));
 
   return (
-    <div className="space-y-[3px] px-2">
+    <div className="space-y-[2px] px-2">
       {/* Dashboard — premium hero link */}
       <Link
         href="/dashboard"
         onClick={onLinkClick}
         className={cn(
-          'relative flex items-center gap-3 rounded-[12px] px-3 py-3 text-[13px] font-bold tracking-wide transition-all duration-300 overflow-hidden group',
+          'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-bold tracking-wide transition-all duration-300 overflow-hidden group',
           isActive('/dashboard')
-            ? 'text-white shadow-[0_8px_28px_var(--brand-glow)]'
+            ? 'text-white'
             : 'text-[var(--text-muted)] hover:text-white',
         )}
         style={{
           background: isActive('/dashboard')
-            ? 'var(--brand-lo)'
+            ? 'linear-gradient(135deg, var(--brand-lo), var(--brand))'
             : 'transparent',
+          boxShadow: isActive('/dashboard')
+            ? '0 8px 28px var(--brand-glow)'
+            : 'none',
         }}
       >
-        <div
-          className="absolute inset-0 rounded-[12px] opacity-0 group-hover:opacity-100 transition-all duration-500"
-          style={{
-            background: !isActive('/dashboard')
-              ? 'var(--brand-soft)'
-              : undefined,
-          }}
-        />
+        {/* Hover overlay */}
+        {!isActive('/dashboard') && (
+          <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"
+            style={{ background: 'var(--brand-soft)' }} />
+        )}
+        {/* Shimmer overlay on active */}
         {isActive('/dashboard') && (
           <motion.div
-            className="absolute inset-0 rounded-[12px]"
-            animate={{ background: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0.08)'] }}
+            className="absolute inset-0 rounded-xl"
+            animate={{ background: ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.1)'] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           />
         )}
-        {isActive('/dashboard') && (
-          <div
-            className="absolute -inset-[1px] rounded-[13px] opacity-60"
-            style={{
-              background: 'var(--brand-lo)',
-              zIndex: -1,
-              filter: 'blur(6px)',
-            }}
-          />
-        )}
+        {/* Icon */}
         <div
           className={cn(
-            'flex h-[28px] w-[28px] items-center justify-center rounded-[8px] shrink-0 transition-all duration-300 relative z-10',
+            'flex h-[26px] w-[26px] items-center justify-center rounded-lg shrink-0 transition-all duration-300 relative z-10',
             isActive('/dashboard')
-              ? 'bg-white/20 shadow-[0_0_12px_rgba(255,255,255,0.15)]'
-              : 'group-hover:bg-[var(--brand-soft)] group-hover:shadow-[0_0_12px_var(--brand-glow)]',
+              ? 'bg-white/20'
+              : 'group-hover:bg-[var(--brand-soft)]',
           )}
         >
           <LayoutDashboard
-            size={16}
+            size={15}
             strokeWidth={isActive('/dashboard') ? 2.5 : 1.8}
             className={cn(
               'transition-colors duration-300',
@@ -166,28 +158,26 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
             )}
           />
         </div>
-        <span className={cn('relative z-10', isActive('/dashboard') ? 'font-extrabold tracking-wide' : 'font-bold')}>
+        <span className={cn('relative z-10', isActive('/dashboard') && 'tracking-wide')}>
           Dashboard
         </span>
+        {/* Active pulse dots */}
         {isActive('/dashboard') && (
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 z-10">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse"
-                style={{ animationDelay: `${i * 0.2}s` }}
-              />
+          <div className="ml-auto flex gap-[3px] items-center relative z-10">
+            {[0, 1, 2].map(i => (
+              <span key={i} className="h-1 w-1 rounded-full bg-white/70 animate-pulse"
+                style={{ animationDelay: `${i * 0.25}s` }} />
             ))}
           </div>
         )}
       </Link>
 
-      {/* Section divider */}
-      <div className="px-1 pt-1 pb-[2px]">
+      {/* Divider */}
+      <div className="px-1 pt-1 pb-[1px]">
         <div className="h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
       </div>
 
-      {/* Group buttons with dropdowns */}
+      {/* Nav groups */}
       {navItems.slice(1).map(group => {
         const GroupIcon = ICON_MAP[group.icon] || LayoutDashboard;
         const open = expanded[group.id] ?? anyChildActive(group.items);
@@ -198,84 +188,54 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
           <div key={group.id} className="relative">
             <button
               onClick={() => toggleGroup(group.id)}
-              className={cn(
-                'group relative w-full rounded-[11px] transition-all duration-300 overflow-hidden',
-                hasActiveChild && 'shadow-[0_4px_16px_rgba(0,0,0,0.06)]',
-              )}
+              className="group relative w-full rounded-xl transition-all duration-300 overflow-hidden"
               style={{
                 background: hasActiveChild
                   ? theme.activeBg
                   : open
-                    ? theme.gradient
-                    : undefined,
+                    ? `linear-gradient(135deg, ${theme.borderColor}18, transparent)`
+                    : 'transparent',
               }}
             >
-              {/* Left color strip */}
-              <div
-                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-300"
+              {/* Left accent strip */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-300"
                 style={{
-                  background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}88)`,
-                  height: hasActiveChild || open ? '60%' : '0%',
+                  background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}77)`,
+                  height: hasActiveChild || open ? '50%' : '0%',
                   opacity: hasActiveChild || open ? 1 : 0,
-                  boxShadow: `0 0 10px ${theme.borderColor}50`,
+                  boxShadow: `0 0 8px ${theme.borderColor}40`,
                 }}
               />
+              {/* Hover bg */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl"
+                style={{ background: theme.lightBg }} />
 
-              {/* Hover gradient overlay */}
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[11px]"
-                style={{ background: theme.lightBg }}
-              />
-
-              {/* Active shimmer scan */}
-              {hasActiveChild && (
-                <motion.div
-                  className="absolute inset-0 rounded-[11px]"
-                  animate={{ x: ['-100%', '100%'] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${theme.borderColor}08, transparent)`,
-                  }}
-                />
-              )}
-
-              <div
-                className={cn(
-                  'relative flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium transition-all duration-200',
-                  hasActiveChild ? 'font-semibold tracking-wide' : '',
-                )}
-                style={{
-                  color: hasActiveChild ? theme.borderColor : 'var(--text-muted)',
-                }}
-              >
-                {/* Icon container */}
+              <div className="relative flex items-center gap-3 px-3 py-2 text-[13px] font-medium transition-all duration-200"
+                style={{ color: hasActiveChild ? theme.borderColor : 'var(--text-muted)' }}>
+                {/* Icon */}
                 <div
                   className={cn(
-                    'flex h-[28px] w-[28px] items-center justify-center rounded-[8px] shrink-0 transition-all duration-300',
-                    (hasActiveChild || open)
-                      ? 'shadow-[0_0_10px_rgba(0,0,0,0.08)]'
-                      : 'group-hover:bg-white/10',
+                    'flex h-[26px] w-[26px] items-center justify-center rounded-lg shrink-0 transition-all duration-300',
+                    (hasActiveChild || open) && 'shadow-[0_0_8px_rgba(0,0,0,0.06)]',
                   )}
                   style={{
                     background: (hasActiveChild || open) ? theme.iconBg : 'transparent',
                   }}
                 >
                   <GroupIcon
-                    size={15}
+                    size={14}
                     strokeWidth={hasActiveChild ? 2.2 : 1.5}
                     style={{
-                      color: hasActiveChild || open ? theme.iconColor : 'var(--sidebar-icon)',
-                      filter: hasActiveChild ? 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' : 'none',
+                      color: hasActiveChild || open ? '#ffffff' : 'var(--sidebar-icon)',
+                      filter: hasActiveChild ? 'drop-shadow(0 0 3px rgba(255,255,255,0.25))' : 'none',
                     }}
                   />
                 </div>
-
                 {/* Label */}
-                <span className="flex-1 text-left">{group.label}</span>
-
+                <span className="flex-1 text-left text-[13px]">{group.label}</span>
                 {/* Chevron */}
                 <ChevronDown
-                  size={13}
+                  size={12}
                   strokeWidth={2}
                   className="shrink-0 transition-transform duration-300"
                   style={{
@@ -293,14 +253,12 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.22, ease: 'easeInOut' }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
                   className="overflow-hidden"
                 >
-                  <div
-                    className="ml-6 mt-1 space-y-[2px] border-l-2 pl-2"
-                    style={{ borderColor: theme.subBorder }}
-                  >
-                    {group.items.map((item, idx) => {
+                  <div className="ml-6 mt-[2px] space-y-[1px] border-l pl-2"
+                    style={{ borderColor: theme.subBorder }}>
+                    {group.items.map((item) => {
                       const ItemIcon = ICON_MAP[item.icon];
                       const active = isActive(item.href);
                       return (
@@ -309,7 +267,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                           href={item.href}
                           onClick={onLinkClick}
                           className={cn(
-                            'relative flex items-center gap-2.5 rounded-[8px] px-3 py-2 text-[12px] font-medium transition-all duration-200 overflow-hidden',
+                            'relative flex items-center gap-2.5 rounded-lg px-3 py-[7px] text-[12px] font-medium transition-all duration-200 overflow-hidden',
                             active && 'font-semibold',
                           )}
                           style={{
@@ -317,73 +275,38 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                             background: active ? theme.subActiveBg : 'transparent',
                           }}
                         >
-                          {/* Active accent bar */}
+                          {/* Active accent */}
                           {active && (
-                            <motion.div
-                              layoutId={`sidebar-active-${group.id}`}
-                              className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-r-full"
+                            <motion.div layoutId={`sidebar-active-${group.id}`}
+                              className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3.5 rounded-r-full"
                               style={{
-                                background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}88)`,
-                                boxShadow: `0 0 8px ${theme.borderColor}60`,
-                              }}
-                            />
+                                background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}77)`,
+                                boxShadow: `0 0 6px ${theme.borderColor}50`,
+                              }} />
                           )}
-
-                          {/* Hover highlight */}
-                          <div
-                            className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-[8px]"
-                            style={{
-                              background: !active ? theme.lightBg : undefined,
-                            }}
-                          />
-
+                          {/* Hover */}
+                          <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-lg"
+                            style={{ background: !active ? theme.lightBg : undefined }} />
                           {/* Icon */}
-                          <div
-                            className={cn(
-                              'flex h-[22px] w-[22px] items-center justify-center rounded-[6px] shrink-0 transition-all duration-200 relative z-10',
-                              active && 'shadow-[0_0_6px_rgba(0,0,0,0.06)]',
-                            )}
-                            style={{
-                              background: active ? theme.iconBg : 'transparent',
-                            }}
-                          >
+                          <div className="flex h-[20px] w-[20px] items-center justify-center rounded-md shrink-0 transition-all duration-200 relative z-10"
+                            style={{ background: active ? theme.iconBg : 'transparent' }}>
                             {ItemIcon && (
-                              <ItemIcon
-                                size={13}
+                              <ItemIcon size={12}
                                 strokeWidth={active ? 2.2 : 1.5}
-                                style={{
-                                  color: active ? '#ffffff' : 'var(--sidebar-icon)',
-                                }}
-                              />
+                                style={{ color: active ? '#ffffff' : 'var(--sidebar-icon)' }} />
                             )}
                           </div>
-
                           {/* Label */}
-                          <span
-                            className={cn(
-                              'truncate relative z-10 transition-all duration-200',
-                              active && 'font-semibold tracking-wide',
-                            )}
-                            style={{
-                              color: active
-                                ? theme.borderColor
-                                : 'var(--text-muted)',
-                            }}
-                          >
-                            {item.label}
-                          </span>
-
-                          {/* Badge / NEW indicator */}
+                          <span className="truncate relative z-10 text-[12px]">{item.label}</span>
+                          {/* Badge / NEW */}
                           {(item.badge || item.isNew) && (
-                            <span
-                              className="ml-auto rounded-full px-[7px] py-[3px] text-[7px] font-extrabold uppercase tracking-wider shrink-0 relative z-10"
+                            <span className="ml-auto rounded-full px-[6px] py-[2px] text-[7px] font-extrabold uppercase tracking-wider shrink-0 relative z-10"
                               style={{
                                 background: theme.badgeBg,
                                 color: theme.badgeText,
-                                boxShadow: `0 1px 4px rgba(0,0,0,0.10)`,
-                              }}
-                            >
-                              {item.badge || (item.isNew ? 'NEW' : '')}
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                              }}>
+                              {item.badge || 'NEW'}
                             </span>
                           )}
                         </Link>
@@ -430,83 +353,66 @@ export default function Sidebar({
       )}
     >
       {/* Brand header */}
-      <div className="relative shrink-0 px-5 pb-3 pt-6">
-        <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r from-[var(--brand-lo)] via-[#60A5FA] to-[var(--brand-lo)] opacity-70" />
+      <div className="relative shrink-0 px-5 pb-2 pt-6">
+        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-[var(--brand-lo)] to-transparent opacity-60" />
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-3 group">
             <div className="relative">
-              <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-[var(--brand-lo)] to-[var(--brand)] p-[2px] shadow-[0_4px_16px_var(--brand-glow)] transition-all duration-300 group-hover:shadow-[0_4px_20px_var(--brand-glow-2)]">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[var(--brand-lo)] to-[var(--brand)] p-[2px] shadow-[0_4px_14px_var(--brand-glow)] transition-all duration-300 group-hover:shadow-[0_4px_18px_var(--brand-glow-2)]">
                 <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
-                  <img
-                    src="/logo.png"
-                    alt="619 Fitness"
-                    className="h-11 w-11 rounded-[8px] object-cover"
-                  />
+                  <img src="/logo.png" alt="" className="h-[38px] w-[38px] rounded-lg object-cover" />
                 </div>
               </div>
-              <motion.span
-                className="absolute -bottom-0.5 -right-0.5 flex h-[14px] w-[14px]"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
+              <motion.span className="absolute -bottom-[2px] -right-[2px] flex h-3 w-3"
+                animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 2, repeat: Infinity }}>
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-50" />
-                <span className="relative inline-flex h-[14px] w-[14px] rounded-full bg-[var(--success)] ring-2 ring-[var(--bg-white)] shadow-[0_0_6px_var(--success)]" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--success)] ring-[2px] ring-[var(--bg-white)] shadow-[0_0_5px_var(--success)]" />
               </motion.span>
             </div>
             <div>
-              <h2 className="text-[16px] font-extrabold tracking-tight text-[var(--text-primary)] leading-none">
-                <span
-                  className="bg-clip-text text-transparent"
-                  style={{ backgroundImage: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #93C5FD 100%)' }}
-                >619</span>
+              <h2 className="text-[15px] font-extrabold tracking-tight text-[var(--text-primary)] leading-none">
+                <span className="bg-clip-text text-transparent"
+                  style={{ backgroundImage: 'linear-gradient(135deg, #3B82F6, #60A5FA)' }}>619</span>
                 {' '}
-                <span className="tracking-[0.04em]">FITNESS</span>
+                <span className="tracking-[0.03em] text-[13px]">FITNESS</span>
               </h2>
-              <p className="mt-[3px] text-[10px] font-semibold text-[var(--text-muted)] tracking-[0.08em] uppercase">
-                Studio Management
+              <p className="mt-[2px] text-[9px] font-semibold text-[var(--text-muted)] tracking-[0.1em] uppercase">
+                Studio Suite
               </p>
             </div>
           </Link>
           {isMobile && (
-            <button
-              type="button"
-              aria-label="Close sidebar"
-              onClick={onMobileClose}
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--text-muted)] transition-all hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]"
-            >
-              <X size={16} />
+            <button type="button" aria-label="Close sidebar" onClick={onMobileClose}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-muted)] transition-all hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]">
+              <X size={14} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Navigation scroll area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 scrollbar-thin scrollbar-thumb-[var(--border)]">
+      {/* Nav */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-1 scrollbar-thin scrollbar-thumb-[var(--border)]">
         <SidebarNav onLinkClick={isMobile ? onMobileClose : undefined} />
       </div>
 
       {/* Footer */}
-      <div className="relative shrink-0 px-4 pb-4 pt-3">
+      <div className="relative shrink-0 px-4 pb-4 pt-2">
         <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-[10px] text-[var(--text-muted)] font-medium tracking-wider uppercase">
+        <div className="flex items-center justify-between pt-[10px]">
+          <p className="text-[9px] text-[var(--text-muted)] font-semibold tracking-[0.1em] uppercase">
             <span className="inline-flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-[7px] w-[7px]">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-40" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--success)] shadow-[0_0_6px_var(--success)]" />
+                <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-[var(--success)] shadow-[0_0_4px_var(--success)]" />
               </span>
-              Premium · v4.0
+              v4.0
             </span>
           </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={toggle}
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-              className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] text-[var(--text-muted)] transition-all hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]"
-            >
-              {theme === 'light' ? <Moon size={13} /> : <Sun size={13} />}
-            </button>
-          </div>
+          <button onClick={toggle}
+            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            className="flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[var(--text-muted)] transition-all hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]">
+            {theme === 'light' ? <Moon size={12} /> : <Sun size={12} />}
+          </button>
         </div>
       </div>
     </aside>
