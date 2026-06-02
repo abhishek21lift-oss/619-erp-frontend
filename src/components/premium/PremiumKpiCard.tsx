@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
 
-export type PremiumKpiGradient = 'blue' | 'green' | 'amber' | 'red' | 'purple';
+export type PremiumKpiGradient = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'pink' | 'violet' | 'cyan';
 
 const GRADIENT_MAP: Record<PremiumKpiGradient, string> = {
   blue: 'linear-gradient(135deg, #2563EB, #60A5FA)',
@@ -13,6 +13,9 @@ const GRADIENT_MAP: Record<PremiumKpiGradient, string> = {
   amber: 'linear-gradient(135deg, #D97706, #FBBF24)',
   red: 'linear-gradient(135deg, #DC2626, #F87171)',
   purple: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+  pink: 'linear-gradient(135deg, #DB2777, #F472B6)',
+  violet: 'linear-gradient(135deg, #6D28D9, #A78BFA)',
+  cyan: 'linear-gradient(135deg, #0891B2, #22D3EE)',
 };
 
 const GLOW_MAP: Record<PremiumKpiGradient, string> = {
@@ -21,6 +24,9 @@ const GLOW_MAP: Record<PremiumKpiGradient, string> = {
   amber: '0 8px 24px -8px rgba(245,158,11,0.45)',
   red: '0 8px 24px -8px rgba(239,68,68,0.45)',
   purple: '0 8px 24px -8px rgba(139,92,246,0.45)',
+  pink: '0 8px 24px -8px rgba(219,39,119,0.45)',
+  violet: '0 8px 24px -8px rgba(109,40,217,0.45)',
+  cyan: '0 8px 24px -8px rgba(8,145,178,0.45)',
 };
 
 function buildSparkPath(values: number[], width: number, height: number): string {
@@ -86,13 +92,18 @@ export const PremiumKpiCard = React.forwardRef<HTMLDivElement, PremiumKpiCardPro
         whileHover={{ y: -4, scale: 1.01 }}
         className={cn(
           'group relative flex flex-col overflow-hidden rounded-3xl',
-          'border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-xl',
+          'border border-[var(--border)] bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-card)] backdrop-blur-xl',
           'shadow-[0_10px_40px_rgba(0,0,0,0.08)]',
           'transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)]',
           className,
         )}
         style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}
       >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1"
+          style={{ background: gradientCss }}
+        />
         <div className="flex items-start justify-between gap-3 p-5">
           <div className="flex items-center gap-3 min-w-0">
             <span
@@ -138,8 +149,8 @@ export const PremiumKpiCard = React.forwardRef<HTMLDivElement, PremiumKpiCardPro
             >
               <defs>
                 <linearGradient id={`spark-fill-${gradient}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={gradient === 'blue' ? '#60A5FA' : gradient === 'green' ? '#4ADE80' : gradient === 'amber' ? '#FBBF24' : gradient === 'red' ? '#F87171' : '#A855F7'} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={gradient === 'blue' ? '#60A5FA' : gradient === 'green' ? '#4ADE80' : gradient === 'amber' ? '#FBBF24' : gradient === 'red' ? '#F87171' : '#A855F7'} stopOpacity={0} />
+                  <stop offset="0%" stopColor={gradient === 'blue' ? '#60A5FA' : gradient === 'green' ? '#4ADE80' : gradient === 'amber' ? '#FBBF24' : gradient === 'red' ? '#F87171' : gradient === 'purple' ? '#A855F7' : gradient === 'pink' ? '#F472B6' : gradient === 'violet' ? '#A78BFA' : '#22D3EE'} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={gradient === 'blue' ? '#60A5FA' : gradient === 'green' ? '#4ADE80' : gradient === 'amber' ? '#FBBF24' : gradient === 'red' ? '#F87171' : gradient === 'purple' ? '#A855F7' : gradient === 'pink' ? '#F472B6' : gradient === 'violet' ? '#A78BFA' : '#22D3EE'} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <motion.path
@@ -152,7 +163,7 @@ export const PremiumKpiCard = React.forwardRef<HTMLDivElement, PremiumKpiCardPro
               <motion.path
                 d={sparkPath}
                 fill="none"
-                stroke={gradient === 'blue' ? '#3B82F6' : gradient === 'green' ? '#22C55E' : gradient === 'amber' ? '#F59E0B' : gradient === 'red' ? '#EF4444' : '#8B5CF6'}
+                stroke={gradient === 'blue' ? '#3B82F6' : gradient === 'green' ? '#22C55E' : gradient === 'amber' ? '#F59E0B' : gradient === 'red' ? '#EF4444' : gradient === 'purple' ? '#8B5CF6' : gradient === 'pink' ? '#EC4899' : gradient === 'violet' ? '#8B5CF6' : '#06B6D4'}
                 strokeWidth={2}
                 strokeLinecap="round"
                 strokeLinejoin="round"

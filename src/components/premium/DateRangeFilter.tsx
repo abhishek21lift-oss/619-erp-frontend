@@ -77,7 +77,7 @@ export const DateRangeFilter = React.forwardRef<HTMLDivElement, DateRangeFilterP
                   {isActive && (
                     <motion.span
                       layoutId="active-date-pill"
-                      className="absolute inset-0 -z-10 rounded-xl bg-[var(--brand)] shadow-[0_4px_16px_var(--brand-glow)]"
+                      className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-500 shadow-[0_4px_16px_rgba(139,92,246,0.35)]"
                       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                     />
                   )}
@@ -164,7 +164,7 @@ export const DateRangeFilter = React.forwardRef<HTMLDivElement, DateRangeFilterP
               {isActive && (
                 <motion.span
                   layoutId="active-date-pill"
-                  className="absolute inset-0 -z-10 rounded-xl bg-[var(--brand)] shadow-[0_4px_16px_var(--brand-glow)]"
+                  className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-500 shadow-[0_4px_16px_rgba(139,92,246,0.35)]"
                   transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                 />
               )}

@@ -91,12 +91,16 @@ export const RevenueTrendChart = React.forwardRef<HTMLDivElement, RevenueTrendCh
         >
           <defs>
             <linearGradient id="revenue-line-stroke" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#3B82F6" />
-              <stop offset="100%" stopColor="#8B5CF6" />
+              <stop offset="0%" stopColor="#EC4899" />
+              <stop offset="25%" stopColor="#A855F7" />
+              <stop offset="50%" stopColor="#3B82F6" />
+              <stop offset="75%" stopColor="#06B6D4" />
+              <stop offset="100%" stopColor="#22C55E" />
             </linearGradient>
             <linearGradient id="revenue-area-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.30} />
-              <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0} />
+              <stop offset="0%" stopColor="#A855F7" stopOpacity={0.35} />
+              <stop offset="50%" stopColor="#3B82F6" stopOpacity={0.15} />
+              <stop offset="100%" stopColor="#06B6D4" stopOpacity={0} />
             </linearGradient>
           </defs>
 
@@ -166,9 +170,9 @@ export const RevenueTrendChart = React.forwardRef<HTMLDivElement, RevenueTrendCh
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={isActive ? 6 : 3.5}
+                  r={isActive ? 7 : 4}
                   fill="white"
-                  stroke={isActive ? '#3B82F6' : '#3B82F6'}
+                  stroke={'#A855F7'}
                   strokeWidth={isActive ? 3 : 2}
                   style={{ transition: 'r 0.15s, stroke-width 0.15s' }}
                 />

@@ -5,24 +5,33 @@ import { motion, useMotionValue, useTransform, animate, useReducedMotion } from 
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
 
-export type ClientOverviewGradient = 'blue' | 'green' | 'purple';
+export type ClientOverviewGradient = 'blue' | 'green' | 'purple' | 'pink' | 'violet' | 'cyan';
 
 const GRADIENT_MAP: Record<ClientOverviewGradient, { from: string; to: string; stroke: string; bg: string }> = {
   blue: { from: '#2563EB', to: '#60A5FA', stroke: '#3B82F6', bg: 'linear-gradient(135deg, rgba(59,130,246,0.10), rgba(96,165,250,0.02))' },
   green: { from: '#16A34A', to: '#4ADE80', stroke: '#22C55E', bg: 'linear-gradient(135deg, rgba(34,197,94,0.10), rgba(74,222,128,0.02))' },
   purple: { from: '#7C3AED', to: '#A855F7', stroke: '#8B5CF6', bg: 'linear-gradient(135deg, rgba(139,92,246,0.10), rgba(168,85,247,0.02))' },
+  pink: { from: '#DB2777', to: '#F472B6', stroke: '#EC4899', bg: 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(244,114,182,0.02))' },
+  violet: { from: '#6D28D9', to: '#A78BFA', stroke: '#8B5CF6', bg: 'linear-gradient(135deg, rgba(139,92,246,0.10), rgba(167,139,250,0.02))' },
+  cyan: { from: '#0891B2', to: '#22D3EE', stroke: '#06B6D4', bg: 'linear-gradient(135deg, rgba(6,182,212,0.10), rgba(34,211,238,0.02))' },
 };
 
 const TEXT_COLOR: Record<ClientOverviewGradient, string> = {
   blue: 'text-[var(--brand)]',
   green: 'text-[var(--success)]',
   purple: 'text-[var(--accent)]',
+  pink: 'text-pink-600 dark:text-pink-400',
+  violet: 'text-violet-600 dark:text-violet-400',
+  cyan: 'text-cyan-600 dark:text-cyan-400',
 };
 
 const ICON_BG: Record<ClientOverviewGradient, string> = {
   blue: 'bg-[var(--brand-soft)]',
   green: 'bg-[var(--success-bg)]',
   purple: 'bg-[var(--accent-soft)]',
+  pink: 'bg-pink-50 dark:bg-pink-500/10',
+  violet: 'bg-violet-50 dark:bg-violet-500/10',
+  cyan: 'bg-cyan-50 dark:bg-cyan-500/10',
 };
 
 export interface ClientOverviewCardProps {

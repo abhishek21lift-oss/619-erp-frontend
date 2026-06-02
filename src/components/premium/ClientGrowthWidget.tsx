@@ -41,28 +41,28 @@ export const ClientGrowthWidget = React.forwardRef<HTMLDivElement, ClientGrowthW
           else if (ref) ref.current = node;
         }}
         className={
-          'rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] ' +
+          'rounded-3xl border border-[var(--border)] bg-gradient-to-br from-violet-500/5 via-purple-500/5 to-fuchsia-500/5 p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] ' +
           (className ?? '')
         }
         role="img"
         aria-label="Client growth over the last 6 months"
       >
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="text-[14px] font-semibold text-[var(--text-primary)]">Client Growth</p>
-            <p className="text-[11px] text-[var(--text-muted)]">New vs lost over the last 6 months</p>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[14px] font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">Client Growth</p>
+              <p className="text-[11px] text-[var(--text-muted)]">New vs lost over the last 6 months</p>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] font-semibold text-[var(--text-muted)]">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-gradient-to-br from-violet-400 to-purple-500" />
+                New
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm bg-gradient-to-br from-rose-400 to-pink-500" />
+                Lost
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-3 text-[11px] font-semibold text-[var(--text-muted)]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-[#22C55E]" />
-              New
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-[#EF4444]" />
-              Lost
-            </span>
-          </div>
-        </div>
         <div style={{ height }}>
           <svg
             width="100%"
@@ -71,6 +71,16 @@ export const ClientGrowthWidget = React.forwardRef<HTMLDivElement, ClientGrowthW
             preserveAspectRatio="none"
             className="block"
           >
+            <defs>
+              <linearGradient id="growth-new" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#A78BFA" />
+                <stop offset="100%" stopColor="#7C3AED" />
+              </linearGradient>
+              <linearGradient id="growth-lost" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F472B6" />
+                <stop offset="100%" stopColor="#DB2777" />
+              </linearGradient>
+            </defs>
             {[0.25, 0.5, 0.75, 1].map((p, i) => {
               const y = padding.top + innerH - innerH * p;
               return (
@@ -102,7 +112,7 @@ export const ClientGrowthWidget = React.forwardRef<HTMLDivElement, ClientGrowthW
                     x={x}
                     width={barW}
                     rx={6}
-                    fill="#22C55E"
+                    fill="url(#growth-new)"
                     initial={prefersReducedMotion ? false : { y: baseY, height: 0 }}
                     animate={{ y: baseY - totalH, height: newH }}
                     transition={{ duration: 0.7, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
@@ -111,7 +121,7 @@ export const ClientGrowthWidget = React.forwardRef<HTMLDivElement, ClientGrowthW
                     x={x}
                     width={barW}
                     rx={6}
-                    fill="#EF4444"
+                    fill="url(#growth-lost)"
                     initial={prefersReducedMotion ? false : { y: baseY - newH, height: 0 }}
                     animate={{ y: baseY - newH - lostH, height: lostH }}
                     transition={{ duration: 0.7, delay: i * 0.08 + 0.05, ease: [0.16, 1, 0.3, 1] }}

@@ -12,7 +12,8 @@ export type ActivityCardGradient =
   | 'red'
   | 'purple'
   | 'cyan'
-  | 'pink';
+  | 'pink'
+  | 'violet';
 
 const GRADIENT_MAP: Record<ActivityCardGradient, string> = {
   blue: 'linear-gradient(135deg, #2563EB, #60A5FA)',
@@ -22,6 +23,7 @@ const GRADIENT_MAP: Record<ActivityCardGradient, string> = {
   purple: 'linear-gradient(135deg, #7C3AED, #A855F7)',
   cyan: 'linear-gradient(135deg, #0891B2, #22D3EE)',
   pink: 'linear-gradient(135deg, #DB2777, #F472B6)',
+  violet: 'linear-gradient(135deg, #6D28D9, #A78BFA)',
 };
 
 const SOFT_BG: Record<ActivityCardGradient, string> = {
@@ -32,6 +34,7 @@ const SOFT_BG: Record<ActivityCardGradient, string> = {
   purple: 'bg-[var(--accent-soft)]',
   cyan: 'bg-cyan-50 dark:bg-cyan-500/10',
   pink: 'bg-pink-50 dark:bg-pink-500/10',
+  violet: 'bg-violet-50 dark:bg-violet-500/10',
 };
 
 const TEXT_COLOR: Record<ActivityCardGradient, string> = {
@@ -42,6 +45,7 @@ const TEXT_COLOR: Record<ActivityCardGradient, string> = {
   purple: 'text-[var(--accent)]',
   cyan: 'text-cyan-600 dark:text-cyan-400',
   pink: 'text-pink-600 dark:text-pink-400',
+  violet: 'text-violet-600 dark:text-violet-400',
 };
 
 export interface ActivityCardProps {

@@ -51,19 +51,20 @@ export const MonthlyTargetGauge = React.forwardRef<HTMLDivElement, MonthlyTarget
       <div
         ref={ref}
         className={
-          'flex flex-col items-center gap-3 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] ' +
+          'flex flex-col items-center gap-3 rounded-3xl border border-[var(--border)] bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-yellow-500/5 p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] ' +
           (className ?? '')
         }
       >
-        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+        <p className="text-[11px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
           Monthly Target
         </p>
         <div className="relative" style={{ width: size, height: size }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
             <defs>
               <linearGradient id="target-grad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor={overshoot ? '#22C55E' : '#8B5CF6'} />
-                <stop offset="100%" stopColor={overshoot ? '#4ADE80' : '#60A5FA'} />
+                <stop offset="0%" stopColor={overshoot ? '#10B981' : '#A78BFA'} />
+                <stop offset="50%" stopColor={overshoot ? '#22C55E' : '#F59E0B'} />
+                <stop offset="100%" stopColor={overshoot ? '#4ADE80' : '#F97316'} />
               </linearGradient>
             </defs>
             <circle
@@ -84,11 +85,11 @@ export const MonthlyTargetGauge = React.forwardRef<HTMLDivElement, MonthlyTarget
               strokeLinecap="round"
               strokeDasharray={circumference}
               style={{ strokeDashoffset: dashOffset }}
-              filter="drop-shadow(0 4px 12px rgba(139,92,246,0.35))"
+              filter="drop-shadow(0 4px 16px rgba(245,158,11,0.4))"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-[15px] font-extrabold leading-none tracking-tight tabular-nums text-[var(--text-primary)]">
+            <span className="text-[15px] font-extrabold leading-none tracking-tight tabular-nums bg-gradient-to-br from-amber-400 to-orange-500 bg-clip-text text-transparent">
               {formatINR(current)}
             </span>
             <span className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -97,7 +98,7 @@ export const MonthlyTargetGauge = React.forwardRef<HTMLDivElement, MonthlyTarget
           </div>
         </div>
         <p className="text-[12px] font-semibold text-[var(--text-muted)]">
-          <span className={overshoot ? 'text-[var(--success)]' : 'text-[var(--accent)]'}>
+          <span className={overshoot ? 'text-emerald-400' : 'text-amber-400'}>
             {Math.round(display)}%
           </span>{' '}
           of target
