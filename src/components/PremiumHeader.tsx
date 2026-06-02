@@ -634,7 +634,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       <style>{`
         @keyframes brand-glow {
           0%,100% { box-shadow: 0 0 0 0 transparent; }
-          50%      { box-shadow: 0 0 20px 4px rgba(255,23,68,0.20); }
+          50%      { box-shadow: 0 0 20px 4px rgba(59,130,246,0.30); }
         }
         @keyframes pulse-ring {
           0%   { box-shadow: 0 0 0 0 currentColor; opacity:0.8; }
@@ -904,11 +904,10 @@ export default function PremiumHeader({ onMenuClick }: Props) {
               >
                 <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full"
                   style={{
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border)',
+                    background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
                   }}
                 >
-                  <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-[var(--text-primary)]">{initials}</span>
+                  <span className="flex h-full w-full items-center justify-center text-[10px] font-black text-white">{initials}</span>
                 </div>
                 <div className="hidden text-left xl:block">
                   <div className="max-w-[90px] truncate text-[11.5px] font-semibold leading-none" style={{ color: 'var(--text-primary)' }}>{accountLabel}</div>

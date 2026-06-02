@@ -166,14 +166,17 @@ export default function AppShell({ children, title }: AppShellProps) {
             {/* Premium colorful search bar */}
             <div ref={searchRef} className="relative flex-1 max-w-[520px]">
               <div className="relative">
-                <div className="pointer-events-none absolute inset-0 rounded-xl border border-[var(--border)] p-[1px]">
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-xl p-[1.5px]"
+                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #06B6D4 100%)' }}
+                >
                   <div className="h-full w-full rounded-xl bg-[var(--bg-base)]" />
                 </div>
                 <div className="flex items-center">
                   <Search
                     size={16}
-                    className="absolute left-3.5 z-10 text-[var(--text-muted)] hidden sm:block"
-                    strokeWidth={1.5}
+                    className="absolute left-3.5 z-10 text-[var(--brand)] hidden sm:block"
+                    strokeWidth={1.8}
                   />
                   <input
                     type="text"
@@ -321,7 +324,10 @@ export default function AppShell({ children, title }: AppShellProps) {
                 onClick={() => setProfileOpen(s => !s)}
                 className="flex items-center gap-2 border-l border-[var(--border)] pl-3 transition-colors hover:opacity-80"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--brand-lo)] shadow-[0_2px_6px_var(--brand-glow)] overflow-hidden">
+                <div
+                  className="flex h-7 w-7 items-center justify-center rounded-lg shadow-[0_2px_6px_var(--brand-glow)] overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
+                >
                   <img src="/logo.png" alt="619" className="h-5 w-5 object-contain" />
                 </div>
                 <div className="hidden sm:block text-left">

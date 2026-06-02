@@ -17,7 +17,7 @@ interface PremiumButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonE
 
 const TONES: Record<Tone, { bg: string; hover: string; text: string; shadow: string }> = {
   primary: {
-    bg: 'bg-[var(--danger)]',
+    bg: 'bg-[var(--brand)]',
     hover: 'hover:brightness-110',
     text: 'text-white',
     shadow: 'shadow-[0_8px_24px_var(--brand-glow)] hover:shadow-[0_12px_32px_var(--brand-glow-2)]',

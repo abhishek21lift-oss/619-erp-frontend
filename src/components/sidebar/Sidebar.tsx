@@ -29,18 +29,55 @@ const ICON_MAP: Record<string, React.ElementType> = {
   CalendarCheck, Package, Banknote,
 };
 
-const MONOCHROME_THEME = {
-  gradient: 'var(--brand-lo)',
-  gradientHover: 'var(--brand-lo)',
-  borderColor: 'var(--border)',
-  iconBg: 'var(--brand-lo)',
-  iconColor: 'var(--text-inverse)',
-  activeBg: 'var(--brand-lo)',
-  subBorder: 'var(--border-2)',
-  subActiveBg: 'var(--brand-soft)',
-  badgeBg: 'var(--brand-lo)',
-  badgeText: 'var(--text-inverse)',
+type GroupTheme = {
+  gradient: string;
+  gradientHover: string;
+  borderColor: string;
+  iconBg: string;
+  iconColor: string;
+  activeBg: string;
+  subBorder: string;
+  subActiveBg: string;
+  badgeBg: string;
+  badgeText: string;
 };
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+};
+
+const buildTheme = (color: string): GroupTheme => ({
+  gradient: `linear-gradient(135deg, ${color} 0%, ${hexToRgba(color, 0.85)} 100%)`,
+  gradientHover: hexToRgba(color, 0.08),
+  borderColor: color,
+  iconBg: color,
+  iconColor: '#ffffff',
+  activeBg: color,
+  subBorder: hexToRgba(color, 0.40),
+  subActiveBg: hexToRgba(color, 0.12),
+  badgeBg: color,
+  badgeText: '#ffffff',
+});
+
+const GROUP_THEMES: Record<string, GroupTheme> = {
+  'lead-crm':            buildTheme('#F59E0B'),
+  'members':             buildTheme('#22C55E'),
+  'attendance':          buildTheme('#06B6D4'),
+  'personal-training':   buildTheme('#8B5CF6'),
+  'trainer-management':  buildTheme('#F97316'),
+  'session-management':  buildTheme('#0EA5E9'),
+  'progress-tracking':   buildTheme('#EC4899'),
+  'memberships':         buildTheme('#6366F1'),
+  'finance':             buildTheme('#14B8A6'),
+  'communication':       buildTheme('#A855F7'),
+  'reports':             buildTheme('#64748B'),
+};
+
+const DEFAULT_THEME = buildTheme('#3B82F6');
 
 function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const { user } = useAuth();
@@ -160,7 +197,7 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
         const GroupIcon = ICON_MAP[group.icon] || LayoutDashboard;
         const open = expanded[group.id] ?? anyChildActive(group.items);
         const hasActiveChild = anyChildActive(group.items);
-        const theme = MONOCHROME_THEME;
+        const theme = GROUP_THEMES[group.id] || DEFAULT_THEME;
 
         return (
           <div key={group.id} className="relative">
@@ -407,7 +444,10 @@ export default function Sidebar({
             </div>
             <div>
               <h2 className="text-[16px] font-extrabold tracking-tight text-[var(--text-primary)] leading-none">
-                <span className="text-[var(--brand)]">619</span>
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{ backgroundImage: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
+                >619</span>
                 {' '}FITNESS
               </h2>
               <p className="mt-0.5 text-[11px] font-semibold text-[var(--text-muted)] tracking-[0.06em] uppercase">
