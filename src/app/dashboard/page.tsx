@@ -196,7 +196,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           format={formatINRShort}
           trend={revenueSpark}
           index={1}
-          onClick={() => router.push('/payments')}
+          onClick={() => router.push('/finance/collected-payments')}
         />
         <PremiumKpiCard
           label="Pending Payments"

@@ -97,7 +97,7 @@ export default function NotificationBell() {
             tone: 'success',
             title: `${p.client_name || 'A member'} just paid ₹${Number(p.amount).toLocaleString('en-IN')}`,
             body: `${p.method || 'Payment'} · ${p.date || 'today'}`,
-            href: '/payments',
+            href: '/finance/collected-payments',
             createdAt: now - 60_000,
           });
         }

@@ -67,7 +67,7 @@ const NAV_ROW1: NavGroup[] = [
     id: 'accounts', label: 'Accounts',
     role: 'admin',
     children: [
-      { label: 'Payments', href: '/payments' },
+      { label: 'Collected Payments', href: '/finance/collected-payments' },
       { label: 'Outstanding Dues', href: '/finance/dues' },
       { label: 'Collection Report', href: '/finance/collection' },
       { label: 'Profit & Loss', href: '/finance/pl' },

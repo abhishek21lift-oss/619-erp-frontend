@@ -18,7 +18,7 @@ export default function BillingSettingsPage() {
             </div>
           ))}
         </div>
-        <button className="btn btn-primary btn-sm" style={{marginTop:16}} onClick={()=>router.push('/payments')}>View Payments →</button>
+        <button className="btn btn-primary btn-sm" style={{marginTop:16}} onClick={()=>router.push('/finance/collected-payments')}>View Payments →</button>
       </div>
     </div>
   </AppShell></Guard>;

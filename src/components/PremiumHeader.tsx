@@ -72,7 +72,7 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Membership Sales', href: '/memberships/subscriptions', description: 'Plan conversions' },
       ]},
       { heading: 'Finance', items: [
-        { label: 'POS', href: '/payments', description: 'Point of sale terminal' },
+        { label: 'Collected Payments', href: '/finance/collected-payments', description: 'All payment transactions' },
         { label: 'Payments', href: '/finance/collection', description: 'Transaction ledger' },
         { label: 'Invoices', href: '/finance/invoices', description: 'Billing records' },
         { label: 'Promotions', href: '/engagement/offers', description: 'Offers & discounts' },

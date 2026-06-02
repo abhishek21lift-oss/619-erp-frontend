@@ -149,7 +149,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'IndianRupee',
     items: [
       { href: '/finance/record-payment',  label: 'Record Payment',     icon: 'Wallet', role: 'admin' },
-      { href: '/payments',                label: 'Payments',           icon: 'Banknote', role: 'admin' },
+      { href: '/finance/collected-payments', label: 'Collected Payments', icon: 'Banknote', role: 'admin' },
       { href: '/finance/invoices',        label: 'Invoices',           icon: 'FileText', role: 'admin' },
       { href: '/finance/dues',            label: 'Outstanding Dues',   icon: 'AlertCircle',  badge: 'duesCount', role: 'admin' },
       { href: '/finance/pl',              label: 'Profit & Loss',      icon: 'BarChart3',    role: 'admin' },
