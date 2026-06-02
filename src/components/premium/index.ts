@@ -6,4 +6,3 @@ export { RevenueCard } from './RevenueCard';
 export { PremiumTable } from './PremiumTable';
 export { AnalyticsPanel } from './AnalyticsPanel';
 export { PremiumModal } from './PremiumModal';
-export { DashboardAnalytics } from './DashboardAnalytics';
