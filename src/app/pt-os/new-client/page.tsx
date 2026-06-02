@@ -108,7 +108,7 @@ function FloatInput({
             transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {label}{required && ' *'}
+          {label}
         </label>
         {multiline ? (
           <textarea
