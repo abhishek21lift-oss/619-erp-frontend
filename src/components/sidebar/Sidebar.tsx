@@ -252,16 +252,6 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                             )}
                           </div>
                           <span className="truncate relative z-10 text-[12px]">{item.label}</span>
-                          {(item.badge || item.isNew) && (
-                            <span className="ml-auto rounded-full px-[7px] py-[2px] text-[6.5px] font-extrabold uppercase tracking-wider shrink-0 relative z-10"
-                              style={{
-                                background: theme.badgeBg,
-                                color: theme.badgeText,
-                                boxShadow: `0 1px 4px ${hexToRgba(theme.borderColor, 0.25)}`,
-                              }}>
-                              {item.badge || 'NEW'}
-                            </span>
-                          )}
                         </Link>
                       );
                     })}
