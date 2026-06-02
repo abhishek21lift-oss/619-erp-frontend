@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Moon, Sun, X, LogOut, Settings, User } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { useTheme } from '@/components/ThemeProvider';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +10,7 @@ import { cn } from '@/components/ui/cn';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
 import {
   LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
-  ClipboardList, ScanFace, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
+  ClipboardList, ScanFace, User, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
   LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
   List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
@@ -283,8 +282,6 @@ export default function Sidebar({
   variant = 'desktop',
 }: SidebarProps) {
   const isMobile = variant === 'mobile';
-  const { theme, toggle } = useTheme();
-  const { user, logout } = useAuth();
 
   return (
     <aside
@@ -350,54 +347,8 @@ export default function Sidebar({
         <SidebarNav onLinkClick={isMobile ? onMobileClose : undefined} />
       </div>
 
-      {/* User profile + footer */}
-      <div className="relative shrink-0 px-3 pb-4 pt-3">
-        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
-
-        {/* User profile card */}
-        <div className="mt-3 mb-3 flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 hover:bg-[var(--brand-soft)] cursor-pointer group/profile"
-          onClick={() => {}}>
-          <div className="relative shrink-0">
-            <div className="h-[34px] w-[34px] rounded-lg bg-gradient-to-br from-[var(--brand-lo)] to-[var(--brand)] flex items-center justify-center text-white text-xs font-bold shadow-[0_2px_8px_var(--brand-glow)]">
-              {(user?.name || 'U').charAt(0).toUpperCase()}
-            </div>
-            <span className="absolute -bottom-[1px] -right-[1px] h-[10px] w-[10px] rounded-full bg-[var(--success)] ring-[2px] ring-[var(--bg-white)]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-bold text-[var(--text-primary)] truncate leading-tight">{user?.name || 'User'}</p>
-            <p className="text-[9px] font-medium text-[var(--text-muted)] truncate tracking-wide uppercase">{user?.role || 'admin'}</p>
-          </div>
-          <Link href="/profile"
-            className="flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[var(--text-muted)] transition-all opacity-0 group-hover/profile:opacity-100 hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]">
-            <Settings size={12} />
-          </Link>
-        </div>
-
-        {/* Footer row */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-[6px] w-[6px]">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-50" />
-              <span className="relative inline-flex h-[6px] w-[6px] rounded-full bg-[var(--success)] shadow-[0_0_4px_var(--success)]" />
-            </span>
-            <span className="text-[9px] font-bold text-[var(--text-muted)] tracking-[0.08em] uppercase">v4.0</span>
-            <span className="text-[9px] text-[var(--text-disabled)]">·</span>
-            <span className="text-[9px] font-medium text-[var(--text-disabled)]">Premium</span>
-          </div>
-          <div className="flex items-center gap-[2px]">
-            <button onClick={toggle}
-              aria-label="Toggle theme"
-              className="flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[var(--text-muted)] transition-all hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]">
-              {theme === 'light' ? <Moon size={11} /> : <Sun size={11} />}
-            </button>
-            <button onClick={() => logout?.()}
-              aria-label="Logout"
-              className="flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[var(--text-muted)] transition-all hover:bg-red-50 hover:text-red-500">
-              <LogOut size={11} />
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Spacer */}
+      <div className="shrink-0 px-3 pb-3 pt-2" />
     </aside>
   );
 }
