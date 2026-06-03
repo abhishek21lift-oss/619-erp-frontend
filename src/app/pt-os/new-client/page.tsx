@@ -298,7 +298,7 @@ function NewClientWizard() {
     if (form.transformationGoals.length > 1000) { setError('Transformation goals must be under 1000 characters.'); return; }
     setSaving(true);
     try {
-      const created = await api.clients.create({
+      const res = await api.pt.create({
         name: form.name.trim(),
         email: form.email.trim() || undefined,
         mobile: form.phone.trim() || undefined,
@@ -308,11 +308,12 @@ function NewClientWizard() {
         weight: form.weight ? Number(form.weight) : undefined,
         notes: form.transformationGoals,
       } as Record<string, unknown>);
+      const created = (res as any)?.data;
       setDone(true);
       setShowSuccess(true);
-      if (photoPreview && (created as any)?.id) {
+      if (photoPreview && created?.id) {
         try {
-          await api.clients.uploadPhoto((created as any).id, photoPreview);
+          await api.clients.uploadPhoto(created.id, photoPreview);
         } catch {} // non-blocking
       }
     } catch (err: any) {

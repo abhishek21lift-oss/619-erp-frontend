@@ -958,6 +958,8 @@ export const api = {
       http<{ data: unknown[]; total: number }>(`/api/pt-os/clients${buildQs(params)}`),
     client: (id: string) =>
       http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/pt-os/clients', { method: 'POST', body: JSON.stringify(data) }),
     balanceSheet: (params?: { trainer_id?: string }) =>
       http<{ data: unknown[]; total: number; total_outstanding: number }>(
         `/api/pt-os/balance-sheet${buildQs(params)}`,
