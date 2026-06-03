@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  LayoutDashboard, RefreshCw,
+  RefreshCw,
   CheckCircle, Clock, UserPlus, Users, DollarSign, Activity,
   UserPlus as UserPlusIcon, ScanFace, PlusCircle, Sparkles,
   TrendingUp,
@@ -65,13 +65,6 @@ function DashboardContent() {
 
   const headerLeft = (
     <>
-      <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-500 shadow-[0_4px_12px_rgba(236,72,153,0.35)]">
-        <LayoutDashboard size={16} strokeWidth={2} className="text-white" />
-        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
-      </div>
-      <h1 className="text-[15px] font-extrabold tracking-[-0.02em] bg-gradient-to-r from-pink-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent leading-none whitespace-nowrap">
-        Dashboard
-      </h1>
       <button
         type="button"
         onClick={refresh}
