@@ -277,6 +277,9 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
     return () => el.removeEventListener('keydown', handler);
   }, [open]);
 
+  const progressPct = Math.min(100, (sampleCount / SAMPLES_REQUIRED) * 100);
+  const isWorking = state === 'loading' || state === 'saving';
+
   if (!open) return null;
   return (
     <div
