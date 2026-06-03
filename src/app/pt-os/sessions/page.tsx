@@ -87,7 +87,7 @@ export default function PTSessionsPage() {
             client_name: s.client_name || '',
             client_mobile: '',
             trainer_id: s.trainer_id,
-            session_date: s.date,
+            session_date: s.session_date ?? '',
             session_time: s.start_time || '',
             status: s.status,
             notes: s.notes,

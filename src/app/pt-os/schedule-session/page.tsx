@@ -152,7 +152,7 @@ function SchedulePageContent() {
         id: String(s.id ?? ''),
         client: s.client_name ?? '',
         trainer: (trainerArr.find((t: any) => t.id === s.trainer_id)?.name) ?? s.trainer_id ?? '',
-        date: s.date ?? '',
+        date: s.session_date ?? '',
         time: s.start_time ?? '',
         duration: 60,
         type: s.title ?? '1-on-1',
