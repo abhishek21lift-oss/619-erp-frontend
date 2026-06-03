@@ -30,7 +30,7 @@ const QUICK_ACTIONS = [
   { href: '/clients/new', label: 'Add Member', icon: PlusCircle, gradient: 'linear-gradient(135deg, #EC4899, #FB7185)' },
   { href: '/sales/enquiry', label: 'New Lead', icon: UserPlusIcon, gradient: 'linear-gradient(135deg, #6D28D9, #A78BFA)' },
   { href: '/checkin', label: 'Check-In', icon: ScanFace, gradient: 'linear-gradient(135deg, #10B981, #34D399)' },
-  { href: '/finance/record-payment', label: 'Record Payment', icon: DollarSign, gradient: 'linear-gradient(135deg, #D97706, #FBBF24)' },
+  { href: '/finance/record-payment', label: 'Record Payment', icon: IndianRupee, gradient: 'linear-gradient(135deg, #D97706, #FBBF24)' },
   { href: '/pt-os', label: 'PT OS', icon: Sparkles, gradient: 'linear-gradient(135deg, #0891B2, #22D3EE)' },
 ];
 
