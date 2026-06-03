@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useId, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Check, User, Mail, Phone, Calendar, Hash,
@@ -19,7 +19,7 @@ import { api } from '@/lib/api';
 ──────────────────────────────────────────────────────────────────── */
 type StepId = 1 | 2 | 3 | 4;
 
-type Goal = 'Weight Loss' | 'Muscle Gain' | 'Endurance' | 'General Fitness';
+type Goal = 'Weight Loss' | 'Muscle Gain' | 'Endurance' | 'General Fitness' | 'Body Recomposition' | 'Flexibility & Mobility' | 'Sports Performance' | 'Fat Loss & Toning';
 
 type PTpackage = 'Starter' | 'Standard' | 'Premium' | 'Elite';
 
@@ -55,7 +55,7 @@ const STEPS = [
 
 const GENDERS = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
 
-const GOALS: Goal[] = ['Weight Loss', 'Muscle Gain', 'Endurance', 'General Fitness'];
+const GOALS: Goal[] = ['Weight Loss', 'Muscle Gain', 'Endurance', 'General Fitness', 'Body Recomposition', 'Flexibility & Mobility', 'Sports Performance', 'Fat Loss & Toning'];
 
 const HEALTH_CONDITIONS = [
   'Hypertension', 'Diabetes', 'Asthma', 'Heart Condition',
@@ -77,68 +77,7 @@ function initForm(): FormData {
 /* ────────────────────────────────────────────────────────────────────
    FLOAT INPUT
 ──────────────────────────────────────────────────────────────────── */
-function FloatInput({
-  label, type = 'text', value, onChange, placeholder = ' ', suffix, required, multiline,
-}: {
-  label: string; type?: string; value: string;
-  onChange: (v: string) => void; placeholder?: string;
-  suffix?: React.ReactNode; required?: boolean; multiline?: boolean;
-}) {
-  const id = useId();
-  const [focused, setFocused] = useState(false);
-  const lifted = focused || value.length > 0;
-  return (
-    <div className="relative">
-      <div
-        className="relative overflow-hidden rounded-[13px] transition-all"
-        style={{
-          background: focused ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: focused ? '1.5px solid rgba(220,38,38,0.40)' : '1.5px solid rgba(15,23,42,0.09)',
-          boxShadow: focused ? '0 0 0 3px rgba(220,38,38,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
-          transition: 'all 180ms cubic-bezier(0.16,1,0.3,1)',
-        }}
-      >
-        <label
-          htmlFor={id}
-          className="pointer-events-none absolute left-4 font-[500] transition-all"
-          style={{
-            top: lifted ? 8 : 18,
-            fontSize: lifted ? 10 : 13,
-            color: lifted ? (focused ? '#dc2626' : 'rgb(148,163,184)') : 'rgb(148,163,184)',
-            transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
-          }}
-        >
-          {label}
-        </label>
-        {multiline ? (
-          <textarea
-            id={id}
-            value={value}
-            placeholder={lifted ? placeholder : ''}
-            onChange={(e) => onChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className="w-full bg-transparent px-4 pb-3 pt-7 text-[13.5px] font-[500] outline-none resize-none"
-            style={{ color: 'rgb(15,23,42)', caretColor: '#dc2626', minHeight: 80 }}
-          />
-        ) : (
-          <input
-            id={id}
-            type={type}
-            value={value}
-            placeholder={lifted ? placeholder : ''}
-            onChange={(e) => onChange(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className="w-full bg-transparent px-4 pb-3 pt-7 text-[13.5px] font-[500] outline-none"
-            style={{ color: 'rgb(15,23,42)', caretColor: '#dc2626' }}
-          />
-        )}
-        {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}
-      </div>
-    </div>
-  );
-}
+import FloatInput from '@/components/ui/FloatInput';
 
 /* ────────────────────────────────────────────────────────────────────
    PREMIUM SELECT
@@ -359,15 +298,7 @@ function NewClientWizard() {
     }));
   };
 
-  const canNext = useMemo(() => {
-    if (step === 1) return form.name && form.email && form.phone;
-    if (step === 2) return form.goal && form.height && form.weight;
-    if (step === 3) return form.trainer && form.ptPackage && form.frequency;
-    return true;
-  }, [step, form]);
-
   const handleNext = () => {
-    if (!canNext) { setError('Please fill in all required fields.'); return; }
     setError('');
     setStep((s) => Math.min(s + 1, 4) as StepId);
   };
@@ -524,11 +455,11 @@ function NewClientWizard() {
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <FloatInput label="Full Name" value={form.name} onChange={(v) => set('name', v)} required />
-                          <FloatInput label="Email Address" type="email" value={form.email} onChange={(v) => set('email', v)} required />
+                          <FloatInput label="Full Name" value={form.name} onChange={(v) => set('name', v)} />
+                          <FloatInput label="Email Address" type="email" value={form.email} onChange={(v) => set('email', v)} />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <FloatInput label="Phone Number" type="tel" value={form.phone} onChange={(v) => set('phone', v)} required />
+                          <FloatInput label="Phone Number" type="tel" value={form.phone} onChange={(v) => set('phone', v)} />
                           <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={(v) => set('dob', v)} />
                           <div>
                             <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Gender</p>
@@ -604,8 +535,8 @@ function NewClientWizard() {
                         {/* Body Measurements */}
                         <p className="mb-2 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Body Measurements</p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <FloatInput label="Height (cm)" type="number" value={form.height} onChange={(v) => set('height', v)} required />
-                          <FloatInput label="Weight (kg)" type="number" value={form.weight} onChange={(v) => set('weight', v)} required />
+                          <FloatInput label="Height (cm)" type="number" value={form.height} onChange={(v) => set('height', v)} />
+                          <FloatInput label="Weight (kg)" type="number" value={form.weight} onChange={(v) => set('weight', v)} />
                           <FloatInput label="Body Fat %" type="number" value={form.bodyFat} onChange={(v) => set('bodyFat', v)} />
                         </div>
 
@@ -850,7 +781,7 @@ function NewClientWizard() {
                 </div>
                 <div className="flex gap-3">
                   {step < 4 ? (
-                    <PremiumButton tone="primary" icon={<ChevronRight size={14} />} onClick={handleNext} disabled={!canNext}>
+                    <PremiumButton tone="primary" icon={<ChevronRight size={14} />} onClick={handleNext}>
                       Next Step
                     </PremiumButton>
                   ) : (
