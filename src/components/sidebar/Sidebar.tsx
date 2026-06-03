@@ -131,9 +131,6 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
           <LayoutDashboard size={15} strokeWidth={isActive('/dashboard') ? 2.5 : 1.8}
             className={cn('transition-colors duration-300', isActive('/dashboard') ? 'text-white' : 'text-[var(--sidebar-icon)] group-hover:text-[var(--brand)]')} />
         </div>
-        <span className={cn('relative z-10 text-[13px]', isActive('/dashboard') && 'tracking-wide')}>
-          Dashboard
-        </span>
         {isActive('/dashboard') && (
           <div className="ml-auto flex gap-[3px] items-center relative z-10">
             {[0, 1, 2].map(i => (
