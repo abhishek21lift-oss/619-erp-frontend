@@ -239,6 +239,7 @@ function NewClientWizard() {
 
   /* ── API State ── */
   const [trainers, setTrainers] = useState<string[]>([]);
+  const [trainerIdMap, setTrainerIdMap] = useState<Record<string, string>>({});
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
 
@@ -247,11 +248,11 @@ function NewClientWizard() {
       setDataLoading(true);
       setDataError('');
       const trainersRes = await api.trainers.list();
-      setTrainers(
-        Array.isArray(trainersRes)
-          ? trainersRes.map((t: any) => t.name ?? t)
-          : [],
-      );
+      const arr = Array.isArray(trainersRes) ? trainersRes : [];
+      setTrainers(arr.map((t: any) => t.name ?? t));
+      const map: Record<string, string> = {};
+      arr.forEach((t: any) => { if (t.name && t.id) map[t.name] = t.id; });
+      setTrainerIdMap(map);
     } catch (err: any) {
       setDataError(err?.message || 'Failed to load data');
       setTrainers([]);
@@ -296,29 +297,30 @@ function NewClientWizard() {
     try {
       const created = await api.clients.create({
         name: form.name,
-        email: form.email,
-        phone: form.phone,
-        dob: form.dob,
+        email: form.email || undefined,
+        mobile: form.phone || undefined,
+        dob: form.dob || undefined,
         gender: form.gender,
-        goal: form.goal,
-        height: Number(form.height),
-        weight: Number(form.weight),
-        bodyFat: Number(form.bodyFat),
-        healthConditions: form.healthConditions,
-        injuries: form.injuries,
-        trainer_name: form.trainer,
-        frequency: form.frequency,
+        trainer_id: trainerIdMap[form.trainer] || undefined,
+        weight: form.weight ? Number(form.weight) : undefined,
         notes: form.transformationGoals,
       } as Record<string, unknown>);
       setDone(true);
       setShowSuccess(true);
-      if (photoPreview && created?.id) {
+      if (photoPreview && (created as any)?.id) {
         try {
-          await api.clients.uploadPhoto(created.id, photoPreview);
+          await api.clients.uploadPhoto((created as any).id, photoPreview);
         } catch {} // non-blocking
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to create client');
+      const payload = err?.payload;
+      const fields = payload?.error?.fields;
+      if (fields && typeof fields === 'object') {
+        const msgs = Object.entries(fields).map(([k, v]) => `${k}: ${v}`).join('; ');
+        setError(msgs);
+      } else {
+        setError(err?.message || 'Failed to create client');
+      }
     } finally {
       setSaving(false);
     }
