@@ -244,7 +244,19 @@ function SchedulePageContent() {
       clientAvatar: initials(data.client),
     };
     try {
-      // Session creation not available via API yet — using local state
+      const trainerObj = trainerList.find((t) => t.name === data.trainer);
+      if (trainerObj) {
+        await api.trainers.createSession({
+          trainer_id: trainerObj.id,
+          client_id: data.client,
+          date: data.date,
+          time: data.time,
+          duration: data.duration,
+          type: data.type,
+          notes: data.notes,
+          recurring: data.recurring,
+        });
+      }
     } catch {}
     setSessions((prev) => [newSession, ...prev]);
     setShowCreateModal(false);

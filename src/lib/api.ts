@@ -237,6 +237,34 @@ export type TrainerSummaryRow = {
   [key: string]: unknown;
 };
 
+export type PtClientBase = {
+  id: string;
+  client_id: string;
+  name: string;
+  mobile: string;
+  trainer_name: string;
+  package_type: string;
+  final_amount: number;
+  paid_amount: number;
+  balance_amount: number;
+  pt_end_date: string;
+  days_left: number;
+  status: string;
+};
+
+export type PtPackage = {
+  id: string;
+  name: string;
+  session_count: number;
+  duration_days: number;
+  price: number;
+  goal_type?: string;
+  description?: string;
+  is_active?: boolean;
+  created_at?: string;
+  [key: string]: unknown;
+};
+
 // Core fetch is handled by http() from ./http
 // This file provides the typed `api` namespace facade over http()
 
@@ -427,6 +455,12 @@ export const api = {
       http(`/api/trainers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => http(`/api/trainers/${id}`, { method: 'DELETE' }),
     sessions: (id: string) => http(`/api/trainers/${id}/sessions`),
+    createSession: (data: {
+      trainer_id: string; client_id: string; date: string; time: string;
+      duration: number; type?: string; notes?: string; recurring?: boolean;
+    }) => http<{ data: unknown }>('/api/trainers/sessions', {
+      method: 'POST', body: JSON.stringify(data),
+    }),
   },
 
   expenses: {
@@ -924,40 +958,10 @@ export const api = {
       http<{ data: unknown[]; total: number }>(`/api/pt-os/clients${buildQs(params)}`),
     client: (id: string) =>
       http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
-    createClient: (data: Record<string, unknown>) =>
-      http<{ data: unknown }>('/api/pt-os/clients', {
-        method: 'POST', body: JSON.stringify(data),
-      }),
-    updateClient: (id: string, data: Record<string, unknown>) =>
-      http<{ data: unknown }>(`/api/pt-os/clients/${id}`, {
-        method: 'PATCH', body: JSON.stringify(data),
-      }),
     balanceSheet: (params?: { trainer_id?: string }) =>
       http<{ data: unknown[]; total: number; total_outstanding: number }>(
         `/api/pt-os/balance-sheet${buildQs(params)}`,
       ),
-    plans: () =>
-      http<{ data: unknown[] }>('/api/pt-os/plans'),
-    createPlan: (data: { name: string; duration_months: number; base_amount: number; description?: string }) =>
-      http<{ data: unknown }>('/api/pt-os/plans', {
-        method: 'POST', body: JSON.stringify(data),
-      }),
-    commissions: (params?: { trainer_id?: string }) =>
-      http<{ data: unknown[] }>(`/api/pt-os/commissions${buildQs(params)}`),
-    calculateCommissions: (month?: string) =>
-      http<{ data: { count: number; total: number } }>('/api/pt-os/commissions/calculate', {
-        method: 'POST', body: JSON.stringify({ month }),
-      }),
-    payouts: (params?: { month?: string }) =>
-      http<{ data: unknown[]; month: string }>(`/api/pt-os/payouts${buildQs(params)}`),
-    createPayout: (data: { trainer_id: string; month: string; deductions?: number }) =>
-      http<{ data: unknown }>('/api/pt-os/payouts', {
-        method: 'POST', body: JSON.stringify(data),
-      }),
-    approvePayout: (id: string, data: { payment_method?: string; payment_ref?: string }) =>
-      http<{ data: unknown }>(`/api/pt-os/payouts/${id}/approve`, {
-        method: 'POST', body: JSON.stringify(data),
-      }),
     revenue: () =>
       http<{ data: unknown[] }>('/api/pt-os/revenue'),
     trainerPerformance: () =>

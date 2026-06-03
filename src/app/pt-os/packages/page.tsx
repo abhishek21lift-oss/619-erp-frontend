@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Plus, Loader2, Check, Dumbbell, Flame, Zap, Heart, Activity } from 'lucide-react';
+import { Package, Plus, Loader2, Check, Dumbbell, Flame, Zap } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAsync } from '@/lib/use-async';
-import { api } from '@/lib/api';
-import { Button, Card, CardBody, Badge } from '@/components/ui';
+import { api, PtPackage } from '@/lib/api';
+import { Button, Badge } from '@/components/ui';
 
 const GOAL_COLORS: Record<string, string> = {
   fat_loss: '#dc2626', muscle_gain: '#7c3aed', strength: '#f59e0b',
@@ -27,7 +27,7 @@ export default function PtPackagesPage() {
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const packages = useAsync(() => api.automation.ptPackages.list().then(r => r.data), []);
+  const packages = useAsync(() => api.automation.ptPackages.list().then(r => r.data as PtPackage[]), []);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -49,17 +49,17 @@ export default function PtPackagesPage() {
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-            style={{ background: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%)', boxShadow: '0 20px 60px rgba(4,120,87,0.3)' }}>
-            <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.5), transparent 70%)' }} />
+            style={{ background: 'linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #ef4444 100%)', boxShadow: '0 20px 60px rgba(220,38,38,0.3)' }}>
+            <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.5), transparent 70%)' }} />
             <div className="relative z-10">
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                  <Package size={16} style={{ color: '#6ee7b7' }} />
+                  <Package size={16} style={{ color: '#fca5a5' }} />
                 </div>
-                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#6ee7b7' }}>PT Packages</span>
+                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#fca5a5' }}>PT Packages</span>
               </div>
               <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#ffffff' }}>
-                PT Package Sale
+                PT Packages
               </h1>
               <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
                 Define PT packages with session counts, pricing, and goal-based targeting.
@@ -69,7 +69,7 @@ export default function PtPackagesPage() {
 
           <div className="flex justify-end mb-4">
             <Button onClick={() => setShowForm(!showForm)}
-              className="!rounded-[14px] !font-[700]" style={{ background: 'linear-gradient(135deg, #047857, #10b981)', color: '#fff' }}>
+              className="!rounded-[14px] !font-[700]" style={{ background: 'linear-gradient(135deg, #dc2626, #ef4444)', color: '#fff' }}>
               <Plus size={16} /> {showForm ? 'Cancel' : 'New Package'}
             </Button>
           </div>
@@ -102,7 +102,7 @@ export default function PtPackagesPage() {
                   className="rounded-[12px] px-4 py-2.5 text-sm outline-none sm:col-span-2"
                   style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
                 <Button type="submit" disabled={saving} className="!rounded-[14px] !font-[700]"
-                  style={{ background: 'linear-gradient(135deg, #047857, #10b981)', color: '#fff' }}>
+                  style={{ background: 'linear-gradient(135deg, #dc2626, #ef4444)', color: '#fff' }}>
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Create Package
                 </Button>
               </form>
@@ -111,7 +111,7 @@ export default function PtPackagesPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {packages.loading && <div className="col-span-full flex justify-center py-12"><Loader2 size={24} className="animate-spin" /></div>}
-            {(packages.data as any[] || []).map((pkg: any, i: number) => (
+            {(packages.data as PtPackage[] || []).map((pkg: PtPackage, i: number) => (
               <motion.div key={pkg.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="rounded-[20px] p-5 relative overflow-hidden" style={{
                   background: 'var(--bg-card)', backdropFilter: 'blur(16px)',
@@ -125,7 +125,7 @@ export default function PtPackagesPage() {
                 </div>
               )}
               <h3 className="text-[17px] font-[760] tracking-[-0.02em] pr-10" style={{ color: 'rgb(15,23,42)' }}>{pkg.name}</h3>
-              <p className="text-[28px] font-[860] tracking-[-0.03em] mt-2" style={{ color: '#047857' }}>{fmtINR(pkg.price)}</p>
+              <p className="text-[28px] font-[860] tracking-[-0.03em] mt-2" style={{ color: '#dc2626' }}>{fmtINR(pkg.price)}</p>
               <div className="flex items-center gap-3 mt-3 text-[12px]" style={{ color: 'rgb(100,116,139)' }}>
                 <span>{pkg.session_count} sessions</span>
                 <span>·</span>

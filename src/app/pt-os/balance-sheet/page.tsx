@@ -6,14 +6,12 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import TabBar from '@/app/pt-os/TabBar';
 import { useAsync } from '@/lib/use-async';
-import { api } from '@/lib/api';
+import { api, PtClientBase } from '@/lib/api';
 
-type BalanceItem = {
-  id: string; client_id: string; name: string; mobile: string;
-  trainer_name: string; package_type: string;
-  final_amount: number; paid_amount: number; balance_amount: number;
-  pt_end_date: string; days_left: number; status: string;
-  due_status: string; monthly_pt_amount: number; trainer_commission: number;
+type BalanceItem = PtClientBase & {
+  due_status: string;
+  monthly_pt_amount: number;
+  trainer_commission: number;
 };
 
 function fmtINR(n: number | string | null | undefined) {

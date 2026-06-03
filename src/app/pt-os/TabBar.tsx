@@ -2,14 +2,18 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Users, Wallet, DollarSign, BarChart3,
+  LayoutDashboard, Users, Wallet, BarChart3, Package,
+  Target, ClipboardList, Calendar,
 } from 'lucide-react';
 
 const NAV = [
   { href: '/pt-os', label: 'Dashboard', icon: <LayoutDashboard size={14} /> },
-  { href: '/pt-os/clients', label: 'PT Clients', icon: <Users size={14} /> },
+  { href: '/pt-os/clients', label: 'Clients', icon: <Users size={14} /> },
   { href: '/pt-os/balance-sheet', label: 'Balance Sheet', icon: <Wallet size={14} /> },
-  { href: '/pt-os/commissions', label: 'Commissions', icon: <DollarSign size={14} /> },
+  { href: '/pt-os/packages', label: 'Packages', icon: <Package size={14} /> },
+  { href: '/pt-os/goals', label: 'Goals', icon: <Target size={14} /> },
+  { href: '/pt-os/assessment', label: 'Assessment', icon: <ClipboardList size={14} /> },
+  { href: '/pt-os/session-balance', label: 'Session Bal.', icon: <Calendar size={14} /> },
   { href: '/pt-os/reports', label: 'Reports', icon: <BarChart3 size={14} /> },
 ];
 

@@ -294,7 +294,7 @@ function NewClientWizard() {
     if (!form.transformationGoals) { setError('Please describe transformation goals.'); return; }
     setSaving(true);
     try {
-      await api.clients.create({
+      const created = await api.clients.create({
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -312,6 +312,11 @@ function NewClientWizard() {
       } as Record<string, unknown>);
       setDone(true);
       setShowSuccess(true);
+      if (photoPreview && created?.id) {
+        try {
+          await api.clients.uploadPhoto(created.id, photoPreview);
+        } catch {} // non-blocking
+      }
     } catch (err: any) {
       setError(err?.message || 'Failed to create client');
     } finally {

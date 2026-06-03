@@ -11,17 +11,18 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import TabBar from '@/app/pt-os/TabBar';
 import { useAsync } from '@/lib/use-async';
-import { api } from '@/lib/api';
+import { api, PtClientBase } from '@/lib/api';
 
-type PtClient = {
-  id: string; client_id: string; name: string; gender: string;
-  mobile: string; trainer_id: string; trainer_name: string;
-  package_type: string; base_amount: number; discount: number;
-  final_amount: number; paid_amount: number; balance_amount: number;
-  joining_date: string; duration_months: number;
-  pt_start_date: string; pt_end_date: string;
-  days_left: number; status: string;
-  monthly_pt_amount: number; trainer_commission: number;
+type PtClient = PtClientBase & {
+  gender: string;
+  trainer_id: string;
+  base_amount: number;
+  discount: number;
+  joining_date: string;
+  duration_months: number;
+  pt_start_date: string;
+  monthly_pt_amount: number;
+  trainer_commission: number;
 };
 
 function fmtINR(n: number | string | null | undefined) {
