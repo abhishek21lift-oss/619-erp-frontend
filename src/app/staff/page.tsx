@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -205,10 +206,10 @@ function Inner() {
               <h1 className="sl-hero-title">Team Management</h1>
               <p className="sl-hero-sub">Manage staff access, roles, schedules, payroll, and performance from one intelligent workspace.</p>
               <div className="sl-hero-actions">
-                <a href="/staff/new" className="sl-btn-primary">
+                <Link href="/settings/staff/new" className="sl-btn-primary">
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                   Add Staff
-                </a>
+                </Link>
                 <button className="sl-btn-ghost">Import Team</button>
                 <button className="sl-btn-ghost">Export</button>
               </div>
@@ -508,7 +509,7 @@ function EmptyState({ search }: { search: string }) {
       </div>
       {!search && (
         <div style={{ display:'flex', gap:12, justifyContent:'center', marginTop:24, flexWrap:'wrap' }}>
-          <a href="/staff/new" className="sl-btn-primary">+ Add Staff</a>
+          <Link href="/settings/staff/new" className="sl-btn-primary">+ Add Staff</Link>
           <button className="sl-btn-ghost">Import Team</button>
         </div>
       )}
