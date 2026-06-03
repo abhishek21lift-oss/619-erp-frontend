@@ -66,11 +66,11 @@ function Donut3D({ percent, gradient, displayText, index = 0 }: {
   displayText: string;
   index?: number;
 }) {
-  const s = 72;
+  const s = 52;
   const cx = s / 2;
   const cy = s / 2;
-  const r = 26;
-  const sw = 7;
+  const r = 19;
+  const sw = 5;
   const circumference = 2 * Math.PI * r;
   const clamped = Math.min(Math.max(percent, 0), 100);
   const offset = circumference * (1 - clamped / 100);
@@ -133,7 +133,7 @@ function Donut3D({ percent, gradient, displayText, index = 0 }: {
           cx={cx} cy={cy} r={r}
           fill="none"
           stroke="rgba(255,255,255,0.15)"
-          strokeWidth={2.5}
+          strokeWidth={2}
           strokeLinecap="round"
           strokeDasharray={circumference * 0.22}
           strokeDashoffset={circumference * 0.7}
@@ -148,7 +148,7 @@ function Donut3D({ percent, gradient, displayText, index = 0 }: {
         x={cx} y={cy}
         textAnchor="middle" dominantBaseline="central"
         fill={`url(#dt-${id})`}
-        fontSize="13" fontWeight={900}
+        fontSize="10" fontWeight={900}
         fontFamily="var(--font-sans, system-ui, sans-serif)"
         letterSpacing="-0.03em"
       >
@@ -188,7 +188,7 @@ export const ActivityCard = React.forwardRef<HTMLDivElement, ActivityCardProps>(
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-        whileHover={{ y: -4, scale: 1.02 }}
+        whileHover={{ y: -3, scale: 1.015 }}
         onClick={onClick}
         role={onClick ? 'button' : undefined}
         tabIndex={onClick ? 0 : undefined}
@@ -242,12 +242,12 @@ export const ActivityCard = React.forwardRef<HTMLDivElement, ActivityCardProps>(
           aria-hidden
           className="pointer-events-none absolute inset-0 translate-x-[-100%] skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]"
         />
-        <div className="absolute inset-x-2 top-0 h-[2px] rounded-b-full" style={{ background: gradientCss, boxShadow: glow }} />
+        <div className="absolute inset-x-2 top-0 h-[1.5px] rounded-b-full" style={{ background: gradientCss, boxShadow: glow }} />
 
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-1 p-2 w-full">
-          <div className="flex items-center justify-center gap-1.5 w-full px-1">
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-0.5 p-1.5 w-full">
+          <div className="flex items-center justify-center gap-1 w-full px-1">
             <span
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white"
+              className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-white"
               style={{ background: gradientCss }}
               aria-hidden
             >
@@ -256,15 +256,15 @@ export const ActivityCard = React.forwardRef<HTMLDivElement, ActivityCardProps>(
             {trend !== undefined && (
               <span
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-0.5 rounded-full px-1 py-0.5 text-[7px] font-bold leading-none',
+                  'inline-flex shrink-0 items-center gap-0.5 rounded-full px-0.5 py-[1px] text-[6px] font-bold leading-none',
                   direction > 0 && 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
                   direction < 0 && 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
                   direction === 0 && 'bg-[var(--neutral-bg)] text-[var(--text-muted)] border border-[var(--border)]',
                 )}
               >
-                {direction > 0 && <TrendingUp size={7} strokeWidth={2.5} />}
-                {direction < 0 && <TrendingDown size={7} strokeWidth={2.5} />}
-                {direction === 0 && <Minus size={7} strokeWidth={2.5} />}
+                {direction > 0 && <TrendingUp size={6} strokeWidth={2.5} />}
+                {direction < 0 && <TrendingDown size={6} strokeWidth={2.5} />}
+                {direction === 0 && <Minus size={6} strokeWidth={2.5} />}
                 {Math.abs(trend).toFixed(1)}%
               </span>
             )}
@@ -277,7 +277,7 @@ export const ActivityCard = React.forwardRef<HTMLDivElement, ActivityCardProps>(
             index={index}
           />
 
-          <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]/60 truncate max-w-[90%] text-center">
+          <p className="text-[7px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]/60 truncate max-w-[90%] text-center">
             {title}
           </p>
         </div>

@@ -171,14 +171,14 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4"
       >
         <PremiumKpiCard
           label="Today's Sale"
           value={r.today}
           prefix="₹"
           gradient="pink"
-          icon={<IndianRupee size={10} strokeWidth={2} />}
+          icon={<IndianRupee size={8} strokeWidth={2} />}
           format={formatINRShort}
           donutPercent={todaySalePct}
           index={0}
@@ -189,7 +189,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           value={r.period}
           prefix="₹"
           gradient="violet"
-          icon={<CheckCircle size={10} strokeWidth={2} />}
+          icon={<CheckCircle size={8} strokeWidth={2} />}
           format={formatINRShort}
           donutPercent={collectedDonutPct}
           index={1}
@@ -200,7 +200,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           value={totalDues}
           prefix="₹"
           gradient="amber"
-          icon={<Clock size={10} strokeWidth={2} />}
+          icon={<Clock size={8} strokeWidth={2} />}
           format={formatINRShort}
           donutPercent={pendingDonutPct}
           index={2}
@@ -210,7 +210,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           label="Upcoming Renewals"
           value={data.expiring_soon}
           gradient="cyan"
-          icon={<RefreshCw size={10} strokeWidth={2} />}
+          icon={<RefreshCw size={8} strokeWidth={2} />}
           donutPercent={renewalsDonutPct}
           index={3}
           onClick={() => router.push('/members/expiring')}
@@ -221,14 +221,14 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4"
       >
         <ActivityCard
           title="New Clients"
           count={c.new_this_month}
           donutPercent={newClientsDonutPct}
           gradient="pink"
-          icon={<UserPlus size={10} strokeWidth={2} />}
+          icon={<UserPlus size={8} strokeWidth={2} />}
           index={0}
           onClick={() => router.push('/clients/new')}
         />
@@ -237,7 +237,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           count={data.pending_renewals}
           donutPercent={renewalsActivityPct}
           gradient="violet"
-          icon={<RefreshCw size={10} strokeWidth={2} />}
+          icon={<RefreshCw size={8} strokeWidth={2} />}
           index={1}
           onClick={() => router.push('/members/renewals')}
         />
@@ -246,7 +246,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           count={0}
           donutPercent={upgradesPct}
           gradient="amber"
-          icon={<Activity size={10} strokeWidth={2} />}
+          icon={<Activity size={8} strokeWidth={2} />}
           index={2}
           onClick={() => router.push('/memberships/subscriptions')}
         />
@@ -255,7 +255,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           count={data.attendance_today}
           donutPercent={checkinsDonutPct}
           gradient="cyan"
-          icon={<CheckCircle size={10} strokeWidth={2} />}
+          icon={<CheckCircle size={8} strokeWidth={2} />}
           index={3}
           onClick={() => router.push('/attendance')}
         />
