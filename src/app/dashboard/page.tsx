@@ -149,17 +149,21 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
   const collectedPct =
     collected + totalDues > 0 ? (collected / (collected + totalDues)) * 100 : 0;
 
-  const revenueSpark = data.monthly_chart.slice(-7).map((m) => m.revenue);
-  const duesSpark = revenueSpark.map((v) => Math.max(0, Math.round(v * 0.25)));
-  const renewalsSpark = revenueSpark.map((v) =>
-    Math.max(0, Math.round((v / Math.max(r.month, 1)) * 12)),
-  );
-
   const inactive = c.expired + c.frozen;
   const totalForPct = c.total || 1;
 
   const target = r.month > 0 ? Math.round(r.month * 1.25) : 500000;
   const current = r.month;
+
+  const dailyTarget = Math.max(r.month / 30, 500);
+  const todaySalePct = Math.min(100, (r.today / dailyTarget) * 100);
+  const collectedDonutPct = Math.min(100, collectedPct);
+  const pendingDonutPct = Math.min(100, totalDues + collected > 0 ? (totalDues / (totalDues + collected)) * 100 : 0);
+  const renewalsDonutPct = Math.min(100, (data.expiring_soon / Math.max(c.total, 1)) * 100);
+  const newClientsDonutPct = Math.min(100, (c.new_this_month / Math.max(c.total, 1)) * 100);
+  const renewalsActivityPct = Math.min(100, (data.pending_renewals / Math.max(c.total, 1)) * 100);
+  const upgradesPct = 35;
+  const checkinsDonutPct = Math.min(100, (data.attendance_today / Math.max(c.active, 1)) * 100);
 
   return (
     <>
@@ -174,9 +178,9 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           value={r.today}
           prefix="₹"
           gradient="pink"
-          icon={<IndianRupee size={14} strokeWidth={2} />}
+          icon={<IndianRupee size={10} strokeWidth={2} />}
           format={formatINRShort}
-          trend={revenueSpark}
+          donutPercent={todaySalePct}
           index={0}
           onClick={() => router.push('/sales/today')}
         />
@@ -185,9 +189,9 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           value={r.period}
           prefix="₹"
           gradient="violet"
-          icon={<CheckCircle size={14} strokeWidth={2} />}
+          icon={<CheckCircle size={10} strokeWidth={2} />}
           format={formatINRShort}
-          trend={revenueSpark}
+          donutPercent={collectedDonutPct}
           index={1}
           onClick={() => router.push('/finance/collected-payments')}
         />
@@ -196,9 +200,9 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           value={totalDues}
           prefix="₹"
           gradient="amber"
-          icon={<Clock size={14} strokeWidth={2} />}
+          icon={<Clock size={10} strokeWidth={2} />}
           format={formatINRShort}
-          trend={duesSpark}
+          donutPercent={pendingDonutPct}
           index={2}
           onClick={() => router.push('/finance/dues')}
         />
@@ -206,8 +210,8 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           label="Upcoming Renewals"
           value={data.expiring_soon}
           gradient="cyan"
-          icon={<RefreshCw size={14} strokeWidth={2} />}
-          trend={renewalsSpark}
+          icon={<RefreshCw size={10} strokeWidth={2} />}
+          donutPercent={renewalsDonutPct}
           index={3}
           onClick={() => router.push('/members/expiring')}
         />
@@ -222,32 +226,36 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
         <ActivityCard
           title="New Clients"
           count={c.new_this_month}
+          donutPercent={newClientsDonutPct}
           gradient="pink"
-          icon={<UserPlus size={14} strokeWidth={2} />}
+          icon={<UserPlus size={10} strokeWidth={2} />}
           index={0}
           onClick={() => router.push('/clients/new')}
         />
         <ActivityCard
           title="Renewals"
           count={data.pending_renewals}
+          donutPercent={renewalsActivityPct}
           gradient="violet"
-          icon={<RefreshCw size={14} strokeWidth={2} />}
+          icon={<RefreshCw size={10} strokeWidth={2} />}
           index={1}
           onClick={() => router.push('/members/renewals')}
         />
         <ActivityCard
           title="Upgrades"
           count={0}
+          donutPercent={upgradesPct}
           gradient="amber"
-          icon={<Activity size={14} strokeWidth={2} />}
+          icon={<Activity size={10} strokeWidth={2} />}
           index={2}
           onClick={() => router.push('/memberships/subscriptions')}
         />
         <ActivityCard
           title="Check-ins"
           count={data.attendance_today}
+          donutPercent={checkinsDonutPct}
           gradient="cyan"
-          icon={<CheckCircle size={14} strokeWidth={2} />}
+          icon={<CheckCircle size={10} strokeWidth={2} />}
           index={3}
           onClick={() => router.push('/attendance')}
         />

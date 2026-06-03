@@ -40,47 +40,12 @@ const BORDER_GLOW: Record<PremiumKpiGradient, string> = {
   cyan: 'rgba(103,232,249,0.15)',
 };
 
-const SPARK_COLORS: Record<PremiumKpiGradient, { stroke: string; fill: string }> = {
-  blue: { stroke: '#38BDF8', fill: '#38BDF8' },
-  green: { stroke: '#34D399', fill: '#34D399' },
-  amber: { stroke: '#FCD34D', fill: '#FCD34D' },
-  red: { stroke: '#FB7185', fill: '#FB7185' },
-  purple: { stroke: '#C084FC', fill: '#C084FC' },
-  pink: { stroke: '#F472B6', fill: '#F472B6' },
-  violet: { stroke: '#A78BFA', fill: '#A78BFA' },
-  cyan: { stroke: '#67E8F9', fill: '#67E8F9' },
-};
-
-function buildSparkPath(values: number[], width: number, height: number): string {
-  if (values.length === 0) return '';
-  if (values.length === 1) {
-    return `M0 ${height / 2} L${width} ${height / 2}`;
-  }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const stepX = width / (values.length - 1);
-  const points = values.map((v, i) => {
-    const x = i * stepX;
-    const y = height - ((v - min) / range) * height * 0.9 - height * 0.05;
-    return [x, y] as const;
-  });
-  let d = `M${points[0][0]} ${points[0][1]}`;
-  for (let i = 1; i < points.length; i++) {
-    const [x0, y0] = points[i - 1];
-    const [x1, y1] = points[i];
-    const cx = (x0 + x1) / 2;
-    d += ` C${cx} ${y0}, ${cx} ${y1}, ${x1} ${y1}`;
-  }
-  return d;
-}
-
 export interface PremiumKpiCardProps {
   label: string;
   value: string | number;
   prefix?: string;
   growth?: number;
-  trend?: number[];
+  donutPercent: number;
   icon: React.ReactNode;
   gradient: PremiumKpiGradient;
   format?: (n: number) => string;
@@ -89,24 +54,115 @@ export interface PremiumKpiCardProps {
   onClick?: () => void;
 }
 
+function Donut3D({ percent, gradient, displayText, prefix, index = 0 }: {
+  percent: number;
+  gradient: string;
+  displayText: string;
+  prefix?: string;
+  index?: number;
+}) {
+  const s = 72;
+  const cx = s / 2;
+  const cy = s / 2;
+  const r = 26;
+  const sw = 7;
+  const circumference = 2 * Math.PI * r;
+  const clamped = Math.min(Math.max(percent, 0), 100);
+  const offset = circumference * (1 - clamped / 100);
+  const id = React.useId();
+  const colors = gradient.match(/#[A-Fa-f0-9]{6}/g) ?? [];
+
+  const [val, setVal] = React.useState(0);
+  React.useEffect(() => {
+    const num = parseFloat(displayText) || 0;
+    if (num === 0) { setVal(0); return; }
+    const duration = 900;
+    const start = performance.now();
+    let raf: number;
+    const fn = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      setVal(Math.round((1 - Math.pow(1 - t, 3)) * num));
+      if (t < 1) raf = requestAnimationFrame(fn);
+    };
+    raf = requestAnimationFrame(fn);
+    return () => cancelAnimationFrame(raf);
+  }, [displayText]);
+
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} aria-hidden className="drop-shadow-lg">
+      <defs>
+        <linearGradient id={`dg-${id}`} x1="0" y1="0" x2="1" y2="1">
+          {colors.map((c, i, arr) => (
+            <stop key={i} offset={`${(i / Math.max(arr.length - 1, 1)) * 100}%`} stopColor={c} />
+          ))}
+        </linearGradient>
+        <linearGradient id={`dt-${id}`} x1="0" y1="0" x2="1" y2="1">
+          {colors.map((c, i, arr) => (
+            <stop key={i} offset={`${(i / Math.max(arr.length - 1, 1)) * 100}%`} stopColor={c} />
+          ))}
+        </linearGradient>
+        <filter id={`ds-${id}`}>
+          <feDropShadow dx={0} dy={2} stdDeviation={3} floodColor="rgba(0,0,0,0.4)" />
+        </filter>
+      </defs>
+
+      <circle cx={cx} cy={cy + 2} r={r} fill="none" stroke="rgba(0,0,0,0.2)" strokeWidth={sw} strokeLinecap="round" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={sw} strokeLinecap="round" />
+
+      <motion.circle
+        cx={cx} cy={cy} r={r}
+        fill="none"
+        stroke={`url(#dg-${id})`}
+        strokeWidth={sw}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        initial={{ strokeDashoffset: circumference }}
+        animate={{ strokeDashoffset: offset }}
+        transition={{ duration: 0.9, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
+        transform={`rotate(-90 ${cx} ${cy})`}
+        filter={`url(#ds-${id})`}
+      />
+
+      {clamped > 3 && (
+        <motion.circle
+          cx={cx} cy={cy} r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.15)"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeDasharray={circumference * 0.22}
+          strokeDashoffset={circumference * 0.7}
+          transform={`rotate(-90 ${cx} ${cy})`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.6 + index * 0.05 }}
+        />
+      )}
+
+      <text
+        x={cx} y={cy}
+        textAnchor="middle" dominantBaseline="central"
+        fill={`url(#dt-${id})`}
+        fontSize="13" fontWeight={900}
+        fontFamily="var(--font-sans, system-ui, sans-serif)"
+        letterSpacing="-0.03em"
+      >
+        {prefix}{val.toLocaleString('en-IN')}
+      </text>
+    </svg>
+  );
+}
+
 export const PremiumKpiCard = React.forwardRef<HTMLDivElement, PremiumKpiCardProps>(
   function PremiumKpiCard(
-    { label, value, prefix, growth, trend, icon, gradient, format, index = 0, className, onClick },
+    { label, value, prefix, growth, donutPercent, icon, gradient, format, index = 0, className, onClick },
     ref,
   ) {
     const gradientCss = GRADIENT_MAP[gradient];
     const glow = GLOW[gradient];
     const borderGlow = BORDER_GLOW[gradient];
-    const sc = SPARK_COLORS[gradient];
     const numericValue = typeof value === 'number' ? value : Number(value);
     const isUp = (growth ?? 0) >= 0;
-
-    const sparkWidth = 80;
-    const sparkHeight = 32;
-    const sparkPath = React.useMemo(
-      () => (trend && trend.length > 0 ? buildSparkPath(trend, sparkWidth, sparkHeight) : ''),
-      [trend],
-    );
 
     const [displayValue, setDisplayValue] = React.useState(0);
     React.useEffect(() => {
@@ -131,13 +187,13 @@ export const PremiumKpiCard = React.forwardRef<HTMLDivElement, PremiumKpiCardPro
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-        whileHover={{ y: -6, scale: 1.03 }}
+        whileHover={{ y: -4, scale: 1.02 }}
         onClick={onClick}
         role={onClick ? 'button' : undefined}
         tabIndex={onClick ? 0 : undefined}
         onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
         className={cn(
-          'group relative flex flex-col overflow-hidden rounded-xl aspect-square',
+          'group relative flex flex-col items-center overflow-hidden rounded-xl aspect-square',
           'bg-[var(--bg-card)]/60 backdrop-blur-2xl',
           'transition-all duration-500',
           'hover:shadow-2xl',
@@ -169,94 +225,50 @@ export const PremiumKpiCard = React.forwardRef<HTMLDivElement, PremiumKpiCardPro
 
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.08] transition-opacity duration-700 group-hover:opacity-[0.18]"
+          className="pointer-events-none absolute inset-0 opacity-10 transition-opacity duration-700 group-hover:opacity-20"
           style={{ background: `radial-gradient(ellipse at 50% 0%, ${gradientCss} 0%, transparent 70%)` }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-x-4 -inset-y-8 opacity-0 transition-all duration-700 group-hover:opacity-[0.07]"
-          style={{
-            background: `radial-gradient(ellipse at 50% 50%, ${gradientCss} 0%, transparent 60%)`,
-            filter: 'blur(20px)',
-          }}
         />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 translate-x-[-100%] skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]"
         />
-        <div className="absolute inset-x-3 top-0 h-[3px] rounded-b-full" style={{ background: gradientCss, boxShadow: glow }} />
+        <div className="absolute inset-x-2 top-0 h-[2px] rounded-b-full" style={{ background: gradientCss, boxShadow: glow }} />
 
-        <div className="relative z-10 flex flex-1 flex-col justify-between p-3">
-          <div className="flex items-start justify-between gap-1.5">
+        <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-1 p-2 w-full">
+          <div className="flex items-center justify-center gap-1.5 w-full px-1">
             <span
-              className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
-              style={{ background: gradientCss, boxShadow: glow }}
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white"
+              style={{ background: gradientCss }}
               aria-hidden
             >
-              <div
-                aria-hidden
-                className="absolute inset-0 rounded-lg animate-pulse opacity-20"
-                style={{ background: gradientCss, filter: 'blur(4px)' }}
-              />
               {icon}
             </span>
             {growth !== undefined && (
               <span
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold',
+                  'inline-flex shrink-0 items-center gap-0.5 rounded-full px-1 py-0.5 text-[7px] font-bold leading-none',
                   isUp
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                     : 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
                 )}
               >
-                {isUp ? <ArrowUpRight size={8} strokeWidth={2.5} /> : <ArrowDownRight size={8} strokeWidth={2.5} />}
+                {isUp ? <ArrowUpRight size={7} strokeWidth={2.5} /> : <ArrowDownRight size={7} strokeWidth={2.5} />}
                 {Math.abs(growth).toFixed(1)}%
               </span>
             )}
           </div>
-          <div className="mt-auto space-y-1">
-            <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]/70 truncate">
-              {label}
-            </p>
-            <div className="flex items-end justify-between gap-1.5">
-              <p
-                className="text-[18px] font-black leading-none tracking-[-0.04em] tabular-nums text-transparent bg-clip-text"
-                style={{ backgroundImage: gradientCss }}
-                aria-label={format ? format(numericValue) : String(value)}
-              >
-                {prefix}
-                {format ? format(displayValue) : displayValue.toLocaleString('en-IN')}
-              </p>
-              {sparkPath && (
-                <svg width={40} height={16} viewBox={`0 0 40 16`} aria-hidden className="shrink-0">
-                  <defs>
-                    <linearGradient id={`spark-fill-${gradient}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={sc.fill} stopOpacity={0.35} />
-                      <stop offset="100%" stopColor={sc.fill} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <motion.path
-                    d={`${sparkPath} L40 16 L0 16 Z`}
-                    fill={`url(#spark-fill-${gradient})`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.6, delay: index * 0.05 + 0.2 }}
-                  />
-                  <motion.path
-                    d={sparkPath}
-                    fill="none"
-                    stroke={sc.stroke}
-                    strokeWidth={1.2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.8, delay: index * 0.05 + 0.15, ease: [0.16, 1, 0.3, 1] }}
-                  />
-                </svg>
-              )}
-            </div>
-          </div>
+
+          <Donut3D
+            percent={donutPercent}
+            gradient={gradientCss}
+            displayText={format ? format(numericValue) : String(numericValue)}
+            prefix={prefix}
+            index={index}
+          />
+
+          <p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]/60 truncate max-w-[90%] text-center">
+            {label}
+          </p>
         </div>
       </motion.div>
     );
