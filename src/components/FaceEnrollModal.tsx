@@ -158,10 +158,11 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
       setState('success');
       setStatusMsg('Face enrolled successfully');
       onEnrolled?.();
-    } catch (e: any) {
+    } catch (e: unknown) {
       setState('error');
       console.error('[enroll] error:', e);
-      const msg = e?.message || (e?.status ? `HTTP ${e.status}` : null) || 'Failed to save face descriptor. Please try again.';
+      const err = e as { message?: string; status?: number };
+      const msg = err?.message || (err?.status ? `HTTP ${err.status}` : null) || 'Failed to save face descriptor. Please try again.';
       setError(msg);
       enrolledRef.current = false;
     }
@@ -256,17 +257,43 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
     loopKeyRef.current += 1;
   }
 
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap
+  useEffect(() => {
+    if (!open) return;
+    const el = modalRef.current;
+    if (!el) return;
+    const focusable = el.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+    };
+    el.addEventListener('keydown', handler);
+    return () => el.removeEventListener('keydown', handler);
+  }, [open]);
+
   if (!open) return null;
-
-  const progressPct = Math.min(100, (sampleCount / SAMPLES_REQUIRED) * 100);
-  const isWorking = state === 'loading' || state === 'saving';
-
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Face Enrollment"
       style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+        padding: 20,
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Face enrollment"
+        style={{
         position: 'fixed', inset: 0, zIndex: 1200,
         background: 'rgba(10,12,28,0.82)',
         backdropFilter: 'blur(12px)',
@@ -561,6 +588,7 @@ export default function FaceEnrollModal({ clientId, clientName, open, onClose, o
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

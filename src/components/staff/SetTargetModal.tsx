@@ -35,6 +35,7 @@ export default function SetTargetModal({
   onClose,
   onSaved,
 }: Props) {
+  const modalRef = useRef<HTMLDivElement>(null);
   const [staffId, setStaffId] = useState(editTarget?.staff_id ?? '');
   const [revenue, setRevenue] = useState(
     editTarget?.target_revenue ? String(editTarget.target_revenue) : ''
@@ -63,6 +64,24 @@ export default function SetTargetModal({
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
+
+  // Focus trap
+  useEffect(() => {
+    if (!open) return;
+    const el = modalRef.current;
+    if (!el) return;
+    const focusable = el.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+    };
+    el.addEventListener('keydown', handler);
+    return () => el.removeEventListener('keydown', handler);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +113,7 @@ export default function SetTargetModal({
 
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md md:p-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
