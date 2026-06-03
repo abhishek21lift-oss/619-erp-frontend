@@ -75,20 +75,29 @@ export default function PTSessionsPage() {
     setLoading(true);
     setError('');
     try {
-      const trainers = await api.trainers.list();
-      if (Array.isArray(trainers)) {
-        const all: Session[] = [];
-        for (const t of trainers.slice(0, 20)) {
-          try {
-            const s = await api.trainers.sessions(t.id);
-            const list = Array.isArray(s) ? s : ((s as any)?.data ?? []);
-            if (Array.isArray(list)) all.push(...list);
-          } catch { /* skip */ }
-        }
-        all.sort((a, b) => (b.session_date + 'T' + (b.session_time || ''))
-          .localeCompare(a.session_date + 'T' + (a.session_time || '')));
-        setSessions(all);
+      const trainersRes = (await api.pt.trainers()) as { data: any[] };
+      const trainerArr = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
+      const all: Session[] = [];
+      for (const t of trainerArr.slice(0, 20)) {
+        try {
+          const sRes = (await api.pt.sessions({ trainer_id: t.id })) as { data: any[] };
+          const list = Array.isArray(sRes?.data) ? sRes.data : [];
+          all.push(...list.map((s: any) => ({
+            id: s.id, client_id: s.client_id,
+            client_name: s.client_name || '',
+            client_mobile: '',
+            trainer_id: s.trainer_id,
+            session_date: s.date,
+            session_time: s.start_time || '',
+            status: s.status,
+            notes: s.notes,
+            session_type: s.title,
+          })));
+        } catch { /* skip */ }
       }
+      all.sort((a, b) => (b.session_date + 'T' + (b.session_time || ''))
+        .localeCompare(a.session_date + 'T' + (a.session_time || '')));
+      setSessions(all);
     } catch {
       setError('Failed to load sessions');
     } finally {

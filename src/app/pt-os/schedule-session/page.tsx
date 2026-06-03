@@ -138,28 +138,28 @@ function SchedulePageContent() {
     try {
       setSessionsLoading(true);
       setSessionsError('');
-      const trainers = await api.trainers.list();
-      const trainerArr = Array.isArray(trainers) ? trainers : [];
+      const trainersRes = (await api.pt.trainers()) as { data: any[] };
+      const trainerArr = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
       setTrainerList(trainerArr);
       const allSessionsData = trainerArr.length > 0
         ? (await Promise.all(
             trainerArr.map((t: any) =>
-              api.trainers.sessions(t.id ?? t).catch((err) => { toast.error(err?.message || 'Failed to load sessions'); return []; })
+              api.pt.sessions({ trainer_id: t.id }).then(r => (r as any)?.data ?? []).catch((err) => { toast.error(err?.message || 'Failed to load sessions'); return []; })
             )
           )).flat()
         : [];
       setSessions(allSessionsData.map((s: any) => ({
         id: String(s.id ?? ''),
-        client: s.client?.name ?? s.client_name ?? s.client ?? '',
-        trainer: s.trainer?.name ?? s.trainer_name ?? s.trainer ?? '',
+        client: s.client_name ?? '',
+        trainer: (trainerArr.find((t: any) => t.id === s.trainer_id)?.name) ?? s.trainer_id ?? '',
         date: s.date ?? '',
-        time: s.time ?? '',
-        duration: s.duration ?? 60,
-        type: s.type ?? '1-on-1',
+        time: s.start_time ?? '',
+        duration: 60,
+        type: s.title ?? '1-on-1',
         status: s.status ?? 'scheduled',
         notes: s.notes ?? '',
-        recurring: s.recurring ?? false,
-        clientAvatar: initials(s.client?.name ?? s.client_name ?? s.client ?? ''),
+        recurring: false,
+        clientAvatar: initials(s.client_name ?? ''),
       })));
     } catch (err: any) {
       setSessionsError(err?.message || 'Failed to load sessions');
@@ -247,15 +247,12 @@ function SchedulePageContent() {
     try {
       const trainerObj = trainerList.find((t) => t.name === data.trainer);
       if (trainerObj) {
-        await api.trainers.createSession({
+        await api.pt.createSession({
           trainer_id: trainerObj.id,
           client_id: data.client,
           date: data.date,
-          time: data.time,
-          duration: data.duration,
-          type: data.type,
+          start_time: data.time,
           notes: data.notes,
-          recurring: data.recurring,
         });
       }
     } catch {}

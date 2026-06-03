@@ -156,7 +156,7 @@ function WorkoutPlansContent() {
       const [exercisesRes, plansRes, trainersRes] = await Promise.all([
         api.workouts.exercises.list().catch((err) => { toast.error(err?.message || 'Failed to load exercises'); return []; }),
         api.workouts.plans.list().catch((err) => { toast.error(err?.message || 'Failed to load plans'); return []; }),
-        api.trainers.list().catch((err) => { toast.error(err?.message || 'Failed to load trainers'); return []; }),
+        api.pt.trainers().then(r => (r as any)?.data).catch((err) => { toast.error(err?.message || 'Failed to load trainers'); return []; }),
       ]);
       setExercises(
         Array.isArray(exercisesRes)

@@ -250,8 +250,8 @@ function NewClientWizard() {
     try {
       setDataLoading(true);
       setDataError('');
-      const trainersRes = await api.trainers.list();
-      const arr = Array.isArray(trainersRes) ? trainersRes : [];
+      const trainersRes = (await api.pt.trainers()) as { data: unknown[] };
+      const arr = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
       setTrainers(arr.map((t: any) => t.name ?? t));
       const map: Record<string, string> = {};
       arr.forEach((t: any) => { if (t.name && t.id) map[t.name] = t.id; });
@@ -317,7 +317,7 @@ function NewClientWizard() {
       setCreatedId(created?.id || null);
       if (photoPreview && created?.id) {
         try {
-          await api.clients.uploadPhoto(created.id, photoPreview);
+          await api.pt.uploadPhoto(created.id, photoPreview);
         } catch {} // non-blocking
       }
     } catch (err: any) {

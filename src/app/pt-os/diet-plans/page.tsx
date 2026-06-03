@@ -167,7 +167,7 @@ function DietPlansContent() {
         api.diet.meals.list().catch((err) => { toast.error(err?.message || 'Failed to load meals'); return []; }),
         api.diet.templates.list().catch((err) => { toast.error(err?.message || 'Failed to load templates'); return []; }),
         api.diet.supplements.list().catch((err) => { toast.error(err?.message || 'Failed to load supplements'); return []; }),
-        api.trainers.list().catch((err) => { toast.error(err?.message || 'Failed to load trainers'); return []; }),
+        api.pt.trainers().then(r => (r as any)?.data).catch((err) => { toast.error(err?.message || 'Failed to load trainers'); return []; }),
       ]);
       setMeals(
         Array.isArray(mealsRes)

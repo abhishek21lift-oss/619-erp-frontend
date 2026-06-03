@@ -960,6 +960,18 @@ export const api = {
       http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
     create: (data: Record<string, unknown>) =>
       http<{ data: unknown }>('/api/pt-os/clients', { method: 'POST', body: JSON.stringify(data) }),
+    uploadPhoto: (id: string, photo: string) =>
+      http<{ data: unknown }>(`/api/pt-os/clients/${id}/photo`, { method: 'POST', body: JSON.stringify({ photo }) }),
+    trainers: (params?: Record<string, string>) =>
+      http<{ data: unknown[] }>(`/api/pt-os/trainers${buildQs(params)}`),
+    sessions: (params?: { trainer_id?: string; date?: string }) =>
+      http<{ data: unknown[] }>(`/api/pt-os/sessions${buildQs(params)}`),
+    createSession: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/pt-os/sessions', { method: 'POST', body: JSON.stringify(data) }),
+    payments: (params?: { client_id?: string; trainer_id?: string }) =>
+      http<{ data: unknown[] }>(`/api/pt-os/payments${buildQs(params)}`),
+    createPayment: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/pt-os/payments', { method: 'POST', body: JSON.stringify(data) }),
     balanceSheet: (params?: { trainer_id?: string }) =>
       http<{ data: unknown[]; total: number; total_outstanding: number }>(
         `/api/pt-os/balance-sheet${buildQs(params)}`,
