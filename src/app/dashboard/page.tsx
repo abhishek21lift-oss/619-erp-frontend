@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   RefreshCw,
-  CheckCircle, Clock, UserPlus, Users, DollarSign, Activity,
+  CheckCircle, Clock, UserPlus, Users, IndianRupee, Activity,
   UserPlus as UserPlusIcon, ScanFace, PlusCircle, Sparkles,
   TrendingUp,
 } from 'lucide-react';
@@ -167,14 +167,14 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
         <PremiumKpiCard
           label="Today's Sale"
           value={r.today}
           prefix="₹"
           gradient="pink"
-          icon={<DollarSign size={18} strokeWidth={2} />}
+          icon={<IndianRupee size={18} strokeWidth={2} />}
           format={formatINRShort}
           trend={revenueSpark}
           index={0}
@@ -202,29 +202,29 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           index={2}
           onClick={() => router.push('/finance/dues')}
         />
-        <PremiumKpiCard
-          label="Upcoming Renewals"
-          value={data.expiring_soon}
-          gradient="cyan"
-          icon={<RefreshCw size={18} strokeWidth={2} />}
-          trend={renewalsSpark}
-          index={3}
-          onClick={() => router.push('/members/expiring')}
-        />
       </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
+        <PremiumKpiCard
+          label="Upcoming Renewals"
+          value={data.expiring_soon}
+          gradient="cyan"
+          icon={<RefreshCw size={18} strokeWidth={2} />}
+          trend={renewalsSpark}
+          index={0}
+          onClick={() => router.push('/members/expiring')}
+        />
         <ActivityCard
           title="New Clients"
           count={c.new_this_month}
           gradient="pink"
           icon={<UserPlus size={20} strokeWidth={2} />}
-          index={0}
+          index={1}
           onClick={() => router.push('/clients/new')}
         />
         <ActivityCard
@@ -232,15 +232,23 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           count={data.pending_renewals}
           gradient="violet"
           icon={<RefreshCw size={20} strokeWidth={2} />}
-          index={1}
+          index={2}
           onClick={() => router.push('/members/renewals')}
         />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.25 }}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
         <ActivityCard
           title="Upgrades"
           count={0}
           gradient="amber"
           icon={<Activity size={20} strokeWidth={2} />}
-          index={2}
+          index={0}
           onClick={() => router.push('/memberships/subscriptions')}
         />
         <ActivityCard
@@ -248,7 +256,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           count={data.attendance_today}
           gradient="cyan"
           icon={<CheckCircle size={20} strokeWidth={2} />}
-          index={3}
+          index={1}
           onClick={() => router.push('/attendance')}
         />
       </motion.div>

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { cn } from '@/components/ui/cn';
 
 export type ActivityCardGradient =
   | 'blue'
@@ -26,28 +25,6 @@ const GRADIENT_MAP: Record<ActivityCardGradient, string> = {
   violet: 'linear-gradient(135deg, #6D28D9, #A78BFA)',
 };
 
-const SOFT_BG: Record<ActivityCardGradient, string> = {
-  blue: 'bg-[var(--brand-soft)]',
-  green: 'bg-[var(--success-bg)]',
-  amber: 'bg-[var(--warning-bg)]',
-  red: 'bg-[var(--danger-bg)]',
-  purple: 'bg-[var(--accent-soft)]',
-  cyan: 'bg-cyan-50 dark:bg-cyan-500/10',
-  pink: 'bg-pink-50 dark:bg-pink-500/10',
-  violet: 'bg-violet-50 dark:bg-violet-500/10',
-};
-
-const TEXT_COLOR: Record<ActivityCardGradient, string> = {
-  blue: 'text-[var(--brand)]',
-  green: 'text-[var(--success)]',
-  amber: 'text-[var(--warning)]',
-  red: 'text-[var(--danger)]',
-  purple: 'text-[var(--accent)]',
-  cyan: 'text-cyan-600 dark:text-cyan-400',
-  pink: 'text-pink-600 dark:text-pink-400',
-  violet: 'text-violet-600 dark:text-violet-400',
-};
-
 export interface ActivityCardProps {
   title: string;
   count: number;
@@ -62,7 +39,18 @@ export interface ActivityCardProps {
 export const ActivityCard = React.forwardRef<HTMLDivElement, ActivityCardProps>(
   function ActivityCard({ title, count, icon, gradient, trend, onClick, index = 0, className }, ref) {
     const direction = trend === undefined ? 0 : trend > 0 ? 1 : trend < 0 ? -1 : 0;
-    return (
+    const glow = `0 6px 18px -6px ${
+    gradient === 'blue' ? 'rgba(59,130,246,0.4)' :
+    gradient === 'green' ? 'rgba(34,197,94,0.4)' :
+    gradient === 'amber' ? 'rgba(245,158,11,0.4)' :
+    gradient === 'red' ? 'rgba(239,68,68,0.4)' :
+    gradient === 'purple' ? 'rgba(139,92,246,0.4)' :
+    gradient === 'pink' ? 'rgba(219,39,119,0.4)' :
+    gradient === 'violet' ? 'rgba(109,40,217,0.4)' :
+    'rgba(8,145,178,0.4)'
+  }`;
+
+  return (
       <motion.div
         ref={ref}
         initial={{ opacity: 0, y: 12 }}
@@ -83,49 +71,55 @@ export const ActivityCard = React.forwardRef<HTMLDivElement, ActivityCardProps>(
             : undefined
         }
         className={cn(
-          'group relative flex items-center gap-4 overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-5 backdrop-blur-xl',
-          'shadow-[0_10px_40px_rgba(0,0,0,0.08)]',
-          'transition-shadow duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)]',
+          'group relative flex flex-col overflow-hidden rounded-2xl aspect-square',
+          'border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-xl',
+          'shadow-[0_8px_32px_rgba(0,0,0,0.06)]',
+          'transition-all duration-300 hover:shadow-[0_16px_48px_rgba(0,0,0,0.1)] hover:-translate-y-0.5',
           onClick && 'cursor-pointer',
           className,
         )}
+        style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.06)' }}
       >
-        <span
-          className={cn(
-            'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
-            SOFT_BG[gradient],
-            TEXT_COLOR[gradient],
-          )}
+        <div
           aria-hidden
-        >
-          {icon}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-[var(--text-muted)] truncate">{title}</p>
-          <p className="mt-0.5 text-[26px] font-extrabold leading-none tracking-[-0.02em] tabular-nums text-[var(--text-primary)]">
-            {count.toLocaleString('en-IN')}
-          </p>
-        </div>
-        {trend !== undefined && (
-          <span
-            className={cn(
-              'inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold',
-              direction > 0 && 'bg-[var(--success-bg)] text-[var(--success)]',
-              direction < 0 && 'bg-[var(--danger-bg)] text-[var(--danger)]',
-              direction === 0 && 'bg-[var(--neutral-bg)] text-[var(--text-muted)]',
-            )}
-          >
-            {direction > 0 && <TrendingUp size={12} strokeWidth={2.5} />}
-            {direction < 0 && <TrendingDown size={12} strokeWidth={2.5} />}
-            {direction === 0 && <Minus size={12} strokeWidth={2.5} />}
-            {Math.abs(trend).toFixed(1)}%
-          </span>
-        )}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-[0.08] blur-2xl transition-opacity duration-500 group-hover:opacity-[0.18]"
-          style={{ background: GRADIENT_MAP[gradient] }}
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          style={{ background: `radial-gradient(ellipse at 50% 0%, ${GRADIENT_MAP[gradient]} 0%, transparent 70%)` }}
         />
+        <div className="absolute inset-x-4 top-0 h-0.5 rounded-b-full" style={{ background: GRADIENT_MAP[gradient], boxShadow: glow }} />
+        <div className="flex flex-1 flex-col justify-between p-5">
+          <div className="flex items-start justify-between gap-2">
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
+              style={{ background: GRADIENT_MAP[gradient], boxShadow: glow }}
+              aria-hidden
+            >
+              {icon}
+            </span>
+            {trend !== undefined && (
+              <span
+                className={cn(
+                  'inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold',
+                  direction > 0 && 'bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success-border)]',
+                  direction < 0 && 'bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger-border)]',
+                  direction === 0 && 'bg-[var(--neutral-bg)] text-[var(--text-muted)] border border-[var(--border)]',
+                )}
+              >
+                {direction > 0 && <TrendingUp size={10} strokeWidth={2.5} />}
+                {direction < 0 && <TrendingDown size={10} strokeWidth={2.5} />}
+                {direction === 0 && <Minus size={10} strokeWidth={2.5} />}
+                {Math.abs(trend).toFixed(1)}%
+              </span>
+            )}
+          </div>
+          <div className="mt-auto space-y-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-muted)] truncate">
+              {title}
+            </p>
+            <p className="text-[28px] font-extrabold leading-none tracking-[-0.03em] tabular-nums text-[var(--text-primary)]">
+              {count.toLocaleString('en-IN')}
+            </p>
+          </div>
+        </div>
       </motion.div>
     );
   },
