@@ -215,7 +215,8 @@ function SchedulePageContent() {
     if (!trainer) { setModalClients([]); return; }
     try {
       setModalClientsLoading(true);
-      const clients = await api.clients.list({ trainer_id: trainer.id });
+      const clientsRes = await api.pt.clients({ trainer_id: trainer.id });
+      const clients = clientsRes.data as any[];
       setModalClients(
         Array.isArray(clients)
           ? clients.map((c: any) => c.name ?? c)

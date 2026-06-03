@@ -32,7 +32,7 @@ export default function WeeklyCheckinPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const clients = useAsync<Client[]>(() => api.clients.list({ status: 'active' }), []);
+  const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const checkins = useAsync(() => api.progress.weeklyCheckins.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
 
   async function handleSubmit(e: React.FormEvent) {

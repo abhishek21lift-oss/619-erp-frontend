@@ -216,7 +216,7 @@ function DietPlansContent() {
       if (Array.isArray(trainersRes)) {
         const allClients = (await Promise.all(
           trainersRes.map((t: any) =>
-            api.clients.list({ trainer_id: t.id ?? t }).catch((err) => { toast.error(err?.message || 'Failed to load clients'); return []; })
+            api.pt.clients({ trainer_id: t.id ?? t }).then(r => r.data).catch((err) => { toast.error(err?.message || 'Failed to load clients'); return []; })
           )
         )).flat();
         setClients(

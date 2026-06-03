@@ -26,7 +26,7 @@ export default function PtGoalsPage() {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const clients = useAsync<Client[]>(() => api.clients.list({ status: 'active' }), []);
+  const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const goals = useAsync(() => api.progress.goals.list(selectedClient ? { client_id: selectedClient } : {}).then(r => r.data), [selectedClient]);
 
   async function handleSubmit(e: React.FormEvent) {

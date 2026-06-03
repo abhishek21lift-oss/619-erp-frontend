@@ -19,7 +19,7 @@ export default function StrengthTrackingPage() {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const clients = useAsync<Client[]>(() => api.clients.list({ status: 'active' }), []);
+  const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const logs = useAsync(() => api.progress.strengthLogs.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
 
   async function handleSubmit(e: React.FormEvent) {

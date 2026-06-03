@@ -13,7 +13,7 @@ export default function PtAssessmentPage() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  const clients = useAsync<Client[]>(() => api.clients.list({ status: 'active' }), []);
+  const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const assessments = useAsync(() => api.progress.assessments.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
 
   function updateField(key: string, value: string) {

@@ -15,7 +15,7 @@ export default function SessionBalancePage() {
   const [endDate, setEndDate] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const clients = useAsync<Client[]>(() => api.clients.list({ status: 'active' }), []);
+  const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const balances = useAsync(() => api.automation.sessionBalance.list({ low_balance: 'true' }).then(r => r.data), []);
   const allBalances = useAsync(() => api.automation.sessionBalance.list().then(r => r.data), []);
 
