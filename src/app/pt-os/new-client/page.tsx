@@ -292,13 +292,16 @@ function NewClientWizard() {
 
   const handleSubmit = async () => {
     setError('');
+    if (!form.name.trim()) { setError('Name is required.'); return; }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { setError('Invalid email format.'); return; }
     if (!form.transformationGoals) { setError('Please describe transformation goals.'); return; }
+    if (form.transformationGoals.length > 1000) { setError('Transformation goals must be under 1000 characters.'); return; }
     setSaving(true);
     try {
       const created = await api.clients.create({
-        name: form.name,
-        email: form.email || undefined,
-        mobile: form.phone || undefined,
+        name: form.name.trim(),
+        email: form.email.trim() || undefined,
+        mobile: form.phone.trim() || undefined,
         dob: form.dob || undefined,
         gender: form.gender,
         trainer_id: trainerIdMap[form.trainer] || undefined,
@@ -313,6 +316,7 @@ function NewClientWizard() {
         } catch {} // non-blocking
       }
     } catch (err: any) {
+      console.error('Submit error:', err);
       const payload = err?.payload;
       const fields = payload?.error?.fields;
       if (fields && typeof fields === 'object') {
