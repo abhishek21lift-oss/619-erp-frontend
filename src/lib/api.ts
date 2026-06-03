@@ -962,6 +962,14 @@ export const api = {
       http<{ data: unknown[]; total: number; total_outstanding: number }>(
         `/api/pt-os/balance-sheet${buildQs(params)}`,
       ),
+    commissions: (params?: { trainer_id?: string }) =>
+      http<{ data: unknown[] }>(`/api/pt-os/commissions${buildQs(params)}`),
+    calculateCommissions: (month?: string) =>
+      http<{ data: { count: number; total: number } }>('/api/pt-os/commissions/calculate', {
+        method: 'POST', body: JSON.stringify({ month }),
+      }),
+    payouts: (params?: { month?: string }) =>
+      http<{ data: unknown[]; month: string }>(`/api/pt-os/payouts${buildQs(params)}`),
     revenue: () =>
       http<{ data: unknown[] }>('/api/pt-os/revenue'),
     trainerPerformance: () =>
