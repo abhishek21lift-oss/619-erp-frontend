@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Check, User, Mail, Phone, Calendar, Hash,
-  Target, Ruler, Heart, Activity, Dumbbell, Clock, Sparkles,
+  Target, Ruler, Heart, Activity, Dumbbell, Sparkles,
   Camera, Upload, CheckCircle2, RefreshCw, Award, FileText,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -21,8 +21,6 @@ type StepId = 1 | 2 | 3 | 4;
 
 type Goal = 'Weight Loss' | 'Muscle Gain' | 'Endurance' | 'General Fitness' | 'Body Recomposition' | 'Flexibility & Mobility' | 'Sports Performance' | 'Fat Loss & Toning';
 
-type PTpackage = 'Starter' | 'Standard' | 'Premium' | 'Elite';
-
 type Frequency = '1x/week' | '2x/week' | '3x/week' | '4x/week' | '5x/week';
 
 interface FormData {
@@ -38,7 +36,6 @@ interface FormData {
   healthConditions: string[];
   injuries: string;
   trainer: string;
-  ptPackage: PTpackage | '';
   frequency: Frequency | '';
   transformationGoals: string;
 }
@@ -69,7 +66,7 @@ function initForm(): FormData {
     name: '', email: '', phone: '', dob: '', gender: 'Male',
     goal: '', height: '', weight: '', bodyFat: '',
     healthConditions: [], injuries: '',
-    trainer: '', ptPackage: '', frequency: '',
+    trainer: '', frequency: '',
     transformationGoals: '',
   };
 }
@@ -242,7 +239,6 @@ function NewClientWizard() {
 
   /* ── API State ── */
   const [trainers, setTrainers] = useState<string[]>([]);
-  const [plans, setPlans] = useState<{ id: PTpackage; sessions: number; price: number; popular?: boolean }[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
 
@@ -250,29 +246,15 @@ function NewClientWizard() {
     try {
       setDataLoading(true);
       setDataError('');
-      const [trainersRes, plansRes] = await Promise.all([
-        api.trainers.list(),
-        api.plans.list(),
-      ]);
+      const trainersRes = await api.trainers.list();
       setTrainers(
         Array.isArray(trainersRes)
           ? trainersRes.map((t: any) => t.name ?? t)
           : [],
       );
-      setPlans(
-        Array.isArray(plansRes)
-          ? plansRes.map((p: any) => ({
-              id: (p.name ?? p.id) as PTpackage,
-              sessions: p.sessions ?? 0,
-              price: p.price ?? 0,
-              popular: p.popular ?? false,
-            }))
-          : [],
-      );
     } catch (err: any) {
       setDataError(err?.message || 'Failed to load data');
       setTrainers([]);
-      setPlans([]);
     } finally {
       setDataLoading(false);
     }
@@ -283,7 +265,6 @@ function NewClientWizard() {
   }, [fetchData]);
 
   const trainerOptions = trainers;
-  const planOptions = plans;
 
   const set = useCallback(<K extends keyof FormData>(key: K, val: FormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -326,7 +307,6 @@ function NewClientWizard() {
         healthConditions: form.healthConditions,
         injuries: form.injuries,
         trainer_name: form.trainer,
-        package: form.ptPackage,
         frequency: form.frequency,
         notes: form.transformationGoals,
       } as Record<string, unknown>);
@@ -347,9 +327,6 @@ function NewClientWizard() {
       reader.readAsDataURL(file);
     }
   };
-
-  const selectedPackage = planOptions.find((p) => p.id === form.ptPackage);
-  const totalSessions = selectedPackage?.sessions || 0;
 
   /* ── SUCCESS MODAL ── */
   if (showSuccess) {
@@ -372,7 +349,7 @@ function NewClientWizard() {
           </motion.div>
           <h2 className="text-[28px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>Client Onboarded!</h2>
           <p className="mt-2 text-[15px]" style={{ color: 'rgb(148,163,184)' }}>
-            {form.name} has been registered for {form.ptPackage} PT package with {form.trainer}.
+            {form.name} has been registered with personal trainer {form.trainer}.
           </p>
           <div className="mt-6 flex gap-3">
             <PremiumButton tone="primary" glow onClick={() => { setShowSuccess(false); setDone(false); setForm(initForm); setStep(1); setPhotoPreview(null); }}>
@@ -597,45 +574,7 @@ function NewClientWizard() {
                           placeholder="Choose a personal trainer"
                         />
 
-                        {/* PT Packages */}
-                        <div>
-                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>PT Package</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            {planOptions.map((pkg) => (
-                              <button
-                                key={pkg.id}
-                                type="button"
-                                onClick={() => set('ptPackage', pkg.id)}
-                                className={cn(
-                                  'relative rounded-[16px] p-4 text-left transition-all',
-                                )}
-                                style={{
-                                  background: form.ptPackage === pkg.id ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'var(--bg-subtle)',
-                                  border: form.ptPackage === pkg.id ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
-                                  boxShadow: form.ptPackage === pkg.id ? '0 4px 20px rgba(220,38,38,0.25)' : 'none',
-                                  color: form.ptPackage === pkg.id ? '#fff' : 'rgb(15,23,42)',
-                                }}
-                              >
-                                {pkg.popular && (
-                                  <span className="absolute -top-2 -right-2 rounded-full px-2 py-0.5 text-[9px] font-[800] uppercase tracking-wider"
-                                    style={{ background: '#f59e0b', color: '#fff', boxShadow: '0 2px 8px rgba(245,158,11,0.3)' }}>
-                                    Popular
-                                  </span>
-                                )}
-                                <p className="text-[13px] font-[720]">{pkg.id}</p>
-                                <p className="mt-1 text-[24px] font-[860] tracking-[-0.03em]">
-                                  ₹{pkg.price.toLocaleString('en-IN')}
-                                </p>
-                                <p className="mt-1 text-[11px] font-[600]" style={{ opacity: 0.75 }}>
-                                  {pkg.sessions} sessions
-                                </p>
-                                <p className="text-[11px]" style={{ opacity: 0.65 }}>
-                                  ₹{Math.round(pkg.price / pkg.sessions).toLocaleString('en-IN')} / session
-                                </p>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+
 
                         {/* Session Frequency */}
                         <PremiumSelect
@@ -647,7 +586,7 @@ function NewClientWizard() {
                         />
 
                         {/* Summary */}
-                        {form.trainer && form.ptPackage && form.frequency && (
+                        {form.trainer && form.frequency && (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
@@ -657,9 +596,7 @@ function NewClientWizard() {
                             <p className="text-[12px] font-[700] tracking-wider uppercase" style={{ color: '#dc2626' }}>Assignment Summary</p>
                             <div className="mt-2 space-y-1 text-[13px]" style={{ color: 'rgb(100,116,139)' }}>
                               <p>Trainer: <strong style={{ color: 'rgb(15,23,42)' }}>{form.trainer}</strong></p>
-                              <p>Package: <strong style={{ color: 'rgb(15,23,42)' }}>{form.ptPackage}</strong></p>
                               <p>Frequency: <strong style={{ color: 'rgb(15,23,42)' }}>{form.frequency}</strong></p>
-                              <p>Estimated duration: <strong style={{ color: 'rgb(15,23,42)' }}>~{Math.round(totalSessions / parseInt(form.frequency || '1'))} weeks</strong></p>
                             </div>
                           </motion.div>
                         )}
@@ -700,10 +637,7 @@ function NewClientWizard() {
                           ]},
                           { title: 'PT Assignment', items: [
                             { k: 'Trainer', v: form.trainer },
-                            { k: 'Package', v: form.ptPackage },
-                            { k: 'Sessions', v: `${totalSessions} sessions` },
                             { k: 'Frequency', v: form.frequency },
-                            { k: 'Investment', v: selectedPackage ? `₹${selectedPackage.price.toLocaleString('en-IN')}` : '—' },
                           ]},
                           { title: 'Photo', items: [
                             { k: 'Photo Upload', v: photoPreview ? 'Uploaded ✓' : 'Not uploaded' },
