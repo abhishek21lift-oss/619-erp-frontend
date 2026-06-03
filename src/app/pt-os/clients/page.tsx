@@ -55,7 +55,7 @@ function ClientRow({ client, index }: { client: PtClient; index: number }) {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.02, duration: 0.2 }}
-      onClick={() => router.push(`/clients/${client.id}`)}
+      onClick={() => router.push(`/pt-os/clients/${client.id}`)}
       className="cursor-pointer transition-colors"
       style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(167,139,250,0.03)'; }}

@@ -7,6 +7,7 @@ import {
   Target, Ruler, Heart, Activity, Dumbbell, Sparkles,
   Camera, Upload, CheckCircle2, RefreshCw, Award, FileText,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
@@ -231,9 +232,11 @@ export default function NewPTClientPage() {
 function NewClientWizard() {
   const [step, setStep] = useState<StepId>(1);
   const [form, setForm] = useState<FormData>(initForm);
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -311,6 +314,7 @@ function NewClientWizard() {
       const created = (res as any)?.data;
       setDone(true);
       setShowSuccess(true);
+      setCreatedId(created?.id || null);
       if (photoPreview && created?.id) {
         try {
           await api.clients.uploadPhoto(created.id, photoPreview);
@@ -367,7 +371,7 @@ function NewClientWizard() {
             <PremiumButton tone="primary" glow onClick={() => { setShowSuccess(false); setDone(false); setForm(initForm); setStep(1); setPhotoPreview(null); }}>
               Onboard Another
             </PremiumButton>
-            <PremiumButton tone="secondary">View Client Profile</PremiumButton>
+            <PremiumButton tone="secondary" onClick={() => router.push(`/pt-os/clients/${createdId}`)}>View Client Profile</PremiumButton>
           </div>
         </motion.div>
       </motion.div>
