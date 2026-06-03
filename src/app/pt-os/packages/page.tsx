@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Plus, Loader2, Check, Dumbbell, Flame, Zap } from 'lucide-react';
+import { Package, Plus, Loader2, Check, Dumbbell, Flame, Zap, Activity } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAsync } from '@/lib/use-async';
