@@ -164,11 +164,11 @@ function Inner() {
               </div>
             </div>
             <button
-              onClick={() => router.push(`/clients/${id}/receipts`)}
+              onClick={() => router.push(`/clients/${id}`)}
               className="inline-flex items-center gap-2 rounded-xl bg-white border border-[rgba(0,0,0,0.04)] px-4 py-2 text-[12px] font-bold text-[var(--text-muted)] hover:bg-[#F5F5F7] transition-colors"
             >
               <FileText size={14} strokeWidth={1.8} />
-              Go to Receipt Register
+              View Profile & Payments
             </button>
           </div>
 

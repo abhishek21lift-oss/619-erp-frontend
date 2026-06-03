@@ -465,6 +465,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                   <ActionBtn icon={<Snowflake size={13} />} label="Freeze" gradient="linear-gradient(135deg,#06b6d4,#0891b2)" onClick={() => router.push(`/clients/${id}/freeze`)} />
                   <ActionBtn icon={<UserCheck size={13} />} label="Assign PT" gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" onClick={() => router.push(`/clients/${id}/assign-pt`)} />
                   <ActionBtn icon={<RotateCcw size={13} />} label="Renew PT" outline onClick={() => router.push(`/clients/${id}/renew-pt`)} />
+                  <ActionBtn icon={<Zap size={13} />} label="Combo" outline onClick={() => router.push(`/clients/${id}/combo`)} />
+                  <ActionBtn icon={<TrendingUp size={13} />} label="Downgrade" outline onClick={() => router.push(`/clients/${id}/downgrade`)} />
+                  <ActionBtn icon={<Star size={13} />} label="Trial" outline onClick={() => router.push(`/clients/${id}/trial`)} />
                   <button
                     onClick={() => setEnrollOpen(true)}
                     style={{
