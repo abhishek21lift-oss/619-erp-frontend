@@ -167,14 +167,14 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
       >
         <PremiumKpiCard
           label="Today's Sale"
           value={r.today}
           prefix="₹"
           gradient="pink"
-          icon={<IndianRupee size={18} strokeWidth={2} />}
+          icon={<IndianRupee size={14} strokeWidth={2} />}
           format={formatINRShort}
           trend={revenueSpark}
           index={0}
@@ -185,7 +185,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           value={r.period}
           prefix="₹"
           gradient="violet"
-          icon={<CheckCircle size={18} strokeWidth={2} />}
+          icon={<CheckCircle size={14} strokeWidth={2} />}
           format={formatINRShort}
           trend={revenueSpark}
           index={1}
@@ -196,11 +196,20 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           value={totalDues}
           prefix="₹"
           gradient="amber"
-          icon={<Clock size={18} strokeWidth={2} />}
+          icon={<Clock size={14} strokeWidth={2} />}
           format={formatINRShort}
           trend={duesSpark}
           index={2}
           onClick={() => router.push('/finance/dues')}
+        />
+        <PremiumKpiCard
+          label="Upcoming Renewals"
+          value={data.expiring_soon}
+          gradient="cyan"
+          icon={<RefreshCw size={14} strokeWidth={2} />}
+          trend={renewalsSpark}
+          index={3}
+          onClick={() => router.push('/members/expiring')}
         />
       </motion.div>
 
@@ -208,55 +217,38 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
       >
-        <PremiumKpiCard
-          label="Upcoming Renewals"
-          value={data.expiring_soon}
-          gradient="cyan"
-          icon={<RefreshCw size={18} strokeWidth={2} />}
-          trend={renewalsSpark}
-          index={0}
-          onClick={() => router.push('/members/expiring')}
-        />
         <ActivityCard
           title="New Clients"
           count={c.new_this_month}
           gradient="pink"
-          icon={<UserPlus size={20} strokeWidth={2} />}
-          index={1}
+          icon={<UserPlus size={14} strokeWidth={2} />}
+          index={0}
           onClick={() => router.push('/clients/new')}
         />
         <ActivityCard
           title="Renewals"
           count={data.pending_renewals}
           gradient="violet"
-          icon={<RefreshCw size={20} strokeWidth={2} />}
-          index={2}
+          icon={<RefreshCw size={14} strokeWidth={2} />}
+          index={1}
           onClick={() => router.push('/members/renewals')}
         />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.25 }}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      >
         <ActivityCard
           title="Upgrades"
           count={0}
           gradient="amber"
-          icon={<Activity size={20} strokeWidth={2} />}
-          index={0}
+          icon={<Activity size={14} strokeWidth={2} />}
+          index={2}
           onClick={() => router.push('/memberships/subscriptions')}
         />
         <ActivityCard
           title="Check-ins"
           count={data.attendance_today}
           gradient="cyan"
-          icon={<CheckCircle size={20} strokeWidth={2} />}
-          index={1}
+          icon={<CheckCircle size={14} strokeWidth={2} />}
+          index={3}
           onClick={() => router.push('/attendance')}
         />
       </motion.div>
