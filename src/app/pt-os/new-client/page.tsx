@@ -39,6 +39,9 @@ interface FormData {
   trainer: string;
   frequency: Frequency | '';
   transformationGoals: string;
+  ptPackageId: string | null;
+  basePrice: number | null;
+  sellingPrice: number | null;
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -69,6 +72,9 @@ function initForm(): FormData {
     healthConditions: [], injuries: '',
     trainer: '', frequency: '',
     transformationGoals: '',
+    ptPackageId: null,
+    basePrice: null,
+    sellingPrice: null,
   };
 }
 
@@ -243,26 +249,42 @@ function NewClientWizard() {
   /* ── API State ── */
   const [trainers, setTrainers] = useState<string[]>([]);
   const [trainerIdMap, setTrainerIdMap] = useState<Record<string, string>>({});
+  const [ptPackages, setPtPackages] = useState<{ id: string; name: string; baseAmount: number; durationMonths: number }[]>([]);
+  const packageNames = ptPackages.map(p => p.name);
+  const packageInfoByName: Record<string, { id: string; baseAmount: number; durationMonths: number }> = {};
+  ptPackages.forEach(p => { packageInfoByName[p.name] = { id: p.id, baseAmount: p.baseAmount, durationMonths: p.durationMonths }; });
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
 
-  const fetchData = useCallback(async () => {
-    try {
-      setDataLoading(true);
-      setDataError('');
-      const trainersRes = (await api.pt.trainers()) as { data: unknown[] };
-      const arr = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
-      setTrainers(arr.map((t: any) => t.name ?? t));
-      const map: Record<string, string> = {};
-      arr.forEach((t: any) => { if (t.name && t.id) map[t.name] = t.id; });
-      setTrainerIdMap(map);
-    } catch (err: any) {
-      setDataError(err?.message || 'Failed to load data');
-      setTrainers([]);
-    } finally {
-      setDataLoading(false);
-    }
-  }, []);
+    const fetchData = useCallback(async () => {
+      try {
+        setDataLoading(true);
+        setDataError('');
+        const trainersRes = (await api.pt.trainers()) as { data: unknown[] };
+        const arr = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
+        setTrainers(arr.map((t: any) => t.name ?? t));
+        const map: Record<string, string> = {};
+        arr.forEach((t: any) => { if (t.name && t.id) map[t.name] = t.id; });
+        setTrainerIdMap(map);
+        
+        // Fetch PT packages
+        const packagesRes = (await api.pt.plans()) as { data: unknown[] };
+        const pkgArr = Array.isArray(packagesRes?.data) ? packagesRes.data : [];
+        setPtPackages(pkgArr.map((p: any) => ({
+          id: p.id ?? '',
+          name: p.name ?? '',
+          baseAmount: Number(p.base_amount ?? 0),
+          durationMonths: Number(p.duration_months ?? 1)
+        })));
+      } catch (err: any) {
+        setDataError(err?.message || 'Failed to load data');
+        setTrainers([]);
+        setTrainerIdMap({});
+        setPtPackages([]);
+      } finally {
+        setDataLoading(false);
+      }
+    }, []);
 
   useEffect(() => {
     fetchData();
@@ -300,17 +322,27 @@ function NewClientWizard() {
     if (!form.transformationGoals) { setError('Please describe transformation goals.'); return; }
     if (form.transformationGoals.length > 1000) { setError('Transformation goals must be under 1000 characters.'); return; }
     setSaving(true);
-    try {
-      const res = await api.pt.create({
-        name: form.name.trim(),
-        email: form.email.trim() || undefined,
-        mobile: form.phone.trim() || undefined,
-        dob: form.dob || undefined,
-        gender: form.gender,
-        trainer_id: trainerIdMap[form.trainer] || undefined,
-        weight: form.weight ? Number(form.weight) : undefined,
-        notes: form.transformationGoals,
-      } as Record<string, unknown>);
+      try {
+        const pkgInfo = form.ptPackageId ? packageInfoByName[form.ptPackageId] : null;
+        const duration = pkgInfo?.durationMonths ?? 1;
+        const disc = form.basePrice && form.sellingPrice ? (form.basePrice - form.sellingPrice) : 0;
+        const selling = form.sellingPrice ?? 0;
+        const res = await api.pt.create({
+          name: form.name.trim(),
+          email: form.email.trim() || undefined,
+          mobile: form.phone.trim() || undefined,
+          dob: form.dob || undefined,
+          gender: form.gender,
+          trainer_id: trainerIdMap[form.trainer] || undefined,
+          weight: form.weight ? Number(form.weight) : undefined,
+          notes: form.transformationGoals,
+          package_type: form.ptPackageId,
+          base_amount: form.basePrice,
+          discount: disc,
+          monthly_pt_amount: duration > 0 ? Math.round(selling / duration) : selling,
+          pt_start_date: new Date().toISOString().slice(0, 10),
+          duration_months: duration,
+        } as Record<string, unknown>);
       const created = (res as any)?.data;
       setDone(true);
       setShowSuccess(true);
@@ -590,7 +622,60 @@ function NewClientWizard() {
                           placeholder="Choose a personal trainer"
                         />
 
+                        {/* PT Package Selector - Show package cards with names and prices */}
+                        <div>
+                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>PT Package</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {ptPackages.map((pkg) => {
+                              const isSelected = form.ptPackageId === pkg.name;
+                              return (
+                                <button
+                                  key={pkg.id}
+                                  type="button"
+                                  onClick={() => {
+                                    set('ptPackageId', pkg.name);
+                                    set('basePrice', pkg.baseAmount);
+                                    set('sellingPrice', pkg.baseAmount);
+                                  }}
+                                  className="rounded-[14px] p-3.5 text-left transition-all"
+                                  style={{
+                                    background: isSelected ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'var(--bg-subtle)',
+                                    border: isSelected ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
+                                    boxShadow: isSelected ? '0 4px 16px rgba(220,38,38,0.2)' : 'none',
+                                    color: isSelected ? '#fff' : 'rgb(15,23,42)',
+                                  }}
+                                >
+                                  <p className="text-[13px] font-[700]" style={{ color: isSelected ? '#fff' : 'rgb(15,23,42)' }}>{pkg.name}</p>
+                                  <p className="text-[11px] mt-0.5" style={{ color: isSelected ? 'rgba(255,255,255,0.8)' : 'rgb(148,163,184)' }}>
+                                    Base: {fmtINR(pkg.baseAmount)}
+                                  </p>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
 
+                        {/* Base Price */}
+                        <FloatInput
+                          label="Base Price (₹)"
+                          value={form.basePrice ?? 0}
+                          onChange={(v) => {
+                            const num = parseFloat(v);
+                            set('basePrice', isNaN(num) ? null : num);
+                          }}
+                          placeholder="Enter base price"
+                        />
+
+                        {/* Selling Price */}
+                        <FloatInput
+                          label="Selling Price (₹)"
+                          value={form.sellingPrice ?? 0}
+                          onChange={(v) => {
+                            const num = parseFloat(v);
+                            set('sellingPrice', isNaN(num) ? null : num);
+                          }}
+                          placeholder="Enter selling price"
+                        />
 
                         {/* Session Frequency */}
                         <PremiumSelect
@@ -602,7 +687,7 @@ function NewClientWizard() {
                         />
 
                         {/* Summary */}
-                        {form.trainer && form.frequency && (
+                        {form.trainer && form.frequency && form.ptPackageId && form.basePrice !== null && form.sellingPrice !== null && (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
@@ -612,6 +697,9 @@ function NewClientWizard() {
                             <p className="text-[12px] font-[700] tracking-wider uppercase" style={{ color: '#dc2626' }}>Assignment Summary</p>
                             <div className="mt-2 space-y-1 text-[13px]" style={{ color: 'rgb(100,116,139)' }}>
                               <p>Trainer: <strong style={{ color: 'rgb(15,23,42)' }}>{form.trainer}</strong></p>
+                              <p>Package: <strong style={{ color: 'rgb(15,23,42)' }}>{form.ptPackageId}</strong></p>
+                              <p>Base Price: <strong style={{ color: 'rgb(15,23,42)' }}>{fmtINR(form.basePrice)}</strong></p>
+                              <p>Selling Price: <strong style={{ color: 'rgb(15,23,42)' }}>{fmtINR(form.sellingPrice)}</strong></p>
                               <p>Frequency: <strong style={{ color: 'rgb(15,23,42)' }}>{form.frequency}</strong></p>
                             </div>
                           </motion.div>
@@ -653,6 +741,9 @@ function NewClientWizard() {
                           ]},
                           { title: 'PT Assignment', items: [
                             { k: 'Trainer', v: form.trainer },
+                            { k: 'Package', v: form.ptPackageId || '—' },
+                            { k: 'Base Price', v: form.basePrice ? fmtINR(form.basePrice) : '—' },
+                            { k: 'Selling Price', v: form.sellingPrice ? fmtINR(form.sellingPrice) : '—' },
                             { k: 'Frequency', v: form.frequency },
                           ]},
                           { title: 'Photo', items: [
