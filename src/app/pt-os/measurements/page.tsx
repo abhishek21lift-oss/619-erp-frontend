@@ -1,11 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Ruler, Plus, Loader2 } from 'lucide-react';
+import { Ruler, Plus, Loader2, Search, Users } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
-import { Button } from '@/components/ui';
+import { PremiumButton } from '@/components/premium/PremiumButton';
 
 const MEASUREMENT_FIELDS = [
   { key: 'weight', label: 'Weight (kg)' },
@@ -19,21 +19,37 @@ const MEASUREMENT_FIELDS = [
 ];
 
 export default function MeasurementsPage() {
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [selectedClient, setSelectedClient] = useState('');
+  const [search, setSearch] = useState('');
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.pt.clients().then((r: any) => {
+      const arr = Array.isArray(r?.data) ? r.data : [];
+      setClients(arr.map((c: any) => ({ id: c.id, name: c.name })));
+    }).catch(() => {});
+  }, []);
+
+  const filteredClients = clients.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   function update(k: string, v: string) { setForm(prev => ({ ...prev, [k]: v })); }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!selectedClient) return;
     setSaving(true);
     try {
-      const body: Record<string, unknown> = { assessment_type: 'monthly' };
+      const body: Record<string, unknown> = { client_id: selectedClient, assessment_type: 'monthly' };
       for (const f of MEASUREMENT_FIELDS) {
         if (form[f.key]) body[f.key] = parseFloat(form[f.key]);
       }
       await api.progress.assessments.create(body);
       setForm({});
+      alert('Measurements saved successfully!');
     } finally { setSaving(false); }
   }
 
@@ -60,23 +76,66 @@ export default function MeasurementsPage() {
             </div>
           </motion.div>
 
-          <div className="rounded-[20px] p-6 max-w-lg" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
-            <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'rgb(15,23,42)' }}>Log Measurements</h2>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                {MEASUREMENT_FIELDS.map(f => (
-                  <input key={f.key} type="number" step="0.1" placeholder={f.label} value={form[f.key] || ''}
-                    onChange={e => update(f.key, e.target.value)}
-                    className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
-                ))}
-              </div>
-              <Button type="submit" disabled={saving} className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                style={{ background: 'linear-gradient(135deg, #6d28d9, #8b5cf6)', color: '#fff' }}>
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Save Measurements
-              </Button>
-            </form>
+          {/* Client Selector */}
+          <div className="rounded-[20px] p-5 mb-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
+            <h2 className="text-[14px] font-[700] mb-3" style={{ color: 'rgb(15,23,42)' }}>Select Client</h2>
+            <div className="relative mb-3">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'rgb(148,163,184)' }} />
+              <input
+                type="text"
+                placeholder="Search clients..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-[10px] text-[12px] outline-none transition-all"
+                style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto">
+              {filteredClients.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => { setSelectedClient(c.id); setSearch(''); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-[600] transition-all"
+                  style={{
+                    background: selectedClient === c.id ? 'rgba(139,92,246,0.12)' : 'rgba(0,0,0,0.03)',
+                    border: `1px solid ${selectedClient === c.id ? 'rgba(139,92,246,0.3)' : 'rgba(0,0,0,0.06)'}`,
+                    color: selectedClient === c.id ? '#7c3aed' : 'rgb(71,85,105)',
+                  }}
+                >
+                  <Users size={12} />
+                  {c.name}
+                </button>
+              ))}
+              {filteredClients.length === 0 && (
+                <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>No clients found</p>
+              )}
+            </div>
           </div>
+
+          {/* Measurements Form */}
+          {selectedClient && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-[20px] p-6 max-w-lg" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
+              <h2 className="text-[18px] font-[760] mb-1" style={{ color: 'rgb(15,23,42)' }}>Log Measurements</h2>
+              <p className="text-[11px] mb-5" style={{ color: 'rgb(148,163,184)' }}>
+                For: {clients.find(c => c.id === selectedClient)?.name}
+              </p>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {MEASUREMENT_FIELDS.map(f => (
+                    <input key={f.key} type="number" step="0.1" placeholder={f.label} value={form[f.key] || ''}
+                      onChange={e => update(f.key, e.target.value)}
+                      className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
+                      style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
+                  ))}
+                </div>
+                <PremiumButton tone="primary" glow icon={saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                  disabled={saving} className="!w-full justify-center">
+                  {saving ? 'Saving...' : 'Save Measurements'}
+                </PremiumButton>
+              </form>
+            </motion.div>
+          )}
         </div>
       </AppShell>
     </Guard>

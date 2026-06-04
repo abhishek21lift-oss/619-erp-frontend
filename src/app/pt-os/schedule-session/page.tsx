@@ -31,6 +31,7 @@ type SessionType = '1-on-1' | 'Group' | 'Assessment';
 interface PTSession {
   id: string;
   client: string;
+  client_id?: string;
   trainer: string;
   date: string;
   time: string;
@@ -44,6 +45,7 @@ interface PTSession {
 
 interface NewSessionData {
   client: string;
+  client_id?: string;
   trainer: string;
   date: string;
   time: string;
@@ -151,6 +153,7 @@ function SchedulePageContent() {
       setSessions(allSessionsData.map((s: any) => ({
         id: String(s.id ?? ''),
         client: s.client_name ?? '',
+        client_id: s.client_id ?? '',
         trainer: (trainerArr.find((t: any) => t.id === s.trainer_id)?.name) ?? s.trainer_id ?? '',
         date: s.session_date ?? '',
         time: s.start_time ?? '',
@@ -207,7 +210,7 @@ function SchedulePageContent() {
   };
 
   /* ── Clients for modal ── */
-  const [modalClients, setModalClients] = useState<string[]>([]);
+  const [modalClients, setModalClients] = useState<{ id: string; name: string }[]>([]);
   const [modalClientsLoading, setModalClientsLoading] = useState(false);
 
   const fetchClientsForTrainer = useCallback(async (trainerName: string) => {
@@ -219,7 +222,7 @@ function SchedulePageContent() {
       const clients = clientsRes.data as any[];
       setModalClients(
         Array.isArray(clients)
-          ? clients.map((c: any) => c.name ?? c)
+          ? clients.map((c: any) => ({ id: c.id, name: c.name ?? c }))
           : [],
       );
     } catch {
@@ -240,8 +243,16 @@ function SchedulePageContent() {
     setConflict(false);
     const newSession: PTSession = {
       id: Date.now().toString(),
-      ...data,
+      client: data.client,
+      client_id: data.client_id ?? '',
+      trainer: data.trainer,
+      date: data.date,
+      time: data.time,
+      duration: data.duration,
+      type: data.type,
       status: 'scheduled',
+      notes: data.notes,
+      recurring: data.recurring,
       clientAvatar: initials(data.client),
     };
     try {
@@ -249,7 +260,7 @@ function SchedulePageContent() {
       if (trainerObj) {
         await api.pt.createSession({
           trainer_id: trainerObj.id,
-          client_id: data.client,
+          client_id: data.client_id,
           date: data.date,
           start_time: data.time,
           notes: data.notes,
@@ -704,11 +715,11 @@ function CreateSessionModal({
 }: {
   open: boolean; onClose: () => void; onConfirm: (data: NewSessionData) => void;
   conflict: boolean; onDismissConflict: () => void;
-  trainerOptions: string[]; clientOptions: string[]; clientOptionsLoading: boolean;
+  trainerOptions: string[]; clientOptions: { id: string; name: string }[]; clientOptionsLoading: boolean;
   onTrainerChange: (trainer: string) => void;
 }) {
   const [form, setForm] = useState<NewSessionData>({
-    client: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00',
+    client: '', client_id: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00',
     duration: 60, type: '1-on-1', notes: '', recurring: false,
   });
   const [step, setStep] = useState(1);
@@ -721,16 +732,16 @@ function CreateSessionModal({
     }
     onConfirm(form);
     setStep(1);
-    setForm({ client: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
+    setForm({ client: '', client_id: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
   };
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => { setStep(1); setForm({ client: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false }); }, 200);
+    setTimeout(() => { setStep(1); setForm({ client: '', client_id: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false }); }, 200);
   };
 
   const onTrainerSelect = (t: string) => {
-    setForm((f) => ({ ...f, trainer: t, client: '' }));
+    setForm((f) => ({ ...f, trainer: t, client: '', client_id: '' }));
     onTrainerChange(t);
   };
 
@@ -781,15 +792,15 @@ function CreateSessionModal({
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 {resolvedClients.map((c) => (
-                  <button key={c} type="button" onClick={() => setForm((f) => ({ ...f, client: c }))}
+                  <button key={c.id} type="button" onClick={() => setForm((f) => ({ ...f, client: c.name, client_id: c.id }))}
                     className="rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
                     style={{
-                      background: form.client === c ? 'rgba(220,38,38,0.10)' : 'var(--bg-subtle)',
-                      border: form.client === c ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                      color: form.client === c ? '#dc2626' : 'rgb(100,116,139)',
+                      background: form.client === c.name ? 'rgba(220,38,38,0.10)' : 'var(--bg-subtle)',
+                      border: form.client === c.name ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
+                      color: form.client === c.name ? '#dc2626' : 'rgb(100,116,139)',
                     }}
                   >
-                    {c}
+                    {c.name}
                   </button>
                 ))}
               </div>

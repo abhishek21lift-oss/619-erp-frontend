@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Wallet, BarChart3, Package,
-  Target, ClipboardList, Calendar,
+  Target, ClipboardList, Calendar, Clock, Ruler,
 } from 'lucide-react';
 
 const NAV = [
@@ -13,7 +13,9 @@ const NAV = [
   { href: '/pt-os/packages', label: 'Packages', icon: <Package size={14} /> },
   { href: '/pt-os/goals', label: 'Goals', icon: <Target size={14} /> },
   { href: '/pt-os/assessment', label: 'Assessment', icon: <ClipboardList size={14} /> },
+  { href: '/pt-os/sessions', label: 'Sessions', icon: <Clock size={14} /> },
   { href: '/pt-os/session-balance', label: 'Session Bal.', icon: <Calendar size={14} /> },
+  { href: '/pt-os/measurements', label: 'Measurements', icon: <Ruler size={14} /> },
   { href: '/pt-os/reports', label: 'Reports', icon: <BarChart3 size={14} /> },
 ];
 

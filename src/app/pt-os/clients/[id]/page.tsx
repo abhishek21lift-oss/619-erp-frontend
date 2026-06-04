@@ -7,6 +7,7 @@ import {
   ArrowLeft, User, Phone, Mail, Calendar, Hash, Target,
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
   CheckCircle, AlertTriangle, Clock, Award, IndianRupee,
+  Camera, Ruler, Zap,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -257,6 +258,22 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <PremiumButton tone="primary" glow icon={<Target size={14} />}
                   onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}>
                   Goals
+                </PremiumButton>
+                <PremiumButton tone="primary" glow icon={<Ruler size={14} />}
+                  onClick={() => router.push(`/pt-os/measurements?client_id=${client.id}`)}>
+                  Measurements
+                </PremiumButton>
+                <PremiumButton tone="primary" glow icon={<Camera size={14} />}
+                  onClick={() => router.push(`/pt-os/progress-photos?client_id=${client.id}`)}>
+                  Progress Photos
+                </PremiumButton>
+                <PremiumButton tone="primary" glow icon={<Zap size={14} />}
+                  onClick={() => router.push(`/pt-os/strength-tracking?client_id=${client.id}`)}>
+                  Strength
+                </PremiumButton>
+                <PremiumButton tone="primary" glow icon={<Activity size={14} />}
+                  onClick={() => router.push(`/pt-os/weekly-checkin?client_id=${client.id}`)}>
+                  Weekly Check-in
                 </PremiumButton>
               </div>
             </div>
