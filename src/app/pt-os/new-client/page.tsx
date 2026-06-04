@@ -662,7 +662,7 @@ function NewClientWizard() {
                         {/* Base Price */}
                         <FloatInput
                           label="Base Price (₹)"
-                          value={form.basePrice ?? 0}
+                          value={String(form.basePrice ?? '')}
                           onChange={(v) => {
                             const num = parseFloat(v);
                             set('basePrice', isNaN(num) ? null : num);
@@ -673,7 +673,7 @@ function NewClientWizard() {
                         {/* Selling Price */}
                         <FloatInput
                           label="Selling Price (₹)"
-                          value={form.sellingPrice ?? 0}
+                          value={String(form.sellingPrice ?? '')}
                           onChange={(v) => {
                             const num = parseFloat(v);
                             set('sellingPrice', isNaN(num) ? null : num);
