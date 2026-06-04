@@ -65,6 +65,10 @@ const HEALTH_CONDITIONS = [
 
 const FREQUENCIES: Frequency[] = ['1x/week', '2x/week', '3x/week', '4x/week', '5x/week'];
 
+function fmtINR(n: number | string | null | undefined) {
+  return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
+
 function initForm(): FormData {
   return {
     name: '', email: '', phone: '', dob: '', gender: 'Male',
