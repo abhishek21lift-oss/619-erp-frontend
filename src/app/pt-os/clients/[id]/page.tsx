@@ -242,6 +242,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
               {/* Quick Actions */}
               <div className="mt-8 flex flex-wrap gap-3">
+                <PremiumButton tone="primary" glow icon={<Wallet size={14} />}
+                  onClick={() => router.push(`/pt-os/clients/${client.id}/payments`)}>
+                  Payments
+                </PremiumButton>
                 <PremiumButton tone="primary" glow icon={<Dumbbell size={14} />}
                   onClick={() => router.push(`/pt-os/workout-plans?client_id=${client.id}`)}>
                   Workout Plans
