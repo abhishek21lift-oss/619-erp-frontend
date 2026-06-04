@@ -984,6 +984,8 @@ export const api = {
       }),
     payouts: (params?: { month?: string }) =>
       http<{ data: unknown[]; month: string }>(`/api/pt-os/payouts${buildQs(params)}`),
+    plans: (params?: Record<string, string>) =>
+      http<{ data: unknown[] }>(`/api/pt-os/plans${buildQs(params)}`),
     revenue: () =>
       http<{ data: unknown[] }>('/api/pt-os/revenue'),
     trainerPerformance: () =>
