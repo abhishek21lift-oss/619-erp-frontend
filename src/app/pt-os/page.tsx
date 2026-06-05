@@ -75,16 +75,18 @@ function fmtINR(n: number | string | null | undefined) {
   return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
-function KpiCard({ icon, label, value, sub, color, delay = 0 }: {
+function KpiCard({ icon, label, value, sub, color, delay = 0, href }: {
   icon: React.ReactNode; label: string; value: string;
-  sub?: string; color: string; delay?: number;
+  sub?: string; color: string; delay?: number; href?: string;
 }) {
+  const router = useRouter();
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-hidden rounded-[20px] p-5"
+      onClick={() => href && router.push(href)}
+      className="relative overflow-hidden rounded-[20px] p-5 cursor-pointer"
       style={{
         background: 'var(--bg-card)',
         backdropFilter: 'blur(16px) saturate(180%)',
@@ -339,6 +341,7 @@ export default function PtOsDashboard() {
                 sub={`${d?.expired_clients ?? 0} expired`}
                 color="#7c3aed"
                 delay={0}
+                href="/pt-os/clients"
               />
               <KpiCard
                 icon={<TrendingUp size={16} />}
@@ -346,6 +349,7 @@ export default function PtOsDashboard() {
                 value={d ? fmtINR(d.total_monthly_pt_revenue) : '—'}
                 color="#10b981"
                 delay={0.05}
+                href="/pt-os/reports"
               />
               <KpiCard
                 icon={<Percent size={16} />}
@@ -353,6 +357,7 @@ export default function PtOsDashboard() {
                 value={d ? fmtINR(d.total_monthly_commission) : '—'}
                 color="#dc2626"
                 delay={0.1}
+                href="/pt-os/commissions"
               />
               <KpiCard
                 icon={<Wallet size={16} />}
@@ -361,6 +366,7 @@ export default function PtOsDashboard() {
                 sub={`${d?.clients_with_balance ?? 0} clients`}
                 color="#f59e0b"
                 delay={0.15}
+                href="/pt-os/balance-sheet"
               />
               <KpiCard
                 icon={<FileText size={16} />}
@@ -370,6 +376,7 @@ export default function PtOsDashboard() {
                   : '—'}
                 color="#8b5cf6"
                 delay={0.2}
+                href="/pt-os/commissions"
               />
               <KpiCard
                 icon={<Shield size={16} />}
@@ -377,6 +384,7 @@ export default function PtOsDashboard() {
                 value={d?.total_monthly_commission && d.total_monthly_commission > 0 ? 'DUE' : 'CLEAR'}
                 color={d?.total_monthly_commission && d.total_monthly_commission > 0 ? '#dc2626' : '#10b981'}
                 delay={0.25}
+                href="/pt-os/commissions"
               />
             </div>
 
