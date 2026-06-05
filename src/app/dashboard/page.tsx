@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   RefreshCw,
-  CheckCircle, Clock, UserPlus, Users, IndianRupee, Activity,
-  UserPlus as UserPlusIcon, ScanFace, PlusCircle, Sparkles,
+  CheckCircle, Clock, UserPlus, IndianRupee,
+  ScanFace, Sparkles,
   TrendingUp,
 } from 'lucide-react';
 
@@ -27,8 +27,6 @@ import { DashboardSkeleton } from '@/components/premium/DashboardSkeleton';
 import { DashboardEmptyState } from '@/components/premium/DashboardEmptyState';
 
 const QUICK_ACTIONS = [
-  { href: '/clients/new', label: 'Add Member', icon: PlusCircle, gradient: 'linear-gradient(135deg, #EC4899, #FB7185)' },
-  { href: '/sales/enquiry', label: 'New Lead', icon: UserPlusIcon, gradient: 'linear-gradient(135deg, #6D28D9, #A78BFA)' },
   { href: '/checkin', label: 'Check-In', icon: ScanFace, gradient: 'linear-gradient(135deg, #10B981, #34D399)' },
   { href: '/finance/record-payment', label: 'Record Payment', icon: IndianRupee, gradient: 'linear-gradient(135deg, #D97706, #FBBF24)' },
   { href: '/pt-os', label: 'PT OS', icon: Sparkles, gradient: 'linear-gradient(135deg, #0891B2, #22D3EE)' },
@@ -213,7 +211,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           icon={<RefreshCw size={8} strokeWidth={2} />}
           donutPercent={renewalsDonutPct}
           index={3}
-          onClick={() => router.push('/members/expiring')}
+          onClick={() => router.push('/pt-os/clients')}
         />
       </motion.div>
 
@@ -230,25 +228,7 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           gradient="pink"
           icon={<UserPlus size={8} strokeWidth={2} />}
           index={0}
-          onClick={() => router.push('/clients/new')}
-        />
-        <ActivityCard
-          title="Renewals"
-          count={data.pending_renewals}
-          donutPercent={renewalsActivityPct}
-          gradient="violet"
-          icon={<RefreshCw size={8} strokeWidth={2} />}
-          index={1}
-          onClick={() => router.push('/members/renewals')}
-        />
-        <ActivityCard
-          title="Upgrades"
-          count={0}
-          donutPercent={upgradesPct}
-          gradient="amber"
-          icon={<Activity size={8} strokeWidth={2} />}
-          index={2}
-          onClick={() => router.push('/memberships/subscriptions')}
+          onClick={() => router.push('/pt-os/new-client')}
         />
         <ActivityCard
           title="Check-ins"
@@ -256,46 +236,8 @@ function DashboardBody({ data, router }: { data: DashboardData; router: ReturnTy
           donutPercent={checkinsDonutPct}
           gradient="cyan"
           icon={<CheckCircle size={8} strokeWidth={2} />}
-          index={3}
-          onClick={() => router.push('/attendance')}
-        />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.25 }}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      >
-        <ClientOverviewCard
-          label="Total Clients"
-          total={c.total}
-          percentage={100}
-          trend={0}
-          gradient="pink"
-          icon={<Users size={20} strokeWidth={2} />}
-          index={0}
-          onClick={() => router.push('/clients')}
-        />
-        <ClientOverviewCard
-          label="Active Clients"
-          total={c.active}
-          percentage={totalForPct > 0 ? (c.active / totalForPct) * 100 : 0}
-          trend={0}
-          gradient="violet"
-          icon={<Activity size={20} strokeWidth={2} />}
           index={1}
-          onClick={() => router.push('/members/active')}
-        />
-        <ClientOverviewCard
-          label="Inactive Clients"
-          total={inactive}
-          percentage={totalForPct > 0 ? (inactive / totalForPct) * 100 : 0}
-          trend={0}
-          gradient="cyan"
-          icon={<Users size={20} strokeWidth={2} />}
-          index={2}
-          onClick={() => router.push('/members/lapsed')}
+          onClick={() => router.push('/attendance')}
         />
       </motion.div>
 

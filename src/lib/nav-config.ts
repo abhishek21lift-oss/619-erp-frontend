@@ -38,22 +38,6 @@ export const DASHBOARD_ITEM: NavItem = {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    id: 'members',
-    label: 'Members',
-    icon: 'Users',
-    items: [
-      { href: '/sales/today',              label: "Today's Sale",       icon: 'IndianRupee',  isNew: true },
-      { href: '/clients/new',       label: 'Add Member',   icon: 'UserPlus' },
-      { href: '/clients',           label: 'My Members',      icon: 'Users' },
-      { href: '/members/active',    label: 'Active Members',  icon: 'UserCheck' },
-      { href: '/members/renewals',  label: 'Renewals',        icon: 'RefreshCw',     badge: 'renewalsCount' },
-      { href: '/members/expiring',  label: 'Expiring Soon',   icon: 'CalendarClock', badge: 'expiringCount' },
-      { href: '/members/lapsed',    label: 'Lapsed',          icon: 'UserX' },
-      { href: '/members/birthdays', label: 'Birthdays',       icon: 'Cake',          badge: 'birthdaysToday' },
-      { href: '/clients/[id]',      label: 'Member Profile',  icon: 'User', hidden: true, matchPrefix: '/clients/' },
-    ],
-  },
-  {
     id: 'attendance',
     label: 'Attendance',
     icon: 'ScanFace',
@@ -193,7 +177,6 @@ export const SETTINGS_GROUP: NavGroup = {
 
 export const QUICK_ACTIONS = [
 
-  { id: 'qa-add-member',   label: 'Create member',         icon: 'Users',         href: '/clients/new' },
   { id: 'qa-record-pay',   label: 'Record payment',        icon: 'Wallet',        href: '/finance/record-payment' },
   { id: 'qa-book-session', label: 'Book PT session',       icon: 'CalendarPlus',  href: '/pt-os/schedule-session' },
   { id: 'qa-face-checkin', label: 'QR / Face check-in',    icon: 'ScanFace',      href: '/checkin' },

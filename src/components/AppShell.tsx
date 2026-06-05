@@ -50,7 +50,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
 
   const globalPages = [
     { label: 'Dashboard', href: '/dashboard', keywords: 'dashboard home overview analytics' },
-    { label: 'Members', href: '/clients', keywords: 'members clients customers' },
     { label: 'Attendance', href: '/attendance', keywords: 'attendance check-in sign-in' },
     { label: 'Session Booking', href: '/pt-os/schedule-session', keywords: 'session booking schedule appointments' },
     { label: 'Progress Tracking', href: '/pt-os/weekly-checkin', keywords: 'progress tracking measurements goals' },
@@ -58,9 +57,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     { label: 'Collected Payments', href: '/finance/collected-payments', keywords: 'payments transactions collected' },
     { label: 'Plans', href: '/plans', keywords: 'plans packages memberships' },
     { label: 'Membership', href: '/memberships/subscriptions', keywords: 'membership subscriptions renewals' },
-    { label: 'Renewal', href: '/members/renewals', keywords: 'renewal expiry' },
     { label: 'Walk-in', href: '/checkin', keywords: 'walk-in walkin drop-in' },
-    { label: 'Enrollment', href: '/clients/new', keywords: 'enrollment registration joining' },
     { label: 'Check-in', href: '/checkin', keywords: 'checkin check-in daily visit' },
     { label: 'Staff', href: '/staff', keywords: 'staff employees trainers' },
     { label: 'Trainers', href: '/trainers', keywords: 'trainers coaches instructors' },

@@ -62,7 +62,6 @@ const buildTheme = (color: string): GroupTheme => ({
 });
 
 const GROUP_THEMES: Record<string, GroupTheme> = {
-  'members':             buildTheme('#22C55E'),
   'attendance':          buildTheme('#06B6D4'),
   'personal-training':   buildTheme('#8B5CF6'),
   'trainer-management':  buildTheme('#F97316'),

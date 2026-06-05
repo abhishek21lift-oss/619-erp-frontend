@@ -21,23 +21,11 @@ type NavGroup = {
 const NAV_ROW1: NavGroup[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂', href: '/dashboard' },
   {
-    id: 'members', label: 'Members',
-    children: [
-      { label: 'Add Member', href: '/clients/new', role: 'admin' },
-      { label: 'My Members', href: '/clients' },
-      { label: 'Active Members', href: '/members/active' },
-      { label: 'Expiring Members', href: '/members/expiring' },
-      { label: 'Lapsed Members', href: '/members/lapsed' },
-      { label: 'Birthday List', href: '/members/birthdays' },
-    ],
-  },
-  {
     id: 'analysis', label: 'Analysis',
     role: 'admin',
     children: [
       { label: 'Traffic Analysis', href: '/insights/traffic' },
       { label: 'Collection Analysis', href: '/finance/collection' },
-      { label: 'Renewal Analysis', href: '/insights/renewal' },
       { label: 'Session Analysis', href: '/insights/sessions' },
       { label: 'Revenue Forecast', href: '/finance/forecast' },
       { label: 'Profit & Loss', href: '/finance/pl' },

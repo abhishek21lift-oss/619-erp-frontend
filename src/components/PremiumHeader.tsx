@@ -76,32 +76,6 @@ const MEGA_SECTIONS: NavSection[] = [
     spotlight: { title: 'This Month', value: '—', sub: 'Revenue collected', accent: 'var(--brand-lo)' },
   },
   {
-    id: 'members',
-    label: 'Members',
-    icon: <Users size={13} />,
-    accent: 'var(--brand-lo)',
-    glow: 'var(--brand-glow)',
-    gradient: 'var(--brand-lo)',
-    columns: [
-      { heading: 'Roster', items: [
-        { label: 'Add Member', href: '/clients/new', description: 'Register new member' },
-        { label: 'All Members', href: '/clients', description: 'Complete member list' },
-        { label: 'Active', href: '/members/active', description: 'Currently active' },
-        { label: 'Renewals', href: '/members/renewals', description: 'Upcoming renewals', isNew: true },
-        { label: 'Expiring Soon', href: '/members/expiring', description: 'Membership ending' },
-        { label: 'Lapsed', href: '/members/lapsed', description: 'Expired memberships' },
-        { label: 'Birthdays', href: '/members/birthdays', description: 'Birthday list' },
-      ]},
-      { heading: 'Daily Operations', items: [
-        { label: 'Attendance', href: '/attendance', description: 'Daily attendance log' },
-        { label: 'Check-ins', href: '/checkin', description: 'Live check-in system' },
-        { label: 'Member Profiles', href: '/clients', description: 'View & manage profiles' },
-        { label: 'Member Database', href: '/clients', description: 'Advanced search & filters' },
-      ]},
-    ],
-    spotlight: { title: 'Active Members', value: '—', sub: 'Valid subscriptions', accent: 'var(--brand-lo)' },
-  },
-  {
     id: 'coaches',
     label: 'Coaches',
     icon: <Dumbbell size={13} />,

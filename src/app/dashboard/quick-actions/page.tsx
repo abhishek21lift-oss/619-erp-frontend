@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import {
-  UserPlus, Dumbbell, FileText, CreditCard, CalendarPlus,
-  ClipboardList, Salad, Target, ScanFace, Download,
+  Dumbbell, FileText, CreditCard, CalendarPlus,
+  ClipboardList, Salad, ScanFace, Download,
   ChevronRight, Zap, Star, Clock, ArrowRight, Search,
   TrendingUp, Bell, Pin, Sparkles, Grip, Hash,
 } from 'lucide-react';
@@ -24,19 +24,17 @@ interface Action {
 }
 
 const ACTIONS: Action[] = [
-  { id:'add-member',   label:'Add Member',      desc:'Enroll a new gym member',       icon:UserPlus,     href:'/clients/new',   tag:'Popular', pinned:true,  category:'Members' },
-  { id:'new-pt',       label:'New PT Client',   desc:'Assign personal trainer',        icon:Dumbbell,     href:'/clients/new',   tag:'Popular', pinned:true,  category:'Training' },
+  { id:'new-pt',       label:'New PT Client',   desc:'Assign personal trainer',        icon:Dumbbell,     href:'/pt-os/new-client',   tag:'Popular', pinned:true,  category:'Training' },
   { id:'checkin',      label:'Start Check-In',  desc:'Open face-recognition kiosk',    icon:ScanFace,     href:'/checkin',       tag:'Live',    pinned:true,  category:'Operations' },
   { id:'invoice',      label:'Create Invoice',  desc:'Generate member invoice',         icon:FileText,     href:'/finance/collected-payments',                   category:'Finance' },
   { id:'payment',      label:'Record Payment',  desc:'Log a cash/UPI payment',          icon:CreditCard,   href:'/finance/collected-payments',      tag:'Quick',                 category:'Finance' },
   { id:'session',      label:'Schedule Session',desc:'Book a PT or group session',      icon:CalendarPlus, href:'/appointments',               category:'Training' },
-  { id:'workout',      label:'Create Workout',  desc:'Design a workout plan',           icon:ClipboardList,href:'/clients',                    category:'Training' },
-  { id:'diet',         label:'Create Diet Plan',desc:'Build a nutrition program',       icon:Salad,        href:'/clients',                    category:'Training' },
-  { id:'lead',         label:'Add Lead',        desc:'Capture a new prospect',          icon:Target,       href:'/clients/new',   tag:'New',                   category:'Members' },
+  { id:'workout',      label:'Create Workout',  desc:'Design a workout plan',           icon:ClipboardList,href:'/pt-os/workout-plans',           category:'Training' },
+  { id:'diet',         label:'Create Diet Plan',desc:'Build a nutrition program',       icon:Salad,        href:'/pt-os/diet-plans',              category:'Training' },
   { id:'report',       label:'Export Report',   desc:'Download analytics PDF',          icon:Download,     href:'/reports',                    category:'Operations' },
 ];
 
-const RECENT = ['add-member', 'payment', 'checkin'];
+const RECENT = ['payment', 'checkin'];
 
 const AI_SUGGESTIONS = [
   { label:'Send renewal reminders', desc:'8 members expire this week',    icon:Bell,       color:'#d97706' },

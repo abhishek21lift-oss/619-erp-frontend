@@ -399,30 +399,6 @@ export const api = {
       http(`/api/payments/stats${buildQs(params)}`),
   },
 
-  subscriptions: {
-    list: (params?: Record<string, string>) =>
-      http<unknown[]>(`/api/subscriptions${buildQs(params)}`),
-    get:         (id: string) => http(`/api/subscriptions/${id}`),
-    create:      (data: Record<string, unknown>) =>
-      http('/api/subscriptions', { method: 'POST', body: JSON.stringify(data) }),
-    update:      (id: string, data: Record<string, unknown>) =>
-      http(`/api/subscriptions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    addPayment:  (id: string, data: Record<string, unknown>) =>
-      http(`/api/subscriptions/${id}/payments`, { method: 'POST', body: JSON.stringify(data) }),
-    freeze:      (id: string, data: Record<string, unknown>) =>
-      http(`/api/subscriptions/${id}/freeze`, { method: 'POST', body: JSON.stringify(data) }),
-    unfreeze:    (id: string) =>
-      http(`/api/subscriptions/${id}/unfreeze`, { method: 'POST' }),
-    upgrade:     (id: string, data: Record<string, unknown>) =>
-      http(`/api/subscriptions/${id}/upgrade`, { method: 'POST', body: JSON.stringify(data) }),
-    downgrade:   (id: string, data: Record<string, unknown>) =>
-      http(`/api/subscriptions/${id}/downgrade`, { method: 'POST', body: JSON.stringify(data) }),
-    transfer:    (id: string, data: Record<string, unknown>) =>
-      http(`/api/subscriptions/${id}/transfer`, { method: 'POST', body: JSON.stringify(data) }),
-    extend:      (id: string, data: Record<string, unknown>) =>
-      http(`/api/subscriptions/${id}/extend`, { method: 'POST', body: JSON.stringify(data) }),
-  },
-
   plans: {
     list:   () => http<unknown[]>('/api/plans'),
     get:    (id: string) => http(`/api/plans/${id}`),
@@ -768,28 +744,6 @@ export const api = {
     supplements: {
       list: () => http<unknown[]>('/api/diet/supplements'),
     },
-  },
-
-  // ── Renewals ──────────────────────────────────────────────────────
-  renewals: {
-    pipeline: (params?: Record<string, string | number>) =>
-      http<{ members: unknown[]; stats: { expiring_today: number; likely_to_renew: number; high_value_at_risk: number; auto_renewals: number; total_pipeline: number } }>(
-        `/api/renewals/pipeline${buildQs(params)}`,
-      ),
-    churnAlerts: () =>
-      http<unknown[]>('/api/renewals/churn-alerts'),
-    insights: () =>
-      http<{ stats: Record<string, number>; insights: unknown[] }>('/api/renewals/insights'),
-    renew: (id: string, data: Record<string, unknown>) =>
-      http<{ message: string }>(`/api/renewals/${id}/renew`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    reminders: (data?: { days?: number }) =>
-      http<{ message: string; count: number }>('/api/renewals/reminders', {
-        method: 'POST',
-        body: data ? JSON.stringify(data) : undefined,
-      }),
   },
 
   // ── Member Portal ────────────────────────────────────────────
