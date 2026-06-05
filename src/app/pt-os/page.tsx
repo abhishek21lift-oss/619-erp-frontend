@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   UserPlus, Salad, Dumbbell, Calendar, ArrowRight,
   Activity, Users, TrendingUp, Clock, Sparkles,
-  ChevronRight, Award, Target, Heart, Zap, BarChart3,
+  Award, Target, Heart, Zap, BarChart3,
   DollarSign, AlertTriangle, CheckCircle, Download,
   RefreshCw, FileText, Wallet, Percent, Shield, Eye,
 } from 'lucide-react';
@@ -486,10 +486,18 @@ export default function PtOsDashboard() {
   const d = dash.data;
 
   const features = useMemo(() => [
-    { icon: <Target size={22} />, label: 'Goal Tracking', desc: 'Set & monitor client fitness goals', href: '/pt-os/goals', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#f59e0b' },
-    { icon: <Heart size={22} />, label: 'Health Insights', desc: 'AI-powered health analytics', href: '/pt-os/assessment', gradient: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: '#dc2626' },
-    { icon: <Zap size={22} />, label: 'Quick Actions', desc: 'Streamlined daily workflows', href: '/pt-os/weekly-checkin', gradient: 'linear-gradient(135deg, #10b981, #059669)', color: '#10b981' },
-    { icon: <Award size={22} />, label: 'Progress Reports', desc: 'Detailed transformation tracking', href: '/pt-os/progress-photos', gradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#8b5cf6' },
+    { icon: <Users size={22} />, label: 'PT Clients', desc: 'View & manage all PT clients', href: '/pt-os/clients', gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: '#7c3aed' },
+    { icon: <Wallet size={22} />, label: 'Balance Sheet', desc: 'Track outstanding dues & payments', href: '/pt-os/balance-sheet', gradient: 'linear-gradient(135deg, #f97316, #ea580c)', color: '#f97316' },
+    { icon: <Percent size={22} />, label: 'Commissions', desc: 'Manage trainer commissions & payouts', href: '/pt-os/commissions', gradient: 'linear-gradient(135deg, #e11d48, #be123c)', color: '#e11d48' },
+    { icon: <Clock size={22} />, label: 'Sessions', desc: 'View all PT session history', href: '/pt-os/sessions', gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#3b82f6' },
+    { icon: <Calendar size={22} />, label: 'Session Balance', desc: 'Check remaining session credits', href: '/pt-os/session-balance', gradient: 'linear-gradient(135deg, #14b8a6, #0d9488)', color: '#14b8a6' },
+    { icon: <Target size={22} />, label: 'Goals', desc: 'Set & monitor client fitness goals', href: '/pt-os/goals', gradient: 'linear-gradient(135deg, #eab308, #ca8a04)', color: '#eab308' },
+    { icon: <Heart size={22} />, label: 'Assessment', desc: 'AI-powered health assessments', href: '/pt-os/assessment', gradient: 'linear-gradient(135deg, #ec4899, #db2777)', color: '#ec4899' },
+    { icon: <Activity size={22} />, label: 'Measurements', desc: 'Track body measurements & stats', href: '/pt-os/measurements', gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)', color: '#06b6d4' },
+    { icon: <Zap size={22} />, label: 'Strength Tracking', desc: 'Log lifts & track strength gains', href: '/pt-os/strength-tracking', gradient: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#6366f1' },
+    { icon: <Award size={22} />, label: 'Progress Photos', desc: 'Visual transformation timeline', href: '/pt-os/progress-photos', gradient: 'linear-gradient(135deg, #10b981, #059669)', color: '#10b981' },
+    { icon: <CheckCircle size={22} />, label: 'Weekly Check-in', desc: 'Streamlined daily workflows', href: '/pt-os/weekly-checkin', gradient: 'linear-gradient(135deg, #84cc16, #65a30d)', color: '#84cc16' },
+    { icon: <BarChart3 size={22} />, label: 'Reports', desc: 'Detailed PT business analytics', href: '/pt-os/reports', gradient: 'linear-gradient(135deg, #64748b, #475569)', color: '#64748b' },
   ], []);
 
   return (
@@ -607,28 +615,28 @@ export default function PtOsDashboard() {
               </div>
             </div>
 
-            {/* Premium Features */}
+            {/* All PT OS Features */}
             <div>
               <div className="flex items-center gap-3 mb-5">
-                <div className="flex h-7 w-1 rounded-full" style={{ background: 'linear-gradient(180deg, #f59e0b, #8b5cf6)' }} />
+                <div className="flex h-7 w-1 rounded-full" style={{ background: 'linear-gradient(180deg, #7c3aed, #ec4899, #06b6d4)' }} />
                 <div className="flex-1">
-                  <h2 className="text-[20px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Premium Features</h2>
-                  <p className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Everything you need to run your PT business</p>
+                  <h2 className="text-[20px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>All PT OS Features</h2>
+                  <p className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Every tool you need to run your PT business — all in one place</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {features.map((f, i) => (
                   <motion.div
                     key={f.label}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.08 * i, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: 0.05 * i, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     whileHover={{ y: -6, scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => router.push(f.href)}
-                    className="group relative cursor-pointer overflow-hidden rounded-[24px] p-7 text-center"
+                    className="group relative cursor-pointer overflow-hidden rounded-[22px] p-5"
                     style={{
-                      background: 'var(--bg-card)',
+                      background: `linear-gradient(145deg, ${f.color}06, var(--bg-card), ${f.color}04)`,
                       backdropFilter: 'blur(20px) saturate(180%)',
                       WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                       border: '1px solid rgba(255,255,255,0.92)',
@@ -638,25 +646,29 @@ export default function PtOsDashboard() {
                       ].join(', '),
                     }}
                   >
-                    <div className="pointer-events-none absolute inset-0 translate-x-[-100%] skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
-                    <div
-                      className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl"
-                      style={{
-                        background: f.gradient,
-                        color: '#fff',
-                        boxShadow: `0 8px 24px ${f.color}35`,
-                      }}
-                    >
-                      {f.icon}
+                    <div className="pointer-events-none absolute inset-0 translate-x-[-100%] skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
+                    <div className="flex items-start gap-4 relative z-10">
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl"
+                        style={{
+                          background: f.gradient,
+                          color: '#fff',
+                          boxShadow: `0 6px 20px ${f.color}35`,
+                        }}
+                      >
+                        {f.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-[14px] font-[760] tracking-[-0.01em]" style={{ color: 'rgb(15,23,42)' }}>{f.label}</h3>
+                        <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: 'rgb(148,163,184)' }}>{f.desc}</p>
+                      </div>
                     </div>
-                    <h3 className="text-[15px] font-[760] tracking-[-0.01em]" style={{ color: 'rgb(15,23,42)' }}>{f.label}</h3>
-                    <p className="mt-1.5 text-[12px] leading-relaxed" style={{ color: 'rgb(148,163,184)' }}>{f.desc}</p>
                     <div
-                      className="absolute inset-x-6 bottom-0 h-[3px] origin-left scale-x-0 rounded-full transition-transform duration-300 group-hover:scale-x-100"
+                      className="absolute inset-x-0 bottom-0 h-[2.5px] origin-left scale-x-0 rounded-full transition-transform duration-300 group-hover:scale-x-100"
                       style={{ background: f.gradient }}
                     />
                     <div
-                      className="pointer-events-none absolute -inset-1 rounded-[26px] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                      className="pointer-events-none absolute -inset-1 rounded-[24px] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                       style={{
                         background: `${f.color}08`,
                         boxShadow: `inset 0 0 30px ${f.color}10`,
