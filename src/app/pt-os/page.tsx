@@ -319,10 +319,10 @@ export default function PtOsDashboard() {
   const d = dash.data;
 
   const features = useMemo(() => [
-    { icon: <Target size={20} />, label: 'Goal Tracking', desc: 'Set & monitor client fitness goals' },
-    { icon: <Heart size={20} />, label: 'Health Insights', desc: 'AI-powered health analytics' },
-    { icon: <Zap size={20} />, label: 'Quick Actions', desc: 'Streamlined daily workflows' },
-    { icon: <Award size={20} />, label: 'Progress Reports', desc: 'Detailed transformation tracking' },
+    { icon: <Target size={22} />, label: 'Goal Tracking', desc: 'Set & monitor client fitness goals', href: '/pt-os/goals', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#f59e0b' },
+    { icon: <Heart size={22} />, label: 'Health Insights', desc: 'AI-powered health analytics', href: '/pt-os/assessment', gradient: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: '#dc2626' },
+    { icon: <Zap size={22} />, label: 'Quick Actions', desc: 'Streamlined daily workflows', href: '/pt-os/weekly-checkin', gradient: 'linear-gradient(135deg, #10b981, #059669)', color: '#10b981' },
+    { icon: <Award size={22} />, label: 'Progress Reports', desc: 'Detailed transformation tracking', href: '/pt-os/progress-photos', gradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#8b5cf6' },
   ], []);
 
   return (
@@ -441,34 +441,57 @@ export default function PtOsDashboard() {
 
             {/* Premium Features */}
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-[18px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Premium Features</h2>
-                  <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Everything you need to run your PT business</p>
+                  <h2 className="text-[20px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Premium Features</h2>
+                  <p className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Everything you need to run your PT business</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
                 {features.map((f, i) => (
                   <motion.div
                     key={f.label}
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * i, duration: 0.4 }}
-                    className="rounded-[16px] p-5 text-center transition-all hover:-translate-y-0.5"
+                    transition={{ delay: 0.08 * i, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ y: -6, scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => router.push(f.href)}
+                    className="group relative cursor-pointer overflow-hidden rounded-[24px] p-7 text-center transition-all"
                     style={{
-                      background: 'rgba(255,255,255,0.60)',
-                      border: '1px solid rgba(255,255,255,0.90)',
-                      boxShadow: '0 1px 8px rgba(15,23,42,0.04)',
+                      background: 'var(--bg-card)',
+                      backdropFilter: 'blur(20px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                      border: '1px solid rgba(255,255,255,0.95)',
+                      boxShadow: [
+                        '0 4px 24px rgba(15,23,42,0.06)',
+                        '0 1px 4px rgba(15,23,42,0.04)',
+                      ].join(', '),
                     }}
                   >
                     <div
-                      className="mx-auto flex h-12 w-12 items-center justify-center rounded-[14px] mb-3"
-                      style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.15), rgba(34,211,238,0.15))', color: '#7c3aed' }}
+                      className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] mb-4 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+                      style={{
+                        background: f.gradient,
+                        color: '#fff',
+                        boxShadow: `0 8px 24px ${f.color}35`,
+                      }}
                     >
                       {f.icon}
                     </div>
-                    <h3 className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{f.label}</h3>
-                    <p className="mt-1 text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{f.desc}</p>
+                    <h3 className="text-[15px] font-[760] tracking-[-0.01em]" style={{ color: 'rgb(15,23,42)' }}>{f.label}</h3>
+                    <p className="mt-1.5 text-[12px] leading-relaxed" style={{ color: 'rgb(148,163,184)' }}>{f.desc}</p>
+                    <div
+                      className="absolute inset-x-6 bottom-0 h-[3px] origin-left scale-x-0 rounded-full transition-transform duration-300 group-hover:scale-x-100"
+                      style={{ background: f.gradient }}
+                    />
+                    <div
+                      className="pointer-events-none absolute -inset-1 rounded-[26px] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                      style={{
+                        background: `${f.color}08`,
+                        boxShadow: `inset 0 0 30px ${f.color}10`,
+                      }}
+                    />
                   </motion.div>
                 ))}
               </div>
