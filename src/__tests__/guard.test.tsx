@@ -53,14 +53,14 @@ describe('<Guard />', () => {
     expect(screen.queryByText('never')).not.toBeInTheDocument();
   });
 
-  it('redirects to /dashboard when role is not allowed', async () => {
+  it('redirects to /pt-os when role is not allowed', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'trainer' as Role }, loading: false });
     render(
       <Guard role="admin">
         <div>never</div>
       </Guard>,
     );
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/pt-os'));
   });
 
   it('normalises receptionist to reception', async () => {

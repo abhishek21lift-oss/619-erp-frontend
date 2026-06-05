@@ -51,10 +51,10 @@ export default function NotFound() {
         }}
       >
         The page you’re looking for doesn’t exist or has been moved.
-        Check the URL or head back to the dashboard.
+        Check the URL or head back to the app.
       </p>
       <Link
-        href="/dashboard"
+        href="/pt-os"
         style={{
           display: 'inline-flex',
           alignItems: 'center',

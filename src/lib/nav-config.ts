@@ -30,12 +30,6 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-export const DASHBOARD_ITEM: NavItem = {
-  href:  '/dashboard',
-  label: 'Dashboard',
-  icon:  'LayoutDashboard',
-};
-
 export const NAV_GROUPS: NavGroup[] = [
   {
     id: 'attendance',
@@ -185,7 +179,6 @@ export const QUICK_ACTIONS = [
 
 export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: string }> {
   const out: Array<NavItem & { groupId: string; groupLabel: string }> = [];
-  out.push({ ...DASHBOARD_ITEM, groupId: 'dashboard', groupLabel: 'Dashboard' });
   for (const g of NAV_GROUPS) {
     for (const it of g.items) {
       out.push({ ...it, groupId: g.id, groupLabel: g.label });

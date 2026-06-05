@@ -525,19 +525,6 @@ export const api = {
       http('/api/v1/notifications/read-all', { method: 'PATCH' }),
   },
 
-  dashboard: {
-    stats: () => http('/api/dashboard/stats'),
-    revenue: (params?: Record<string, string>) =>
-      http(`/api/dashboard/revenue${buildQs(params)}`),
-    summary: () =>
-      http<{
-        expiring_soon: number;
-        total_dues: number;
-        attendance_today: number;
-        recent_payments: Array<{ id: string; client_name?: string; amount: number; method?: string; date?: string }>;
-      }>('/api/dashboard/summary'),
-  },
-
   reports: {
     revenue: (params?: Record<string, string>) =>
       http(`/api/reports/revenue${buildQs(params)}`),

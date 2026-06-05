@@ -37,9 +37,9 @@ export default function Breadcrumbs() {
   }, [path]);
 
   const crumbs = useMemo<Crumb[]>(() => {
-    const out: Crumb[] = [{ label: 'Home', href: '/dashboard' }];
+    const out: Crumb[] = [{ label: 'Home', href: '/pt-os' }];
     const cleanPath = path.split('?')[0];
-    if (cleanPath === '/dashboard' || cleanPath === '/') return out;
+    if (cleanPath === '/pt-os' || cleanPath === '/') return out;
 
     const segs = cleanPath.split('/').filter(Boolean);
     // First segment maps to the group whose first item starts with /<seg>

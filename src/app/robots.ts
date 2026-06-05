@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/dashboard', '/finance', '/members', '/sales', '/settings', '/clients'],
+        disallow: ['/api/', '/finance', '/members', '/sales', '/settings', '/clients'],
       },
     ],
     sitemap: 'https://619fitness.in/sitemap.xml',

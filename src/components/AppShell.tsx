@@ -49,7 +49,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   };
 
   const globalPages = [
-    { label: 'Dashboard', href: '/dashboard', keywords: 'dashboard home overview analytics' },
+    { label: 'PT OS', href: '/pt-os', keywords: 'personal training pt dashboard' },
     { label: 'Attendance', href: '/attendance', keywords: 'attendance check-in sign-in' },
     { label: 'Session Booking', href: '/pt-os/schedule-session', keywords: 'session booking schedule appointments' },
     { label: 'Progress Tracking', href: '/pt-os/weekly-checkin', keywords: 'progress tracking measurements goals' },

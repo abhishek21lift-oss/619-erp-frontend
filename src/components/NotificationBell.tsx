@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { api } from '@/lib/api';
 import { Bell } from 'lucide-react';
 
 type Notification = {
@@ -54,73 +53,7 @@ export default function NotificationBell() {
   }, [open]);
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    api.dashboard
-      .summary()
-      .then((d: any) => {
-        if (cancelled || !d) return;
-        const list: Notification[] = [];
-        const now = Date.now();
-        if (d.expiring_soon > 0) {
-          list.push({
-            id: 'expiring',
-            icon: '⚠',
-            tone: 'warning',
-            title: `${d.expiring_soon} membership${d.expiring_soon > 1 ? 's' : ''} expiring soon`,
-            body: 'Renew within the next 7 days to keep them on the roster.',
-            href: '/clients?segment=expiring',
-            createdAt: now,
-          });
-        }
-        if (d.total_dues && Number(d.total_dues) > 0) {
-          const v = Number(d.total_dues);
-          const pretty =
-            v >= 100000
-              ? '₹' + (v / 100000).toFixed(1) + 'L'
-              : '₹' + Math.round(v).toLocaleString('en-IN');
-          list.push({
-            id: 'dues',
-            icon: '◈',
-            tone: 'danger',
-            title: `${pretty} in outstanding dues`,
-            body: 'Tap to send payment reminders.',
-            href: '/reports?view=dues',
-            createdAt: now,
-          });
-        }
-        if (Array.isArray(d.recent_payments) && d.recent_payments.length > 0) {
-          const p = d.recent_payments[0];
-          list.push({
-            id: 'pay-' + p.id,
-            icon: '✓',
-            tone: 'success',
-            title: `${p.client_name || 'A member'} just paid ₹${Number(p.amount).toLocaleString('en-IN')}`,
-            body: `${p.method || 'Payment'} · ${p.date || 'today'}`,
-            href: '/finance/collected-payments',
-            createdAt: now - 60_000,
-          });
-        }
-        if (Number(d.attendance_today || 0) === 0) {
-          list.push({
-            id: 'no-attendance',
-            icon: '◧',
-            tone: 'info',
-            title: 'No check-ins logged today',
-            body: 'Make sure attendance is captured at the front desk.',
-            href: '/attendance',
-            createdAt: now - 120_000,
-          });
-        }
-        setItems(list);
-      })
-      .catch((err) => console.error('[NotificationBell] dashboard summary failed', err))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    setLoading(false);
   }, []);
 
   const visible = items.filter((i) => !snoozedIds.has(i.id));

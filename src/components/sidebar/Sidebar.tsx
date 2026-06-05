@@ -81,7 +81,6 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const navItems = [
-    { items: [], label: 'Dashboard', id: 'dashboard', icon: 'LayoutDashboard', single: true, href: '/dashboard' },
     ...NAV_GROUPS.filter(g => isGroupVisibleForRole(g, user?.role)).map(g => ({
       ...g,
       items: g.items.filter(i => isVisibleForRole(i, user?.role)).flatMap(i =>
@@ -98,54 +97,8 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
 
   return (
     <div className="space-y-[2px] px-3">
-      {/* Dashboard */}
-      <Link
-        href="/dashboard"
-        onClick={onLinkClick}
-        className={cn(
-          'relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold tracking-wide transition-all duration-300 overflow-hidden group',
-          isActive('/dashboard') ? 'text-white' : 'text-[var(--text-muted)] hover:text-white',
-        )}
-        style={{
-          background: isActive('/dashboard')
-            ? 'linear-gradient(135deg, var(--brand-lo), var(--brand))'
-            : 'transparent',
-          boxShadow: isActive('/dashboard') ? '0 8px 32px var(--brand-glow)' : 'none',
-        }}
-      >
-        {!isActive('/dashboard') && (
-          <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"
-            style={{ background: 'var(--brand-soft)' }} />
-        )}
-        {isActive('/dashboard') && (
-          <motion.div className="absolute inset-0 rounded-xl"
-            animate={{ background: ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.02)', 'rgba(255,255,255,0.1)'] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }} />
-        )}
-        <div className={cn(
-          'flex h-[28px] w-[28px] items-center justify-center rounded-lg shrink-0 transition-all duration-300 relative z-10',
-          isActive('/dashboard') ? 'bg-white/20 shadow-[0_0_14px_rgba(255,255,255,0.15)]' : 'group-hover:bg-[var(--brand-soft)]',
-        )}>
-          <LayoutDashboard size={15} strokeWidth={isActive('/dashboard') ? 2.5 : 1.8}
-            className={cn('transition-colors duration-300', isActive('/dashboard') ? 'text-white' : 'text-[var(--sidebar-icon)] group-hover:text-[var(--brand)]')} />
-        </div>
-        {isActive('/dashboard') && (
-          <div className="ml-auto flex gap-[3px] items-center relative z-10">
-            {[0, 1, 2].map(i => (
-              <span key={i} className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse"
-                style={{ animationDelay: `${i * 0.2}s` }} />
-            ))}
-          </div>
-        )}
-      </Link>
-
-      {/* Divider */}
-      <div className="px-1 pt-2 pb-1">
-        <div className="h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
-      </div>
-
       {/* Groups */}
-      {navItems.slice(1).map(group => {
+      {navItems.slice(0).map(group => {
         const GroupIcon = ICON_MAP[group.icon] || LayoutDashboard;
         const open = expanded[group.id] ?? anyChildActive(group.items);
         const hasActiveChild = anyChildActive(group.items);
@@ -294,7 +247,7 @@ export default function Sidebar({
       <div className="relative shrink-0 px-5 pb-3 pt-6">
         <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r from-transparent via-[var(--brand-lo)] to-transparent opacity-70" />
         <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-3 group">
+          <Link href="/pt-os" className="flex items-center gap-3 group">
             <div className="relative">
               <div className="h-[52px] w-[52px] rounded-xl bg-gradient-to-br from-[var(--brand-lo)] via-[var(--brand)] to-purple-500 p-[2px] shadow-[0_4px_20px_var(--brand-glow)] transition-all duration-300 group-hover:shadow-[0_6px_28px_var(--brand-glow-2)]">
                 <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">

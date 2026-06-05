@@ -19,7 +19,7 @@ export default function LoginPage() {
     if (!loading && user) {
       if (user.role === 'trainer') router.replace('/trainer/dashboard');
       else if (user.role === 'member') router.replace('/member/dashboard');
-      else router.replace('/dashboard');
+      else router.replace('/pt-os');
     }
   }, [user, loading, router]);
 

@@ -98,7 +98,7 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
         Something went sideways
       </h2>
       <p className="text-sm text-slate-500 dark:text-white/50">
-        We logged the error. You can retry, or head back to the dashboard.
+        We logged the error. You can retry, or head back to the app.
       </p>
       {process.env.NODE_ENV !== 'production' && (
         <pre className="mt-2 max-h-32 w-full overflow-auto rounded-lg bg-slate-50 p-3 text-left text-[11px] text-slate-500 dark:bg-white/5 dark:text-white/50">
@@ -114,10 +114,10 @@ function DefaultFallback({ error, reset }: { error: Error; reset: () => void }) 
           Try again
         </button>
         <Link
-          href="/dashboard"
+          href="/pt-os"
           className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/20 dark:bg-[#1E1F24] dark:text-white/70 dark:hover:bg-white/10"
         >
-          Back to dashboard
+          Back to app
         </Link>
       </div>
     </div>

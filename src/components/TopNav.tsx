@@ -19,7 +19,6 @@ type NavGroup = {
 };
 
 const NAV_ROW1: NavGroup[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: '⌂', href: '/dashboard' },
   {
     id: 'analysis', label: 'Analysis',
     role: 'admin',

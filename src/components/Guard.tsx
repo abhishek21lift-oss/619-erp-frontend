@@ -26,7 +26,7 @@ export default function Guard({ children, role, roles }: Props) {
     }
 
     if (!hasRole(user.role, roles ?? role)) {
-      router.replace('/dashboard');
+      router.replace('/pt-os');
       return;
     }
 

@@ -5,12 +5,12 @@ import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
-import { DASHBOARD_ITEM, NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/lib/nav-config';
+import { NAV_GROUPS, SETTINGS_GROUP, isVisibleForRole } from '@/lib/nav-config';
 import {
   Menu, Bell, ChevronDown, Search, MoreVertical,
   Plus, UserPlus, Dumbbell, FileText, CreditCard, UserCheck,
   CalendarPlus, ClipboardList, Salad, Zap,
-  LayoutDashboard, TrendingUp, Users, Activity, Settings, BarChart2,
+  TrendingUp, Users, Activity, Settings, BarChart2,
   IndianRupee, LogOut, KeyRound, X, Palette,
 } from 'lucide-react';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
@@ -34,27 +34,6 @@ interface NavSection {
 }
 
 const MEGA_SECTIONS: NavSection[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: <LayoutDashboard size={13} />,
-    accent: 'var(--brand-lo)',
-    glow: 'var(--brand-glow)',
-    gradient: 'var(--brand-lo)',
-    columns: [
-      { heading: 'Overview', items: [
-        { label: 'Overview', href: '/dashboard', description: 'Studio at a glance' },
-        { label: 'Live Activity', href: '/dashboard/live-activity', description: 'Real-time check-ins' },
-        { label: 'Quick Actions', href: '/dashboard/quick-actions', description: 'Fast operations' },
-      ]},
-      { heading: 'Intelligence', items: [
-        { label: 'AI Insights', href: '/dashboard/ai-insights', description: 'Smart recommendations', isNew: true },
-        { label: 'Tasks', href: '/dashboard/tasks', description: 'Pending work items' },
-        { label: 'Studio Status', href: '/dashboard/studio-status', description: 'System health' },
-      ]},
-    ],
-    spotlight: { title: 'Today', value: '—', sub: 'Members active', accent: 'var(--brand-lo)' },
-  },
   {
     id: 'sales',
     label: 'Sales',
@@ -160,7 +139,6 @@ const MEGA_SECTIONS: NavSection[] = [
       { heading: 'Intelligence', items: [
         { label: 'Coach Performance', href: '/insights/sessions', description: 'Coaching metrics' },
         { label: 'Branch Performance', href: '/settings/branches', description: 'Location comparison' },
-        { label: 'AI Insights', href: '/dashboard/ai-insights', description: 'Smart patterns', isNew: true },
         { label: 'Forecasting', href: '/finance/forecast', description: 'Future projections' },
       ]},
     ],
@@ -535,7 +513,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
       items: SETTINGS_GROUP.items.filter((i) => isVisibleForRole(i, user?.role) && !i.hidden),
     };
     return [
-      { id: 'dashboard', label: 'Dashboard', items: [DASHBOARD_ITEM] },
+
       ...visible,
       ...(vs.items.length ? [{ id: vs.id, label: vs.label, items: vs.items }] : []),
     ];
@@ -692,7 +670,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 border: '1px solid var(--border)',
                 transition: 'width 0.3s, height 0.3s',
               }}
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/pt-os')}
               title="ABHI-DESK"
             >
               <Image
