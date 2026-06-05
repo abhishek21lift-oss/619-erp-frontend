@@ -39,7 +39,7 @@ const STATUS_CONFIG = {
 } as const;
 
 function StatusBadge({ status, days_left }: { status: string; days_left: number | null }) {
-  let cfg = STATUS_CONFIG.expired;
+  let cfg: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG] = STATUS_CONFIG.expired;
   if (status === 'active') {
     if (days_left !== null && days_left <= 7) cfg = STATUS_CONFIG.expiring;
     else if (days_left !== null && days_left <= 30) cfg = STATUS_CONFIG.soon;
