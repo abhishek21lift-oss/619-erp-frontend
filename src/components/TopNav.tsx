@@ -21,14 +21,6 @@ type NavGroup = {
 const NAV_ROW1: NavGroup[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂', href: '/dashboard' },
   {
-    id: 'enquiry', label: 'Enquiry',
-    children: [
-      { label: 'Add Enquiry', href: '/sales/enquiry' },
-      { label: 'Enquiry List', href: '/sales/leads' },
-    ],
-  },
-  { id: 'followups', label: 'Follow Ups', icon: '↺', href: '/sales/leads' },
-  {
     id: 'members', label: 'Members',
     children: [
       { label: 'Add Member', href: '/clients/new', role: 'admin' },
@@ -46,12 +38,10 @@ const NAV_ROW1: NavGroup[] = [
       { label: 'Traffic Analysis', href: '/insights/traffic' },
       { label: 'Collection Analysis', href: '/finance/collection' },
       { label: 'Renewal Analysis', href: '/insights/renewal' },
-      { label: 'Conversion Analysis', href: '/sales/funnel' },
       { label: 'Session Analysis', href: '/insights/sessions' },
       { label: 'Revenue Forecast', href: '/finance/forecast' },
       { label: 'Profit & Loss', href: '/finance/pl' },
       { label: 'Sales Leaderboard', href: '/operations/leaderboard' },
-      { label: 'Lead Sources', href: '/sales/sources' },
       { label: 'All Reports', href: '/reports' },
     ],
   },

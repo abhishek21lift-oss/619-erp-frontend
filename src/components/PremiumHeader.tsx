@@ -64,11 +64,6 @@ const MEGA_SECTIONS: NavSection[] = [
     gradient: 'var(--brand-lo)',
     columns: [
       { heading: 'Pipeline', items: [
-        { label: 'Leads', href: '/sales/leads', description: 'Prospective members' },
-        { label: 'Enquiries', children: [
-          { label: 'Add Enquiry', href: '/sales/enquiry', description: 'New lead form' },
-          { label: 'Enquiry List', href: '/sales/enquiries', description: 'View all enquiries' },
-        ]},
         { label: 'Membership Sales', href: '/memberships/subscriptions', description: 'Plan conversions' },
       ]},
       { heading: 'Finance', items: [
@@ -204,7 +199,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   { label: 'PT OS Dashboard', href: '/pt-os',                  icon: <Dumbbell size={14} />,     group: 'Coaches' },
   { label: 'Create Invoice',   href: '/finance/invoices',       icon: <FileText size={14} />,     group: 'Finance',  role: 'admin' },
   { label: 'Record Payment',   href: '/finance/record-payment', icon: <CreditCard size={14} />,   group: 'Finance',  role: 'admin' },
-  { label: 'Add Lead',         href: '/sales/enquiry',          icon: <UserCheck size={14} />,    group: 'Sales'    },
+
   { label: 'Schedule Session', href: '/appointments',           icon: <CalendarPlus size={14} />, group: 'Coaches' },
   { label: 'Workout Plan',     href: '/pt-os/workout-plans',    icon: <ClipboardList size={14} />,group: 'Coaches' },
   { label: 'Diet Plan',        href: '/pt-os/diet-plans',       icon: <Salad size={14} />,        group: 'Coaches' },

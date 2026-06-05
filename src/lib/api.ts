@@ -814,34 +814,6 @@ export const api = {
       http<{ membership: unknown; stats: unknown }>(`/api/v1/members/${id}/metrics`),
   },
 
-  // ── Leads CRM ────────────────────────────────────────────────
-  leads: {
-    list: (params?: Record<string, string | number>) =>
-      http<{ data: unknown[]; total: number }>(`/api/leads${buildQs(params)}`),
-    stats: () => http<{ data: unknown }>('/api/leads/stats'),
-    get: (id: string) => http<{ data: unknown }>(`/api/leads/${id}`),
-    create: (data: Record<string, unknown>) =>
-      http<{ data: unknown }>('/api/leads', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Record<string, unknown>) =>
-      http<{ data: unknown }>(`/api/leads/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    convert: (id: string, client_id: string) =>
-      http<{ data: unknown }>(`/api/leads/${id}/convert`, {
-        method: 'POST', body: JSON.stringify({ client_id }),
-      }),
-    delete: (id: string) => http(`/api/leads/${id}`, { method: 'DELETE' }),
-    followups: {
-      list: (leadId: string) => http<{ data: unknown[] }>(`/api/leads/${leadId}/followups`),
-      create: (leadId: string, data: Record<string, unknown>) =>
-        http<{ data: unknown }>(`/api/leads/${leadId}/followups`, {
-          method: 'POST', body: JSON.stringify(data),
-        }),
-      update: (followupId: string, data: Record<string, unknown>) =>
-        http<{ data: unknown }>(`/api/leads/followups/${followupId}`, {
-          method: 'PATCH', body: JSON.stringify(data),
-        }),
-    },
-  },
-
   // ── Progress Tracking ─────────────────────────────────────────
   progress: {
     assessments: {

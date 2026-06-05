@@ -50,7 +50,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
 
   const globalPages = [
     { label: 'Dashboard', href: '/dashboard', keywords: 'dashboard home overview analytics' },
-    { label: 'Leads', href: '/sales/leads', keywords: 'leads prospects inquiries' },
     { label: 'Members', href: '/clients', keywords: 'members clients customers' },
     { label: 'Attendance', href: '/attendance', keywords: 'attendance check-in sign-in' },
     { label: 'Session Booking', href: '/pt-os/schedule-session', keywords: 'session booking schedule appointments' },
@@ -60,7 +59,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     { label: 'Plans', href: '/plans', keywords: 'plans packages memberships' },
     { label: 'Membership', href: '/memberships/subscriptions', keywords: 'membership subscriptions renewals' },
     { label: 'Renewal', href: '/members/renewals', keywords: 'renewal expiry' },
-    { label: 'Enquiry', href: '/sales/enquiry', keywords: 'enquiry inquiries questions' },
     { label: 'Walk-in', href: '/checkin', keywords: 'walk-in walkin drop-in' },
     { label: 'Enrollment', href: '/clients/new', keywords: 'enrollment registration joining' },
     { label: 'Check-in', href: '/checkin', keywords: 'checkin check-in daily visit' },
@@ -74,7 +72,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     { label: 'Strength Tracking', href: '/pt-os/strength-tracking', keywords: 'strength tracking lifts weights' },
     { label: 'Progress Photos', href: '/pt-os/progress-photos', keywords: 'progress photos pictures transformation' },
     { label: 'Commissions', href: '/pt-os/commissions', keywords: 'commissions incentives bonuses' },
-    { label: 'Trial Sessions', href: '/sales/trial-sessions', keywords: 'trial sessions free demo' },
     { label: 'Automation', href: '/engagement/automation', keywords: 'automation workflows triggers' },
     { label: 'Attendance Reports', href: '/attendance/reports', keywords: 'attendance reports analytics' },
     { label: 'Communication', href: '/engagement/notifications', keywords: 'communication messaging notifications' },

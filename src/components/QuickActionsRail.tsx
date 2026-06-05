@@ -62,17 +62,6 @@ const PULSE: PulseItem[] = [
     accent: '#6C5CE7',
   },
   {
-    icon: Activity,
-    value: '12',
-    label: 'New Leads',
-    sub: '4 hot prospects',
-    badge: '3 pending',
-    gradient: 'from-[#0984E3] via-[#1877F2] to-[#0050B3]',
-    glow: 'rgba(9,132,227,0.35)',
-    lightBg: 'rgba(9,132,227,0.06)',
-    accent: '#0984E3',
-  },
-  {
     icon: Sparkles,
     value: '96',
     label: 'Satisfaction Score',

@@ -38,24 +38,11 @@ export const DASHBOARD_ITEM: NavItem = {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    id: 'lead-crm',
-    label: 'Lead CRM',
-    icon: 'Target',
-    items: [
-      { href: '/sales/leads',              label: 'Lead Inbox',         icon: 'Inbox',        badge: 'leadsCount' },
-      { href: '/sales/today',              label: "Today's Sale",       icon: 'IndianRupee',  isNew: true },
-      { href: '/sales/sources',            label: 'Lead Sources',       icon: 'PieChart',     role: 'admin' },
-      { href: '/sales/funnel',             label: 'Conversion Funnel',  icon: 'Filter',       role: 'admin' },
-      { href: '/sales/enquiry',            label: 'Add Enquiry',        icon: 'PlusCircle' },
-      { href: '/sales/enquiries',          label: 'Enquiry List',       icon: 'List' },
-      { href: '/sales/trial-sessions',     label: 'Trial Sessions',     icon: 'CalendarCheck', role: 'admin', isNew: true },
-    ],
-  },
-  {
     id: 'members',
     label: 'Members',
     icon: 'Users',
     items: [
+      { href: '/sales/today',              label: "Today's Sale",       icon: 'IndianRupee',  isNew: true },
       { href: '/clients/new',       label: 'Add Member',   icon: 'UserPlus' },
       { href: '/clients',           label: 'My Members',      icon: 'Users' },
       { href: '/members/active',    label: 'Active Members',  icon: 'UserCheck' },
@@ -205,7 +192,7 @@ export const SETTINGS_GROUP: NavGroup = {
 };
 
 export const QUICK_ACTIONS = [
-  { id: 'qa-add-lead',     label: 'Add new lead',          icon: 'UserPlus',      href: '/sales/enquiry' },
+
   { id: 'qa-add-member',   label: 'Create member',         icon: 'Users',         href: '/clients/new' },
   { id: 'qa-record-pay',   label: 'Record payment',        icon: 'Wallet',        href: '/finance/record-payment' },
   { id: 'qa-book-session', label: 'Book PT session',       icon: 'CalendarPlus',  href: '/pt-os/schedule-session' },
