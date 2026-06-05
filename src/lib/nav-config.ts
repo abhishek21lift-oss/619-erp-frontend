@@ -85,7 +85,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/new-client',       label: 'PT Consultation',    icon: 'ClipboardList' },
       { href: '/pt-os/goals',            label: 'Goal Setting',       icon: 'Target',       isNew: true },
       { href: '/pt-os/assessment',       label: 'PT Assessment',      icon: 'ClipboardCheck', isNew: true },
-      { href: '/pt-os/packages',         label: 'PT Packages',        icon: 'Package',      isNew: true },
       { href: '/pt-os/clients',          label: 'PT Clients',         icon: 'Users' },
     ],
   },

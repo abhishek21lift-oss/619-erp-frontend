@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Users, Wallet, BarChart3, Package,
+  LayoutDashboard, Users, Wallet, BarChart3,
   Target, ClipboardList, Calendar, Clock, Ruler,
 } from 'lucide-react';
 
@@ -10,7 +10,6 @@ const NAV = [
   { href: '/pt-os', label: 'Dashboard', icon: <LayoutDashboard size={14} /> },
   { href: '/pt-os/clients', label: 'Clients', icon: <Users size={14} /> },
   { href: '/pt-os/balance-sheet', label: 'Balance Sheet', icon: <Wallet size={14} /> },
-  { href: '/pt-os/packages', label: 'Packages', icon: <Package size={14} /> },
   { href: '/pt-os/goals', label: 'Goals', icon: <Target size={14} /> },
   { href: '/pt-os/assessment', label: 'Assessment', icon: <ClipboardList size={14} /> },
   { href: '/pt-os/sessions', label: 'Sessions', icon: <Clock size={14} /> },

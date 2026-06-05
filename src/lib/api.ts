@@ -252,19 +252,6 @@ export type PtClientBase = {
   status: string;
 };
 
-export type PtPackage = {
-  id: string;
-  name: string;
-  session_count: number;
-  duration_days: number;
-  price: number;
-  goal_type?: string;
-  description?: string;
-  is_active?: boolean;
-  created_at?: string;
-  [key: string]: unknown;
-};
-
 // Core fetch is handled by http() from ./http
 // This file provides the typed `api` namespace facade over http()
 
@@ -936,18 +923,6 @@ export const api = {
           method: 'POST',
         }),
     },
-    ptPackages: {
-      list: (params?: Record<string, string | number>) =>
-        http<{ data: unknown[] }>(`/api/automation/pt-packages${buildQs(params)}`),
-      create: (data: Record<string, unknown>) =>
-        http<{ data: unknown }>('/api/automation/pt-packages', {
-          method: 'POST', body: JSON.stringify(data),
-        }),
-      update: (id: string, data: Record<string, unknown>) =>
-        http<{ data: unknown }>(`/api/automation/pt-packages/${id}`, {
-          method: 'PATCH', body: JSON.stringify(data),
-        }),
-    },
   },
 
   // ── PT OS ────────────────────────────────────────────────────
@@ -984,8 +959,6 @@ export const api = {
       }),
     payouts: (params?: { month?: string }) =>
       http<{ data: unknown[]; month: string }>(`/api/pt-os/payouts${buildQs(params)}`),
-    plans: (params?: Record<string, string>) =>
-      http<{ data: unknown[] }>(`/api/pt-os/plans${buildQs(params)}`),
     revenue: () =>
       http<{ data: unknown[] }>('/api/pt-os/revenue'),
     trainerPerformance: () =>

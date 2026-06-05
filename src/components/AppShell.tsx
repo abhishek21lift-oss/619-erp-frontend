@@ -68,7 +68,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     { label: 'Trainers', href: '/trainers', keywords: 'trainers coaches instructors' },
     { label: 'Goals', href: '/pt-os/goals', keywords: 'goals objectives targets' },
     { label: 'Assessment', href: '/pt-os/assessment', keywords: 'assessment evaluation fitness test' },
-    { label: 'Packages', href: '/pt-os/packages', keywords: 'packages offerings plans' },
     { label: 'Session Balance', href: '/pt-os/session-balance', keywords: 'session balance remaining credits' },
     { label: 'Weekly Check-in', href: '/pt-os/weekly-checkin', keywords: 'weekly check-in checkin progress' },
     { label: 'Measurements', href: '/pt-os/measurements', keywords: 'measurements body stats metrics' },
