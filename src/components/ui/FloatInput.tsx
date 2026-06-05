@@ -14,7 +14,7 @@ interface FloatInputProps {
 }
 
 export default function FloatInput({
-  label, type = 'text', value, onChange, placeholder = ' ', suffix, multiline,
+  label, type = 'text', value, onChange, placeholder = ' ', suffix, required, multiline,
 }: FloatInputProps) {
   const id = useId();
   const [focused, setFocused] = useState(false);
@@ -40,7 +40,7 @@ export default function FloatInput({
             transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {label}
+          {label}{required && <span style={{ color: '#dc2626', marginLeft: 2 }}>*</span>}
         </label>
         {multiline ? (
           <textarea

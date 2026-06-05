@@ -484,11 +484,11 @@ function NewClientWizard() {
                       </div>
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <FloatInput label="Full Name" value={form.name} onChange={(v) => set('name', v)} />
+                          <FloatInput label="Full Name" required value={form.name} onChange={(v) => set('name', v)} />
                           <FloatInput label="Email Address" type="email" value={form.email} onChange={(v) => set('email', v)} />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <FloatInput label="Phone Number" type="tel" value={form.phone} onChange={(v) => set('phone', v)} />
+                          <FloatInput label="Phone Number" type="tel" required value={form.phone} onChange={(v) => set('phone', v)} />
                           <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={(v) => set('dob', v)} />
                           <div>
                             <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Gender</p>
@@ -535,7 +535,7 @@ function NewClientWizard() {
                       <div className="space-y-5">
                         {/* Goals */}
                         <div>
-                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Primary Fitness Goal</p>
+                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Primary Fitness Goal <span style={{ color: '#dc2626' }}>*</span></p>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                             {GOALS.map((g) => (
                               <button
@@ -619,7 +619,7 @@ function NewClientWizard() {
                       <div className="space-y-5">
                         {/* Trainer Selector */}
                         <PremiumSelect
-                          label="Select Trainer"
+                          label="Select Trainer *"
                           value={form.trainer}
                           onChange={(v) => set('trainer', v)}
                           options={trainerOptions}
@@ -628,7 +628,7 @@ function NewClientWizard() {
 
                         {/* PT Package Selector - Show package cards with names and prices */}
                         <div>
-                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>PT Package</p>
+                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>PT Package <span style={{ color: '#dc2626' }}>*</span></p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {ptPackages.map((pkg) => {
                               const isSelected = form.ptPackageId === pkg.name;
@@ -662,6 +662,7 @@ function NewClientWizard() {
                         {/* Base Price */}
                         <FloatInput
                           label="Base Price (₹)"
+                          required
                           value={String(form.basePrice ?? '')}
                           onChange={(v) => {
                             const num = parseFloat(v);
@@ -673,6 +674,7 @@ function NewClientWizard() {
                         {/* Selling Price */}
                         <FloatInput
                           label="Selling Price (₹)"
+                          required
                           value={String(form.sellingPrice ?? '')}
                           onChange={(v) => {
                             const num = parseFloat(v);
@@ -683,7 +685,7 @@ function NewClientWizard() {
 
                         {/* Session Frequency */}
                         <PremiumSelect
-                          label="Session Frequency"
+                          label="Session Frequency *"
                           value={form.frequency}
                           onChange={(v) => set('frequency', v)}
                           options={FREQUENCIES}
@@ -773,7 +775,7 @@ function NewClientWizard() {
 
                       {/* Transformation Goals */}
                       <div className="mb-6">
-                        <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Transformation Goals</p>
+                        <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Transformation Goals <span style={{ color: '#dc2626' }}>*</span></p>
                         <FloatInput
                           label="Describe what the client wants to achieve..."
                           value={form.transformationGoals}
