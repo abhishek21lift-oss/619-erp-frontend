@@ -1,345 +1,161 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
-import BrandLogo from './BrandLogo';
 
-/* =====================================================================
-   Navigation tree
-   ===================================================================== */
-type NavChild = { label: string; href: string; role?: 'admin' | 'trainer' | 'member' };
-type NavGroup = {
-  id: string;
-  label: string;
-  icon?: string;
-  href?: string;
-  children?: NavChild[];
-  role?: 'admin' | 'trainer' | 'member';
+import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
+  ClipboardList, ScanFace, User, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
+  LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
+  List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
+  LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
+  UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
+  CalendarCheck, Package, Banknote,
+} from 'lucide-react';
+import { cn } from '@/components/ui/cn';
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
+  ClipboardList, ScanFace, User, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
+  LayoutGrid, Layers, PlusCircle, Ticket, Gift, CreditCard, TrendingUp, Inbox,
+  List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
+  LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
+  UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
+  CalendarCheck, Package, Banknote,
 };
 
-const NAV_ROW1: NavGroup[] = [
-  {
-    id: 'analysis', label: 'Analysis',
-    role: 'admin',
-    children: [
-      { label: 'Traffic Analysis', href: '/insights/traffic' },
-      { label: 'Collection Analysis', href: '/finance/collection' },
-      { label: 'Session Analysis', href: '/insights/sessions' },
-      { label: 'Revenue Forecast', href: '/finance/forecast' },
-      { label: 'Profit & Loss', href: '/finance/pl' },
-      { label: 'Sales Leaderboard', href: '/operations/leaderboard' },
-      { label: 'All Reports', href: '/reports' },
-    ],
-  },
-  {
-    id: 'memberships', label: 'Memberships',
-    children: [
-      { label: 'Plans & Pricing', href: '/plans' },
-      { label: 'Subscriptions', href: '/memberships/subscriptions' },
-      { label: 'Appointments', href: '/appointments' },
-    ],
-  },
-  {
-    id: 'accounts', label: 'Accounts',
-    role: 'admin',
-    children: [
-      { label: 'Collected Payments', href: '/finance/collected-payments' },
-      { label: 'Outstanding Dues', href: '/finance/dues' },
-      { label: 'Collection Report', href: '/finance/collection' },
-      { label: 'Profit & Loss', href: '/finance/pl' },
-      { label: 'Revenue Forecast', href: '/finance/forecast' },
-    ],
-  },
-];
+const GROUP_COLORS: Record<string, string> = {
+  attendance: '#06B6D4',
+  'personal-training': '#8B5CF6',
+  'trainer-management': '#F97316',
+  'session-management': '#0EA5E9',
+  'progress-tracking': '#EC4899',
+  memberships: '#6366F1',
+  finance: '#14B8A6',
+  communication: '#A855F7',
+  reports: '#64748B',
+};
 
-const NAV_ROW2: NavGroup[] = [
-  {
-    id: 'notifications', label: 'Notifications & WhatsApp',
-    children: [
-      { label: 'Notifications', href: '/settings' },
-      { label: 'WhatsApp', href: '/settings' },
-    ],
-  },
-  {
-    id: 'trainers', label: 'Trainers',
-    role: 'admin',
-    children: [
-      { label: 'Add Trainer', href: '/trainers?new=1' },
-      { label: 'My Trainers', href: '/trainers' },
-      { label: 'Transformations', href: '/training/transformations' },
-      { label: 'Coach Dashboard', href: '/trainer/dashboard', role: 'trainer' },
-    ],
-  },
-  {
-    id: 'fitnesscenter', label: 'Fitness Center',
-    role: 'admin',
-    children: [
-      { label: 'Settings', href: '/settings' },
-      { label: 'Plans & Pricing', href: '/plans' },
-    ],
-  },
-  {
-    id: 'staff', label: 'Staff',
-    role: 'admin',
-    children: [
-      { label: 'Staff Attendance', href: '/attendance/staff' },
-      { label: 'Staff List', href: '/attendance/staff' },
-    ],
-  },
-  {
-    id: 'attendance', label: 'Attendance Reports',
-    children: [
-      { label: 'Member Attendance', href: '/attendance' },
-      { label: 'Staff Attendance', href: '/attendance/staff', role: 'admin' },
-      { label: 'Check-in Leaderboard', href: '/operations/leaderboard' },
-    ],
-  },
-  {
-    id: 'appsettings', label: 'App Settings',
-    role: 'admin',
-    children: [
-      { label: 'Settings', href: '/settings' },
-    ],
-  },
-  { id: 'appointments', label: 'Appointments', href: '/attendance' },
-];
-
-/* =====================================================================
-   Nested-dropdown support
-   A NavChild can optionally carry sub-children for a fly-out panel.
-   ===================================================================== */
-type NavChildWithSub = NavChild & { sub?: NavChild[] };
-type NavGroupExtended = Omit<NavGroup, 'children'> & { children?: NavChildWithSub[] };
-
-// Patch the Memberships entry to give "Plans & Pricing" a sub-menu
-const NAV_ROW1_EXT: NavGroupExtended[] = NAV_ROW1.map((g) => {
-  if (g.id !== 'memberships') return g;
-  return {
-    ...g,
-    children: [
-      {
-        label: 'Plans & Pricing',
-        href: '/plans',
-        sub: [
-          { label: 'Plans', href: '/plans' },
-          { label: 'Create Plan', href: '/plans/create' },
-        ],
-      },
-      { label: 'Subscriptions', href: '/memberships/subscriptions' },
-      { label: 'Appointments', href: '/appointments' },
-    ],
-  };
-});
-
-/* =====================================================================
-   Dropdown component  (supports one level of sub-menu fly-out)
-   ===================================================================== */
-interface DropdownProps {
-  group: NavGroupExtended;
-  isActive: boolean;
-  userRole?: string;
-}
-
-function NavDropdown({ group, isActive, userRole }: DropdownProps) {
-  const [open, setOpen] = useState(false);
-  const [subOpen, setSubOpen] = useState<string | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
+export default function TopNav() {
+  const { user } = useAuth();
+  const pathname = usePathname();
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const navRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-        setSubOpen(null);
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenGroup(null);
       }
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const visibleChildren = (group.children || []).filter(
-    (c) => !c.role || c.role === userRole,
-  ) as NavChildWithSub[];
+  useEffect(() => { setOpenGroup(null); }, [pathname]);
 
-  if (group.href) {
-    return (
-      <Link
-        href={group.href}
-        className={`tn-item${isActive ? ' tn-active' : ''}`}
-        title={group.label}
-      >
-        {group.icon && <span className="tn-item-icon">{group.icon}</span>}
-        <span className="tn-item-label">{group.label}</span>
-      </Link>
-    );
-  }
+  const visibleGroups = NAV_GROUPS
+    .filter(g => isGroupVisibleForRole(g, user?.role))
+    .map(g => ({
+      ...g,
+      items: g.items
+        .filter(i => isVisibleForRole(i, user?.role))
+        .flatMap(i => i.children ? i.children.filter(c => isVisibleForRole(c, user?.role)) : [i]),
+    }))
+    .filter(g => g.items.length > 0);
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   return (
-    <div ref={ref} className={`tn-dropdown${open ? ' tn-open' : ''}`}>
-      <button
-        type="button"
-        className={`tn-item tn-has-arrow${isActive ? ' tn-active' : ''}`}
-        onClick={() => { setOpen((o) => !o); setSubOpen(null); }}
-        aria-expanded={open}
-        title={group.label}
-      >
-        {group.icon && <span className="tn-item-icon">{group.icon}</span>}
-        <span className="tn-item-label">{group.label}</span>
-        <span className="tn-arrow">{open ? '▲' : '▼'}</span>
-      </button>
+    <nav ref={navRef} className="flex items-center gap-1">
+      {visibleGroups.map(group => {
+        const GroupIcon = ICON_MAP[group.icon] || LayoutDashboard;
+        const color = GROUP_COLORS[group.id] || '#3B82F6';
+        const open = openGroup === group.id;
+        const hasActive = group.items.some(i => isActive(i.href));
 
-      {open && (
-        <div className="tn-menu">
-          {visibleChildren.map((c) =>
-            c.sub ? (
-              /* Item with sub-menu */
-              <div
-                key={c.href + c.label}
-                className={`tn-menu-item tn-menu-item--has-sub${subOpen === c.label ? ' tn-sub-open' : ''}`}
-                onMouseEnter={() => setSubOpen(c.label)}
-                onMouseLeave={() => setSubOpen(null)}
-              >
-                <span className="tn-menu-item-label">{c.label}</span>
-                <span className="tn-menu-item-arrow">▶</span>
-                {subOpen === c.label && (
-                  <div className="tn-submenu">
-                    {c.sub.map((s) => (
-                      <Link
-                        key={s.href + s.label}
-                        href={s.href}
-                        className="tn-menu-item"
-                        onClick={() => { setOpen(false); setSubOpen(null); }}
-                      >
-                        {s.label}
-                      </Link>
-                    ))}
+        return (
+          <div key={group.id} className="relative">
+            <button
+              onClick={() => setOpenGroup(open ? null : group.id)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold transition-all duration-200',
+                hasActive
+                  ? 'text-white shadow-sm'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]',
+              )}
+              style={{
+                background: hasActive ? `linear-gradient(135deg, ${color}, ${color}cc)` : undefined,
+                boxShadow: hasActive ? `0 2px 8px ${color}40` : undefined,
+              }}
+            >
+              <GroupIcon size={14} strokeWidth={hasActive ? 2.5 : 1.5} />
+              <span>{group.label}</span>
+            </button>
+
+            <AnimatePresence>
+              {open && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  className="absolute left-0 top-full mt-1.5 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_rgba(0,0,0,0.1)]"
+                  style={{ borderTop: `2px solid ${color}` }}
+                >
+                  <div className="py-1">
+                    {group.items.map(item => {
+                      const ItemIcon = ICON_MAP[item.icon];
+                      const active = isActive(item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setOpenGroup(null)}
+                          className={cn(
+                            'flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition-colors',
+                            active
+                              ? 'text-[var(--text-primary)] bg-[var(--bg-hover)]'
+                              : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]',
+                          )}
+                        >
+                          <div className="flex h-6 w-6 items-center justify-center rounded-md"
+                            style={{ background: active ? `${color}15` : 'transparent' }}>
+                            {ItemIcon && <ItemIcon size={12} strokeWidth={active ? 2.5 : 1.5}
+                              style={{ color: active ? color : 'var(--text-muted)' }} />}
+                          </div>
+                          <span>{item.label}</span>
+                          {item.badge && (
+                            <span className="ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase"
+                              style={{ background: `${color}20`, color }}>
+                              {item.badge}
+                            </span>
+                          )}
+                          {item.isNew && (
+                            <span className="ml-auto rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase text-white"
+                              style={{ background: color }}>
+                              New
+                            </span>
+                          )}
+                          {item.comingSoon && (
+                            <span className="ml-auto text-[8px] font-semibold text-[var(--text-disabled)]">
+                              Soon
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                key={c.href + c.label}
-                href={c.href}
-                className="tn-menu-item"
-                onClick={() => { setOpen(false); setSubOpen(null); }}
-              >
-                {c.label}
-              </Link>
-            )
-          )}
-        </div>
-      )}
-    </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+    </nav>
   );
 }
-
-/* =====================================================================
-   Main TopNav component
-   ===================================================================== */
-export default function TopNav() {
-  const { user, logout } = useAuth();
-  const path = usePathname();
-  const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => { setMobileOpen(false); }, [path]);
-
-  const userRole = user?.role;
-
-  function isGroupActive(group: NavGroupExtended): boolean {
-    if (group.href) return path === group.href || path.startsWith(group.href + '/');
-    return (group.children || []).some(
-      (c) => path === c.href || path.startsWith(c.href.split('?')[0] + '/'),
-    );
-  }
-
-  const initials = (user?.name || 'U')
-    .split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-
-  const roleLabel = userRole === 'admin' ? 'Owner' : userRole === 'trainer' ? 'Coach' : 'Athlete';
-
-  const visibleRow1 = NAV_ROW1_EXT.filter((g) => !g.role || g.role === userRole);
-  const visibleRow2 = NAV_ROW2.filter((g) => !g.role || g.role === userRole);
-
-  return (
-    <>
-      <nav className="tn-root">
-        {/* ── Brand bar ── */}
-        <div className="tn-brand-bar">
-          <div className="tn-brand-inner">
-            <div className="tn-brand-logo">
-              <BrandLogo size={36} />
-              <div className="tn-brand-text">
-                <span className="tn-brand-name">619 FITNESS STUDIO</span>
-                <span className="tn-branch-name">Kalyan Branch</span>
-              </div>
-            </div>
-
-            <div className="tn-brand-right">
-              <div className="tn-user-pill">
-                <div className="tn-user-avatar">{initials}</div>
-                <div className="tn-user-info">
-                  <span className="tn-user-name">{user?.name || 'User'}</span>
-                  <span className="tn-user-role">{roleLabel}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="tn-signout-btn"
-                onClick={() => { logout(); router.replace('/login'); }}
-                title="Sign out"
-              >
-                &#x2192; Sign out
-              </button>
-              <button
-                type="button"
-                className="tn-hamburger"
-                onClick={() => setMobileOpen((o) => !o)}
-                aria-label="Toggle menu"
-              >
-                <span /><span /><span />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Nav rows ── */}
-        <div className={`tn-nav-wrap${mobileOpen ? ' tn-mobile-open' : ''}`}>
-          {/* Row 1 */}
-          <div className="tn-row">
-            {visibleRow1.map((g) => (
-              <NavDropdown
-                key={g.id}
-                group={g}
-                isActive={isGroupActive(g)}
-                userRole={userRole}
-              />
-            ))}
-          </div>
-          {/* Row 2 */}
-          <div className="tn-row tn-row-2">
-            {visibleRow2.map((g) => (
-              <NavDropdown
-                key={g.id}
-                group={g as NavGroupExtended}
-                isActive={isGroupActive(g as NavGroupExtended)}
-                userRole={userRole}
-              />
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="tn-mobile-overlay"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-    </>
-  );
-}
-
-
-/* TopNav navbar sizing fix */

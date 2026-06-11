@@ -2,13 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Menu, Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown } from 'lucide-react';
+import { Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
-import Sidebar from './sidebar/Sidebar';
+import TopNav from './TopNav';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -17,7 +17,6 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children, title, headerLeft }: AppShellProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ label: string; href: string }[]>([]);
@@ -125,65 +124,55 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
 
   return (
     <LazyMotion features={domAnimation} strict>
-      <div className="flex min-h-screen bg-[var(--bg-canvas)]">
-        {/* Desktop sidebar — always visible on lg+ */}
-        <div className="hidden lg:block">
-          <Sidebar variant="desktop" />
-        </div>
-
-        {/* Mobile sidebar — overlay */}
-        <Sidebar
-          variant="mobile"
-          mobileOpen={sidebarOpen}
-          onMobileClose={() => setSidebarOpen(false)}
-        />
-
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        <div className="flex flex-1 flex-col lg:pl-64 xl:pl-72">
-          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] px-4 backdrop-blur-2xl sm:px-6 lg:px-8">
-            {/* Mobile menu button */}
-            <button
-              type="button"
-              aria-label="Open sidebar"
-              aria-expanded={sidebarOpen}
-              onClick={() => setSidebarOpen(true)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] lg:hidden"
-            >
-              <Menu size={18} />
-            </button>
-
-            {headerLeft && (
-              <div className="flex items-center gap-3 shrink-0">
-                {headerLeft}
+      <div className="flex min-h-screen flex-col bg-[var(--bg-canvas)]">
+        {/* Top header bar */}
+        <header className="sticky top-0 z-30 flex flex-col border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] backdrop-blur-2xl">
+          {/* Top row: brand + search + actions */}
+          <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
+            {/* Brand logo */}
+            <Link href="/" className="flex items-center gap-2.5 shrink-0">
+              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-[var(--brand-lo)] via-[var(--brand)] to-purple-500 p-[1.5px] shadow-[0_2px_8px_var(--brand-glow)]">
+                <div className="flex h-full w-full items-center justify-center rounded-[7px] bg-[var(--bg-white)]">
+                  <Image src="/logo.png" alt="619 Fitness" width={24} height={24} className="h-6 w-6 rounded object-cover" />
+                </div>
               </div>
-            )}
-            {/* Premium search bar */}
-            <div ref={searchRef} className="relative flex-1 max-w-[480px]">
+              <div className="hidden sm:block">
+                <h2 className="text-[14px] font-extrabold tracking-tight text-[var(--text-primary)] leading-none">
+                  <span className="bg-clip-text text-transparent"
+                    style={{ backgroundImage: 'linear-gradient(135deg, #3B82F6, #60A5FA, #93C5FD)' }}>619</span>
+                  {' '}
+                  <span className="tracking-[0.04em] text-[11px]">FITNESS</span>
+                </h2>
+              </div>
+            </Link>
+
+            {/* Desktop nav */}
+            <div className="hidden lg:flex flex-1 items-center">
+              <div className="ml-2">
+                <TopNav />
+              </div>
+            </div>
+
+            {/* Search */}
+            <div ref={searchRef} className="relative flex-1 max-w-[360px] lg:max-w-[400px]">
               <div className="group relative">
-                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[var(--brand-lo)] via-[var(--brand)] to-cyan-400 p-[1.5px] opacity-60 transition-opacity duration-300 group-focus-within:opacity-100">
+                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[var(--brand-lo)] via-[var(--brand)] to-cyan-400 p-[1.5px] opacity-40 transition-opacity duration-300 group-focus-within:opacity-100">
                   <div className="h-full w-full rounded-2xl bg-[var(--bg-base)]" />
                 </div>
                 <div className="relative flex items-center">
-                  <Search size={15} strokeWidth={2}
-                    className="absolute left-3.5 z-10 text-[var(--text-disabled)] transition-colors duration-200 group-focus-within:text-[var(--brand)]" />
+                  <Search size={14} strokeWidth={2}
+                    className="absolute left-3 z-10 text-[var(--text-disabled)] transition-colors duration-200 group-focus-within:text-[var(--brand)]" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => { if (searchQuery.trim()) setSearchOpen(searchResults.length > 0); }}
                     placeholder="Search pages, members, payments..."
-                    className="relative w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] py-[10px] sm:pl-10 pl-3 pr-4 text-[13px] text-[var(--text-primary)] outline-none transition-all duration-200 placeholder-[var(--text-disabled)] focus:border-transparent focus:bg-[var(--bg-base)] focus:shadow-[0_0_0_1.5px_var(--brand),0_8px_24px_var(--brand-glow)]"
+                    className="relative w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] py-[7px] pl-9 pr-3 text-[12px] text-[var(--text-primary)] outline-none transition-all duration-200 placeholder-[var(--text-disabled)] focus:border-transparent focus:bg-[var(--bg-base)] focus:shadow-[0_0_0_1.5px_var(--brand),0_8px_24px_var(--brand-glow)]"
                   />
                 </div>
               </div>
 
-              {/* Search dropdown */}
               <AnimatePresence>
                 {searchOpen && (
                   <motion.div
@@ -191,7 +180,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.96 }}
                     transition={{ duration: 0.18, ease: 'easeOut' }}
-                    className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_rgba(0,0,0,0.08),0_0_0_1px_rgba(255,255,255,0.5)_inset] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.03)_inset]"
+                    className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
                   >
                     <div className="max-h-[300px] overflow-y-auto py-2">
                       {searchResults.length === 0 ? (
@@ -219,7 +208,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             </div>
 
             {/* Spacer */}
-            <div className="flex-1" />
+            <div className="hidden lg:block flex-1" />
 
             {/* Settings dropdown */}
             <div ref={settingsRef} className="relative">
@@ -231,23 +220,16 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                 whileTap={{ scale: 0.95 }}
                 className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200"
                 style={{
-                  background: settingsOpen
-                    ? 'var(--brand-lo)'
-                    : undefined,
-                  boxShadow: settingsOpen
-                    ? '0 4px 12px var(--brand-glow)'
-                    : undefined,
+                  background: settingsOpen ? 'var(--brand-lo)' : undefined,
+                  boxShadow: settingsOpen ? '0 4px 12px var(--brand-glow)' : undefined,
                 }}
               >
-                {/* Default state gradient border */}
                 {!settingsOpen && (
                   <div className="absolute inset-0 rounded-xl border border-[var(--border)] p-[1.5px]">
                     <div className="h-full w-full rounded-[10.5px] bg-[var(--bg-base)]" />
                   </div>
                 )}
-                {/* Hover overlay */}
                 <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-200 bg-[var(--bg-hover)]" />
-                {/* Active glow ring */}
                 {settingsOpen && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -260,11 +242,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className={settingsOpen ? 'text-white' : 'text-[var(--text-muted)]'}
                 >
-                  <Settings
-                    size={16}
-                    strokeWidth={settingsOpen ? 2 : 1.5}
-                    className="relative z-10"
-                  />
+                  <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} className="relative z-10" />
                 </motion.div>
               </motion.button>
               <AnimatePresence>
@@ -276,25 +254,15 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                     transition={{ duration: 0.12, ease: 'easeOut' }}
                     className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_var(--brand-glow)]"
                   >
-                    <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">
-                      Settings
-                    </div>
+                    <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">Settings</div>
                     <div className="pb-2">
                       {settingsLinks.map((link) => {
                         const Icon = link.icon;
                         const active = pathname === link.href;
                         return (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            onClick={() => setSettingsOpen(false)}
-                            className={cn(
-                              'flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition-colors',
-                              active
-                                ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
-                                : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]',
-                            )}
-                          >
+                          <Link key={link.href} href={link.href} onClick={() => setSettingsOpen(false)}
+                            className={cn('flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition-colors',
+                              active ? 'bg-[var(--brand-soft)] text-[var(--brand)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]')}>
                             <Icon size={14} strokeWidth={1.5} />
                             {link.label}
                           </Link>
@@ -307,26 +275,19 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             </div>
 
             {/* Notification bell */}
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-            >
+            <button type="button" aria-label="Notifications"
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
               <Bell size={17} strokeWidth={1.5} />
               <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--danger)] shadow-[0_0_6px_var(--danger)]" />
             </button>
 
             {/* Profile dropdown */}
             <div ref={profileRef} className="relative">
-              <button
-                onClick={() => setProfileOpen(s => !s)}
-                className="flex items-center gap-2 border-l border-[var(--border)] pl-3 transition-colors hover:opacity-80"
-              >
-                <div
-                  className="flex h-7 w-7 items-center justify-center rounded-lg shadow-[0_2px_6px_var(--brand-glow)] overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}
-                >
-                    <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
+              <button onClick={() => setProfileOpen(s => !s)}
+                className="flex items-center gap-2 border-l border-[var(--border)] pl-3 transition-colors hover:opacity-80">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg shadow-[0_2px_6px_var(--brand-glow)] overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}>
+                  <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-[12px] font-semibold leading-tight text-[var(--text-primary)]">619 FITNESS STUDIO</p>
@@ -348,20 +309,25 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                       <p className="text-[10px] text-[var(--text-muted)] capitalize">{user?.email || '—'}</p>
                     </div>
                     <div className="py-1">
-                      <Link href="/settings/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                      <Link href="/settings/profile" onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                         <User size={14} strokeWidth={1.5} /> My Profile
                       </Link>
-                      <Link href="/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                      <Link href="/settings" onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                         <Settings size={14} strokeWidth={1.5} /> Account Settings
                       </Link>
-                      <Link href="/settings/staff" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                      <Link href="/settings/staff" onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                         <ShieldCheck size={14} strokeWidth={1.5} /> Manage Users
                       </Link>
-                      <Link href="/help" onClick={() => setProfileOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                      <Link href="/help" onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                         <HelpCircle size={14} strokeWidth={1.5} /> Help & Support
                       </Link>
                       <hr className="my-1 border-[var(--border)]" />
-                      <button onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger)] hover:bg-[var(--danger)]/5 transition-colors">
+                      <button onClick={handleLogout}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger)] hover:bg-[var(--danger)]/5 transition-colors">
                         <LogOut size={14} strokeWidth={1.5} /> Logout
                       </button>
                     </div>
@@ -369,20 +335,28 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                 )}
               </AnimatePresence>
             </div>
-          </header>
+          </div>
 
-          <main
-            id="main-content"
-            className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8"
-          >
-            {title && (
-              <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
-                {title}
-              </h1>
-            )}
-            {children}
-          </main>
-        </div>
+          {/* Mobile nav row */}
+          <div className="flex lg:hidden overflow-x-auto px-4 pb-2 gap-1 scrollbar-none">
+            <TopNav />
+          </div>
+        </header>
+
+        {headerLeft && (
+          <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 pt-4">
+            {headerLeft}
+          </div>
+        )}
+
+        <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8">
+          {title && (
+            <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
+              {title}
+            </h1>
+          )}
+          {children}
+        </main>
       </div>
     </LazyMotion>
   );
