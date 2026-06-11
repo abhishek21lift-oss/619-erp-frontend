@@ -247,7 +247,7 @@ export default function Sidebar({
       <div className="relative shrink-0 px-5 pb-3 pt-6">
         <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r from-transparent via-[var(--brand-lo)] to-transparent opacity-70" />
         <div className="flex items-center justify-between">
-          <Link href="/pt-os" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group">
             <div className="relative">
               <div className="h-[52px] w-[52px] rounded-xl bg-gradient-to-br from-[var(--brand-lo)] via-[var(--brand)] to-purple-500 p-[2px] shadow-[0_4px_20px_var(--brand-glow)] transition-all duration-300 group-hover:shadow-[0_6px_28px_var(--brand-glow-2)]">
                 <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
