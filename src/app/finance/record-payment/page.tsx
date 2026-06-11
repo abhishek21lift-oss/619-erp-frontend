@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
-import { PremiumModal } from '@/components/premium/PremiumModal';
 import { FloatingPanel } from '@/components/premium/FloatingPanel';
 import {
   IndianRupee, Search, ChevronDown, Check, X, CreditCard,

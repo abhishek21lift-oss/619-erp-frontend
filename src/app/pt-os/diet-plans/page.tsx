@@ -12,7 +12,6 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { StatusPill } from '@/components/premium/StatusPill';
-import { RevenueCard } from '@/components/premium/RevenueCard';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';

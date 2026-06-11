@@ -6,10 +6,7 @@ import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { RevenueCard } from '@/components/premium/RevenueCard';
-import { StatusPill } from '@/components/premium/StatusPill';
-import { PremiumTable } from '@/components/premium/PremiumTable';
 import { PremiumModal } from '@/components/premium/PremiumModal';
-import { AnalyticsPanel } from '@/components/premium/AnalyticsPanel';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import {
   FileText, Download, Send, CheckCircle2, Search,

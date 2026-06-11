@@ -15,8 +15,8 @@ export function useDashboardData(period: string) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await http<DashboardData>('/api/dashboard/sales?period=' + encodeURIComponent(period));
-      setData(res);
+      const res = await http<DashboardData | { data: DashboardData }>('/api/dashboard/sales?period=' + encodeURIComponent(period));
+      setData('revenue' in res ? res : (res as { data: DashboardData }).data);
     } catch {
       setData(null);
     } finally {

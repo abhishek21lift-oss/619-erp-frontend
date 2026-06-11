@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
-import { PremiumModal } from '@/components/premium/PremiumModal';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
 
