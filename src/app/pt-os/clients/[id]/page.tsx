@@ -117,7 +117,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [renewOpen, setRenewOpen] = useState(false);
   const [trainers, setTrainers] = useState<string[]>([]);
   const [trainerIdMap, setTrainerIdMap] = useState<Record<string, string>>({});
-  const [plans, setPlans] = useState<{ id: string; name: string; final_amount: number; duration: string }[]>([]);
   const [saving, setSaving] = useState(false);
 
   const fetch = async () => {
@@ -147,14 +146,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   useEffect(() => { fetch(); }, [id]);
 
   /* ── Assign PT Modal ── */
-  const [assignData, setAssignData] = useState({ planId: '', trainer: '', baseAmount: '', sellingPrice: '', frequency: '' });
+  const [assignData, setAssignData] = useState({ trainer: '', baseAmount: '', sellingPrice: '', frequency: '' });
   const openAssign = () => {
     fetchTrainers();
-    api.plans.list().then((res) => {
-      const arr = Array.isArray(res) ? res : [];
-      setPlans(arr.map((p: any) => ({ id: p.id, name: p.name || p.kind || 'Plan', final_amount: p.final_amount || p.base_amount || 0, duration: p.duration || '' })));
-    }).catch(() => setPlans([]));
-    setAssignData({ planId: '', trainer: '', baseAmount: '', sellingPrice: '', frequency: '' });
+    setAssignData({ trainer: '', baseAmount: '', sellingPrice: '', frequency: '' });
     setAssignOpen(true);
   };
   const handleAssign = async () => {
@@ -163,7 +158,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     try {
       await api.clients.assignPt(id, {
         trainer_id: trainerIdMap[assignData.trainer],
-        plan_id: assignData.planId || undefined,
         base_amount: Number(assignData.baseAmount),
         monthly_pt_amount: Number(assignData.sellingPrice || assignData.baseAmount),
         frequency: assignData.frequency || undefined,
@@ -384,23 +378,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                                   border: assignData.trainer === t ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
                                 }}>{t}</button>
                             ))}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="mb-1.5 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Membership Plan</p>
-                          <div className="flex flex-wrap gap-2">
-                            {plans.map((p) => (
-                              <button key={p.id} onClick={() => setAssignData(prev => ({ ...prev, planId: prev.planId === p.id ? '' : p.id, baseAmount: prev.planId === p.id ? '' : String(p.final_amount) }))}
-                                className="rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all text-left"
-                                style={{
-                                  background: assignData.planId === p.id ? 'linear-gradient(135deg,#14B8A6,#0D9488)' : 'var(--bg-subtle)',
-                                  color: assignData.planId === p.id ? '#fff' : 'rgb(100,116,139)',
-                                  border: assignData.planId === p.id ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
-                                }}>
-                                {p.name}{p.final_amount ? ` · ₹${p.final_amount}` : ''}{p.duration ? ` · ${p.duration}` : ''}
-                              </button>
-                            ))}
-                            {plans.length === 0 && <span className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>No membership plans found</span>}
                           </div>
                         </div>
                         <FloatInput label="Base Amount (₹)" type="number" value={assignData.baseAmount} onChange={(v) => setAssignData(p => ({ ...p, baseAmount: v }))} />
