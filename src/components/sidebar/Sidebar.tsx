@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -237,16 +237,31 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
 
 export default function Sidebar({
   collapsed = false,
-  onToggleCollapse,
+  onExpand,
+  onCollapse,
   mobileOpen = false,
   onMobileClose,
   variant = 'desktop',
 }: SidebarProps) {
   const isMobile = variant === 'mobile';
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = useCallback(() => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    if (collapsed) onExpand?.();
+  }, [collapsed, onExpand]);
+
+  const handleMouseLeave = useCallback(() => {
+    hoverTimer.current = setTimeout(() => {
+      if (!collapsed) onCollapse?.();
+    }, 300);
+  }, [collapsed, onCollapse]);
 
   return (
     <aside
       data-sidebar={variant}
+      onMouseEnter={!isMobile ? handleMouseEnter : undefined}
+      onMouseLeave={!isMobile ? handleMouseLeave : undefined}
       className={cn(
         !isMobile && [
           'fixed inset-y-0 left-0 z-30 hidden flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
@@ -306,26 +321,14 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto overflow-x-hidden py-1 scrollbar-thin scrollbar-thumb-[var(--border)]">
         <SidebarNav collapsed={collapsed} onLinkClick={isMobile ? onMobileClose : undefined} />
       </div>
-
-      {/* Toggle collapse button */}
-      {!isMobile && (
-        <div className={cn('shrink-0', collapsed ? 'px-2 pb-3' : 'px-3 pb-3 pt-2')}>
-          <button
-            onClick={onToggleCollapse}
-            className="flex w-full items-center justify-center rounded-xl py-2 text-[var(--text-muted)] transition-all hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-        </div>
-      )}
     </aside>
   );
 }
 
 interface SidebarProps {
   collapsed?: boolean;
-  onToggleCollapse?: () => void;
+  onExpand?: () => void;
+  onCollapse?: () => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
   variant?: 'desktop' | 'mobile';

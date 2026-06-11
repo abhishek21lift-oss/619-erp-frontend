@@ -22,20 +22,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const [searchResults, setSearchResults] = useState<{ label: string; href: string }[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('sidebar_collapsed') === 'true';
-    }
-    return false;
-  });
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(prev => {
-      const next = !prev;
-      localStorage.setItem('sidebar_collapsed', String(next));
-      return next;
-    });
-  };
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -141,7 +128,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     <LazyMotion features={domAnimation} strict>
       <div className="flex min-h-screen bg-[var(--bg-canvas)]">
         {/* Sidebar */}
-        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={toggleSidebar} />
+        <Sidebar collapsed={sidebarCollapsed} onExpand={() => setSidebarCollapsed(false)} onCollapse={() => setSidebarCollapsed(true)} />
 
         {/* Right column */}
         <div className={cn('flex flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}>
