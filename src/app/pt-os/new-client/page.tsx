@@ -40,6 +40,7 @@ interface FormData {
   transformationGoals: string;
   basePrice: number | null;
   sellingPrice: number | null;
+  planId: string;
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ function initForm(): FormData {
     transformationGoals: '',
     basePrice: null,
     sellingPrice: null,
+    planId: '',
   };
 }
 
@@ -250,6 +252,7 @@ function NewClientWizard() {
   /* ── API State ── */
   const [trainers, setTrainers] = useState<string[]>([]);
   const [trainerIdMap, setTrainerIdMap] = useState<Record<string, string>>({});
+  const [plans, setPlans] = useState<{ id: string; name: string; final_amount: number; duration: string }[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
 
@@ -263,6 +266,10 @@ function NewClientWizard() {
         const map: Record<string, string> = {};
         arr.forEach((t: any) => { if (t.name && t.id) map[t.name] = t.id; });
         setTrainerIdMap(map);
+        api.plans.list().then((res) => {
+          const arr2 = Array.isArray(res) ? res : [];
+          setPlans(arr2.map((p: any) => ({ id: p.id, name: p.name || p.kind || 'Plan', final_amount: p.final_amount || p.base_amount || 0, duration: p.duration || '' })));
+        }).catch(() => setPlans([]));
       } catch (err: any) {
         setDataError(err?.message || 'Failed to load data');
         setTrainers([]);
@@ -318,6 +325,7 @@ function NewClientWizard() {
           dob: form.dob || undefined,
           gender: form.gender,
           trainer_id: trainerIdMap[form.trainer] || undefined,
+          plan_id: form.planId || undefined,
           weight: form.weight ? Number(form.weight) : undefined,
           notes: form.transformationGoals,
           base_amount: form.basePrice,
@@ -603,6 +611,25 @@ function NewClientWizard() {
                           options={trainerOptions}
                           placeholder="Choose a personal trainer"
                         />
+
+                        {/* Membership Plan */}
+                        <div>
+                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Membership Plan</p>
+                          <div className="flex flex-wrap gap-2">
+                            {plans.map((p) => (
+                              <button key={p.id} onClick={() => set('planId', form.planId === p.id ? '' : p.id)}
+                                className="rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all"
+                                style={{
+                                  background: form.planId === p.id ? 'linear-gradient(135deg,#14B8A6,#0D9488)' : 'var(--bg-subtle)',
+                                  color: form.planId === p.id ? '#fff' : 'rgb(100,116,139)',
+                                  border: form.planId === p.id ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
+                                }}>
+                                {p.name}{p.final_amount ? ` · ₹${p.final_amount}` : ''}
+                              </button>
+                            ))}
+                            {plans.length === 0 && <span className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>No plans available</span>}
+                          </div>
+                        </div>
 
                         {/* Base Price */}
                         <FloatInput
