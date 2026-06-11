@@ -1,18 +1,12 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PremiumButton } from '@/components/premium/PremiumButton';
 import { api } from '@/lib/api';
-import { ChevronLeft, ChevronRight, Download, PlusCircle, Users } from 'lucide-react';
-
-export default function ProfitAndLossPage() {
-  return (
-    <Guard role="admin">
-      <Inner />
-    </Guard>
-  );
-}
+import { ChevronLeft, ChevronRight, Download, PlusCircle, Users, IndianRupee, TrendingUp, TrendingDown, PieChart, AlertTriangle } from 'lucide-react';
 
 const fmt = (n: any) => '\u20b9' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
@@ -24,6 +18,14 @@ const FINANCE_TABS = [
   { label: 'Forecast',   href: '/finance/forecast' },
   { label: 'Payroll',    href: '/finance/trainer-revenue' },
 ];
+
+export default function ProfitAndLossPage() {
+  return (
+    <Guard role="admin">
+      <Inner />
+    </Guard>
+  );
+}
 
 function Inner() {
   const router = useRouter();
@@ -95,196 +97,237 @@ function Inner() {
     URL.revokeObjectURL(url);
   };
 
+  const isProfit = totals.profit >= 0;
+
   return (
     <AppShell>
-      <div className="page-main">
+      <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+        {/* Premium Hero Header */}
+        <div className="relative overflow-hidden rounded-none sm:rounded-[28px] mx-0 sm:mx-6 mt-0 sm:mt-6 p-6 sm:p-8"
+          style={{
+            background: 'linear-gradient(145deg, #0f0c29 0%, #1a1440 30%, #1e1b4b 60%, #1e40af 100%)',
+            boxShadow: '0 24px 80px rgba(30,27,75,0.35)',
+          }}>
+          <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+            }} />
+          <motion.div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full opacity-30"
+            style={{ background: 'radial-gradient(circle, rgba(167,139,250,0.5) 0%, transparent 70%)' }}
+            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.4, 0.3] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
+          <motion.div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full opacity-25"
+            style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)' }}
+            animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-purple-400 to-cyan-400 opacity-60" />
 
-        {/* Finance tab bar */}
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 20 }}>
-          {FINANCE_TABS.map(tab => (
-            <button
-              key={tab.href}
-              onClick={() => router.push(tab.href)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: 8,
-                border: tab.href === '/finance/pl' ? '1.5px solid var(--brand)' : '1.5px solid var(--border)',
-                background: tab.href === '/finance/pl' ? 'var(--brand)' : 'transparent',
-                color: tab.href === '/finance/pl' ? '#fff' : 'var(--muted)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+          <div className="relative z-10">
+            {/* Finance Tabs */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              {FINANCE_TABS.map(tab => (
+                <button key={tab.href} onClick={() => router.push(tab.href)}
+                  className="rounded-[10px] px-3.5 py-2 text-[11px] font-[700] uppercase tracking-[0.06em] transition-all"
+                  style={{
+                    background: tab.href === '/finance/pl' ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
+                    color: tab.href === '/finance/pl' ? '#c4b5fd' : 'rgba(255,255,255,0.6)',
+                    border: tab.href === '/finance/pl' ? '1.5px solid rgba(167,139,250,0.4)' : '1.5px solid rgba(255,255,255,0.08)',
+                  }}>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-        {/* Header row: year selector + action buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-          {/* Year selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button
-              onClick={() => setYear(y => y - 1)}
-              style={{ padding: '6px 10px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer' }}
-              aria-label="Previous year"
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <span style={{ fontSize: 16, fontWeight: 700, minWidth: 52, textAlign: 'center' }}>{year}</span>
-            <button
-              onClick={() => setYear(y => y + 1)}
-              disabled={year >= new Date().getFullYear()}
-              style={{ padding: '6px 10px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'transparent', color: year >= new Date().getFullYear() ? 'var(--muted)' : 'var(--text)', cursor: year >= new Date().getFullYear() ? 'not-allowed' : 'pointer' }}
-              aria-label="Next year"
-            >
-              <ChevronRight size={15} />
-            </button>
-          </div>
+            {/* Title + Year Selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-[26px] sm:text-[34px] font-[860] tracking-[-0.03em] leading-[1.2]" style={{ color: '#ffffff' }}>
+                  Profit &{' '}
+                  <span style={{ background: 'linear-gradient(135deg, #c4b5fd, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    Loss
+                  </span>
+                </h1>
+                <p className="mt-1 text-[13px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Annual financial overview and performance metrics</p>
+              </div>
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => router.push('/finance/record-payment')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-            >
-              <PlusCircle size={14} /> Add Expense
-            </button>
-            <button
-              onClick={() => router.push('/finance/trainer-revenue')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-            >
-              <Users size={14} /> Payroll Detail
-            </button>
-            <button
-              onClick={handleExport}
-              disabled={loading}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'transparent', color: loading ? 'var(--muted)' : 'var(--text)', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
-            >
-              <Download size={14} /> Export CSV
-            </button>
-          </div>
-        </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setYear(y => y - 1)}
+                  className="flex h-8 w-8 items-center justify-center rounded-[10px] transition-all hover:bg-white/10"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <ChevronLeft size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+                </button>
+                <span className="text-[15px] font-[760] min-w-[52px] text-center" style={{ color: '#ffffff' }}>{year}</span>
+                <button onClick={() => setYear(y => y + 1)} disabled={year >= new Date().getFullYear()}
+                  className="flex h-8 w-8 items-center justify-center rounded-[10px] transition-all hover:bg-white/10"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', opacity: year >= new Date().getFullYear() ? 0.4 : 1 }}>
+                  <ChevronRight size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+                </button>
+              </div>
+            </div>
 
-        {/* KPI stat cards */}
-        {!loading && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
-            <Stat label="Total Revenue"   value={fmt(totals.revenue)}    color="var(--success)" />
-            <Stat label="Total Cost"      value={fmt(totals.totalCost)}  color="var(--danger)" />
-            <Stat label={totals.profit >= 0 ? 'Net Profit' : 'Net Loss'}
-                  value={fmt(Math.abs(totals.profit))}
-                  color={totals.profit >= 0 ? 'var(--success)' : 'var(--danger)'} />
-            <Stat label="Profit Margin"   value={`${totals.margin}%`}    color={totals.margin >= 0 ? 'var(--brand)' : 'var(--danger)'} />
-          </div>
-        )}
-
-        {error && (
-          <div style={{ color: 'var(--danger)', padding: '1rem', marginBottom: 16, borderRadius: 8, background: 'var(--danger-light, #fee)' }}>
-            {error}
-          </div>
-        )}
-
-        {/* P&L table */}
-        <div className="card" style={{ padding: 0 }}>
-          <div className="table-wrap">
-            {loading ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>Loading\u2026</div>
-            ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Line item</th>
-                    <th style={{ textAlign: 'right' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ fontWeight: 600 }}>Membership & training revenue</td>
-                    <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 700 }} className="tabular">
-                      {fmt(totals.revenue)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <button
-                        onClick={() => router.push('/finance/trainer-revenue')}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, textDecoration: 'underline dotted', textUnderlineOffset: 3 }}
-                      >
-                        Less: Coach payroll (12 months)
-                      </button>
-                    </td>
-                    <td style={{ textAlign: 'right', color: 'var(--danger)' }} className="tabular">
-                      ({fmt(totals.annualSalary)})
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ verticalAlign: 'top' }}>
-                      <button
-                        onClick={() => router.push('/finance/collection')}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, textDecoration: 'underline dotted', textUnderlineOffset: 3 }}
-                      >
-                        Less: Overheads
-                      </button>
-                    </td>
-                    <td style={{ textAlign: 'right', color: 'var(--danger)', verticalAlign: 'top' }} className="tabular">
-                      ({fmt(totals.overheads)})
-                    </td>
-                  </tr>
-                  {byCategory.length > 0 && (
-                    <tr>
-                      <td style={{ paddingLeft: 32, fontSize: 13, color: 'var(--muted)' }}>
-                        {byCategory.map(([cat, amt]) => (
-                          <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
-                            <span>{cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
-                            <span className="tabular">{fmt(amt)}</span>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => router.push('/finance/dues')}
-                          style={{ marginTop: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--brand)', fontSize: 12, fontWeight: 600, padding: 0 }}
-                        >
-                          View all expenses →
-                        </button>
-                      </td>
-                      <td />
-                    </tr>
-                  )}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td style={{ fontWeight: 700 }}>{totals.profit >= 0 ? 'Profit Before Tax' : 'Net Loss'}</td>
-                    <td
-                      style={{ textAlign: 'right', color: totals.profit >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}
-                      className="tabular"
-                    >
-                      {fmt(Math.abs(totals.profit))}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+            {/* KPI Cards */}
+            {!loading && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+                <KPICard icon={<TrendingUp size={16} />} label="Total Revenue" value={fmt(totals.revenue)} accent="#10B981" />
+                <KPICard icon={<TrendingDown size={16} />} label="Total Cost" value={fmt(totals.totalCost)} accent="#F43F5E" />
+                <KPICard icon={isProfit ? <IndianRupee size={16} /> : <AlertTriangle size={16} />}
+                  label={isProfit ? 'Net Profit' : 'Net Loss'} value={fmt(Math.abs(totals.profit))} accent={isProfit ? '#8B5CF6' : '#F59E0B'} />
+                <KPICard icon={<PieChart size={16} />} label="Profit Margin" value={`${totals.margin}%`} accent={isProfit ? '#06B6D4' : '#F43F5E'} />
+              </div>
             )}
           </div>
         </div>
 
+        {/* Action Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-8 mt-6 mb-4">
+          <div className="flex gap-2">
+            <PremiumButton tone="secondary" size="sm" icon={<PlusCircle size={13} />} onClick={() => router.push('/finance/record-payment')}>
+              Add Expense
+            </PremiumButton>
+            <PremiumButton tone="secondary" size="sm" icon={<Users size={13} />} onClick={() => router.push('/finance/trainer-revenue')}>
+              Payroll Detail
+            </PremiumButton>
+          </div>
+          <PremiumButton tone="primary" glow size="sm" icon={<Download size={13} />} onClick={handleExport} disabled={loading}>
+            Export CSV
+          </PremiumButton>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+            className="mx-5 sm:mx-8 mb-4 rounded-[13px] p-3.5 text-[13px] font-[500]"
+            style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239' }}>
+            {error}
+          </motion.div>
+        )}
+
+        {/* P&L Table */}
+        <div className="px-5 sm:px-8 pb-8">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-[22px] overflow-hidden"
+            style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-8 w-8 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
+                  <span className="text-[13px] font-[500]" style={{ color: 'rgb(148,163,184)' }}>Loading financial data...</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-5 sm:p-6">
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left pb-3 text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: 'rgb(148,163,184)', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>Line Item</th>
+                      <th className="text-right pb-3 text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: 'rgb(148,163,184)', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="py-3.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)', borderBottom: '1px solid rgba(15,23,42,0.04)' }}>
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                            <TrendingUp size={13} style={{ color: '#10B981' }} />
+                          </div>
+                          Membership & Training Revenue
+                        </div>
+                      </td>
+                      <td className="py-3.5 text-[15px] font-[800] text-right tabular-nums" style={{ color: '#10B981', borderBottom: '1px solid rgba(15,23,42,0.04)' }}>
+                        {fmt(totals.revenue)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-3.5 text-[13px] font-[600]" style={{ color: 'rgb(71,85,105)', borderBottom: '1px solid rgba(15,23,42,0.04)' }}>
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(244,63,94,0.12)' }}>
+                            <Users size={13} style={{ color: '#F43F5E' }} />
+                          </div>
+                          <button onClick={() => router.push('/finance/trainer-revenue')} className="underline decoration-dotted underline-offset-2 hover:no-underline" style={{ color: 'inherit' }}>
+                            Less: Coach Payroll (12 months)
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-3.5 text-[14px] font-[700] text-right tabular-nums" style={{ color: '#F43F5E', borderBottom: '1px solid rgba(15,23,42,0.04)' }}>
+                        ({fmt(totals.annualSalary)})
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-3.5 text-[13px] font-[600]" style={{ color: 'rgb(71,85,105)', borderBottom: byCategory.length > 0 ? 'none' : '1px solid rgba(15,23,42,0.04)' }}>
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(245,158,11,0.12)' }}>
+                            <IndianRupee size={13} style={{ color: '#F59E0B' }} />
+                          </div>
+                          <button onClick={() => router.push('/finance/collection')} className="underline decoration-dotted underline-offset-2 hover:no-underline" style={{ color: 'inherit' }}>
+                            Less: Overheads
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-3.5 text-[14px] font-[700] text-right tabular-nums" style={{ color: '#F43F5E', borderBottom: byCategory.length > 0 ? 'none' : '1px solid rgba(15,23,42,0.04)' }}>
+                        ({fmt(totals.overheads)})
+                      </td>
+                    </tr>
+                    {byCategory.length > 0 && (
+                      <tr>
+                        <td className="pb-2" style={{ paddingLeft: 48 }}>
+                          <div className="space-y-1.5">
+                            {byCategory.map(([cat, amt]) => (
+                              <div key={cat} className="flex justify-between text-[12.5px]" style={{ color: 'rgb(100,116,139)' }}>
+                                <span className="font-[500]">{cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+                                <span className="tabular-nums font-[600]" style={{ color: '#F43F5E' }}>{fmt(amt)}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <button onClick={() => router.push('/finance/dues')}
+                            className="mt-2 text-[11px] font-[700] uppercase tracking-[0.06em] transition-colors hover:opacity-70"
+                            style={{ color: '#8B5CF6' }}>
+                            View All Expenses →
+                          </button>
+                        </td>
+                        <td />
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td className="pt-4 text-[14px] font-[800]" style={{ borderTop: '2px solid rgba(15,23,42,0.08)', color: 'rgb(15,23,42)' }}>
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-[9px]"
+                            style={{ background: isProfit ? 'rgba(139,92,246,0.12)' : 'rgba(245,158,11,0.12)' }}>
+                            {isProfit ? <TrendingUp size={14} style={{ color: '#8B5CF6' }} /> : <AlertTriangle size={14} style={{ color: '#F59E0B' }} />}
+                          </div>
+                          {isProfit ? 'Profit Before Tax' : 'Net Loss'}
+                        </div>
+                      </td>
+                      <td className="pt-4 text-[18px] font-[860] text-right tabular-nums"
+                        style={{ borderTop: '2px solid rgba(15,23,42,0.08)', color: isProfit ? '#8B5CF6' : '#F59E0B' }}>
+                        {isProfit ? '' : '('}{fmt(Math.abs(totals.profit))}{isProfit ? '' : ')'}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </motion.div>
+        </div>
       </div>
     </AppShell>
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
-    <div className="kpi-card">
-      <div style={{ fontSize: 24, fontWeight: 800, color, letterSpacing: '-0.03em' }} className="tabular">
-        {value}
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      className="rounded-[16px] p-4"
+      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}>
+      <div className="flex items-center gap-2.5 mb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: `${accent}20` }}>
+          {icon}
+        </div>
+        <span className="text-[10px] font-[700] uppercase tracking-[0.08em]" style={{ color: 'rgba(255,255,255,0.6)' }}>{label}</span>
       </div>
-      <div
-        className="text-muted"
-        style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '1.4px', textTransform: 'uppercase', marginTop: 4 }}
-      >
-        {label}
-      </div>
-    </div>
+      <p className="text-[20px] sm:text-[24px] font-[860] tracking-[-0.03em] tabular-nums" style={{ color: '#ffffff' }}>{value}</p>
+    </motion.div>
   );
 }
