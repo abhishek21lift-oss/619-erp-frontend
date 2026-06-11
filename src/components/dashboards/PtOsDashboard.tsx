@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   UserPlus, Salad, Dumbbell, Calendar, ArrowRight,
-  Activity, Users, TrendingUp, Clock, Sparkles,
+  Activity, Users, TrendingUp, Clock,
   Award, Target, Heart, Zap, BarChart3,
   CheckCircle,
   RefreshCw, FileText, Wallet, Percent, Shield,
@@ -168,7 +168,7 @@ function PremiumHero() {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-hidden rounded-[28px] p-10 sm:p-12"
+      className="relative overflow-hidden rounded-[20px] p-6 sm:p-8"
       style={{
         background: 'linear-gradient(145deg, #0f0c29 0%, #1a1440 25%, #1e1b4b 50%, #1e40af 75%, #0e7490 100%)',
         boxShadow: '0 24px 80px rgba(30,27,75,0.35)',
@@ -200,30 +200,21 @@ function PremiumHero() {
         transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
       />
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-purple-400 to-cyan-400 opacity-60" />
-      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(255,255,255,0.12)' }}>
-              <Sparkles size={15} style={{ color: '#a78bfa' }} />
-            </div>
-            <span className="text-[10px] font-[700] uppercase tracking-[0.1em]" style={{ color: '#a78bfa' }}>
-              PERSONAL TRAINING
-            </span>
-          </div>
-          <h1 className="text-[34px] sm:text-[44px] font-[860] tracking-[-0.03em] leading-[1.1]" style={{ color: '#ffffff' }}>
-            Personal Training
-            <br />
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="text-center sm:text-left">
+          <h1 className="text-[22px] sm:text-[30px] font-[860] tracking-[-0.03em] leading-[1.2]" style={{ color: '#ffffff' }}>
+            Personal Training{' '}
             <span style={{ background: 'linear-gradient(135deg, #c4b5fd, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Operating System
             </span>
           </h1>
-          <p className="mt-3 max-w-xl text-[14.5px] sm:text-[15.5px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          <p className="mt-1.5 max-w-xl text-[13px] sm:text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
             Manage PT clients, track commissions, process payouts — your complete gym PT business OS.
           </p>
-          <div className="mt-5 flex gap-3">
+          <div className="mt-4 flex gap-3 justify-center sm:justify-start">
             <PremiumButton
-              tone="primary" glow size="lg"
-              icon={<UserPlus size={16} />}
+              tone="primary" glow size="md"
+              icon={<UserPlus size={15} />}
               onClick={() => router.push('/pt-os/new-client')}
               style={{
                 background: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
@@ -233,8 +224,8 @@ function PremiumHero() {
               New Client
             </PremiumButton>
             <PremiumButton
-              tone="secondary" size="lg"
-              icon={<BarChart3 size={16} />}
+              tone="secondary" size="md"
+              icon={<BarChart3 size={15} />}
               onClick={() => router.push('/pt-os/clients')}
               className="!bg-white/10 !text-white !border-white/20 hover:!bg-white/20"
             >
