@@ -5,7 +5,7 @@ import http from '@/lib/http';
 
 export type DashboardData = {
   revenue: { today: number; week: number; month: number };
-  recent_payments: Array<{ id: string; method: string; amount: number; date: string; member?: string }>;
+  recent_payments: Array<{ id: string; method: string; amount: number; date: string; member?: string; client_name?: string }>;
 };
 
 export function useDashboardData(period: string) {
@@ -16,7 +16,7 @@ export function useDashboardData(period: string) {
     setLoading(true);
     try {
       const res = await http<DashboardData>('/api/dashboard/sales?period=' + encodeURIComponent(period));
-      setData(res.data ?? (res as unknown as DashboardData));
+      setData(res);
     } catch {
       setData(null);
     } finally {
