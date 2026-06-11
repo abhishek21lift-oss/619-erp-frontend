@@ -6,13 +6,13 @@ import {
   UserPlus, Salad, Dumbbell, Calendar, ArrowRight,
   Activity, Users, TrendingUp, Clock, Sparkles,
   Award, Target, Heart, Zap, BarChart3,
-  DollarSign, AlertTriangle, CheckCircle, Download,
-  RefreshCw, FileText, Wallet, Percent, Shield, Eye,
+  CheckCircle,
+  RefreshCw, FileText, Wallet, Percent, Shield,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { useAsync } from '@/lib/use-async';
-import { api } from '@/lib/api';
+import http from '@/lib/http';
 
 type DashData = {
   active_pt_clients: number;
@@ -523,7 +523,9 @@ function QuickActionItem({ action, index, router }: {
 
 export default function PtOsDashboard() {
   const router = useRouter();
-  const dash = useAsync<DashData>(() => api.pt.dashboard().then((r) => r.data as DashData), []);
+  const dash = useAsync<DashData>(
+    (signal) => http<{ data: DashData }>('/api/pt-os/dashboard', { signal }).then((r) => r.data),
+  []);
   const d = dash.data;
 
   const features = useMemo(() => [

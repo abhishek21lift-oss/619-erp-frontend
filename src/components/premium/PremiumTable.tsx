@@ -1,7 +1,5 @@
 'use client';
 
-import { clsx } from 'clsx';
-
 type Column<T> = {
   key: string;
   header: string;
