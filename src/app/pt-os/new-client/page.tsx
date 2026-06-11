@@ -617,7 +617,7 @@ function NewClientWizard() {
                           <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Membership Plan</p>
                           <div className="flex flex-wrap gap-2">
                             {plans.map((p) => (
-                              <button key={p.id} onClick={() => set('planId', form.planId === p.id ? '' : p.id)}
+                              <button key={p.id} onClick={() => { const selecting = form.planId !== p.id; set('planId', selecting ? p.id : ''); set('basePrice', selecting ? p.final_amount : null); }}
                                 className="rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all"
                                 style={{
                                   background: form.planId === p.id ? 'linear-gradient(135deg,#14B8A6,#0D9488)' : 'var(--bg-subtle)',

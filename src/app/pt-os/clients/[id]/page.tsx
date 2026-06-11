@@ -390,7 +390,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           <p className="mb-1.5 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Membership Plan</p>
                           <div className="flex flex-wrap gap-2">
                             {plans.map((p) => (
-                              <button key={p.id} onClick={() => setAssignData(prev => ({ ...prev, planId: prev.planId === p.id ? '' : p.id }))}
+                              <button key={p.id} onClick={() => setAssignData(prev => ({ ...prev, planId: prev.planId === p.id ? '' : p.id, baseAmount: prev.planId === p.id ? '' : String(p.final_amount) }))}
                                 className="rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all text-left"
                                 style={{
                                   background: assignData.planId === p.id ? 'linear-gradient(135deg,#14B8A6,#0D9488)' : 'var(--bg-subtle)',
