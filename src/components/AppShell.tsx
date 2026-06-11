@@ -126,7 +126,9 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     <LazyMotion features={domAnimation} strict>
       <div className="flex min-h-screen flex-col bg-[var(--bg-canvas)]">
         {/* Top header bar */}
-        <header className="sticky top-0 z-30 flex flex-col border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] backdrop-blur-2xl">
+        <header className="sticky top-0 z-30 flex flex-col border-b border-transparent"
+          style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 40%, #1e1b4b 70%, #1e40af 100%)' }}
+        >
           {/* Top row: brand + search + actions */}
           <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
             {/* Brand logo */}
@@ -137,11 +139,11 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                 </div>
               </div>
               <div className="hidden sm:block">
-                <h2 className="text-[14px] font-extrabold tracking-tight text-[var(--text-primary)] leading-none">
+                <h2 className="text-[14px] font-extrabold tracking-tight leading-none">
                   <span className="bg-clip-text text-transparent"
-                    style={{ backgroundImage: 'linear-gradient(135deg, #3B82F6, #60A5FA, #93C5FD)' }}>619</span>
+                    style={{ backgroundImage: 'linear-gradient(135deg, #c4b5fd, #67e8f9)' }}>619</span>
                   {' '}
-                  <span className="tracking-[0.04em] text-[11px]">FITNESS</span>
+                  <span className="tracking-[0.04em] text-[11px] text-white/70">FITNESS</span>
                 </h2>
               </div>
             </Link>
@@ -156,19 +158,19 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             {/* Search */}
             <div ref={searchRef} className="relative flex-1 max-w-[360px] lg:max-w-[400px]">
               <div className="group relative">
-                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-[var(--brand-lo)] via-[var(--brand)] to-cyan-400 p-[1.5px] opacity-40 transition-opacity duration-300 group-focus-within:opacity-100">
-                  <div className="h-full w-full rounded-2xl bg-[var(--bg-base)]" />
+                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400 via-violet-500 to-cyan-400 p-[1.5px] opacity-50 transition-opacity duration-300 group-focus-within:opacity-100">
+                  <div className="h-full w-full rounded-2xl" style={{ background: 'rgba(15,12,41,0.7)' }} />
                 </div>
                 <div className="relative flex items-center">
                   <Search size={14} strokeWidth={2}
-                    className="absolute left-3 z-10 text-[var(--text-disabled)] transition-colors duration-200 group-focus-within:text-[var(--brand)]" />
+                    className="absolute left-3 z-10 text-white/40 transition-colors duration-200 group-focus-within:text-purple-300" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     onFocus={() => { if (searchQuery.trim()) setSearchOpen(searchResults.length > 0); }}
                     placeholder="Search pages, members, payments..."
-                    className="relative w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-subtle)] py-[7px] pl-9 pr-3 text-[12px] text-[var(--text-primary)] outline-none transition-all duration-200 placeholder-[var(--text-disabled)] focus:border-transparent focus:bg-[var(--bg-base)] focus:shadow-[0_0_0_1.5px_var(--brand),0_8px_24px_var(--brand-glow)]"
+                    className="relative w-full rounded-2xl border border-white/10 bg-white/5 py-[7px] pl-9 pr-3 text-[12px] text-white outline-none transition-all duration-200 placeholder-white/30 focus:border-transparent focus:bg-white/10 focus:shadow-[0_0_0_1.5px_#a78bfa,0_8px_24px_rgba(167,139,250,0.2)]"
                   />
                 </div>
               </div>
@@ -220,27 +222,14 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                 whileTap={{ scale: 0.95 }}
                 className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200"
                 style={{
-                  background: settingsOpen ? 'var(--brand-lo)' : undefined,
-                  boxShadow: settingsOpen ? '0 4px 12px var(--brand-glow)' : undefined,
+                  background: settingsOpen ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
+                  boxShadow: settingsOpen ? '0 4px 12px rgba(167,139,250,0.3)' : undefined,
                 }}
               >
-                {!settingsOpen && (
-                  <div className="absolute inset-0 rounded-xl border border-[var(--border)] p-[1.5px]">
-                    <div className="h-full w-full rounded-[10.5px] bg-[var(--bg-base)]" />
-                  </div>
-                )}
-                <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-200 bg-[var(--bg-hover)]" />
-                {settingsOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute inset-0 rounded-xl bg-[var(--brand-soft)] animate-pulse"
-                  />
-                )}
                 <motion.div
                   animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className={settingsOpen ? 'text-white' : 'text-[var(--text-muted)]'}
+                  className={settingsOpen ? 'text-purple-300' : 'text-white/60'}
                 >
                   <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} className="relative z-10" />
                 </motion.div>
@@ -276,24 +265,24 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
 
             {/* Notification bell */}
             <button type="button" aria-label="Notifications"
-              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white/60 transition-colors hover:bg-white/10 hover:text-white">
               <Bell size={17} strokeWidth={1.5} />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--danger)] shadow-[0_0_6px_var(--danger)]" />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.6)]" />
             </button>
 
             {/* Profile dropdown */}
             <div ref={profileRef} className="relative">
               <button onClick={() => setProfileOpen(s => !s)}
-                className="flex items-center gap-2 border-l border-[var(--border)] pl-3 transition-colors hover:opacity-80">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg shadow-[0_2px_6px_var(--brand-glow)] overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }}>
+                className="flex items-center gap-2 border-l border-white/10 pl-3 transition-colors hover:opacity-80">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg shadow-[0_2px_6px_rgba(167,139,250,0.4)] overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)' }}>
                   <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-[12px] font-semibold leading-tight text-[var(--text-primary)]">619 FITNESS STUDIO</p>
-                  <p className="text-[10px] leading-tight text-[var(--text-muted)] capitalize">{user?.role || '—'}</p>
+                  <p className="text-[12px] font-semibold leading-tight text-white">619 FITNESS STUDIO</p>
+                  <p className="text-[10px] leading-tight text-white/50 capitalize">{user?.role || '—'}</p>
                 </div>
-                <ChevronDown size={12} strokeWidth={1.5} className="text-[var(--text-disabled)] shrink-0" />
+                <ChevronDown size={12} strokeWidth={1.5} className="text-white/40 shrink-0" />
               </button>
               <AnimatePresence>
                 {profileOpen && (

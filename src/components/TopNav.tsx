@@ -86,10 +86,10 @@ export default function TopNav() {
                 'flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold transition-all duration-200',
                 hasActive
                   ? 'text-white shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]',
+                  : 'text-white/70 hover:text-white',
               )}
               style={{
-                background: hasActive ? `linear-gradient(135deg, ${color}, ${color}cc)` : undefined,
+                background: hasActive ? `linear-gradient(135deg, ${color}, ${color}cc)` : `${color}15`,
                 boxShadow: hasActive ? `0 2px 8px ${color}40` : undefined,
               }}
             >
