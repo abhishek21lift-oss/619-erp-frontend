@@ -524,7 +524,7 @@ export default function StudioSettingsPage() {
                   <SettingRow label="AI Insights" description="Machine learning retention predictions">
                     <Toggle enabled={aiInsights} onChange={setAiInsights} />
                   </SettingRow>
-                  <SettingRow label="Auto-Renewals" description="Automatic membership renewal processing">
+                  <SettingRow label="Auto-Renewals" description="Automatic PT package renewal processing">
                     <Toggle enabled={autoRenewals} onChange={setAutoRenewals} />
                   </SettingRow>
                   <SettingRow label="Smart Reminders" description="AI-optimized reminder timing">

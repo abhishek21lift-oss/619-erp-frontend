@@ -849,5 +849,14 @@ export const api = {
       http<{ data: unknown[] }>('/api/pt-os/trainer-performance'),
     deleteClient: (id: string) =>
       http<{ message: string }>(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
+    plans: {
+      list: () => http<{ data: unknown[] }>('/api/pt-os/plans'),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: unknown }>('/api/pt-os/plans', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: unknown }>(`/api/pt-os/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) =>
+        http<{ message: string }>(`/api/pt-os/plans/${id}`, { method: 'DELETE' }),
+    },
   },
 };
