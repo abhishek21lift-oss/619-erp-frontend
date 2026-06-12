@@ -196,7 +196,7 @@ function MemberCard({ c, accent }: { c: Client; accent: string }) {
           <Eye size={11} /> View
         </Link>
         <Link href={`/pt-os/clients/${c.id}`} style={{ width: 34, height: 34, borderRadius: 12, border: `1.5px solid ${accent}30`, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, textDecoration: 'none' }}>
-          <User size={12} />
+          <Users size={12} />
         </Link>
         {phone && (
           <a href={whatsappHref(phone, c.name)} target="_blank" rel="noopener noreferrer" style={{ width: 34, height: 34, borderRadius: 12, border: '1.5px solid #bbf7d0', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a', textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>
