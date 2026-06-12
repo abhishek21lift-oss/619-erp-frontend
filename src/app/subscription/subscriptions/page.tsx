@@ -10,7 +10,7 @@ import { api } from '@/lib/api';
 const A = '#F59E0B', B = '#D97706', C = '#451A03';
 const fmtINR = (n: number | string | null | undefined) => '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 const cv = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.1 } } };
-const iv = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } } };
+const iv = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] } } };
 
 interface Subscription { id: string; clientName: string; planName: string; planAmount: number; startDate: string; endDate: string; daysLeft: number; status: 'active' | 'expiring' | 'expired'; }
 
