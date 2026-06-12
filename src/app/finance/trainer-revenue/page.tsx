@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
-import { useToast } from '@/lib/toast';
+import { Award, Users, Dumbbell, TrendingUp, BadgePercent, X } from 'lucide-react';
 
 export default function TrainerRevenuePage() {
   return (
@@ -14,7 +15,7 @@ export default function TrainerRevenuePage() {
 }
 
 const fmt = (n: number) =>
-  '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  '\u20B9' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
 const PKG_MONTHS: Record<string, number> = {
   'Monthly': 1, 'Quarterly': 3, 'Half Yearly': 6, 'Yearly': 12,
@@ -25,7 +26,6 @@ function getPkgMonths(pkg: string): number {
   return PKG_MONTHS[pkg] ?? PKG_MONTHS[pkg?.toLowerCase?.()] ?? 1;
 }
 
-/** Returns true if date falls within the given month/year */
 function inMonth(dateStr: string | undefined, year: number, month: number): boolean {
   if (!dateStr) return false;
   const d = new Date(dateStr);
@@ -43,13 +43,28 @@ interface TrainerData {
   revenue_percentage: number;
 }
 
+function useBreakpoint(query: string): boolean {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window !== 'undefined') return window.matchMedia(query).matches;
+    return false;
+  });
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [query]);
+  return matches;
+}
+
 function Inner() {
   const [trainers, setTrainers] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedTrainer, setSelectedTrainer] = useState<any | null>(null);
-  const { toast } = useToast();
+
+  const isSm = useBreakpoint('(min-width: 640px)');
 
   const now = new Date();
   const curYear = now.getFullYear();
@@ -64,8 +79,8 @@ function Inner() {
     let alive = true;
     setLoading(true);
     Promise.all([
-      api.trainers.list().catch((err) => { toast.error(err?.message || 'Failed to load trainers'); return []; }),
-      api.clients.list({ limit: 2000 }).catch((err) => { toast.error(err?.message || 'Failed to load clients'); return []; }),
+      api.trainers.list().catch((err) => { console.error(err?.message || 'Failed to load trainers'); return []; }),
+      api.clients.list({ limit: 2000 }).catch((err) => { console.error(err?.message || 'Failed to load clients'); return []; }),
     ])
       .then(([td, cd]) => {
         if (!alive) return;
@@ -77,7 +92,7 @@ function Inner() {
       .catch((e) => alive && setError(e.message))
       .finally(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [toast]);
+  }, []);
 
   const trainerRevenueData = useMemo((): TrainerData[] => {
     const ptClients = clients.filter((c: any) =>
@@ -127,7 +142,6 @@ function Inner() {
     [trainerRevenueData]
   );
 
-  /** Clients for the detail panel */
   const detailClients = useMemo(() => {
     if (!selectedTrainer) return { cur: [], prev: [] };
     const tc = clients.filter((c: any) => c.trainer_id === selectedTrainer.id);
@@ -143,169 +157,561 @@ function Inner() {
     return { cur, prev };
   }, [selectedTrainer, clients, curYear, curMonth, prevYear, prevMonth]);
 
+  const kpis = [
+    { label: 'Total Trainers', value: summaryKpis.totalTrainers, accent: '#6366f1', icon: <Users size={18} /> },
+    { label: 'Active PT Clients', value: summaryKpis.totalClients, accent: '#8b5cf6', icon: <Dumbbell size={18} /> },
+    { label: 'Monthly PT Revenue', value: fmt(summaryKpis.totalMonthlyRevenue), accent: '#10b981', icon: <TrendingUp size={18} /> },
+    { label: 'Total Incentives', value: fmt(summaryKpis.totalIncentives), accent: '#f59e0b', icon: <BadgePercent size={18} /> },
+  ];
+
   return (
     <AppShell>
-      <div className="page-main">
-        <div className="page-content fade-up">
-          {error && <div className="alert alert-error">{error}</div>}
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
 
-          {/* KPI Cards */}
-          <div className="kpi-grid mb-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-            {[
-              { label: 'Total Trainers',       val: summaryKpis.totalTrainers,        color: 'var(--brand)' },
-              { label: 'Active PT Clients',    val: summaryKpis.totalClients,         color: 'var(--brand)' },
-              { label: 'Monthly PT Revenue',   val: fmt(summaryKpis.totalMonthlyRevenue), color: 'var(--success)' },
-              { label: 'Total Incentives',     val: fmt(summaryKpis.totalIncentives), color: 'var(--success)' },
-            ].map((k) => (
-              <div className="kpi-card" key={k.label}>
-                <div style={{ fontSize: 28, fontWeight: 800, color: k.color, letterSpacing: '-0.03em' }} className="tabular">{k.val}</div>
-                <div className="text-muted" style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '1.4px', textTransform: 'uppercase', marginTop: 4 }}>{k.label}</div>
+        {/* ── Dark Gradient Hero ── */}
+        <div style={{
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg,#0f172a,#1e293b)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          {/* Orb 1 — Indigo */}
+          <motion.div
+            animate={{ x: [0, 40, -20, 0], y: [0, -50, 30, 0] }}
+            transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
+            style={{
+              position: 'absolute', width: 320, height: 320, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+              top: -120, right: '10%', pointerEvents: 'none',
+            }}
+          />
+          {/* Orb 2 — Violet */}
+          <motion.div
+            animate={{ x: [0, -50, 40, 0], y: [0, 60, -30, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
+            style={{
+              position: 'absolute', width: 260, height: 260, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)',
+              top: -60, left: '15%', pointerEvents: 'none',
+            }}
+          />
+          {/* Orb 3 — Purple */}
+          <motion.div
+            animate={{ x: [0, 30, -50, 0], y: [0, -40, 50, 0] }}
+            transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+            style={{
+              position: 'absolute', width: 220, height: 220, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)',
+              bottom: -40, right: '25%', pointerEvents: 'none',
+            }}
+          />
+
+          {/* Hero Content */}
+          <div style={{
+            position: 'relative', zIndex: 1,
+            maxWidth: 1280, margin: '0 auto',
+            padding: isSm ? '28px 32px' : '24px 20px',
+          }}>
+            <div style={{
+              display: 'flex', flexWrap: 'wrap',
+              alignItems: 'flex-start', justifyContent: 'space-between',
+              gap: 16,
+            }}>
+              {/* Left: Icon + Title + Subtitle */}
+              <div style={{ flex: 1, minWidth: isSm ? undefined : '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    display: 'flex', height: 44, width: 44,
+                    alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    boxShadow: '0 8px 24px rgba(99,102,241,0.25)',
+                  }}>
+                    <Award size={20} color="white" />
+                  </div>
+                  <h1 style={{
+                    fontSize: 26, fontWeight: 860,
+                    letterSpacing: '-0.03em', margin: 0,
+                    background: 'linear-gradient(135deg,#f8fafc,#94a3b8)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}>Trainer Payouts</h1>
+                </div>
+                <p style={{ marginTop: 6, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
+                  PT revenue, incentives & payout summaries for all trainers.
+                </p>
               </div>
+
+              {/* Right: Date badge */}
+              <div style={{
+                padding: '8px 14px',
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.06)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <span style={{
+                  fontSize: 12, fontWeight: 700,
+                  color: 'rgba(255,255,255,0.45)',
+                  letterSpacing: '0.5px', textTransform: 'uppercase',
+                }}>
+                  {monthLabel(curYear, curMonth)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Main Content ── */}
+        <div style={{
+          maxWidth: 1280, margin: '0 auto',
+          padding: isSm ? '24px 32px 112px' : '24px 16px 112px',
+        }}>
+          {/* Error banner */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  background: 'rgba(254,202,202,0.15)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  borderRadius: 14, padding: '12px 16px',
+                  fontSize: 14, color: '#f87171', marginBottom: 16,
+                }}
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── KPI Cards ── */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gap: 14, marginBottom: 24,
+          }}>
+            {kpis.map((k, idx) => (
+              <motion.div
+                key={k.label}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.08, duration: 0.4 }}
+                style={{
+                  background: 'rgba(255,255,255,0.85)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  borderRadius: 20, padding: '22px 24px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                  border: '1px solid rgba(255,255,255,0.4)',
+                  position: 'relative', overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  position: 'absolute', top: 0, left: 24, right: 24, height: 3,
+                  background: `linear-gradient(90deg,${k.accent},${k.accent}88)`,
+                  borderRadius: '0 0 3px 3px',
+                }} />
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  background: `${k.accent}1a`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: k.accent,
+                }}>
+                  {k.icon}
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <div style={{
+                    fontSize: 26, fontWeight: 800,
+                    color: 'rgba(15,23,42,0.9)',
+                    letterSpacing: '-0.02em', lineHeight: 1,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {k.value}
+                  </div>
+                  <div style={{
+                    fontSize: 12, color: 'rgba(15,23,42,0.5)',
+                    marginTop: 4, fontWeight: 500,
+                  }}>
+                    {k.label}
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
 
-          {/* Main table + detail panel side by side */}
-          <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+          {/* ── Table + Detail Panel ── */}
+          <div style={{
+            display: 'flex',
+            gap: '1.25rem',
+            alignItems: 'flex-start',
+            flexDirection: isSm ? 'row' : 'column',
+          }}>
 
             {/* Trainer table */}
-            <div className="card" style={{ padding: 0, flex: selectedTrainer ? '0 0 55%' : '1' }}>
-              <div style={{ padding: '0.85rem 1.4rem', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontWeight: 600 }}>Trainer PT Revenue Breakdown</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  {new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+            <div style={{
+              background: 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              borderRadius: 20,
+              border: '1px solid rgba(255,255,255,0.35)',
+              overflow: 'hidden',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+              flex: selectedTrainer ? '0 0 55%' : '1',
+              minWidth: 0,
+            }}>
+              <div style={{
+                padding: '16px 24px',
+                borderBottom: '1px solid rgba(241,245,249,0.6)',
+                display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: 'rgba(15,23,42,0.85)' }}>
+                  Trainer PT Revenue Breakdown
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.4)' }}>
+                  {monthLabel(curYear, curMonth)}
                 </div>
               </div>
-              <div className="table-wrap">
-                {loading ? (
-                  <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>Loading…</div>
-                ) : sortedTrainers.length === 0 ? (
-                  <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>No PT clients assigned yet.</div>
-                ) : (
-                  <table>
+
+              {loading ? (
+                <div style={{ padding: '48px 24px' }}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} style={{
+                      display: 'flex', gap: 16, padding: '14px 0',
+                      borderBottom: '1px solid #f1f5f9',
+                    }}>
+                      {[160, 80, 100, 60, 100, 120].map((w, j) => (
+                        <div key={j} style={{
+                          height: 14, width: w, borderRadius: 6,
+                          background: '#f1f5f9', position: 'relative',
+                          overflow: 'hidden',
+                        }}>
+                          <motion.div
+                            animate={{ x: ['-100%', '200%'] }}
+                            transition={{ repeat: Infinity, duration: 1.5, ease: 'linear', delay: i * 0.04 }}
+                            style={{
+                              position: 'absolute', inset: 0,
+                              background: 'linear-gradient(90deg,transparent 30%,rgba(255,255,255,0.5) 50%,transparent 70%)',
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : sortedTrainers.length === 0 ? (
+                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                  <div style={{
+                    display: 'flex', height: 64, width: 64,
+                    alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 16, background: 'rgba(99,102,241,0.08)',
+                    margin: '0 auto 16px',
+                  }}>
+                    <Users size={28} style={{ color: '#6366f1' }} />
+                  </div>
+                  <p style={{
+                    fontSize: 16, fontWeight: 700,
+                    color: 'rgba(15,23,42,0.7)',
+                  }}>No PT clients assigned yet.</p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr>
-                        <th>Trainer</th>
-                        <th>PT Clients</th>
-                        <th>Monthly Revenue</th>
-                        <th>Incentive %</th>
-                        <th>Incentive Amount</th>
-                        <th>Revenue Share</th>
+                      <tr style={{
+                        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                      }}>
+                        {['Trainer', 'PT Clients', 'Monthly Revenue', 'Incentive %', 'Incentive Amount', 'Revenue Share'].map((h) => (
+                          <th key={h} style={{
+                            padding: '14px 20px',
+                            textAlign: h === 'Monthly Revenue' || h === 'Incentive Amount' || h === 'PT Clients' || h === 'Revenue Share' ? 'right' : 'left',
+                            fontSize: 11, fontWeight: 700, color: 'white',
+                            textTransform: 'uppercase', letterSpacing: '0.8px',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {h}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
                       {sortedTrainers.map((trainer) => (
-                        <tr
+                        <motion.tr
                           key={trainer.id}
                           onClick={() => setSelectedTrainer(selectedTrainer?.id === trainer.id ? null : trainer)}
-                          style={{ cursor: 'pointer', background: selectedTrainer?.id === trainer.id ? 'var(--bg-3, #f9f9fb)' : '' }}
+                          whileHover={{ backgroundColor: 'rgba(99,102,241,0.04)' }}
+                          style={{
+                            cursor: 'pointer',
+                            borderBottom: '1px solid #f1f5f9',
+                            backgroundColor: selectedTrainer?.id === trainer.id ? 'rgba(99,102,241,0.06)' : 'white',
+                            transition: 'background-color 0.15s',
+                          }}
                         >
-                          <td style={{ fontWeight: 600 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,var(--brand),#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                          <td style={{ padding: '14px 20px', fontWeight: 600 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{
+                                width: 32, height: 32, borderRadius: '50%',
+                                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                                display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', fontSize: 12,
+                                fontWeight: 700, color: '#fff', flexShrink: 0,
+                              }}>
                                 {trainer.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                               </div>
-                              <span style={{ color: 'var(--brand)', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>{trainer.name}</span>
+                              <span style={{ color: '#6366f1', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
+                                {trainer.name}
+                              </span>
                             </div>
                           </td>
-                          <td className="text-muted tabular">{trainer.clients_count}</td>
-                          <td style={{ fontWeight: 700, color: 'var(--success)' }} className="tabular">{fmt(trainer.monthly_pt_revenue)}</td>
-                          <td className="tabular">
-                            <span className={`badge ${trainer.incentive_rate >= 50 ? 'badge-success' : 'badge-warning'}`}>{trainer.incentive_rate}%</span>
+                          <td style={{
+                            padding: '14px 20px', textAlign: 'right',
+                            color: 'rgba(15,23,42,0.55)',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}>
+                            {trainer.clients_count}
                           </td>
-                          <td style={{ fontWeight: 700, color: 'var(--success)' }} className="tabular">{fmt(trainer.incentive_amount)}</td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <div style={{ flex: 1, height: 6, background: 'var(--line)', borderRadius: 3, overflow: 'hidden' }}>
-                                <div style={{ width: `${Math.min(trainer.revenue_percentage, 100)}%`, height: '100%', background: 'var(--brand)', transition: 'width .3s ease' }} />
+                          <td style={{
+                            padding: '14px 20px', textAlign: 'right',
+                            fontWeight: 800, fontSize: 15,
+                            color: '#10b981',
+                            fontVariantNumeric: 'tabular-nums',
+                            letterSpacing: '-0.02em',
+                          }}>
+                            {fmt(trainer.monthly_pt_revenue)}
+                          </td>
+                          <td style={{ padding: '14px 20px', textAlign: 'right' }}>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center',
+                              padding: '2px 10px',
+                              borderRadius: 9999,
+                              fontSize: 11, fontWeight: 700,
+                              background: trainer.incentive_rate >= 50
+                                ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+                              color: trainer.incentive_rate >= 50
+                                ? '#059669' : '#d97706',
+                            }}>
+                              {trainer.incentive_rate}%
+                            </span>
+                          </td>
+                          <td style={{
+                            padding: '14px 20px', textAlign: 'right',
+                            fontWeight: 800, fontSize: 14,
+                            color: '#10b981',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}>
+                            {fmt(trainer.incentive_amount)}
+                          </td>
+                          <td style={{ padding: '14px 20px', minWidth: 160 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{
+                                flex: 1, height: 8,
+                                background: '#f1f5f9',
+                                borderRadius: 4, overflow: 'hidden',
+                              }}>
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${Math.min(trainer.revenue_percentage, 100)}%` }}
+                                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                                  style={{
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg,#6366f1,#8b5cf6)',
+                                    borderRadius: 4,
+                                  }}
+                                />
                               </div>
-                              <span className="text-muted tabular" style={{ fontSize: 12, minWidth: 30 }}>{trainer.revenue_percentage.toFixed(1)}%</span>
+                              <span style={{
+                                fontSize: 12, fontWeight: 600,
+                                color: 'rgba(15,23,42,0.5)',
+                                fontVariantNumeric: 'tabular-nums',
+                                minWidth: 40, textAlign: 'right',
+                              }}>
+                                {trainer.revenue_percentage.toFixed(1)}%
+                              </span>
                             </div>
                           </td>
-                        </tr>
+                        </motion.tr>
                       ))}
                     </tbody>
                   </table>
-                )}
-              </div>
-              <div style={{ padding: '0.85rem 1.4rem', borderTop: '1px solid var(--line)', fontSize: 12, color: 'var(--muted)' }}>
-                💡 Click any trainer row to see their monthly client breakdown.
+                </div>
+              )}
+
+              <div style={{
+                padding: '12px 24px',
+                borderTop: '1px solid rgba(241,245,249,0.6)',
+                fontSize: 12, color: 'rgba(15,23,42,0.4)',
+              }}>
+                Click any trainer row to see their monthly client breakdown.
               </div>
             </div>
 
-            {/* Detail panel */}
-            {selectedTrainer && (
-              <div className="card" style={{ flex: '1', padding: 0, minWidth: 0, animation: 'fadeSlideIn .2s ease' }}>
-                {/* Panel header */}
-                <div style={{ padding: '0.85rem 1.2rem', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,var(--brand),#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                    {selectedTrainer.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+            {/* ── Detail Panel ── */}
+            <AnimatePresence>
+              {selectedTrainer && (
+                <motion.div
+                  key={selectedTrainer.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.25 }}
+                  style={{
+                    background: 'rgba(255,255,255,0.9)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    borderRadius: 20,
+                    border: '1px solid rgba(255,255,255,0.35)',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    flex: '1', minWidth: 0,
+                  }}
+                >
+                  {/* Panel header */}
+                  <div style={{
+                    padding: '14px 20px',
+                    borderBottom: '1px solid rgba(241,245,249,0.6)',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                  }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%',
+                      background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                      display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', fontSize: 13,
+                      fontWeight: 700, color: '#fff', flexShrink: 0,
+                    }}>
+                      {selectedTrainer.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'rgba(15,23,42,0.85)' }}>
+                        {selectedTrainer.name}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.4)' }}>
+                        PT Client Breakdown
+                      </div>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setSelectedTrainer(null)}
+                      style={{
+                        background: 'rgba(241,245,249,0.7)',
+                        border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 28, height: 28, borderRadius: 8,
+                        color: 'rgba(100,116,139,0.7)',
+                      }}
+                    >
+                      <X size={15} />
+                    </motion.button>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '.9rem' }}>{selectedTrainer.name}</div>
-                    <div style={{ fontSize: '.72rem', color: 'var(--muted)' }}>PT Client Breakdown</div>
-                  </div>
-                  <button onClick={() => setSelectedTrainer(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)', lineHeight: 1 }}>&#215;</button>
-                </div>
 
-                {/* Current month */}
-                <ClientMonthSection
-                  label={`📅 ${monthLabel(curYear, curMonth)} (Current)`}
-                  clients={detailClients.cur}
-                  accent="var(--success)"
-                />
+                  {/* Current month */}
+                  <ClientMonthSection
+                    label={`${monthLabel(curYear, curMonth)} (Current)`}
+                    clients={detailClients.cur}
+                    accent="#10b981"
+                  />
 
-                {/* Previous month */}
-                <ClientMonthSection
-                  label={`🗓 ${monthLabel(prevYear, prevMonth)} (Previous)`}
-                  clients={detailClients.prev}
-                  accent="var(--brand)"
-                />
-              </div>
-            )}
+                  {/* Previous month */}
+                  <ClientMonthSection
+                    label={`${monthLabel(prevYear, prevMonth)} (Previous)`}
+                    clients={detailClients.prev}
+                    accent="#6366f1"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateX(12px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        .badge-warning { background: #fef9c3; color: #a16207; font-size: .7rem; padding: .2rem .5rem; border-radius: 20px; font-weight: 700; }
-      `}</style>
     </AppShell>
   );
 }
 
 function ClientMonthSection({ label, clients, accent }: { label: string; clients: any[]; accent: string }) {
-  const fmt = (n: number) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  const fmtLocal = (n: number) =>
+    '\u20B9' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
   const total = clients.reduce((s, c) => s + (Number(c.final_amount) || 0), 0);
 
   return (
-    <div style={{ borderBottom: '1px solid var(--line)' }}>
-      <div style={{ padding: '.65rem 1.2rem .5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontWeight: 700, fontSize: '.8rem', color: accent }}>{label}</div>
-        <div style={{ fontSize: '.78rem', fontWeight: 700, color: accent }}>{clients.length} clients &bull; {fmt(total)}</div>
+    <div style={{ borderBottom: '1px solid rgba(241,245,249,0.6)' }}>
+      <div style={{
+        padding: '12px 20px 10px',
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
+        <div style={{
+          fontWeight: 700, fontSize: 12,
+          color: accent, letterSpacing: '0.3px',
+        }}>
+          {label}
+        </div>
+        <div style={{
+          fontSize: 12, fontWeight: 700,
+          color: accent, fontVariantNumeric: 'tabular-nums',
+        }}>
+          {clients.length} clients &middot; {fmtLocal(total)}
+        </div>
       </div>
       {clients.length === 0 ? (
-        <div style={{ padding: '.6rem 1.2rem 1rem', fontSize: '.78rem', color: 'var(--muted)' }}>No clients this month.</div>
+        <div style={{
+          padding: '10px 20px 16px',
+          fontSize: 12, color: 'rgba(15,23,42,0.4)',
+        }}>
+          No clients this month.
+        </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', fontSize: '.78rem', borderCollapse: 'collapse' }}>
+          <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'var(--bg-2, #f8f9fa)' }}>
-                <th style={{ padding: '.4rem 1.2rem', textAlign: 'left', fontWeight: 600, color: 'var(--muted)', fontSize: '.68rem', letterSpacing: '.06em', textTransform: 'uppercase' }}>Member</th>
-                <th style={{ padding: '.4rem .75rem', textAlign: 'right', fontWeight: 600, color: 'var(--muted)', fontSize: '.68rem', letterSpacing: '.06em', textTransform: 'uppercase' }}>Package</th>
-                <th style={{ padding: '.4rem .75rem', textAlign: 'right', fontWeight: 600, color: 'var(--muted)', fontSize: '.68rem', letterSpacing: '.06em', textTransform: 'uppercase' }}>Amount</th>
+              <tr style={{ background: 'rgba(241,245,249,0.5)' }}>
+                {['Member', 'Package', 'Amount'].map((h) => (
+                  <th key={h} style={{
+                    padding: '8px 20px',
+                    textAlign: h === 'Amount' ? 'right' : 'left',
+                    fontWeight: 600,
+                    color: 'rgba(15,23,42,0.4)',
+                    fontSize: 10, letterSpacing: '0.6px',
+                    textTransform: 'uppercase',
+                  }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {(clients ?? []).map((c: any) => (
-                <tr key={c.id} style={{ borderTop: '1px solid var(--line)' }}>
-                  <td style={{ padding: '.5rem 1.2rem', fontWeight: 600 }}>{c.name || c.client_name || 'Unknown'}</td>
-                  <td style={{ padding: '.5rem .75rem', textAlign: 'right', color: 'var(--muted)' }}>{c.package_type || '—'}</td>
-                  <td style={{ padding: '.5rem .75rem', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{fmt(Number(c.final_amount) || 0)}</td>
-                </tr>
+              {(clients ?? []).map((c: any, i: number) => (
+                <motion.tr
+                  key={c.id}
+                  initial={{ opacity: 0, x: -4 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  style={{
+                    borderTop: '1px solid rgba(241,245,249,0.4)',
+                    backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(248,250,252,0.5)',
+                  }}
+                >
+                  <td style={{ padding: '8px 20px', fontWeight: 600, color: 'rgba(15,23,42,0.85)' }}>
+                    {c.name || c.client_name || 'Unknown'}
+                  </td>
+                  <td style={{ padding: '8px 20px', color: 'rgba(15,23,42,0.5)' }}>
+                    {c.package_type || '\u2014'}
+                  </td>
+                  <td style={{
+                    padding: '8px 20px', textAlign: 'right',
+                    fontWeight: 800, color: '#10b981',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {fmtLocal(Number(c.final_amount) || 0)}
+                  </td>
+                </motion.tr>
               ))}
             </tbody>
           </table>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -94,57 +95,36 @@ function Inner() {
 
   return (
     <AppShell>
-      <style>{`
-        @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-        @keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        .dues-row:hover td { background: #fafbff; }
-      `}</style>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px', animation: 'fadeInUp 0.4s ease' }}>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
-        {/* ── Page Header ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 shadow-[0_4px_12px_rgba(245,158,11,0.35)]"
-                style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AlertTriangle size={18} color="white" />
-              </div>
-              <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}
-                className="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">
-                Pending Dues
-              </h1>
-            </div>
-            <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Collections dashboard · Outstanding balances · Recovery pipeline</p>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={fetchDues}
-              style={{ width: 36, height: 36, borderRadius: 10, border: '1.5px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-              <RefreshCw size={15} />
-            </button>
-          </div>
-        </div>
-
-        {/* ── Hero Outstanding Banner ── */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 p-8 mb-5 shadow-[0_8px_32px_rgba(245,158,11,0.3)]"
-          style={{ borderRadius: 24, padding: '32px 36px', marginBottom: 20 }}>
-          <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, background: 'rgba(255,255,255,0.06)', borderRadius: '50%' }} />
-          <div style={{ position: 'absolute', bottom: -40, right: 80, width: 160, height: 160, background: 'rgba(255,255,255,0.04)', borderRadius: '50%' }} />
-          <div style={{ position: 'absolute', top: '30%', left: '20%', width: 100, height: 100, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
-          <div className="flex items-center justify-between relative" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        {/* ── Dark Hero ── */}
+        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'linear-gradient(135deg,#0f172a,#1e293b)', padding: '32px 36px', marginBottom: 20, boxShadow: '0 8px 32px rgba(15,23,42,0.4)' }}>
+          <motion.div style={{ position: 'absolute', top: -80, right: -40, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(245,158,11,0.2),transparent 70%)', pointerEvents: 'none' }}
+            animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
+          <motion.div style={{ position: 'absolute', bottom: -60, left: '30%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(251,146,60,0.15),transparent 70%)', pointerEvents: 'none' }}
+            animate={{ x: [0, -30, 40, 0], y: [0, 30, -20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
+          <motion.div style={{ position: 'absolute', top: '40%', left: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(244,63,94,0.12),transparent 70%)', pointerEvents: 'none' }}
+            animate={{ x: [0, 40, -10, 0], y: [0, -20, 30, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
-              <h2 style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 8px' }}>Total Outstanding Amount</h2>
-              <div className="bg-gradient-to-r from-white via-amber-100 to-orange-100 bg-clip-text text-transparent"
-                style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>{fmtCompact(total)}</div>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '8px 0 0' }}>{filtered.length} member{filtered.length !== 1 ? 's' : ''} with pending dues</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#f59e0b,#f97316,#f43f5e)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(245,158,11,0.35)' }}>
+                  <AlertTriangle size={18} color="white" />
+                </div>
+                <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(135deg,#fbbf24,#fb923c,#f43f5e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Pending Dues</h1>
+              </div>
+              <h2 style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 4px' }}>Total Outstanding Amount</h2>
+              <div style={{ fontSize: 44, fontWeight: 900, color: 'white', letterSpacing: '-0.03em', lineHeight: 1, textShadow: '0 2px 20px rgba(255,255,255,0.1)' }}>{fmtCompact(total)}</div>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '8px 0 0' }}>{filtered.length} member{filtered.length !== 1 ? 's' : ''} with pending dues</p>
             </div>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               {[
-                { label: 'High Risk', value: highRisk, color: 'rgba(255,255,255,0.15)' },
-                { label: 'Medium', value: medRisk, color: 'rgba(255,255,255,0.12)' },
+                { label: 'High Risk', value: highRisk },
+                { label: 'Medium', value: medRisk },
               ].map((s) => (
-                <div key={s.label} style={{ background: s.color, backdropFilter: 'blur(8px)', borderRadius: 14, padding: '14px 20px', border: '1px solid rgba(255,255,255,0.15)', textAlign: 'center', minWidth: 90 }}>
+                <div key={s.label} style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderRadius: 14, padding: '14px 20px', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', minWidth: 90 }}>
                   <div style={{ fontSize: 22, fontWeight: 900, color: 'white' }}>{s.value}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 2 }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -186,14 +166,15 @@ function Inner() {
           </div>
         </div>
 
-        {/* ── Premium Table ── */}
+        {/* ── Colorful Table ── */}
         <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
           {loading ? (
             <div style={{ padding: '48px 32px' }}>
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} style={{ display: 'flex', gap: 16, padding: '14px 0', borderBottom: '1px solid #f8fafc' }}>
                   {[40, 160, 100, 80, 100, 80].map((w, j) => (
-                    <div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                    <motion.div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }}
+                      animate={{ backgroundPosition: ['0% 0%', '200% 0%'] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} />
                   ))}
                 </div>
               ))}
@@ -214,7 +195,7 @@ function Inner() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                     {['Member', 'Mobile', 'Coach', 'Balance Due', 'Expiry', 'Risk', 'Status', ''].map((h, i) => (
-                      <th key={i} style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.8px', background: '#fafbff', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={i} style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.8px', background: 'linear-gradient(135deg,#f59e0b,#f97316,#f43f5e)', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -224,7 +205,7 @@ function Inner() {
                     const risk = riskLevel(amt);
                     const initials = (d.name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
                     return (
-                      <tr key={d.id} className="dues-row" style={{ borderBottom: '1px solid #f8fafc', transition: 'background 150ms' }}>
+                      <tr key={d.id} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#fafbff' }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 150ms' }}>
                         <td style={{ padding: '14px 16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ width: 36, height: 36, borderRadius: '50%', background: nameGradient(d.name || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'white', flexShrink: 0 }}>{initials}</div>
@@ -270,7 +251,7 @@ function Inner() {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </AppShell>
   );
 }
