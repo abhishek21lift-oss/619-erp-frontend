@@ -7,7 +7,8 @@ import {
   ArrowLeft, User, Phone, Mail, Calendar, Hash, Target,
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
   CheckCircle, AlertTriangle, Clock, Award, IndianRupee,
-  Camera, Ruler, Zap, UserPlus, Repeat, X, ChevronRight, Check,
+  Camera, Ruler, Zap, UserPlus, Repeat, X, ChevronRight,
+  TrendingUp, MessageCircle, Save,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -30,47 +31,41 @@ interface PtClientDetail {
   due_status?: string;
 }
 
-function fmtINR(n: number | string | null | undefined) {
-  return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+interface TimelineEvent {
+  id: string;
+  type: 'payment' | 'checkin' | 'session' | 'measurement' | 'goal' | 'strength' | 'photo';
+  title: string;
+  subtitle: string;
+  date: string;
+  icon: React.ReactNode;
+  color: string;
+  value?: string;
 }
 
-function fmtDate(d?: string) {
+const fmtINR = (n: number | string | null | undefined) =>
+  '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+const fmtDate = (d?: string) => {
   if (!d) return '—';
   const dt = new Date(d);
   if (isNaN(dt.getTime())) return d;
   return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+};
 
 function StatusBadge({ status, days_left }: { status: string; days_left: number | null }) {
-  const styles: Record<string, { label: string; bg: string; fg: string }> = {
-    active:  { label: 'Active',  bg: '#10b98118', fg: '#10b981' },
-    expired: { label: 'Expired', bg: '#f43f5e18', fg: '#f43f5e' },
-    frozen:  { label: 'Frozen',  bg: '#3b82f618', fg: '#3b82f6' },
-  };
-  let s = styles[status] || { label: status, bg: '#6b728018', fg: '#6b7280' };
-  if (status === 'active' && days_left !== null && days_left <= 7)
-    s = { label: 'Expiring', bg: '#dc262618', fg: '#dc2626' };
+  const s = (() => {
+    if (status === 'active' && days_left !== null && days_left <= 7)
+      return { label: 'Expiring', bg: '#dc262618', fg: '#dc2626' };
+    if (status === 'active') return { label: 'Active', bg: '#10b98118', fg: '#10b981' };
+    if (status === 'expired') return { label: 'Expired', bg: '#f43f5e18', fg: '#f43f5e' };
+    if (status === 'frozen') return { label: 'Frozen', bg: '#3b82f618', fg: '#3b82f6' };
+    return { label: status, bg: '#6b728018', fg: '#6b7280' };
+  })();
   return (
     <span className="text-[11px] font-bold uppercase tracking-[0.06em] px-2.5 py-1 rounded-[8px]"
       style={{ background: s.bg, color: s.fg }}>
       {s.label}
     </span>
-  );
-}
-
-function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: string }) {
-  return (
-    <div className="rounded-[14px] p-4 flex items-center gap-3"
-      style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.07)' }}>
-      <div className="flex h-10 w-10 items-center justify-center rounded-[11px]"
-        style={{ background: `${accent || '#dc2626'}14` }}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-[11px] font-[600] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
-        <p className="text-[15px] font-[760]" style={{ color: accent || 'rgb(15,23,42)' }}>{value}</p>
-      </div>
-    </div>
   );
 }
 
@@ -83,27 +78,26 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function SectionCard({ title, icon, children, accent }: { title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string }) {
   return (
-    <div className="rounded-[18px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      className="rounded-[18px] p-5"
+      style={{
+        background: 'rgba(255,255,255,0.7)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.8)',
+        boxShadow: '0 2px 20px rgba(15,23,42,0.06)',
+      }}>
       <div className="flex items-center gap-2.5 mb-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
+        <div className="flex h-8 w-8 items-center justify-center rounded-[9px]"
+          style={{ background: `${accent || '#dc2626'}14` }}>
           {icon}
         </div>
         <h3 className="text-[14px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{title}</h3>
       </div>
       {children}
-    </div>
-  );
-}
-
-function Skeleton() {
-  return (
-    <div className="animate-pulse space-y-6 p-6">
-      {[1,2,3].map(i => (
-        <div key={i} className="rounded-[18px] p-5 h-40" style={{ background: 'var(--bg-card)' }} />
-      ))}
-    </div>
+    </motion.div>
   );
 }
 
@@ -119,17 +113,110 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [trainerIdMap, setTrainerIdMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [recentCheckins, setRecentCheckins] = useState<any[]>([]);
+  const [recentWeights, setRecentWeights] = useState<any[]>([]);
+  const [activeGoals, setActiveGoals] = useState<any[]>([]);
+  const [editNotes, setEditNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState('');
+
   const fetch = async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await api.pt.client(id);
-      setClient((res as any)?.data ?? null);
+      const [clientRes, checkinsRes, assessmentsRes, goalsRes, paymentsRes] = await Promise.all([
+        api.pt.client(id),
+        api.progress.weeklyCheckins.list({ client_id: id, limit: 5 }),
+        api.progress.assessments.list({ client_id: id, limit: 10 }),
+        api.progress.goals.list({ client_id: id }),
+        api.pt.payments({ client_id: id }),
+      ]);
+      const c = (clientRes as any)?.data ?? null;
+      setClient(c);
+
+      const checkins = Array.isArray((checkinsRes as any)?.data) ? (checkinsRes as any).data : [];
+      setRecentCheckins(checkins);
+
+      const assessments = Array.isArray((assessmentsRes as any)?.data) ? (assessmentsRes as any).data : [];
+      setRecentWeights(assessments.filter((a: any) => a.weight));
+      setRecentWeights(prev => {
+        const weights = assessments.filter((a: any) => a.weight).slice(0, 5);
+        return weights;
+      });
+
+      const goals = Array.isArray((goalsRes as any)?.data) ? (goalsRes as any).data : [];
+      setActiveGoals(goals.filter((g: any) => g.status === 'active'));
+
+      const rawPayments = Array.isArray((paymentsRes as any)?.data) ? (paymentsRes as any).data : [];
+
+      const events: TimelineEvent[] = [];
+
+      checkins.forEach((ch: any) => {
+        events.push({
+          id: `ch-${ch.id}`,
+          type: 'checkin',
+          title: `Weekly Check-in`,
+          subtitle: `Adherence: ${ch.adherence || ch.workout_adherence || '—'}% · Weight: ${ch.weight || '—'}`,
+          date: ch.week_start_date || ch.created_at,
+          icon: <Activity size={13} />,
+          color: '#10b981',
+        });
+      });
+
+      rawPayments.forEach((p: any) => {
+        events.push({
+          id: `pmt-${p.id}`,
+          type: 'payment',
+          title: `Payment of ${fmtINR(p.amount)}`,
+          subtitle: `${p.payment_method || p.method || '—'} · ${p.notes || ''}`,
+          date: p.date || p.created_at,
+          icon: <Wallet size={13} />,
+          color: '#8b5cf6',
+          value: fmtINR(p.amount),
+        });
+      });
+
+      assessments.forEach((a: any) => {
+        events.push({
+          id: `meas-${a.id}`,
+          type: 'measurement',
+          title: a.weight ? `Weight: ${a.weight} kg` : 'Assessment recorded',
+          subtitle: a.body_fat ? `Body Fat: ${a.body_fat}% · ${a.assessment_type || 'check-in'}` : a.assessment_type || 'check-in',
+          date: a.created_at || a.assessment_date,
+          icon: <Ruler size={13} />,
+          color: '#f59e0b',
+          value: a.weight ? `${a.weight} kg` : undefined,
+        });
+      });
+
+      goals.filter((g: any) => g.status === 'active').forEach((g: any) => {
+        events.push({
+          id: `goal-${g.id}`,
+          type: 'goal',
+          title: `Goal: ${g.goal_type || g.type || 'Fitness'}`,
+          subtitle: g.target_weight ? `Target: ${g.target_weight} kg` : g.target_body_fat ? `Target BF: ${g.target_body_fat}%` : 'Active',
+          date: g.created_at,
+          icon: <Target size={13} />,
+          color: '#3b82f6',
+        });
+      });
+
+      events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setTimeline(events.slice(0, 10));
+      setNotesDraft(c?.notes || '');
     } catch (err: any) {
       setError(err?.message || 'Failed to load client');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveNotes = async () => {
+    try {
+      await api.clients.update(id, { notes: notesDraft });
+      setEditNotes(false);
+      setClient(prev => prev ? { ...prev, notes: notesDraft } : prev);
+    } catch { alert('Failed to save notes'); }
   };
 
   const fetchTrainers = useCallback(async () => {
@@ -145,7 +232,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
   useEffect(() => { fetch(); }, [id]);
 
-  /* ── Assign PT Modal ── */
   const [assignData, setAssignData] = useState({ trainer: '', baseAmount: '', sellingPrice: '', frequency: '' });
   const openAssign = () => {
     fetchTrainers();
@@ -168,9 +254,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     finally { setSaving(false); }
   };
 
-  /* ── Renew PT Modal ── */
   const [renewData, setRenewData] = useState({ baseAmount: '', sellingPrice: '', durationMonths: '', startDate: '' });
-  const openRenew = () => { setRenewData({ baseAmount: String(client?.base_amount ?? ''), sellingPrice: String(client?.monthly_pt_amount ?? ''), durationMonths: '', startDate: '' }); setRenewOpen(true); };
+  const openRenew = () => {
+    setRenewData({
+      baseAmount: String(client?.base_amount ?? ''),
+      sellingPrice: String(client?.monthly_pt_amount ?? ''),
+      durationMonths: '', startDate: ''
+    });
+    setRenewOpen(true);
+  };
   const handleRenew = async () => {
     if (!renewData.durationMonths || !renewData.startDate) return;
     setSaving(true);
@@ -200,12 +292,38 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     );
   };
 
+  const whatsappHref = (phone?: string, name?: string) => {
+    const p = (phone ?? '').replace(/\D/g, '');
+    if (!p) return '#';
+    const num = p.startsWith('91') ? p : `91${p}`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, this is your trainer from 619 Fitness Studio.`)}`;
+  };
+
+  const initials = (name: string) =>
+    name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+
+  const avatarColors = ['#dc2626', '#7c3aed', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899'];
+  const avatarColor = (name: string) => {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+    return avatarColors[Math.abs(h) % avatarColors.length];
+  };
+
+  const completionPct = client
+    ? Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)
+    : 0;
+
   return (
     <Guard>
       <AppShell>
         <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
           {loading ? (
-            <Skeleton />
+            <div className="animate-pulse space-y-6 p-6 max-w-screen-lg mx-auto">
+              <div className="rounded-[22px] h-48" style={{ background: 'linear-gradient(135deg,#0f172a,#1e293b)' }} />
+              {[1,2,3].map(i => (
+                <div key={i} className="rounded-[18px] p-5 h-32" style={{ background: 'rgba(255,255,255,0.7)' }} />
+              ))}
+            </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
               <div className="flex h-14 w-14 items-center justify-center rounded-[16px] mb-4" style={{ background: 'rgba(220,38,38,0.10)' }}>
@@ -216,133 +334,356 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
             </div>
           ) : client ? (
             <div className="mx-auto max-w-screen-lg px-4 py-6 sm:px-6">
-              {/* Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <button onClick={() => router.back()}
-                    className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors hover:bg-white/80"
-                    style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.07)' }}>
-                    <ArrowLeft size={16} style={{ color: 'rgb(71,85,105)' }} />
-                  </button>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>{client.name}</h1>
-                      <StatusBadge status={client.status} days_left={client.days_left} />
+
+              {/* ── Dark Gradient Hero ── */}
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                style={{
+                  position: 'relative', overflow: 'hidden', borderRadius: 24,
+                  background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                  padding: '32px 36px', marginBottom: 24,
+                  boxShadow: '0 8px 32px rgba(15,23,42,0.35)',
+                }}>
+                <motion.div style={{ position: 'absolute', top: -60, right: -30, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.2), transparent 70%)', pointerEvents: 'none' }}
+                  animate={{ x: [0, 20, -15, 0], y: [0, -30, 15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
+                <motion.div style={{ position: 'absolute', bottom: -40, left: '20%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.15), transparent 70%)', pointerEvents: 'none' }}
+                  animate={{ x: [0, -25, 30, 0], y: [0, 20, -15, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
+
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <button onClick={() => router.back()}
+                      className="flex h-8 w-8 items-center justify-center rounded-[9px] transition-all hover:bg-white/10"
+                      style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <ArrowLeft size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+                    </button>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Client Profile</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[18px] text-[26px] font-[800] text-white"
+                      style={{ background: `linear-gradient(135deg, ${avatarColor(client.name)}, ${avatarColor(client.name.split('').reverse().join(''))})`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+                      {initials(client.name)}
                     </div>
-                    <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>
-                      {client.client_id || client.id.slice(0, 8)} · PT Client
-                    </p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h1 className="text-[26px] font-[860] tracking-[-0.03em]" style={{ color: '#ffffff' }}>{client.name}</h1>
+                        <StatusBadge status={client.status} days_left={client.days_left} />
+                      </div>
+                      <p className="mt-1 text-[13px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        {client.client_id || client.id.slice(0, 8)} · PT Client
+                        {client.trainer_name ? ` · Trained by ${client.trainer_name}` : ''}
+                      </p>
+                      <div className="flex flex-wrap gap-3 mt-3">
+                        {client.mobile && (
+                          <a href={whatsappHref(client.mobile, client.name)} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[11px] font-[600] transition-all hover:bg-white/15"
+                            style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <MessageCircle size={12} /> WhatsApp
+                          </a>
+                        )}
+                        {client.email && (
+                          <a href={`mailto:${client.email}`}
+                            className="inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[11px] font-[600] transition-all hover:bg-white/15"
+                            style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <Mail size={12} /> Email
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <PremiumButton tone="primary" glow size="sm" icon={<UserPlus size={13} />} onClick={openAssign}>
+                        Assign PT
+                      </PremiumButton>
+                      <PremiumButton tone="success" glow size="sm" icon={<Repeat size={13} />} onClick={openRenew}>
+                        Renew PT
+                      </PremiumButton>
+                    </div>
                   </div>
                 </div>
-                <PremiumButton tone="secondary" icon={<ArrowLeft size={14} />} onClick={() => router.push('/pt-os/clients')}>
-                  Back to Clients
-                </PremiumButton>
-              </div>
+              </motion.div>
 
-              {/* Stat Cards */}
+              {/* ── Progress Dashboard ── */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                <StatCard icon={<Wallet size={18} style={{ color: '#dc2626' }} />}
-                  label="Final Amount" value={fmtINR(client.final_amount)} />
-                <StatCard icon={<CheckCircle size={18} style={{ color: '#10b981' }} />}
-                  label="Paid" value={fmtINR(client.paid_amount)} accent="#10b981" />
-                <StatCard icon={<AlertTriangle size={18} style={{ color: client.balance_amount > 0 ? '#f59e0b' : '#10b981' }} />}
-                  label="Balance" value={fmtINR(client.balance_amount)}
-                  accent={client.balance_amount > 0 ? '#f59e0b' : '#10b981'} />
-                <StatCard icon={<Award size={18} style={{ color: '#8b5cf6' }} />}
-                  label="Commission" value={fmtINR(client.trainer_commission)} accent="#8b5cf6" />
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', borderRadius: 16, padding: '16px 18px', border: '1px solid rgba(255,255,255,0.7)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Wallet size={14} style={{ color: '#dc2626' }} />
+                    <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Final Amount</span>
+                  </div>
+                  <p className="text-[20px] font-[800]" style={{ color: 'rgb(15,23,42)' }}>{fmtINR(client.final_amount)}</p>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', borderRadius: 16, padding: '16px 18px', border: '1px solid rgba(255,255,255,0.7)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle size={14} style={{ color: '#10b981' }} />
+                    <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Paid</span>
+                  </div>
+                  <p className="text-[20px] font-[800]" style={{ color: '#10b981' }}>{fmtINR(client.paid_amount)}</p>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', borderRadius: 16, padding: '16px 18px', border: '1px solid rgba(255,255,255,0.7)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertTriangle size={14} style={{ color: client.balance_amount > 0 ? '#f59e0b' : '#10b981' }} />
+                    <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Balance</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[20px] font-[800]" style={{ color: client.balance_amount > 0 ? '#f59e0b' : '#10b981' }}>{fmtINR(client.balance_amount)}</p>
+                    <DueBadge status={client.due_status} />
+                  </div>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', borderRadius: 16, padding: '16px 18px', border: '1px solid rgba(255,255,255,0.7)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Award size={14} style={{ color: '#8b5cf6' }} />
+                    <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Commission</span>
+                  </div>
+                  <p className="text-[20px] font-[800]" style={{ color: '#8b5cf6' }}>{fmtINR(client.trainer_commission)}</p>
+                </motion.div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Personal Info */}
-                <SectionCard title="Personal Info" icon={<User size={16} style={{ color: '#dc2626' }} />}>
-                  <InfoRow label="Gender" value={client.gender || '—'} />
-                  <InfoRow label="DOB" value={fmtDate(client.dob)} />
-                  <InfoRow label="Phone" value={client.mobile || '—'} />
-                  <InfoRow label="Email" value={client.email || '—'} />
-                  <InfoRow label="Weight" value={client.weight ? `${client.weight} kg` : '—'} />
-                  <InfoRow label="Joined" value={fmtDate(client.joining_date)} />
-                </SectionCard>
+              {/* ── Progress Bars ── */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  className="rounded-[16px] p-4"
+                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.7)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Payment Progress</span>
+                    <span className="text-[12px] font-[700]" style={{ color: '#10b981' }}>{completionPct}%</span>
+                  </div>
+                  <div className="h-2 rounded-full" style={{ background: 'rgba(15,23,42,0.06)' }}>
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }}
+                      transition={{ duration: 1, ease: 'easeOut' }}
+                      className="h-full rounded-full"
+                      style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+                  </div>
+                  <div className="flex justify-between mt-1.5">
+                    <span className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>Paid: {fmtINR(client.paid_amount)}</span>
+                    <span className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>Total: {fmtINR(client.final_amount)}</span>
+                  </div>
+                </motion.div>
 
-                {/* PT Assignment */}
-                <SectionCard title="PT Assignment" icon={<Dumbbell size={16} style={{ color: '#dc2626' }} />}>
-                  <InfoRow label="Trainer" value={client.trainer_name || '—'} />
-                  <InfoRow label="Package" value={client.package_type || '—'} />
-                  <InfoRow label="Start Date" value={fmtDate(client.pt_start_date)} />
-                  <InfoRow label="End Date" value={fmtDate(client.pt_end_date)} />
-                  <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
-                  <InfoRow label="Monthly PT Fee" value={fmtINR(client.monthly_pt_amount)} />
-                  <InfoRow label="Days Left" value={client.days_left !== null ? `${client.days_left} days` : '—'} />
-                </SectionCard>
-
-                {/* Financial Details */}
-                <SectionCard title="Financial Details" icon={<Wallet size={16} style={{ color: '#dc2626' }} />}>
-                  <InfoRow label="Base Amount" value={fmtINR(client.base_amount)} />
-                  <InfoRow label="Discount" value={client.discount ? `-${fmtINR(client.discount)}` : '—'} />
-                  <InfoRow label="Final Amount" value={fmtINR(client.final_amount)} />
-                  <InfoRow label="Paid Amount" value={fmtINR(client.paid_amount)} />
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-[12.5px] font-[500]" style={{ color: 'rgb(148,163,184)' }}>Balance</span>
-                    <span className="flex items-center gap-2 text-[12.5px] font-[650]"
-                      style={{ color: client.balance_amount > 0 ? '#dc2626' : '#10b981' }}>
-                      {fmtINR(client.balance_amount)}
-                      {client.balance_amount > 0 && <DueBadge status={client.due_status} />}
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  className="rounded-[16px] p-4"
+                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.7)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>PT Duration</span>
+                    <span className="text-[12px] font-[700]" style={{ color: client.days_left <= 7 && client.days_left >= 0 ? '#dc2626' : '#6366f1' }}>
+                      {client.days_left !== null ? `${client.days_left} days left` : '—'}
                     </span>
                   </div>
-                </SectionCard>
+                  <div className="h-2 rounded-full" style={{ background: 'rgba(15,23,42,0.06)' }}>
+                    {client.duration_months && client.pt_start_date && client.pt_end_date ? (
+                      (() => {
+                        const start = new Date(client.pt_start_date!).getTime();
+                        const end = new Date(client.pt_end_date!).getTime();
+                        const now = Date.now();
+                        const progress = Math.min(Math.max(((now - start) / (end - start)) * 100, 0), 100);
+                        return (
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                            transition={{ duration: 1, ease: 'easeOut' }}
+                            className="h-full rounded-full"
+                            style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
+                        );
+                      })()
+                    ) : null}
+                  </div>
+                  <div className="flex justify-between mt-1.5">
+                    <span className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>Start: {fmtDate(client.pt_start_date)}</span>
+                    <span className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>End: {fmtDate(client.pt_end_date)}</span>
+                  </div>
+                </motion.div>
+              </div>
 
-                {/* Notes */}
-                <SectionCard title="Notes" icon={<FileText size={16} style={{ color: '#dc2626' }} />}>
-                  {client.notes ? (
-                    <p className="text-[13px] leading-relaxed" style={{ color: 'rgb(71,85,105)' }}>{client.notes}</p>
-                  ) : (
-                    <p className="text-[13px]" style={{ color: 'rgb(148,163,184)', fontStyle: 'italic' }}>No notes recorded</p>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  {/* ── Activity Timeline ── */}
+                  <SectionCard title="Recent Activity" icon={<Activity size={16} />} accent="#6366f1">
+                    {timeline.length === 0 ? (
+                      <p className="text-[13px]" style={{ color: 'rgb(148,163,184)', fontStyle: 'italic' }}>No recent activity</p>
+                    ) : (
+                      <div className="space-y-0">
+                        {timeline.map((event, i) => (
+                          <motion.div key={event.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                            className="relative flex gap-3 pb-4 pl-6 last:pb-0">
+                            <div className="absolute left-0 top-1 flex flex-col items-center">
+                              <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: `${event.color}18` }}>
+                                <span style={{ color: event.color }}>{event.icon}</span>
+                              </div>
+                              {i < timeline.length - 1 && <div className="mt-1 w-px flex-1" style={{ background: 'rgba(15,23,42,0.06)' }} />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-[12.5px] font-[640]" style={{ color: 'rgb(15,23,42)' }}>{event.title}</p>
+                                <span className="text-[10px] whitespace-nowrap" style={{ color: 'rgb(148,163,184)' }}>{fmtDate(event.date)}</span>
+                              </div>
+                              {event.subtitle && <p className="text-[11.5px] mt-0.5" style={{ color: 'rgb(148,163,184)' }}>{event.subtitle}</p>}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </SectionCard>
+
+                  {/* ── Personal Info ── */}
+                  <SectionCard title="Personal Info" icon={<User size={16} />}>
+                    <InfoRow label="Gender" value={client.gender || '—'} />
+                    <InfoRow label="DOB" value={fmtDate(client.dob)} />
+                    <InfoRow label="Phone" value={client.mobile || '—'} />
+                    <InfoRow label="Email" value={client.email || '—'} />
+                    <InfoRow label="Weight" value={client.weight ? `${client.weight} kg` : '—'} />
+                    <InfoRow label="Joined" value={fmtDate(client.joining_date)} />
+                  </SectionCard>
+
+                  {/* ── Assessent & Health History - mini weight trend ── */}
+                  {recentWeights.length >= 2 && (
+                    <SectionCard title="Weight Trend" icon={<TrendingUp size={16} />} accent="#10b981">
+                      <div className="flex items-end gap-2 h-24 pt-2">
+                        {recentWeights.slice(0, 6).map((a: any, i: number) => {
+                          const maxW = Math.max(...recentWeights.map((w: any) => Number(w.weight)));
+                          const barH = (Number(a.weight) / maxW) * 80;
+                          return (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                              <motion.div initial={{ height: 0 }} animate={{ height: barH }} transition={{ duration: 0.5, delay: i * 0.05 }}
+                                className="w-full rounded-[4px]"
+                                style={{ background: 'linear-gradient(180deg, #10b981, #34d399)', minHeight: 4 }} />
+                              <span className="text-[9px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>
+                                {a.weight}
+                              </span>
+                              <span className="text-[8px]" style={{ color: 'rgb(203,213,225)' }}>
+                                {fmtDate(a.created_at || a.assessment_date).slice(0, 5)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </SectionCard>
                   )}
-                </SectionCard>
+
+                  {/* ── Goals ── */}
+                  {activeGoals.length > 0 && (
+                    <SectionCard title="Active Goals" icon={<Target size={16} />} accent="#3b82f6">
+                      <div className="space-y-3">
+                        {activeGoals.slice(0, 3).map((g: any) => (
+                          <div key={g.id} className="flex items-center justify-between py-2 border-b" style={{ borderColor: 'rgba(15,23,42,0.04)' }}>
+                            <div>
+                              <p className="text-[13px] font-[600]" style={{ color: 'rgb(15,23,42)' }}>{g.goal_type || g.type || 'Goal'}</p>
+                              <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
+                                {g.target_weight ? `Target: ${g.target_weight} kg` : ''}
+                                {g.target_body_fat ? ` · BF: ${g.target_body_fat}%` : ''}
+                              </p>
+                            </div>
+                            <button onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}
+                              className="text-[11px] font-[600] px-3 py-1.5 rounded-[8px] transition hover:opacity-70"
+                              style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
+                              View
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </SectionCard>
+                  )}
+                </div>
+
+                <div className="space-y-6">
+                  {/* ── PT Assignment ── */}
+                  <SectionCard title="PT Assignment" icon={<Dumbbell size={16} />}>
+                    <InfoRow label="Trainer" value={client.trainer_name || '—'} />
+                    <InfoRow label="Package" value={client.package_type || '—'} />
+                    <InfoRow label="Start Date" value={fmtDate(client.pt_start_date)} />
+                    <InfoRow label="End Date" value={fmtDate(client.pt_end_date)} />
+                    <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
+                    <InfoRow label="Monthly PT Fee" value={fmtINR(client.monthly_pt_amount)} />
+                    <InfoRow label="Days Left" value={client.days_left !== null ? `${client.days_left} days` : '—'} />
+                  </SectionCard>
+
+                  {/* ── Financial Details ── */}
+                  <SectionCard title="Financial Details" icon={<Wallet size={16} />}>
+                    <InfoRow label="Base Amount" value={fmtINR(client.base_amount)} />
+                    <InfoRow label="Discount" value={client.discount ? `-${fmtINR(client.discount)}` : '—'} />
+                    <InfoRow label="Final Amount" value={fmtINR(client.final_amount)} />
+                    <InfoRow label="Paid Amount" value={fmtINR(client.paid_amount)} />
+                    <div className="flex justify-between py-2.5">
+                      <span className="text-[12.5px] font-[500]" style={{ color: 'rgb(148,163,184)' }}>Balance</span>
+                      <span className="flex items-center gap-2 text-[12.5px] font-[650]"
+                        style={{ color: client.balance_amount > 0 ? '#dc2626' : '#10b981' }}>
+                        {fmtINR(client.balance_amount)}
+                        {client.balance_amount > 0 && <DueBadge status={client.due_status} />}
+                      </span>
+                    </div>
+                  </SectionCard>
+
+                  {/* ── Notes (editable) ── */}
+                  <SectionCard title="Notes" icon={<FileText size={16} />}>
+                    {editNotes ? (
+                      <div className="space-y-3">
+                        <textarea value={notesDraft} onChange={(e) => setNotesDraft(e.target.value)}
+                          rows={4}
+                          className="w-full rounded-[12px] border border-zinc-200 bg-white/80 px-3.5 py-2.5 text-[13px] outline-none transition-all focus:border-[rgba(99,102,241,0.4)]"
+                          style={{ color: 'rgb(15,23,42)', resize: 'none' }}
+                          placeholder="Add notes about this client..." />
+                        <div className="flex gap-2">
+                          <PremiumButton tone="primary" size="sm" icon={<Save size={12} />} onClick={handleSaveNotes}>Save</PremiumButton>
+                          <PremiumButton tone="ghost" size="sm" onClick={() => { setEditNotes(false); setNotesDraft(client.notes || ''); }}>Cancel</PremiumButton>
+                        </div>
+                      </div>
+                    ) : (
+                      <div onClick={() => setEditNotes(true)} className="cursor-pointer group">
+                        {client.notes ? (
+                          <p className="text-[13px] leading-relaxed" style={{ color: 'rgb(71,85,105)' }}>{client.notes}</p>
+                        ) : (
+                          <p className="text-[13px]" style={{ color: 'rgb(148,163,184)', fontStyle: 'italic' }}>
+                            <span className="group-hover:hidden">No notes recorded</span>
+                            <span className="hidden group-hover:inline" style={{ color: '#6366f1', fontStyle: 'normal' }}>Click to add notes...</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </SectionCard>
+
+                  {/* ── Session Balance Summary ── */}
+                  <SectionCard title="Session Balance" icon={<Calendar size={16} />} accent="#f59e0b">
+                    <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
+                      className="flex items-center justify-between w-full py-2 px-3 rounded-[10px] transition hover:bg-zinc-50"
+                      style={{ background: 'rgba(245,158,11,0.06)' }}>
+                      <div>
+                        <p className="text-[13px] font-[600]" style={{ color: 'rgb(15,23,42)' }}>View Session Packages</p>
+                        <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>Check remaining sessions &amp; validity</p>
+                      </div>
+                      <ChevronRight size={14} style={{ color: 'rgb(148,163,184)' }} />
+                    </button>
+                  </SectionCard>
+                </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="mt-8 flex flex-wrap gap-3">
-                <PremiumButton tone="primary" glow icon={<UserPlus size={14} />}
-                  onClick={openAssign}>
-                  Assign PT
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Repeat size={14} />}
-                  onClick={openRenew}>
-                  Renew PT
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Wallet size={14} />}
-                  onClick={() => router.push(`/pt-os/clients/${client.id}/payments`)}>
-                  Payments
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Dumbbell size={14} />}
-                  onClick={() => router.push(`/pt-os/workout-plans?client_id=${client.id}`)}>
-                  Workout Plans
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Activity size={14} />}
-                  onClick={() => router.push(`/pt-os/assessment?client_id=${client.id}`)}>
-                  Assessment
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Target size={14} />}
-                  onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}>
-                  Goals
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Ruler size={14} />}
-                  onClick={() => router.push(`/pt-os/measurements?client_id=${client.id}`)}>
-                  Measurements
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Camera size={14} />}
-                  onClick={() => router.push(`/pt-os/progress-photos?client_id=${client.id}`)}>
-                  Progress Photos
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Zap size={14} />}
-                  onClick={() => router.push(`/pt-os/strength-tracking?client_id=${client.id}`)}>
-                  Strength
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Activity size={14} />}
-                  onClick={() => router.push(`/pt-os/weekly-checkin?client_id=${client.id}`)}>
-                  Weekly Check-in
-                </PremiumButton>
-              </div>
+              {/* ── Quick Actions ── */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {[
+                  { label: 'Payments', icon: <Wallet size={15} />, href: `/pt-os/clients/${client.id}/payments`, color: '#8b5cf6' },
+                  { label: 'Workout Plans', icon: <Dumbbell size={15} />, href: `/pt-os/workout-plans?client_id=${client.id}`, color: '#dc2626' },
+                  { label: 'Assessment', icon: <Activity size={15} />, href: `/pt-os/assessment?client_id=${client.id}`, color: '#10b981' },
+                  { label: 'Goals', icon: <Target size={15} />, href: `/pt-os/goals?client_id=${client.id}`, color: '#3b82f6' },
+                  { label: 'Measurements', icon: <Ruler size={15} />, href: `/pt-os/measurements?client_id=${client.id}`, color: '#f59e0b' },
+                  { label: 'Photos', icon: <Camera size={15} />, href: `/pt-os/progress-photos?client_id=${client.id}`, color: '#ec4899' },
+                  { label: 'Strength', icon: <Zap size={15} />, href: `/pt-os/strength-tracking?client_id=${client.id}`, color: '#6366f1' },
+                  { label: 'Check-in', icon: <Activity size={15} />, href: `/pt-os/weekly-checkin?client_id=${client.id}`, color: '#14b8a6' },
+                  { label: 'Diet Plans', icon: <FileText size={15} />, href: `/pt-os/diet-plans?client_id=${client.id}`, color: '#f97316' },
+                  { label: 'Sessions', icon: <Calendar size={15} />, href: `/pt-os/sessions?client_id=${client.id}`, color: '#0ea5e9' },
+                ].map((action, i) => (
+                  <motion.button key={action.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+                    onClick={() => router.push(action.href)}
+                    className="flex flex-col items-center gap-2 rounded-[16px] p-4 text-center transition-all hover:shadow-md"
+                    style={{
+                      background: 'rgba(255,255,255,0.7)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255,255,255,0.7)',
+                    }}>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-[11px]" style={{ background: `${action.color}14` }}>
+                      <span style={{ color: action.color }}>{action.icon}</span>
+                    </div>
+                    <span className="text-[11px] font-[660]" style={{ color: 'rgb(71,85,105)' }}>{action.label}</span>
+                  </motion.button>
+                ))}
+              </motion.div>
 
               {/* ── Assign PT Modal ── */}
               <AnimatePresence>
@@ -387,7 +728,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <div className="mt-6 flex gap-3 justify-end">
                         <PremiumButton tone="secondary" onClick={() => setAssignOpen(false)}>Cancel</PremiumButton>
                         <PremiumButton tone="primary" glow onClick={handleAssign} loading={saving} disabled={!assignData.trainer || !assignData.baseAmount}>
-                          <Check size={13} /> Assign
+                          <CheckCircle size={13} /> Assign
                         </PremiumButton>
                       </div>
                     </motion.div>
@@ -425,7 +766,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <div className="mt-6 flex gap-3 justify-end">
                         <PremiumButton tone="secondary" onClick={() => setRenewOpen(false)}>Cancel</PremiumButton>
                         <PremiumButton tone="success" glow onClick={handleRenew} loading={saving} disabled={!renewData.durationMonths || !renewData.startDate}>
-                          <Check size={13} /> Renew
+                          <CheckCircle size={13} /> Renew
                         </PremiumButton>
                       </div>
                     </motion.div>
