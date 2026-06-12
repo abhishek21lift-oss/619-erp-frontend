@@ -41,6 +41,10 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] } }
 };
 
+const tableHeadStyle: React.CSSProperties = { padding: '10px 14px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.35)' };
+const tableCellStyle: React.CSSProperties = { padding: '10px 14px', fontSize: 12 };
+const tableRowBorder = { borderBottom: '1px solid rgba(255,255,255,0.04)' };
+
 function KpiCard({ label, value, icon, gradient, sub }: {
   label: string; value: string; icon?: React.ReactNode; gradient: string; sub?: string
 }) {
