@@ -8,7 +8,7 @@ import {
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
   CheckCircle, AlertTriangle, Clock, Award, IndianRupee,
   Camera, Ruler, Zap, UserPlus, Repeat, X, ChevronRight,
-  TrendingUp, MessageCircle, Save,
+  TrendingUp, MessageCircle, Save, Trash2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -113,6 +113,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [trainers, setTrainers] = useState<string[]>([]);
   const [trainerIdMap, setTrainerIdMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [recentCheckins, setRecentCheckins] = useState<any[]>([]);
@@ -218,6 +220,14 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       setEditNotes(false);
       setClient(prev => prev ? { ...prev, notes: notesDraft } : prev);
     } catch { alert('Failed to save notes'); }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await api.pt.deleteClient(id);
+      router.push('/pt-os/clients');
+    } catch { alert('Failed to delete client'); setDeleting(false); }
   };
 
   const fetchTrainers = useCallback(async () => {
@@ -669,9 +679,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   { label: 'Check-in', icon: <Activity size={15} />, href: `/pt-os/weekly-checkin?client_id=${client.id}`, color: '#14b8a6' },
                   { label: 'Diet Plans', icon: <FileText size={15} />, href: `/pt-os/diet-plans?client_id=${client.id}`, color: '#f97316' },
                   { label: 'Sessions', icon: <Calendar size={15} />, href: `/pt-os/sessions?client_id=${client.id}`, color: '#0ea5e9' },
+                  { label: 'Delete', icon: <Trash2 size={15} />, href: '#delete', color: '#ef4444' },
                 ].map((action, i) => (
                   <motion.button key={action.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                    onClick={() => router.push(action.href)}
+                    onClick={() => action.href === '#delete' ? setDeleteOpen(true) : router.push(action.href)}
                     className="flex flex-col items-center gap-2 rounded-[16px] p-4 text-center transition-all hover:shadow-md"
                     style={{
                       background: 'rgba(255,255,255,0.7)',
@@ -768,6 +779,36 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         <PremiumButton tone="secondary" onClick={() => setRenewOpen(false)}>Cancel</PremiumButton>
                         <PremiumButton tone="success" glow onClick={handleRenew} loading={saving} disabled={!renewData.durationMonths || !renewData.startDate}>
                           <CheckCircle size={13} /> Renew
+                        </PremiumButton>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* ── Delete Confirmation Modal ── */}
+              <AnimatePresence>
+                {deleteOpen && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                    onClick={() => setDeleteOpen(false)}>
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                      className="w-full max-w-sm rounded-[22px] p-6 text-center"
+                      style={{ background: 'var(--bg-card)', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}
+                      onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-center mb-4">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: '#ef444418' }}>
+                          <AlertTriangle size={26} style={{ color: '#ef4444' }} />
+                        </div>
+                      </div>
+                      <h3 className="text-[17px] font-[760] mb-2" style={{ color: 'rgb(15,23,42)' }}>Delete Client</h3>
+                      <p className="text-[13px] mb-6" style={{ color: 'rgb(100,116,139)' }}>
+                        Are you sure you want to delete <strong>{client?.name}</strong>? This action cannot be undone.
+                      </p>
+                      <div className="flex gap-3 justify-center">
+                        <PremiumButton tone="secondary" onClick={() => setDeleteOpen(false)}>Cancel</PremiumButton>
+                        <PremiumButton tone="danger" glow onClick={handleDelete} loading={deleting}>
+                          <Trash2 size={13} /> Delete
                         </PremiumButton>
                       </div>
                     </motion.div>

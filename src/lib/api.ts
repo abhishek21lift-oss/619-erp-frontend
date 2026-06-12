@@ -884,5 +884,7 @@ export const api = {
       http<{ data: unknown[] }>('/api/pt-os/revenue'),
     trainerPerformance: () =>
       http<{ data: unknown[] }>('/api/pt-os/trainer-performance'),
+    deleteClient: (id: string) =>
+      http<{ message: string }>(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
   },
 };
