@@ -320,15 +320,6 @@ const simpleModules: Record<string, Partial<ModuleConfig>> = {
     workflows: ['Choose report', 'Apply date filter', 'Preview charts', 'Export PDF/Excel/CSV'],
     insights: ['Revenue reports', 'GST reports', 'Branch reports', 'Export queue'],
   },
-  plans: {
-    title: 'Plans Management',
-    description: 'Membership, diet, workout, renewal, customization, comparison, and pricing management.',
-    entityName: 'Plan',
-    primaryAction: 'Create plan',
-    statuses: ['Draft', 'Active', 'Archived', 'Promo', 'Renewal Only'],
-    workflows: ['Set pricing', 'Add inclusions', 'Compare plans', 'Publish plan'],
-    insights: ['Active plans', 'Renewal plans', 'Avg price', 'Most selected'],
-  },
   appointments: {
     title: 'Appointments',
     description: 'Booking system, trainer scheduling, calendar view, reminders, slot and availability tracking.',
@@ -559,7 +550,7 @@ export function getModuleConfig(area: string, tab?: string): ModuleConfig {
 function adminRoleFor(key: string): Role | undefined {
   if (['referrals', 'appointments'].includes(key)) return undefined;
   if (key.startsWith('engagement-') && !['engagement-notifications', 'engagement-whatsapp', 'engagement-sms', 'engagement-community', 'engagement-challenges'].includes(key)) return 'admin';
-  return ['payroll', 'expenses', 'reports', 'plans', 'trainer-targets', 'attendance-reports', 'branches', 'staff', 'biometric', 'equipment', 'notices', 'billing', 'branding', 'measurements', 'workouts', 'member-analytics', 'billing-analytics', 'leave'].includes(key)
+  return ['payroll', 'expenses', 'reports', 'trainer-targets', 'attendance-reports', 'branches', 'staff', 'biometric', 'equipment', 'notices', 'billing', 'branding', 'measurements', 'workouts', 'member-analytics', 'billing-analytics', 'leave'].includes(key)
     ? 'admin'
     : undefined;
 }

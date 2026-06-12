@@ -34,7 +34,6 @@ const GROUP_COLORS: Record<string, string> = {
   'trainer-management': '#F97316',
   'session-management': '#0EA5E9',
   'progress-tracking': '#EC4899',
-  memberships: '#6366F1',
   finance: '#14B8A6',
   communication: '#A855F7',
   reports: '#64748B',

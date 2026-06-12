@@ -92,22 +92,6 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'memberships',
-    label: 'Memberships',
-    icon: 'CreditCard',
-    items: [
-      { href: '/plans',                    label: 'Plans',              icon: 'Layers',        role: 'admin',
-        children: [
-          { href: '/plans/create', label: 'Create Plan',  icon: 'PlusCircle', role: 'admin' },
-          { href: '/plans',        label: 'My Plans',     icon: 'LayoutGrid', role: 'admin' },
-        ],
-      },
-      { href: '/memberships/subscriptions', label: 'Subscriptions',      icon: 'RefreshCw', role: 'admin' },
-      { href: '/memberships/coupons',       label: 'Coupons',            icon: 'Ticket',        role: 'admin' },
-      { href: '/memberships/combo-offers',  label: 'Combo Offers',       icon: 'Gift',          role: 'admin' },
-    ],
-  },
-  {
     id: 'finance',
     label: 'Finance',
     icon: 'IndianRupee',

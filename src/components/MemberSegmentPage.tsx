@@ -24,7 +24,6 @@ interface Client {
   phone?: string;
   mobile?: string;
   status?: string;
-  membership_plan?: string;
   package_type?: string;
   expiry_date?: string;
   pt_end_date?: string;
@@ -44,23 +43,23 @@ const SEGMENT_META: Record<Segment, {
   heroGradient: string; accentColor: string; accentLight: string;
 }> = {
   active: {
-    title: 'Active Members', subtitle: 'Currently subscribed athletes',
+    title: 'Active Clients', subtitle: 'Currently subscribed athletes',
     icon: <CheckCircle size={18} />,
-    emptyTitle: 'No active members yet', emptyDesc: 'Add members and assign active subscriptions.',
+    emptyTitle: 'No active clients yet', emptyDesc: 'Add clients and assign PT packages.',
     heroGradient: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 70%, #10b981 100%)',
     accentColor: '#10b981', accentLight: '#ecfdf5',
   },
   expiring: {
-    title: 'Renewals Due', subtitle: 'Memberships expiring in the next 30 days',
+    title: 'Renewals Due', subtitle: 'PT packages expiring in the next 30 days',
     icon: <Clock size={18} />,
-    emptyTitle: 'No renewals due', emptyDesc: 'No memberships are expiring in the next 30 days.',
+    emptyTitle: 'No renewals due', emptyDesc: 'No packages are expiring in the next 30 days.',
     heroGradient: 'linear-gradient(135deg, #78350f 0%, #92400e 40%, #b45309 70%, #f59e0b 100%)',
     accentColor: '#f59e0b', accentLight: '#fffbeb',
   },
   lapsed: {
-    title: 'Pending Dues', subtitle: 'Lapsed memberships — collection required',
+    title: 'Pending Dues', subtitle: 'Lapsed packages — collection required',
     icon: <UserX size={18} />,
-    emptyTitle: 'No lapsed members', emptyDesc: 'All members are currently active.',
+    emptyTitle: 'No lapsed clients', emptyDesc: 'All clients are currently active.',
     heroGradient: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 40%, #b91c1c 70%, #ef4444 100%)',
     accentColor: '#ef4444', accentLight: '#fef2f2',
   },
@@ -111,7 +110,7 @@ function whatsappHref(phone?: string, name?: string) {
 }
 function getExpiry(c: Client) { return c.expiry_date ?? c.pt_end_date; }
 function getPhone(c: Client)  { return c.phone ?? c.mobile; }
-function getPlan(c: Client)   { return c.membership_plan ?? c.package_type; }
+function getPlan(c: Client)   { return c.package_type; }
 
 /* ─── Premium Member Card ───────────────────────────────── */
 function MemberCard({ c, accent }: { c: Client; accent: string }) {
@@ -196,8 +195,8 @@ function MemberCard({ c, accent }: { c: Client; accent: string }) {
         <Link href={`/clients/${c.id}`} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '8px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: 'white', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none', transition: 'all 150ms ease' }}>
           <Eye size={11} /> View
         </Link>
-        <Link href={`/clients/${c.id}/renew-subscription`} style={{ width: 34, height: 34, borderRadius: 12, border: `1.5px solid ${accent}30`, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, textDecoration: 'none' }}>
-          <RefreshCw size={12} />
+        <Link href={`/pt-os/clients/${c.id}`} style={{ width: 34, height: 34, borderRadius: 12, border: `1.5px solid ${accent}30`, background: `${accent}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent, textDecoration: 'none' }}>
+          <User size={12} />
         </Link>
         {phone && (
           <a href={whatsappHref(phone, c.name)} target="_blank" rel="noopener noreferrer" style={{ width: 34, height: 34, borderRadius: 12, border: '1.5px solid #bbf7d0', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a', textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>

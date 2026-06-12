@@ -42,9 +42,6 @@ const MEGA_SECTIONS: NavSection[] = [
     glow: 'var(--brand-glow)',
     gradient: 'var(--brand-lo)',
     columns: [
-      { heading: 'Pipeline', items: [
-        { label: 'Membership Sales', href: '/memberships/subscriptions', description: 'Plan conversions' },
-      ]},
       { heading: 'Finance', items: [
         { label: 'Collected Payments', href: '/finance/collected-payments', description: 'All payment transactions' },
         { label: 'Payments', href: '/finance/collection', description: 'Transaction ledger' },
@@ -117,7 +114,6 @@ const MEGA_SECTIONS: NavSection[] = [
         { label: 'Billing', href: '/settings/billing', description: 'Invoice management' },
         { label: 'Reports', href: '/reports', description: 'Financial summaries' },
         { label: 'Forecasting', href: '/finance/forecast', description: 'Revenue projections' },
-        { label: 'Subscriptions', href: '/memberships/subscriptions', description: 'Plan management' },
       ]},
     ],
     spotlight: { title: 'Outstanding Dues', value: '—', sub: 'Pending collection', accent: 'var(--brand-lo)' },

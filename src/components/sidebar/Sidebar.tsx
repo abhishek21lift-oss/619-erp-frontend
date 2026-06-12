@@ -67,7 +67,6 @@ const GROUP_THEMES: Record<string, GroupTheme> = {
   'trainer-management':  buildTheme('#F97316'),
   'session-management':  buildTheme('#0EA5E9'),
   'progress-tracking':   buildTheme('#EC4899'),
-  'memberships':         buildTheme('#6366F1'),
   'finance':             buildTheme('#14B8A6'),
   'communication':       buildTheme('#A855F7'),
   'reports':             buildTheme('#64748B'),

@@ -210,23 +210,6 @@ export type LeaveRequestPayload = {
   reason?: string;
 };
 
-export type PlanApiResponse = {
-  plan: {
-    id: string;
-    kind?: string;
-    name?: string;
-    duration?: string;
-    base_amount?: number;
-    discount?: number;
-    final_amount?: number;
-    sessions_per_week?: number;
-    features?: string[];
-    popular?: boolean;
-    [key: string]: unknown;
-  };
-  message?: string;
-};
-
 export type TrainerSummaryRow = {
   id: string | number;
   name: string;
@@ -339,16 +322,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ photo: dataUrl }),
       }),
-    renewSubscription: (id: string, data: Record<string, unknown>) =>
-      http<{ message?: string }>(`/api/clients/${id}/renew-subscription`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    addSubscription: (id: string, data: Record<string, unknown>) =>
-      http<{ message?: string }>(`/api/clients/${id}/add-subscription`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
     assignPt: (id: string, data: Record<string, unknown>) =>
       http<{ message?: string }>(`/api/clients/${id}/assign-pt`, {
         method: 'POST',
@@ -405,16 +378,6 @@ export const api = {
     delete: (id: string) => http(`/api/payments/${id}`, { method: 'DELETE' }),
     stats:  (params?: Record<string, string>) =>
       http(`/api/payments/stats${buildQs(params)}`),
-  },
-
-  plans: {
-    list:   () => http<unknown[]>('/api/plans'),
-    get:    (id: string) => http(`/api/plans/${id}`),
-    create: (data: Record<string, unknown>) =>
-      http<PlanApiResponse>('/api/plans', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Record<string, unknown>) =>
-      http<PlanApiResponse>(`/api/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string) => http(`/api/plans/${id}`, { method: 'DELETE' }),
   },
 
   trainers: {

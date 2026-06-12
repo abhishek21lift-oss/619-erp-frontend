@@ -412,7 +412,7 @@ export default function ClientMetricsCards({
       badge: `${activeRate}% active`,
       badgeColor: '#10b981',
       subValue: '↑ 5% MoM',
-      subLabel: 'Currently active memberships',
+      subLabel: 'Active PT packages',
       insights: [
         { label: 'Daily check-ins', value: '78%' },
         { label: 'PT bookings', value: '126' },
@@ -431,7 +431,7 @@ export default function ClientMetricsCards({
       badge: 'Needs attention',
       badgeColor: '#f97316',
       subValue: '↓ 3% MoM',
-      subLabel: 'Lapsed or expired memberships',
+      subLabel: 'Lapsed or expired packages',
       insights: [
         { label: 'At risk', value: inactive > 0 ? Math.round(inactive * 0.49).toLocaleString('en-IN') : '0' },
         { label: 'Recovery est.', value: inactive > 0 ? `₹${(inactive * 2000 / 100000).toFixed(1)}L` : '—' },

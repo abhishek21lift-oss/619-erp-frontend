@@ -56,8 +56,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     { label: 'Progress Tracking', href: '/pt-os/weekly-checkin', keywords: 'progress tracking measurements goals' },
     { label: 'Finance', href: '/finance/collected-payments', keywords: 'finance payments billing invoices' },
     { label: 'Collected Payments', href: '/finance/collected-payments', keywords: 'payments transactions collected' },
-    { label: 'Plans', href: '/plans', keywords: 'plans packages memberships' },
-    { label: 'Membership', href: '/memberships/subscriptions', keywords: 'membership subscriptions renewals' },
     { label: 'Walk-in', href: '/checkin', keywords: 'walk-in walkin drop-in' },
     { label: 'Check-in', href: '/checkin', keywords: 'checkin check-in daily visit' },
     { label: 'Staff', href: '/staff', keywords: 'staff employees trainers' },
