@@ -28,24 +28,7 @@ export default function RevenueForecastPage() {
   return <Guard role="admin"><Inner /></Guard>;
 }
 
-const orbAnimation = (x: number, y: number, delay: number) => ({
-  initial: { x: 0, y: 0, scale: 1, opacity: 0.15 },
-  animate: {
-    x: [0, x, 0, -x, 0],
-    y: [0, -y, 0, y, 0],
-    scale: [1, 1.2, 0.9, 1.1, 1],
-    opacity: [0.15, 0.25, 0.12, 0.22, 0.15],
-    transition: { duration: 12, delay, repeat: Infinity, ease: 'easeInOut' },
-  },
-});
 
-const shimmerVariants = {
-  initial: { backgroundPosition: '-200% 0' },
-  animate: {
-    backgroundPosition: '200% 0',
-    transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' },
-  },
-};
 
 function Inner() {
   const router = useRouter();
@@ -101,9 +84,9 @@ function Inner() {
           marginBottom: 24,
         }}>
           {/* Animated Orbs */}
-          <motion.div {...orbAnimation(60, 40, 0)} style={{ position: 'absolute', top: '10%', left: '5%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <motion.div {...orbAnimation(-50, 60, 2)} style={{ position: 'absolute', top: '50%', right: '10%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <motion.div {...orbAnimation(70, -30, 4)} style={{ position: 'absolute', bottom: '5%', left: '40%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <motion.div animate={{ x: [0, 60, 0, -60, 0], y: [0, -40, 0, 40, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '10%', left: '5%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <motion.div animate={{ x: [0, -50, 0, 50, 0], y: [0, 60, 0, -60, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, delay: 2, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '50%', right: '10%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <motion.div animate={{ x: [0, 70, 0, -70, 0], y: [0, -30, 0, 30, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, delay: 4, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: '5%', left: '40%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
           <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
@@ -194,9 +177,8 @@ function Inner() {
                   {[80, 100, 120].map((w, j) => (
                     <motion.div
                       key={j}
-                      variants={shimmerVariants}
-                      initial="initial"
-                      animate="animate"
+                      animate={{ backgroundPosition: ['-200% 0%', '200% 0%'] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
                       style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }}
                     />
                   ))}
