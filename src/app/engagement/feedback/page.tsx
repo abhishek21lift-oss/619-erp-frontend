@@ -17,6 +17,23 @@ const SAMPLE:Feedback[] = [
 
 const CATS = ['All','Trainer','Facility','Equipment','Overall','Timing','Billing','Other'];
 
+const KPIS = [
+  { label:'Avg Rating', key:'rating', color:'#f59e0b', suffix:'', bg:'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(217,119,6,0.06))' },
+  { label:'Total', key:'total', color:'#8b5cf6', suffix:'', bg:'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(109,40,217,0.06))' },
+  { label:'Positive', key:'positive', color:'#22c55e', suffix:'', bg:'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(22,163,74,0.06))' },
+  { label:'Open', key:'open', color:'#ef4444', suffix:'', bg:'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06))' },
+  { label:'NPS Score', key:'nps', color:'#a855f7', suffix:'%', bg:'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(88,28,135,0.06))' },
+];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] } }
+};
+
 export default function FeedbackPage() {
   return <Guard role="admin"><FeedbackContent/></Guard>;
 }
@@ -45,100 +62,97 @@ function FeedbackContent() {
 
   function handleResolve(id:string){ setItems(p=>p.map(f=>f.id===id?{...f,status:'resolved' as const}:f)); setShowReply(null); setReply(''); }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
-  };
-  const itemVariants = {
-    hidden: { opacity: 0, y: 16 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] } }
-  };
-
   return (
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'36px 40px', marginBottom:24, background:'linear-gradient(135deg, #0f172a, #1e293b)', boxShadow:'0 20px 60px rgba(15,23,42,0.3)' }}>
+          style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e)', boxShadow:'0 20px 60px rgba(26,10,46,0.5)' }}>
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(600px circle at 30% 50%, rgba(139,92,246,0.12), transparent 70%)' }}/>
+          <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(139,92,246,0.08) 1px, transparent 1px)', backgroundSize:'24px 24px' }}/>
+          <div style={{ position:'absolute', top:-10, left:80, width:120, height:120, borderRadius:'50%', background:'radial-gradient(circle, rgba(168,85,247,0.08), transparent)' }}/>
           <div style={{ position:'relative', zIndex:10 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
-              <div style={{ width:40, height:40, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(168,85,247,0.2)' }}>
-                <Star size={20} color="#A855F7" />
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
+              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg, rgba(139,92,246,0.25), rgba(109,40,217,0.1))', backdropFilter:'blur(8px)' }}>
+                <Star size={22} color="#a855f7" />
               </div>
-              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#A855F7' }}>Feedback</span>
+              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Feedback</span>
             </div>
-            <h1 style={{ fontSize:32, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#ffffff', margin:0 }}>Member Feedback</h1>
-            <p style={{ marginTop:8, maxWidth:560, fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.6)' }}>Track, respond &amp; act on member reviews and complaints.</p>
+            <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#ffffff', margin:'0 0 8px' }}>Member Feedback</h1>
+            <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.55)' }}>Track, respond &amp; act on member reviews and complaints.</p>
           </div>
         </motion.div>
 
         <motion.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, marginBottom:24 }}>
-          {[
-            { label:'Avg Rating', value:avgRating, color:'#f59e0b', suffix:'⭐' },
-            { label:'Total', value:items.length, color:'#A855F7', suffix:'' },
-            { label:'Positive', value:positive, color:'#22c55e', suffix:'' },
-            { label:'Open', value:open, color:'#ef4444', suffix:'' },
-            { label:'NPS Score', value:nps, color:'#8b5cf6', suffix:'%' },
-          ].map(k=>(
-            <motion.div key={k.label} variants={itemVariants}
-              style={{ background:'rgba(255,255,255,0.95)', backdropFilter:'blur(12px)', borderRadius:20, padding:'20px 24px', border:'1px solid rgba(255,255,255,0.9)', boxShadow:'0 2px 20px rgba(15,23,42,0.07)' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                <span style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.04em', color:'#94a3b8' }}>{k.label}</span>
-              </div>
-              <div style={{ fontSize:28, fontWeight:800, color:k.color, lineHeight:1.2 }}>{k.value}{k.suffix}</div>
-            </motion.div>
-          ))}
+          style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:28 }}>
+          {KPIS.map((k,i)=>{
+            const vals = [avgRating, items.length, positive, open, nps];
+            const suffixes = [' ⭐','','','','%'];
+            return (
+              <motion.div key={k.label} variants={itemVariants}
+                style={{ position:'relative', overflow:'hidden', borderRadius:20, padding:'22px 24px', background:k.bg, backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 8px 32px rgba(0,0,0,0.12)', cursor:'default', transition:'all 0.3s ease' }}
+                onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 12px 40px rgba(0,0,0,0.2)';}}
+                onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.12)';}}>
+                <div style={{ position:'absolute', top:-20, right:-20, width:100, height:100, borderRadius:'50%', background:`radial-gradient(circle, ${k.color}15, transparent)` }}/>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:3 }}>
+                    <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'rgba(255,255,255,0.5)' }}>{k.label}</span>
+                  </div>
+                </div>
+                <div style={{ fontSize:30, fontWeight:800, color:k.color, lineHeight:1.2, letterSpacing:'-0.02em' }}>{vals[i]}{suffixes[i]}</div>
+              </motion.div>
+            );
+          })}
         </motion.div>
 
-        {/* Filters */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          style={{ display:'flex', gap:12, marginBottom:18, flexWrap:'wrap', alignItems:'center' }}>
+          style={{ display:'flex', gap:12, marginBottom:20, flexWrap:'wrap', alignItems:'center' }}>
           <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
             {CATS.map(c=>(
               <button key={c} onClick={()=>setCat(c)}
-                style={{ padding:'6px 14px', borderRadius:8, border:'none', fontSize:12, fontWeight:600, cursor:'pointer',
-                  background:cat===c?'linear-gradient(135deg, #A855F7, #7c3aed)':'rgba(15,23,42,0.04)',
-                  color:cat===c?'#fff':'#64748b',
-                  boxShadow:cat===c?'0 4px 12px rgba(168,85,247,0.25)':'none' }}>{c}</button>
+                style={{ padding:'7px 16px', borderRadius:8, border:'none', fontSize:12, fontWeight:600, cursor:'pointer',
+                  background:cat===c?'linear-gradient(135deg, #8b5cf6, #6d28d9)':'rgba(255,255,255,0.05)',
+                  color:cat===c?'#fff':'rgba(255,255,255,0.5)',
+                  boxShadow:cat===c?'0 4px 14px rgba(139,92,246,0.3)':'none' }}>{c}</button>
             ))}
           </div>
           <select value={statusF} onChange={e=>setStatusF(e.target.value as any)}
-            style={{ maxWidth:160, width:'100%', border:'1px solid rgba(15,23,42,0.08)', borderRadius:10, padding:'7px 12px', fontSize:12, fontWeight:500, color:'#0f172a', background:'rgba(248,250,252,0.9)', outline:'none', fontFamily:'inherit' }}>
+            style={{ maxWidth:160, width:'100%', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'7px 12px', fontSize:12, fontWeight:500, color:'rgba(255,255,255,0.85)', background:'rgba(255,255,255,0.04)', outline:'none', fontFamily:'inherit' }}>
             <option value="all">All Status</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
           </select>
         </motion.div>
 
-        {/* Feedback list */}
         <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display:'grid', gap:12 }}>
           {filtered.map(f=>(
             <motion.div key={f.id} variants={itemVariants}
-              style={{ background:'rgba(255,255,255,0.95)', backdropFilter:'blur(12px)', borderRadius:20, border:'1px solid rgba(255,255,255,0.9)', boxShadow:'0 2px 20px rgba(15,23,42,0.07)', overflow:'hidden' }}>
-              <div style={{ padding:'18px 22px' }}>
+              style={{ borderRadius:20, background:'rgba(255,255,255,0.06)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 8px 32px rgba(0,0,0,0.12)', overflow:'hidden', transition:'all 0.3s ease' }}
+              onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 12px 40px rgba(0,0,0,0.2)';}}
+              onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.12)';}}>
+              <div style={{ padding:'20px 24px' }}>
                 <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
-                  <div style={{ width:44, height:44, borderRadius:'50%', background:'rgba(168,85,247,0.1)', color:'#A855F7', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:14, flexShrink:0 }}>
-                    <User size={20}/>
+                  <div style={{ width:46, height:46, borderRadius:'50%', background:'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(109,40,217,0.1))', color:'#a855f7', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:14, flexShrink:0, border:'1px solid rgba(139,92,246,0.15)' }}>
+                    <User size={22}/>
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:5, flexWrap:'wrap' }}>
-                      <span style={{ fontWeight:700, fontSize:14, color:'#0f172a' }}>{f.member}</span>
-                      {f.trainer&&<span style={{ fontSize:12, color:'#94a3b8' }}>→ {f.trainer}</span>}
+                      <span style={{ fontWeight:700, fontSize:14, color:'rgba(255,255,255,0.9)' }}>{f.member}</span>
+                      {f.trainer&&<span style={{ fontSize:12, color:'rgba(255,255,255,0.4)' }}>→ {f.trainer}</span>}
                       <span style={{ color:'#f59e0b', fontSize:16, letterSpacing:'-1px' }}>{stars(f.rating)}</span>
-                      <span style={{ fontSize:12, fontWeight:700, color:'#f59e0b' }}>{f.rating}/5</span>
-                      <span style={{ fontSize:11, fontWeight:600, padding:'2px 10px', borderRadius:20, background:'rgba(15,23,42,0.05)', color:'#64748b' }}>{f.category}</span>
-                      <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:`${statusColor(f.status)}18`, color:statusColor(f.status), textTransform:'capitalize' }}>{f.status.replace('_',' ')}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color:'#fbbf24' }}>{f.rating}/5</span>
+                      <span style={{ fontSize:11, fontWeight:600, padding:'2px 10px', borderRadius:20, background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.45)' }}>{f.category}</span>
+                      <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:`${statusColor(f.status)}20`, color:statusColor(f.status), textTransform:'capitalize' }}>{f.status.replace('_',' ')}</span>
                       {sentimentIcon(f.sentiment)}
                     </div>
-                    <p style={{ margin:'0 0 10px', fontSize:13, color:'#475569', lineHeight:1.6, fontStyle:'italic' }}>"{f.message}"</p>
+                    <p style={{ margin:'0 0 10px', fontSize:13, color:'rgba(255,255,255,0.55)', lineHeight:1.6, fontStyle:'italic' }}>"{f.message}"</p>
                     <div style={{ display:'flex', gap:14, alignItems:'center', flexWrap:'wrap' }}>
-                      <span style={{ fontSize:11, color:'#94a3b8', display:'flex', alignItems:'center', gap:3 }}><Clock size={11}/>{f.date}</span>
+                      <span style={{ fontSize:11, color:'rgba(255,255,255,0.35)', display:'flex', alignItems:'center', gap:3 }}><Clock size={11}/>{f.date}</span>
                       {f.status!=='resolved'&&(
                         <>
                           <button onClick={()=>setShowReply(showReply===f.id?null:f.id)}
-                            style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600, padding:'5px 12px', borderRadius:8, border:'1px solid rgba(15,23,42,0.1)', background:'transparent', color:'#64748b', cursor:'pointer' }}>
+                            style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600, padding:'5px 14px', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)', background:'transparent', color:'rgba(255,255,255,0.5)', cursor:'pointer' }}>
                             <MessageSquare size={12}/> Reply
                           </button>
                           <button onClick={()=>handleResolve(f.id)}
-                            style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600, padding:'5px 12px', borderRadius:8, border:'1px solid rgba(34,197,94,0.2)', background:'rgba(34,197,94,0.08)', color:'#16a34a', cursor:'pointer' }}>
+                            style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600, padding:'5px 14px', borderRadius:8, border:'1px solid rgba(34,197,94,0.2)', background:'rgba(34,197,94,0.08)', color:'#4ade80', cursor:'pointer' }}>
                             <CheckCircle2 size={12}/> Mark Resolved
                           </button>
                         </>
@@ -147,9 +161,9 @@ function FeedbackContent() {
                     {showReply===f.id&&(
                       <div style={{ marginTop:14, display:'flex', gap:8 }}>
                         <input value={reply} onChange={e=>setReply(e.target.value)} placeholder="Type your reply to the member…"
-                          style={{ flex:1, border:'1px solid rgba(15,23,42,0.08)', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'#0f172a', background:'rgba(248,250,252,0.9)', outline:'none', fontFamily:'inherit' }} />
+                          style={{ flex:1, border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'9px 14px', fontSize:13, fontWeight:500, color:'rgba(255,255,255,0.85)', background:'rgba(255,255,255,0.04)', outline:'none', fontFamily:'inherit' }} />
                         <button onClick={()=>handleResolve(f.id)}
-                          style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, padding:'8px 16px', borderRadius:10, background:'linear-gradient(135deg, #A855F7, #7c3aed)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(168,85,247,0.3)' }}>
+                          style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, background:'linear-gradient(135deg, #8b5cf6, #6d28d9)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(139,92,246,0.3)' }}>
                           Send &amp; Resolve
                         </button>
                       </div>
@@ -160,10 +174,10 @@ function FeedbackContent() {
             </motion.div>
           ))}
           {filtered.length===0&&(
-            <div style={{ padding:'60px 20px', textAlign:'center' }}>
-              <Star size={36} color="#cbd5e1" style={{ marginBottom:12 }}/>
-              <p style={{ fontSize:15, fontWeight:600, color:'#94a3b8', margin:0 }}>No feedback found</p>
-              <p style={{ fontSize:12, color:'#cbd5e1', marginTop:4 }}>Try adjusting your filters.</p>
+            <div style={{ padding:'64px 20px', textAlign:'center' }}>
+              <Star size={40} color="rgba(255,255,255,0.12)" style={{ marginBottom:14 }}/>
+              <p style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,0.35)', margin:0 }}>No feedback found</p>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', marginTop:4 }}>Try adjusting your filters.</p>
             </div>
           )}
         </motion.div>
