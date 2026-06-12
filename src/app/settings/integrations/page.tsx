@@ -3,452 +3,227 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Zap, Search, Check, X, ChevronRight, Link2, Unlink, Key,
-  Clock, Shield, Activity, ExternalLink, Globe, Smartphone,
-  CreditCard, MessageSquare, Brain, Calendar, Camera,
-  BarChart3, RefreshCw, AlertTriangle, CheckCircle2,
-  Copy, Eye, EyeOff, Loader2, Plus, Settings, Webhook,
-  Bot, Wifi, Cpu, Radio, Cloud,
+  Zap, Search, X, CreditCard, Smartphone, MessageSquare, Send,
+  Bot, Calendar, Camera, BarChart3, Loader2, Link2, Unlink,
+  Settings, Clock, CheckCircle2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
-type IntegrationStatus = 'connected' | 'error' | 'pending' | 'unavailable';
+type Status = 'connected' | 'error' | 'pending' | 'unavailable';
 
 interface Integration {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  icon: React.ReactNode;
-  color: string;
-  bg: string;
-  status: IntegrationStatus;
-  connectedAt?: string;
-  lastSync?: string;
-  docsUrl?: string;
-  popular?: boolean;
-  comingSoon?: boolean;
+  id: string; name: string; description: string; category: string;
+  icon: string; color: string; bg: string; status: Status;
+  connectedAt?: string; lastSync?: string; comingSoon?: boolean;
 }
 
-const CATEGORIES = [
-  { id: 'all', label: 'All Integrations', icon: <Zap size={13} /> },
-  { id: 'payments', label: 'Payments', icon: <CreditCard size={13} /> },
-  { id: 'communication', label: 'Communication', icon: <MessageSquare size={13} /> },
-  { id: 'ai', label: 'AI & Automation', icon: <Brain size={13} /> },
-  { id: 'scheduling', label: 'Scheduling', icon: <Calendar size={13} /> },
-  { id: 'devices', label: 'Devices & IoT', icon: <Camera size={13} /> },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={13} /> },
+const INTEGRATIONS: Integration[] = [
+  { id: 'razorpay', name: 'Razorpay', description: 'Payment gateway for fees, memberships & PT packages', category: 'payments', icon: 'CreditCard', color: '#2563eb', bg: '#eff6ff', status: 'connected', connectedAt: '2026-03-15', lastSync: '2026-06-12 10:30 AM' }, { id: 'paytm', name: 'Paytm', description: 'UPI & wallet payment processing', category: 'payments', icon: 'Smartphone', color: '#00baf2', bg: '#eef9ff', status: 'connected', connectedAt: '2026-02-01', lastSync: '2026-06-12 09:15 AM' }, { id: 'stripe', name: 'Stripe', description: 'International payment processing', category: 'payments', icon: 'CreditCard', color: '#635bff', bg: '#f0efff', status: 'error' }, { id: 'whatsapp', name: 'WhatsApp Business', description: 'Send notifications, reminders & marketing via WhatsApp', category: 'communication', icon: 'MessageSquare', color: '#25d366', bg: '#f0fdf4', status: 'connected', connectedAt: '2026-01-10', lastSync: '2026-06-12 11:00 AM' }, { id: 'twilio', name: 'Twilio SMS', description: 'SMS alerts for dues, check-ins & announcements', category: 'communication', icon: 'MessageSquare', color: '#f22f46', bg: '#fef2f2', status: 'pending' }, { id: 'sendgrid', name: 'SendGrid', description: 'Email marketing & transactional emails', category: 'communication', icon: 'Send', color: '#1a82e2', bg: '#eff6ff', status: 'unavailable', comingSoon: true }, { id: 'chatgpt', name: 'AI Assistant', description: 'AI-powered workout & nutrition recommendations', category: 'ai', icon: 'Bot', color: '#10a37f', bg: '#f0fdf4', status: 'unavailable', comingSoon: true }, { id: 'calendar', name: 'Google Calendar', description: 'Sync sessions, bookings & trainer schedules', category: 'scheduling', icon: 'Calendar', color: '#4285f4', bg: '#eff6ff', status: 'connected', connectedAt: '2026-04-05', lastSync: '2026-06-12 10:45 AM' }, { id: 'biometric', name: 'Biometric Scanner', description: 'Face & fingerprint check-in hardware', category: 'devices', icon: 'Camera', color: '#8b5cf6', bg: '#f5f3ff', status: 'unavailable', comingSoon: true }, { id: 'mixpanel', name: 'Mixpanel', description: 'Product analytics & member behavior tracking', category: 'analytics', icon: 'BarChart3', color: '#7856ff', bg: '#f0efff', status: 'unavailable', comingSoon: true },
 ];
 
-// TODO: Fetch integrations from API endpoint
+const CATEGORIES = [
+  { id: 'all', label: 'All' },
+  { id: 'payments', label: 'Payments' },
+  { id: 'communication', label: 'Communication' },
+  { id: 'ai', label: 'AI & Automation' },
+  { id: 'scheduling', label: 'Scheduling' },
+  { id: 'devices', label: 'Devices & IoT' },
+  { id: 'analytics', label: 'Analytics' },
+];
 
-function StatusDot({ status }: { status: IntegrationStatus }) {
-  const cfg = {
-    connected: { bg: '#10b981', label: 'Connected' },
-    error: { bg: '#ef4444', label: 'Error' },
-    pending: { bg: '#f59e0b', label: 'Pending' },
-    unavailable: { bg: '#94a3b8', label: 'Unavailable' },
-  }[status];
+const iconMap: Record<string, React.ComponentType<any>> = {
+  CreditCard, Smartphone, MessageSquare, Send, Bot, Calendar, Camera, BarChart3,
+};
+
+function ConnectModal({ integration, onClose, onDisconnect }: { integration: Integration; onClose: () => void; onDisconnect: () => void }) {
+  const [apiKey, setApiKey] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  const Icon = iconMap[integration.icon];
+
+  const testConnection = async () => {
+    setTesting(true); setTestResult(null);
+    await new Promise((r) => setTimeout(r, 1500));
+    setTestResult(apiKey.length > 5 ? 'success' : 'error');
+    setTesting(false);
+  };
+
+  const sBtn = { width: '100%', padding: '10px 0', borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#ffffff' } as const;
+  const aBtn = { flex: 1, padding: '10px 0', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer' } as const;
+
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold" style={{ color: cfg.bg }}>
-      <span className="relative flex h-2 w-2">
-        <span className="absolute h-full w-full rounded-full" style={{ background: cfg.bg, opacity: 0.3, animation: status === 'connected' ? 'pulse-ring 2s ease infinite' : 'none' }} />
-        <span className="h-2 w-2 rounded-full" style={{ background: cfg.bg }} />
-      </span>
-      {cfg.label}
-    </span>
-  );
-}
-
-function IntegrationCard({ integration, onToggle }: { integration: Integration; onToggle: (id: string) => void }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="group relative rounded-[18px] p-4 transition-all duration-200 hover:shadow-lg"
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid rgba(255,255,255,0.55)',
-        backdropFilter: 'blur(12px)',
-        boxShadow: '0 2px 8px rgba(15,23,42,0.05)',
-      }}
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] transition-all"
-          style={{ background: integration.bg, color: integration.color }}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.2 }}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        style={{ width: '90%', maxWidth: 440, background: '#ffffff', borderRadius: 20, padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: integration.bg, color: integration.color }}>
+            {Icon && <Icon size={20} />}
+          </div>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>{integration.name}</div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{integration.description}</div>
+          </div>
+          <button onClick={onClose} style={{ marginLeft: 'auto', width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: '#f1f5f9', cursor: 'pointer', color: '#94a3b8' }}><X size={16} /></button>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6, display: 'block' }}>API Key / Webhook URL</label>
+          <input value={apiKey} onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }} placeholder="Paste your API key or webhook URL..."
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: `1px solid ${testResult === 'error' ? '#ef4444' : '#e2e8f0'}`, fontSize: 13, outline: 'none', color: '#0f172a', background: '#f8fafc', boxSizing: 'border-box' }}
+          />
+        </div>
+        <button onClick={testConnection} disabled={testing}
+          style={{ ...sBtn, cursor: testing ? 'not-allowed' : 'pointer', background: testResult === 'success' ? '#10b981' : testResult === 'error' ? '#ef4444' : '#0f172a' }}
         >
-          {integration.icon}
+          {testing && <motion.span style={{ display: 'inline-flex' }} animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><Loader2 size={16} /></motion.span>}
+          {testing ? 'Testing...' : testResult === 'success' ? 'Connected Successfully' : testResult === 'error' ? 'Connection Failed' : 'Test Connection'}
+        </button>
+        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <button onClick={onClose} style={{ ...aBtn, border: 'none', background: '#0f172a', color: '#fff' }}>Save</button>
+          <button onClick={() => { onDisconnect(); onClose(); }} style={{ ...aBtn, border: '1px solid #fecaca', background: '#fef2f2', color: '#ef4444' }}>Disconnect</button>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
-              {integration.name}
-            </h3>
-            {integration.popular && (
-              <span className="rounded-full px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wider"
-                style={{ background: 'rgba(124,58,237,0.10)', color: '#7c3aed' }}>
-                Popular
-              </span>
-            )}
-            {integration.comingSoon && (
-              <span className="rounded-full px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-wider"
-                style={{ background: 'rgba(245,158,11,0.10)', color: '#f59e0b' }}>
-                Coming Soon
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            {integration.description}
-          </p>
-          <div className="mt-1.5 flex items-center gap-3">
-            <StatusDot status={integration.status} />
-            {integration.lastSync && (
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                Sync: {integration.lastSync}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="shrink-0">
-          {integration.comingSoon ? (
-            <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(148,163,184,0.08)' }}>
-              <Clock size={14} style={{ color: 'var(--text-muted)' }} />
-            </div>
-          ) : integration.status === 'connected' ? (
-            <button
-              onClick={() => onToggle(integration.id)}
-              className="flex h-8 items-center gap-1.5 rounded-[10px] px-3 text-[11px] font-bold text-rose-600 transition-all hover:bg-rose-50"
-              style={{ background: 'rgba(225,29,72,0.06)' }}
-            >
-              <Unlink size={12} /> Disconnect
-            </button>
-          ) : (
-            <button
-              onClick={() => onToggle(integration.id)}
-              className="flex h-8 items-center gap-1.5 rounded-[10px] px-3 text-[11px] font-bold text-emerald-600 transition-all hover:bg-emerald-50"
-              style={{ background: 'rgba(16,185,129,0.08)' }}
-            >
-              <Link2 size={12} /> Connect
-            </button>
-          )}
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {expanded && integration.status === 'connected' && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mt-3 overflow-hidden"
-          >
-            <div className="rounded-[12px] p-3" style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(15,23,42,0.06)' }}>
-              <div className="flex items-center justify-between text-[11.5px]">
-                <span style={{ color: 'var(--text-muted)' }}>Connected</span>
-                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{integration.connectedAt}</span>
-              </div>
-              <div className="mt-1 flex items-center justify-between text-[11.5px]">
-                <span style={{ color: 'var(--text-muted)' }}>Last Sync</span>
-                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{integration.lastSync}</span>
-              </div>
-              <button
-                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-[10px] py-2 text-[11px] font-semibold transition-all hover:bg-white/80"
-                style={{ background: 'rgba(255,255,255,0.60)', color: 'var(--text-secondary)' }}
-              >
-                <Settings size={11} /> Configure
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-function ApiKeySection() {
-  const [keys, setKeys] = useState([
-    { id: '1', name: 'Production API Key', key: '619_live_8a7f3b2c9d1e4f5a6b7c8d9e0f1a2b3c', created: '15 Jan 2026', lastUsed: '2 mins ago', env: 'production' },
-    { id: '2', name: 'Development API Key', key: '619_test_3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d', created: '20 Mar 2026', lastUsed: '1 hr ago', env: 'development' },
-  ]);
-  const [visible, setVisible] = useState<Record<string, boolean>>({});
-
-  const copyKey = (key: string) => navigator.clipboard?.writeText(key);
-
-  return (
-    <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.55)', boxShadow: '0 2px 8px rgba(15,23,42,0.05)' }}>
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(124,58,237,0.08)' }}>
-          <Key size={14} style={{ color: '#7c3aed' }} />
-        </div>
-        <div>
-          <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>API Keys</h2>
-          <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Manage your API keys for programmatic access</p>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2.5">
-        {keys.map((k) => (
-          <div key={k.id} className="rounded-[14px] p-3.5 transition-all hover:shadow-sm"
-            style={{ background: 'rgba(248,250,252,0.85)', border: '1px solid rgba(15,23,42,0.06)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{k.name}</span>
-                <span className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase" style={{ background: k.env === 'production' ? 'rgba(16,185,129,0.10)' : 'rgba(245,158,11,0.10)', color: k.env === 'production' ? '#10b981' : '#f59e0b' }}>
-                  {k.env}
-                </span>
-              </div>
-              <div className="flex gap-1">
-                <button onClick={() => copyKey(k.key)} className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-all hover:bg-white/80" style={{ color: 'var(--text-muted)' }}>
-                  <Copy size={12} />
-                </button>
-                <button onClick={() => setVisible((v) => ({ ...v, [k.id]: !v[k.id] }))} className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-all hover:bg-white/80" style={{ color: 'var(--text-muted)' }}>
-                  {visible[k.id] ? <EyeOff size={12} /> : <Eye size={12} />}
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 rounded-[10px] px-3 py-2" style={{ background: 'rgba(15,23,42,0.03)' }}>
-              <code className="flex-1 text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>
-                {visible[k.id] ? k.key : `${k.key.slice(0, 12)}${'•'.repeat(20)}${k.key.slice(-4)}`}
-              </code>
-            </div>
-            <div className="mt-2 flex gap-4 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
-              <span>Created: {k.created}</span>
-              <span>Last used: {k.lastUsed}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <button className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-[12px] py-2.5 text-[12px] font-semibold transition-all hover:shadow-sm"
-        style={{ background: 'rgba(124,58,237,0.06)', color: '#7c3aed', border: '1px dashed rgba(124,58,237,0.20)' }}>
-        <Plus size={13} /> Generate New API Key
-      </button>
-    </div>
-  );
-}
-
-function WebhookSection() {
-  const [hooks] = useState([
-    { id: '1', name: 'Member Created', url: 'https://api.619fitness.com/webhooks/member-created', events: '2.3k', lastTriggered: '5 mins ago', status: 'active' as const },
-    { id: '2', name: 'Payment Received', url: 'https://api.619fitness.com/webhooks/payment', events: '1.1k', lastTriggered: '2 mins ago', status: 'active' as const },
-    { id: '3', name: 'Check-in Event', url: 'https://api.619fitness.com/webhooks/checkin', events: '8.7k', lastTriggered: 'Just now', status: 'active' as const },
-  ]);
-
-  return (
-    <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.55)', boxShadow: '0 2px 8px rgba(15,23,42,0.05)' }}>
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(16,185,129,0.08)' }}>
-          <Webhook size={14} style={{ color: '#10b981' }} />
-        </div>
-        <div>
-          <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>Webhooks</h2>
-          <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Real-time event notifications to your endpoints</p>
-        </div>
-      </div>
-      <div className="flex flex-col gap-2">
-        {hooks.map((h) => (
-          <div key={h.id} className="rounded-[14px] p-3.5 transition-all"
-            style={{ background: 'rgba(248,250,252,0.85)', border: '1px solid rgba(15,23,42,0.06)' }}>
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute h-full w-full rounded-full bg-emerald-500 opacity-30" style={{ animation: 'pulse-ring 2s ease infinite' }} />
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                </span>
-                <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{h.name}</span>
-              </div>
-              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{h.events} events</span>
-            </div>
-            <div className="rounded-[10px] px-3 py-2 text-[11px] font-mono" style={{ background: 'rgba(15,23,42,0.03)', color: 'var(--text-muted)' }}>
-              {h.url}
-            </div>
-            <div className="mt-1.5 text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
-              Last triggered: {h.lastTriggered}
-            </div>
-          </div>
-        ))}
-      </div>
+      </motion.div>
     </div>
   );
 }
 
 export default function IntegrationsPage() {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
-  const [connected, setConnected] = useState<Set<string>>(new Set());
+  const [connected, setConnected] = useState<Set<string>>(new Set(['razorpay', 'paytm', 'whatsapp', 'calendar']));
+  const [modalId, setModalId] = useState<string | null>(null);
 
   const toggleIntegration = (id: string) => {
     setConnected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
 
-  const filtered = useMemo(() => {
-    return integrations.filter((i) => {
+  const filtered = useMemo(() =>
+    INTEGRATIONS.filter((i) => {
       if (category !== 'all' && i.category !== category) return false;
       if (search && !i.name.toLowerCase().includes(search.toLowerCase()) && !i.description.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
-    });
-  }, [integrations, category, search]);
+    }), [category, search]);
 
-  const stats = useMemo(() => ({
-    total: integrations.length,
-    connected: connected.size,
-    errors: integrations.filter((i) => i.status === 'error').length,
-    pending: integrations.filter((i) => i.status === 'pending' || i.comingSoon).length,
-  }), [integrations, connected]);
+  const modalIntegration = modalId ? INTEGRATIONS.find((i) => i.id === modalId) ?? null : null;
 
-  return (<Guard role="admin"><div className="min-h-screen" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
-      <style>{`
-        @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 0.6; }
-          100% { transform: scale(2.5); opacity: 0; }
-        }
-      `}</style>
+  return (
+    <Guard role="admin">
+      <AppShell>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-      {/* ── Executive Header ── */}
-      <div className="border-b" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderColor: 'var(--border)' }}>
-        <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: 'rgba(124,58,237,0.10)' }}>
-                  <Zap size={16} style={{ color: '#7c3aed' }} />
-                </div>
-                <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>Integrations</h1>
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: 24, padding: '40px 36px', marginBottom: 32, position: 'relative', overflow: 'hidden' }}
+          >
+            <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: 'rgba(99,102,241,0.12)', filter: 'blur(60px)' }} />
+            <div style={{ position: 'absolute', bottom: -40, left: '30%', width: 160, height: 160, borderRadius: '50%', background: 'rgba(139,92,246,0.10)', filter: 'blur(50px)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 1 }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(99,102,241,0.3)' }}>
+                <Zap size={26} color="#fff" />
               </div>
-              <p className="mt-1.5 ml-0 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Connect your studio with the tools you use every day.</p>
-            </div>
-            <button className="flex items-center gap-2 rounded-[13px] px-4 py-2.5 text-[13px] font-[740] text-white transition-all hover:brightness-105 active:scale-95"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: '0 4px 16px rgba(124,58,237,0.28)' }}>
-              <ExternalLink size={14} /> Explore Marketplace
-            </button>
-          </div>
-
-          {/* Stats */}
-          <div className="mt-5 grid grid-cols-4 gap-3 sm:flex sm:flex-wrap">
-            {[
-              { label: 'Total', value: stats.total, color: '#7c3aed', icon: <Zap size={12} /> },
-              { label: 'Connected', value: stats.connected, color: '#10b981', icon: <CheckCircle2 size={12} /> },
-              { label: 'Errors', value: stats.errors, color: '#ef4444', icon: <AlertTriangle size={12} /> },
-              { label: 'Pending', value: stats.pending, color: '#f59e0b', icon: <Clock size={12} /> },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center gap-2 rounded-[12px] px-3.5 py-2.5"
-                style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.07)' }}>
-                <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: `${s.color}12`, color: s.color }}>
-                  {s.icon}
-                </div>
-                <div>
-                  <p className="text-[17px] font-[800] leading-none" style={{ color: 'rgb(15,23,42)' }}>{s.value}</p>
-                  <p className="text-[10px] font-medium" style={{ color: 'rgb(148,163,184)' }}>{s.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Main Content ── */}
-      <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
-        <div className="flex flex-col gap-6 lg:flex-row">
-          {/* ── Sidebar ── */}
-          <div className="lg:w-[200px] shrink-0">
-            <div className="rounded-[18px] p-2" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.50)' }}>
-              <div className="relative mb-2 flex items-center gap-2 rounded-[12px] px-3 py-2" style={{ background: 'rgba(248,250,252,0.90)' }}>
-                <Search size={12} style={{ color: 'var(--text-muted)' }} />
-                <input value={search} onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search..." className="flex-1 bg-transparent text-[12px] outline-none" style={{ color: 'var(--text-primary)' }} />
-                {search && (
-                  <button onClick={() => setSearch('')}><X size={11} style={{ color: 'var(--text-muted)' }} /></button>
-                )}
-              </div>
-              <div className="flex flex-col gap-0.5">
-                {CATEGORIES.map((cat) => (
-                  <button key={cat.id} onClick={() => setCategory(cat.id)}
-                    className="flex items-center gap-2.5 rounded-[11px] px-3 py-2.5 text-[12px] font-semibold transition-all"
-                    style={{
-                      background: category === cat.id ? 'var(--bg-card)' : 'transparent',
-                      color: category === cat.id ? '#7c3aed' : 'var(--text-muted)',
-                      boxShadow: category === cat.id ? '0 1px 4px rgba(15,23,42,0.06)' : 'none',
-                    }}>
-                    {cat.icon}
-                    {cat.label}
-                  </button>
-                ))}
+              <div>
+                <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.03em' }}>Integrations</h1>
+                <p style={{ fontSize: 14, color: '#94a3b8', margin: '4px 0 0' }}>Connect your studio with powerful tools</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* ── Grid ── */}
-          <div className="flex-1">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <AnimatePresence mode="popLayout">
-                {filtered.map((integration) => (
-                  <IntegrationCard
-                    key={integration.id}
-                    integration={{ ...integration, status: connected.has(integration.id) ? 'connected' : integration.status === 'error' ? 'error' : 'pending' }}
-                    onToggle={toggleIntegration}
-                  />
-                ))}
-              </AnimatePresence>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} style={{ marginBottom: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#ffffff', borderRadius: 14, padding: '4px 16px', border: '1px solid #f1f5f9', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+              <Search size={16} color="#94a3b8" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search integrations..."
+                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, padding: '12px 0', color: '#0f172a', background: 'transparent' }}
+              />
+              {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}><X size={14} /></button>}
             </div>
-            {integrations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[18px]" style={{ background: 'rgba(148,163,184,0.08)' }}>
-                  <Cloud size={24} style={{ color: 'var(--text-muted)' }} />
-                </div>
-                <p className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>Integration data not yet available from API</p>
-                <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>Connect to the backend to see available integrations.</p>
-              </div>
-            ) : filtered.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-[18px]" style={{ background: 'rgba(148,163,184,0.08)' }}>
-                  <Search size={24} style={{ color: 'var(--text-muted)' }} />
-                </div>
-                <p className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>No integrations found</p>
-                <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>Try a different category or search term.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── API & Webhooks Section ── */}
-        <div className="mt-8 grid gap-5 lg:grid-cols-2">
-          <ApiKeySection />
-          <WebhookSection />
-        </div>
-
-        {/* ── AI Recommendations ── */}
-        {stats.connected < stats.total && (
-          <div className="mt-6 rounded-[20px] p-5" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.06), rgba(99,102,241,0.04))', border: '1px solid rgba(124,58,237,0.12)' }}>
-            <div className="flex items-center gap-2.5 mb-3">
-              <Brain size={16} style={{ color: '#7c3aed' }} />
-              <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>AI Recommendations</h2>
-            </div>
-            <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-              Connect {integrations.filter((i) => i.popular && !connected.has(i.id)).map((i) => i.name).join(', ')} to unlock automated workflows, smart insights, and seamless member experiences.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {integrations.filter((i) => i.popular && !connected.has(i.id)).map((i) => (
-                <button key={i.id} onClick={() => toggleIntegration(i.id)}
-                  className="inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[11px] font-semibold transition-all hover:brightness-95"
-                  style={{ background: i.bg, color: i.color, border: `1px solid ${i.color}20` }}>
-                  <Plus size={11} /> {i.name}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {CATEGORIES.map((cat) => (
+                <button key={cat.id} onClick={() => setCategory(cat.id)}
+                  style={{ padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: category === cat.id ? '#0f172a' : '#f1f5f9', color: category === cat.id ? '#ffffff' : '#64748b' }}
+                >
+                  {cat.label}
                 </button>
               ))}
             </div>
+          </motion.div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            <AnimatePresence mode="popLayout">
+              {filtered.map((integration) => {
+                const isConnected = connected.has(integration.id);
+                const status = isConnected ? 'connected' : integration.status;
+                const sc: Record<Status, string> = { connected: '#10b981', error: '#ef4444', pending: '#f59e0b', unavailable: '#94a3b8' };
+                const sl: Record<Status, string> = { connected: 'Connected', error: 'Error', pending: 'Pending', unavailable: 'Unavailable' };
+                const Icon = iconMap[integration.icon];
+                const bPrize = { flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#0f172a', color: '#fff' } as const;
+
+                return (
+                  <motion.div key={integration.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }}
+                    style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.8)', borderRadius: 20, padding: 20, boxShadow: '0 2px 8px rgba(15,23,42,0.05)' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: integration.bg, color: integration.color }}>
+                        {Icon && <Icon size={20} />}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{integration.name}</span>
+                          {integration.comingSoon && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(245,158,11,0.10)', color: '#f59e0b' }}>Coming Soon</span>}
+                        </div>
+                        <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0', lineHeight: 1.4 }}>{integration.description}</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: sc[status] }}>
+                        {isConnected ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: sc[status], display: 'inline-block' }} />}
+                        {sl[status]}
+                      </span>
+                      {isConnected && integration.connectedAt && <span style={{ fontSize: 10, color: '#94a3b8' }}>Connected {integration.connectedAt}</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {integration.comingSoon ? (
+                        <div style={{ flex: 1, padding: '8px 0', borderRadius: 12, background: '#f1f5f9', color: '#94a3b8', fontSize: 12, fontWeight: 600, textAlign: 'center' }}>
+                          <Clock size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} /> Coming Soon
+                        </div>
+                      ) : isConnected ? (
+                        <>
+                          <button onClick={() => setModalId(integration.id)} style={bPrize}><Settings size={13} /> Configure</button>
+                          <button onClick={() => toggleIntegration(integration.id)} style={{ padding: '8px 14px', borderRadius: 12, background: '#fef2f2', color: '#ef4444', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}><Unlink size={13} /></button>
+                        </>
+                      ) : (
+                        <button onClick={() => setModalId(integration.id)} style={bPrize}><Link2 size={13} /> Connect</button>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
-        )}
-      </div>
-    </div></Guard>
+
+          {filtered.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: 20, marginTop: 16, border: '1px solid #f1f5f9' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Search size={24} color="#94a3b8" />
+              </div>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>No integrations found</p>
+              <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>Try a different category or search term.</p>
+            </div>
+          )}
+
+          {modalIntegration && (
+            <ConnectModal
+              integration={modalIntegration}
+              onClose={() => setModalId(null)}
+              onDisconnect={() => toggleIntegration(modalIntegration.id)}
+            />
+          )}
+        </div>
+      </AppShell>
+    </Guard>
   );
 }

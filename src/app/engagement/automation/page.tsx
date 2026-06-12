@@ -1,12 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bot, Plus, Loader2, Power, PowerOff } from 'lucide-react';
+import { Bot, Plus, Loader2, Power, PowerOff, Edit2, Trash2, Zap, MessageSquare, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
-import { Button } from '@/components/ui';
+import { useToast } from '@/lib/toast';
 
 const TRIGGER_EVENTS = [
   { value: 'member_created', label: 'Member Created', channel: 'whatsapp' },
@@ -23,13 +23,18 @@ const TRIGGER_EVENTS = [
 ];
 
 export default function AutomationPage() {
+  return <Guard role="admin"><AutoContent/></Guard>;
+}
+function AutoContent() {
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
   const [name, setName] = useState('');
   const [triggerEvent, setTriggerEvent] = useState('member_created');
   const [channel, setChannel] = useState('whatsapp');
   const [template, setTemplate] = useState('');
   const [delayMinutes, setDelayMinutes] = useState('0');
   const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
 
   const rules = useAsync(() => api.automation.rules.list().then(r => r.data as any[]), []);
   const logs = useAsync(() => api.automation.communicationLogs.list({ limit: 20 }).then(r => r.data as any[]), []);
@@ -39,166 +44,246 @@ export default function AutomationPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.automation.rules.create({
-        name, trigger_event: triggerEvent, channel,
-        template, delay_minutes: parseInt(delayMinutes),
-      });
-      setName(''); setTemplate(''); setDelayMinutes('0');
+      if (editing) {
+        await api.automation.rules.update(editing.id, {
+          name, trigger_event: triggerEvent, channel,
+          template, delay_minutes: parseInt(delayMinutes),
+        });
+        toast.success('Rule updated');
+      } else {
+        await api.automation.rules.create({
+          name, trigger_event: triggerEvent, channel,
+          template, delay_minutes: parseInt(delayMinutes),
+        });
+        toast.success('Rule created');
+      }
+      setName(''); setTemplate(''); setDelayMinutes('0'); setEditing(null);
       setShowForm(false); rules.refetch();
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save rule');
     } finally { setSaving(false); }
   }
 
   async function toggleRule(rule: any) {
-    await api.automation.rules.update(rule.id, { is_active: !rule.is_active });
-    rules.refetch();
+    try {
+      await api.automation.rules.update(rule.id, { is_active: !rule.is_active });
+      rules.refetch();
+    } catch { toast.error('Failed to toggle rule'); }
   }
 
+  async function deleteRule(id: string) {
+    try {
+      await api.automation.rules.delete(id);
+      toast.success('Rule deleted');
+      rules.refetch();
+    } catch { toast.error('Failed to delete rule'); }
+  }
+
+  function startEdit(rule: any) {
+    setName(rule.name);
+    setTriggerEvent(rule.trigger_event);
+    setChannel(rule.channel);
+    setTemplate(rule.template || '');
+    setDelayMinutes(String(rule.delay_minutes || 0));
+    setEditing(rule);
+    setShowForm(true);
+  }
+
+  function cancelForm() {
+    setShowForm(false); setEditing(null);
+    setName(''); setTemplate(''); setDelayMinutes('0'); setTriggerEvent('member_created'); setChannel('whatsapp');
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+  };
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] } }
+  };
+
   return (
-    <Guard role="admin">
-      <AppShell>
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-            style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #3730a3 50%, #6366f1 100%)', boxShadow: '0 20px 60px rgba(55,48,163,0.3)' }}>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                  <Bot size={16} style={{ color: '#a5b4fc' }} />
-                </div>
-                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#a5b4fc' }}>Communication</span>
+    <AppShell>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'36px 40px', marginBottom:24, background:'linear-gradient(135deg, #0f172a, #1e293b)', boxShadow:'0 20px 60px rgba(15,23,42,0.3)' }}>
+          <div style={{ position:'relative', zIndex:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+              <div style={{ width:40, height:40, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(168,85,247,0.2)' }}>
+                <Bot size={20} color="#A855F7" />
               </div>
-              <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#ffffff' }}>
-                Automation Rules
-              </h1>
-              <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                Automate WhatsApp, SMS, and email messages for welcome, follow-up, renewal, birthday, and promotions.
-              </p>
+              <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#A855F7' }}>Automation</span>
+            </div>
+            <h1 style={{ fontSize:32, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#ffffff', margin:0 }}>Automation Rules</h1>
+            <p style={{ marginTop:8, maxWidth:560, fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.6)' }}>Automate WhatsApp, SMS, and email messages for welcome, follow-up, renewal, birthday, and promotions.</p>
+          </div>
+        </motion.div>
+
+        {/* Stats */}
+        {logStats.data && (
+          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+            style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, marginBottom:24 }}>
+            {[
+              { label:'Total (30d)', value: (logStats.data as any).total || 0, color: '#A855F7' },
+              { label:'Sent', value: (logStats.data as any).sent || 0, color: '#3b82f6' },
+              { label:'Delivered', value: (logStats.data as any).delivered || 0, color: '#22c55e' },
+              { label:'Read', value: (logStats.data as any).read || 0, color: '#8b5cf6' },
+              { label:'Failed', value: (logStats.data as any).failed || 0, color: '#ef4444' },
+            ].map((s, i) => (
+              <motion.div key={s.label} variants={itemVariants}
+                style={{ background:'rgba(255,255,255,0.95)', backdropFilter:'blur(12px)', borderRadius:20, padding:'20px 24px', border:'1px solid rgba(255,255,255,0.9)', boxShadow:'0 2px 20px rgba(15,23,42,0.07)' }}>
+                <div style={{ fontSize:28, fontWeight:800, color:s.color }}>{s.value}</div>
+                <div style={{ fontSize:10, fontWeight:600, marginTop:4, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.04em' }}>{s.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
+          <button onClick={()=>{cancelForm(); setShowForm(!showForm);}}
+            style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'10px 18px', borderRadius:12, background:'linear-gradient(135deg, #A855F7, #7c3aed)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(168,85,247,0.3)' }}>
+            <Plus size={14}/> {showForm?'Cancel':'New Rule'}
+          </button>
+        </div>
+
+        {/* Create / Edit Form */}
+        {showForm && (
+          <motion.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
+            style={{ background:'rgba(255,255,255,0.95)', backdropFilter:'blur(12px)', borderRadius:20, border:'1px solid rgba(255,255,255,0.9)', boxShadow:'0 8px 30px rgba(15,23,42,0.1)', padding:24, marginBottom:20 }}>
+            <h3 style={{ margin:'0 0 18px', fontSize:15, fontWeight:700, color:'#0f172a', display:'flex', gap:8, alignItems:'center' }}>
+              <Bot size={16} color="#A855F7"/> {editing?'Edit Rule':'Create Rule'}
+            </h3>
+            <form onSubmit={handleCreate} style={{ display:'grid', gap:14 }}>
+              <input required placeholder="Rule name (e.g., Welcome Message)" value={name} onChange={e => setName(e.target.value)}
+                style={{ width:'100%', border:'1px solid rgba(15,23,42,0.08)', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:500, color:'#0f172a', background:'rgba(248,250,252,0.9)', outline:'none', fontFamily:'inherit' }} />
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                <select value={triggerEvent} onChange={e => {
+                  setTriggerEvent(e.target.value);
+                  const ev = TRIGGER_EVENTS.find(t => t.value === e.target.value);
+                  if (ev) setChannel(ev.channel);
+                }}
+                  style={{ width:'100%', border:'1px solid rgba(15,23,42,0.08)', borderRadius:10, padding:'10px 12px', fontSize:13, fontWeight:500, color:'#0f172a', background:'rgba(248,250,252,0.9)', outline:'none', fontFamily:'inherit' }}>
+                  {TRIGGER_EVENTS.map(ev => <option key={ev.value} value={ev.value}>{ev.label}</option>)}
+                </select>
+                <select value={channel} onChange={e => setChannel(e.target.value)}
+                  style={{ width:'100%', border:'1px solid rgba(15,23,42,0.08)', borderRadius:10, padding:'10px 12px', fontSize:13, fontWeight:500, color:'#0f172a', background:'rgba(248,250,252,0.9)', outline:'none', fontFamily:'inherit' }}>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="sms">SMS</option>
+                  <option value="email">Email</option>
+                </select>
+              </div>
+              <textarea required placeholder="Message template (use {{name}}, {{amount}}, etc.)" rows={3} value={template}
+                onChange={e => setTemplate(e.target.value)}
+                style={{ width:'100%', border:'1px solid rgba(15,23,42,0.08)', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:500, color:'#0f172a', background:'rgba(248,250,252,0.9)', outline:'none', resize:'vertical', fontFamily:'inherit', lineHeight:1.6 }} />
+              <input type="number" placeholder="Delay (minutes, 0 = instant)" value={delayMinutes} onChange={e => setDelayMinutes(e.target.value)}
+                style={{ width:'100%', border:'1px solid rgba(15,23,42,0.08)', borderRadius:10, padding:'10px 14px', fontSize:13, fontWeight:500, color:'#0f172a', background:'rgba(248,250,252,0.9)', outline:'none', fontFamily:'inherit' }} />
+              <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+                <button type="button" onClick={cancelForm}
+                  style={{ fontSize:12, fontWeight:700, padding:'8px 16px', borderRadius:10, border:'1px solid rgba(15,23,42,0.1)', background:'transparent', color:'#64748b', cursor:'pointer' }}>Cancel</button>
+                <button type="submit" disabled={saving}
+                  style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:12, background:'linear-gradient(135deg, #A855F7, #7c3aed)', color:'#fff', border:'none', cursor:saving?'not-allowed':'pointer', opacity:saving?0.7:1, boxShadow:'0 4px 14px rgba(168,85,247,0.3)' }}>
+                  {saving ? <><Loader2 size={13}/> Saving…</> : <><Plus size={13}/> {editing?'Update Rule':'Create Rule'}</>}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+          {/* Active Rules */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            style={{ background:'rgba(255,255,255,0.95)', backdropFilter:'blur(12px)', borderRadius:20, border:'1px solid rgba(255,255,255,0.9)', boxShadow:'0 2px 20px rgba(15,23,42,0.07)', padding:20 }}>
+            <h2 style={{ fontSize:16, fontWeight:700, color:'#0f172a', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
+              <Zap size={16} color="#A855F7"/> Active Rules
+            </h2>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {((rules.data as any[]) || []).map((r: any) => (
+                <motion.div key={r.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                  style={{ borderRadius:14, padding:'14px 16px', background:r.is_active?'rgba(255,255,255,0.6)':'rgba(255,255,255,0.3)', border:'1px solid rgba(15,23,42,0.06)', opacity:r.is_active?1:0.5 }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ margin:0, fontSize:14, fontWeight:700, color:'#0f172a' }}>{r.name}</p>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:5, flexWrap:'wrap' }}>
+                        <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:5, background:'rgba(168,85,247,0.1)', color:'#A855F7', textTransform:'capitalize' }}>
+                          {r.trigger_event?.replace(/_/g, ' ')}
+                        </span>
+                        <span style={{ fontSize:10, color:'#94a3b8' }}>via {r.channel}</span>
+                        {r.delay_minutes > 0 && <span style={{ fontSize:10, color:'#94a3b8' }}>· {r.delay_minutes}m delay</span>}
+                      </div>
+                      {r.template && (
+                        <p style={{ margin:'6px 0 0', fontSize:11, color:'#94a3b8', lineHeight:1.4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:300 }}>{r.template}</p>
+                      )}
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+                      <button onClick={() => startEdit(r)} title="Edit rule"
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'1px solid rgba(15,23,42,0.08)', background:'transparent', color:'#64748b', cursor:'pointer' }}>
+                        <Edit2 size={12}/>
+                      </button>
+                      <button onClick={() => deleteRule(r.id)} title="Delete rule"
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'none', background:'rgba(239,68,68,0.08)', color:'#ef4444', cursor:'pointer' }}>
+                        <Trash2 size={12}/>
+                      </button>
+                      <button onClick={() => toggleRule(r)} title={r.is_active?'Disable':'Enable'}
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'none',
+                          background:r.is_active?'rgba(34,197,94,0.1)':'rgba(100,116,139,0.1)', cursor:'pointer' }}>
+                        {r.is_active ? <Power size={13} color="#22c55e"/> : <PowerOff size={13} color="#94a3b8"/>}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              {(!rules.data || (rules.data as any[]).length === 0) && (
+                <div style={{ padding:'36px 16px', textAlign:'center' }}>
+                  <Bot size={28} color="#cbd5e1" style={{ marginBottom:10 }}/>
+                  <p style={{ fontSize:13, fontWeight:600, color:'#94a3b8', margin:0 }}>No automation rules yet.</p>
+                  <p style={{ fontSize:11, color:'#cbd5e1', marginTop:4 }}>Click "New Rule" to create your first one.</p>
+                </div>
+              )}
             </div>
           </motion.div>
 
-          {/* Stats */}
-          {logStats.data && (
-            <div className="grid grid-cols-5 gap-3 mb-6">
-              {[
-                { label: 'Total (30d)', value: (logStats.data as any).total, color: '#6366f1' },
-                { label: 'Sent', value: (logStats.data as any).sent, color: '#3b82f6' },
-                { label: 'Delivered', value: (logStats.data as any).delivered, color: '#10b981' },
-                { label: 'Read', value: (logStats.data as any).read, color: '#8b5cf6' },
-                { label: 'Failed', value: (logStats.data as any).failed, color: '#ef4444' },
-              ].map((s, i) => (
-                <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                  className="rounded-[14px] p-4 text-center" style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.9)' }}>
-                  <p className="text-[20px] font-[800]" style={{ color: s.color }}>{s.value}</p>
-                  <p className="text-[10px] font-medium mt-1" style={{ color: 'rgb(148,163,184)' }}>{s.label}</p>
-                </motion.div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex justify-end mb-4">
-            <Button onClick={() => setShowForm(!showForm)} className="!rounded-[14px] !font-[700]"
-              style={{ background: 'linear-gradient(135deg, #3730a3, #6366f1)', color: '#fff' }}>
-              <Plus size={16} /> {showForm ? 'Cancel' : 'New Rule'}
-            </Button>
-          </div>
-
-          {showForm && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="rounded-[20px] p-6 mb-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
-              <form onSubmit={handleCreate} className="space-y-3">
-                <input required placeholder="Rule name (e.g., Welcome Message)" value={name} onChange={e => setName(e.target.value)}
-                  className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
-                <div className="grid grid-cols-2 gap-3">
-                  <select value={triggerEvent} onChange={e => {
-                    setTriggerEvent(e.target.value);
-                    const ev = TRIGGER_EVENTS.find(t => t.value === e.target.value);
-                    if (ev) setChannel(ev.channel);
-                  }} className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }}>
-                    {TRIGGER_EVENTS.map(ev => <option key={ev.value} value={ev.value}>{ev.label}</option>)}
-                  </select>
-                  <select value={channel} onChange={e => setChannel(e.target.value)}
-                    className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }}>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="sms">SMS</option>
-                    <option value="email">Email</option>
-                  </select>
+          {/* Recent Communication Logs */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.1 }}
+            style={{ background:'rgba(255,255,255,0.95)', backdropFilter:'blur(12px)', borderRadius:20, border:'1px solid rgba(255,255,255,0.9)', boxShadow:'0 2px 20px rgba(15,23,42,0.07)', padding:20 }}>
+            <h2 style={{ fontSize:16, fontWeight:700, color:'#0f172a', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
+              <MessageSquare size={16} color="#A855F7"/> Recent Logs
+            </h2>
+            <div style={{ display:'flex', flexDirection:'column', gap:6, maxHeight:480, overflowY:'auto' }}>
+              {((logs.data || []) as any[]).map((l: any) => {
+                const logStatusColor = l.status === 'delivered' || l.status === 'read' ? '#22c55e' :
+                  l.status === 'failed' ? '#ef4444' : '#94a3b8';
+                const logStatusBg = l.status === 'delivered' || l.status === 'read' ? 'rgba(34,197,94,0.1)' :
+                  l.status === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(148,163,184,0.1)';
+                return (
+                  <div key={l.id}
+                    style={{ borderRadius:10, padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(15,23,42,0.02)', border:'1px solid rgba(15,23,42,0.04)' }}>
+                    <div style={{ minWidth:0, flex:1 }}>
+                      <p style={{ margin:0, fontSize:12, fontWeight:700, color:'#0f172a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {l.recipient_name || l.recipient_id}
+                      </p>
+                      <p style={{ margin:'2px 0 0', fontSize:10, color:'#94a3b8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {l.message?.slice(0, 80)}
+                      </p>
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, marginLeft:8, flexShrink:0 }}>
+                      <span style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', padding:'2px 6px', borderRadius:4, background:logStatusBg, color:logStatusColor }}>{l.status}</span>
+                      <span style={{ fontSize:9, fontWeight:600, textTransform:'uppercase', color:'#94a3b8' }}>{l.channel}</span>
+                      {l.created_at&&<span style={{ fontSize:9, color:'#cbd5e1', display:'flex', alignItems:'center', gap:2 }}><Clock size={8}/>{new Date(l.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+              {(!logs.data || (logs.data as any[]).length === 0) && (
+                <div style={{ padding:'36px 16px', textAlign:'center' }}>
+                  <MessageSquare size={28} color="#cbd5e1" style={{ marginBottom:10 }}/>
+                  <p style={{ fontSize:13, fontWeight:600, color:'#94a3b8', margin:0 }}>No communication logs yet.</p>
                 </div>
-                <textarea required placeholder="Message template (use {{name}}, {{amount}}, etc.)" rows={3} value={template}
-                  onChange={e => setTemplate(e.target.value)}
-                  className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
-                <input type="number" placeholder="Delay (minutes, 0 = instant)" value={delayMinutes} onChange={e => setDelayMinutes(e.target.value)}
-                  className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
-                <Button type="submit" disabled={saving} className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                  style={{ background: 'linear-gradient(135deg, #3730a3, #6366f1)', color: '#fff' }}>
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Create Rule
-                </Button>
-              </form>
-            </motion.div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
-              <h2 className="text-[18px] font-[760] mb-4" style={{ color: 'rgb(15,23,42)' }}>Active Rules</h2>
-              <div className="space-y-3">
-                {(rules.data as any[] || []).map((r: any) => (
-                  <div key={r.id} className="rounded-[14px] p-4 flex items-center justify-between"
-                    style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.04)', opacity: r.is_active ? 1 : 0.5 }}>
-                    <div>
-                      <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{r.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-[4px] capitalize"
-                          style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}>{r.trigger_event?.replace(/_/g, ' ')}</span>
-                        <span className="text-[10px]" style={{ color: 'rgb(148,163,184)' }}>via {r.channel}</span>
-                        {r.delay_minutes > 0 && <span className="text-[10px]" style={{ color: 'rgb(148,163,184)' }}>· {r.delay_minutes}m delay</span>}
-                      </div>
-                    </div>
-                    <button onClick={() => toggleRule(r)} className="p-2 rounded-[8px] transition-colors"
-                      style={{ background: r.is_active ? 'rgba(16,185,129,0.1)' : 'rgba(100,116,139,0.1)' }}>
-                      {r.is_active ? <Power size={14} style={{ color: '#10b981' }} /> : <PowerOff size={14} style={{ color: 'rgb(148,163,184)' }} />}
-                    </button>
-                  </div>
-                ))}
-                {(!rules.data || (rules.data as any[]).length === 0) && (
-                  <p className="text-center py-6 text-sm" style={{ color: 'rgb(148,163,184)' }}>No automation rules yet.</p>
-                )}
-              </div>
+              )}
             </div>
-
-            <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
-              <h2 className="text-[18px] font-[760] mb-4" style={{ color: 'rgb(15,23,42)' }}>Recent Communication Logs</h2>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {((logs.data || []) as any[]).map((l: any) => (
-                  <div key={l.id} className="rounded-[10px] p-3 flex items-center justify-between"
-                    style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.04)' }}>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-semibold truncate" style={{ color: 'rgb(15,23,42)' }}>{l.recipient_name || l.recipient_id}</p>
-                      <p className="text-[10px] truncate" style={{ color: 'rgb(148,163,184)' }}>{l.message?.slice(0, 60)}</p>
-                    </div>
-                    <div className="flex items-center gap-2 ml-2 shrink-0">
-                      <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded-[4px]"
-                        style={{
-                          background: l.status === 'delivered' || l.status === 'read' ? 'rgba(16,185,129,0.1)' :
-                            l.status === 'failed' ? 'rgba(239,68,68,0.1)' : 'rgba(148,163,184,0.1)',
-                          color: l.status === 'delivered' || l.status === 'read' ? '#10b981' :
-                            l.status === 'failed' ? '#ef4444' : 'rgb(148,163,184)',
-                        }}>{l.status}</span>
-                      <span className="text-[9px] font-medium uppercase" style={{ color: 'rgb(148,163,184)' }}>{l.channel}</span>
-                    </div>
-                  </div>
-                ))}
-                {(!logs.data || (logs.data as any[]).length === 0) && (
-                  <p className="text-center py-6 text-sm" style={{ color: 'rgb(148,163,184)' }}>No communication logs yet.</p>
-                )}
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </div>
-      </AppShell>
-    </Guard>
+      </div>
+    </AppShell>
   );
 }

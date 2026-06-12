@@ -278,17 +278,9 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                         <p className="text-[10px] text-[var(--text-muted)] capitalize">{user?.email || '—'}</p>
                       </div>
                       <div className="py-1">
-                        <Link href="/settings/profile" onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <User size={14} strokeWidth={1.5} /> My Profile
-                        </Link>
                         <Link href="/settings" onClick={() => setProfileOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                           <Settings size={14} strokeWidth={1.5} /> Account Settings
-                        </Link>
-                        <Link href="/settings/staff" onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <ShieldCheck size={14} strokeWidth={1.5} /> Manage Users
                         </Link>
                         <Link href="/help" onClick={() => setProfileOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">

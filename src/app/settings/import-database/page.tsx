@@ -1,11 +1,13 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
-import { DatabaseBackup, Download, FileSpreadsheet, UploadCloud } from 'lucide-react';
+import { DatabaseBackup, Download, FileSpreadsheet, UploadCloud, X } from 'lucide-react';
+
+const sz = (b: number) => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
 
 export default function ImportDatabasePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -16,10 +18,7 @@ export default function ImportDatabasePage() {
   const handleImport = async () => {
     setError('');
     setSuccess('');
-    if (!file) {
-      setError('Please select an Excel file first.');
-      return;
-    }
+    if (!file) { setError('Please select a file first.'); return; }
     const lower = file.name.toLowerCase();
     if (!(lower.endsWith('.xlsx') || lower.endsWith('.xls') || lower.endsWith('.csv'))) {
       setError('Only .xlsx, .xls, or .csv files are allowed.');
@@ -30,8 +29,8 @@ export default function ImportDatabasePage() {
       const res: any = await api.admin.importDatabase(file);
       setSuccess(res?.message || 'Database import completed successfully.');
       setFile(null);
-      const input = document.getElementById('db-import-file') as HTMLInputElement | null;
-      if (input) input.value = '';
+      const inp = document.getElementById('dbf') as HTMLInputElement | null;
+      if (inp) inp.value = '';
     } catch (err: any) {
       setError(err?.message || 'Failed to import database file.');
     } finally {
@@ -39,60 +38,187 @@ export default function ImportDatabasePage() {
     }
   };
 
+  const downloadSampleTemplate = useCallback(() => {
+    const headers = ['name', 'email', 'mobile', 'gender', 'dob', 'address', 'weight', 'notes'];
+    const rows = [
+      ['John Doe', 'john@example.com', '9876543210', 'Male', '1995-06-15', '123 Main St, City', '75', 'Regular member'],
+      ['Jane Smith', 'jane@example.com', '9876543211', 'Female', '1998-12-20', '456 Oak Ave, Town', '62', 'New joinee'],
+    ];
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'import-database-template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (f) setFile(f);
+  }, []);
+
+  const clearFile = () => {
+    setFile(null);
+    const inp = document.getElementById('dbf') as HTMLInputElement | null;
+    if (inp) inp.value = '';
+  };
+
+  const [dragOver, setDragOver] = useState(false);
+
   return (
     <Guard role="admin">
       <AppShell>
-        <div className="mx-auto max-w-5xl space-y-6">
-          <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)]">
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[var(--brand-soft)] text-[var(--brand)]">
-                <DatabaseBackup size={26} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-[var(--text-primary)]">Import Database</h1>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">Upload an external Excel sheet and import data into the web app database.</p>
-              </div>
+        <div style={{ maxWidth: 1024, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            style={{
+              background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+              borderRadius: 24, padding: '28px 32px',
+              display: 'flex', alignItems: 'center', gap: 20,
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <div style={{
+              width: 56, height: 56, borderRadius: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(129,140,248,0.15)',
+            }}>
+              <DatabaseBackup size={26} color="#818cf8" />
             </div>
-          </div>
+            <div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', margin: 0 }}>Import Database</h1>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 4, margin: 0 }}>Bulk import client &amp; member data from Excel or CSV</p>
+            </div>
+          </motion.div>
 
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)]">
-              <label htmlFor="db-import-file" className="mb-3 block text-sm font-semibold text-[var(--text-secondary)]">Choose Excel or CSV file</label>
-              <label htmlFor="db-import-file" className="flex cursor-pointer flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-[var(--border)] bg-[var(--bg-subtle)] px-6 py-10 text-center transition hover:border-[var(--brand)] hover:bg-white">
-                <UploadCloud size={32} className="text-[var(--brand)]" />
-                <span className="mt-4 text-base font-semibold text-[var(--text-primary)]">Click to select a file</span>
-                <span className="mt-1 text-sm text-[var(--text-muted)]">Supported formats: .xlsx, .xls, .csv</span>
-                {file && <span className="mt-4 rounded-full bg-[var(--brand-soft)] px-4 py-2 text-sm font-medium text-[var(--brand)]">{file.name}</span>}
-              </label>
-              <input id="db-import-file" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.9fr', gap: 24, alignItems: 'start' }}>
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+              style={{
+                borderRadius: 24, padding: 24,
+                background: 'rgba(255,255,255,0.03)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => { handleDrop(e); setDragOver(false); }}
+                onClick={() => document.getElementById('dbf')?.click()}
+                style={{
+                  borderRadius: 20, padding: '40px 24px', textAlign: 'center',
+                  border: `2px dashed ${dragOver ? 'rgba(129,140,248,0.6)' : 'rgba(255,255,255,0.12)'}`,
+                  background: dragOver ? 'rgba(129,140,248,0.06)' : 'rgba(255,255,255,0.02)',
+                  cursor: 'pointer', transition: 'all 0.2s ease',
+                }}
+              >
+                <UploadCloud size={34} color="#818cf8" />
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#e2e8f0', margin: '12px 0 2px' }}>Click or drag file here</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>.xlsx &middot; .xls &middot; .csv</p>
+              </div>
+              <input id="dbf" type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={(e) => setFile(e.target.files?.[0] || null)} />
 
-              {error && <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</div>}
-              {success && <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{success}</div>}
+              {file && (
+                <div style={{
+                  marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  borderRadius: 16, padding: '12px 16px',
+                  background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.18)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <FileSpreadsheet size={18} color="#818cf8" />
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', margin: 0 }}>{file.name}</p>
+                      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>{sz(file.size)}</p>
+                    </div>
+                  </div>
+                  <button onClick={clearFile}
+                    style={{
+                      background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 10,
+                      padding: 6, cursor: 'pointer', display: 'flex', lineHeight: 0,
+                    }}>
+                    <X size={14} color="#94a3b8" />
+                  </button>
+                </div>
+              )}
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button type="button" onClick={handleImport} disabled={loading} className="inline-flex items-center justify-center rounded-2xl bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-brand)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60">
+              {error && (
+                <div style={{
+                  marginTop: 16, borderRadius: 14, padding: '12px 16px',
+                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+                  fontSize: 13, fontWeight: 500, color: '#fca5a5',
+                }}>{error}</div>
+              )}
+              {success && (
+                <div style={{
+                  marginTop: 16, borderRadius: 14, padding: '12px 16px',
+                  background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
+                  fontSize: 13, fontWeight: 500, color: '#86efac',
+                }}>{success}</div>
+              )}
+
+              <div style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                <button onClick={handleImport} disabled={loading}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    borderRadius: 16, padding: '12px 24px',
+                    background: loading ? 'rgba(99,102,241,0.5)' : '#6366f1',
+                    border: 'none', fontSize: 13, fontWeight: 600, color: '#fff',
+                    cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                  }}>
                   {loading ? 'Importing...' : 'Import Database'}
                 </button>
-                <a href="/templates/import-database-template.csv" download className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-subtle)]">
-                  <Download size={16} />
-                  Download Template
-                </a>
+                <button onClick={downloadSampleTemplate}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    borderRadius: 16, padding: '12px 24px',
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                    fontSize: 13, fontWeight: 600, color: '#e2e8f0', cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}>
+                  <Download size={15} color="#94a3b8" />
+                  Download Sample Template
+                </button>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)]">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)] text-[var(--brand)]">
-                <FileSpreadsheet size={22} />
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+              style={{
+                borderRadius: 24, padding: 24,
+                background: 'rgba(255,255,255,0.03)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              <div style={{
+                width: 48, height: 48, borderRadius: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(129,140,248,0.12)',
+              }}>
+                <FileSpreadsheet size={22} color="#818cf8" />
               </div>
-              <h2 className="mt-4 text-lg font-semibold text-[var(--text-primary)]">Import notes</h2>
-              <ul className="mt-4 space-y-3 text-sm text-[var(--text-muted)]">
-                <li>- Use Excel or CSV file exported from another software.</li>
-                <li>- Keep column names clean and structured before upload.</li>
-                <li>- Recommended for admin-only migration or bulk setup.</li>
-                <li>- Download the sample template before preparing your data.</li>
-                <li>- Backend endpoint used: /api/import/import-excel</li>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#e2e8f0', margin: '16px 0 0' }}>Import notes</h2>
+              <ul style={{
+                marginTop: 16, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 10,
+                fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6,
+              }}>
+                <li>Use Excel or CSV file exported from another software.</li>
+                <li>Keep column names clean and structured before upload.</li>
+                <li>Recommended for admin-only migration or bulk setup.</li>
+                <li>Download the sample template before preparing your data.</li>
+                <li>Backend endpoint used: /api/import/import-excel</li>
               </ul>
-            </div>
+            </motion.div>
           </div>
         </div>
       </AppShell>

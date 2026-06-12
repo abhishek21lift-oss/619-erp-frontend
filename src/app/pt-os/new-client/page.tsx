@@ -38,6 +38,8 @@ interface FormData {
   trainer: string;
   frequency: Frequency | '';
   transformationGoals: string;
+  plan: string;
+  planId: string;
   basePrice: number | null;
   sellingPrice: number | null;
 }
@@ -74,6 +76,8 @@ function initForm(): FormData {
     healthConditions: [], injuries: '',
     trainer: '', frequency: '',
     transformationGoals: '',
+    plan: '',
+    planId: '',
     basePrice: null,
     sellingPrice: null,
   };
@@ -250,6 +254,7 @@ function NewClientWizard() {
   /* ── API State ── */
   const [trainers, setTrainers] = useState<string[]>([]);
   const [trainerIdMap, setTrainerIdMap] = useState<Record<string, string>>({});
+  const [plans, setPlans] = useState<{ id: string; name: string; base_amount: number; duration_months: number }[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
 
@@ -257,16 +262,21 @@ function NewClientWizard() {
       try {
         setDataLoading(true);
         setDataError('');
-        const trainersRes = (await api.pt.trainers()) as { data: unknown[] };
+        const [trainersRes, plansRes] = await Promise.all([
+          api.pt.trainers() as Promise<{ data: unknown[] }>,
+          api.pt.plans.list() as Promise<{ data: unknown[] }>,
+        ]);
         const arr = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
         setTrainers(arr.map((t: any) => t.name ?? t));
         const map: Record<string, string> = {};
         arr.forEach((t: any) => { if (t.name && t.id) map[t.name] = t.id; });
         setTrainerIdMap(map);
+        setPlans(Array.isArray(plansRes?.data) ? plansRes.data.map((p: any) => ({ id: p.id, name: p.name, base_amount: p.base_amount, duration_months: p.duration_months })) : []);
       } catch (err: any) {
         setDataError(err?.message || 'Failed to load data');
         setTrainers([]);
         setTrainerIdMap({});
+        setPlans([]);
       } finally {
         setDataLoading(false);
       }
@@ -325,6 +335,7 @@ function NewClientWizard() {
           discount: disc,
           monthly_pt_amount: selling,
           pt_start_date: new Date().toISOString().slice(0, 10),
+          pt_package_id: form.planId || undefined,
         } as Record<string, unknown>);
       const created = (res as any)?.data;
       setDone(true);
@@ -605,6 +616,55 @@ function NewClientWizard() {
                           placeholder="Choose a personal trainer"
                         />
 
+                        {/* Subscription Plan */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Subscription Plan</p>
+                            <a href="/pt-os/plans" target="_blank" rel="noopener noreferrer"
+                              className="text-[11px] font-[660] transition-all hover:underline"
+                              style={{ color: '#dc2626' }}>
+                              + Manage Plans
+                            </a>
+                          </div>
+                          <div className="relative">
+                            <select
+                              value={form.planId}
+                              onChange={(e) => {
+                                const selected = plans.find(p => p.id === e.target.value);
+                                if (selected) {
+                                  setForm(prev => ({
+                                    ...prev,
+                                    planId: selected.id,
+                                    plan: selected.name,
+                                    basePrice: selected.base_amount,
+                                    sellingPrice: selected.base_amount,
+                                  }));
+                                } else {
+                                  set('planId', '');
+                                  set('plan', '');
+                                }
+                              }}
+                              className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500] outline-none transition-all appearance-none cursor-pointer"
+                              style={{
+                                background: 'var(--bg-subtle)',
+                                border: '1.5px solid rgba(15,23,42,0.09)',
+                                color: form.planId ? 'rgb(15,23,42)' : 'rgb(148,163,184)',
+                              }}>
+                              <option value="">Select a plan…</option>
+                              {plans.map(p => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo
+                                </option>
+                              ))}
+                            </select>
+                            <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                              width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
+                              style={{ color: 'rgb(148,163,184)' }}>
+                              <path d="m6 9 6 6 6-6" />
+                            </svg>
+                          </div>
+                        </div>
+
                         {/* Base Price */}
                         <FloatInput
                           label="Base Price (₹)"
@@ -649,6 +709,7 @@ function NewClientWizard() {
                             <p className="text-[12px] font-[700] tracking-wider uppercase" style={{ color: '#dc2626' }}>Assignment Summary</p>
                             <div className="mt-2 space-y-1 text-[13px]" style={{ color: 'rgb(100,116,139)' }}>
                               <p>Trainer: <strong style={{ color: 'rgb(15,23,42)' }}>{form.trainer}</strong></p>
+                              {form.plan && <p>Plan: <strong style={{ color: 'rgb(15,23,42)' }}>{form.plan}</strong></p>}
                               <p>Base Price: <strong style={{ color: 'rgb(15,23,42)' }}>{fmtINR(form.basePrice)}</strong></p>
                               <p>Selling Price: <strong style={{ color: 'rgb(15,23,42)' }}>{fmtINR(form.sellingPrice)}</strong></p>
                               <p>Frequency: <strong style={{ color: 'rgb(15,23,42)' }}>{form.frequency}</strong></p>
@@ -692,6 +753,7 @@ function NewClientWizard() {
                           ]},
                           { title: 'PT Assignment', items: [
                             { k: 'Trainer', v: form.trainer },
+                            { k: 'Plan', v: form.plan || '—' },
                             { k: 'Base Price', v: form.basePrice ? fmtINR(form.basePrice) : '—' },
                             { k: 'Selling Price', v: form.sellingPrice ? fmtINR(form.sellingPrice) : '—' },
                             { k: 'Frequency', v: form.frequency },

@@ -847,6 +847,18 @@ export const api = {
       http<{ data: unknown[] }>('/api/pt-os/revenue'),
     trainerPerformance: () =>
       http<{ data: unknown[] }>('/api/pt-os/trainer-performance'),
+    updateCommission: (trainerId: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/pt-os/commissions/${trainerId}`, {
+        method: 'PUT', body: JSON.stringify(data),
+      }),
+    updatePayout: (trainerId: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/pt-os/payouts/${trainerId}`, {
+        method: 'PUT', body: JSON.stringify(data),
+      }),
+    markAllPayoutsPaid: (month: string) =>
+      http<{ data: unknown }>('/api/pt-os/payouts/mark-all-paid', {
+        method: 'POST', body: JSON.stringify({ month }),
+      }),
     deleteClient: (id: string) =>
       http<{ message: string }>(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
     plans: {
