@@ -20,6 +20,7 @@ interface PtClientDetail {
   id: string; client_id?: string; name: string;
   email?: string; mobile?: string; gender?: string; dob?: string;
   address?: string; photo_url?: string;
+  emergency_contact?: string;
   trainer_id?: string; trainer_name?: string;
   package_type?: string;
   base_amount: number; discount: number; final_amount: number;

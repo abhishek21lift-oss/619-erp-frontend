@@ -242,6 +242,14 @@ export type PtClientBase = {
   client_id: string;
   name: string;
   mobile: string;
+  email?: string;
+  photo_url?: string;
+  gender?: string;
+  dob?: string;
+  weight?: number;
+  notes?: string;
+  address?: string;
+  emergency_no?: string;
   trainer_name: string;
   package_type: string;
   final_amount: number;
