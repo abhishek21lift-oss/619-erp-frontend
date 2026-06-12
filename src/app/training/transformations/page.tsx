@@ -9,7 +9,7 @@ import { api, Client } from '@/lib/api';
 import { fmtDate } from '@/lib/format';
 
 function fadeUp(i: number) {
-  return { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.08, duration: 0.4, ease: 'easeOut' } };
+  return { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.08, duration: 0.4, ease: 'easeOut' as const } };
 }
 
 export default function TransformationsPage() {
