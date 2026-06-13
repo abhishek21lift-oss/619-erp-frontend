@@ -76,9 +76,9 @@ function Inner() {
     setLoading(true);
     try {
       const [mRes, tRes, sRes] = await Promise.all([
-        api.diet.meals.list({ date }) as Promise<{ data: Meal[] }>,
-        api.diet.templates.list() as Promise<{ data: DietTemplate[] }>,
-        api.diet.supplements.list() as Promise<{ data: Supplement[] }>,
+        api.diet.meals.list({ date }),
+        api.diet.templates.list(),
+        api.diet.supplements.list(),
       ]);
       setMeals(Array.isArray((mRes as any)?.data) ? (mRes as any).data : []);
       setTemplates(Array.isArray((tRes as any)?.data) ? (tRes as any).data : []);
