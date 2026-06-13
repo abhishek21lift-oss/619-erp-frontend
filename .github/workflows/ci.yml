@@ -24,6 +24,12 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint
+        run: npm run lint
+
   # ── Job 2: Type-check ──────────────────────────────────────────────
   typecheck:
     name: TypeScript
@@ -64,12 +70,6 @@ jobs:
       - name: Build
         run: npm run build
 
-         - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: Lint
-        run: npm run lint
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -91,4 +91,4 @@ jobs:
           cache: 'npm'
 
       - name: Audit dependencies
-        run: npm audit --audit-level=high --legacy-peer-deps || true
+        run: npm audit --audit-level=high --legacy-peer-deps

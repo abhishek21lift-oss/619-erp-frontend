@@ -20,19 +20,21 @@ const AuthContext = createContext<Ctx>({
   logout: () => {},
 });
 
-const SESSION_USER_KEY = '619_user_v2';
+// Minimal non-sensitive user fields stored in sessionStorage (cleared on tab close).
+// Full user object (including email) remains in memory only.
+const SESSION_USER_KEY = '619_user_minimal_v3';
 
 function ssGet(key: string): string | null {
   if (typeof window === 'undefined') return null;
-  try { return localStorage.getItem(key); } catch { return null; }
+  try { return sessionStorage.getItem(key); } catch { return null; }
 }
 function ssSet(key: string, val: string): void {
   if (typeof window === 'undefined') return;
-  try { localStorage.setItem(key, val); } catch { /* quota */ }
+  try { sessionStorage.setItem(key, val); } catch { /* quota */ }
 }
 function ssDel(key: string): void {
   if (typeof window === 'undefined') return;
-  try { localStorage.removeItem(key); } catch { /* noop */ }
+  try { sessionStorage.removeItem(key); } catch { /* noop */ }
 }
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout
@@ -59,11 +61,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (initDone.current) return;
     initDone.current = true;
 
-    // Restore cached user immediately — avoids blank flash on hard refresh
+    // Restore cached user immediately — avoids blank flash on hard refresh.
+    // Only id + name + role are persisted; email and other PII stay in memory.
     const cachedRaw = ssGet(SESSION_USER_KEY);
     let cachedUser: User | null = null;
     if (cachedRaw) {
-      try { cachedUser = JSON.parse(cachedRaw) as User; } catch { ssDel(SESSION_USER_KEY); }
+      try {
+        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string };
+        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '' };
+      } catch { ssDel(SESSION_USER_KEY); }
     }
     if (cachedUser) setUser(cachedUser);
 
@@ -75,10 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     //     entirely — the fresh login data is the source of truth.
     api.auth.me()
       .then((res) => {
-        if (loggedInRef.current) return; // login() already set the user — don't overwrite
+        if (loggedInRef.current) return;
         if (res?.user) {
-          setUser(res.user as User);
-          ssSet(SESSION_USER_KEY, JSON.stringify(res.user));
+          const u = res.user as User;
+          setUser(u);
+          ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
         } else {
           setUser(null);
           ssDel(SESSION_USER_KEY);
@@ -135,8 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetRedirectLock();
     // Mark that a real login happened so the background me() call is ignored
     loggedInRef.current = true;
-    setUser(data.user);
-    ssSet(SESSION_USER_KEY, JSON.stringify(data.user));
+    const u = data.user;
+    setUser(u);
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
     // Unblock the login page redirect immediately — don't wait for me()
     setLoading(false);
   }, []);

@@ -130,7 +130,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
         {/* Right column */}
         <div className={cn('flex flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}>
           {/* Top header bar */}
-          <header className="sticky top-0 z-30 border-b border-transparent"
+          <header className="sticky top-0 z-40 border-b border-transparent"
             style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 40%, #1e1b4b 70%, #1e40af 100%)' }}
           >
             <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">

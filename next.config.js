@@ -2,71 +2,7 @@
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-// TODO (CSP): replace 'unsafe-inline' with per-request nonce-based script-src
-// once Next.js supports nonces across streaming SSR (track next.js issue #51192).
-// Until then, strict CSP with unsafe-inline is the best we can do without breaking
-// Next.js chunk loading and framer-motion's runtime injection.
-const STRICT_CSP_DEV = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
-  "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self' https: wss:",
-  "media-src 'self' blob:",
-  "worker-src blob:",
-  "frame-ancestors 'none'",
-].join('; ');
-
-const STRICT_CSP_PROD = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
-  "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self' https: wss:",
-  "media-src 'self' blob:",
-  "worker-src blob:",
-  "frame-ancestors 'none'",
-].join('; ');
-
-const CHECKIN_CSP_DEV = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
-  "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self' https: wss:",
-  "media-src 'self' blob:",
-  "worker-src blob:",
-  "frame-ancestors 'none'",
-].join('; ');
-
-const CHECKIN_CSP_PROD = [
-  "default-src 'self'",
-  // face-api needs a worker; eval only in dev. prod still requires
-  // 'unsafe-inline' for Next.js streamed chunks until nonce work lands.
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com",
-  "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self' https: wss:",
-  "media-src 'self' blob:",
-  "worker-src blob:",
-  "frame-ancestors 'none'",
-].join('; ');
-
-const STRICT_CSP = IS_PROD ? STRICT_CSP_PROD : STRICT_CSP_DEV;
-const CHECKIN_CSP = IS_PROD ? CHECKIN_CSP_PROD : CHECKIN_CSP_DEV;
-
-const BASE_SECURITY_HEADERS = [
-  { key: 'X-Content-Type-Options',    value: 'nosniff' },
-  { key: 'X-Frame-Options',           value: 'DENY' },
-  { key: 'X-XSS-Protection',          value: '1; mode=block' },
-  { key: 'Referrer-Policy',           value: 'strict-origin-when-cross-origin' },
-  { key: 'Permissions-Policy',        value: 'camera=(self), microphone=(), geolocation=()' },
-  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-];
+// CSP is now set dynamically in src/middleware.ts with per-request nonces.
 
 const nextConfig = {
   output: 'standalone',
@@ -121,34 +57,6 @@ const nextConfig = {
 
   async headers() {
     return [
-      {
-        source: '/checkin',
-        headers: [
-          ...BASE_SECURITY_HEADERS,
-          { key: 'Content-Security-Policy', value: CHECKIN_CSP },
-        ],
-      },
-      {
-        source: '/checkin/(.*)',
-        headers: [
-          ...BASE_SECURITY_HEADERS,
-          { key: 'Content-Security-Policy', value: CHECKIN_CSP },
-        ],
-      },
-      {
-        source: '/clients/:id/biometric',
-        headers: [
-          ...BASE_SECURITY_HEADERS,
-          { key: 'Content-Security-Policy', value: CHECKIN_CSP },
-        ],
-      },
-      {
-        source: '/(.*)',
-        headers: [
-          ...BASE_SECURITY_HEADERS,
-          { key: 'Content-Security-Policy', value: STRICT_CSP },
-        ],
-      },
       {
         source: '/models/(.*)',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],

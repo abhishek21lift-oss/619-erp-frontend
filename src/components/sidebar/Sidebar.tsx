@@ -264,7 +264,7 @@ export default function Sidebar({
       onMouseLeave={!isMobile ? handleMouseLeave : undefined}
       className={cn(
         !isMobile && [
-          'fixed inset-y-0 left-0 z-30 hidden flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'fixed inset-y-0 left-0 z-40 hidden flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
           'lg:flex',
           collapsed ? 'w-16' : 'w-64 xl:w-72',
           'bg-[var(--sidebar-bg)] backdrop-blur-[24px] saturate-[180%]',
