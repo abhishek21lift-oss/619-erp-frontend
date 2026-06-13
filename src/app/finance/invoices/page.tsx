@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { RevenueCard } from '@/components/premium/RevenueCard';
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import {
@@ -128,29 +127,27 @@ function SkeletonCard() {
         gap: '16px',
         borderRadius: '18px',
         padding: '16px 20px',
-        background: 'rgba(255,255,255,0.65)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid rgba(226,232,240,0.8)',
-        boxShadow: '0 4px 24px rgba(15,23,42,0.06)',
+        background: 'white',
+        border: '1px solid #f1f5f9',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-        <motion.div animate={pulse} transition={pulseTrans} style={{ height: '36px', width: '36px', flexShrink: 0, borderRadius: '10px', background: 'rgba(148,163,184,0.3)' }} />
+        <motion.div animate={pulse} transition={pulseTrans} style={{ height: '36px', width: '36px', flexShrink: 0, borderRadius: '10px', background: '#f1f5f9' }} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '176px', borderRadius: '9999px', background: 'rgba(148,163,184,0.3)' }} />
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '256px', borderRadius: '9999px', background: 'rgba(148,163,184,0.2)' }} />
+          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '176px', borderRadius: '9999px', background: '#f1f5f9' }} />
+          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '256px', borderRadius: '9999px', background: '#f1f5f9' }} />
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'right' }}>
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '80px', borderRadius: '9999px', background: 'rgba(148,163,184,0.3)', marginLeft: 'auto' }} />
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '64px', borderRadius: '9999px', background: 'rgba(148,163,184,0.2)', marginLeft: 'auto' }} />
+          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '80px', borderRadius: '9999px', background: '#f1f5f9', marginLeft: 'auto' }} />
+          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '64px', borderRadius: '9999px', background: '#f1f5f9', marginLeft: 'auto' }} />
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: 'rgba(148,163,184,0.3)' }} />
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: 'rgba(148,163,184,0.3)' }} />
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: 'rgba(148,163,184,0.3)' }} />
+          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
+          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
+          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
         </div>
       </div>
     </motion.div>
@@ -158,10 +155,10 @@ function SkeletonCard() {
 }
 
 const KPI_CONFIG = [
-  { label: 'Total Invoiced', key: 'total' as const, icon: <FileText size={16} />, trend: 12.5 },
-  { label: 'Paid', key: 'paid' as const, icon: <CheckCircle2 size={16} />, trend: 8.3 },
-  { label: 'Pending', key: 'pending' as const, icon: <Clock size={16} />, trend: -3.2 },
-  { label: 'Overdue', key: 'overdue' as const, icon: <AlertTriangle size={16} />, trend: -5.1 },
+  { label: 'Total Invoiced', key: 'total' as const, icon: <FileText size={18} />, accent: '#3b82f6' },
+  { label: 'Paid', key: 'paid' as const, icon: <CheckCircle2 size={18} />, accent: '#10b981' },
+  { label: 'Pending', key: 'pending' as const, icon: <Clock size={18} />, accent: '#f59e0b' },
+  { label: 'Overdue', key: 'overdue' as const, icon: <AlertTriangle size={18} />, accent: '#ef4444' },
 ];
 
 export default function InvoicesPage() {
@@ -207,13 +204,6 @@ export default function InvoicesPage() {
       { id: 'draft' as const, label: 'Draft', count: counts.draft },
     ];
   }, [invoices]);
-
-  const statBadges = [
-    { label: 'Total', value: fmtCurrency(stats.total), color: '#3b82f6' },
-    { label: 'Paid', value: fmtCurrency(stats.paid), color: '#10b981' },
-    { label: 'Pending', value: fmtCurrency(stats.pending), color: '#f59e0b' },
-    { label: 'Overdue', value: fmtCurrency(stats.overdue), color: '#ef4444' },
-  ];
 
   return (
     <Guard role="admin">
@@ -329,7 +319,7 @@ export default function InvoicesPage() {
                   </div>
                 </div>
 
-                {/* Right: Stat Badges + Actions */}
+                {/* Right: Compact Stats + Actions */}
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -338,38 +328,46 @@ export default function InvoicesPage() {
                 }}>
                   <div style={{
                     display: 'flex',
-                    gap: '8px',
+                    gap: '16px',
                     flexWrap: 'wrap',
                     justifyContent: 'flex-end',
+                    alignItems: 'center',
                   }}>
-                    {statBadges.map((s) => (
-                      <div key={s.label} style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: '8px 14px',
-                        borderRadius: '12px',
-                        background: 'rgba(255,255,255,0.06)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        minWidth: '90px',
-                      }}>
-                        <span style={{
-                          fontSize: '11px',
-                          color: 'rgba(255,255,255,0.45)',
-                          fontWeight: 600,
-                          letterSpacing: '0.5px',
-                          textTransform: 'uppercase',
-                        }}>{s.label}</span>
-                        <span style={{
-                          fontSize: '15px',
-                          color: '#f1f5f9',
-                          fontWeight: 780,
-                          letterSpacing: '-0.02em',
-                          marginTop: '2px',
-                        }}>{s.value}</span>
-                      </div>
-                    ))}
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: 'rgba(255,255,255,0.45)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}>Overdue</div>
+                      <div style={{
+                        fontSize: '17px',
+                        fontWeight: 800,
+                        background: 'linear-gradient(135deg,#ef4444,#f43f5e)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        marginTop: '2px',
+                      }}>{fmtCurrency(stats.overdue)}</div>
+                    </div>
+                    <div style={{ width: '1px', height: '32px', background: 'rgba(255,255,255,0.1)' }} />
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: 'rgba(255,255,255,0.45)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}>Pending</div>
+                      <div style={{
+                        fontSize: '17px',
+                        fontWeight: 800,
+                        background: 'linear-gradient(135deg,#f59e0b,#f97316)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        marginTop: '2px',
+                      }}>{fmtCurrency(stats.pending)}</div>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <PremiumButton tone="secondary" icon={<Filter size={16} />}>Filter</PremiumButton>
@@ -390,12 +388,80 @@ export default function InvoicesPage() {
             {/* KPI Row */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-              gap: '12px',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: '14px',
               marginBottom: '24px',
             }}>
-              {KPI_CONFIG.map((kpi, i) => (
-                <RevenueCard key={kpi.label} label={kpi.label} value={fmtCurrency(stats[kpi.key])} trend={kpi.trend} icon={kpi.icon} index={i} />
+              {KPI_CONFIG.map((kpi) => (
+                <div
+                  key={kpi.label}
+                  style={{
+                    background: 'white',
+                    borderRadius: 20,
+                    padding: '22px 24px',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'all 200ms ease',
+                    cursor: 'default',
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLDivElement;
+                    el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)';
+                    el.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLDivElement;
+                    el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)';
+                    el.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 24,
+                    right: 24,
+                    height: 3,
+                    background: `linear-gradient(90deg,${kpi.accent},${kpi.accent}88)`,
+                    borderRadius: '0 0 3px 3px',
+                    opacity: 0.8,
+                  }} />
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: `${kpi.accent}18`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: kpi.accent,
+                  }}>
+                    {kpi.icon}
+                  </div>
+                  <div>
+                    <div style={{
+                      fontSize: 26,
+                      fontWeight: 800,
+                      color: '#0f172a',
+                      letterSpacing: '-0.02em',
+                      lineHeight: 1,
+                    }}>
+                      {fmtCurrency(stats[kpi.key])}
+                    </div>
+                    <div style={{
+                      fontSize: 12,
+                      color: '#64748b',
+                      marginTop: 4,
+                      fontWeight: 500,
+                    }}>
+                      {kpi.label}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
 
@@ -408,11 +474,9 @@ export default function InvoicesPage() {
               marginBottom: '20px',
               padding: isSm ? '6px 8px' : '6px',
               borderRadius: '16px',
-              background: 'rgba(255,255,255,0.5)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(226,232,240,0.7)',
-              boxShadow: '0 1px 6px rgba(15,23,42,0.04)',
+              background: 'white',
+              border: '1px solid #f1f5f9',
+              boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
             }}>
               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                 {statusTabs.map((tab) => (
@@ -459,9 +523,9 @@ export default function InvoicesPage() {
                   gap: '8px',
                   padding: '10px 14px',
                   borderRadius: '13px',
-                  background: 'rgba(255,255,255,0.7)',
-                  border: '1px solid rgba(226,232,240,0.6)',
-                  boxShadow: '0 1px 4px rgba(15,23,42,0.04)',
+                  background: '#fafafa',
+                  border: '1.5px solid #e2e8f0',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
                 }}>
                   <Search size={13} style={{ color: 'rgba(148,163,184,0.8)' }} />
                   <input
@@ -654,13 +718,21 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
         gap: '16px',
         borderRadius: '18px',
         padding: '16px 20px',
-        background: 'rgba(255,255,255,0.65)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid rgba(226,232,240,0.8)',
-        boxShadow: '0 4px 24px rgba(15,23,42,0.06)',
+        background: 'white',
+        border: '1px solid #f1f5f9',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         position: 'relative',
         transition: 'all 0.2s ease',
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.08)';
+        el.style.transform = 'translateY(-1px)';
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)';
+        el.style.transform = 'translateY(0)';
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
@@ -671,7 +743,7 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
               fontSize: '14px',
               fontWeight: 720,
               letterSpacing: '-0.01em',
-              color: 'rgba(30,41,59,0.9)',
+              color: '#0f172a',
             }}>{invoice.memberName}</p>
             <span style={{
               fontSize: '11px',
@@ -713,7 +785,7 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
           <p style={{
             marginTop: '2px',
             fontSize: '12.5px',
-            color: 'rgba(148,163,184,0.8)',
+            color: '#64748b',
           }}>{invoice.description}</p>
         </div>
       </div>
@@ -728,11 +800,11 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
             fontSize: '16px',
             fontWeight: 780,
             letterSpacing: '-0.02em',
-            color: 'rgba(30,41,59,0.9)',
+            color: '#0f172a',
           }}>{fmtCurrency(invoice.amount)}</p>
           <p style={{
             fontSize: '11px',
-            color: 'rgba(148,163,184,0.8)',
+            color: '#64748b',
           }}>{invoice.date}</p>
         </div>
 
@@ -750,7 +822,7 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
               borderRadius: '10px',
               border: 'none',
               cursor: 'pointer',
-              background: 'rgba(241,245,249,0.7)',
+              background: '#f1f5f9',
             }}
             title="View Invoice"
           >
@@ -768,7 +840,7 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
               borderRadius: '10px',
               border: 'none',
               cursor: 'pointer',
-              background: 'rgba(241,245,249,0.7)',
+              background: '#f1f5f9',
             }}
             title="Download PDF"
           >
@@ -788,7 +860,7 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
                 borderRadius: '10px',
                 border: 'none',
                 cursor: 'pointer',
-                background: 'rgba(241,245,249,0.7)',
+                background: '#f1f5f9',
               }}
             >
               <MoreHorizontal size={14} style={{ color: 'rgba(100,116,139,0.7)' }} />
@@ -889,7 +961,7 @@ function InvoiceDetail({ invoice }: { invoice: Invoice }) {
               marginTop: '6px',
               fontSize: '15px',
               fontWeight: 720,
-              color: 'rgba(30,41,59,0.9)',
+              color: '#0f172a',
             }}>{field.value}</p>
           </div>
         ))}
@@ -952,7 +1024,7 @@ function InvoiceDetail({ invoice }: { invoice: Invoice }) {
                 <p style={{
                   fontSize: '13.5px',
                   fontWeight: 640,
-                  color: item.done ? 'rgba(30,41,59,0.9)' : 'rgba(148,163,184,0.8)',
+                  color: item.done ? '#0f172a' : 'rgba(148,163,184,0.8)',
                 }}>{item.action}</p>
                 <p style={{
                   marginTop: '2px',

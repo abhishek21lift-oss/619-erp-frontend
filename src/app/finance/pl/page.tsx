@@ -207,7 +207,7 @@ function Inner() {
         <div className="px-5 sm:px-8 pb-8">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="rounded-[22px] overflow-hidden"
-            style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+            style={{ background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="flex flex-col items-center gap-3">
@@ -319,15 +319,28 @@ function Inner() {
 function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="rounded-[16px] p-4"
-      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)' }}>
-      <div className="flex items-center gap-2.5 mb-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: `${accent}20` }}>
-          {icon}
-        </div>
-        <span className="text-[10px] font-[700] uppercase tracking-[0.08em]" style={{ color: 'rgba(255,255,255,0.6)' }}>{label}</span>
+      tabIndex={0} role="button"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; }}
+      style={{
+        background: 'white', borderRadius: 20, padding: '22px 24px',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.06)',
+        display: 'flex', flexDirection: 'column', gap: 12, position: 'relative',
+        overflow: 'hidden', transition: 'all 200ms ease', cursor: 'default'
+      }}
+      onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}>
+      <div style={{
+        position: 'absolute', top: 0, left: 24, right: 24, height: 3,
+        background: `linear-gradient(90deg,${accent},${accent}88)`,
+        borderRadius: '0 0 3px 3px', opacity: 0.8
+      }} />
+      <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent }}>
+        {icon}
       </div>
-      <p className="text-[20px] sm:text-[24px] font-[860] tracking-[-0.03em] tabular-nums" style={{ color: '#ffffff' }}>{value}</p>
+      <div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{label}</div>
+      </div>
     </motion.div>
   );
 }

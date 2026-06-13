@@ -28,8 +28,6 @@ export default function RevenueForecastPage() {
   return <Guard role="admin"><Inner /></Guard>;
 }
 
-
-
 function Inner() {
   const router = useRouter();
   const year = new Date().getFullYear();
@@ -140,17 +138,21 @@ function Inner() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.08, duration: 0.4, ease: 'easeOut' }}
+              tabIndex={0} role="button"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.style.transform = 'translateY(-2px)'; }}
               style={{
-                background: 'rgba(255,255,255,0.75)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
+                background: 'white',
                 borderRadius: 20,
                 padding: '22px 24px',
-                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
-                border: '1px solid rgba(255,255,255,0.7)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                border: '1px solid rgba(0,0,0,0.06)',
                 display: 'flex', flexDirection: 'column', gap: 12,
                 position: 'relative', overflow: 'hidden',
+                transition: 'all 200ms ease',
+                cursor: 'default',
               }}
+              onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}
             >
               <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: `linear-gradient(90deg, ${k.accent}, ${k.accent}88)`, borderRadius: '0 0 3px 3px', opacity: 0.8 }} />
               <div style={{ width: 40, height: 40, borderRadius: 12, background: `${k.accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.accent }}>{k.icon}</div>

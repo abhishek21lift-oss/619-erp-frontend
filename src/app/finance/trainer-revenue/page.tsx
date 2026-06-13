@@ -303,24 +303,27 @@ function Inner() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.08, duration: 0.4 }}
+                tabIndex={0} role="button"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}
                 style={{
-                  background: 'rgba(255,255,255,0.85)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
+                  background: 'white',
                   borderRadius: 20, padding: '22px 24px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                  border: '1px solid rgba(255,255,255,0.4)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                  border: '1px solid rgba(0,0,0,0.06)',
                   position: 'relative', overflow: 'hidden',
+                  transition: 'all 200ms ease', cursor: 'default',
                 }}
               >
                 <div style={{
                   position: 'absolute', top: 0, left: 24, right: 24, height: 3,
                   background: `linear-gradient(90deg,${k.accent},${k.accent}88)`,
-                  borderRadius: '0 0 3px 3px',
+                  borderRadius: '0 0 3px 3px', opacity: 0.8,
                 }} />
                 <div style={{
                   width: 40, height: 40, borderRadius: 12,
-                  background: `${k.accent}1a`,
+                  background: `${k.accent}18`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: k.accent,
                 }}>
@@ -329,7 +332,7 @@ function Inner() {
                 <div style={{ marginTop: 12 }}>
                   <div style={{
                     fontSize: 26, fontWeight: 800,
-                    color: 'rgba(15,23,42,0.9)',
+                    color: '#0f172a',
                     letterSpacing: '-0.02em', lineHeight: 1,
                     fontVariantNumeric: 'tabular-nums',
                   }}>
@@ -356,13 +359,11 @@ function Inner() {
 
             {/* Trainer table */}
             <div style={{
-              background: 'rgba(255,255,255,0.9)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
+              background: 'white',
               borderRadius: 20,
-              border: '1px solid rgba(255,255,255,0.35)',
+              border: '1px solid #f1f5f9',
               overflow: 'hidden',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
               flex: selectedTrainer ? '0 0 55%' : '1',
               minWidth: 0,
             }}>
@@ -562,13 +563,11 @@ function Inner() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.25 }}
                   style={{
-                    background: 'rgba(255,255,255,0.9)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
+                    background: 'white',
                     borderRadius: 20,
-                    border: '1px solid rgba(255,255,255,0.35)',
+                    border: '1px solid #f1f5f9',
                     overflow: 'hidden',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
                     flex: '1', minWidth: 0,
                   }}
                 >

@@ -18,7 +18,7 @@ const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transiti
 const itemVariants = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } };
 const fadeUp = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, ease: 'easeOut' as const } };
 
-const card = { background: '#1e293b', border: '1px solid #334155', borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.2)' };
+const card = { background: '#1e293b', border: '1px solid #334155', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' };
 const label = { fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: '#94a3b8' };
 const value = { fontSize: 13, fontWeight: 700, color: '#f8fafc' };
 

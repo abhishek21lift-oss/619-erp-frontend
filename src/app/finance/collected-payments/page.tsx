@@ -231,10 +231,10 @@ function Inner() {
                 gap: 12,
                 marginTop: 24,
               }}>
-                <KPICard icon={<Layers size={15} color="#06b6d4" />} label="Total Payments" value={filtered.length.toString()} accent="#06b6d4" />
-                <KPICard icon={<IndianRupee size={15} color="#10b981" />} label="Total Collected" value={fmtINR(totalCollected)} accent="#10b981" />
-                <KPICard icon={<List size={15} color="#8b5cf6" />} label="Unique Methods" value={methods.length.toString()} accent="#8b5cf6" />
-                <KPICard icon={<TrendingUp size={15} color="#f59e0b" />} label="Largest Payment" value={fmtINR(largestPayment)} accent="#f59e0b" />
+                <KPICard icon={<Layers size={18} />} label="Total Payments" value={filtered.length.toString()} accent="#06b6d4" />
+                <KPICard icon={<IndianRupee size={18} />} label="Total Collected" value={fmtINR(totalCollected)} accent="#10b981" />
+                <KPICard icon={<List size={18} />} label="Unique Methods" value={methods.length.toString()} accent="#8b5cf6" />
+                <KPICard icon={<TrendingUp size={18} />} label="Largest Payment" value={fmtINR(largestPayment)} accent="#f59e0b" />
               </div>
             )}
           </div>
@@ -406,32 +406,32 @@ function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label:
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
+      tabIndex={0} role="button"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.style.transform = 'translateY(-2px)'; }}
       style={{
-        borderRadius: 16,
-        padding: '16px 16px 20px',
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(8px)',
+        background: 'white',
+        borderRadius: 20,
+        padding: '22px 24px',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(0,0,0,0.06)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
         position: 'relative',
         overflow: 'hidden',
-      }}>
-      <div style={{
-        position: 'absolute',
-        top: 0, left: 0, right: 0,
-        height: 3,
-        background: `linear-gradient(90deg, ${accent}, transparent)`,
-      }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${accent}20` }}>
-          {icon}
-        </div>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.6)' }}>
-          {label}
-        </span>
+        transition: 'all 200ms ease',
+        cursor: 'default',
+      }}
+      onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}>
+      <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: `linear-gradient(90deg,${accent},${accent}88)`, borderRadius: '0 0 3px 3px', opacity: 0.8 }} />
+      <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent }}>
+        {icon}
       </div>
-      <p style={{ fontSize: 22, fontWeight: 860, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', color: '#ffffff', margin: 0 }}>
-        {value}
-      </p>
+      <div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500 }}>{label}</div>
+      </div>
     </motion.div>
   );
 }

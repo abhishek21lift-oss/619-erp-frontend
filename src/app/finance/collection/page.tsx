@@ -142,7 +142,7 @@ function Inner() {
                   letterSpacing: '-0.02em',
                 }}>Collection</h1>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
-                  Monthly revenue collected · Payment volume
+                  Monthly revenue collected — Payment volume
                 </p>
               </div>
             </div>
@@ -227,19 +227,16 @@ function Inner() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             style={{
-              background: 'rgba(254,202,202,0.15)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              border: '1px solid rgba(239,68,68,0.25)',
+              background: '#fef2f2', border: '1px solid #fecaca',
               borderRadius: 14, padding: '12px 16px',
-              fontSize: 14, color: '#f87171', marginBottom: 16,
+              fontSize: 14, color: '#dc2626', marginBottom: 16,
             }}
           >
             {error}
           </motion.div>
         )}
 
-        {/* ── KPI Cards ── */}
+        {/* ── KPI Cards (solid white) ── */}
         {!loading && (
           <div style={{
             display: 'grid',
@@ -252,16 +249,19 @@ function Inner() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.08, duration: 0.4 }}
+                tabIndex={0} role="button"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; }}
                 style={{
-                  background: 'rgba(255,255,255,0.85)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
+                  background: 'white',
                   borderRadius: 20, padding: '22px 24px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                  border: '1px solid rgba(255,255,255,0.4)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                  border: '1px solid rgba(0,0,0,0.06)',
                   display: 'flex', flexDirection: 'column', gap: 12,
                   position: 'relative', overflow: 'hidden',
+                  transition: 'all 200ms ease', cursor: 'default',
                 }}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}
               >
                 {/* Gradient accent bar */}
                 <div style={{
@@ -280,20 +280,20 @@ function Inner() {
                 <div>
                   <div style={{
                     fontSize: 26, fontWeight: 800,
-                    color: 'rgba(15,23,42,0.9)',
+                    color: '#0f172a',
                     letterSpacing: '-0.02em', lineHeight: 1,
                   }}>
                     {k.value}
                   </div>
                   <div style={{
-                    fontSize: 12, color: 'rgba(15,23,42,0.5)',
+                    fontSize: 12, color: '#64748b',
                     marginTop: 4, fontWeight: 500,
                   }}>
                     {k.label}
                   </div>
                   {k.sub && (
                     <div style={{
-                      fontSize: 11, color: 'rgba(15,23,42,0.35)',
+                      fontSize: 11, color: '#94a3b8',
                       marginTop: 2,
                     }}>
                       {k.sub}
@@ -305,29 +305,27 @@ function Inner() {
           </div>
         )}
 
-        {/* ── Monthly Breakdown Table ── */}
+        {/* ── Monthly Breakdown Table (solid white) ── */}
         <div style={{
-          background: 'rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          background: 'white',
           borderRadius: 20,
-          border: '1px solid rgba(255,255,255,0.35)',
+          border: '1px solid #f1f5f9',
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         }}>
           <div style={{
             padding: '16px 24px',
-            borderBottom: '1px solid rgba(241,245,249,0.6)',
+            borderBottom: '1px solid #f1f5f9',
             display: 'flex', justifyContent: 'space-between',
             alignItems: 'center',
           }}>
             <div style={{
               fontWeight: 700, fontSize: 15,
-              color: 'rgba(15,23,42,0.85)',
+              color: '#0f172a',
             }}>
               Monthly Breakdown — {year}
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.4)' }}>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
               Avg: <strong style={{ color: '#10b981' }}>{fmtCompact(avg)}</strong> / month
             </div>
           </div>
@@ -405,13 +403,13 @@ function Inner() {
                     >
                       <td style={{
                         padding: '14px 20px', fontWeight: 600,
-                        color: 'rgba(15,23,42,0.85)',
+                        color: '#0f172a',
                       }}>
                         {m.month} {year}
                       </td>
                       <td style={{
                         padding: '14px 20px',
-                        color: 'rgba(15,23,42,0.55)',
+                        color: '#64748b',
                         fontVariantNumeric: 'tabular-nums',
                       }}>
                         {m.count || '\u2014'}
@@ -450,18 +448,18 @@ function Inner() {
                 <tfoot>
                   <tr style={{
                     borderTop: '2px solid #e2e8f0',
-                    background: 'rgba(241,245,249,0.5)',
+                    background: '#f8fafc',
                   }}>
                     <td style={{
                       padding: '14px 20px', fontWeight: 800,
-                      color: 'rgba(15,23,42,0.85)',
+                      color: '#0f172a',
                     }}>
                       Total
                     </td>
                     <td style={{
                       padding: '14px 20px', fontWeight: 700,
                       fontVariantNumeric: 'tabular-nums',
-                      color: 'rgba(15,23,42,0.85)',
+                      color: '#0f172a',
                     }}>
                       {totalCount}
                     </td>
