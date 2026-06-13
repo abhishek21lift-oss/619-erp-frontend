@@ -1,4 +1,5 @@
 import { http } from './http';
+export { http };
 import type { Role } from './roles';
 
 export { ROLES, normaliseRole, hasRole, isAdminOrManager } from './roles';
@@ -863,5 +864,56 @@ export const api = {
       delete: (id: string) =>
         http<{ message: string }>(`/api/pt-os/plans/${id}`, { method: 'DELETE' }),
     },
+  },
+
+  webauthn: {
+    registerBegin: (memberId: string) =>
+      http<{ challenge: string; rp: { name: string; id: string }; user: { id: string; name: string; displayName: string }; pubKeyCredParams: { type: 'public-key'; alg: number }[] }>(
+        `/api/webauthn/register/begin?member_id=${memberId}`,
+      ),
+    registerComplete: (data: { memberId: string; deviceName: string; credentialId: string; rawId: string; attestationObject: string; clientDataJSON: string }) =>
+      http<{ success: boolean; credential: { id: string } }>('/api/webauthn/register/complete', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    authenticateBegin: (memberId?: string) =>
+      http<{ challenge: string; allowCredentials?: { id: string; type: 'public-key' }[]; rpId: string }>(
+        `/api/webauthn/authenticate/begin${memberId ? `?member_id=${memberId}` : ''}`,
+      ),
+    authenticateComplete: (data: { credentialId: string; rawId: string; authenticatorData: string; signature: string; clientDataJSON: string; userHandle?: string }) =>
+      http<{ success: boolean; memberId?: string; memberName?: string }>('/api/webauthn/authenticate/complete', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    listCredentials: (memberId: string) =>
+      http<{ credentials: { id: string; deviceName: string; createdAt: string; lastUsedAt: string | null }[] }>(
+        `/api/webauthn/credentials?member_id=${memberId}`,
+      ),
+    removeCredential: (credentialId: string) =>
+      http<{ success: boolean }>(`/api/webauthn/credentials/${credentialId}`, { method: 'DELETE' }),
+  },
+
+  biometricAttend: {
+    mark: (data: { memberId: string; verificationMethod: string; deviceName: string; latitude: number; longitude: number }) =>
+      http<{ success: boolean; attendanceId?: string; error?: string }>('/api/biometric-attend/mark', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    today: () =>
+      http<{ present: number; absent: number; late: number; active: number; feed: { id: string; memberName: string; checkInTime: string; verificationMethod: string; deviceName: string }[] }>(
+        '/api/biometric-attend/today',
+      ),
+    history: (params?: Record<string, string>) =>
+      http<{ records: unknown[]; total: number }>(`/api/biometric-attend/history${buildQs(params)}`),
+    memberHistory: (memberId: string, params?: Record<string, string>) =>
+      http<{ records: unknown[] }>(`/api/biometric-attend/member/${memberId}${buildQs(params)}`),
+    report: (params?: Record<string, string>) =>
+      http<{ url: string }>(`/api/biometric-attend/report${buildQs(params)}`),
+  },
+
+  gymSettings: {
+    get: () =>
+      http<{ geofence_lat: number; geofence_lng: number; geofence_radius: number; enable_face_id: boolean; enable_touch_id: boolean; enable_gps: boolean; duplicate_window_minutes: number; auto_checkout: boolean; auto_checkout_minutes: number }>(
+        '/api/settings/gym',
+      ),
+    update: (data: Record<string, unknown>) =>
+      http<{ success: boolean }>('/api/settings/gym', { method: 'PUT', body: JSON.stringify(data) }),
   },
 };

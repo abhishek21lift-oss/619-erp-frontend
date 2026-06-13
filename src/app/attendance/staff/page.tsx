@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { api, Trainer, Attendance } from '@/lib/api';
+import { api, http, Trainer, Attendance } from '@/lib/api';
 import {
   Fingerprint, UserCheck, UserX, Clock, Users,
   Search, CheckCircle2, Calendar, RefreshCw,
@@ -137,7 +137,7 @@ function Inner() {
     setBioSaving(true);
     setError('');
     try {
-      const res = await api.attendance.biometric({ biometric_code: bioCode.trim(), type: 'trainer' });
+      const res = await http('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'trainer' }) });
       const updated = await api.attendance.list({ date, type: 'trainer' });
       setRecords(Array.isArray(updated) ? updated : []);
       setSuccess(res.message);

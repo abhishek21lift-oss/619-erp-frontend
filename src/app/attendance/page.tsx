@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
-import { api, Client, Attendance } from '@/lib/api';
+import { api, http, Client, Attendance } from '@/lib/api';
 import {
   Activity,
   AlertCircle,
@@ -151,7 +151,7 @@ function AttendanceContent() {
     setBioSaving(true);
     setError('');
     try {
-      const res = await api.attendance.biometric({ biometric_code: bioCode.trim(), type: 'client' });
+      const res = await http('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'client' }) });
       const updated = await api.attendance.list({ date, type: 'client' });
       setRecords(updated);
       setSuccess(res.message);
