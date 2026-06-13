@@ -6,6 +6,8 @@ export async function GET(req: NextRequest) {
   try {
     const memberId = req.nextUrl.searchParams.get('member_id');
 
+    await execute("DELETE FROM webauthn_challenges WHERE expires_at < now()");
+
     let creds: any[];
     if (memberId) {
       creds = await query(

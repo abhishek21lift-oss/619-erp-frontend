@@ -10,6 +10,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'member_id is required' }, { status: 400 });
     }
 
+    await execute("DELETE FROM webauthn_challenges WHERE expires_at < now()");
+
     const existingCreds: any[] = await query(
       'SELECT credential_id FROM webauthn_credentials WHERE member_id = $1',
       [memberId],

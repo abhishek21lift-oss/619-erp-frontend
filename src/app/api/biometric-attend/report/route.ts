@@ -7,11 +7,12 @@ export async function GET(req: NextRequest) {
     const date = req.nextUrl.searchParams.get('date') || new Date().toISOString().slice(0, 10);
     const format = req.nextUrl.searchParams.get('format') || 'csv';
 
+    const cols = 'member_id, member_name, date, check_in_time, check_out_time, day, verification_method, device_name, attendance_status, gps_lat, gps_lng';
     let sql: string;
     let params: any[];
     if (range === 'monthly') {
       const month = date.slice(0, 7);
-      sql = "SELECT * FROM biometric_attendance WHERE to_char(date, 'YYYY-MM') = $1 ORDER BY date, check_in_time";
+      sql = `SELECT ${cols} FROM biometric_attendance WHERE to_char(date, 'YYYY-MM') = $1 ORDER BY date, check_in_time`;
       params = [month];
     } else if (range === 'weekly') {
       const d = new Date(date);
@@ -19,10 +20,10 @@ export async function GET(req: NextRequest) {
       start.setDate(d.getDate() - d.getDay());
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
-      sql = 'SELECT * FROM biometric_attendance WHERE date >= $1 AND date <= $2 ORDER BY date, check_in_time';
+      sql = `SELECT ${cols} FROM biometric_attendance WHERE date >= $1 AND date <= $2 ORDER BY date, check_in_time`;
       params = [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
     } else {
-      sql = 'SELECT * FROM biometric_attendance WHERE date = $1 ORDER BY check_in_time';
+      sql = `SELECT ${cols} FROM biometric_attendance WHERE date = $1 ORDER BY check_in_time`;
       params = [date];
     }
 

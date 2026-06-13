@@ -4,13 +4,13 @@ import { query, execute, queryOne } from '@/lib/db';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { memberId, verificationMethod, deviceName, latitude, longitude } = body;
+    const { memberId, memberName, verificationMethod, deviceName, latitude, longitude } = body;
 
     if (!memberId || !verificationMethod) {
       return NextResponse.json({ error: 'memberId and verificationMethod are required' }, { status: 400 });
     }
 
-    const settings = await queryOne<any>('SELECT * FROM gym_settings WHERE id = 1');
+    const settings = await queryOne<any>('SELECT geofence_lat, geofence_lng, geofence_radius, enable_gps, duplicate_window_minutes FROM gym_settings WHERE id = 1');
     if (!settings) {
       return NextResponse.json({ error: 'Gym settings not configured' }, { status: 500 });
     }
@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
 
     const inserted = await queryOne<any>(
       `INSERT INTO biometric_attendance (member_id, member_name, date, check_in_time, day, gps_lat, gps_lng, verification_method, device_name, attendance_status)
-       VALUES ($1, '', $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-      [memberId, today, timeStr, day, latitude || null, longitude || null, verificationMethod, deviceName || '', status],
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+      [memberId, memberName || '', today, timeStr, day, latitude || null, longitude || null, verificationMethod, deviceName || '', status],
     );
 
     return NextResponse.json({ success: true, attendanceId: inserted?.id });

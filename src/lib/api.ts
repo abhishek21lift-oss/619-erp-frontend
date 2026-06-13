@@ -892,9 +892,13 @@ export const api = {
   },
 
   biometricAttend: {
-    mark: (data: { memberId: string; verificationMethod: string; deviceName: string; latitude: number; longitude: number }) =>
+    mark: (data: { memberId: string; memberName?: string; verificationMethod: string; deviceName: string; latitude: number; longitude: number }) =>
       http<{ success: boolean; attendanceId?: string; error?: string }>('/api/biometric-attend/mark', {
         method: 'POST', body: JSON.stringify(data),
+      }),
+    checkout: (memberId: string) =>
+      http<{ success: boolean; sessionDurationMinutes: number }>('/api/biometric-attend/checkout', {
+        method: 'POST', body: JSON.stringify({ memberId }),
       }),
     today: () =>
       http<{ present: number; absent: number; late: number; active: number; feed: { id: string; memberName: string; checkInTime: string; verificationMethod: string; deviceName: string }[] }>(

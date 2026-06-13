@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
     const today = new Date().toISOString().slice(0, 10);
 
     const allRows: any[] = await query(
-      'SELECT * FROM biometric_attendance WHERE date = $1 ORDER BY check_in_time DESC',
+      'SELECT id, member_id, member_name, check_in_time, verification_method, device_name, attendance_status FROM biometric_attendance WHERE date = $1 ORDER BY check_in_time DESC',
       [today],
     );
 
