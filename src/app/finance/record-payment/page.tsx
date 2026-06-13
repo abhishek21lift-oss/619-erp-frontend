@@ -70,19 +70,14 @@ export default function RecordPaymentPage() {
   const [selectedBalance, setSelectedBalance] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [clientsData, invoicesData] = await Promise.all([
-          api.clients.list(),
-          api.invoices.list({ status: 'pending' }),
-        ]);
-        const raw = clientsData as any;
-        const memberList = Array.isArray(raw) ? raw : raw?.data ? (Array.isArray(raw.data) ? raw.data : []) : raw?.clients ? (Array.isArray(raw.clients) ? raw.clients : []) : [];
-        setMembers(memberList as Member[]);
-        setInvoices((invoicesData as { invoices: Invoice[] }).invoices || []);
-      } catch (err) { console.error('Failed to load data', err); }
-    };
-    fetchData();
+    api.clients.list().then((raw: any) => {
+      const list = Array.isArray(raw) ? raw : raw?.data ? (Array.isArray(raw.data) ? raw.data : []) : raw?.clients ? (Array.isArray(raw.clients) ? raw.clients : []) : [];
+      setMembers(list as Member[]);
+    }).catch((err) => console.error('Failed to load clients', err));
+    api.invoices.list({ status: 'pending' }).then((raw: any) => {
+      const list = Array.isArray(raw) ? raw : raw?.invoices ?? [];
+      setInvoices(list as Invoice[]);
+    }).catch((err) => console.error('Failed to load invoices', err));
   }, []);
 
   const filteredMembers = members.filter((m) =>
