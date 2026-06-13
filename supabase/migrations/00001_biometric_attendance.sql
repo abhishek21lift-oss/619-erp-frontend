@@ -98,11 +98,43 @@ ALTER TABLE biometric_attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gym_settings ENABLE ROW LEVEL SECURITY;
 
 -- Authenticated users can read/insert their own credentials
-CREATE POLICY webauthn_credentials_member_policy ON webauthn_credentials
-  USING (member_id = current_setting('app.member_id', true) OR current_setting('app.role', true) = 'admin')
-  WITH CHECK (member_id = current_setting('app.member_id', true) OR current_setting('app.role', true) = 'admin');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'webauthn_credentials' AND policyname = 'webauthn_credentials_member_policy') THEN
+    CREATE POLICY webauthn_credentials_member_policy ON webauthn_credentials
+      USING (member_id = current_setting('app.member_id', true) OR current_setting('app.role', true) = 'admin')
+      WITH CHECK (member_id = current_setting('app.member_id', true) OR current_setting('app.role', true) = 'admin');
+  END IF;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'biometric_attendance' AND policyname = 'biometric_attendance_member_policy') THEN
+    CREATE POLICY biometric_attendance_member_policy ON biometric_attendance
+      USING (member_id = current_setting('app.member_id', true) OR current_setting('app.role', true) = 'admin')
+      WITH CHECK (member_id = current_setting('app.member_id', true) OR current_setting('app.role', true) = 'admin');
+  END IF;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'webauthn_challenges' AND policyname = 'webauthn_challenges_member_policy') THEN
+    CREATE POLICY webauthn_challenges_member_policy ON webauthn_challenges
+      USING (member_id = current_setting('app.member_id', true) OR current_setting('app.role', true) = 'admin')
+      WITH CHECK (member_id = current_setting('app.member_id', true) OR current_setting('app.role', true) = 'admin');
+  END IF;
+END;
+$$;
 
 -- Admin-only for gym_settings
-CREATE POLICY gym_settings_admin_policy ON gym_settings
-  USING (current_setting('app.role', true) = 'admin')
-  WITH CHECK (current_setting('app.role', true) = 'admin');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'gym_settings' AND policyname = 'gym_settings_admin_policy') THEN
+    CREATE POLICY gym_settings_admin_policy ON gym_settings
+      USING (current_setting('app.role', true) = 'admin')
+      WITH CHECK (current_setting('app.role', true) = 'admin');
+  END IF;
+END;
+$$;

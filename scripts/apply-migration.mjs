@@ -1,12 +1,32 @@
-import { readFileSync } from 'fs';
-import { createRequire } from 'module';
+import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+import { fileURLToPath } from 'url';
 
-const require = createRequire(import.meta.url);
+const __dirname = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
+
+if (!process.env.SUPABASE_DB_URL) {
+  const envPath = resolve(__dirname, '.env.local');
+  if (existsSync(envPath)) {
+    const content = readFileSync(envPath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const eqIdx = trimmed.indexOf('=');
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim();
+        if (key === 'SUPABASE_DB_URL' && !process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+}
 
 const CONNECTION_STRING = process.env.SUPABASE_DB_URL;
 if (!CONNECTION_STRING) {
   console.error('Error: SUPABASE_DB_URL environment variable is required.');
-  console.error('Usage: SUPABASE_DB_URL=postgresql://... node scripts/apply-migration.mjs');
+  console.error('Set it in .env.local or pass it inline:');
+  console.error('  $env:SUPABASE_DB_URL="postgresql://..." ; node scripts/apply-migration.mjs');
   process.exit(1);
 }
 
