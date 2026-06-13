@@ -141,33 +141,48 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
 
         {/* Right column */}
         <div className={cn('flex flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}>
-          {/* Top header bar */}
-          <header className="sticky top-0 z-40 border-b border-transparent"
-            style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 40%, #1e1b4b 70%, #1e40af 100%)' }}
+          {/* Top header bar — Premium Glassmorphic */}
+          <header className="sticky top-0 z-40 border-b border-white/[0.06] overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(15,12,41,0.85) 0%, rgba(26,20,64,0.85) 40%, rgba(30,27,75,0.85) 70%, rgba(30,64,175,0.85) 100%)',
+              backdropFilter: 'blur(20px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            }}
           >
-            <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
+            {/* Ambient gradient orbs */}
+            <motion.div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full opacity-20"
+              style={{ background: 'radial-gradient(circle, #a78bfa, transparent 70%)' }}
+              animate={{ x: [0, 15, -10, 0], y: [0, -10, 5, 0] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
+            <motion.div className="pointer-events-none absolute -right-8 -bottom-8 h-24 w-24 rounded-full opacity-15"
+              style={{ background: 'radial-gradient(circle, #38bdf8, transparent 70%)' }}
+              animate={{ x: [0, -10, 5, 0], y: [0, 8, -5, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
+
+            <div className="relative flex h-14 items-center gap-2 px-3 sm:px-5 lg:px-6">
               {/* Mobile menu toggle */}
               <button type="button" aria-label="Open navigation menu" onClick={() => setMobileMenuOpen(true)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white/60 transition-colors hover:bg-white/10 hover:text-white lg:hidden">
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition-all duration-200 hover:bg-white/10 hover:text-white lg:hidden">
                 <Menu size={17} strokeWidth={1.5} />
               </button>
 
               {/* Search */}
-              <div ref={searchRef} className="relative flex-1 max-w-[360px] lg:max-w-[400px]">
+              <div ref={searchRef} className="relative flex-1 max-w-[300px] lg:max-w-[360px]">
                 <div className="group relative">
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400 via-violet-500 to-cyan-400 p-[1.5px] opacity-50 transition-opacity duration-300 group-focus-within:opacity-100">
-                    <div className="h-full w-full rounded-2xl" style={{ background: 'rgba(15,12,41,0.7)' }} />
+                  <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/20 via-violet-500/20 to-cyan-500/20 p-[1px] opacity-60 transition-opacity duration-300 group-focus-within:opacity-100">
+                    <div className="h-full w-full rounded-xl" style={{ background: 'rgba(15,12,41,0.6)' }} />
                   </div>
                   <div className="relative flex items-center">
-                    <Search size={14} strokeWidth={2}
-                      className="absolute left-3 z-10 text-white/40 transition-colors duration-200 group-focus-within:text-purple-300" />
+                    <Search size={13} strokeWidth={2}
+                      className="absolute left-3 z-10 text-white/35 transition-all duration-200 group-focus-within:text-purple-300" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => handleSearch(e.target.value)}
                       onFocus={() => { if (searchQuery.trim()) setSearchOpen(searchResults.length > 0); }}
                       placeholder="Search pages, members, payments..."
-                      className="relative w-full rounded-2xl border border-white/10 bg-white/5 py-[7px] pl-9 pr-3 text-[12px] text-white outline-none transition-all duration-200 placeholder-white/30 focus:border-transparent focus:bg-white/10 focus:shadow-[0_0_0_1.5px_#a78bfa,0_8px_24px_rgba(167,139,250,0.2)]"
+                      className="relative w-full rounded-xl border border-white/[0.07] bg-white/[0.04] py-[7px] pl-9 pr-3 text-[12px] text-white/90 outline-none transition-all duration-200 placeholder-white/25 focus:border-purple-500/30 focus:bg-white/[0.08] focus:shadow-[0_0_0_1.5px_rgba(167,139,250,0.2),0_4px_16px_rgba(167,139,250,0.1)]"
                     />
                   </div>
                 </div>
@@ -175,15 +190,16 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                 <AnimatePresence>
                   {searchOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      initial={{ opacity: 0, y: -6, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                      transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
+                      exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-xl border border-white/[0.08] shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
+                      style={{ background: 'rgba(15,12,41,0.92)', backdropFilter: 'blur(24px) saturate(180%)' }}
                     >
-                      <div className="max-h-[300px] overflow-y-auto py-2">
+                      <div className="max-h-[280px] overflow-y-auto py-1.5">
                         {searchResults.length === 0 ? (
-                          <div className="px-4 py-6 text-center text-[13px] text-[var(--text-disabled)]">
+                          <div className="px-4 py-5 text-center text-[12px] text-white/30">
                             No results found
                           </div>
                         ) : (
@@ -191,9 +207,9 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                             <button
                               key={r.href}
                               onClick={() => navigateTo(r.href)}
-                              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] transition-all duration-150 hover:bg-[var(--brand-soft)] hover:pl-5"
+                              className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[12px] text-white/70 transition-all duration-150 hover:bg-white/[0.06] hover:text-white"
                             >
-                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--brand-lo)] to-[var(--brand)] text-[10px] font-bold text-white shadow-[0_2px_6px_var(--brand-glow)]">
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 text-[9px] font-bold text-white shadow-[0_2px_8px_rgba(167,139,250,0.25)]">
                                 {r.label.charAt(0)}
                               </span>
                               <span className="font-medium">{r.label}</span>
@@ -217,18 +233,22 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                   onClick={() => setSettingsOpen(s => !s)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200"
+                  className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 overflow-hidden border border-white/[0.06]"
                   style={{
-                    background: settingsOpen ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
-                    boxShadow: settingsOpen ? '0 4px 12px rgba(167,139,250,0.3)' : undefined,
+                    background: settingsOpen
+                      ? 'linear-gradient(135deg, rgba(167,139,250,0.2), rgba(99,102,241,0.15))'
+                      : 'rgba(255,255,255,0.05)',
+                    boxShadow: settingsOpen
+                      ? '0 4px 16px rgba(167,139,250,0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
+                      : 'inset 0 1px 0 rgba(255,255,255,0.06)',
                   }}
                 >
                   <motion.div
                     animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className={settingsOpen ? 'text-purple-300' : 'text-white/60'}
+                    className={settingsOpen ? 'text-purple-300' : 'text-white/50'}
                   >
-                    <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} className="relative z-10" />
+                    <Settings size={15} strokeWidth={settingsOpen ? 2 : 1.5} className="relative z-10" />
                   </motion.div>
                 </motion.button>
                 <AnimatePresence>
@@ -238,18 +258,19 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_var(--brand-glow)]"
+                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-white/[0.08] shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
+                      style={{ background: 'rgba(15,12,41,0.92)', backdropFilter: 'blur(24px) saturate(180%)' }}
                     >
-                      <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">Settings</div>
+                      <div className="px-3.5 py-2 text-[9px] font-bold uppercase tracking-[0.12em] text-white/30">Settings</div>
                       <div className="pb-2">
                         {settingsLinks.map((link) => {
                           const Icon = link.icon;
                           const active = pathname === link.href;
                           return (
                             <Link key={link.href} href={link.href} onClick={() => setSettingsOpen(false)}
-                              className={cn('flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition-colors',
-                                active ? 'bg-[var(--brand-soft)] text-[var(--brand)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]')}>
-                              <Icon size={14} strokeWidth={1.5} />
+                              className={cn('flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium transition-all',
+                                active ? 'bg-purple-500/10 text-purple-300' : 'text-white/50 hover:bg-white/[0.05] hover:text-white')}>
+                              <Icon size={13} strokeWidth={1.5} />
                               {link.label}
                             </Link>
                           );
@@ -261,25 +282,28 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
               </div>
 
               {/* Notification bell */}
-              <button type="button" aria-label="Notifications"
-                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white/60 transition-colors hover:bg-white/10 hover:text-white">
-                <Bell size={17} strokeWidth={1.5} />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-400 shadow-[0_0_6px_rgba(251,113,133,0.6)]" />
-              </button>
+              <motion.button type="button" aria-label="Notifications"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] transition-all duration-200"
+                style={{ background: 'rgba(255,255,255,0.05)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}>
+                <Bell size={15} strokeWidth={1.5} className="text-white/50" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.6)]" />
+              </motion.button>
 
               {/* Profile dropdown */}
               <div ref={profileRef} className="relative">
                 <button onClick={() => setProfileOpen(s => !s)}
-                  className="flex items-center gap-2 border-l border-white/10 pl-3 transition-colors hover:opacity-80">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg shadow-[0_2px_6px_rgba(167,139,250,0.4)] overflow-hidden"
+                  className="flex items-center gap-2 rounded-xl border border-white/[0.06] pl-2 pr-2.5 py-1.5 transition-all duration-200 hover:bg-white/[0.04]"
+                  style={{ background: 'rgba(255,255,255,0.03)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg overflow-hidden shadow-[0_2px_8px_rgba(167,139,250,0.3)]"
                     style={{ background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)' }}>
-                    <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
+                    <Image src="/logo.png" alt="619" width={18} height={18} className="h-[18px] w-[18px] object-contain" />
                   </div>
                   <div className="hidden sm:block text-left">
-                    <p className="text-[12px] font-semibold leading-tight text-white">619 FITNESS STUDIO</p>
-                    <p className="text-[10px] leading-tight text-white/50 capitalize">{user?.role || '—'}</p>
+                    <p className="text-[11px] font-semibold leading-tight text-white/90">619 FITNESS STUDIO</p>
+                    <p className="text-[9px] leading-tight text-white/40 capitalize">{user?.role || '—'}</p>
                   </div>
-                  <ChevronDown size={12} strokeWidth={1.5} className="text-white/40 shrink-0" />
+                  <ChevronDown size={11} strokeWidth={2} className="text-white/30 shrink-0" />
                 </button>
                 <AnimatePresence>
                   {profileOpen && (
@@ -288,25 +312,26 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_var(--brand-glow)]"
+                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-white/[0.08] shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
+                      style={{ background: 'rgba(15,12,41,0.92)', backdropFilter: 'blur(24px) saturate(180%)' }}
                     >
-                      <div className="px-3 py-2.5 border-b border-[var(--border)]">
-                        <p className="text-[12px] font-semibold text-[var(--text-primary)]">{user?.name || 'Admin'}</p>
-                        <p className="text-[10px] text-[var(--text-muted)] capitalize">{user?.email || '—'}</p>
+                      <div className="px-3.5 py-2.5 border-b border-white/[0.06]">
+                        <p className="text-[12px] font-semibold text-white/90">{user?.name || 'Admin'}</p>
+                        <p className="text-[10px] text-white/40 capitalize">{user?.email || '—'}</p>
                       </div>
                       <div className="py-1">
                         <Link href="/settings" onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <Settings size={14} strokeWidth={1.5} /> Account Settings
+                          className="flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-white/50 hover:bg-white/[0.05] hover:text-white transition-all">
+                          <Settings size={13} strokeWidth={1.5} /> Account Settings
                         </Link>
                         <Link href="/help" onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                          <HelpCircle size={14} strokeWidth={1.5} /> Help & Support
+                          className="flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-white/50 hover:bg-white/[0.05] hover:text-white transition-all">
+                          <HelpCircle size={13} strokeWidth={1.5} /> Help & Support
                         </Link>
-                        <hr className="my-1 border-[var(--border)]" />
+                        <hr className="my-1 border-white/[0.06]" />
                         <button onClick={handleLogout}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--danger)] hover:bg-[var(--danger)]/5 transition-colors">
-                          <LogOut size={14} strokeWidth={1.5} /> Logout
+                          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-rose-400 hover:bg-rose-500/10 transition-all">
+                          <LogOut size={13} strokeWidth={1.5} /> Logout
                         </button>
                       </div>
                     </motion.div>
