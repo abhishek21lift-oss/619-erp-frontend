@@ -871,7 +871,7 @@ export const api = {
       http<{ challenge: string; rp: { name: string; id: string }; user: { id: string; name: string; displayName: string }; pubKeyCredParams: { type: 'public-key'; alg: number }[] }>(
         `/api/webauthn/register/begin?member_id=${memberId}`,
       ),
-    registerComplete: (data: { memberId: string; deviceName: string; credentialId: string; rawId: string; attestationObject: string; clientDataJSON: string }) =>
+    registerComplete: (data: { memberId: string; deviceName: string; credentialId: string; rawId: string; transports?: string[]; deviceType?: string; attestationObject: string; clientDataJSON: string }) =>
       http<{ success: boolean; credential: { id: string } }>('/api/webauthn/register/complete', {
         method: 'POST', body: JSON.stringify(data),
       }),

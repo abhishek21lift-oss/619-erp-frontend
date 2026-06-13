@@ -11,7 +11,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { api } from '@/lib/api';
-import { isWebAuthnSupported, isPlatformAuthenticatorAvailable, registerCredential } from '@/lib/webauthn';
+import { isWebAuthnSupported, isPlatformAuthenticatorAvailable, registerCredential, getWebAuthnError } from '@/lib/webauthn';
 
 interface Credential {
   id: string;
@@ -99,6 +99,16 @@ function EnrollContent() {
     if (memberId) loadCredentials();
   }, [memberId, loadCredentials]);
 
+  function detectDeviceType(): string {
+    const ua = navigator.userAgent;
+    if (ua.includes('iPhone') || ua.includes('iPad')) return 'mobile';
+    if (ua.includes('Android')) return 'mobile';
+    if (ua.includes('Mac')) return 'desktop';
+    if (ua.includes('Windows')) return 'desktop';
+    if (ua.includes('Linux')) return 'desktop';
+    return 'unknown';
+  }
+
   const handleEnroll = async () => {
     if (!memberId || !memberName) { setStatus({ type: 'error', msg: 'Member ID and Name are required.' }); return; }
     setEnrolling(true);
@@ -115,6 +125,8 @@ function EnrollContent() {
         memberId, deviceName,
         credentialId: credential.credentialId,
         rawId: credential.rawId,
+        transports: credential.transports,
+        deviceType: detectDeviceType(),
         attestationObject: credential.response.attestationObject,
         clientDataJSON: credential.response.clientDataJSON,
       }) as any;
@@ -126,8 +138,7 @@ function EnrollContent() {
         setStatus({ type: 'error', msg: 'Failed to enroll passkey.' });
       }
     } catch (err: any) {
-      if (err?.name === 'NotAllowedError') setStatus({ type: 'error', msg: 'Enrollment cancelled.' });
-      else setStatus({ type: 'error', msg: err?.message || 'Enrollment failed.' });
+      setStatus({ type: 'error', msg: getWebAuthnError(err) });
     }
     finally { setEnrolling(false); }
   };

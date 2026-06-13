@@ -13,7 +13,7 @@ const ORIGIN = process.env.VERCEL_URL
 
 export { RP_NAME, RP_ID, ORIGIN };
 
-export async function generateRegOptions(user: { id: string; name: string; displayName: string }, excludeCredentials: { id: string }[]) {
+export async function generateRegOptions(user: { id: string; name: string; displayName: string }, excludeCredentials: { id: string }[], allowCrossPlatform?: boolean) {
   return generateRegistrationOptions({
     rpName: RP_NAME,
     rpID: RP_ID,
@@ -23,10 +23,10 @@ export async function generateRegOptions(user: { id: string; name: string; displ
     attestationType: 'none',
     excludeCredentials: excludeCredentials.map((c) => ({
       id: c.id,
-      transports: ['internal'],
+      transports: ['internal', 'usb', 'nfc', 'ble'],
     })),
     authenticatorSelection: {
-      authenticatorAttachment: 'platform',
+      authenticatorAttachment: allowCrossPlatform ? undefined : 'platform',
       userVerification: 'required',
       residentKey: 'required',
     },
@@ -42,14 +42,14 @@ export async function verifyRegResponse(credential: any, expectedChallenge: stri
   });
 }
 
-export async function generateAuthOptions(allowCredentials: { id: string }[]) {
+export async function generateAuthOptions(allowCredentials: { id: string }[], requireUserVerification?: boolean) {
   return generateAuthenticationOptions({
     rpID: RP_ID,
     allowCredentials: allowCredentials.map((c) => ({
       id: c.id,
-      transports: ['internal'],
+      transports: ['internal', 'usb', 'nfc', 'ble'],
     })),
-    userVerification: 'required',
+    userVerification: requireUserVerification === false ? 'discouraged' : 'required',
   });
 }
 

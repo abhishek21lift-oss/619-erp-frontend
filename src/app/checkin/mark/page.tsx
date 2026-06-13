@@ -11,7 +11,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { api } from '@/lib/api';
-import { isWebAuthnSupported, authenticateCredential } from '@/lib/webauthn';
+import { isWebAuthnSupported, authenticateCredential, getWebAuthnError } from '@/lib/webauthn';
 
 type Step = 'gps' | 'biometric' | 'success' | 'error';
 type VerifyMethod = 'face_id' | 'touch_id' | 'fingerprint' | 'passkey';
@@ -158,11 +158,7 @@ function MarkAttendanceContent() {
         setStep('error');
       }
     } catch (err: any) {
-      if (err?.name === 'NotAllowedError') {
-        setErrorMsg('Biometric verification cancelled.');
-      } else {
-        setErrorMsg(err?.message || 'Biometric verification failed.');
-      }
+      setErrorMsg(getWebAuthnError(err));
       setStep('error');
     }
     finally { setLoading(false); }

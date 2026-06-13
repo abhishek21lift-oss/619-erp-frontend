@@ -49,9 +49,35 @@ export function isPlatformAuthenticatorAvailable(): Promise<boolean> {
   return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
 }
 
+export function getWebAuthnError(err: any): string {
+  if (!err) return 'Something went wrong. Please try again later.';
+  switch (err.name) {
+    case 'NotSupportedError':
+      return 'This device does not support biometric authentication.';
+    case 'NotAllowedError':
+      return 'Biometric registration was cancelled.';
+    case 'AbortError':
+      return 'Request timed out. Please try again.';
+    case 'InvalidStateError':
+      return 'This credential is already registered.';
+    case 'SecurityError':
+      return 'A security error occurred. Please use HTTPS.';
+    case 'UnknownError':
+      return 'Identity verification failed. Please try again.';
+    default:
+      if (err.message?.includes('timed out') || err.message?.includes('timeout')) {
+        return 'Request timed out. Please try again.';
+      }
+      if (err.message?.includes('cancelled') || err.message?.includes('canceled')) {
+        return 'Biometric registration was cancelled.';
+      }
+      return err?.message || 'Something went wrong. Please try again later.';
+  }
+}
+
 export async function registerCredential(
   options: RegistrationOptions,
-): Promise<{ credentialId: string; rawId: string; response: { attestationObject: string; clientDataJSON: string } }> {
+): Promise<{ credentialId: string; rawId: string; transports: string[]; response: { attestationObject: string; clientDataJSON: string } }> {
   const publicKey: PublicKeyCredentialCreationOptions = {
     challenge: base64ToArrayBuffer(options.challenge),
     rp: options.rp,
@@ -77,9 +103,17 @@ export async function registerCredential(
   const credential = (await navigator.credentials.create({ publicKey })) as PublicKeyCredential;
   const response = credential.response as AuthenticatorAttestationResponse;
 
+  let transports: string[] = [];
+  try {
+    transports = response.getTransports?.() ?? [];
+  } catch {
+    transports = ['internal'];
+  }
+
   return {
     credentialId: credential.id,
     rawId: arrayBufferToBase64(credential.rawId),
+    transports,
     response: {
       attestationObject: arrayBufferToBase64(response.attestationObject),
       clientDataJSON: arrayBufferToBase64(response.clientDataJSON),

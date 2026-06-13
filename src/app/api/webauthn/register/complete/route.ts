@@ -5,7 +5,7 @@ import { verifyRegResponse } from '@/lib/webauthn-server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { memberId, deviceName, credentialId, rawId, attestationObject, clientDataJSON } = body;
+    const { memberId, deviceName, credentialId, rawId, attestationObject, clientDataJSON, transports, deviceType } = body;
 
     if (!memberId || !deviceName || !credentialId || !attestationObject || !clientDataJSON) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -34,10 +34,14 @@ export async function POST(req: NextRequest) {
     }
 
     const publicKey = Buffer.from(verification.registrationInfo.credential.publicKey).toString('base64url');
+    const counter = verification.registrationInfo.credential.counter ?? 0;
+    const credTransports = Array.isArray(transports) ? JSON.stringify(transports) : '["internal"]';
 
     await execute(
-      'INSERT INTO webauthn_credentials (member_id, credential_id, device_name, public_key) VALUES ($1, $2, $3, $4) ON CONFLICT (credential_id) DO UPDATE SET device_name = $3',
-      [memberId, credentialId, deviceName, publicKey],
+      `INSERT INTO webauthn_credentials (member_id, credential_id, device_name, device_type, public_key, counter, transports)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (credential_id) DO UPDATE SET device_name = $3, device_type = $4, transports = $7`,
+      [memberId, credentialId, deviceName, deviceType || '', publicKey, counter, credTransports],
     );
 
     await execute('DELETE FROM webauthn_challenges WHERE challenge = $1', [challengeRow.challenge]);
