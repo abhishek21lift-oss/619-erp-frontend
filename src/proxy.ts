@@ -22,7 +22,6 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import crypto from 'crypto';
 
 const PUBLIC_PATHS: string[] = [
   '/login',
@@ -47,72 +46,11 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
-const IS_PROD = process.env.NODE_ENV === 'production';
-
-function buildCsp(nonce: string, pathname: string): string {
-  const isCheckin = pathname.startsWith('/checkin') || pathname.startsWith('/clients/');
-
-  const scriptSrc = [
-    `'nonce-${nonce}'`,
-    "'self'",
-    ...(IS_PROD ? [] : ["'unsafe-eval'"]),
-  ];
-
-  const styleSrc = [
-    `'nonce-${nonce}'`,
-    "'self'",
-    "'unsafe-inline'",
-    'https://fonts.googleapis.com',
-    'https://api.fontshare.com',
-  ];
-
-  const directives: Record<string, string[]> = {
-    'default-src': ["'self'"],
-    'script-src': scriptSrc,
-    'style-src': styleSrc,
-    'font-src': ["'self'", 'https://fonts.gstatic.com', 'https://api.fontshare.com'],
-    'img-src': ["'self'", 'data:', 'blob:', 'https:'],
-    'connect-src': ["'self'", 'https:', 'wss:'],
-    'media-src': ["'self'", 'blob:'],
-    'worker-src': ['blob:'],
-    'frame-ancestors': ["'none'"],
-  };
-
-  if (isCheckin) {
-    directives['script-src']!.push("'unsafe-inline'");
-  }
-
-  return Object.entries(directives)
-    .map(([key, values]) => `${key} ${values.join(' ')}`)
-    .join('; ');
-}
-
-function setSecurityHeaders(res: NextResponse, nonce: string, pathname: string) {
-  const csp = buildCsp(nonce, pathname);
-  res.headers.set('x-nonce', nonce);
-  res.headers.set('Content-Security-Policy', csp);
-  res.headers.set('X-Content-Type-Options', 'nosniff');
-  res.headers.set('X-Frame-Options', 'DENY');
-  res.headers.set('X-XSS-Protection', '1; mode=block');
-  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.headers.set(
-    'Permissions-Policy',
-    'camera=(self), microphone=(), geolocation=()',
-  );
-  res.headers.set(
-    'Strict-Transport-Security',
-    'max-age=63072000; includeSubDomains; preload',
-  );
-}
-
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const nonce = crypto.randomBytes(16).toString('base64url');
 
   if (isPublicPath(pathname)) {
-    const res = NextResponse.next();
-    setSecurityHeaders(res, nonce, pathname);
-    return res;
+    return NextResponse.next();
   }
 
   const token = req.cookies.get('token')?.value;
@@ -134,9 +72,7 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const res = NextResponse.next();
-  setSecurityHeaders(res, nonce, pathname);
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {
