@@ -269,7 +269,7 @@ export default function AttendanceReportsPage() {
                               </td>
                               <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{data.checkins}</td>
                               <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{data.members.size}</td>
-                              <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{Math.round(data.checkins / Math.max(new Set((monthly.data as Attendance[] || []).filter(m => (m.date || '').startsWith(month)).length), 1))}</td>
+                              <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{Math.round(data.checkins / Math.max((monthly.data as Attendance[] || []).filter(m => (m.date || '').startsWith(month)).length, 1))}</td>
                               <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{Math.round((data.present / Math.max(data.checkins, 1)) * 100)}%</td>
                             </tr>
                           ))
