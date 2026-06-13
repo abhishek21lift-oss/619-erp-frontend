@@ -48,8 +48,8 @@ function Inner() {
   const [search, setSearch] = useState('');
   const [bioCode, setBioCode] = useState('');
   const [bioSaving, setBioSaving] = useState(false);
-  const successTimer = useRef<ReturnType<typeof setTimeout>>();
-  const errorTimer = useRef<ReturnType<typeof setTimeout>>();
+  const successTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function showSuccess(msg: string) { clearTimeout(successTimer.current); setSuccess(msg); successTimer.current = setTimeout(() => setSuccess(''), 1800); }
   function showError(msg: string) { clearTimeout(errorTimer.current); setError(msg); errorTimer.current = setTimeout(() => setError(''), 5000); }
