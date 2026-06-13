@@ -96,9 +96,9 @@ function Inner() {
     setDataLoading(true); setDataError('');
     try {
       const [exRes, plRes, trRes] = await Promise.all([
-        api.workouts.exercises.list() as Promise<{ data: Exercise[] }>,
-        api.workouts.plans.list() as Promise<{ data: WorkoutPlan[] }>,
-        api.pt.trainers() as Promise<{ data: { name: string }[] }>,
+        api.workouts.exercises.list(),
+        api.workouts.plans.list(),
+        api.pt.trainers(),
       ]);
       setExercises(Array.isArray((exRes as any)?.data) ? (exRes as any).data : []);
       setPlans(Array.isArray((plRes as any)?.data) ? (plRes as any).data : []);
