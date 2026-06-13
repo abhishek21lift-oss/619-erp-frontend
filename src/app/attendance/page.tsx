@@ -390,14 +390,14 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
             { label: 'Present today',  value: summary.present,  sub: 'members' },
             { label: 'Attendance rate', value: `${attendanceRate}%`, sub: 'today' },
             { label: 'Late arrivals',  value: summary.late,     sub: 'logged' },
             { label: 'Unmarked',       value: summary.unmarked, sub: 'pending' },
           ].map(stat => (
-            <div key={stat.label} className="rounded-[22px] border border-white/10 bg-white/10 p-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-xl">
+            <div key={stat.label} className="rounded-[22px] border border-white/10 bg-white/10 p-3 sm:p-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-xl">
               <p className="text-xs text-white/45">{stat.label}</p>
               <p className="mt-2 text-2xl font-semibold tabular-nums">{stat.value}</p>
               <p className="mt-1 text-xs text-white/50">{stat.sub}</p>
@@ -451,7 +451,7 @@ function BiometricPanel({ bioCode, setBioCode, bioSaving, onSubmit, bioRef, bioF
               onBlur={() => setBioFocus(false)}
               placeholder="Scan fingerprint / enter member code"
               autoComplete="off"
-              className="flex-1 min-w-[220px] rounded-[16px] border border-zinc-200 bg-white/80 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30 dark:focus:ring-rose-900/20"
+              className="flex-1 min-w-0 sm:min-w-[220px] rounded-[16px] border border-zinc-200 bg-white/80 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30 dark:focus:ring-rose-900/20"
             />
             <button
               type="submit"

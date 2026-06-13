@@ -422,12 +422,7 @@ export default function CheckInContent() {
       </div>
 
       {/* ── Main Layout: Two Columns ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 360px',
-        gap: 20,
-        alignItems: 'start',
-      }}>
+      <div className="grid grid-cols-1 gap-5 items-start lg:grid-cols-[1fr_360px]">
         {/* ═══ Left: Camera Card ═══ */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -480,16 +475,16 @@ export default function CheckInContent() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
-                style={{
-                  position: 'absolute',
-                  top: '50%', left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: 220, height: 220,
-                  borderRadius: '50%',
-                  border: `2.5px solid ${camGuideColor}`,
-                  pointerEvents: 'none',
-                  animation: 'ck-guide-pulse 2s ease-in-out infinite',
-                  boxShadow: `0 0 30px ${camGuideColor}20, inset 0 0 30px ${camGuideColor}08`,
+                  style={{
+                    position: 'absolute',
+                    top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 'min(55vw, 220px)', height: 'min(55vw, 220px)',
+                    borderRadius: '50%',
+                    border: `2.5px solid ${camGuideColor}`,
+                    pointerEvents: 'none',
+                    animation: 'ck-guide-pulse 2s ease-in-out infinite',
+                    boxShadow: `0 0 30px ${camGuideColor}20, inset 0 0 30px ${camGuideColor}08`,
                 }}
               />
             )}
