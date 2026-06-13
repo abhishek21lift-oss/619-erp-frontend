@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
+import { useRouter } from 'next/navigation';
 import { api, http, Client, Attendance } from '@/lib/api';
 import {
   Activity,
@@ -48,26 +49,72 @@ import {
 type ViewMode = 'table' | 'grid';
 type StatusFilter = 'all' | 'present' | 'absent' | 'late' | 'unmarked';
 
-const FEED_ITEMS = [
-  { id: 1, name: 'Rahul Gupta',    action: 'checked in',   time: '2 min ago',  status: 'present', avatar: 'RG' },
-  { id: 2, name: 'Ananya Joshi',  action: 'arrived late',  time: '6 min ago',  status: 'late',    avatar: 'AJ' },
-  { id: 3, name: 'Deepak Mehta',  action: 'checked in',   time: '12 min ago', status: 'present', avatar: 'DM' },
-  { id: 4, name: 'Sonia Kapoor',  action: 'scan failed',  time: '18 min ago', status: 'error',   avatar: 'SK' },
-  { id: 5, name: 'Vijay Sharma',  action: 'checked in',   time: '25 min ago', status: 'present', avatar: 'VS' },
-  { id: 6, name: 'Neha Singh',    action: 'membership ⚠', time: '31 min ago', status: 'warn',    avatar: 'NS' },
-];
+export interface FeedItem {
+  id: string | number;
+  name: string;
+  action: string;
+  time: string;
+  status: string;
+  avatar: string;
+}
 
-const WEEKLY_BARS = [
-  { day: 'Mon', pct: 88 }, { day: 'Tue', pct: 76 }, { day: 'Wed', pct: 92 },
-  { day: 'Thu', pct: 84 }, { day: 'Fri', pct: 70 }, { day: 'Sat', pct: 95 }, { day: 'Sun', pct: 62 },
-];
+function buildFeedFromRecords(records: Attendance[], clients: Client[]): FeedItem[] {
+  const now = Date.now();
+  return records
+    .filter(r => r.check_in)
+    .slice(0, 6)
+    .map(r => {
+      const client = clients.find(c => c.id === r.ref_id);
+      const name = client?.name || r.ref_name || 'Unknown';
+      const initials = name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+      const checkTime = r.check_in ? new Date(`1970-01-01T${r.check_in}`).getTime() : 0;
+      const minsAgo = Math.round((now - checkTime) / 60000);
+      const action = r.status === 'late' ? 'arrived late' : 'checked in';
+      return { id: r.id, name, action, time: `${Math.max(1, minsAgo)} min ago`, status: r.status, avatar: initials };
+    });
+}
 
-const SMART_ALERTS = [
-  { type: 'warn',    title: '4 members absent for 7+ days',           desc: 'Consider sending re-engagement notifications.',       icon: <AlertTriangle className="h-4 w-4" /> },
-  { type: 'info',   title: '6 memberships expiring within 10 days',  desc: 'Renewals pending — trigger reminder campaign.',        icon: <Clock className="h-4 w-4" /> },
-  { type: 'amber',  title: '3 members with frequent late check-ins',  desc: 'Rohit, Ananya & Vijay arriving 15+ min late daily.',  icon: <ArrowDownLeft className="h-4 w-4" /> },
-  { type: 'green',  title: '12 members with 100% monthly attendance', desc: 'High-engagement cohort — ideal for loyalty rewards.',  icon: <Sparkles className="h-4 w-4" /> },
-];
+function buildWeeklyBars(records: Attendance[]): { day: string; pct: number }[] {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayCount: Record<string, { present: number; total: number }> = {};
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    dayCount[days[d.getDay()]] = { present: 0, total: 0 };
+  }
+  records.forEach(r => {
+    const d = new Date(r.date || Date.now());
+    const key = days[d.getDay()];
+    if (dayCount[key]) {
+      dayCount[key].total++;
+      if (r.status === 'present' || r.status === 'late') dayCount[key].present++;
+    }
+  });
+  return Object.entries(dayCount).map(([day, v]) => ({
+    day,
+    pct: v.total > 0 ? Math.round((v.present / v.total) * 100) : 0,
+  }));
+}
+
+function buildAlerts(records: Attendance[], clients: Client[]): { type: string; title: string; desc: string; icon: React.ReactNode }[] {
+  const alerts: { type: string; title: string; desc: string; icon: React.ReactNode }[] = [];
+  const absent = clients.filter(c => !records.find(r => r.ref_id === c.id));
+  if (absent.length > 0) {
+    alerts.push({ type: 'warn', title: `${absent.length} members absent today`, desc: 'No check-in recorded for these members.', icon: <AlertTriangle className="h-4 w-4" /> });
+  }
+  const late = records.filter(r => r.status === 'late');
+  if (late.length > 0) {
+    const names = late.slice(0, 3).map(r => r.ref_name).filter(Boolean).join(', ');
+    alerts.push({ type: 'amber', title: `${late.length} members arrived late`, desc: names ? `${names} checking in after 10 AM.` : 'Late check-ins detected.', icon: <ArrowDownLeft className="h-4 w-4" /> });
+  }
+  const perfect = clients.filter(c => {
+    const rec = records.find(r => r.ref_id === c.id);
+    return rec?.status === 'present';
+  });
+  if (perfect.length > 0) {
+    alerts.push({ type: 'green', title: `${perfect.length} members marked present`, desc: 'On-time attendance recorded.', icon: <Sparkles className="h-4 w-4" /> });
+  }
+  return alerts.length > 0 ? alerts : [{ type: 'info', title: 'All clear', desc: 'No attendance anomalies detected today.', icon: <Clock className="h-4 w-4" /> }];
+}
 
 /* ────────────────────────────────────────────────────────────────
    ROOT
@@ -88,7 +135,7 @@ function AttendanceContent() {
   const isAdmin = user?.role === 'admin';
   const today   = new Date().toISOString().split('T')[0];
 
-  /* ── original state ── */
+  /* ── state ── */
   const [date,      setDate]      = useState(today);
   const [clients,   setClients]   = useState<Client[]>([]);
   const [records,   setRecords]   = useState<Attendance[]>([]);
@@ -100,15 +147,20 @@ function AttendanceContent() {
   const [bioCode,   setBioCode]   = useState('');
   const [bioSaving, setBioSaving] = useState(false);
 
-  /* ── new UI state ── */
+  /* ── UI state ── */
   const [viewMode,      setViewMode]      = useState<ViewMode>('table');
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all');
   const [activeTab,     setActiveTab]     = useState<'members' | 'insights' | 'alerts'>('members');
   const [bioFocus,      setBioFocus]      = useState(false);
   const [dirty,         setDirty]         = useState(false);
   const bioRef = useRef<HTMLInputElement>(null);
+  const successTimer = useRef<ReturnType<typeof setTimeout>>();
+  const errorTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  /* ── original data fetch ── */
+  function showSuccess(msg: string) { clearTimeout(successTimer.current); setSuccess(msg); successTimer.current = setTimeout(() => setSuccess(''), 1800); }
+  function showError(msg: string) { clearTimeout(errorTimer.current); setError(msg); errorTimer.current = setTimeout(() => setError(''), 5000); }
+
+  /* ── data fetch ── */
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -116,11 +168,12 @@ function AttendanceContent() {
       api.attendance.list({ date, type: 'client' }),
     ])
       .then(([c, a]) => { setClients(c); setRecords(a); })
-      .catch((e) => setError(e.message))
+      .catch((e: Error) => showError(e.message))
       .finally(() => setLoading(false));
+    return () => { clearTimeout(successTimer.current); clearTimeout(errorTimer.current); };
   }, [date]);
 
-  /* ── original mark function ── */
+  /* ── mark function ── */
   async function mark(client: Client, status: string) {
     setSaving(client.id);
     try {
@@ -135,17 +188,16 @@ function AttendanceContent() {
       });
       const updated = await api.attendance.list({ date, type: 'client' });
       setRecords(updated);
-      setSuccess(`Marked ${client.name} as ${status}`);
+      showSuccess(`Marked ${client.name} as ${status}`);
       setDirty(true);
-      setTimeout(() => setSuccess(''), 1800);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      showError(e instanceof Error ? e.message : 'Failed to mark attendance');
     } finally {
       setSaving(null);
     }
   }
 
-  /* ── original biometric check-in ── */
+  /* ── biometric check-in ── */
   async function biometricCheckIn() {
     if (!bioCode.trim()) return;
     setBioSaving(true);
@@ -154,12 +206,11 @@ function AttendanceContent() {
       const res = await http<{ message: string }>('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'client' }) });
       const updated = await api.attendance.list({ date, type: 'client' });
       setRecords(updated);
-      setSuccess(res.message);
+      showSuccess(res.message);
       setBioCode('');
       setDirty(true);
-      setTimeout(() => setSuccess(''), 2200);
-    } catch (e: any) {
-      setError(e.message || 'Biometric check-in failed');
+    } catch (e: unknown) {
+      showError((e instanceof Error ? e.message : null) || 'Biometric check-in failed');
     } finally {
       setBioSaving(false);
     }
@@ -184,6 +235,10 @@ function AttendanceContent() {
     unmarked: clients.length - records.length,
     total:    clients.length,
   };
+
+  const feedItems = buildFeedFromRecords(records, clients);
+  const weeklyBars = buildWeeklyBars(records);
+  const smartAlerts = buildAlerts(records, clients);
 
   const filtered = clients.filter((c) => {
     const rec  = getRecord(c.id);
@@ -266,12 +321,12 @@ function AttendanceContent() {
                 date={date} today={today} onMarkAll={date === today ? markAllPresent : undefined}
               />
             )}
-            {activeTab === 'insights' && <InsightsPanel summary={summary} />}
-            {activeTab === 'alerts'   && <AlertsPanel />}
+            {activeTab === 'insights' && <InsightsPanel summary={summary} weeklyBars={weeklyBars} />}
+            {activeTab === 'alerts'   && <AlertsPanel alerts={smartAlerts} />}
           </div>
 
           {/* ── LIVE FEED ── */}
-          <LiveFeedPanel />
+          <LiveFeedPanel feedItems={feedItems} />
 
           {/* ── QUICK ACTIONS ── */}
           <QuickActionsPanel onMarkAll={date === today ? markAllPresent : undefined} />
@@ -607,13 +662,14 @@ function AttendanceBtns({ client, rec, saving, mark }: {
 /* ────────────────────────────────────────────────────────────────
    INSIGHTS PANEL
 ──────────────────────────────────────────────────────────────── */
-function InsightsPanel({ summary }: { summary: { present: number; absent: number; late: number; unmarked: number; total: number } }) {
-  const max = Math.max(...WEEKLY_BARS.map(b => b.pct), 1);
+function InsightsPanel({ summary, weeklyBars }: { summary: { present: number; absent: number; late: number; unmarked: number; total: number }; weeklyBars: { day: string; pct: number }[] }) {
+  const bars = weeklyBars.length > 0 ? weeklyBars : [{ day: '—', pct: 0 }];
+  const max = Math.max(...bars.map(b => b.pct), 1);
   return (
     <div className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
       <PremiumCard title="Weekly Attendance Trends" subtitle="Last 7 days — daily attendance rate">
         <div className="flex h-44 items-end gap-2 pt-4">
-          {WEEKLY_BARS.map((b, i) => (
+          {bars.map((b, i) => (
             <div key={i} className="flex flex-1 flex-col items-center gap-2">
               <p className="text-xs font-semibold text-zinc-600 dark:text-white/55">{b.pct}%</p>
               <div className="w-full rounded-t-[10px] transition-all" style={{ height: `${(b.pct / max) * 140}px`, background: b.pct >= 85 ? 'linear-gradient(180deg,#10b981,#059669)' : b.pct >= 70 ? 'linear-gradient(180deg,#dc2626,#991b1b)' : 'linear-gradient(180deg,#f59e0b,#d97706)' }} />
@@ -652,7 +708,9 @@ function InsightsPanel({ summary }: { summary: { present: number; absent: number
 
         <PremiumCard title="Peak hours" subtitle="Studio occupancy">
           <div className="space-y-2">
-            {[['6–8 AM', 78], ['8–10 AM', 95], ['10 AM–12', 62], ['4–6 PM', 88], ['6–8 PM', 72]].map(([t, v]) => (
+            {[['6–8 AM', 78], ['8–10 AM', 95], ['10 AM–12', 62], ['4–6 PM', 88], ['6–8 PM', 72]].map(([t, v]) => {
+        const pct = weeklyBars.length > 0 ? Math.round(summary.present / Math.max(summary.total, 1) * 100) : Number(v);
+        return (
               <div key={String(t)} className="flex items-center gap-3">
                 <p className="w-20 shrink-0 text-xs text-zinc-500 dark:text-white/40">{t}</p>
                 <div className="flex-1 h-2 rounded-full bg-zinc-100 dark:bg-white/10">
@@ -671,7 +729,7 @@ function InsightsPanel({ summary }: { summary: { present: number; absent: number
 /* ────────────────────────────────────────────────────────────────
    ALERTS PANEL
 ──────────────────────────────────────────────────────────────── */
-function AlertsPanel() {
+function AlertsPanel({ alerts }: { alerts: { type: string; title: string; desc: string; icon: React.ReactNode }[] }) {
   const COLORS: Record<string, string> = {
     warn:  'border-rose-400/30 bg-rose-500/8 dark:bg-rose-900/15',
     info:  'border-sky-400/30 bg-sky-500/8 dark:bg-sky-900/15',
@@ -684,7 +742,7 @@ function AlertsPanel() {
   return (
     <PremiumCard title="Smart Alerts" subtitle="AI-powered operational insights based on attendance patterns">
       <div className="grid gap-4 sm:grid-cols-2">
-        {SMART_ALERTS.map((a, i) => (
+        {alerts.map((a, i) => (
           <div key={i} className={`rounded-[20px] border p-5 transition hover:-translate-y-0.5 ${COLORS[a.type]}`}>
             <div className="flex items-start gap-3">
               <div className={`mt-0.5 ${ICON_COLORS[a.type]}`}>{a.icon}</div>
@@ -707,7 +765,7 @@ function AlertsPanel() {
 /* ────────────────────────────────────────────────────────────────
    LIVE FEED
 ──────────────────────────────────────────────────────────────── */
-function LiveFeedPanel() {
+function LiveFeedPanel({ feedItems }: { feedItems: FeedItem[] }) {
   return (
     <section className="mt-6">
       <div className="mb-4 flex items-center justify-between">
@@ -719,18 +777,24 @@ function LiveFeedPanel() {
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />Live
         </span>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {FEED_ITEMS.map(f => (
-          <div key={f.id} className="flex items-center gap-3.5 rounded-[20px] border border-zinc-200/70 bg-white/80 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-            <FeedAvatar initials={f.avatar} status={f.status} size="lg" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-zinc-900 dark:text-white">{f.name}</p>
-              <p className="text-xs text-zinc-500 dark:text-white/40">{f.action}</p>
+      {feedItems.length === 0 ? (
+        <div className="rounded-[20px] border border-zinc-200/70 bg-white/80 px-4 py-8 text-center text-sm text-zinc-400 dark:border-white/10 dark:bg-white/5">
+          No check-ins recorded yet today
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {feedItems.map(f => (
+            <div key={f.id} className="flex items-center gap-3.5 rounded-[20px] border border-zinc-200/70 bg-white/80 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+              <FeedAvatar initials={f.avatar} status={f.status} size="lg" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-zinc-900 dark:text-white">{f.name}</p>
+                <p className="text-xs text-zinc-500 dark:text-white/40">{f.action}</p>
+              </div>
+              <p className="shrink-0 text-xs text-zinc-400 dark:text-white/30">{f.time}</p>
             </div>
-            <p className="shrink-0 text-xs text-zinc-400 dark:text-white/30">{f.time}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -739,13 +803,14 @@ function LiveFeedPanel() {
    QUICK ACTIONS
 ──────────────────────────────────────────────────────────────── */
 function QuickActionsPanel({ onMarkAll }: { onMarkAll?: () => void }) {
+  const router = useRouter();
   const actions = [
     { label: 'Mark All Present', icon: <CheckCircle2 className="h-5 w-5" />, color: 'from-emerald-500/20 to-green-500/10', onClick: onMarkAll },
-    { label: 'Bulk Attendance',  icon: <Users className="h-5 w-5" />,        color: 'from-sky-500/20 to-blue-500/10' },
-    { label: 'Export CSV',       icon: <Download className="h-5 w-5" />,      color: 'from-violet-500/20 to-purple-500/10' },
-    { label: 'Send Reminders',   icon: <Bell className="h-5 w-5" />,          color: 'from-amber-500/20 to-yellow-500/10' },
-    { label: 'Open Reports',     icon: <BarChart3 className="h-5 w-5" />,     color: 'from-rose-500/20 to-red-500/10' },
-    { label: 'Start Live Scan',  icon: <Scan className="h-5 w-5" />,          color: 'from-rose-500/20 to-red-500/10' },
+    { label: 'Bulk Attendance',  icon: <Users className="h-5 w-5" />,        color: 'from-sky-500/20 to-blue-500/10', onClick: onMarkAll },
+    { label: 'Export CSV',       icon: <Download className="h-5 w-5" />,      color: 'from-violet-500/20 to-purple-500/10', onClick: () => window.open(`/api/attendance?format=csv&date=${new Date().toISOString().split('T')[0]}`, '_blank') },
+    { label: 'Send Reminders',   icon: <Bell className="h-5 w-5" />,          color: 'from-amber-500/20 to-yellow-500/10', onClick: () => router.push('/engagement/notifications') },
+    { label: 'Open Reports',     icon: <BarChart3 className="h-5 w-5" />,     color: 'from-rose-500/20 to-red-500/10', onClick: () => router.push('/attendance/reports') },
+    { label: 'Start Live Scan',  icon: <Scan className="h-5 w-5" />,          color: 'from-rose-500/20 to-red-500/10', onClick: () => router.push('/checkin') },
   ];
   return (
     <section className="mt-6">
@@ -855,8 +920,8 @@ function StatusBadge({ status }: { status: string }) {
 function MemberAvatar({ client, large }: { client: Client; large?: boolean }) {
   const sz = large ? 'h-12 w-12 text-sm' : 'h-9 w-9 text-xs';
   const initials = (client.name || '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-  if ((client as any).photo_url) {
-    return <img src={(client as any).photo_url} alt={client.name} className={`${sz} rounded-full object-cover`} loading="lazy" />;
+  if (client.photo_url) {
+    return <img src={client.photo_url} alt={client.name} className={`${sz} rounded-full object-cover`} loading="lazy" />;
   }
   return (
     <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#dc2626,#7c3aed)] flex items-center justify-center font-semibold text-white shadow-sm`}>

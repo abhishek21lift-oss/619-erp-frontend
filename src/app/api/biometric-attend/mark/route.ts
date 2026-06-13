@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
       [memberId, today],
     );
     if (existing) {
-      const elapsed = (Date.now() - new Date(`${today}T${existing.check_in_time}`).getTime()) / 60000;
+      const checkInIso = existing.check_in_time.length === 8 ? `T${existing.check_in_time}` : `T${existing.check_in_time}`;
+      const elapsed = (Date.now() - new Date(`${today}${checkInIso}`).getTime()) / 60000;
       if (elapsed < settings.duplicate_window_minutes) {
         return NextResponse.json({
           success: false,
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     const day = now.toLocaleDateString('en-US', { weekday: 'long' });
     const hour = now.getHours();
     const status = hour >= 10 ? 'late' : 'present';

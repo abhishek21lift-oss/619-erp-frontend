@@ -463,7 +463,7 @@ export const api = {
     list: (params?: Record<string, string>) =>
       http<Attendance[]>(`/api/attendance${buildQs(params)}`),
     mark: (data: Record<string, unknown>) =>
-      http<Attendance>('/api/attendance/mark', { method: 'POST', body: JSON.stringify(data) }),
+      http<Attendance>('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
     create: (data: Record<string, unknown>) =>
       http('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>

@@ -185,11 +185,23 @@ export default function AttendanceReportsPage() {
                   <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}><Loader2 size={20} className="animate-spin" /></div>
                 ) : records.length > 0 ? (
                   <div style={{ padding: '40px 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 4 }}>
-                    {records.slice(0, 20).map((r, i) => (
-                      <motion.div key={i} initial={{ height: 0 }} animate={{ height: 20 + Math.random() * 80 }}
-                        transition={{ duration: 0.6, delay: i * 0.03, ease: 'easeOut' }}
-                        style={{ width: 18, borderRadius: '6px 6px 0 0', background: `linear-gradient(180deg, #06b6d4, #3b82f6)`, opacity: 0.6 + (i / records.length) * 0.4 }} />
-                    ))}
+                    {(() => {
+                      const statusCounts = records.reduce((acc: Record<string, number>, r) => {
+                        acc[r.status] = (acc[r.status] || 0) + 1;
+                        return acc;
+                      }, {});
+                      const maxCount = Math.max(...Object.values(statusCounts), 1);
+                      const colors: Record<string, string> = { present: '#10b981', late: '#f59e0b', absent: '#ef4444', unmarked: '#94a3b8' };
+                      return Object.entries(statusCounts).map(([status, count], i) => {
+                        const barHeight = 20 + (count / maxCount) * 80;
+                        return (
+                          <motion.div key={status} initial={{ height: 0 }} animate={{ height: barHeight }}
+                            transition={{ duration: 0.6, delay: i * 0.03, ease: 'easeOut' }}
+                            style={{ width: 40, borderRadius: '6px 6px 0 0', background: `linear-gradient(180deg, ${colors[status] || '#06b6d4'}, #1e293b)`, opacity: 0.6 + (i / Math.max(Object.keys(statusCounts).length, 1)) * 0.4 }}
+                            title={`${status}: ${count}`} />
+                        );
+                      });
+                    })()}
                   </div>
                 ) : (
                   <div style={{ padding: '48px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
@@ -230,26 +242,38 @@ export default function AttendanceReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(monthly.data as Attendance[] || []).slice(0, 6).length > 0 ? (
-                        (monthly.data as Attendance[] || []).slice(0, 6).map((m, i) => (
-                          <tr key={i}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
-                            style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 150ms' }}>
-                            <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <motion.div initial={{ width: 0 }} animate={{ width: Math.min(60, 10 + Math.random() * 50) }}
-                                  transition={{ duration: 0.8, delay: i * 0.05, ease: 'easeOut' }}
-                                  style={{ height: 6, borderRadius: 3, background: 'linear-gradient(90deg,#06b6d4,#3b82f6)' }} />
-                                {m.date || m.ref_name || '—'}
-                              </div>
-                            </td>
-                            <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{m.status || '—'}</td>
-                            <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{m.ref_name || '—'}</td>
-                            <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{m.check_in || '—'}</td>
-                            <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{m.ref_id || '—'}</td>
-                          </tr>
-                        ))
+                      {(() => {
+                        const byMonth: Record<string, { checkins: number; members: Set<string>; present: number }> = {};
+                        (monthly.data as Attendance[] || []).forEach((m) => {
+                          const date = m.date || '';
+                          const monthKey = date.slice(0, 7);
+                          if (!byMonth[monthKey]) byMonth[monthKey] = { checkins: 0, members: new Set(), present: 0 };
+                          byMonth[monthKey].checkins++;
+                          byMonth[monthKey].members.add(m.ref_id);
+                          if (m.status === 'present') byMonth[monthKey].present++;
+                        });
+                        const entries = Object.entries(byMonth).sort().reverse().slice(0, 6);
+                        return entries.length > 0 ? (
+                          entries.map(([month, data], i) => (
+                            <tr key={month}
+                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
+                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
+                              style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 150ms' }}>
+                              <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <motion.div initial={{ width: 0 }} animate={{ width: Math.min(60, (data.present / Math.max(data.checkins, 1)) * 60) }}
+                                    transition={{ duration: 0.8, delay: i * 0.05, ease: 'easeOut' }}
+                                    style={{ height: 6, borderRadius: 3, background: 'linear-gradient(90deg,#06b6d4,#3b82f6)' }} />
+                                  {month}
+                                </div>
+                              </td>
+                              <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{data.checkins}</td>
+                              <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{data.members.size}</td>
+                              <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{Math.round(data.checkins / Math.max(new Set((monthly.data as Attendance[] || []).filter(m => (m.date || '').startsWith(month)).length), 1))}</td>
+                              <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{Math.round((data.present / Math.max(data.checkins, 1)) * 100)}%</td>
+                            </tr>
+                          ))
+                        ) : (
                       ) : (
                         <tr>
                           <td colSpan={5} style={{ padding: '32px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>No monthly data available</td>

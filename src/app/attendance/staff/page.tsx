@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -48,6 +48,11 @@ function Inner() {
   const [search, setSearch] = useState('');
   const [bioCode, setBioCode] = useState('');
   const [bioSaving, setBioSaving] = useState(false);
+  const successTimer = useRef<ReturnType<typeof setTimeout>>();
+  const errorTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  function showSuccess(msg: string) { clearTimeout(successTimer.current); setSuccess(msg); successTimer.current = setTimeout(() => setSuccess(''), 1800); }
+  function showError(msg: string) { clearTimeout(errorTimer.current); setError(msg); errorTimer.current = setTimeout(() => setError(''), 5000); }
 
   useEffect(() => {
     let alive = true;
@@ -62,10 +67,12 @@ function Inner() {
         setStaff(t);
         setRecords(Array.isArray(a) ? a : []);
       })
-      .catch((e) => alive && setError(e.message || 'Failed to load staff'))
+      .catch((e) => { if (alive) showError(e.message || 'Failed to load staff'); })
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
+      clearTimeout(successTimer.current);
+      clearTimeout(errorTimer.current);
     };
   }, [date]);
 
@@ -89,10 +96,9 @@ function Inner() {
       });
       const updated = await api.attendance.list({ date, type: 'trainer' });
       setRecords(Array.isArray(updated) ? updated : []);
-      setSuccess(`Marked ${t.name} as ${status}`);
-      setTimeout(() => setSuccess(''), 1800);
-    } catch (e: any) {
-      setError(e.message || 'Could not save attendance.');
+      showSuccess(`Marked ${t.name} as ${status}`);
+    } catch (e: unknown) {
+      showError((e instanceof Error ? e.message : null) || 'Could not save attendance.');
     } finally {
       setSaving(null);
     }
@@ -140,11 +146,10 @@ function Inner() {
       const res = await http<{ message: string }>('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'trainer' }) });
       const updated = await api.attendance.list({ date, type: 'trainer' });
       setRecords(Array.isArray(updated) ? updated : []);
-      setSuccess(res.message);
+      showSuccess(res.message);
       setBioCode('');
-      setTimeout(() => setSuccess(''), 2200);
-    } catch (e: any) {
-      setError(e.message || 'Biometric check-in failed');
+    } catch (e: unknown) {
+      showError((e instanceof Error ? e.message : null) || 'Biometric check-in failed');
     } finally {
       setBioSaving(false);
     }

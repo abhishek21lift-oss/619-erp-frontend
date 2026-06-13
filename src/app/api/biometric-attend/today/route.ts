@@ -22,9 +22,17 @@ export async function GET(req: NextRequest) {
       deviceName: r.device_name,
     }));
 
+    const memberIds = allRows.map((r: any) => r.member_id);
+    const absent = memberIds.length > 0
+      ? (await query(
+          `SELECT COUNT(*)::int AS cnt FROM members WHERE deleted_at IS NULL AND id != ALL($1::text[])`,
+          [memberIds],
+        ))[0]?.cnt || 0
+      : 0;
+
     return NextResponse.json({
       present,
-      absent: 0,
+      absent,
       late,
       active: total,
       feed,
