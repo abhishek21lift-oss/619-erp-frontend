@@ -274,7 +274,6 @@ export default function AttendanceReportsPage() {
                             </tr>
                           ))
                         ) : (
-                      ) : (
                         <tr>
                           <td colSpan={5} style={{ padding: '32px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>No monthly data available</td>
                         </tr>

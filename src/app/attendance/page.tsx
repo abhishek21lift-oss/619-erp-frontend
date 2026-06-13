@@ -708,9 +708,7 @@ function InsightsPanel({ summary, weeklyBars }: { summary: { present: number; ab
 
         <PremiumCard title="Peak hours" subtitle="Studio occupancy">
           <div className="space-y-2">
-            {[['6–8 AM', 78], ['8–10 AM', 95], ['10 AM–12', 62], ['4–6 PM', 88], ['6–8 PM', 72]].map(([t, v]) => {
-        const pct = weeklyBars.length > 0 ? Math.round(summary.present / Math.max(summary.total, 1) * 100) : Number(v);
-        return (
+            {[['6–8 AM', 78], ['8–10 AM', 95], ['10 AM–12', 62], ['4–6 PM', 88], ['6–8 PM', 72]].map(([t, v]) => (
               <div key={String(t)} className="flex items-center gap-3">
                 <p className="w-20 shrink-0 text-xs text-zinc-500 dark:text-white/40">{t}</p>
                 <div className="flex-1 h-2 rounded-full bg-zinc-100 dark:bg-white/10">
