@@ -1,13 +1,13 @@
 'use client';
 
-import { use, useState, useEffect, useCallback } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, User, Phone, Mail, Calendar, Hash, Target,
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
   CheckCircle, AlertTriangle, Clock, Award, IndianRupee,
-  Camera, Ruler, Zap, UserPlus, Repeat, X, ChevronRight,
+  Camera, Ruler, Zap, Repeat, X, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -108,10 +108,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [client, setClient] = useState<PtClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [assignOpen, setAssignOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
-  const [trainers, setTrainers] = useState<string[]>([]);
-  const [trainerIdMap, setTrainerIdMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -230,40 +227,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     } catch { alert('Failed to delete client'); setDeleting(false); }
   };
 
-  const fetchTrainers = useCallback(async () => {
-    try {
-      const res = await api.pt.trainers() as { data: unknown[] };
-      const arr = Array.isArray(res?.data) ? res.data : [];
-      setTrainers(arr.map((t: any) => t.name ?? t));
-      const map: Record<string, string> = {};
-      arr.forEach((t: any) => { if (t.name && t.id) map[t.name] = t.id; });
-      setTrainerIdMap(map);
-    } catch { setTrainers([]); }
-  }, []);
-
   useEffect(() => { fetch(); }, [id]);
-
-  const [assignData, setAssignData] = useState({ trainer: '', baseAmount: '', sellingPrice: '', frequency: '' });
-  const openAssign = () => {
-    fetchTrainers();
-    setAssignData({ trainer: '', baseAmount: '', sellingPrice: '', frequency: '' });
-    setAssignOpen(true);
-  };
-  const handleAssign = async () => {
-    if (!assignData.trainer || !assignData.baseAmount) return;
-    setSaving(true);
-    try {
-      await api.clients.assignPt(id, {
-        trainer_id: trainerIdMap[assignData.trainer],
-        base_amount: Number(assignData.baseAmount),
-        monthly_pt_amount: Number(assignData.sellingPrice || assignData.baseAmount),
-        frequency: assignData.frequency || undefined,
-      });
-      setAssignOpen(false);
-      fetch();
-    } catch (err: any) { alert(err?.message || 'Failed to assign PT'); }
-    finally { setSaving(false); }
-  };
 
   const [renewData, setRenewData] = useState({ baseAmount: '', sellingPrice: '', durationMonths: '', startDate: '' });
   const openRenew = () => {
@@ -401,9 +365,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <PremiumButton tone="primary" glow size="sm" icon={<UserPlus size={13} />} onClick={openAssign}>
-                        Assign PT
-                      </PremiumButton>
                       <PremiumButton tone="success" glow size="sm" icon={<Repeat size={13} />} onClick={openRenew}>
                         Renew PT
                       </PremiumButton>
@@ -696,57 +657,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </motion.button>
                 ))}
               </motion.div>
-
-              {/* ── Assign PT Modal ── */}
-              <AnimatePresence>
-                {assignOpen && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-                    onClick={() => setAssignOpen(false)}>
-                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                      className="w-full max-w-md rounded-[22px] p-6"
-                      style={{ background: 'var(--bg-card)', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}
-                      onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'rgba(139,92,246,0.12)' }}>
-                            <UserPlus size={16} style={{ color: '#8B5CF6' }} />
-                          </div>
-                          <h3 className="text-[17px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Assign PT</h3>
-                        </div>
-                        <button onClick={() => setAssignOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100">
-                          <X size={15} />
-                        </button>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="mb-1.5 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Trainer *</p>
-                          <div className="flex flex-wrap gap-2">
-                            {trainers.map((t) => (
-                              <button key={t} onClick={() => setAssignData(p => ({ ...p, trainer: t }))}
-                                className="rounded-[10px] px-3.5 py-2 text-[12px] font-[600] transition-all"
-                                style={{
-                                  background: assignData.trainer === t ? 'linear-gradient(135deg,#8B5CF6,#7C3AED)' : 'var(--bg-subtle)',
-                                  color: assignData.trainer === t ? '#fff' : 'rgb(100,116,139)',
-                                  border: assignData.trainer === t ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
-                                }}>{t}</button>
-                            ))}
-                          </div>
-                        </div>
-                        <FloatInput label="Base Amount (₹)" type="number" value={assignData.baseAmount} onChange={(v) => setAssignData(p => ({ ...p, baseAmount: v }))} />
-                        <FloatInput label="Selling Price (₹)" type="number" value={assignData.sellingPrice} onChange={(v) => setAssignData(p => ({ ...p, sellingPrice: v }))} />
-                        <FloatInput label="Frequency (e.g. 3x/week)" value={assignData.frequency} onChange={(v) => setAssignData(p => ({ ...p, frequency: v }))} />
-                      </div>
-                      <div className="mt-6 flex gap-3 justify-end">
-                        <PremiumButton tone="secondary" onClick={() => setAssignOpen(false)}>Cancel</PremiumButton>
-                        <PremiumButton tone="primary" glow onClick={handleAssign} loading={saving} disabled={!assignData.trainer || !assignData.baseAmount}>
-                          <CheckCircle size={13} /> Assign
-                        </PremiumButton>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* ── Renew PT Modal ── */}
               <AnimatePresence>

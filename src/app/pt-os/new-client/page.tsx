@@ -42,6 +42,8 @@ interface FormData {
   planId: string;
   basePrice: number | null;
   sellingPrice: number | null;
+  startDate: string;
+  endDate: string;
 }
 
 /* ────────────────────────────────────────────────────────────────────
@@ -80,6 +82,8 @@ function initForm(): FormData {
     planId: '',
     basePrice: null,
     sellingPrice: null,
+    startDate: new Date().toISOString().slice(0, 10),
+    endDate: '',
   };
 }
 
@@ -334,7 +338,8 @@ function NewClientWizard() {
           base_amount: form.basePrice,
           discount: disc,
           monthly_pt_amount: selling,
-          pt_start_date: new Date().toISOString().slice(0, 10),
+          pt_start_date: form.startDate,
+          pt_end_date: form.endDate || undefined,
           pt_package_id: form.planId || undefined,
         } as Record<string, unknown>);
       const created = (res as any)?.data;
@@ -632,13 +637,22 @@ function NewClientWizard() {
                               onChange={(e) => {
                                 const selected = plans.find(p => p.id === e.target.value);
                                 if (selected) {
-                                  setForm(prev => ({
-                                    ...prev,
-                                    planId: selected.id,
-                                    plan: selected.name,
-                                    basePrice: selected.base_amount,
-                                    sellingPrice: selected.base_amount,
-                                  }));
+                                  setForm(prev => {
+                                    let ed = prev.endDate;
+                                    if (prev.startDate && selected.duration_months > 0) {
+                                      const d = new Date(prev.startDate);
+                                      d.setMonth(d.getMonth() + selected.duration_months);
+                                      ed = d.toISOString().slice(0, 10);
+                                    }
+                                    return {
+                                      ...prev,
+                                      planId: selected.id,
+                                      plan: selected.name,
+                                      basePrice: selected.base_amount,
+                                      sellingPrice: selected.base_amount,
+                                      endDate: ed,
+                                    };
+                                  });
                                 } else {
                                   set('planId', '');
                                   set('plan', '');
@@ -664,6 +678,52 @@ function NewClientWizard() {
                             </svg>
                           </div>
                         </div>
+
+                        {/* Start Date */}
+                        <div>
+                          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Start Date *</p>
+                          <input
+                            type="date"
+                            value={form.startDate}
+                            onChange={(e) => {
+                              const sd = e.target.value;
+                              setForm(prev => {
+                                const plan = plans.find(p => p.id === prev.planId);
+                                const months = plan?.duration_months ?? 0;
+                                let ed = '';
+                                if (sd && months > 0) {
+                                  const d = new Date(sd);
+                                  d.setMonth(d.getMonth() + months);
+                                  ed = d.toISOString().slice(0, 10);
+                                }
+                                return { ...prev, startDate: sd, endDate: ed };
+                              });
+                            }}
+                            className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500] outline-none transition-all"
+                            style={{
+                              background: 'var(--bg-subtle)',
+                              border: '1.5px solid rgba(15,23,42,0.09)',
+                              color: 'rgb(15,23,42)',
+                            }}
+                          />
+                        </div>
+
+                        {/* End Date (auto-calculated, read-only) */}
+                        {form.endDate && (
+                          <div>
+                            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>End Date</p>
+                            <div
+                              className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500]"
+                              style={{
+                                background: 'rgba(220,38,38,0.05)',
+                                border: '1.5px solid rgba(220,38,38,0.15)',
+                                color: 'rgb(100,116,139)',
+                              }}
+                            >
+                              {new Date(form.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Base Price */}
                         <FloatInput
@@ -713,6 +773,8 @@ function NewClientWizard() {
                               <p>Base Price: <strong style={{ color: 'rgb(15,23,42)' }}>{fmtINR(form.basePrice)}</strong></p>
                               <p>Selling Price: <strong style={{ color: 'rgb(15,23,42)' }}>{fmtINR(form.sellingPrice)}</strong></p>
                               <p>Frequency: <strong style={{ color: 'rgb(15,23,42)' }}>{form.frequency}</strong></p>
+                              <p>Start: <strong style={{ color: 'rgb(15,23,42)' }}>{new Date(form.startDate).toLocaleDateString('en-IN')}</strong></p>
+                              {form.endDate && <p>End: <strong style={{ color: 'rgb(15,23,42)' }}>{new Date(form.endDate).toLocaleDateString('en-IN')}</strong></p>}
                             </div>
                           </motion.div>
                         )}
@@ -757,6 +819,8 @@ function NewClientWizard() {
                             { k: 'Base Price', v: form.basePrice ? fmtINR(form.basePrice) : '—' },
                             { k: 'Selling Price', v: form.sellingPrice ? fmtINR(form.sellingPrice) : '—' },
                             { k: 'Frequency', v: form.frequency },
+                            { k: 'Start Date', v: new Date(form.startDate).toLocaleDateString('en-IN') },
+                            { k: 'End Date', v: form.endDate ? new Date(form.endDate).toLocaleDateString('en-IN') : '—' },
                           ]},
                           { title: 'Photo', items: [
                             { k: 'Photo Upload', v: photoPreview ? 'Uploaded ✓' : 'Not uploaded' },

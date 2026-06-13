@@ -77,6 +77,7 @@ export default function RecordPaymentPage() {
   const [showInvoicePanel, setShowInvoicePanel] = React.useState(false);
   const [members, setMembers] = React.useState<Member[]>([]);
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
+  const [selectedBalance, setSelectedBalance] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -310,7 +311,17 @@ export default function RecordPaymentPage() {
                   >
                     <MemberSelector
                       selected={selectedMember}
-                      onSelect={(m) => { setSelectedMember(m); setMemberSearchOpen(false); }}
+                      selectedBalance={selectedBalance}
+                      onSelect={async (m) => {
+                        setSelectedMember(m);
+                        setMemberSearchOpen(false);
+                        try {
+                          const res = await api.pt.client(m.id) as any;
+                          setSelectedBalance(res?.data?.balance_amount ?? null);
+                        } catch {
+                          setSelectedBalance(null);
+                        }
+                      }}
                       open={memberSearchOpen}
                       setOpen={setMemberSearchOpen}
                       query={memberQuery}
@@ -862,6 +873,7 @@ function SectionCard({
 
 function MemberSelector({
   selected,
+  selectedBalance,
   onSelect,
   open,
   setOpen,
@@ -870,6 +882,7 @@ function MemberSelector({
   filtered,
 }: {
   selected: Member | null;
+  selectedBalance: number | null;
   onSelect: (m: Member) => void;
   open: boolean;
   setOpen: (v: boolean) => void;
@@ -909,6 +922,12 @@ function MemberSelector({
                 {selected.email}
                 {selected.plan ? ` · ${selected.plan}` : ''}
               </p>
+              {selectedBalance !== null && (
+                <p className="mt-0.5 text-[11px] font-[660]"
+                  style={{ color: selectedBalance > 0 ? '#dc2626' : '#10b981' }}>
+                  Balance: {fmtCurrency(selectedBalance)}
+                </p>
+              )}
             </div>
           </>
         ) : (
