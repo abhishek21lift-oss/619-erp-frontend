@@ -290,6 +290,7 @@ function AttendanceContent() {
             bioCode={bioCode} setBioCode={setBioCode}
             bioSaving={bioSaving} onSubmit={biometricCheckIn}
             bioRef={bioRef} bioFocus={bioFocus} setBioFocus={setBioFocus}
+            feedItems={feedItems}
           />
 
           {/* ── TAB BAR ── */}
@@ -411,11 +412,12 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
 /* ────────────────────────────────────────────────────────────────
    BIOMETRIC PANEL
 ──────────────────────────────────────────────────────────────── */
-function BiometricPanel({ bioCode, setBioCode, bioSaving, onSubmit, bioRef, bioFocus, setBioFocus }: {
+function BiometricPanel({ bioCode, setBioCode, bioSaving, onSubmit, bioRef, bioFocus, setBioFocus, feedItems }: {
   bioCode: string; setBioCode: (v: string) => void;
   bioSaving: boolean; onSubmit: () => void;
   bioRef: React.RefObject<HTMLInputElement | null>;
   bioFocus: boolean; setBioFocus: (v: boolean) => void;
+  feedItems: FeedItem[];
 }) {
   return (
     <section className="mt-6 rounded-[30px] border border-zinc-200/70 bg-white/75 p-5 shadow-[0_10px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-6">
@@ -466,7 +468,7 @@ function BiometricPanel({ bioCode, setBioCode, bioSaving, onSubmit, bioRef, bioF
         <div className="hidden lg:block w-56">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-white/30">Recent scans</p>
           <div className="space-y-2">
-            {FEED_ITEMS.slice(0, 3).map(f => (
+            {feedItems.slice(0, 3).map(f => (
               <div key={f.id} className="flex items-center gap-2.5 rounded-[14px] border border-zinc-100 bg-zinc-50/70 px-3 py-2 dark:border-white/5 dark:bg-white/5">
                 <FeedAvatar initials={f.avatar} status={f.status} />
                 <div className="min-w-0">
