@@ -65,8 +65,6 @@ export type Client = {
   subscription_start_date?: string;
   plan_name?: string;
   photo_url?: string;
-  face_descriptor?: number[];
-  biometric_fingers?: string;
   notes?: string;
   joining_date?: string;
   created_at?: string;
@@ -465,8 +463,6 @@ export const api = {
       http<Attendance[]>(`/api/attendance${buildQs(params)}`),
     mark: (data: Record<string, unknown>) =>
       http<Attendance>('/api/attendance/mark', { method: 'POST', body: JSON.stringify(data) }),
-    biometric: (data: Record<string, unknown>) =>
-      http<{ message: string }>('/api/attendance/biometric', { method: 'POST', body: JSON.stringify(data) }),
     create: (data: Record<string, unknown>) =>
       http('/api/attendance', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Record<string, unknown>) =>
@@ -478,9 +474,6 @@ export const api = {
       http<unknown[]>(`/api/checkin${buildQs(params)}`),
     create: (data: Record<string, unknown>) =>
       http('/api/checkin', { method: 'POST', body: JSON.stringify(data) }),
-    enroll: (clientId: string, descriptor: number[]) =>
-      http(`/api/checkin/enroll`, { method: 'POST', body: JSON.stringify({ client_id: clientId, descriptor }) }),
-    descriptors: () => http<{ client_id: string; name: string; descriptor: number[] }[]>('/api/checkin/descriptors'),
     face: (descriptor: number[]) =>
       http<{ success: boolean; error?: string; member?: { id: string; name: string; status: string } }>(
         '/api/checkin/face', { method: 'POST', body: JSON.stringify({ descriptor }) }
