@@ -62,12 +62,12 @@ const containerVariants = {
 };
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const } }
 };
 
 const heroVariants = {
   hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } }
 };
 
 function fmtINR(n: number | string | null | undefined) {
@@ -120,11 +120,11 @@ function Inner() {
       {/* ── Hero ── */}
       <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0f0a1e 0%, #1a1040 25%, #0f172a 55%, #1e0a2e 80%, #0f0a1e 100%)', padding: '48px 32px 40px', borderRadius: '0 0 40px 40px' }}>
         <motion.div style={{ position: 'absolute', top: -100, right: -40, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', pointerEvents: 'none' }}
-          animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
+          animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' as const }} />
         <motion.div style={{ position: 'absolute', bottom: -70, left: -30, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%)', pointerEvents: 'none' }}
-          animate={{ x: [0, -25, 30, 0], y: [0, 25, -15, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
+          animate={{ x: [0, -25, 30, 0], y: [0, 25, -15, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' as const }} />
         <motion.div style={{ position: 'absolute', top: '30%', left: '55%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.06), transparent 70%)', pointerEvents: 'none' }}
-          animate={{ x: [0, 15, -10, 0], y: [0, -20, 10, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
+          animate={{ x: [0, 15, -10, 0], y: [0, -20, 10, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' as const }} />
         <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '22px 22px', pointerEvents: 'none' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
