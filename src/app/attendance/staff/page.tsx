@@ -137,7 +137,7 @@ function Inner() {
     setBioSaving(true);
     setError('');
     try {
-      const res = await http('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'trainer' }) });
+      const res = await http<{ message: string }>('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'trainer' }) });
       const updated = await api.attendance.list({ date, type: 'trainer' });
       setRecords(Array.isArray(updated) ? updated : []);
       setSuccess(res.message);

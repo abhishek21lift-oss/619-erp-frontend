@@ -151,7 +151,7 @@ function AttendanceContent() {
     setBioSaving(true);
     setError('');
     try {
-      const res = await http('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'client' }) });
+      const res = await http<{ message: string }>('/api/attendance/biometric', { method: 'POST', body: JSON.stringify({ biometric_code: bioCode.trim(), type: 'client' }) });
       const updated = await api.attendance.list({ date, type: 'client' });
       setRecords(updated);
       setSuccess(res.message);
