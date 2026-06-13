@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import {
   Users, UserPlus, Shield, Key, Search, Filter, MoreHorizontal,
@@ -1037,7 +1038,9 @@ function AccountManagementPage() {
 export default function SettingsPage() {
   return (
     <Guard>
-      <AccountManagementPage />
+      <AppShell>
+        <AccountManagementPage />
+      </AppShell>
     </Guard>
   );
 }

@@ -205,8 +205,8 @@ export default function RecordPaymentPage() {
               ) : (
                 <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {/* ── Member Selector ── */}
-                  <div style={{ borderRadius: 18, padding: 18, background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 1px 6px rgba(0,0,0,0.04)', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, background: 'linear-gradient(180deg,#6366f1,#6366f188)', borderRadius: '0 0 0 3px' }} />
+                  <div style={{ borderRadius: 18, padding: 18, background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 1px 6px rgba(0,0,0,0.04)', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 3, background: 'linear-gradient(180deg,#6366f1,#6366f188)', borderRadius: 18 }} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <div style={{ width: 30, height: 30, borderRadius: 8, background: '#6366f118', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}><User size={14} /></div>
                       <div>

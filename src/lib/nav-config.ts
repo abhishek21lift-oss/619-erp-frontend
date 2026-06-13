@@ -150,7 +150,6 @@ export const SETTINGS_GROUP: NavGroup = {
   label: 'Settings',
   icon: 'Settings',
   items: [
-    { href: '/settings',                 label: 'General',              icon: 'Settings' },
     { href: '/settings/studio',          label: 'Studio Settings',      icon: 'Building2',      role: 'admin', isNew: true },
     { href: '/settings/profile',         label: 'My Profile',           icon: 'User',           isNew: true },
     { href: '/settings/branches',        label: 'Branches',             icon: 'Building2',      role: 'admin' },

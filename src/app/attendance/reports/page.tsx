@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Loader2, Download, Calendar } from 'lucide-react';
+import { BarChart3, Loader2, Download, Calendar, Users, CheckCircle, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAsync } from '@/lib/use-async';
@@ -10,121 +10,255 @@ import { Button } from '@/components/ui';
 
 function fmtINR(n: number | null | undefined) { return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
 
+const KPIS = [
+  { label: 'Total Check-Ins', icon: <BarChart3 size={18} />, accent: '#06b6d4', key: 'total' as const },
+  { label: 'Present', icon: <CheckCircle size={18} />, accent: '#10b981', key: 'present' as const },
+  { label: 'Late', icon: <Clock size={18} />, accent: '#f59e0b', key: 'late' as const },
+  { label: 'Absent', icon: <AlertTriangle size={18} />, accent: '#ef4444', key: 'absent' as const },
+];
+
+function getKPIValue(data: Attendance[] | null | undefined, key: string) {
+  if (!data || !Array.isArray(data)) return '—';
+  const n = data.length;
+  if (key === 'total') return String(n);
+  return String(data.filter((r: Attendance) => r.status === key).length);
+}
+
 export default function AttendanceReportsPage() {
   const [dateRange, setDateRange] = useState('7');
-  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
 
   const traffic = useAsync(() => api.attendance.list({ days: dateRange }), [dateRange]);
   const monthly = useAsync(() => api.attendance.list({ months: '12' }), []);
 
+  const records = traffic.data && Array.isArray(traffic.data) ? traffic.data as Attendance[] : [];
+
   return (
     <Guard role="admin">
       <AppShell>
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-            style={{ background: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #38bdf8 100%)', boxShadow: '0 20px 60px rgba(2,132,199,0.3)' }}>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                  <BarChart3 size={16} style={{ color: '#bae6fd' }} />
-                </div>
-                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#bae6fd' }}>Reports</span>
-              </div>
-              <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#ffffff' }}>
-                Attendance Reports & Analytics
-              </h1>
-              <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                Track footfall trends, peak hours, check-in summaries, and export-ready audit reports.
-              </p>
-            </div>
-          </motion.div>
+        <div style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)', minHeight: '100vh' }}>
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
 
-          <div className="flex items-center gap-3 mb-6 flex-wrap">
-            {['7', '30', '90'].map(d => (
-              <button key={d} onClick={() => setDateRange(d)}
-                className="rounded-[10px] px-4 py-2 text-[12px] font-semibold transition-all"
-                style={{
-                  background: dateRange === d ? 'rgba(2,132,199,0.1)' : 'rgba(255,255,255,0.7)',
-                  border: `1.5px solid ${dateRange === d ? '#0284c7' : 'var(--border)'}`,
-                  color: dateRange === d ? '#0284c7' : 'rgb(100,116,139)',
-                  backdropFilter: 'blur(8px)',
-                }}>
-                Last {d} days
-              </button>
-            ))}
-            <div className="flex-1" />
-            <Button className="!rounded-[12px] !text-[12px] !font-[600]"
-              style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(100,116,139)' }}>
-              <Download size={14} /> Export Report
-            </Button>
-          </div>
+            {/* ═══════ HERO SECTION ═══════ */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: 24,
+                padding: '36px 40px',
+                marginBottom: 24,
+                background: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #38bdf8 100%)',
+                boxShadow: '0 24px 80px rgba(2,132,199,0.35)',
+              }}>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 rounded-[20px] p-6"
-              style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-              <h2 className="text-[18px] font-[760] mb-4" style={{ color: 'rgb(15,23,42)' }}>Footfall Trend</h2>
-              {traffic.loading ? (
-                <div className="flex justify-center py-12"><Loader2 size={20} className="animate-spin" /></div>
-              ) : traffic.data && Array.isArray(traffic.data) && traffic.data.length > 0 ? (
-                <div className="h-64 flex items-center justify-center" style={{ color: 'rgb(148,163,184)' }}>
-                  <p className="text-sm font-medium">{traffic.data.length} attendance records loaded</p>
-                </div>
-              ) : (
-                <div className="h-64 flex items-center justify-center" style={{ color: 'rgb(148,163,184)' }}>
-                  <p className="text-sm">No attendance data for this period</p>
-                </div>
-              )}
-            </div>
+              {/* Grid overlay */}
+              <div style={{
+                position: 'absolute', inset: 0, opacity: 0.035, pointerEvents: 'none',
+                backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                backgroundSize: '40px 40px',
+              }} />
 
-            <div className="rounded-[20px] p-6"
-              style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-              <h2 className="text-[18px] font-[760] mb-4" style={{ color: 'rgb(15,23,42)' }}>Key Metrics</h2>
-              <div className="space-y-4">
-                {[
-                  { label: 'Total Check-Ins', value: traffic.data && Array.isArray(traffic.data) ? String(traffic.data.length) : '—', change: '—', up: true },
-                  { label: 'Present', value: traffic.data && Array.isArray(traffic.data) ? String(traffic.data.filter((r: Attendance) => r.status === 'present').length) : '—', change: '—', up: true },
-                  { label: 'Late', value: traffic.data && Array.isArray(traffic.data) ? String(traffic.data.filter((r: Attendance) => r.status === 'late').length) : '—', change: '—', up: false },
-                  { label: 'Absent', value: traffic.data && Array.isArray(traffic.data) ? String(traffic.data.filter((r: Attendance) => r.status === 'absent').length) : '—', change: '—', up: false },
-                ].map(m => (
-                  <div key={m.label} className="flex items-center justify-between py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-                    <div>
-                      <p className="text-[12px] font-medium" style={{ color: 'rgb(148,163,184)' }}>{m.label}</p>
-                      <p className="text-[18px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>{m.value}</p>
-                    </div>
-                    <span className="text-[11px] font-semibold" style={{ color: m.up ? '#10b981' : '#ef4444' }}>{m.change}</span>
+              {/* Floating orbs */}
+              <motion.div style={{ position: 'absolute', right: -100, top: -100, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(56,189,248,0.35) 0%, transparent 70%)', pointerEvents: 'none' }}
+                animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.45, 0.3] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
+              <motion.div style={{ position: 'absolute', left: -60, bottom: -100, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }}
+                animate={{ scale: [1, 1.18, 1], opacity: [0.2, 0.35, 0.2] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
+              <motion.div style={{ position: 'absolute', left: '50%', top: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%)', pointerEvents: 'none' }}
+                animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
+
+              {/* Top accent glow bar */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)', opacity: 0.5 }} />
+
+              <div style={{ position: 'relative', zIndex: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#06b6d4,#3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(6,182,212,0.35)' }}>
+                    <BarChart3 size={17} color="white" />
                   </div>
-                ))}
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#bae6fd' }}>Reports</span>
+                </div>
+                <h1 style={{
+                  fontSize: 32, fontWeight: 860, letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0,
+                  background: 'linear-gradient(135deg, #ffffff, #bae6fd, #7dd3fc)',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                }}>
+                  Attendance Reports & Analytics
+                </h1>
+                <p style={{ marginTop: 8, fontSize: 14, color: 'rgba(255,255,255,0.6)', maxWidth: 520 }}>
+                  Track footfall trends, peak hours, check-in summaries, and export-ready audit reports.
+                </p>
               </div>
-            </div>
-          </div>
+            </motion.div>
 
-          <div className="mt-6 rounded-[20px] p-6"
-            style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-            <h2 className="text-[18px] font-[760] mb-4" style={{ color: 'rgb(15,23,42)' }}>Monthly Summary</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-[13px]">
-                <thead>
-                  <tr style={{ color: 'rgb(148,163,184)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                    <th className="pb-3 font-semibold">Month</th>
-                    <th className="pb-3 font-semibold">Total Check-Ins</th>
-                    <th className="pb-3 font-semibold">Unique Members</th>
-                    <th className="pb-3 font-semibold">Avg Daily</th>
-                    <th className="pb-3 font-semibold">Peak Day</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(monthly.data as Attendance[] || []).slice(0, 6).map((m, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-                      <td className="py-3 font-medium" style={{ color: 'rgb(15,23,42)' }}>{m.date || m.ref_name || '—'}</td>
-                      <td className="py-3" style={{ color: 'rgb(100,116,139)' }}>{m.status || '—'}</td>
-                      <td className="py-3" style={{ color: 'rgb(100,116,139)' }}>{m.ref_name || '—'}</td>
-                      <td className="py-3" style={{ color: 'rgb(100,116,139)' }}>{m.check_in || '—'}</td>
-                      <td className="py-3" style={{ color: 'rgb(100,116,139)' }}>{m.ref_id || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* ═══════ DATE RANGE PILLS ═══════ */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+              {['7', '30', '90'].map(d => {
+                const active = dateRange === d;
+                return (
+                  <button key={d} onClick={() => setDateRange(d)}
+                    style={{
+                      padding: '10px 22px', borderRadius: 100, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer',
+                      transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)',
+                      background: active
+                        ? 'linear-gradient(135deg, #0284c7, #0ea5e9)'
+                        : 'rgba(255,255,255,0.8)',
+                      color: active ? '#fff' : '#64748b',
+                      boxShadow: active
+                        ? '0 4px 16px rgba(2,132,199,0.3)'
+                        : '0 1px 4px rgba(0,0,0,0.04)',
+                    }}>
+                    Last {d} days
+                  </button>
+                );
+              })}
+              <div style={{ flex: 1 }} />
+              <Button className="!rounded-[100px] !text-[12px] !font-[700]"
+                style={{
+                  background: 'rgba(255,255,255,0.85)',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  color: '#64748b',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                  paddingLeft: 20,
+                  paddingRight: 20,
+                }}>
+                <Download size={14} /> Export Report
+              </Button>
+            </div>
+
+            {/* ═══════ KPI CARDS ROW ═══════ */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
+              {KPIS.map((kpi) => {
+                const val = getKPIValue(traffic.data as Attendance[] | null, kpi.key);
+                return (
+                  <motion.div key={kpi.key} tabIndex={0} role="button"
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    style={{
+                      background: 'white',
+                      borderRadius: 20,
+                      padding: '22px 24px',
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                      border: '1px solid rgba(0,0,0,0.06)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 200ms ease',
+                      cursor: 'default',
+                    }}
+                    onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}>
+                    <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: `linear-gradient(90deg,${kpi.accent},${kpi.accent}88)`, borderRadius: '0 0 3px 3px', opacity: 0.8 }} />
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: `${kpi.accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.accent }}>
+                      {kpi.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{val}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500 }}>{kpi.label}</div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* ═══════ FOOTFALL TREND + METRICS GRID ═══════ */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24, alignItems: 'start' }}>
+
+              {/* Footfall Trend Card */}
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+                style={{
+                  background: 'white',
+                  borderRadius: 20,
+                  padding: 24,
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}>
+                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#06b6d4,#3b82f6)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#06b6d418', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#06b6d4' }}>
+                    <TrendingUp size={16} />
+                  </div>
+                  <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Footfall Trend</h2>
+                </div>
+                {traffic.loading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}><Loader2 size={20} className="animate-spin" /></div>
+                ) : records.length > 0 ? (
+                  <div style={{ padding: '40px 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 4 }}>
+                    {records.slice(0, 20).map((r, i) => (
+                      <motion.div key={i} initial={{ height: 0 }} animate={{ height: 20 + Math.random() * 80 }}
+                        transition={{ duration: 0.6, delay: i * 0.03, ease: 'easeOut' }}
+                        style={{ width: 18, borderRadius: '6px 6px 0 0', background: `linear-gradient(180deg, #06b6d4, #3b82f6)`, opacity: 0.6 + (i / records.length) * 0.4 }} />
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: '48px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                    <p style={{ fontSize: 13, fontWeight: 500 }}>No attendance data for this period</p>
+                  </div>
+                )}
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
+                  {records.length} record{records.length !== 1 ? 's' : ''} · {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </div>
+              </motion.div>
+
+              {/* Monthly Summary Card */}
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
+                style={{
+                  background: 'white',
+                  borderRadius: 20,
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  overflow: 'hidden',
+                  position: 'relative',
+                }}>
+                <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#10b981,#06b6d4)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
+                <div style={{ padding: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#10b98118', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
+                      <Calendar size={16} />
+                    </div>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Monthly Summary</h2>
+                  </div>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr>
+                        {['Month', 'Check-Ins', 'Members', 'Avg Daily', 'Peak Day'].map((h, i) => (
+                          <th key={i} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.8px', background: 'linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(monthly.data as Attendance[] || []).slice(0, 6).length > 0 ? (
+                        (monthly.data as Attendance[] || []).slice(0, 6).map((m, i) => (
+                          <tr key={i}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '' }}
+                            style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 150ms' }}>
+                            <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <motion.div initial={{ width: 0 }} animate={{ width: Math.min(60, 10 + Math.random() * 50) }}
+                                  transition={{ duration: 0.8, delay: i * 0.05, ease: 'easeOut' }}
+                                  style={{ height: 6, borderRadius: 3, background: 'linear-gradient(90deg,#06b6d4,#3b82f6)' }} />
+                                {m.date || m.ref_name || '—'}
+                              </div>
+                            </td>
+                            <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{m.status || '—'}</td>
+                            <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{m.ref_name || '—'}</td>
+                            <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{m.check_in || '—'}</td>
+                            <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{m.ref_id || '—'}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} style={{ padding: '32px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>No monthly data available</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>

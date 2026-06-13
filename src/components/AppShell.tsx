@@ -32,7 +32,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const profileRef = useRef<HTMLDivElement>(null);
 
   const settingsLinks = [
-    { href: '/settings', label: 'General', icon: Settings },
     { href: '/settings/studio', label: 'Studio Settings', icon: Building2 },
     { href: '/settings/profile', label: 'My Profile', icon: User },
     { href: '/settings/branches', label: 'Branches', icon: Building2 },
