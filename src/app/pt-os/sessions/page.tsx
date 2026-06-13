@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import TabBar from '@/app/pt-os/TabBar';
 import { api } from '@/lib/api';
 
 type Session = {
@@ -140,7 +139,6 @@ export default function PTSessionsPage() {
           </div>
 
           {/* Tab Bar */}
-          <TabBar />
 
           {/* Filters */}
           <div className="mb-5 flex flex-wrap items-center gap-3">

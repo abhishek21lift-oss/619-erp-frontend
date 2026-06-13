@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import TabBar from '@/app/pt-os/TabBar';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
@@ -103,7 +102,6 @@ function PtPlansContent() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
-        <TabBar />
 
         <div className="flex items-center justify-between mb-6">
           <div>

@@ -49,6 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/pt-os/new-client',       label: 'New Client',         icon: 'UserPlus' },
       { href: '/pt-os/clients',          label: 'All Clients',        icon: 'Users' },
+      { href: '/pt-os/balance-sheet',    label: 'Balance Sheet',      icon: 'Wallet' },
       { href: '/pt-os/goals',            label: 'Goal Setting',       icon: 'Target' },
       { href: '/pt-os/assessment',       label: 'Assessment',         icon: 'ClipboardCheck' },
     ],

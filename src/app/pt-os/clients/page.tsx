@@ -9,7 +9,6 @@ import {
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import TabBar from '@/app/pt-os/TabBar';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
@@ -261,7 +260,6 @@ export default function PtClientsPage() {
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 relative" style={{ zIndex: 1 }}>
           <AmbientOrbs />
           <div className="relative" style={{ zIndex: 2 }}>
-            <TabBar />
 
             {/* Header */}
             <motion.div

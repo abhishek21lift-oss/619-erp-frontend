@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import TabBar from '@/app/pt-os/TabBar';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 
@@ -44,7 +43,6 @@ export default function BalanceSheetPage() {
     <Guard role="admin">
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <TabBar />
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
