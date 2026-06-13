@@ -70,7 +70,7 @@ function buildFeedFromRecords(records: Attendance[], clients: Client[]): FeedIte
       const checkTime = r.check_in ? new Date(`1970-01-01T${r.check_in}`).getTime() : 0;
       const minsAgo = Math.round((now - checkTime) / 60000);
       const action = r.status === 'late' ? 'arrived late' : 'checked in';
-      return { id: r.id, name, action, time: `${Math.max(1, minsAgo)} min ago`, status: r.status, avatar: initials };
+      return { id: r.id ?? '', name, action, time: `${Math.max(1, minsAgo)} min ago`, status: r.status, avatar: initials };
     });
 }
 
