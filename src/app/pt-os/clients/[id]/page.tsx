@@ -119,6 +119,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
   const [editNotes, setEditNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
+  const [totalEarnedCommission, setTotalEarnedCommission] = useState(0);
 
   const fetch = async () => {
     try {
@@ -148,6 +149,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       setActiveGoals(goals.filter((g: any) => g.status === 'active'));
 
       const rawPayments = Array.isArray((paymentsRes as any)?.data) ? (paymentsRes as any).data : [];
+
+      const totalComm = rawPayments.reduce((sum: number, p: any) => sum + Number(p.incentive_amt || 0), 0);
+      setTotalEarnedCommission(totalComm);
 
       const events: TimelineEvent[] = [];
 
@@ -409,6 +413,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Commission</span>
                   </div>
                   <p className="text-[20px] font-[800]" style={{ color: '#8b5cf6' }}>{fmtINR(client.trainer_commission)}</p>
+                  <p className="text-[10px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>
+                    {fmtINR(totalEarnedCommission)} earned from payments
+                  </p>
                 </motion.div>
               </div>
 

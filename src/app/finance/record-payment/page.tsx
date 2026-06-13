@@ -5,56 +5,49 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
-import { FloatingPanel } from '@/components/premium/FloatingPanel';
 import {
   IndianRupee, Search, ChevronDown, Check, X, CreditCard,
   Smartphone, Banknote, Zap, Shield, FileText, Receipt,
   CheckCircle2, SplitSquareHorizontal, Percent, Wallet,
-  PenSquare, ArrowRight, User,
-  RefreshCw, Link2,
-  Plus, Printer,
+  PenSquare, ArrowRight, User, RefreshCw, Link2, Plus,
+  Printer, Sparkles, TrendingUp, CircleDot,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 type PaymentMethod = 'upi' | 'card' | 'cash' | 'razorpay' | 'stripe';
 
-interface Member {
-  id: string;
-  name: string;
-  email: string;
-  plan?: string;
-}
-
-interface Invoice {
-  id: string;
-  amount: number;
-  date: string;
-  status: string;
-}
+interface Member { id: string; name: string; email: string; plan?: string; }
+interface Invoice { id: string; amount: number; date: string; status: string; }
 
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: React.ReactNode; color: string; bg: string }[] = [
-  { id: 'upi', label: 'UPI', icon: <Smartphone className="h-5 w-5" />, color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' },
-  { id: 'card', label: 'Credit/Debit Card', icon: <CreditCard className="h-5 w-5" />, color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)' },
-  { id: 'cash', label: 'Cash', icon: <Banknote className="h-5 w-5" />, color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
-  { id: 'razorpay', label: 'Razorpay', icon: <Zap className="h-5 w-5" />, color: '#6366f1', bg: 'rgba(99,102,241,0.08)' },
-  { id: 'stripe', label: 'Stripe', icon: <Shield className="h-5 w-5" />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)' },
+  { id: 'upi', label: 'UPI', icon: <Smartphone size={17} />, color: '#7c3aed', bg: 'rgba(124,58,237,0.12)' },
+  { id: 'card', label: 'Card', icon: <CreditCard size={17} />, color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)' },
+  { id: 'cash', label: 'Cash', icon: <Banknote size={17} />, color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+  { id: 'razorpay', label: 'Razorpay', icon: <Zap size={17} />, color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+  { id: 'stripe', label: 'Stripe', icon: <Shield size={17} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
 ];
 
 const AVATAR_COLORS = ['#dc2626', '#7c3aed', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899'];
-
 function initials(name: string): string {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 }
-
 function avatarColor(name: string): string {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
-
 function fmtCurrency(n: number): string {
   return '₹' + n.toLocaleString('en-IN');
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.04 } }
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } }
+};
 
 export default function RecordPaymentPage() {
   const [step, setStep] = React.useState<'form' | 'success'>('form');
@@ -62,19 +55,16 @@ export default function RecordPaymentPage() {
   const [memberSearchOpen, setMemberSearchOpen] = React.useState(false);
   const [memberQuery, setMemberQuery] = React.useState('');
   const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
-  const [invoiceOpen, setInvoiceOpen] = React.useState(false);
+  const [showInvoicePanel, setShowInvoicePanel] = React.useState(false);
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>('upi');
   const [amount, setAmount] = React.useState('');
   const [splitPayment, setSplitPayment] = React.useState(false);
-  const [splitRows, setSplitRows] = React.useState<{ method: PaymentMethod; amount: string }[]>([
-    { method: 'upi', amount: '' },
-  ]);
+  const [splitRows, setSplitRows] = React.useState<{ method: PaymentMethod; amount: string }[]>([{ method: 'upi', amount: '' }]);
   const [partialPayment, setPartialPayment] = React.useState(false);
   const [notes, setNotes] = React.useState('');
   const [generateReceipt, setGenerateReceipt] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [showInvoicePanel, setShowInvoicePanel] = React.useState(false);
   const [members, setMembers] = React.useState<Member[]>([]);
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
   const [selectedBalance, setSelectedBalance] = React.useState<number | null>(null);
@@ -87,18 +77,10 @@ export default function RecordPaymentPage() {
           api.invoices.list({ status: 'pending' }),
         ]);
         const raw = clientsData as any;
-        const memberList = Array.isArray(raw)
-          ? raw
-          : raw?.data
-            ? (Array.isArray(raw.data) ? raw.data : [])
-            : raw?.clients
-              ? (Array.isArray(raw.clients) ? raw.clients : [])
-              : [];
+        const memberList = Array.isArray(raw) ? raw : raw?.data ? (Array.isArray(raw.data) ? raw.data : []) : raw?.clients ? (Array.isArray(raw.clients) ? raw.clients : []) : [];
         setMembers(memberList as Member[]);
         setInvoices((invoicesData as { invoices: Invoice[] }).invoices || []);
-      } catch (err) {
-        console.error('Failed to load data', err);
-      }
+      } catch (err) { console.error('Failed to load data', err); }
     };
     fetchData();
   }, []);
@@ -121,983 +103,367 @@ export default function RecordPaymentPage() {
     setSaving(true);
     try {
       const paymentData: Record<string, unknown> = {
-        client_id: selectedMember!.id,
-        amount: parseFloat(amount),
-        method: paymentMethod,
-        date: new Date().toISOString().split('T')[0],
-        notes: notes || undefined,
-        generate_receipt: generateReceipt,
+        client_id: selectedMember!.id, amount: parseFloat(amount), method: paymentMethod,
+        date: new Date().toISOString().split('T')[0], notes: notes || undefined, generate_receipt: generateReceipt,
       };
       if (selectedInvoice) paymentData.invoice_id = selectedInvoice.id;
-      if (splitPayment) {
-        paymentData.splits = splitRows.map((r) => ({
-          method: r.method,
-          amount: parseFloat(r.amount),
-        }));
-      }
+      if (splitPayment) paymentData.splits = splitRows.map((r) => ({ method: r.method, amount: parseFloat(r.amount) }));
       await api.payments.create(paymentData);
       setStep('success');
       setTimeout(() => {
-        setStep('form');
-        setSelectedMember(null);
-        setSelectedInvoice(null);
-        setAmount('');
-        setNotes('');
-        setPartialPayment(false);
-        setSplitPayment(false);
-        setSplitRows([{ method: 'upi', amount: '' }]);
+        setStep('form'); setSelectedMember(null); setSelectedInvoice(null); setAmount(''); setNotes('');
+        setPartialPayment(false); setSplitPayment(false); setSplitRows([{ method: 'upi', amount: '' }]);
       }, 3000);
-    } catch (err) {
-      console.error('Payment failed', err);
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { console.error('Payment failed', err); }
+    finally { setSaving(false); }
   };
 
-  const addSplitRow = () => {
-    setSplitRows([...splitRows, { method: 'upi', amount: '' }]);
-  };
-
+  const addSplitRow = () => setSplitRows([...splitRows, { method: 'upi', amount: '' }]);
   const updateSplitRow = (index: number, field: 'method' | 'amount', value: string) => {
     const updated = [...splitRows];
-    if (field === 'method') {
-      updated[index].method = value as PaymentMethod;
-    } else {
-      updated[index].amount = value;
-    }
+    if (field === 'method') updated[index].method = value as PaymentMethod;
+    else updated[index].amount = value;
     setSplitRows(updated);
   };
-
   const removeSplitRow = (index: number) => {
-    if (splitRows.length > 1) {
-      setSplitRows(splitRows.filter((_, i) => i !== index));
-    }
+    if (splitRows.length > 1) setSplitRows(splitRows.filter((_, i) => i !== index));
   };
+
+  const splitTotal = splitRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const isValidSplit = Math.abs(splitTotal - (parseFloat(amount) || 0)) < 0.01;
+
+  const totalInvoiced = invoices.reduce((s, i) => s + i.amount, 0);
 
   return (
     <Guard role="admin">
       <AppShell>
-        <div style={{ background: '#0f172a', minHeight: '100vh' }}>
-          {/* ── Dark Gradient Hero ── */}
-          <div
-            className="relative overflow-hidden"
-            style={{
-              background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
-              boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.04)',
-            }}
-          >
-            {/* Animated Orbs — red, crimson, rose */}
-            <div className="absolute inset-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
-              <motion.div
-                animate={{ x: [0, 140, 0], y: [0, -90, 0] }}
-                transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  position: 'absolute', top: '-18%', left: '-8%',
-                  width: 480, height: 480, borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(220,38,38,0.15) 0%, transparent 70%)',
-                  filter: 'blur(80px)',
-                }}
-              />
-              <motion.div
-                animate={{ x: [0, -110, 0], y: [0, 100, 0] }}
-                transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  position: 'absolute', top: '5%', right: '-10%',
-                  width: 360, height: 360, borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(225,29,72,0.12) 0%, transparent 70%)',
-                  filter: 'blur(70px)',
-                }}
-              />
-              <motion.div
-                animate={{ x: [0, 60, 0], y: [0, -50, 0] }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  position: 'absolute', bottom: '-25%', left: '35%',
-                  width: 260, height: 260, borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(244,63,94,0.10) 0%, transparent 70%)',
-                  filter: 'blur(60px)',
-                }}
-              />
-            </div>
+        <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f0a1e 0%, #0f172a 100%)' }}>
+          {/* ── Hero ── */}
+          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0f0a1e 0%, #2a0a1a 25%, #1e0a2e 55%, #0f172a 100%)', padding: '40px 32px 36px', borderRadius: '0 0 40px 40px' }}>
+            <motion.div style={{ position: 'absolute', top: -80, right: -20, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle, rgba(220,38,38,0.12), transparent 70%)', pointerEvents: 'none' }}
+              animate={{ x: [0, 30, -20, 0], y: [0, -40, 15, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
+            <motion.div style={{ position: 'absolute', bottom: -60, left: -30, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.08), transparent 70%)', pointerEvents: 'none' }}
+              animate={{ x: [0, -25, 20, 0], y: [0, 25, -10, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
+            <motion.div style={{ position: 'absolute', top: '25%', left: '50%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.06), transparent 70%)', pointerEvents: 'none' }}
+              animate={{ x: [0, 15, -10, 0], y: [0, -15, 8, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
+            <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '22px 22px', pointerEvents: 'none' }} />
 
-            {/* Hero Content — integrated header */}
-            <div
-              className="mx-auto max-w-4xl px-5 sm:px-8"
-              style={{ position: 'relative', zIndex: 5, paddingTop: '2rem', paddingBottom: '2.25rem' }}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, #dc2626, #e11d48)', boxShadow: '0 8px 32px rgba(220,38,38,0.3)' }}>
+                  <Wallet size={22} color="#fff" />
+                </motion.div>
                 <div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      style={{
-                        background: 'linear-gradient(135deg, #dc2626, #e11d48)',
-                        borderRadius: 14,
-                        width: 42,
-                        height: 42,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 6px 24px rgba(220,38,38,0.30)',
-                      }}
-                    >
-                      <Wallet size={18} color="white" />
-                    </div>
-                    <div>
-                      <h1
-                        style={{
-                          fontSize: 24,
-                          fontWeight: 860,
-                          letterSpacing: '-0.03em',
-                          lineHeight: 1.15,
-                          background: 'linear-gradient(135deg, #fda4af, #f43f5e, #dc2626)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                        }}
-                      >
-                        Record Payment
-                      </h1>
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.40)', marginTop: 2 }}>
-                        Record and reconcile member payments.
-                      </p>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      marginTop: 12,
-                      fontSize: 12,
-                      color: 'rgba(255,255,255,0.30)',
-                    }}
-                  >
-                    <span>Finance</span>
-                    <ChevronDown size={10} style={{ transform: 'rotate(-90deg)' }} />
-                    <span style={{ color: '#f43f5e', fontWeight: 600 }}>Record Payment</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <PremiumButton tone="secondary" size="sm" icon={<RefreshCw className="h-4 w-4" />}>
-                    Reset
-                  </PremiumButton>
+                  <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fda4af, #f43f5e, #dc2626)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Record Payment</h1>
+                  <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>Record and reconcile member payments</p>
                 </div>
               </div>
+              <PremiumButton tone="secondary" size="sm" icon={<RefreshCw size={14} />}>Reset</PremiumButton>
             </div>
           </div>
 
-          {/* ── Form Content ── */}
-          <div
-            className="relative mx-auto max-w-4xl px-4 pb-28 -mt-6 sm:px-6"
-            style={{ zIndex: 10 }}
-          >
+          <div style={{ padding: '24px 32px', maxWidth: 800, margin: '0 auto' }}>
+            {/* ── Quick Stats ── */}
+            <motion.div variants={containerVariants} initial="hidden" animate="visible"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+              {[
+                { label: 'Total Members', value: members.length, icon: <User size={14} />, color: '#6366f1' },
+                { label: 'Pending Invoices', value: invoices.length, icon: <FileText size={14} />, color: '#f59e0b' },
+                { label: 'Total Receivable', value: fmtCurrency(totalInvoiced), icon: <TrendingUp size={14} />, color: '#10b981' },
+              ].map((s, i) => (
+                <motion.div key={s.label} variants={itemVariants}
+                  style={{ borderRadius: 14, padding: '14px 16px', background: `linear-gradient(135deg, ${s.color}12, rgba(15,15,35,0.5))`, border: '1px solid rgba(255,255,255,0.06)', transition: 'transform 0.3s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.4)' }}>{s.label}</span>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>{s.value}</div>
+                </motion.div>
+              ))}
+            </motion.div>
+
             <AnimatePresence mode="wait">
               {step === 'success' ? (
-                <SuccessAnimation key="success" />
+                <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                  style={{ borderRadius: 24, padding: '48px 32px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(16,185,129,0.06), rgba(5,46,22,0.4))', border: '1px solid rgba(16,185,129,0.15)' }}>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+                    style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 8px 32px rgba(16,185,129,0.3)' }}>
+                    <CheckCircle2 size={28} color="#fff" />
+                  </motion.div>
+                  <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800, color: '#fff' }}>Payment Recorded!</h2>
+                  <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.45)', marginBottom: 20 }}>Payment of {fmtCurrency(parseFloat(amount || '0'))} from {selectedMember?.name || 'member'} has been recorded.</p>
+                  <div style={{ display: 'flex', gap: 24, justifyContent: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>
+                    <span>💳 {paymentMethod.toUpperCase()}</span>
+                    <span>📄 {generateReceipt ? 'Receipt Generated' : 'No Receipt'}</span>
+                  </div>
+                </motion.div>
               ) : (
-                <motion.div
-                  key="form"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-5"
-                >
+                <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {/* ── Member Selector ── */}
-                  <SectionCard
-                    icon={<User className="h-4 w-4" />}
-                    title="Member"
-                    subtitle="Select the member making the payment"
-                    className={memberSearchOpen ? 'relative z-20' : ''}
-                  >
-                    <MemberSelector
-                      selected={selectedMember}
-                      selectedBalance={selectedBalance}
-                      onSelect={async (m) => {
-                        setSelectedMember(m);
-                        setMemberSearchOpen(false);
-                        try {
-                          const res = await api.pt.client(m.id) as any;
-                          setSelectedBalance(res?.data?.balance_amount ?? null);
-                        } catch {
-                          setSelectedBalance(null);
-                        }
-                      }}
-                      open={memberSearchOpen}
-                      setOpen={setMemberSearchOpen}
-                      query={memberQuery}
-                      setQuery={setMemberQuery}
-                      filtered={filteredMembers}
-                    />
-                    {errors.member && (
-                      <p className="mt-1.5 text-[12px] font-[600]" style={{ color: '#ef4444' }}>
-                        {errors.member}
-                      </p>
-                    )}
-                  </SectionCard>
-
-                  {/* ── Invoice Linking ── */}
-                  <SectionCard
-                    icon={<Receipt className="h-4 w-4" />}
-                    title="Link Invoice"
-                    subtitle="Associate payment with an existing invoice"
-                  >
-                    <button
-                      onClick={() => setShowInvoicePanel(true)}
-                      className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
-                      style={{
-                        background: selectedInvoice ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.03)',
-                        border: selectedInvoice
-                          ? '1.5px solid rgba(99,102,241,0.40)'
-                          : '1.5px solid rgba(0,0,0,0.07)',
-                      }}
-                    >
-                      <div
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px]"
-                        style={{
-                          background: selectedInvoice
-                            ? 'rgba(99,102,241,0.10)'
-                            : 'rgba(0,0,0,0.04)',
-                        }}
-                      >
-                        {selectedInvoice ? (
-                          <Receipt size={15} style={{ color: '#6366f1' }} />
-                        ) : (
-                          <Link2 size={15} style={{ color: 'rgb(148,163,184)' }} />
-                        )}
+                  <div style={{ borderRadius: 18, padding: 18, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc' }}><User size={14} /></div>
+                      <div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>Member</span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 8 }}>Select the member making the payment</span>
                       </div>
-                      <div className="flex-1">
-                        {selectedInvoice ? (
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <div onClick={() => setMemberSearchOpen(!memberSearchOpen)}
+                        style={{ borderRadius: 12, padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${selectedMember ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.08)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {selectedMember ? (
                           <>
-                            <p className="text-[13.5px] font-[620]" style={{ color: 'rgb(15,23,42)' }}>
-                              {selectedInvoice.id} — {fmtCurrency(selectedInvoice.amount)}
-                            </p>
-                            <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>
-                              {selectedInvoice.date}
-                            </p>
+                            <div style={{ width: 32, height: 32, borderRadius: 8, background: avatarColor(selectedMember.name) + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: avatarColor(selectedMember.name) }}>
+                              {initials(selectedMember.name)}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{selectedMember.name}</span>
+                              {selectedMember.plan && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 8 }}>{selectedMember.plan}</span>}
+                            </div>
+                            {selectedBalance !== null && (
+                              <div style={{ padding: '4px 10px', borderRadius: 8, background: selectedBalance > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)', fontSize: 11, fontWeight: 700, color: selectedBalance > 0 ? '#fca5a5' : '#6ee7b7' }}>
+                                Bal: {fmtCurrency(selectedBalance)}
+                              </div>
+                            )}
+                            <ChevronDown size={14} color="rgba(255,255,255,0.3)" />
                           </>
                         ) : (
-                          <span className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>
-                            Select an invoice to link (optional)
-                          </span>
+                          <>
+                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Search for a member...</span>
+                            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: '4px 8px' }}>
+                              <Search size={12} color="rgba(255,255,255,0.3)" />
+                            </div>
+                          </>
                         )}
                       </div>
-                      <ChevronDown size={14} style={{ color: 'rgb(148,163,184)' }} />
+                      <AnimatePresence>
+                        {memberSearchOpen && (
+                          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                            style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 6, borderRadius: 14, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 16px 48px rgba(0,0,0,0.4)', padding: 6, zIndex: 20 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', marginBottom: 4 }}>
+                              <Search size={13} color="rgba(255,255,255,0.3)" />
+                              <input value={memberQuery} onChange={(e) => setMemberQuery(e.target.value)} placeholder="Type name or email..." autoFocus
+                                style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: 12, outline: 'none', flex: 1, fontFamily: 'inherit' }} />
+                            </div>
+                            <div style={{ maxHeight: 200, overflow: 'auto' }}>
+                              {filteredMembers.map((m) => (
+                                <div key={m.id} onClick={async () => {
+                                  setSelectedMember(m); setMemberSearchOpen(false);
+                                  try { const res = await api.pt.client(m.id) as any; setSelectedBalance(res?.data?.balance_amount ?? null); } catch { setSelectedBalance(null); }
+                                }}
+                                  style={{ padding: '8px 10px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'background 0.15s' }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                                  <div style={{ width: 28, height: 28, borderRadius: 7, background: avatarColor(m.name) + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: avatarColor(m.name) }}>
+                                    {initials(m.name)}
+                                  </div>
+                                  <div>
+                                    <span style={{ fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>{m.name}</span>
+                                    <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.25)', marginLeft: 6 }}>{m.email}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    {errors.member && <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 600, color: '#ef4444' }}>{errors.member}</p>}
+                  </div>
+
+                  {/* ── Invoice Linking ── */}
+                  <div style={{ borderRadius: 18, padding: 18, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fcd34d' }}><Link2 size={14} /></div>
+                      <div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>Link Invoice</span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 8 }}>Associate payment with an existing invoice</span>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowInvoicePanel(true)}
+                      style={{ width: '100%', borderRadius: 12, padding: '10px 14px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', border: `1px solid ${selectedInvoice ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.08)'}`, background: 'rgba(255,255,255,0.04)', color: '#fff', fontFamily: 'inherit', transition: 'all 0.2s' }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: selectedInvoice ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: selectedInvoice ? '#a5b4fc' : 'rgba(255,255,255,0.3)' }}>
+                        {selectedInvoice ? <Receipt size={14} /> : <Plus size={14} />}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        {selectedInvoice ? (
+                          <><span style={{ fontSize: 13, fontWeight: 600 }}>{selectedInvoice.id}</span><span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginLeft: 8 }}>{fmtCurrency(selectedInvoice.amount)}</span></>
+                        ) : (
+                          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Select an invoice to link (optional)</span>
+                        )}
+                      </div>
+                      <ChevronDown size={13} color="rgba(255,255,255,0.3)" />
                     </button>
-                  </SectionCard>
+                  </div>
 
                   {/* ── Payment Method ── */}
-                  <SectionCard
-                    icon={<Wallet className="h-4 w-4" />}
-                    title="Payment Method"
-                    subtitle="Choose how the payment is being made"
-                  >
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                  <div style={{ borderRadius: 18, padding: 18, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34d399' }}><CircleDot size={14} /></div>
+                      <div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>Payment Method</span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 8 }}>Choose how the payment is being made</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
                       {PAYMENT_METHODS.map((method) => {
                         const active = paymentMethod === method.id;
                         return (
-                          <motion.button
-                            key={method.id}
-                            onClick={() => setPaymentMethod(method.id)}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="flex flex-col items-center gap-2 rounded-[16px] p-4 text-center transition-all"
-                            style={{
-                              background: active ? method.bg : 'rgba(255,255,255,0.8)',
-                              border: active
-                                ? `1.5px solid ${method.color}50`
-                                : '1px solid rgba(0,0,0,0.06)',
-                              boxShadow: active
-                                ? `0 0 0 2px ${method.color}18`
-                                : '0 1px 4px rgba(0,0,0,0.03)',
-                            }}
-                          >
-                            <div
-                              className="flex h-11 w-11 items-center justify-center rounded-[12px] transition-all"
-                              style={{
-                                background: active ? method.color : 'rgba(0,0,0,0.04)',
-                                color: active ? 'white' : 'rgb(148,163,184)',
-                              }}
-                            >
+                          <motion.button key={method.id} onClick={() => setPaymentMethod(method.id)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px 8px', borderRadius: 14, cursor: 'pointer', border: `1px solid ${active ? `${method.color}50` : 'rgba(255,255,255,0.06)'}`, background: active ? method.bg : 'rgba(255,255,255,0.03)', color: '#fff', fontFamily: 'inherit', transition: 'all 0.2s' }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: active ? method.color : 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#fff' : 'rgba(255,255,255,0.4)' }}>
                               {method.icon}
                             </div>
-                            <span
-                              className="text-[11px] font-[660]"
-                              style={{ color: active ? method.color : 'rgb(100,116,139)' }}
-                            >
-                              {method.label}
-                            </span>
-                            {active && <Check size={10} className="text-current" />}
+                            <span style={{ fontSize: 10.5, fontWeight: 700, color: active ? method.color : 'rgba(255,255,255,0.5)' }}>{method.label}</span>
+                            {active && <Check size={10} color={method.color} />}
                           </motion.button>
                         );
                       })}
                     </div>
-                  </SectionCard>
+                  </div>
 
                   {/* ── Amount ── */}
-                  <SectionCard
-                    icon={<IndianRupee className="h-4 w-4" />}
-                    title="Payment Amount"
-                    subtitle={partialPayment ? 'Partial amount being paid' : 'Total payment amount'}
-                  >
-                    <div className="relative">
-                      <div
-                        className="relative overflow-hidden rounded-[13px] transition-all"
-                        style={{
-                          background: 'rgba(0,0,0,0.03)',
-                          border: errors.amount
-                            ? '1.5px solid rgba(239,68,68,0.40)'
-                            : '1.5px solid rgba(0,0,0,0.07)',
-                          boxShadow: errors.amount
-                            ? '0 0 0 3px rgba(239,68,68,0.08)'
-                            : '0 1px 2px rgba(0,0,0,0.03)',
-                        }}
-                      >
-                        <div className="flex items-center px-4 py-4">
-                          <span className="text-[18px] font-[800]" style={{ color: 'rgb(148,163,184)' }}>
-                            ₹
-                          </span>
-                          <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder="0.00"
-                            className="w-full bg-transparent px-3 text-[22px] font-[800] tracking-tight outline-none"
-                            style={{ color: 'rgb(15,23,42)' }}
-                          />
-                        </div>
+                  <div style={{ borderRadius: 18, padding: 18, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fca5a5' }}><IndianRupee size={14} /></div>
+                      <div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>Payment Amount</span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 8 }}>{partialPayment ? 'Partial amount being paid' : 'Total payment amount'}</span>
                       </div>
-                      {errors.amount && (
-                        <p className="mt-1.5 text-[12px] font-[600]" style={{ color: '#ef4444' }}>
-                          {errors.amount}
-                        </p>
-                      )}
                     </div>
-
-                    {/* Quick amounts */}
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div style={{ borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: `1px solid ${errors.amount ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`, display: 'flex', alignItems: 'center', padding: '4px 14px' }}>
+                      <span style={{ fontSize: 20, fontWeight: 800, color: 'rgba(255,255,255,0.3)' }}>₹</span>
+                      <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
+                        style={{ flex: 1, background: 'transparent', border: 'none', padding: '10px 8px', fontSize: 24, fontWeight: 800, color: '#fff', outline: 'none', fontFamily: 'inherit' }} />
+                    </div>
+                    {errors.amount && <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 600, color: '#ef4444' }}>{errors.amount}</p>}
+                    <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
                       {[5000, 10000, 17500, 28500, 45000].map((val) => (
-                        <motion.button
-                          key={val}
-                          onClick={() => setAmount(val.toString())}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                          className="rounded-full border px-3.5 py-1.5 text-[12px] font-[600] transition-all"
-                          style={{
-                            background:
-                              amount === val.toString()
-                                ? 'rgba(220,38,38,0.10)'
-                                : 'rgba(255,255,255,0.7)',
-                            borderColor:
-                              amount === val.toString()
-                                ? 'rgba(220,38,38,0.30)'
-                                : 'rgba(0,0,0,0.08)',
-                            color:
-                              amount === val.toString()
-                                ? '#dc2626'
-                                : 'rgb(100,116,139)',
-                          }}
-                        >
+                        <motion.button key={val} onClick={() => setAmount(val.toString())} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                          style={{ padding: '5px 14px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit', border: `1px solid ${amount === val.toString() ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}`, background: amount === val.toString() ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)', color: amount === val.toString() ? '#fca5a5' : 'rgba(255,255,255,0.4)', fontSize: 11.5, fontWeight: 700 }}>
                           {fmtCurrency(val)}
                         </motion.button>
                       ))}
                     </div>
-                  </SectionCard>
+                  </div>
 
-                  {/* ── Payment Options (Toggles) ── */}
-                  <SectionCard
-                    icon={<SplitSquareHorizontal className="h-4 w-4" />}
-                    title="Payment Options"
-                    subtitle="Configure additional payment settings"
-                  >
-                    <div className="space-y-4">
-                      {/* Partial Payment */}
-                      <div
-                        className="flex items-center justify-between rounded-[14px] p-4"
-                        style={{
-                          background: 'rgba(255,255,255,0.75)',
-                          border: '1px solid rgba(0,0,0,0.05)',
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Percent
-                            className="mt-0.5 h-5 w-5"
-                            style={{ color: partialPayment ? '#dc2626' : 'rgb(148,163,184)' }}
-                          />
+                  {/* ── Payment Options ── */}
+                  <div style={{ borderRadius: 18, padding: 18, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(236,72,153,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f9a8d4' }}><SplitSquareHorizontal size={14} /></div>
+                      <div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>Payment Options</span>
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 8 }}>Configure additional payment settings</span>
+                      </div>
+                    </div>
+
+                    {/* Partial Payment Toggle */}
+                    <div style={{ borderRadius: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Percent size={14} color={partialPayment ? '#f43f5e' : 'rgba(255,255,255,0.2)'} />
+                        <div>
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Partial Payment</span>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginLeft: 6 }}>Allow paying less than the full invoice amount</span>
+                        </div>
+                      </div>
+                      <motion.button onClick={() => setPartialPayment(!partialPayment)} whileTap={{ scale: 0.95 }}
+                        style={{ width: 44, height: 24, borderRadius: 12, padding: 2, border: 'none', cursor: 'pointer', background: partialPayment ? '#ef4444' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}>
+                        <motion.div animate={{ x: partialPayment ? 20 : 0 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                          style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
+                      </motion.button>
+                    </div>
+
+                    {/* Split Payment */}
+                    <div style={{ borderRadius: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: splitPayment ? 12 : 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <SplitSquareHorizontal size={14} color={splitPayment ? '#6366f1' : 'rgba(255,255,255,0.2)'} />
                           <div>
-                            <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>
-                              Partial Payment
-                            </p>
-                            <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>
-                              Allow paying less than the full invoice amount
-                            </p>
+                            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>Split Payment</span>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginLeft: 6 }}>Divide payment across multiple methods</span>
                           </div>
                         </div>
-                        <motion.button
-                          onClick={() => setPartialPayment(!partialPayment)}
-                          whileTap={{ scale: 0.95 }}
-                          className="flex h-7 w-12 items-center rounded-full p-1 transition-all"
-                          style={{ background: partialPayment ? '#dc2626' : 'rgb(203,213,225)' }}
-                        >
-                          <motion.div
-                            animate={{ x: partialPayment ? 20 : 0 }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                            className="h-5 w-5 rounded-full bg-white shadow-sm"
-                          />
+                        <motion.button onClick={() => setSplitPayment(!splitPayment)} whileTap={{ scale: 0.95 }}
+                          style={{ width: 44, height: 24, borderRadius: 12, padding: 2, border: 'none', cursor: 'pointer', background: splitPayment ? '#6366f1' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', transition: 'all 0.2s' }}>
+                          <motion.div animate={{ x: splitPayment ? 20 : 0 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
                         </motion.button>
                       </div>
-
-                      {/* Split Payment */}
-                      <div
-                        className="rounded-[14px] p-4"
-                        style={{
-                          background: 'rgba(255,255,255,0.75)',
-                          border: '1px solid rgba(0,0,0,0.05)',
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-start gap-3">
-                            <SplitSquareHorizontal
-                              className="mt-0.5 h-5 w-5"
-                              style={{ color: splitPayment ? '#dc2626' : 'rgb(148,163,184)' }}
-                            />
-                            <div>
-                              <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>
-                                Split Payment
-                              </p>
-                              <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>
-                                Divide payment across multiple methods
-                              </p>
-                            </div>
-                          </div>
-                          <motion.button
-                            onClick={() => setSplitPayment(!splitPayment)}
-                            whileTap={{ scale: 0.95 }}
-                            className="flex h-7 w-12 items-center rounded-full p-1 transition-all"
-                            style={{ background: splitPayment ? '#dc2626' : 'rgb(203,213,225)' }}
-                          >
-                            <motion.div
-                              animate={{ x: splitPayment ? 20 : 0 }}
-                              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                              className="h-5 w-5 rounded-full bg-white shadow-sm"
-                            />
-                          </motion.button>
-                        </div>
-
-                        <AnimatePresence>
-                          {splitPayment && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="mt-4 space-y-3 overflow-hidden"
-                            >
-                              {splitRows.map((row, i) => (
-                                <div key={i} className="flex items-center gap-3">
-                                  <select
-                                    value={row.method}
-                                    onChange={(e) => updateSplitRow(i, 'method', e.target.value)}
-                                    className="rounded-[10px] border px-3 py-2.5 text-[13px] font-[500] outline-none"
-                                    style={{
-                                      color: 'rgb(15,23,42)',
-                                      borderColor: 'rgba(0,0,0,0.12)',
-                                      background: 'white',
-                                    }}
-                                  >
-                                    {PAYMENT_METHODS.map((m) => (
-                                      <option key={m.id} value={m.id}>
-                                        {m.label}
-                                      </option>
-                                    ))}
+                      <AnimatePresence>
+                        {splitPayment && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
+                            {splitRows.map((row, i) => (
+                              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                                <div style={{ flex: 1 }}>
+                                  <select value={row.method} onChange={(e) => updateSplitRow(i, 'method', e.target.value)}
+                                    style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}>
+                                    {PAYMENT_METHODS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
                                   </select>
-                                  <div className="relative flex-1">
-                                    <span
-                                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-[600]"
-                                      style={{ color: 'rgb(148,163,184)' }}
-                                    >
-                                      ₹
-                                    </span>
-                                    <input
-                                      type="number"
-                                      value={row.amount}
-                                      onChange={(e) => updateSplitRow(i, 'amount', e.target.value)}
-                                      placeholder="Amount"
-                                      className="w-full rounded-[10px] border px-7 py-2.5 text-[13px] font-[500] outline-none"
-                                      style={{
-                                        color: 'rgb(15,23,42)',
-                                        borderColor: 'rgba(0,0,0,0.12)',
-                                        background: 'white',
-                                      }}
-                                    />
-                                  </div>
-                                  <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => removeSplitRow(i)}
-                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] transition"
-                                    style={{
-                                      background: 'rgba(239,68,68,0.08)',
-                                      color: '#ef4444',
-                                    }}
-                                  >
-                                    <X size={14} />
-                                  </motion.button>
                                 </div>
-                              ))}
-                              <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={addSplitRow}
-                                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-[660] transition-all"
-                                style={{
-                                  background: 'rgba(99,102,241,0.08)',
-                                  color: '#6366f1',
-                                  border: '1px solid rgba(99,102,241,0.2)',
-                                }}
-                              >
-                                <Plus size={13} /> Add Payment Method
+                                <div style={{ position: 'relative', flex: 1 }}>
+                                  <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>₹</span>
+                                  <input type="number" value={row.amount} onChange={(e) => updateSplitRow(i, 'amount', e.target.value)} placeholder="0"
+                                    style={{ width: '100%', padding: '8px 10px 8px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+                                </div>
+                                <button onClick={() => removeSplitRow(i)} disabled={splitRows.length <= 1}
+                                  style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.1)', color: '#fca5a5', cursor: splitRows.length <= 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: splitRows.length <= 1 ? 0.3 : 1 }}>
+                                  <X size={13} />
+                                </button>
+                              </div>
+                            ))}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <motion.button onClick={addSplitRow} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                style={{ padding: '6px 12px', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.15)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Plus size={12} /> Add Method
                               </motion.button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-
-                      {/* Generate Receipt */}
-                      <div
-                        className="flex items-center justify-between rounded-[14px] p-4"
-                        style={{
-                          background: 'rgba(255,255,255,0.75)',
-                          border: '1px solid rgba(0,0,0,0.05)',
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Printer
-                            className="mt-0.5 h-5 w-5"
-                            style={{ color: generateReceipt ? '#dc2626' : 'rgb(148,163,184)' }}
-                          />
-                          <div>
-                            <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>
-                              Generate Receipt
-                            </p>
-                            <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>
-                              Auto-generate a payment receipt for the member
-                            </p>
-                          </div>
-                        </div>
-                        <motion.button
-                          onClick={() => setGenerateReceipt(!generateReceipt)}
-                          whileTap={{ scale: 0.95 }}
-                          className="flex h-7 w-12 items-center rounded-full p-1 transition-all"
-                          style={{ background: generateReceipt ? '#dc2626' : 'rgb(203,213,225)' }}
-                        >
-                          <motion.div
-                            animate={{ x: generateReceipt ? 20 : 0 }}
-                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                            className="h-5 w-5 rounded-full bg-white shadow-sm"
-                          />
-                        </motion.button>
-                      </div>
+                              <span style={{ fontSize: 11, color: isValidSplit ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)' }}>
+                                Split: {fmtCurrency(splitTotal)} / {fmtCurrency(parseFloat(amount) || 0)}
+                              </span>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  </SectionCard>
+                  </div>
 
-                  {/* ── Notes ── */}
-                  <SectionCard
-                    icon={<PenSquare className="h-4 w-4" />}
-                    title="Payment Notes"
-                    subtitle="Optional notes for this transaction"
-                  >
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add a note about this payment…"
-                      rows={3}
-                      className="w-full rounded-[13px] border px-4 py-3 text-[13px] font-[500] outline-none transition-all placeholder:text-zinc-400 focus:border-[rgba(99,102,241,0.40)] focus:ring-[3px] focus:ring-[rgba(99,102,241,0.08)]"
-                      style={{
-                        color: 'rgb(15,23,42)',
-                        resize: 'none',
-                        borderColor: 'rgba(0,0,0,0.10)',
-                        background: 'rgba(255,255,255,0.75)',
-                      }}
-                    />
-                  </SectionCard>
-
-                  {/* ── Submit Bar ── */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-                    style={{
-                      borderRadius: 24,
-                      padding: 20,
-                      background: 'rgba(255,255,255,0.60)',
-                      backdropFilter: 'blur(16px)',
-                      WebkitBackdropFilter: 'blur(16px)',
-                      border: '1px solid rgba(255,255,255,0.30)',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                    }}
-                  >
-                    <div>
-                      <p className="text-[14px] font-[720]" style={{ color: 'rgb(15,23,42)' }}>
-                        {selectedMember
-                          ? `Recording payment for ${selectedMember.name}`
-                          : 'Ready to record payment'}
-                      </p>
-                      <p className="mt-1 text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>
-                        {amount
-                          ? `Amount: ${fmtCurrency(parseFloat(amount || '0'))}`
-                          : 'Enter an amount to continue'}
-                      </p>
+                  {/* ── Notes & Receipt ── */}
+                  <div style={{ borderRadius: 18, padding: 18, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34d399' }}><PenSquare size={14} /></div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>Notes & Receipt</span>
                     </div>
-                    <PremiumButton
-                      tone="primary"
-                      size="lg"
-                      loading={saving}
-                      glow
-                      icon={saving ? undefined : <CheckCircle2 className="h-5 w-5" />}
-                      onClick={handleSubmit}
-                    >
-                      {saving
-                        ? 'Processing Payment…'
-                        : `Record Payment ${amount ? fmtCurrency(parseFloat(amount || '0')) : ''}`}
-                    </PremiumButton>
-                  </motion.div>
+                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add payment notes (optional)..."
+                      style={{ width: '100%', minHeight: 70, padding: 10, borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: 12, fontFamily: 'inherit', outline: 'none', resize: 'vertical' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                      <input type="checkbox" id="receipt" checked={generateReceipt} onChange={(e) => setGenerateReceipt(e.target.checked)}
+                        style={{ accentColor: '#10b981', cursor: 'pointer' }} />
+                      <label htmlFor="receipt" style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>Generate receipt for this payment</label>
+                    </div>
+                  </div>
+
+                  {/* ── Submit ── */}
+                  <motion.button onClick={handleSubmit} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                    disabled={saving}
+                    style={{ width: '100%', padding: '14px 20px', borderRadius: 14, border: 'none', cursor: saving ? 'wait' : 'pointer', background: 'linear-gradient(135deg, #dc2626, #e11d48)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 32px rgba(220,38,38,0.3)', opacity: saving ? 0.7 : 1, transition: 'all 0.2s' }}>
+                    {saving ? (
+                      <><RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> Processing...</>
+                    ) : (
+                      <><Wallet size={16} /> Record Payment — {fmtCurrency(parseFloat(amount || '0'))}</>
+                    )}
+                  </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-
-          {/* ── Invoice FloatingPanel ── */}
-          <FloatingPanel
-            open={showInvoicePanel}
-            onClose={() => setShowInvoicePanel(false)}
-            title="Link Invoice"
-            subtitle="Select an invoice to associate with this payment"
-            icon={<Receipt className="h-4 w-4" />}
-            size="sm"
-          >
-            <div className="space-y-2">
-              {invoices.map((inv) => (
-                <motion.button
-                  key={inv.id}
-                  onClick={() => { setSelectedInvoice(inv); setShowInvoicePanel(false); }}
-                  whileHover={{ scale: 1.01 }}
-                  className="flex w-full items-center justify-between rounded-[14px] p-4 text-left transition-all hover:shadow-sm"
-                  style={{
-                    background: selectedInvoice?.id === inv.id ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.85)',
-                    border: '1px solid',
-                    borderColor: selectedInvoice?.id === inv.id ? 'rgba(99,102,241,0.25)' : 'rgba(0,0,0,0.06)',
-                  }}
-                >
-                  <div>
-                    <p className="text-[14px] font-[680]" style={{ color: 'rgb(15,23,42)' }}>
-                      {inv.id}
-                    </p>
-                    <p className="mt-0.5 text-[12px]" style={{ color: 'rgb(148,163,184)' }}>
-                      {inv.date} · {inv.status}
-                    </p>
-                  </div>
-                  <p className="text-[15px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>
-                    {fmtCurrency(inv.amount)}
-                  </p>
-                </motion.button>
-              ))}
-              <button
-                onClick={() => { setSelectedInvoice(null); setShowInvoicePanel(false); }}
-                className="flex w-full items-center justify-center gap-2 rounded-[14px] py-3 text-[13px] font-[660] transition hover:bg-zinc-50"
-                style={{ color: 'rgb(148,163,184)' }}
-              >
-                <X size={13} /> Clear selection
-              </button>
-            </div>
-          </FloatingPanel>
+          <div style={{ textAlign: 'center', padding: '8px 0 24px', fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>
+            Secure payment processing • All amounts in INR
+          </div>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </AppShell>
     </Guard>
-  );
-}
-
-/* ============================================================
-   Sub-Components
-   ============================================================ */
-
-function SectionCard({
-  icon,
-  title,
-  subtitle,
-  children,
-  className = '',
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`transition-all duration-200 ${className}`}
-      style={{
-        borderRadius: 22,
-        padding: 20,
-        background: 'rgba(255,255,255,0.65)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255,255,255,0.35)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-      }}
-    >
-      <div className="mb-4 flex items-center gap-3">
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-[10px]"
-          style={{
-            background: 'linear-gradient(135deg, rgba(220,38,38,0.12), rgba(225,29,72,0.12))',
-            color: '#dc2626',
-          }}
-        >
-          {icon}
-        </div>
-        <div>
-          <p className="text-[14px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>
-            {title}
-          </p>
-          <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>
-            {subtitle}
-          </p>
-        </div>
-      </div>
-      {children}
-    </motion.div>
-  );
-}
-
-function MemberSelector({
-  selected,
-  selectedBalance,
-  onSelect,
-  open,
-  setOpen,
-  query,
-  setQuery,
-  filtered,
-}: {
-  selected: Member | null;
-  selectedBalance: number | null;
-  onSelect: (m: Member) => void;
-  open: boolean;
-  setOpen: (v: boolean) => void;
-  query: string;
-  setQuery: (v: string) => void;
-  filtered: Member[];
-}) {
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
-        style={{
-          background: open ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.03)',
-          border: open
-            ? '1.5px solid rgba(99,102,241,0.40)'
-            : '1.5px solid rgba(0,0,0,0.07)',
-          boxShadow: open
-            ? '0 0 0 3px rgba(99,102,241,0.08)'
-            : '0 1px 2px rgba(0,0,0,0.03)',
-        }}
-      >
-        {selected ? (
-          <>
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] text-[12px] font-[700] text-white"
-              style={{ background: avatarColor(selected.name) }}
-            >
-              {initials(selected.name)}
-            </div>
-            <div className="flex-1">
-              <p className="text-[13.5px] font-[620]" style={{ color: 'rgb(15,23,42)' }}>
-                {selected.name}
-              </p>
-              <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>
-                {selected.email}
-                {selected.plan ? ` · ${selected.plan}` : ''}
-              </p>
-              {selectedBalance !== null && (
-                <p className="mt-0.5 text-[11px] font-[660]"
-                  style={{ color: selectedBalance > 0 ? '#dc2626' : '#10b981' }}>
-                  Balance: {fmtCurrency(selectedBalance)}
-                </p>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px]"
-              style={{ background: 'rgba(99,102,241,0.08)' }}
-            >
-              <User size={15} style={{ color: '#6366f1' }} />
-            </div>
-            <span className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>
-              Search and select a member…
-            </span>
-          </>
-        )}
-        <ChevronDown
-          size={14}
-          style={{
-            color: 'rgb(148,163,184)',
-            flexShrink: 0,
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 200ms',
-          }}
-        />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-[14px] p-1"
-            style={{
-              background: 'rgba(255,255,255,0.95)',
-              border: '1px solid rgba(0,0,0,0.08)',
-              boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
-            }}
-          >
-            <div
-              className="flex items-center gap-2 rounded-[10px] px-3 py-2 mb-1"
-              style={{ background: 'rgba(0,0,0,0.03)' }}
-            >
-              <Search size={12} style={{ color: 'rgb(148,163,184)' }} />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search members…"
-                className="flex-1 bg-transparent text-[12px] outline-none"
-                style={{ color: 'rgb(30,30,40)' }}
-              />
-            </div>
-            {selected && (
-              <button
-                onClick={() => { onSelect({} as Member); setOpen(false); }}
-                className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-[12.5px] text-red-400 transition hover:bg-red-50"
-              >
-                <X size={12} /> Clear selection
-              </button>
-            )}
-            {filtered.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => { onSelect(m); setOpen(false); }}
-                className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 transition hover:bg-slate-50"
-              >
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[11px] font-[700] text-white"
-                  style={{ background: avatarColor(m.name) }}
-                >
-                  {initials(m.name)}
-                </div>
-                <div className="flex-1 text-left">
-                  <span className="text-[12.5px] font-[580]" style={{ color: 'rgb(30,30,40)' }}>
-                    {m.name}
-                  </span>
-                  <p className="text-[10.5px]" style={{ color: 'rgb(148,163,184)' }}>
-                    {m.email}
-                  </p>
-                </div>
-                {selected?.id === m.id && (
-                  <Check size={12} style={{ color: '#6366f1' }} />
-                )}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function SuccessAnimation() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="flex flex-col items-center justify-center py-20 text-center"
-    >
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 15 }}
-        className="relative flex h-28 w-28 items-center justify-center rounded-[32px] mb-6"
-        style={{
-          background: 'linear-gradient(135deg, #059669, #10b981)',
-          boxShadow: '0 20px 60px rgba(5,150,105,0.30)',
-        }}
-      >
-        <motion.div
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ delay: 0.3, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <CheckCircle2 size={56} className="text-white" strokeWidth={1.5} />
-        </motion.div>
-        {Array.from({ length: 12 }).map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: 0, y: 0, scale: 0 }}
-            animate={{
-              opacity: [0, 1, 0],
-              x: [0, Math.cos((i * 30) * Math.PI / 180) * 80],
-              y: [0, Math.sin((i * 30) * Math.PI / 180) * 80],
-              scale: [0, 1.2, 0],
-            }}
-            transition={{ delay: 0.2 + i * 0.03, duration: 0.8, ease: 'easeOut' }}
-            className="absolute h-3 w-3 rounded-full"
-            style={{
-              background: ['#dc2626', '#7c3aed', '#10b981', '#f59e0b', '#0ea5e9', '#ec4899'][i % 6],
-            }}
-          />
-        ))}
-      </motion.div>
-
-      <motion.h2
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="text-[24px] font-[820] tracking-tight"
-        style={{ color: 'rgb(15,23,42)' }}
-      >
-        Payment Recorded Successfully
-      </motion.h2>
-      <motion.p
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="mt-2 text-[14px]"
-        style={{ color: 'rgb(148,163,184)' }}
-      >
-        The payment has been recorded and receipt is ready.
-      </motion.p>
-
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="mt-10 flex gap-3"
-      >
-        <PremiumButton tone="secondary" icon={<FileText className="h-4 w-4" />}>
-          View Receipt
-        </PremiumButton>
-        <PremiumButton tone="primary" icon={<ArrowRight className="h-4 w-4" />}>
-          Go to Invoices
-        </PremiumButton>
-      </motion.div>
-    </motion.div>
   );
 }

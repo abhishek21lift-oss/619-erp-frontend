@@ -1,11 +1,8 @@
 'use client';
-/**
- * Trainer Profile Page
- * Shows trainer details, their assigned members list, and schedule.
- */
 import React, { use, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
@@ -13,9 +10,9 @@ import { useAuth } from '@/lib/auth-context';
 import {
   ArrowLeft, User, Phone, Mail, Edit2, Trash2, Users,
   MessageCircle, Award, Calendar, Dumbbell, CheckCircle, XCircle,
+  Star, Clock, MapPin, ChevronRight, AlertTriangle, Sparkles,
 } from 'lucide-react';
 
-/* ─── Types ─────────────────────────────────────────────── */
 interface TrainerDetail {
   id: number;
   name: string;
@@ -38,40 +35,75 @@ interface AssignedMember {
   phone?: string;
 }
 
-/* ─── Helpers ───────────────────────────────────────────── */
 function fmtDate(d?: string) {
   if (!d) return '—';
   const dt = new Date(d);
   return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
+  active: { bg: 'rgba(16,185,129,0.15)', color: '#6ee7b7' },
+  expired: { bg: 'rgba(239,68,68,0.15)', color: '#fca5a5' },
+  frozen: { bg: 'rgba(59,130,246,0.15)', color: '#93c5fd' },
+  pending: { bg: 'rgba(245,158,11,0.15)', color: '#fcd34d' },
+  inactive: { bg: 'rgba(148,163,184,0.15)', color: '#cbd5e1' },
+};
+
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  'linear-gradient(135deg, #10b981, #34d399)',
+  'linear-gradient(135deg, #f59e0b, #fbbf24)',
+  'linear-gradient(135deg, #ec4899, #f472b6)',
+  'linear-gradient(135deg, #06b6d4, #22d3ee)',
+  'linear-gradient(135deg, #8b5cf6, #a78bfa)',
+];
+
+function initials(name: string) {
+  return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function avatarGradient(name: string) {
+  const h = name.split('').reduce((a, ch) => ((a << 5) - a) + ch.charCodeAt(0), 0);
+  return AVATAR_GRADIENTS[Math.abs(h) % AVATAR_GRADIENTS.length];
+}
+
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    active: 'badge-success', expired: 'badge-danger',
-    frozen: 'badge-info', pending: 'badge-warning', inactive: 'badge-secondary',
-  };
-  return <span className={`badge ${map[status] ?? 'badge-secondary'}`}>{status}</span>;
+  const s = STATUS_STYLES[status] || STATUS_STYLES.inactive;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, color: s.color, padding: '3px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, textTransform: 'capitalize' }}>
+      {status === 'active' ? <CheckCircle size={11} /> : <XCircle size={11} />}
+      {status}
+    </span>
+  );
 }
 
 function InfoRow({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
-      <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>{value ?? '—'}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{value ?? '—'}</span>
     </div>
   );
 }
 
-/* ─── Main ──────────────────────────────────────────────── */
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06 } }
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } }
+};
+
 export default function TrainerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useAuth();
 
-  const [trainer, setTrainer]   = useState<TrainerDetail | null>(null);
-  const [members, setMembers]   = useState<AssignedMember[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
+  const [trainer, setTrainer] = useState<TrainerDetail | null>(null);
+  const [members, setMembers] = useState<AssignedMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'members'>('profile');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -90,31 +122,22 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
         const d = mRes.value as any;
         const raw = Array.isArray(d) ? d : (d.members ?? []);
         setMembers(raw.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          status: c.status,
+          id: c.id, name: c.name, status: c.status,
           membership_plan: c.membership_plan || c.package_type,
           expiry_date: c.expiry_date || c.pt_end_date,
           phone: c.phone || c.mobile,
         })));
       }
-    } catch (e: any) {
-      setError(e.message || 'Failed to load trainer.');
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) { setError(e.message || 'Failed to load trainer.'); }
+    finally { setLoading(false); }
   }, [id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   async function handleDelete() {
     setDeleting(true);
-    try {
-      await api.trainers.delete(id);
-    } catch (e: any) {
-      alert(`Failed: ${e.message}`);
-      setDeleting(false);
-    }
+    try { await api.trainers.delete(id); }
+    catch (e: any) { alert(`Failed: ${e.message}`); setDeleting(false); }
   }
 
   const whatsappHref = () => {
@@ -126,14 +149,15 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
 
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
-  /* ── Loading ── */
   if (loading) {
     return (
       <Guard roles={['admin', 'manager']}>
-        <AppShell title="Trainer Profile">
-          <div className="page-container">
-            <div className="skeleton" style={{ height: 180, borderRadius: 12, marginBottom: 16 }} />
-            <div className="skeleton" style={{ height: 350, borderRadius: 12 }} />
+        <AppShell>
+          <div style={{ padding: '32px', maxWidth: 1000, margin: '0 auto' }}>
+            <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ height: 200, borderRadius: 20, background: 'rgba(255,255,255,0.03)', marginBottom: 16, border: '1px solid rgba(255,255,255,0.05)' }} />
+            <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+              style={{ height: 350, borderRadius: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }} />
           </div>
         </AppShell>
       </Guard>
@@ -143,84 +167,88 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   if (error || !trainer) {
     return (
       <Guard roles={['admin', 'manager']}>
-        <AppShell title="Trainer Profile">
-          <div className="page-container">
-            <div className="empty-state">
-              <User size={36} className="empty-state-icon" />
-              <p className="empty-state-title">{error || 'Trainer not found'}</p>
-              <button className="btn btn-primary btn-sm" onClick={() => router.back()}>Go back</button>
+        <AppShell>
+          <div style={{ padding: '60px 32px', textAlign: 'center' }}>
+            <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <User size={28} color="#fca5a5" />
             </div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>{error || 'Trainer not found'}</div>
+            <button onClick={() => router.back()}
+              style={{ padding: '8px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Go back
+            </button>
           </div>
         </AppShell>
       </Guard>
     );
   }
 
-    return (
-      <Guard roles={['admin', 'manager']}>
-      <AppShell title="Trainer Profile">
-        <div className="page-container animate-fade-in">
+  const mg = avatarGradient(trainer.name);
 
-          {/* ── Back ── */}
-          <button className="btn btn-ghost btn-sm" onClick={() => router.back()} style={{ marginBottom: 16 }}>
-            <ArrowLeft size={14} /> Back to Trainers
-          </button>
+  return (
+    <Guard roles={['admin', 'manager']}>
+      <AppShell>
+        <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f0a1e 0%, #0f172a 50%, #0a0a1a 100%)' }}>
+          {/* ── Hero ── */}
+          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0f0a1e 0%, #1a1040 30%, #0f172a 60%, #1e0a2e 100%)', padding: '28px 32px 36px', borderRadius: '0 0 40px 40px' }}>
+            <motion.div style={{ position: 'absolute', top: -60, right: -30, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%)', pointerEvents: 'none' }}
+              animate={{ x: [0, 25, -15, 0], y: [0, -30, 15, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
+            <motion.div style={{ position: 'absolute', bottom: -50, left: -20, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%)', pointerEvents: 'none' }}
+              animate={{ x: [0, -20, 25, 0], y: [0, 20, -10, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
+            <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none' }} />
 
-          {/* ── Header card ── */}
-          <div className="card" style={{ padding: 24, marginBottom: 16 }}>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              {/* Avatar */}
-              <div style={{
-                width: 68, height: 68, borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 24, fontWeight: 700, color: '#fff',
-              }}>
-                {trainer.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
-              </div>
+            <button onClick={() => router.back()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20, transition: 'background 0.2s', position: 'relative', zIndex: 1 }}>
+              <ArrowLeft size={13} /> Back to Trainers
+            </button>
 
-              {/* Details */}
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{trainer.name}</h2>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
+              <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                style={{ width: 76, height: 76, borderRadius: 20, flexShrink: 0, background: mg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 800, color: '#fff', boxShadow: '0 8px 32px rgba(99,102,241,0.3)' }}>
+                {initials(trainer.name)}
+              </motion.div>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>{trainer.name}</h2>
                   <StatusBadge status={trainer.status} />
                 </div>
                 {trainer.specialization && (
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-                    <Dumbbell size={12} /> {trainer.specialization}
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
+                    <Dumbbell size={13} color="rgba(255,255,255,0.3)" /> {trainer.specialization}
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 4 }}>
                   {trainer.phone && (
-                    <span style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Phone size={12} /> {trainer.phone}
+                    <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Phone size={12} color="rgba(255,255,255,0.3)" /> {trainer.phone}
                     </span>
                   )}
                   {trainer.email && (
-                    <span style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Mail size={12} /> {trainer.email}
+                    <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Mail size={12} color="rgba(255,255,255,0.3)" /> {trainer.email}
                     </span>
                   )}
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Users size={12} /> {members.length} member{members.length !== 1 ? 's' : ''}
+                  <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Users size={12} color="rgba(255,255,255,0.3)" /> {members.length} member{members.length !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
-
-              {/* Actions */}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {trainer.phone && (
-                  <a href={whatsappHref()} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+                  <a href={whatsappHref()} target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', color: '#6ee7b7', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s' }}>
                     <MessageCircle size={13} /> WhatsApp
                   </a>
                 )}
                 {isAdmin && (
-                  <Link href={`/trainers/${id}/edit`} className="btn btn-outline btn-sm">
+                  <Link href={`/trainers/${id}/edit`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s' }}>
                     <Edit2 size={13} /> Edit
                   </Link>
                 )}
                 {user?.role === 'admin' && (
-                  <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(true)}>
+                  <button onClick={() => setDeleteConfirm(true)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
                     <Trash2 size={13} /> Remove
                   </button>
                 )}
@@ -228,129 +256,179 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
-          {/* ── Tabs ── */}
-          <div className="tab-bar" style={{ marginBottom: 16 }}>
-            {(['profile', 'members'] as const).map((t) => (
-              <button key={t} className={`tab-btn ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>
-                {t === 'members' ? `Members (${members.length})` : 'Profile'}
-              </button>
-            ))}
-          </div>
+          <div style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
+            {/* ── Quick Stats ── */}
+            <motion.div variants={containerVariants} initial="hidden" animate="visible"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+              {[
+                { label: 'Total Members', value: members.length, icon: <Users size={14} />, color: '#6366f1' },
+                { label: 'Active Members', value: members.filter(m => m.status === 'active').length, icon: <CheckCircle size={14} />, color: '#10b981' },
+                { label: 'Joined Date', value: fmtDate(trainer.join_date), icon: <Calendar size={14} />, color: '#f59e0b' },
+              ].map((s, i) => (
+                <motion.div key={s.label} variants={itemVariants}
+                  style={{ borderRadius: 16, padding: '16px 18px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
+                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)' }}>{s.label}</span>
+                  </div>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{s.value}</span>
+                </motion.div>
+              ))}
+            </motion.div>
 
-          {/* ── Profile tab ── */}
-          {activeTab === 'profile' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-              <div className="card" style={{ padding: 20 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <User size={14} /> Personal Details
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <InfoRow label="Full Name" value={trainer.name} />
-                  <InfoRow label="Status" value={<StatusBadge status={trainer.status} />} />
-                  <InfoRow label="Phone" value={trainer.phone} />
-                  <InfoRow label="Email" value={trainer.email} />
-                  <InfoRow label="Specialization" value={trainer.specialization} />
-                  <InfoRow label="Joined" value={fmtDate(trainer.join_date)} />
+            {/* ── Tabs ── */}
+            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 20, background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 3 }}>
+              {(['profile', 'members'] as const).map((t) => (
+                <button key={t} onClick={() => setActiveTab(t)}
+                  style={{
+                    padding: '8px 20px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                    fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
+                    background: activeTab === t ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                    color: activeTab === t ? '#fff' : 'rgba(255,255,255,0.4)',
+                    boxShadow: activeTab === t ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
+                  }}>
+                  {t === 'members' ? `Members (${members.length})` : 'Profile'}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Profile Tab ── */}
+            {activeTab === 'profile' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+                <div style={{ borderRadius: 20, padding: 22, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)' }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <User size={14} color="rgba(255,255,255,0.4)" /> Personal Details
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <InfoRow label="Full Name" value={trainer.name} />
+                    <InfoRow label="Status" value={<StatusBadge status={trainer.status} />} />
+                    <InfoRow label="Phone" value={trainer.phone} />
+                    <InfoRow label="Email" value={trainer.email} />
+                    <InfoRow label="Specialization" value={trainer.specialization} />
+                    <InfoRow label="Joined" value={fmtDate(trainer.join_date)} />
+                  </div>
                 </div>
-              </div>
 
-              <div className="card" style={{ padding: 20 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Award size={14} /> Certifications & Schedule
-                </h3>
-                {trainer.certifications && trainer.certifications.length > 0 ? (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-                    {trainer.certifications.map((c, i) => (
-                      <span key={i} className="badge badge-info" style={{ fontSize: 12 }}>{c}</span>
-                    ))}
+                <div style={{ borderRadius: 20, padding: 22, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)' }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Award size={14} color="rgba(255,255,255,0.4)" /> Certifications & Schedule
+                  </h3>
+                  {trainer.certifications && trainer.certifications.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                      {trainer.certifications.map((c, i) => (
+                        <span key={i} style={{ padding: '4px 12px', borderRadius: 20, background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', fontSize: 11.5, fontWeight: 600, border: '1px solid rgba(99,102,241,0.15)' }}>{c}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>No certifications listed.</p>
+                  )}
+                  <InfoRow label="Schedule / Timing" value={trainer.schedule} />
+                </div>
+
+                {trainer.bio && (
+                  <div style={{ borderRadius: 20, padding: 22, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', gridColumn: '1/-1' }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Star size={14} color="rgba(255,255,255,0.4)" /> Bio
+                    </h3>
+                    <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{trainer.bio}</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* ── Members Tab ── */}
+            {activeTab === 'members' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+                style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.85)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Users size={14} color="rgba(255,255,255,0.4)" /> Assigned Members
+                    <span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}>{members.length}</span>
+                  </h3>
+                </div>
+                {members.length === 0 ? (
+                  <div style={{ padding: '50px', textAlign: 'center' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', border: '1px solid rgba(99,102,241,0.15)' }}>
+                      <Users size={24} color="#a5b4fc" />
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 16, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>No members assigned</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', maxWidth: 300, margin: '0 auto' }}>Assign members to this trainer from the Members page.</div>
                   </div>
                 ) : (
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>No certifications listed.</p>
-                )}
-                <InfoRow label="Schedule / Timing" value={trainer.schedule} />
-              </div>
-
-              {trainer.bio && (
-                <div className="card" style={{ padding: 20, gridColumn: '1/-1' }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>Bio</h3>
-                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{trainer.bio}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Members tab ── */}
-          {activeTab === 'members' && (
-            <div className="card" style={{ overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-                <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                  Assigned Members ({members.length})
-                </h3>
-              </div>
-              {members.length === 0 ? (
-                <div className="empty-state">
-                  <Users size={32} className="empty-state-icon" />
-                  <p className="empty-state-title">No members assigned</p>
-                  <p className="empty-state-desc">Assign members to this trainer from the Members page.</p>
-                </div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Status</th>
-                        <th>Plan</th>
-                        <th>Expiry</th>
-                        <th>Phone</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(members ?? []).map((m) => (
-                        <tr key={m.id} style={{ cursor: 'pointer' }} onClick={() => router.push(`/clients/${m.id}`)}>
-                          <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{m.name}</td>
-                          <td><StatusBadge status={m.status} /></td>
-                          <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{m.membership_plan ?? '—'}</td>
-                          <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{fmtDate(m.expiry_date)}</td>
-                          <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{m.phone ?? '—'}</td>
-                          <td onClick={(e) => e.stopPropagation()}>
-                            <Link href={`/clients/${m.id}`} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                              View
-                            </Link>
-                          </td>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))' }}>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Name</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Status</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Plan</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Expiry</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Phone</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }} />
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ── Delete Modal ── */}
-        {deleteConfirm && (
-          <div className="modal-backdrop" role="presentation" onClick={() => setDeleteConfirm(false)}>
-            <div className="modal animate-slide-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
-              <div className="modal-header">
-                <h3 className="modal-title">Remove Trainer</h3>
-                <button className="modal-close" onClick={() => setDeleteConfirm(false)}>×</button>
-              </div>
-              <div className="modal-body">
-                <p style={{ color: 'var(--text-secondary)' }}>
-                  Remove <strong>{trainer.name}</strong>? Their {members.length} assigned member{members.length !== 1 ? 's' : ''} will become unassigned.
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-outline btn-sm" onClick={() => setDeleteConfirm(false)}>Cancel</button>
-                <button className="btn btn-danger btn-sm" onClick={handleDelete} disabled={deleting}>
-                  {deleting ? 'Removing…' : 'Remove trainer'}
-                </button>
-              </div>
-            </div>
+                      </thead>
+                      <tbody>
+                        {(members ?? []).map((m, i) => (
+                          <motion.tr key={m.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                            style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.2s', background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}
+                            onClick={() => router.push(`/clients/${m.id}`)}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.06)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'; }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>{m.name}</td>
+                            <td style={{ padding: '12px 16px' }}><StatusBadge status={m.status} /></td>
+                            <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{m.membership_plan ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{fmtDate(m.expiry_date)}</td>
+                            <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{m.phone ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                              <Link href={`/clients/${m.id}`}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', fontSize: 11, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(99,102,241,0.15)', transition: 'all 0.2s' }}>
+                                View <ChevronRight size={11} />
+                              </Link>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
-        )}
+
+          {/* ── Delete Modal ── */}
+          <AnimatePresence>
+            {deleteConfirm && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+                onClick={() => setDeleteConfirm(false)}>
+                <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
+                  style={{ background: 'linear-gradient(145deg, #1e1b4b, #0f172a)', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}
+                  onClick={(e) => e.stopPropagation()}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <AlertTriangle size={18} color="#fca5a5" />
+                    </div>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#fff' }}>Remove Trainer</h3>
+                  </div>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
+                    Remove <strong style={{ color: '#fff' }}>{trainer.name}</strong>? Their {members.length} assigned member{members.length !== 1 ? 's' : ''} will become unassigned.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                    <button onClick={() => setDeleteConfirm(false)}
+                      style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Cancel
+                    </button>
+                    <button onClick={handleDelete} disabled={deleting}
+                      style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: deleting ? 'default' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(239,68,68,0.25)' }}>
+                      {deleting ? 'Removing…' : 'Remove trainer'}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </AppShell>
     </Guard>
   );
