@@ -206,8 +206,8 @@ function Inner() {
           ].map((k, i) => (
             <motion.div key={k.label} variants={itemVariants}
               style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '20px 20px', background: `linear-gradient(135deg, ${k.bg}, rgba(30,27,75,0.6))`, border: '1px solid rgba(255,255,255,0.08)', boxShadow: `0 6px 24px ${k.glow}`, cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
-              onMouseEnter={(e) => { e.currentStyle?.setProperty?.('transform', 'translateY(-3px)'); e.currentStyle?.setProperty?.('box-shadow', `0 12px 40px ${k.glow}`); }}
-              onMouseLeave={(e) => { e.currentStyle?.setProperty?.('transform', 'translateY(0)'); e.currentStyle?.setProperty?.('box-shadow', `0 6px 24px ${k.glow}`); }}>
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 12px 40px ${k.glow}`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 6px 24px ${k.glow}`; }}>
               <div style={{ position: 'absolute', top: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: `radial-gradient(circle, ${k.glow}, transparent 70%)`, pointerEvents: 'none' }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, position: 'relative', zIndex: 1 }}>
                 <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'rgba(255,255,255,0.5)' }}>{k.label}</span>
