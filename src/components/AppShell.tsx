@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown } from 'lucide-react';
+import { Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint, Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown, Menu } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname, useRouter } from 'next/navigation';
@@ -23,6 +23,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -124,8 +125,19 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   return (
     <LazyMotion features={domAnimation} strict>
       <div className="flex min-h-screen bg-[var(--bg-canvas)]">
-        {/* Sidebar */}
+        {/* Sidebar — desktop */}
         <Sidebar collapsed={sidebarCollapsed} onExpand={() => setSidebarCollapsed(false)} onCollapse={() => setSidebarCollapsed(true)} />
+
+        {/* Sidebar — mobile drawer */}
+        <Sidebar variant="mobile" mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
+
+        {/* Mobile backdrop */}
+        <div onClick={() => setMobileMenuOpen(false)}
+          className={cn(
+            'fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden',
+            mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+          )}
+        />
 
         {/* Right column */}
         <div className={cn('flex flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}>
@@ -134,6 +146,12 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 40%, #1e1b4b 70%, #1e40af 100%)' }}
           >
             <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
+              {/* Mobile menu toggle */}
+              <button type="button" aria-label="Open navigation menu" onClick={() => setMobileMenuOpen(true)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white/60 transition-colors hover:bg-white/10 hover:text-white lg:hidden">
+                <Menu size={17} strokeWidth={1.5} />
+              </button>
+
               {/* Search */}
               <div ref={searchRef} className="relative flex-1 max-w-[360px] lg:max-w-[400px]">
                 <div className="group relative">
