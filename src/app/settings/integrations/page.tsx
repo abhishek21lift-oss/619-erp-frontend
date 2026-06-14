@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Search, X, CreditCard, Smartphone, MessageSquare, Send,
   Bot, Calendar, Camera, BarChart3, Loader2, Link2, Unlink,
-  Settings, Clock, CheckCircle2, RefreshCw,
+  Settings, Clock, CheckCircle2, RefreshCw, ArrowRight,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -28,7 +28,7 @@ const STATIC_INTEGRATIONS: Integration[] = [
   { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Send notifications, reminders & marketing via WhatsApp', category: 'communication', icon: 'MessageSquare', color: '#25d366', bg: '#f0fdf4', status: 'connected',   connectedAt: '2026-01-10', lastSync: '2026-06-12 11:00 AM' },
   { id: 'twilio',    name: 'Twilio SMS',         description: 'SMS alerts for dues, check-ins & announcements',     category: 'communication', icon: 'MessageSquare', color: '#f22f46', bg: '#fef2f2', status: 'pending' },
   { id: 'sendgrid',  name: 'SendGrid',           description: 'Email marketing & transactional emails',             category: 'communication', icon: 'Send',          color: '#1a82e2', bg: '#eff6ff', status: 'unavailable', comingSoon: true },
-  { id: 'chatgpt',   name: 'AI Assistant',       description: 'AI-powered workout & nutrition recommendations',      category: 'ai',            icon: 'Bot',           color: '#10a37f', bg: '#f0fdf4', status: 'unavailable', comingSoon: true },
+  // AI Coach card is rendered as a live AiCoachCard — not in this static list
   { id: 'biometric', name: 'Biometric Scanner',  description: 'Face & fingerprint check-in hardware',               category: 'devices',       icon: 'Camera',        color: '#8b5cf6', bg: '#f5f3ff', status: 'connected',   connectedAt: '2026-05-20', lastSync: '2026-06-12 08:30 AM' },
   { id: 'zoho',      name: 'Zoho Books',         description: 'Accounting & invoicing sync',                        category: 'analytics',     icon: 'BarChart3',     color: '#e42527', bg: '#fef2f2', status: 'unavailable', comingSoon: true },
 ];
@@ -118,6 +118,58 @@ function ConnectModal({ integration, onClose, onDisconnect }: {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+// ── AI Coach Card (live) ──────────────────────────────────────────────────────
+function AiCoachCard() {
+  const router = useRouter();
+  const [usage, setUsage] = useState<{ messages_today: string; tokens_today: string } | null>(null);
+
+  useEffect(() => {
+    api.ai.usage().then((r) => setUsage(r.data)).catch(() => {});
+  }, []);
+
+  return (
+    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
+      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
+      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', color: '#10a37f' }}>
+          <Bot size={20} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>619 AI Coach</span>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(16,163,127,0.12)', color: '#10a37f', border: '1px solid rgba(16,163,127,0.25)' }}>Active</span>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
+            AI-powered workout &amp; nutrition coach with member context
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#10a37f' }}>
+          <CheckCircle2 size={12} /> Connected · GPT-4o
+        </span>
+        {usage && (
+          <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>
+            {usage.messages_today} messages today
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          onClick={() => router.push('/ai-coach')}
+          style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#10a37f,#059669)', color: '#ffffff', boxShadow: '0 4px 12px rgba(16,163,127,0.3)' }}
+        >
+          Open AI Coach <ArrowRight size={13} />
+        </button>
+      </div>
+    </motion.div>
   );
 }
 
@@ -379,7 +431,10 @@ export default function IntegrationsPage() {
     const showCalendar =
       (category === 'all' || category === 'scheduling') &&
       (!search || 'google calendar'.includes(search.toLowerCase()) || 'sync sessions bookings'.includes(search.toLowerCase()));
-    return { staticFiltered, showCalendar };
+    const showAi =
+      (category === 'all' || category === 'ai') &&
+      (!search || 'ai coach'.includes(search.toLowerCase()) || '619 ai workout nutrition'.includes(search.toLowerCase()));
+    return { staticFiltered, showCalendar, showAi };
   }, [category, search]);
 
   const modalIntegration = modalId ? STATIC_INTEGRATIONS.find((i) => i.id === modalId) ?? null : null;
@@ -437,13 +492,16 @@ export default function IntegrationsPage() {
                   onToggle={() => toggleIntegration(integration.id)}
                 />
               ))}
+              {filtered.showAi && (
+                <AiCoachCard key="ai-coach" />
+              )}
               {filtered.showCalendar && (
                 <GoogleCalendarCard key="calendar" flashSuccess={flashSuccess} />
               )}
             </AnimatePresence>
           </div>
 
-          {!filtered.staticFiltered.length && !filtered.showCalendar && (
+          {!filtered.staticFiltered.length && !filtered.showCalendar && !filtered.showAi && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ textAlign: 'center', padding: '60px 20px', ...glass, borderRadius: 20, marginTop: 16 }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>

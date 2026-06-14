@@ -1025,4 +1025,33 @@ export const api = {
     update: (data: Record<string, unknown>) =>
       http<{ success: boolean }>('/api/settings/gym', { method: 'PUT', body: JSON.stringify(data) }),
   },
+
+  // ── AI Coach ────────────────────────────────────────────────────
+  ai: {
+    conversations: (params?: Record<string, string | number>) =>
+      http<{ data: AiConversation[] }>(`/api/ai/conversations${buildQs(params)}`),
+    conversation: (id: string) =>
+      http<{ data: AiConversation & { messages: AiMessage[] } }>(`/api/ai/conversations/${id}`),
+    deleteConversation: (id: string) =>
+      http<{ message: string }>(`/api/ai/conversations/${id}`, { method: 'DELETE' }),
+    usage: () =>
+      http<{ data: { messages_this_hour: string; messages_today: string; tokens_today: string } }>('/api/ai/usage'),
+  },
+};
+
+// ── AI Coach types ─────────────────────────────────────────────────────
+export type AiConversation = {
+  id: string;
+  title: string | null;
+  client_id: string | null;
+  last_message?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AiMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
 };

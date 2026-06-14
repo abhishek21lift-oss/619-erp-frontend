@@ -74,6 +74,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     { label: 'Reports', href: '/reports', keywords: 'reports analytics insights' },
     { label: 'Notifications', href: '/engagement/notifications', keywords: 'notifications alerts updates' },
     { label: 'Settings', href: '/settings', keywords: 'settings configuration preferences' },
+    { label: 'AI Coach', href: '/ai-coach', keywords: 'ai coach workout nutrition fitness chatbot assistant gpt' },
   ];
 
   useEffect(() => {
