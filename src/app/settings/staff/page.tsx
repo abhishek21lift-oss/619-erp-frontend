@@ -37,6 +37,7 @@ const ROLE_CFG: Record<string, {
 };
 
 import { avatarGradient as avatarGrad, initialsAvatar } from '@/lib/avatar';
+import { CopyId } from '@/components/ui/CopyId';
 
 /* ─── Helpers ────────────────────────────────────────────────────── */
 const initials = initialsAvatar;
@@ -134,7 +135,8 @@ function Inner() {
   const filtered = staff.filter(s => {
     const q = search.toLowerCase();
     const matchQ = !q || s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
-      || (s.phone || '').includes(q) || s.role.toLowerCase().includes(q);
+      || (s.phone || '').includes(q) || s.role.toLowerCase().includes(q)
+      || (s.unique_id || '').toLowerCase().includes(q);
     const matchR = roleFilter === 'all' || s.role === roleFilter;
     return matchQ && matchR;
   });
@@ -378,7 +380,7 @@ function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen, onEdit }
         </div>
         <div className="sm-card-meta">
           <div className="sm-card-name">{s.name}</div>
-          {s.unique_id && <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', color: '#6366f1', textTransform: 'uppercase', marginBottom: 1 }}>{s.unique_id}</div>}
+          {s.unique_id && <div style={{ marginBottom: 2 }}><CopyId id={s.unique_id} color="#6366f1" /></div>}
           <div className="sm-card-email">{s.email}</div>
           {s.phone && <div className="sm-card-phone">{s.phone}</div>}
         </div>
@@ -486,7 +488,7 @@ function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen, 
                       <div style={{ fontWeight: 650, fontSize: 13, color: 'var(--text-primary)' }}>
                         {s.name}
                       </div>
-                      {s.unique_id && <div style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', letterSpacing: '0.06em' }}>{s.unique_id}</div>}
+                      {s.unique_id && <CopyId id={s.unique_id} color="#6366f1" />}
                       <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 1 }}>{s.email}</div>
                     </div>
                   </div>
@@ -574,7 +576,10 @@ function EditModal({ s, saving, onSave, onClose }: {
         }}>
           <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 750, color: '#0f172a' }}>Edit Profile</div>
+              <div style={{ fontSize: 15, fontWeight: 750, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                Edit Profile
+                {s.unique_id && <CopyId id={s.unique_id} color="#6366f1" />}
+              </div>
               <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Update name, email, and phone</div>
             </div>
             <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: 'none', background: '#f8fafc', cursor: 'pointer', color: '#64748b' }}>

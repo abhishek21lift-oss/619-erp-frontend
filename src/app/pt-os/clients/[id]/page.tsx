@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { CopyId } from '@/components/ui/CopyId';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, User, Phone, Mail, Calendar, Hash, Target,
@@ -18,7 +19,7 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
 interface PtClientDetail {
-  id: string; client_id?: string; name: string;
+  id: string; unique_id?: string; client_id?: string; name: string;
   email?: string; mobile?: string; gender?: string; dob?: string;
   address?: string; photo_url?: string;
   emergency_contact?: string;
@@ -359,9 +360,9 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
                         <h1 className="text-[26px] font-[860] tracking-[-0.03em]" style={{ color: '#ffffff' }}>{client.name}</h1>
                         <StatusBadge status={client.status} days_left={client.days_left} />
                       </div>
-                      <p className="mt-1 text-[13px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                        {client.client_id || client.id.slice(0, 8)} · PT Client
-                        {client.trainer_name ? ` · Trained by ${client.trainer_name}` : ''}
+                      <p className="mt-1 text-[13px] flex items-center gap-2 flex-wrap" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="rgba(255,255,255,0.7)" />
+                        <span>· PT Client{client.trainer_name ? ` · Trained by ${client.trainer_name}` : ''}</span>
                       </p>
                       <div className="flex flex-wrap gap-3 mt-3">
                         {client.mobile && (

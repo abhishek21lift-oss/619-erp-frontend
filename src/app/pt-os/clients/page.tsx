@@ -12,6 +12,7 @@ import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
+import { CopyId } from '@/components/ui/CopyId';
 
 type PtClient = PtClientBase & {
   gender: string;
@@ -162,10 +163,10 @@ function ClientRow({ client, index }: { client: PtClient; index: number }) {
           </div>
           <div>
             <p className="text-[13.5px] font-[760] leading-tight tracking-[-0.01em]" style={{ color: 'rgb(15,23,42)' }}>{client.name}</p>
-            <p className="text-[10px] font-medium mt-0.5 flex items-center gap-1" style={{ color: 'rgb(148,163,184)' }}>
-              <span className="w-1 h-1 rounded-full" style={{ background: color }} />
-              {client.unique_id || client.client_id || client.id.slice(0, 8)}
-            </p>
+            <div className="mt-0.5 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full shrink-0" style={{ background: color }} />
+              <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color={color} />
+            </div>
           </div>
         </div>
       </td>
@@ -233,7 +234,11 @@ export default function PtClientsPage() {
   const filtered = (clients.data?.data ?? []).filter((c) => {
     if (search) {
       const q = search.toLowerCase();
-      if (!c.name?.toLowerCase().includes(q) && !c.trainer_name?.toLowerCase().includes(q)) return false;
+      const matchesSearch = c.name?.toLowerCase().includes(q)
+        || c.trainer_name?.toLowerCase().includes(q)
+        || (c.unique_id || '').toLowerCase().includes(q)
+        || (c.client_id || '').toLowerCase().includes(q);
+      if (!matchesSearch) return false;
     }
     if (statusFilter !== 'all' && c.status !== statusFilter) return false;
     return true;

@@ -9,6 +9,7 @@ import {
   DollarSign, Target, Sparkles,
   Crown, Zap, Activity,
 } from 'lucide-react';
+import { CopyId } from '@/components/ui/CopyId';
 import AppShell from '@/components/AppShell';
 import Guard from '@/components/Guard';
 import { KpiCard } from '@/components/ui/KpiCard';
@@ -116,7 +117,9 @@ function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
                 <h3 className="text-[15px] font-bold text-[var(--text-primary)] truncate">{trainer.name}</h3>
               </Link>
               {(trainer as any).unique_id && (
-                <div className="text-[10px] font-bold tracking-widest uppercase mt-0.5" style={{ color: '#f97316' }}>{(trainer as any).unique_id}</div>
+                <div className="mt-0.5">
+                  <CopyId id={(trainer as any).unique_id} color="#f97316" />
+                </div>
               )}
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Award size={11} className="text-[#8B5CF6] shrink-0" />

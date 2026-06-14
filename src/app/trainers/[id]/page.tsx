@@ -13,6 +13,7 @@ import {
   MessageCircle, Award, Calendar, Dumbbell, CheckCircle, XCircle,
   Star, Clock, MapPin, ChevronRight, AlertTriangle, Sparkles,
 } from 'lucide-react';
+import { CopyId } from '@/components/ui/CopyId';
 
 interface TrainerDetail {
   id: number;
@@ -290,7 +291,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                   </h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <InfoRow label="Full Name" value={trainer.name} />
-                    <InfoRow label="Trainer ID" value={(trainer as any).unique_id || '—'} />
+                    <InfoRow label="Trainer ID" value={(trainer as any).unique_id ? <CopyId id={(trainer as any).unique_id} color="#f97316" /> : '—'} />
                     <InfoRow label="Status" value={<StatusBadge status={trainer.status} />} />
                     <InfoRow label="Phone" value={trainer.phone} />
                     <InfoRow label="Email" value={trainer.email} />
