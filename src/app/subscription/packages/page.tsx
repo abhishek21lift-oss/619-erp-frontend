@@ -6,6 +6,7 @@ import { Package, Plus, Pencil, Trash2, X, Check, Search } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 interface PtPlan {
   id: string;
@@ -36,6 +37,7 @@ export default function PackagesPage() {
 }
 
 function PackagesContent() {
+  const { toast } = useToast();
   const [plans, setPlans] = useState<PtPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -43,6 +45,7 @@ function PackagesContent() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', duration_months: '', base_amount: '', description: '' });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const fetchPlans = async () => {
     try {
@@ -73,7 +76,8 @@ function PackagesContent() {
     try {
       await api.pt.plans.update(plan.id, { is_active: !plan.is_active });
       setPlans(p => p.map(x => x.id === plan.id ? { ...x, is_active: !x.is_active } : x));
-    } catch { alert('Failed to toggle status'); }
+      toast.success(`Package ${plan.is_active ? 'deactivated' : 'activated'}`);
+    } catch { toast.error('Failed to toggle status'); }
   };
 
   const handleSave = async () => {
@@ -86,14 +90,14 @@ function PackagesContent() {
       setShowForm(false);
       setEditing(null);
       await fetchPlans();
-    } catch { alert('Failed to save package'); }
+      toast.success(editing ? 'Package updated' : 'Package created');
+    } catch { toast.error('Failed to save package'); }
     finally { setSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this package?')) return;
-    try { await api.pt.plans.delete(id); setPlans(p => p.filter(x => x.id !== id)); }
-    catch { alert('Failed to delete package'); }
+    try { await api.pt.plans.delete(id); setPlans(p => p.filter(x => x.id !== id)); setDeleteId(null); toast.success('Package deleted'); }
+    catch { toast.error('Failed to delete package'); setDeleteId(null); }
   };
 
   return (
@@ -147,7 +151,7 @@ function PackagesContent() {
                     style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: a }}>
                     <Pencil size={13} />
                   </button>
-                  <button onClick={() => handleDelete(plan.id)}
+                  <button onClick={() => setDeleteId(plan.id)}
                     style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}>
                     <Trash2 size={13} />
                   </button>
@@ -218,6 +222,35 @@ function PackagesContent() {
                     ) : <Check size={15} />}
                     {editing ? 'Update' : 'Create'}
                   </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Delete confirmation modal */}
+        <AnimatePresence>
+          {deleteId && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+              onClick={() => setDeleteId(null)}>
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '32px 36px', maxWidth: 380, width: '90%', textAlign: 'center' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <Trash2 size={22} color="#f87171" />
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: '0 0 8px' }}>Delete Package?</h3>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '0 0 24px' }}>This action cannot be undone.</p>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button onClick={() => setDeleteId(null)}
+                    style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                  <button onClick={() => handleDelete(deleteId)}
+                    style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#ef4444', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                    Delete
+                  </button>
                 </div>
               </motion.div>
             </motion.div>

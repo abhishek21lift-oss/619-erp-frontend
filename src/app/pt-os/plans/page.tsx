@@ -10,6 +10,7 @@ import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 interface PtPlan {
   id: string;
@@ -34,6 +35,7 @@ export default function PtPlansPage() {
 }
 
 function PtPlansContent() {
+  const { toast } = useToast();
   const [plans, setPlans] = useState<PtPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -87,16 +89,16 @@ function PtPlansContent() {
       setShowForm(false);
       setEditing(null);
       await fetchPlans();
-    } catch { alert('Failed to save plan'); }
+    } catch { toast.error('Failed to save plan'); }
     finally { setSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this plan?')) return;
     try {
       await api.pt.plans.delete(id);
       setPlans((p) => p.filter((x) => x.id !== id));
-    } catch { alert('Failed to delete plan'); }
+      toast.success('Plan deleted');
+    } catch { toast.error('Failed to delete plan'); }
   };
 
   return (

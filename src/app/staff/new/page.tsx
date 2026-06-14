@@ -71,7 +71,9 @@ function avatarInitials(name: string) {
 }
 
 function generateStaffId() {
-  return '619-STF-' + String(Math.floor(1000 + Math.random() * 9000));
+  const ts = Date.now().toString(36).toUpperCase().slice(-4);
+  const rnd = Math.random().toString(36).slice(2, 4).toUpperCase();
+  return '619-STF-' + ts + rnd;
 }
 
 // ─── main component ────────────────────────────────────────────────────────────

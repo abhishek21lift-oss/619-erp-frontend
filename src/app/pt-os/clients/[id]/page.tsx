@@ -15,6 +15,7 @@ import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 interface PtClientDetail {
   id: string; client_id?: string; name: string;
@@ -107,6 +108,7 @@ function SectionCard({ title, icon, children, accent }: { title: string; icon: R
 export default function PtClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { toast } = useToast();
   const [client, setClient] = useState<PtClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -227,7 +229,7 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
       await api.clients.update(id, { notes: notesDraft });
       setEditNotes(false);
       setClient(prev => prev ? { ...prev, notes: notesDraft } : prev);
-    } catch { alert('Failed to save notes'); }
+    } catch { toast.error('Failed to save notes'); }
   };
 
   const handleDelete = async () => {
@@ -235,7 +237,7 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
       setDeleting(true);
       await api.pt.deleteClient(id);
       router.push('/pt-os/clients');
-    } catch { alert('Failed to delete client'); setDeleting(false); }
+    } catch { toast.error('Failed to delete client'); setDeleting(false); }
   };
 
   useEffect(() => { fetch(); }, [id]);
@@ -264,7 +266,7 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
       });
       setRenewOpen(false);
       fetch();
-    } catch (err: any) { alert(err?.message || 'Failed to renew PT'); }
+    } catch (err: any) { toast.error(err?.message || 'Failed to renew PT'); }
     finally { setSaving(false); }
   };
 

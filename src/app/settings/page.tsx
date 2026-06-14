@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import {
   Users, UserPlus, Shield, Key, Search, Filter, MoreHorizontal,
   Eye, EyeOff, ChevronDown, Check, X, Mail, Lock, User,
@@ -803,6 +804,7 @@ function ChangePasswordPanel() {
    PAGE
 ──────────────────────────────────────────────────────────────────── */
 function AccountManagementPage() {
+  const { toast } = useToast();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountsError, setAccountsError] = useState('');
@@ -861,7 +863,8 @@ function AccountManagementPage() {
       try {
         await api.accounts.delete(id);
         setAccounts((prev) => prev.filter((a) => a.id !== id));
-      } catch { alert('Failed to delete account'); }
+        toast.success('Account deleted');
+      } catch { toast.error('Failed to delete account'); }
     } else if (action === 'toggle') {
       try {
         const res = await api.accounts.toggleStatus(id);
@@ -869,7 +872,8 @@ function AccountManagementPage() {
         setAccounts((prev) => prev.map((a) =>
           a.id === id ? { ...a, status: active ? 'active' : 'suspended' } : a,
         ));
-      } catch { alert('Failed to toggle status'); }
+        toast.success(active ? 'Account activated' : 'Account suspended');
+      } catch { toast.error('Failed to toggle status'); }
     } else if (action === 'copy') {
       const account = accounts.find((a) => a.id === id);
       if (account) navigator.clipboard?.writeText(account.email).catch(() => {});

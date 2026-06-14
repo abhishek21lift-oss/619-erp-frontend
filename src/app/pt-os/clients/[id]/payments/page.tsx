@@ -13,6 +13,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 interface Payment {
   id: string; client_id: string; trainer_id: string;
@@ -121,6 +122,7 @@ function Skeleton() {
 export default function PtClientPaymentsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { toast } = useToast();
 
   const [client, setClient] = useState<PtClientDetail | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -196,7 +198,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
       });
       await fetchAll();
     } catch (err: any) {
-      alert(err?.message || 'Failed to record payment');
+      toast.error(err?.message || 'Failed to record payment');
     } finally {
       setSubmitting(false);
     }

@@ -22,10 +22,11 @@ const badge = (p: number) => {
   return { label: 'Behind', cls: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/60' };
 };
 
+const THIS_YEAR = new Date().getFullYear();
 const monthOptions = Array.from({ length: 12 }, (_, i) => {
-  const d = new Date(2026, i, 1);
+  const d = new Date(THIS_YEAR, i, 1);
   return {
-    value: `2026-${String(i + 1).padStart(2, '0')}`,
+    value: `${THIS_YEAR}-${String(i + 1).padStart(2, '0')}`,
     label: d.toLocaleString('default', { month: 'long', year: 'numeric' }),
   };
 });
@@ -391,6 +392,11 @@ export default function StaffTargetsPage() {
   const totalRevTarget = targets.reduce((s, t) => s + (t.target_revenue ?? 0), 0);
   const totalRevAchieved = targets.reduce((s, t) => s + (t.achieved_revenue ?? 0), 0);
   const overallPct = pct(totalRevAchieved, totalRevTarget);
+  // Sparkline = actual per-staff revenue achievement % (real data, not fabricated history)
+  const staffRevPcts = targets.map(t => pct(t.achieved_revenue, t.target_revenue));
+  const sparkRevData = staffRevPcts.length > 0 ? staffRevPcts : [0];
+  const staffCliPcts = targets.map(t => pct(t.achieved_clients, t.target_clients));
+  const sparkCliData = staffCliPcts.length > 0 ? staffCliPcts : [0];
   const bestPerformer = [...targets].sort(
     (a, b) =>
       pct(b.achieved_revenue, b.target_revenue) - pct(a.achieved_revenue, a.target_revenue)
@@ -467,8 +473,8 @@ export default function StaffTargetsPage() {
             label="Total Revenue Target"
             value={INR(totalRevTarget)}
             sub="This month"
-            trend="+12% vs last"
-            sparkData={[40, 55, 48, 72, 65, 80, overallPct]}
+            trend={overallPct >= 80 ? '↑ strong' : overallPct >= 50 ? '→ on track' : '↓ needs push'}
+            sparkData={sparkRevData}
             accentColor="#7c3aed"
             icon={
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -482,7 +488,7 @@ export default function StaffTargetsPage() {
             value={`${overallPct}%`}
             sub="Revenue achieved"
             trend={overallPct >= 60 ? 'On track' : 'Needs review'}
-            sparkData={[30, 45, 52, 60, Math.max(overallPct - 10, 0), overallPct]}
+            sparkData={sparkCliData}
             accentColor="#059669"
             icon={
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -551,7 +557,7 @@ export default function StaffTargetsPage() {
                 : '—'
             }
             sub="Avg performance index"
-            trend="↑ improving"
+            trend={overallPct >= 60 ? '↑ improving' : '→ steady'}
             accentColor="#7c3aed"
             icon={
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

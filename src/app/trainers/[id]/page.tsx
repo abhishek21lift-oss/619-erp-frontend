@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -85,6 +86,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const router = useRouter();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [trainer, setTrainer] = useState<TrainerDetail | null>(null);
   const [members, setMembers] = useState<AssignedMember[]>([]);
@@ -123,7 +125,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   async function handleDelete() {
     setDeleting(true);
     try { await api.trainers.delete(id); }
-    catch (e: any) { alert(`Failed: ${e.message}`); setDeleting(false); }
+    catch (e: any) { toast.error(`Failed: ${e.message}`); setDeleting(false); }
   }
 
   const whatsappHref = () => {

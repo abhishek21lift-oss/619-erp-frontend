@@ -5,6 +5,7 @@ import { Ruler, Plus, Loader2, Search, Users } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 
 const MEASUREMENT_FIELDS = [
@@ -19,6 +20,7 @@ const MEASUREMENT_FIELDS = [
 ];
 
 export default function MeasurementsPage() {
+  const { toast } = useToast();
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [search, setSearch] = useState('');
@@ -49,7 +51,7 @@ export default function MeasurementsPage() {
       }
       await api.progress.assessments.create(body);
       setForm({});
-      alert('Measurements saved successfully!');
+      toast.success('Measurements saved successfully!');
     } finally { setSaving(false); }
   }
 
