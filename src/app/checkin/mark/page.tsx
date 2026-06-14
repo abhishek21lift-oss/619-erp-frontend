@@ -68,7 +68,7 @@ function MarkAttendanceContent() {
         if (ctx.name) setMemberName(ctx.name);
       } catch {}
     }
-    api.gymSettings.get().then((res: any) => setSettings(res)).catch(() => {});
+    api.gymSettings.get().then((res: any) => setSettings(res)).catch((err: any) => console.error('[checkin/mark] failed to load settings', err));
   }, []);
 
   const handleGPSVerify = async () => {

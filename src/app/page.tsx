@@ -43,7 +43,7 @@ export default function Root() {
             className="display"
             style={{ fontSize: 22, marginBottom: 8 }}
           >
-            ABHI-DESK
+            619 FITNESS STUDIO
           </div>
           <div
             style={{

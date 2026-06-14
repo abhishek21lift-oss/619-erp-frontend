@@ -18,18 +18,9 @@ function fmt(d: string) {
   return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function initials(name: string) {
-  return (name || '?').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-}
+import { avatarGradient, initialsAvatar } from '@/lib/avatar';
 
-const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #6366f1, #8b5cf6)',
-  'linear-gradient(135deg, #10b981, #34d399)',
-  'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  'linear-gradient(135deg, #ec4899, #f472b6)',
-  'linear-gradient(135deg, #06b6d4, #22d3ee)',
-  'linear-gradient(135deg, #8b5cf6, #a78bfa)',
-];
+const initials = initialsAvatar;
 
 const TYPE_STYLES: Record<string, { bg: string; color: string; icon: string }> = {
   sick:      { bg: 'rgba(239,68,68,0.12)', color: '#fca5a5', icon: '🤒' },
@@ -303,7 +294,7 @@ function Inner() {
                           onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'; }}>
                           <td style={{ padding: '12px 16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: AVATAR_GRADIENTS[Math.abs((lv.trainer_name || '').split('').reduce((a, ch) => ((a << 5) - a) + ch.charCodeAt(0), 0)) % AVATAR_GRADIENTS.length], color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                              <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: avatarGradient(lv.trainer_name || '?'), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
                                 {initials(lv.trainer_name || '?')}
                               </div>
                               <div>

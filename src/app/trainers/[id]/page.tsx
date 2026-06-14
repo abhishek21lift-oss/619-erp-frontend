@@ -49,23 +49,9 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   inactive: { bg: 'rgba(148,163,184,0.15)', color: '#cbd5e1' },
 };
 
-const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #6366f1, #8b5cf6)',
-  'linear-gradient(135deg, #10b981, #34d399)',
-  'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  'linear-gradient(135deg, #ec4899, #f472b6)',
-  'linear-gradient(135deg, #06b6d4, #22d3ee)',
-  'linear-gradient(135deg, #8b5cf6, #a78bfa)',
-];
+import { avatarGradient, initialsAvatar } from '@/lib/avatar';
 
-function initials(name: string) {
-  return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-}
-
-function avatarGradient(name: string) {
-  const h = name.split('').reduce((a, ch) => ((a << 5) - a) + ch.charCodeAt(0), 0);
-  return AVATAR_GRADIENTS[Math.abs(h) % AVATAR_GRADIENTS.length];
-}
+const initials = initialsAvatar;
 
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLES[status] || STATUS_STYLES.inactive;

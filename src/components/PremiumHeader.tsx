@@ -515,7 +515,7 @@ export default function PremiumHeader({ onMenuClick }: Props) {
     ];
   }, [user?.role]);
 
-  const accountLabel = user?.name || 'ABHI-DESK';
+  const accountLabel = user?.name || '619 FITNESS STUDIO';
   const roleLabel = user?.role || 'admin';
   const initials = (user?.name || 'A').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
@@ -667,11 +667,11 @@ export default function PremiumHeader({ onMenuClick }: Props) {
                 transition: 'width 0.3s, height 0.3s',
               }}
               onClick={() => router.push('/pt-os')}
-              title="ABHI-DESK"
+              title="619 FITNESS STUDIO"
             >
               <Image
                 src="/619-logo.png"
-                alt="ABHI-DESK"
+                alt="619 FITNESS STUDIO"
                 width={scrolled ? 34 : 42}
                 height={scrolled ? 34 : 42}
                 className="logo-img-clean object-contain transition-all duration-300"

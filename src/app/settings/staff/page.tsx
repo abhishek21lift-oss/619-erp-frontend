@@ -35,22 +35,10 @@ const ROLE_CFG: Record<string, {
   support:      { label: 'Support',      icon: '🔧',  gradient: 'linear-gradient(135deg,#64748b,#475569)', bg: '#f8fafc', color: '#334155', dot: '#64748b', ring: '#cbd5e1' },
 };
 
-const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg,#7c3aed,#4f46e5)',
-  'linear-gradient(135deg,#e11d48,#be185d)',
-  'linear-gradient(135deg,#0ea5e9,#2563eb)',
-  'linear-gradient(135deg,#10b981,#059669)',
-  'linear-gradient(135deg,#f59e0b,#d97706)',
-  'linear-gradient(135deg,#06b6d4,#0891b2)',
-  'linear-gradient(135deg,#8b5cf6,#7c3aed)',
-];
+import { avatarGradient as avatarGrad, initialsAvatar } from '@/lib/avatar';
 
 /* ─── Helpers ────────────────────────────────────────────────────── */
-const initials = (n: string) =>
-  (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
-const avatarGrad = (n: string) =>
-  AVATAR_GRADIENTS[(n.charCodeAt(0) || 0) % AVATAR_GRADIENTS.length];
+const initials = initialsAvatar;
 
 const getRoleCfg = (r: string) =>
   ROLE_CFG[r] || { label: r, icon: '👤', gradient: 'linear-gradient(135deg,#64748b,#475569)', bg: '#f8fafc', color: '#334155', dot: '#64748b', ring: '#cbd5e1' };

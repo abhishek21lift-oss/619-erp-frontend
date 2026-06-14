@@ -40,7 +40,7 @@ function NContent() {
   const [flash, setFlash] = useState('');
 
   useEffect(()=>{
-    api.clients.list({status:'active'}).then((d:any)=>setMemberCount(Array.isArray(d)?d.length:0)).catch(()=>{});
+    api.clients.list({status:'active'}).then((d:any)=>setMemberCount(Array.isArray(d)?d.length:0)).catch((err: any) => console.error('[notifications] failed to load member count', err));
   },[]);
 
   async function handleSend(e:React.FormEvent){

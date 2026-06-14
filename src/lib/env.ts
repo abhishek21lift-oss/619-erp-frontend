@@ -10,7 +10,7 @@ const ENV_SPECS: EnvSpec[] = [
     key: 'NEXT_PUBLIC_API_URL',
     required: false,
     validator: (v) => {
-      if (!v || v === 'http://localhost:5000') return true;
+      if (!v) return true;
       try { new URL(v); return true; } catch { return false; }
     },
     hint: 'Must be a valid URL, e.g. https://api.619fitness.in',

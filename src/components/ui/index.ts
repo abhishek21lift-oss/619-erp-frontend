@@ -49,3 +49,5 @@ export {
   GlassTable, GlassThead, GlassTh, GlassTr, GlassTd,
 } from './GlassTable';
 export type { GlassTableProps } from './GlassTable';
+
+export { default as ComingSoon } from './ComingSoon';

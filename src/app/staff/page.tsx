@@ -24,23 +24,10 @@ interface StaffMember {
   avatar?: string;
 }
 
-/* ─── helpers ────────────────────────────────────────────────────── */
-function initials(name: string) {
-  return (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-}
+import { avatarGradient as avatarGrad, initialsAvatar } from '@/lib/avatar';
 
-const AVATAR_GRADIENTS = [
-  ['#6366f1','#8b5cf6'],
-  ['#ec4899','#f43f5e'],
-  ['#0ea5e9','#6366f1'],
-  ['#10b981','#0ea5e9'],
-  ['#f59e0b','#ef4444'],
-  ['#8b5cf6','#ec4899'],
-];
-function avatarGrad(name: string) {
-  const i = (name.charCodeAt(0) || 0) % AVATAR_GRADIENTS.length;
-  return `linear-gradient(135deg,${AVATAR_GRADIENTS[i][0]},${AVATAR_GRADIENTS[i][1]})`;
-}
+/* ─── helpers ────────────────────────────────────────────────────── */
+const initials = initialsAvatar;
 
 const ROLE_META: Record<string, { label: string; icon: string; bg: string; color: string; border: string; dot: string }> = {
   admin:        { label:'Admin',        icon:'🛡️', bg:'#fffbeb', color:'#92400e', border:'#fde68a', dot:'#f59e0b' },
