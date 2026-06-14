@@ -481,7 +481,7 @@ export const api = {
     create: (data: Record<string, unknown>) =>
       http('/api/checkin', { method: 'POST', body: JSON.stringify(data) }),
     face: (descriptor: number[]) =>
-      http<{ success: boolean; error?: string; member?: { id: string; name: string; status: string } }>(
+      http<{ success: boolean; error?: string; member?: { id: string; name: string; status: string; photo_url?: string; member_code?: string } }>(
         '/api/checkin/face', { method: 'POST', body: JSON.stringify({ descriptor }) }
       ),
   },
