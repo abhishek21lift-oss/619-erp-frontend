@@ -1,28 +1,25 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
+import LandingPage from '@/components/LandingPage';
 import BrandLogo from '@/components/BrandLogo';
 
 export default function Root() {
   const { user, loading } = useAuth();
-  const router = useRouter();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!loading) {
-      if (!user) {
-        router.replace('/login');
-      } else {
+      if (user) {
         setReady(true);
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading]);
 
-  if (loading || !ready) {
+  if (loading) {
     return (
       <div className="login-shell" aria-busy="true" role="status">
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }} className="fade-up">
@@ -59,6 +56,10 @@ export default function Root() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <LandingPage />;
   }
 
   return (
