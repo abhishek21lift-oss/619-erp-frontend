@@ -46,8 +46,16 @@ function isRateLimited(ip: string): { limited: boolean; retryAfter: number } {
 }
 
 export async function GET(req: NextRequest) {
+  // L-02: use x-real-ip if set (rightmost trusted proxy), else last entry
+  // of x-forwarded-for (the one added by our own reverse proxy).
+  // Never trust the leftmost XFF entry — it is client-controlled and spoofable.
+  const realIp = req.headers.get('x-real-ip');
   const forwarded = req.headers.get('x-forwarded-for');
-  const ip = (forwarded ? forwarded.split(',')[0] : 'unknown').trim();
+  const ip = (
+    realIp
+    ?? (forwarded ? forwarded.split(',').at(-1) : null)
+    ?? 'unknown'
+  ).trim();
 
   const { limited, retryAfter } = isRateLimited(ip);
   if (limited) {

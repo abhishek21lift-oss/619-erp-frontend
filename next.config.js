@@ -25,8 +25,15 @@ const nextConfig = {
 
   images: {
     formats: ['image/avif', 'image/webp'],
+    // M-02: explicit allowlist — wildcard '**' allows SSRF via Next.js image optimizer
     remotePatterns: [
-      { protocol: 'https', hostname: '**' },
+      // Supabase storage (replace <project-ref> with your actual project ref via env)
+      {
+        protocol: 'https',
+        hostname: process.env.NEXT_PUBLIC_SUPABASE_HOST || '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      // Add your CDN hostname here if you serve user avatars from one
     ],
   },
 

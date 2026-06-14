@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, execute, queryOne } from '@/lib/db';
+import { requireAuth } from '@/lib/require-auth';
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await req.json();
     const { memberId, memberName, verificationMethod, deviceName, latitude, longitude } = body;
@@ -60,6 +64,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, attendanceId: inserted?.id });
   } catch (err: any) {
     console.error('Biometric mark error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }

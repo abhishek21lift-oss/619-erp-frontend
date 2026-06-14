@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, execute } from '@/lib/db';
-import { generateRegOptions, RP_ID } from '@/lib/webauthn-server';
-import crypto from 'crypto';
+import { generateRegOptions } from '@/lib/webauthn-server';
+import { requireAuth } from '@/lib/require-auth';
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const memberId = req.nextUrl.searchParams.get('member_id');
     if (!memberId) {
@@ -22,20 +25,15 @@ export async function GET(req: NextRequest) {
       existingCreds.map((c: any) => ({ id: c.credential_id })),
     );
 
-    const challenge = options.challenge;
     await execute(
       'INSERT INTO webauthn_challenges (challenge, member_id, type, expires_at) VALUES ($1, $2, $3, $4)',
-      [challenge, memberId, 'registration', new Date(Date.now() + 120000).toISOString()],
+      [options.challenge, memberId, 'registration', new Date(Date.now() + 120000).toISOString()],
     );
 
     return NextResponse.json({
       challenge: options.challenge,
       rp: options.rp,
-      user: {
-        id: memberId,
-        name: memberId,
-        displayName: memberId,
-      },
+      user: { id: memberId, name: memberId, displayName: memberId },
       pubKeyCredParams: options.pubKeyCredParams,
       timeout: options.timeout,
       attestation: options.attestation,
@@ -47,6 +45,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (err: any) {
     console.error('WebAuthn register begin error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }

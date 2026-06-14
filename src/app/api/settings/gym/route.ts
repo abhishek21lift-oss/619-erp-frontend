@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, execute, queryOne } from '@/lib/db';
+import { requireAuth, requireRole } from '@/lib/require-auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const settings = await queryOne<any>('SELECT geofence_lat, geofence_lng, geofence_radius, enable_face_id, enable_touch_id, enable_gps, duplicate_window_minutes, auto_checkout, auto_checkout_minutes FROM gym_settings WHERE id = 1');
     if (!settings) {
@@ -14,11 +18,15 @@ export async function GET() {
     return NextResponse.json(settings);
   } catch (err: any) {
     console.error('Get gym settings error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }
 
 export async function PUT(req: NextRequest) {
+  // Only admins and managers can change gym security settings
+  const auth = await requireRole(req, 'admin', 'manager');
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await req.json();
     const { geofence_lat, geofence_lng, geofence_radius, enable_face_id, enable_touch_id, enable_gps, duplicate_window_minutes, auto_checkout, auto_checkout_minutes } = body;
@@ -39,6 +47,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error('Update gym settings error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }

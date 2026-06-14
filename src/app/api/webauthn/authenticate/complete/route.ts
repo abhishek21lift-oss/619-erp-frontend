@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query, execute, queryOne } from '@/lib/db';
+import { execute, queryOne } from '@/lib/db';
 import { verifyAuthResponse } from '@/lib/webauthn-server';
+import { requireAuth } from '@/lib/require-auth';
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await req.json();
     const { credentialId, rawId, authenticatorData, signature, clientDataJSON, userHandle } = body;
@@ -11,8 +15,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Retrieve challenge scoped to this session (C-04 fix: session-bound challenge)
+    const sessionId = req.cookies.get('wa_session')?.value;
+    if (!sessionId) {
+      return NextResponse.json({ error: 'No WebAuthn session found. Please restart authentication.' }, { status: 400 });
+    }
+
     const challengeRow: any = await queryOne(
-      "SELECT challenge FROM webauthn_challenges WHERE type = 'authentication' AND expires_at > now() ORDER BY created_at DESC LIMIT 1",
+      "SELECT challenge FROM webauthn_challenges WHERE session_id = $1 AND type = 'authentication' AND expires_at > now()",
+      [sessionId],
     );
     if (!challengeRow) {
       return NextResponse.json({ error: 'Request timed out. Please try again.' }, { status: 400 });
@@ -58,15 +69,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Consume challenge and session cookie
     await execute('DELETE FROM webauthn_challenges WHERE challenge = $1', [challengeRow.challenge]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       memberId: credRow.member_id,
       memberName: credRow.member_name || undefined,
     });
+    response.cookies.delete('wa_session');
+    return response;
   } catch (err: any) {
     console.error('WebAuthn authenticate complete error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }

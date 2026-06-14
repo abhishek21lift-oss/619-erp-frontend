@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, execute, queryOne } from '@/lib/db';
 import { verifyRegResponse } from '@/lib/webauthn-server';
+import { requireAuth } from '@/lib/require-auth';
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await req.json();
     const { memberId, deviceName, credentialId, rawId, attestationObject, clientDataJSON, transports, deviceType } = body;
@@ -49,6 +53,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, credential: { id: credentialId } });
   } catch (err: any) {
     console.error('WebAuthn register complete error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }

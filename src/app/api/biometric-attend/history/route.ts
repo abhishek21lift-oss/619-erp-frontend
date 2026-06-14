@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireAuth } from '@/lib/require-auth';
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const memberId = req.nextUrl.searchParams.get('member_id');
     const range = req.nextUrl.searchParams.get('range') || 'daily';
@@ -35,6 +39,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ records, total: records.length });
   } catch (err: any) {
     console.error('History error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }

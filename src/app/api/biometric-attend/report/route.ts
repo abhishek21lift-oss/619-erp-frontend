@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireAuth } from '@/lib/require-auth';
+
+// H-02: sanitize CSV cells to prevent formula injection in Excel/Sheets
+function csvCell(value: unknown): string {
+  const s = value == null ? '' : String(value);
+  // Strip leading formula-injection chars
+  const sanitized = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  // Quote cells that contain commas, newlines, or double-quotes
+  if (/[,\n\r"]/.test(sanitized)) {
+    return `"${sanitized.replace(/"/g, '""')}"`;
+  }
+  return sanitized;
+}
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth instanceof NextResponse) return auth;
   try {
     const range = req.nextUrl.searchParams.get('range') || 'daily';
     const date = req.nextUrl.searchParams.get('date') || new Date().toISOString().slice(0, 10);
@@ -32,7 +47,8 @@ export async function GET(req: NextRequest) {
     if (format === 'csv') {
       const header = 'Member ID,Member Name,Date,Check In,Check Out,Day,Method,Device,Status,Lat,Lng\n';
       const rows = records.map((r) =>
-        [r.member_id, r.member_name, r.date, r.check_in_time, r.check_out_time || '', r.day, r.verification_method, r.device_name, r.attendance_status, r.gps_lat || '', r.gps_lng || ''].join(',')
+        [r.member_id, r.member_name, r.date, r.check_in_time, r.check_out_time ?? '', r.day, r.verification_method, r.device_name, r.attendance_status, r.gps_lat ?? '', r.gps_lng ?? '']
+          .map(csvCell).join(',')
       ).join('\n');
       return new NextResponse(header + rows, {
         headers: {
@@ -45,6 +61,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ records, total: records.length });
   } catch (err: any) {
     console.error('Report error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

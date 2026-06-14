@@ -10,7 +10,10 @@ function getPool(): Pool {
     }
     pool = new Pool({
       connectionString: url,
-      ssl: { rejectUnauthorized: false },
+      // L-05: require valid TLS cert; set DATABASE_SSL_CA if using a custom CA
+      ssl: process.env.DATABASE_SSL_CA
+        ? { rejectUnauthorized: true, ca: process.env.DATABASE_SSL_CA }
+        : { rejectUnauthorized: true },
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,

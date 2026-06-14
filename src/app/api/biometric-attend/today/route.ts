@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireAuth } from '@/lib/require-auth';
 
 export async function GET(req: NextRequest) {
+  const auth = await requireAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const today = new Date().toISOString().slice(0, 10);
 
@@ -30,15 +34,9 @@ export async function GET(req: NextRequest) {
         ))[0]?.cnt || 0
       : 0;
 
-    return NextResponse.json({
-      present,
-      absent,
-      late,
-      active: total,
-      feed,
-    });
+    return NextResponse.json({ present, absent, late, active: total, feed });
   } catch (err: any) {
     console.error('Today stats error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'An internal error occurred' }, { status: 500 });
   }
 }

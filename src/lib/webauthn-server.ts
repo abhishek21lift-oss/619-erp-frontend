@@ -5,11 +5,15 @@ import {
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 
+// H-03: Use explicit env vars — not VERCEL_URL (which is a preview deployment URL,
+// not the custom domain, and changes every deploy).
 const RP_NAME = '619 ERP';
-const RP_ID = process.env.VERCEL_URL || 'localhost:3000';
-const ORIGIN = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : 'http://localhost:3000';
+const RP_ID   = process.env.WEBAUTHN_RP_ID   ?? 'localhost';
+const ORIGIN  = process.env.WEBAUTHN_ORIGIN  ?? 'http://localhost:3000';
+
+if (process.env.NODE_ENV === 'production' && (!process.env.WEBAUTHN_RP_ID || !process.env.WEBAUTHN_ORIGIN)) {
+  throw new Error('WEBAUTHN_RP_ID and WEBAUTHN_ORIGIN must be set in production');
+}
 
 export { RP_NAME, RP_ID, ORIGIN };
 
