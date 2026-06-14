@@ -29,7 +29,7 @@ export default function OffersPage() {
   return <Guard role="admin"><OffersContent/></Guard>;
 }
 function OffersContent() {
-  const toast = useToast();
+  const { toast } = useToast();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

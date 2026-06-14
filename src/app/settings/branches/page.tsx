@@ -14,7 +14,7 @@ export default function BranchesPage() {
 }
 
 function BranchesContent() {
-  const toast = useToast();
+  const { toast } = useToast();
   const [items, setItems] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

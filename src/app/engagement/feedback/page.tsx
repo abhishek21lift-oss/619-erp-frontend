@@ -33,7 +33,7 @@ export default function FeedbackPage() {
 }
 
 function FeedbackContent() {
-  const toast = useToast();
+  const { toast } = useToast();
   const [items, setItems] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

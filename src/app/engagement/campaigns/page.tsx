@@ -33,7 +33,7 @@ export default function CampaignsPage() {
 }
 
 function CampaignContent() {
-  const toast = useToast();
+  const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

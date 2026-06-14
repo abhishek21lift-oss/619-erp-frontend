@@ -32,7 +32,7 @@ export default function NotificationsPage() {
   return <Guard role="admin"><NContent/></Guard>;
 }
 function NContent() {
-  const toast = useToast();
+  const { toast } = useToast();
   const [items, setItems] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
