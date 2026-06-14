@@ -195,7 +195,7 @@ export default function KioskContent() {
         const mod = await import('jsqr');
         jsQR = (mod.default || mod) as unknown as typeof jsQR;
       }
-      const camOk = await camera.start({ video: { facingMode: 'environment' } } as any);
+      const camOk = await camera.start();
       if (!camOk) { setMsg('Camera unavailable.'); setKState('scanning'); return; }
       setKState('scanning');
       setMsg('Hold your QR code up to the camera');
