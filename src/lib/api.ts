@@ -1068,6 +1068,20 @@ export const api = {
       http<{ message: string }>(`/api/ai/conversations/${id}`, { method: 'DELETE' }),
     usage: () =>
       http<{ data: { messages_this_hour: string; messages_today: string; tokens_today: string } }>('/api/ai/usage'),
+    providerSettings: () =>
+      http<{ data: AiProviderSettings }>('/api/ai/provider-settings'),
+    updateProviderSettings: (mode: string) =>
+      http<{ message: string; mode: string }>('/api/ai/provider-settings', {
+        method: 'PUT',
+        body: JSON.stringify({ mode }),
+      }),
+    providerStats: () =>
+      http<{ data: AiProviderStats }>('/api/ai/provider-stats'),
+    testProvider: (provider: 'openai' | 'gemini') =>
+      http<{ success: boolean; message: string }>('/api/ai/test-provider', {
+        method: 'POST',
+        body: JSON.stringify({ provider }),
+      }),
   },
 };
 
@@ -1085,5 +1099,30 @@ export type AiMessage = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  provider?: string;
   created_at: string;
+};
+
+export type AiProviderSettings = {
+  id: string;
+  mode: string;
+  updated_at: string;
+  openai_configured: boolean;
+  gemini_configured: boolean;
+};
+
+export type AiProviderStatEntry = {
+  configured: boolean;
+  model: string;
+  requests: string;
+  tokens_total: string;
+  tokens_prompt: string;
+  tokens_completion: string;
+  requests_today: string;
+  tokens_today: string;
+};
+
+export type AiProviderStats = {
+  openai: AiProviderStatEntry;
+  gemini: AiProviderStatEntry;
 };

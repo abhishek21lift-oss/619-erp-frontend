@@ -6,11 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Search, X, CreditCard, Smartphone, MessageSquare, Send,
   Bot, Calendar, Camera, BarChart3, Loader2, Link2, Unlink,
-  Settings, Clock, CheckCircle2, RefreshCw, ArrowRight,
+  Settings, Clock, CheckCircle2, RefreshCw, ArrowRight, Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import type { AiProviderSettings, AiProviderStats } from '@/lib/api';
 
 type Status = 'connected' | 'error' | 'pending' | 'unavailable';
 
@@ -410,6 +412,159 @@ function StaticCard({ integration, isConnected, connectedAt, onConfigure, onTogg
   );
 }
 
+// ── Gemini Integration Card ───────────────────────────────────────────────────
+function GeminiCard() {
+  const [settings, setSettings] = useState<AiProviderSettings | null>(null);
+  const [stats,    setStats]    = useState<AiProviderStats | null>(null);
+  const [testing,  setTesting]  = useState(false);
+  const [testMsg,  setTestMsg]  = useState<{ success: boolean; message: string } | null>(null);
+
+  const load = () => {
+    api.ai.providerSettings().then(r => setSettings(r.data)).catch(() => {});
+    api.ai.providerStats().then(r => setStats(r.data)).catch(() => {});
+  };
+  useEffect(() => { load(); }, []);
+
+  const handleTest = async () => {
+    setTesting(true); setTestMsg(null);
+    try {
+      const r = await api.ai.testProvider('gemini');
+      setTestMsg(r);
+    } catch { setTestMsg({ success: false, message: 'Test failed — network error' }); }
+    finally { setTesting(false); }
+  };
+
+  const isConnected = settings?.gemini_configured ?? false;
+  const gemStat = stats?.gemini;
+
+  return (
+    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
+      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
+      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0ff', color: '#4f6ef7' }}>
+          <Sparkles size={20} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Google Gemini</span>
+            {isConnected
+              ? <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(16,163,127,0.12)', color: '#10a37f', border: '1px solid rgba(16,163,127,0.25)' }}>Connected</span>
+              : <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>Not configured</span>
+            }
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
+            Gemini 1.5 Pro · AI fallback & secondary provider
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: isConnected ? '#10a37f' : '#ef4444' }}>
+          {isConnected ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+          {isConnected ? 'API key loaded from environment' : 'Set GEMINI_API_KEY in environment'}
+        </span>
+      </div>
+
+      {gemStat && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {[
+            { label: 'Requests (30d)', value: Number(gemStat.requests).toLocaleString() },
+            { label: 'Tokens (30d)',   value: Number(gemStat.tokens_total).toLocaleString() },
+            { label: 'Today',          value: `${gemStat.requests_today} req` },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ flex: 1, background: 'var(--bg-subtle)', borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {testMsg && (
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: testMsg.success ? 'rgba(16,163,127,0.1)' : 'rgba(239,68,68,0.1)', color: testMsg.success ? '#10a37f' : '#ef4444', border: `1px solid ${testMsg.success ? 'rgba(16,163,127,0.25)' : 'rgba(239,68,68,0.2)'}` }}>
+          {testMsg.message}
+        </div>
+      )}
+
+      <button
+        onClick={handleTest}
+        disabled={testing || !isConnected}
+        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (testing || !isConnected) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: isConnected ? 'linear-gradient(135deg,#4f6ef7,#7c3aed)' : 'var(--bg-subtle)', color: isConnected ? '#ffffff' : 'var(--text-disabled)', boxShadow: isConnected ? '0 4px 12px rgba(79,110,247,0.3)' : 'none', opacity: (!isConnected || testing) ? 0.7 : 1 }}
+      >
+        {testing
+          ? <><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> Testing…</>
+          : <><Sparkles size={13} /> Test Connection</>
+        }
+      </button>
+    </motion.div>
+  );
+}
+
+// ── AI Provider Mode Card ─────────────────────────────────────────────────────
+const MODES = [
+  { id: 'auto',            label: 'Auto',                  desc: 'Use whichever provider is configured (OpenAI preferred)' },
+  { id: 'openai_only',     label: 'OpenAI Only',           desc: 'Always use OpenAI, never Gemini' },
+  { id: 'gemini_only',     label: 'Gemini Only',           desc: 'Always use Gemini, never OpenAI' },
+  { id: 'openai_primary',  label: 'OpenAI + Gemini backup', desc: 'OpenAI primary, Gemini as fallback' },
+  { id: 'gemini_primary',  label: 'Gemini + OpenAI backup', desc: 'Gemini primary, OpenAI as fallback' },
+];
+
+function AiProviderModeCard() {
+  const [settings, setSettings] = useState<AiProviderSettings | null>(null);
+  const [saving,   setSaving]   = useState(false);
+
+  useEffect(() => {
+    api.ai.providerSettings().then(r => setSettings(r.data)).catch(() => {});
+  }, []);
+
+  const handleMode = async (mode: string) => {
+    if (!settings || mode === settings.mode) return;
+    setSaving(true);
+    try {
+      await api.ai.updateProviderSettings(mode);
+      setSettings(s => s ? { ...s, mode } : s);
+    } catch { /* silently ignore */ }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
+      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
+      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
+          <Settings size={16} />
+        </div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Provider Mode</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>How AI requests are routed</div>
+        </div>
+        {saving && <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex', marginLeft: 'auto', color: 'var(--text-muted)' }}><Loader2 size={14} /></motion.span>}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {MODES.map(m => {
+          const active = settings?.mode === m.id;
+          return (
+            <button key={m.id} onClick={() => handleMode(m.id)} disabled={saving}
+              style={{ padding: '10px 14px', borderRadius: 12, textAlign: 'left', cursor: saving ? 'not-allowed' : 'pointer', border: `1px solid ${active ? 'rgba(139,92,246,0.4)' : 'var(--border)'}`, background: active ? 'rgba(139,92,246,0.08)' : 'var(--bg-subtle)', transition: 'all 0.18s' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: active ? '#8b5cf6' : 'var(--text-primary)' }}>{m.label}</span>
+                {active && <CheckCircle2 size={13} color="#8b5cf6" />}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{m.desc}</div>
+            </button>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
 type ApiIntegration = { id: string; status: string; connected_at?: string; last_sync_at?: string };
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -532,6 +687,12 @@ export default function IntegrationsPage() {
               ))}
               {filtered.showAi && (
                 <AiCoachCard key="ai-coach" />
+              )}
+              {filtered.showAi && (
+                <GeminiCard key="gemini" />
+              )}
+              {filtered.showAi && (
+                <AiProviderModeCard key="ai-mode" />
               )}
               {filtered.showCalendar && (
                 <GoogleCalendarCard key="calendar" flashSuccess={flashSuccess} />
