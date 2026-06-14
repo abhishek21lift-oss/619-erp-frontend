@@ -161,6 +161,34 @@ const KPI_CONFIG = [
   { label: 'Overdue', key: 'overdue' as const, icon: <AlertTriangle size={18} />, accent: '#ef4444' },
 ];
 
+interface CreateForm {
+  memberName: string; amount: string; dueDate: string; description: string; paymentMethod: PaymentMethod;
+}
+
+function generateInvoiceHTML(invoice: Invoice): string {
+  return `<!DOCTYPE html><html><head><title>Invoice ${invoice.id}</title>
+<style>body{font-family:sans-serif;padding:40px;color:#0f172a}h1{font-size:24px;margin-bottom:4px}
+.row{display:flex;gap:32px;margin-bottom:24px}.field{flex:1}
+label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700}
+p{font-size:15px;font-weight:600;margin:4px 0}
+.amount{font-size:28px;font-weight:800;color:#0f172a}
+.status{display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;
+background:${invoice.status==='paid'?'#dcfce7':invoice.status==='overdue'?'#fee2e2':'#fef9c3'};
+color:${invoice.status==='paid'?'#059669':invoice.status==='overdue'?'#dc2626':'#d97706'}}
+@media print{button{display:none}}</style></head><body>
+<h1>Invoice</h1><p style="color:#64748b;margin-bottom:24px">${invoice.id}</p>
+<div class="row"><div class="field"><label>Bill To</label><p>${invoice.memberName}</p></div>
+<div class="field"><label>Status</label><div style="margin-top:4px"><span class="status">${invoice.status.toUpperCase()}</span></div></div></div>
+<div class="row"><div class="field"><label>Issue Date</label><p>${invoice.date}</p></div>
+<div class="field"><label>Due Date</label><p>${invoice.dueDate}</p></div></div>
+<div style="border-top:2px solid #e2e8f0;padding-top:16px;margin-bottom:24px">
+<label>Description</label><p>${invoice.description}</p></div>
+<div style="background:#f8fafc;border-radius:12px;padding:24px;text-align:right">
+<label>Total Amount</label><div class="amount">&#8377;${invoice.amount.toLocaleString('en-IN')}</div>
+${invoice.paymentMethod?`<p style="color:#64748b;font-size:13px;margin-top:8px">Via ${PAYMENT_ICONS[invoice.paymentMethod]?.label}</p>`:''}
+</div></body></html>`;
+}
+
 export default function InvoicesPage() {
   const [statusTab, setStatusTab] = React.useState<InvoiceStatus | 'all'>('all');
   const [search, setSearch] = React.useState('');
@@ -169,6 +197,11 @@ export default function InvoicesPage() {
   const [stats, setStats] = React.useState<InvoiceStats>({ total: 0, paid: 0, pending: 0, overdue: 0 });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = React.useState(false);
+  const [creating, setCreating] = React.useState(false);
+  const [createForm, setCreateForm] = React.useState<CreateForm>({
+    memberName: '', amount: '', dueDate: '', description: '', paymentMethod: 'upi',
+  });
 
   const isSm = useBreakpoint('(min-width: 640px)');
 
@@ -192,6 +225,34 @@ export default function InvoicesPage() {
   React.useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
+
+  const handleCreateInvoice = React.useCallback(async () => {
+    if (!createForm.memberName || !createForm.amount || !createForm.dueDate) return;
+    setCreating(true);
+    try {
+      await api.invoices.create({
+        member_name: createForm.memberName,
+        amount: parseFloat(createForm.amount),
+        due_date: createForm.dueDate,
+        description: createForm.description,
+        payment_method: createForm.paymentMethod,
+      });
+      setShowCreateModal(false);
+      setCreateForm({ memberName: '', amount: '', dueDate: '', description: '', paymentMethod: 'upi' });
+      fetchInvoices();
+    } finally {
+      setCreating(false);
+    }
+  }, [createForm, fetchInvoices]);
+
+  const handleDownloadPDF = React.useCallback((invoice: Invoice) => {
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(generateInvoiceHTML(invoice)); w.document.close(); w.focus(); w.print(); }
+  }, []);
+
+  const handleSendReminder = React.useCallback(async (invoice: Invoice) => {
+    try { await api.invoices.remind(invoice.id); } catch { /* silently ignore */ }
+  }, []);
 
   const statusTabs = React.useMemo(() => {
     const counts: Record<string, number> = { all: invoices.length, paid: 0, pending: 0, overdue: 0, draft: 0, cancelled: 0 };
@@ -371,7 +432,7 @@ export default function InvoicesPage() {
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <PremiumButton tone="secondary" icon={<Filter size={16} />}>Filter</PremiumButton>
-                    <PremiumButton tone="primary" icon={<Plus size={16} />}>Create Invoice</PremiumButton>
+                    <PremiumButton tone="primary" icon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</PremiumButton>
                   </div>
                 </div>
               </div>
@@ -548,7 +609,7 @@ export default function InvoicesPage() {
                     </button>
                   )}
                 </div>
-                <PremiumButton tone="primary" icon={<Plus size={16} />}>New Invoice</PremiumButton>
+                <PremiumButton tone="primary" icon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>New Invoice</PremiumButton>
               </div>
             </div>
 
@@ -646,7 +707,7 @@ export default function InvoicesPage() {
                       {search ? 'Try adjusting your search terms.' : 'Create your first invoice to start tracking payments.'}
                     </p>
                     <div style={{ marginTop: '24px' }}>
-                      <PremiumButton tone="primary" icon={<Plus size={16} />}>Create Invoice</PremiumButton>
+                      <PremiumButton tone="primary" icon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</PremiumButton>
                     </div>
                   </motion.div>
                 ) : (
@@ -658,7 +719,7 @@ export default function InvoicesPage() {
                     style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
                   >
                     {invoices.map((invoice, i) => (
-                      <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} />
+                      <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} onDownload={handleDownloadPDF} onRemind={handleSendReminder} />
                     ))}
                   </motion.div>
                 )}
@@ -676,11 +737,59 @@ export default function InvoicesPage() {
             footer={
               <>
                 <PremiumButton tone="ghost" onClick={() => setSelectedInvoice(null)}>Close</PremiumButton>
-                <PremiumButton tone="primary" icon={<Download size={16} />}>Download PDF</PremiumButton>
+                <PremiumButton tone="primary" icon={<Download size={16} />} onClick={() => selectedInvoice && handleDownloadPDF(selectedInvoice)}>Download PDF</PremiumButton>
               </>
             }
           >
-            {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} />}
+            {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} onDownload={handleDownloadPDF} onRemind={handleSendReminder} />}
+          </PremiumModal>
+
+          <PremiumModal
+            open={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            title="Create Invoice"
+            subtitle="New billing entry"
+            icon={<Plus size={16} />}
+            footer={
+              <>
+                <PremiumButton tone="ghost" onClick={() => setShowCreateModal(false)}>Cancel</PremiumButton>
+                <PremiumButton tone="primary" onClick={handleCreateInvoice} disabled={creating || !createForm.memberName || !createForm.amount || !createForm.dueDate}>
+                  {creating ? 'Creating…' : 'Create Invoice'}
+                </PremiumButton>
+              </>
+            }
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {([
+                ['Member Name', 'memberName', 'text', 'e.g. Rahul Sharma'],
+                ['Amount (₹)', 'amount', 'number', 'e.g. 5000'],
+                ['Due Date', 'dueDate', 'date', ''],
+                ['Description', 'description', 'text', 'e.g. Monthly membership fee'],
+              ] as [string, keyof Omit<CreateForm, 'paymentMethod'>, string, string][]).map(([label, key, type, placeholder]) => (
+                <div key={key}>
+                  <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>{label}</label>
+                  <input
+                    type={type}
+                    value={createForm[key]}
+                    onChange={e => setCreateForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: '#f8fafc', boxSizing: 'border-box' }}
+                  />
+                </div>
+              ))}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>Payment Method</label>
+                <select
+                  value={createForm.paymentMethod}
+                  onChange={e => setCreateForm(f => ({ ...f, paymentMethod: e.target.value as PaymentMethod }))}
+                  style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: '#f8fafc' }}
+                >
+                  {Object.entries(PAYMENT_ICONS).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </PremiumModal>
         </div>
       </AppShell>
@@ -690,7 +799,7 @@ export default function InvoicesPage() {
 
 /* ────────── Invoice Card ────────── */
 
-function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: number; onView: () => void }) {
+function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice: Invoice; index: number; onView: () => void; onDownload: (i: Invoice) => void; onRemind: (i: Invoice) => void }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [hoveredItem, setHoveredItem] = React.useState<string | null>(null);
   const isSm = useBreakpoint('(min-width: 640px)');
@@ -831,6 +940,7 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => onDownload(invoice)}
             style={{
               display: 'flex',
               height: '32px',
@@ -896,7 +1006,12 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
                   ].map((item) => (
                     <button
                       key={item.action}
-                      onClick={() => setMenuOpen(false)}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        if (item.action === 'view') onView();
+                        else if (item.action === 'download') onDownload(invoice);
+                        else if (item.action === 'remind') onRemind(invoice);
+                      }}
                       onMouseEnter={() => setHoveredItem(item.action)}
                       onMouseLeave={() => setHoveredItem(null)}
                       style={{
@@ -930,7 +1045,7 @@ function InvoiceCard({ invoice, index, onView }: { invoice: Invoice; index: numb
 
 /* ────────── Invoice Detail ────────── */
 
-function InvoiceDetail({ invoice }: { invoice: Invoice }) {
+function InvoiceDetail({ invoice, onDownload, onRemind }: { invoice: Invoice; onDownload: (i: Invoice) => void; onRemind: (i: Invoice) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{
@@ -1038,9 +1153,9 @@ function InvoiceDetail({ invoice }: { invoice: Invoice }) {
       </div>
 
       <div style={{ display: 'flex', gap: '8px' }}>
-        <PremiumButton tone="primary" icon={<Download size={16} />} size="sm">Download PDF</PremiumButton>
+        <PremiumButton tone="primary" icon={<Download size={16} />} size="sm" onClick={() => onDownload(invoice)}>Download PDF</PremiumButton>
         {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-          <PremiumButton tone="secondary" icon={<Send size={16} />} size="sm">Send Reminder</PremiumButton>
+          <PremiumButton tone="secondary" icon={<Send size={16} />} size="sm" onClick={() => onRemind(invoice)}>Send Reminder</PremiumButton>
         )}
         {invoice.status === 'pending' && (
           <PremiumButton tone="success" icon={<CheckCircle2 size={16} />} size="sm">Mark as Paid</PremiumButton>

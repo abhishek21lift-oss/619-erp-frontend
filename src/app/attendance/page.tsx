@@ -303,8 +303,8 @@ function AttendanceContent() {
                     : 'text-zinc-600 hover:bg-zinc-100 dark:bg-white/10 hover:text-zinc-900 dark:text-white/55 dark:hover:bg-white/10 dark:hover:text-white'
                 }`}>
                 {tab === 'members' ? 'Member Attendance' : tab === 'insights' ? 'Insights & Trends' : 'Smart Alerts'}
-                {tab === 'alerts' && (
-                  <span className="ml-2 rounded-full bg-rose-500 px-1.5 py-0.5 text-xs text-white">4</span>
+                {tab === 'alerts' && smartAlerts.length > 0 && (
+                  <span className="ml-2 rounded-full bg-rose-500 px-1.5 py-0.5 text-xs text-white">{smartAlerts.length}</span>
                 )}
               </button>
             ))}

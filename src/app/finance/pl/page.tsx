@@ -279,7 +279,7 @@ function Inner() {
                               </div>
                             ))}
                           </div>
-                          <button onClick={() => router.push('/finance/dues')}
+                          <button onClick={() => router.push('/expenses')}
                             className="mt-2 text-[11px] font-[700] uppercase tracking-[0.06em] transition-colors hover:opacity-70"
                             style={{ color: '#8B5CF6' }}>
                             View All Expenses →

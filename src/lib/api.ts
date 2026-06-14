@@ -990,9 +990,9 @@ export const api = {
   // ── Activity Logs (Profile) ─────────────────────────────────────
   activity: {
     list: (params?: Record<string, string | number>) =>
-      http<unknown[]>(`/api/activity${buildQs(params)}`),
-    sessions: () => http<unknown[]>('/api/activity/sessions'),
-    devices: () => http<unknown[]>('/api/activity/devices'),
+      http<unknown[]>(`/api/profile/activity${buildQs(params)}`),
+    sessions: () => http<unknown[]>('/api/profile/sessions'),
+    devices: () => http<unknown[]>('/api/profile/devices'),
   },
 
   // ── Branches ───────────────────────────────────────────────────

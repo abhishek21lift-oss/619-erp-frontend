@@ -24,6 +24,25 @@ function getKPIValue(data: Attendance[] | null | undefined, key: string) {
   return String(data.filter((r: Attendance) => r.status === key).length);
 }
 
+function exportCSV(records: Attendance[], days: string) {
+  const header = ['Date', 'Member', 'Status', 'Check-In Time', 'Check-Out Time'];
+  const rows = records.map(r => [
+    r.date ?? '',
+    r.ref_name ?? r.ref_id ?? '',
+    r.status ?? '',
+    r.check_in ?? '',
+    r.check_out ?? '',
+  ]);
+  const csv = [header, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `attendance-report-${days}days-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AttendanceReportsPage() {
   const [dateRange, setDateRange] = useState('7');
 
@@ -111,6 +130,7 @@ export default function AttendanceReportsPage() {
               })}
               <div style={{ flex: 1 }} />
               <Button className="!rounded-[100px] !text-[12px] !font-[700]"
+                onClick={() => exportCSV(records, dateRange)}
                 style={{
                   background: 'rgba(255,255,255,0.85)',
                   border: '1px solid rgba(0,0,0,0.06)',

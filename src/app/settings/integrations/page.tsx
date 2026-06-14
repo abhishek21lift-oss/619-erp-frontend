@@ -20,16 +20,16 @@ interface Integration {
   connectedAt?: string; lastSync?: string; comingSoon?: boolean;
 }
 
-// Static mock integrations — only 'calendar' is replaced with a live API card
+// Static integration metadata — status and dates are loaded from the API at runtime
 const STATIC_INTEGRATIONS: Integration[] = [
-  { id: 'razorpay',  name: 'Razorpay',          description: 'Payment gateway for fees, memberships & PT packages', category: 'payments',      icon: 'CreditCard',    color: '#2563eb', bg: '#eff6ff', status: 'connected',   connectedAt: '2026-03-15', lastSync: '2026-06-12 10:30 AM' },
-  { id: 'paytm',     name: 'Paytm',              description: 'UPI & wallet payment processing',                     category: 'payments',      icon: 'Smartphone',    color: '#00baf2', bg: '#eef9ff', status: 'connected',   connectedAt: '2026-02-01', lastSync: '2026-06-12 09:15 AM' },
-  { id: 'stripe',    name: 'Stripe',             description: 'International payment processing',                    category: 'payments',      icon: 'CreditCard',    color: '#635bff', bg: '#f0efff', status: 'error' },
-  { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Send notifications, reminders & marketing via WhatsApp', category: 'communication', icon: 'MessageSquare', color: '#25d366', bg: '#f0fdf4', status: 'connected',   connectedAt: '2026-01-10', lastSync: '2026-06-12 11:00 AM' },
+  { id: 'razorpay',  name: 'Razorpay',          description: 'Payment gateway for fees, memberships & PT packages', category: 'payments',      icon: 'CreditCard',    color: '#2563eb', bg: '#eff6ff', status: 'pending' },
+  { id: 'paytm',     name: 'Paytm',              description: 'UPI & wallet payment processing',                     category: 'payments',      icon: 'Smartphone',    color: '#00baf2', bg: '#eef9ff', status: 'pending' },
+  { id: 'stripe',    name: 'Stripe',             description: 'International payment processing',                    category: 'payments',      icon: 'CreditCard',    color: '#635bff', bg: '#f0efff', status: 'pending' },
+  { id: 'whatsapp',  name: 'WhatsApp Business',  description: 'Send notifications, reminders & marketing via WhatsApp', category: 'communication', icon: 'MessageSquare', color: '#25d366', bg: '#f0fdf4', status: 'pending' },
   { id: 'twilio',    name: 'Twilio SMS',         description: 'SMS alerts for dues, check-ins & announcements',     category: 'communication', icon: 'MessageSquare', color: '#f22f46', bg: '#fef2f2', status: 'pending' },
   { id: 'sendgrid',  name: 'SendGrid',           description: 'Email marketing & transactional emails',             category: 'communication', icon: 'Send',          color: '#1a82e2', bg: '#eff6ff', status: 'unavailable', comingSoon: true },
   // AI Coach card is rendered as a live AiCoachCard — not in this static list
-  { id: 'biometric', name: 'Biometric Scanner',  description: 'Face & fingerprint check-in hardware',               category: 'devices',       icon: 'Camera',        color: '#8b5cf6', bg: '#f5f3ff', status: 'connected',   connectedAt: '2026-05-20', lastSync: '2026-06-12 08:30 AM' },
+  { id: 'biometric', name: 'Biometric Scanner',  description: 'Face & fingerprint check-in hardware',               category: 'devices',       icon: 'Camera',        color: '#8b5cf6', bg: '#f5f3ff', status: 'pending' },
   { id: 'zoho',      name: 'Zoho Books',         description: 'Accounting & invoicing sync',                        category: 'analytics',     icon: 'BarChart3',     color: '#e42527', bg: '#fef2f2', status: 'unavailable', comingSoon: true },
 ];
 
@@ -64,11 +64,13 @@ const sc: Record<Status, string> = { connected: '#10b981', error: '#ef4444', pen
 const sl: Record<Status, string> = { connected: 'Connected', error: 'Error', pending: 'Pending', unavailable: 'Unavailable' };
 
 // ── Static ConnectModal (non-calendar integrations) ───────────────────────────
-function ConnectModal({ integration, onClose, onDisconnect }: {
-  integration: Integration; onClose: () => void; onDisconnect: () => void;
+function ConnectModal({ integration, isConnected, onClose, onConnect, onDisconnect }: {
+  integration: Integration; isConnected: boolean; onClose: () => void;
+  onConnect: (id: string, apiKey: string) => Promise<void>; onDisconnect: () => void;
 }) {
   const [apiKey, setApiKey] = useState('');
   const [testing, setTesting] = useState(false);
+  const [saving,  setSaving]  = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
   const Icon = iconMap[integration.icon];
 
@@ -79,6 +81,16 @@ function ConnectModal({ integration, onClose, onDisconnect }: {
       setTestResult(res.success ? 'success' : 'error');
     } catch { setTestResult('error'); }
     finally { setTesting(false); }
+  };
+
+  const saveConnection = async () => {
+    setSaving(true);
+    try {
+      await onConnect(integration.id, apiKey);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sBtn = { width: '100%', padding: '10px 0', borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#ffffff' } as const;
@@ -100,21 +112,34 @@ function ConnectModal({ integration, onClose, onDisconnect }: {
           </div>
           <button onClick={onClose} style={{ marginLeft: 'auto', width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
         </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>API Key / Webhook URL</label>
-          <input value={apiKey} onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }} placeholder="Paste your API key or webhook URL..."
-            style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: `1px solid ${testResult === 'error' ? 'rgba(239,68,68,0.4)' : 'var(--border)'}`, fontSize: 13, outline: 'none', color: 'var(--text-primary)', background: 'var(--bg-canvas)', boxSizing: 'border-box' }}
-          />
-        </div>
-        <button onClick={testConnection} disabled={testing}
-          style={{ ...sBtn, cursor: testing ? 'not-allowed' : 'pointer', background: testResult === 'success' ? 'linear-gradient(135deg,#10b981,#059669)' : testResult === 'error' ? 'linear-gradient(135deg,#ef4444,#dc2626)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}
-        >
-          {testing && <motion.span style={{ display: 'inline-flex' }} animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><Loader2 size={16} /></motion.span>}
-          {testing ? 'Testing...' : testResult === 'success' ? 'Connected Successfully' : testResult === 'error' ? 'Connection Failed' : 'Test Connection'}
-        </button>
+        {!isConnected && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>API Key / Webhook URL</label>
+            <input value={apiKey} onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }} placeholder="Paste your API key or webhook URL..."
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: `1px solid ${testResult === 'error' ? 'rgba(239,68,68,0.4)' : 'var(--border)'}`, fontSize: 13, outline: 'none', color: 'var(--text-primary)', background: 'var(--bg-canvas)', boxSizing: 'border-box' }}
+            />
+          </div>
+        )}
+        {!isConnected && (
+          <button onClick={testConnection} disabled={testing || !apiKey}
+            style={{ ...sBtn, cursor: (testing || !apiKey) ? 'not-allowed' : 'pointer', background: testResult === 'success' ? 'linear-gradient(135deg,#10b981,#059669)' : testResult === 'error' ? 'linear-gradient(135deg,#ef4444,#dc2626)' : 'linear-gradient(135deg,#f59e0b,#d97706)', opacity: !apiKey ? 0.6 : 1 }}
+          >
+            {testing && <motion.span style={{ display: 'inline-flex' }} animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><Loader2 size={16} /></motion.span>}
+            {testing ? 'Testing...' : testResult === 'success' ? 'Connected Successfully' : testResult === 'error' ? 'Connection Failed' : 'Test Connection'}
+          </button>
+        )}
         <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-          <button onClick={onClose} style={{ ...aBtn, border: 'none', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff' }}>Save</button>
-          <button onClick={() => { onDisconnect(); onClose(); }} style={{ ...aBtn, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', color: '#fca5a5' }}>Disconnect</button>
+          {!isConnected ? (
+            <button onClick={saveConnection} disabled={saving || !apiKey}
+              style={{ ...aBtn, border: 'none', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', opacity: !apiKey ? 0.6 : 1 }}>
+              {saving ? 'Saving…' : 'Save & Connect'}
+            </button>
+          ) : (
+            <button onClick={onClose} style={{ ...aBtn, border: 'none', background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>Close</button>
+          )}
+          {isConnected && (
+            <button onClick={() => { onDisconnect(); onClose(); }} style={{ ...aBtn, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', color: '#fca5a5' }}>Disconnect</button>
+          )}
         </div>
       </motion.div>
     </div>
@@ -325,8 +350,8 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
 }
 
 // ── Static integration card ───────────────────────────────────────────────────
-function StaticCard({ integration, isConnected, onConfigure, onToggle }: {
-  integration: Integration; isConnected: boolean;
+function StaticCard({ integration, isConnected, connectedAt, onConfigure, onToggle }: {
+  integration: Integration; isConnected: boolean; connectedAt?: string;
   onConfigure: () => void; onToggle: () => void;
 }) {
   const status: Status = isConnected ? 'connected' : integration.status;
@@ -357,8 +382,8 @@ function StaticCard({ integration, isConnected, onConfigure, onToggle }: {
           {isConnected ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: sc[status], display: 'inline-block', boxShadow: `0 0 8px ${sc[status]}` }} />}
           {sl[status]}
         </span>
-        {isConnected && integration.connectedAt && (
-          <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Connected {integration.connectedAt}</span>
+        {isConnected && connectedAt && (
+          <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Connected {new Date(connectedAt).toLocaleDateString()}</span>
         )}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -385,14 +410,25 @@ function StaticCard({ integration, isConnected, onConfigure, onToggle }: {
   );
 }
 
+type ApiIntegration = { id: string; status: string; connected_at?: string; last_sync_at?: string };
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function IntegrationsPage() {
   const searchParams  = useSearchParams();
   const router        = useRouter();
   const [category, setCategory]   = useState('all');
   const [search,   setSearch]     = useState('');
-  const [connected, setConnected] = useState<Set<string>>(new Set(['razorpay', 'paytm', 'whatsapp', 'biometric']));
-  const [modalId,   setModalId]   = useState<string | null>(null);
+  const [apiData,  setApiData]    = useState<Record<string, ApiIntegration>>({});
+  const [modalId,  setModalId]    = useState<string | null>(null);
+
+  // Load integration statuses from backend
+  useEffect(() => {
+    api.integrations.list().then(rows => {
+      const map: Record<string, ApiIntegration> = {};
+      (rows as ApiIntegration[]).forEach(r => { map[r.id] = r; });
+      setApiData(map);
+    }).catch(() => {});
+  }, []);
 
   // Detect OAuth callback result
   const calendarParam = searchParams.get('calendar');
@@ -408,12 +444,13 @@ export default function IntegrationsPage() {
     }
   }, [calendarParam, searchParams, router]);
 
-  const toggleIntegration = (id: string) => {
-    setConnected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+  const isConnected = (id: string) => apiData[id]?.status === 'connected';
+
+  const disconnectIntegration = async (id: string) => {
+    try {
+      await api.integrations.disconnect(id);
+      setApiData(prev => ({ ...prev, [id]: { ...prev[id], id, status: 'disconnected' } }));
+    } catch { /* silently ignore */ }
   };
 
   // Build the filtered list: inject calendar card placeholder for layout purposes
@@ -487,9 +524,10 @@ export default function IntegrationsPage() {
                 <StaticCard
                   key={integration.id}
                   integration={integration}
-                  isConnected={connected.has(integration.id)}
+                  isConnected={isConnected(integration.id)}
+                  connectedAt={apiData[integration.id]?.connected_at}
                   onConfigure={() => setModalId(integration.id)}
-                  onToggle={() => toggleIntegration(integration.id)}
+                  onToggle={() => disconnectIntegration(integration.id)}
                 />
               ))}
               {filtered.showAi && (
@@ -515,8 +553,13 @@ export default function IntegrationsPage() {
           {modalIntegration && (
             <ConnectModal
               integration={modalIntegration}
+              isConnected={isConnected(modalIntegration.id)}
               onClose={() => setModalId(null)}
-              onDisconnect={() => toggleIntegration(modalIntegration.id)}
+              onConnect={async (id, apiKey) => {
+                await api.integrations.connect(id, { api_key: apiKey });
+                setApiData(prev => ({ ...prev, [id]: { ...prev[id], id, status: 'connected', connected_at: new Date().toISOString() } }));
+              }}
+              onDisconnect={() => disconnectIntegration(modalIntegration.id)}
             />
           )}
         </div>

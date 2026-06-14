@@ -104,7 +104,7 @@ function Inner() {
   const maxRevenue = Math.max(...fullYear.map((m) => m.revenue), 1);
   const totalRevenueAll = revenueByTrainer.reduce((s, t) => s + Number(t.total_revenue || 0), 0);
 
-  const chartHovered = useState<number | null>(null);
+  const [chartHovered, setChartHovered] = useState<number | null>(null);
 
   return (
     <AppShell>

@@ -157,8 +157,26 @@ function Inner() {
         <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
           {[
             { label: 'Avg Progress per Member', value: clients.length ? `${((clients.filter(c => c.weight && Number(c.weight) > 0).length / clients.length) * 100).toFixed(0)}%` : '—', icon: <Activity size={14} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-            { label: 'Goal Completion Rate', value: '—', icon: <Target size={14} />, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-            { label: 'Top Performer', value: clients.length ? clients.reduce((best, c) => (c.weight && Number(c.weight) > Number(best.weight || 0)) ? c : best, clients[0]).name : '—', icon: <Trophy size={14} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+            { label: 'Goal Completion Rate', value: clients.length ? (() => {
+              const achieved = clients.filter(c => {
+                const start = Number((c as Record<string, unknown>).initial_weight ?? (c as Record<string, unknown>).start_weight ?? 0);
+                const curr = Number(c.weight ?? 0);
+                return start > 0 && curr > 0 && curr < start;
+              }).length;
+              return `${((achieved / clients.length) * 100).toFixed(0)}%`;
+            })() : '—', icon: <Target size={14} />, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+            { label: 'Top Performer', value: clients.length ? (() => {
+              const best = clients.reduce((b, c) => {
+                const cStart = Number((c as Record<string, unknown>).initial_weight ?? (c as Record<string, unknown>).start_weight ?? 0);
+                const cCurr = Number(c.weight ?? 0);
+                const cLoss = cStart > 0 && cCurr > 0 ? cStart - cCurr : 0;
+                const bStart = Number((b as Record<string, unknown>).initial_weight ?? (b as Record<string, unknown>).start_weight ?? 0);
+                const bCurr = Number(b.weight ?? 0);
+                const bLoss = bStart > 0 && bCurr > 0 ? bStart - bCurr : 0;
+                return cLoss > bLoss ? c : b;
+              }, clients[0]);
+              return best.name ?? '—';
+            })() : '—', icon: <Trophy size={14} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
           ].map((stat, i) => (
             <motion.div key={stat.label} variants={itemVariants}
               style={{ borderRadius: 16, padding: '16px 18px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)' }}>
@@ -236,7 +254,7 @@ function Inner() {
                         </td>
                         <td style={{ ...td, color: 'rgba(255,255,255,0.5)' }}>{c.trainer_name || '—'}</td>
                         <td style={{ ...td, color: 'rgba(255,255,255,0.5)' }}>{c.weight ? `${c.weight} kg` : '—'}</td>
-                        <td style={td}><WeightChange start={c.weight} current={c.weight} /></td>
+                        <td style={td}><WeightChange start={(c as any).initial_weight ?? (c as any).start_weight} current={c.weight} /></td>
                         <td style={{ ...td, color: 'rgba(255,255,255,0.45)' }}>{fmtDate(c.joining_date || c.pt_start_date)}</td>
                         <td style={td}>
                           <Link href={`/clients/${c.id}`}

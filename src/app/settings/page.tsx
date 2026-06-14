@@ -31,7 +31,7 @@ interface Account {
   mfa: boolean;
 }
 
-const COACHES = ['Rahul Sharma', 'Priya Mehta', 'Amit Verma', 'Neha Gupta', 'Vikram Singh', 'Sneha Patel'];
+// Coaches loaded dynamically from API in CoachSelector
 
 /* ────────────────────────────────────────────────────────────────────
    ROLE CONFIG
@@ -234,8 +234,14 @@ function RoleSelector({ value, onChange }: { value: Role; onChange: (r: Role) =>
 function CoachSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
-  const filtered = COACHES.filter((c) => c.toLowerCase().includes(q.toLowerCase()));
-  const idx = COACHES.findIndex((c) => c === value);
+  const [coaches, setCoaches] = useState<string[]>([]);
+  useEffect(() => {
+    api.staff.list().then(staff => {
+      setCoaches(staff.filter(s => s.role === 'coach' || s.role === 'trainer').map(s => s.name));
+    }).catch(() => {});
+  }, []);
+  const filtered = coaches.filter((c) => c.toLowerCase().includes(q.toLowerCase()));
+  const idx = coaches.findIndex((c) => c === value);
 
   return (
     <div className="relative">
@@ -431,10 +437,13 @@ function EmptyAccounts({ onAdd }: { onAdd: () => void }) {
    SECURITY WIDGET
 ──────────────────────────────────────────────────────────────────── */
 function SecurityWidget() {
+  const [sessionCount, setSessionCount] = useState<number | null>(null);
+  useEffect(() => {
+    api.activity.sessions().then(s => setSessionCount(Array.isArray(s) ? s.length : null)).catch(() => {});
+  }, []);
   const items = [
-    { icon: <Clock size={13} />,          label: 'Last admin login',  value: '2 mins ago',   color: '#6366f1' },
-    { icon: <Activity size={13} />,       label: 'Active sessions',   value: '3',             color: '#10b981' },
-    { icon: <ShieldCheck size={13} />,    label: 'MFA enabled',       value: '3 of 6',        color: '#0ea5e9' },
+    { icon: <Activity size={13} />,       label: 'Active sessions',   value: sessionCount !== null ? String(sessionCount) : '—', color: '#10b981' },
+    { icon: <ShieldCheck size={13} />,    label: 'MFA enabled',       value: 'Enabled',       color: '#0ea5e9' },
     { icon: <AlertTriangle size={13} />,  label: 'Suspicious alerts', value: 'None',          color: '#f59e0b' },
   ];
   return (
@@ -631,6 +640,10 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
 function ChangePasswordPanel() {
   const [cur,   setCur]   = useState('');
   const [next,  setNext]  = useState('');
+  const [sessionCount, setSessionCount] = useState<number | null>(null);
+  useEffect(() => {
+    api.activity.sessions().then(s => setSessionCount(Array.isArray(s) ? s.length : null)).catch(() => {});
+  }, []);
   const [conf,  setConf]  = useState('');
   const [showCur,  setShowCur]  = useState(false);
   const [showNext, setShowNext] = useState(false);
@@ -732,9 +745,8 @@ function ChangePasswordPanel() {
       <div className="rounded-[13px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid rgba(15,23,42,0.07)' }}>
         <p className="mb-2.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Recent Security</p>
         {[
-          { label: 'Last password change', value: '42 days ago' },
-          { label: 'Active sessions',      value: '3 devices' },
-          { label: '2FA status',           value: 'Enabled' },
+          { label: 'Active sessions', value: sessionCount !== null ? `${sessionCount} device${sessionCount !== 1 ? 's' : ''}` : '—' },
+          { label: '2FA status',      value: 'Enabled' },
         ].map((item) => (
           <div key={item.label} className="flex justify-between py-1.5">
             <span className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>{item.label}</span>

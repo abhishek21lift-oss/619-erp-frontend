@@ -329,7 +329,6 @@ function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
   const e     = edits[s.id] || { role: s.role, status: s.status || 'active' };
   const cfg   = getRoleCfg(e.role);
   const busy  = saving === s.id;
-  const stats = { attendance: 0, clients: 0, leads: 0, performance: 0 };
   const isActive = e.status === 'active';
 
   return (
@@ -360,10 +359,10 @@ function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
       {/* Quick stats */}
       <div className="sm-card-stats">
         {[
-          { label: 'Attendance', val: `${stats.attendance}%`, color: stats.attendance > 85 ? '#10b981' : stats.attendance > 70 ? '#f59e0b' : '#e11d48' },
-          { label: 'Clients',    val: stats.clients,           color: '#7c3aed' },
-          { label: 'Leads',      val: stats.leads,             color: '#0ea5e9' },
-          { label: 'Score',      val: `${stats.performance}`, color: '#10b981' },
+          { label: 'Attendance', val: '—', color: '#94a3b8' },
+          { label: 'Clients',    val: '—', color: '#94a3b8' },
+          { label: 'Leads',      val: '—', color: '#94a3b8' },
+          { label: 'Score',      val: '—', color: '#94a3b8' },
         ].map(st => (
           <div key={st.label} className="sm-mini-stat">
             <div className="sm-mini-val" style={{ color: st.color }}>{st.val}</div>
@@ -446,7 +445,6 @@ function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }
             const e   = edits[s.id] || { role: s.role, status: s.status || 'active' };
             const cfg = getRoleCfg(e.role);
             const busy = saving === s.id;
-            const stats = { attendance: 0, clients: 0, leads: 0, performance: 0 };
             return (
               <tr key={s.id} className="sm-table-row">
                 <td>
@@ -476,12 +474,7 @@ function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }
                   </span>
                 </td>
                 <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ height: 4, width: 80, background: '#f1f5f9', borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${stats.attendance}%`, background: stats.attendance > 85 ? '#22c55e' : stats.attendance > 70 ? '#f59e0b' : '#e11d48', borderRadius: 99 }} />
-                    </div>
-                    <span style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 600 }}>{stats.attendance}%</span>
-                  </div>
+                  <span style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 600 }}>—</span>
                 </td>
                 <td>
                   <select className="sm-select" style={{ minWidth: 130 }} value={e.role}
@@ -531,7 +524,6 @@ interface SidePanelProps {
 function SidePanel({ s, edits, setEdits, saving, save, isDirty, onClose }: SidePanelProps) {
   const e     = edits[s.id] || { role: s.role, status: s.status || 'active' };
   const cfg   = getRoleCfg(e.role);
-  const stats = { attendance: 0, clients: 0, leads: 0, performance: 0 };
   const busy  = saving === s.id;
 
   return (
@@ -564,13 +556,13 @@ function SidePanel({ s, edits, setEdits, saving, save, isDirty, onClose }: SideP
             <div className="sm-panel-section-title">Performance</div>
             <div className="sm-panel-stats">
               {[
-                { label: 'Attendance', val: `${stats.attendance}%`, color: '#10b981' },
-                { label: 'Clients',    val: stats.clients,           color: '#7c3aed' },
-                { label: 'Leads',      val: stats.leads,             color: '#0ea5e9' },
-                { label: 'Score',      val: `${stats.performance}`,  color: '#f59e0b' },
+                { label: 'Attendance', color: '#94a3b8' },
+                { label: 'Clients',    color: '#94a3b8' },
+                { label: 'Leads',      color: '#94a3b8' },
+                { label: 'Score',      color: '#94a3b8' },
               ].map(st => (
                 <div key={st.label} className="sm-panel-stat">
-                  <div className="sm-panel-stat-val" style={{ color: st.color }}>{st.val}</div>
+                  <div className="sm-panel-stat-val" style={{ color: st.color }}>—</div>
                   <div className="sm-panel-stat-lbl">{st.label}</div>
                 </div>
               ))}
@@ -597,32 +589,21 @@ function SidePanel({ s, edits, setEdits, saving, save, isDirty, onClose }: SideP
           </div>
 
           <div className="sm-panel-section">
-            <div className="sm-panel-section-title">Shifts (Preview)</div>
-            <div className="sm-shifts">
-              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => {
-                const h = (s.id.charCodeAt(i % s.id.length) || 0) % 4;
-                return (
-                  <div key={d} className={`sm-shift-chip${h === 0 ? ' off' : ''}`}>
-                    <span style={{ fontWeight: 700 }}>{d}</span>
-                    <span>{h === 0 ? 'Off' : h === 1 ? '6am–2pm' : h === 2 ? '2pm–10pm' : '9am–5pm'}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="sm-panel-section">
             <div className="sm-panel-section-title">Permissions</div>
             <div className="sm-perms">
-              {['View Clients', 'Edit Members', 'Manage Payments', 'View Reports', 'Manage Staff'].map((p, i) => {
-                const has = (s.id.charCodeAt(i) || 0) % 3 !== 0;
-                return (
+              {(() => {
+                const role = (edits[s.id]?.role || s.role);
+                const adminPerms = ['View Clients', 'Edit Members', 'Manage Payments', 'View Reports', 'Manage Staff'];
+                const managerPerms = ['View Clients', 'Edit Members', 'Manage Payments', 'View Reports'];
+                const trainerPerms = ['View Clients'];
+                const allowed = role === 'admin' ? adminPerms : role === 'manager' ? managerPerms : role === 'accountant' ? ['Manage Payments', 'View Reports'] : role === 'hr' ? ['View Reports', 'Manage Staff'] : trainerPerms;
+                return adminPerms.map(p => (
                   <div key={p} className="sm-perm-row">
                     <span>{p}</span>
-                    <span className={`sm-perm-tag${has ? ' yes' : ' no'}`}>{has ? '✓ Allowed' : '✗ Denied'}</span>
+                    <span className={`sm-perm-tag${allowed.includes(p) ? ' yes' : ' no'}`}>{allowed.includes(p) ? '✓ Allowed' : '✗ Denied'}</span>
                   </div>
-                );
-              })}
+                ));
+              })()}
             </div>
           </div>
 
