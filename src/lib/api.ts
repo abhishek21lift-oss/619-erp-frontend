@@ -1026,6 +1026,38 @@ export const api = {
       http<{ success: boolean }>('/api/settings/gym', { method: 'PUT', body: JSON.stringify(data) }),
   },
 
+  // ── QR Check-in ─────────────────────────────────────────────────
+  qr: {
+    generate: (params?: { dynamic?: boolean }) =>
+      http<{ dataUrl: string; payload: string; userId: string; userType: string; dynamic: boolean; expiresIn: number | null }>(
+        `/api/qr/generate${params?.dynamic ? '?dynamic=true' : ''}`
+      ),
+    generateFor: (type: string, id: string, dynamic?: boolean) =>
+      http<{ dataUrl: string; payload: string; userId: string; userType: string }>(
+        `/api/qr/generate/${type}/${id}${dynamic ? '?dynamic=true' : ''}`
+      ),
+    scan: (data: { payload: string; device_info?: string; location?: string }) =>
+      http<{ success: boolean; duplicate?: boolean; message: string; user?: { id: string; name: string; status: string; photo_url?: string; member_code?: string; package_type?: string; role?: string }; attendance_id?: string; check_in_time?: string }>(
+        '/api/qr/scan', { method: 'POST', body: JSON.stringify(data) }
+      ),
+    checkout: () =>
+      http<{ success: boolean; message: string; attendance_id?: string; duration_minutes?: number; check_out_time?: string }>(
+        '/api/qr/checkout', { method: 'POST', body: '{}' }
+      ),
+    dashboard: () =>
+      http<{ currently_inside: { total: number; breakdown: Record<string, number> }; today: { total: number; breakdown: Record<string, unknown> }; hourly: { hour: number; count: number }[]; weekly_trend: { date: string; present: number }[]; method_breakdown: { method: string; count: number }[]; recent_checkins: unknown[]; generated_at: string }>(
+        '/api/qr/dashboard'
+      ),
+    myHistory: (limit?: number) =>
+      http<{ history: { date: string; status: string; check_in_time: string | null; check_out_time: string | null; method: string; duration_minutes: number | null }[]; stats: { total_present: number; total_days: number; current_streak: number; longest_streak: number; this_month: number; attendance_rate: number; avg_duration_minutes: number | null } }>(
+        `/api/qr/my-history${limit ? `?limit=${limit}` : ''}`
+      ),
+    staffReport: (params?: { from?: string; to?: string; type?: string }) =>
+      http<{ data: unknown[]; from: string; to: string; type: string }>(
+        `/api/qr/staff-report${params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''}`
+      ),
+  },
+
   // ── AI Coach ────────────────────────────────────────────────────
   ai: {
     conversations: (params?: Record<string, string | number>) =>

@@ -37,10 +37,13 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'ScanFace',
     items: [
       { href: '/checkin',                label: 'QR / Face Check-In',        icon: 'ScanFace' },
+      { href: '/checkin/qr-scanner',     label: 'QR Scanner',                icon: 'QrCode',       roles: ['admin', 'manager', 'trainer'], isNew: true },
+      { href: '/checkin/kiosk',          label: 'Self-Check-In Kiosk',       icon: 'Monitor',      role: 'admin', isNew: true },
       { href: '/checkin/enroll',         label: 'Enroll Passkey',            icon: 'Shield',       role: 'admin', isNew: true },
       { href: '/checkin/mark',           label: 'Biometric Attendance',      icon: 'Fingerprint',  isNew: true },
       { href: '/checkin/dashboard',      label: 'Attendance Dashboard',      icon: 'Activity',     role: 'admin', isNew: true },
       { href: '/checkin/reports',        label: 'Biometric Reports',         icon: 'FileBarChart', role: 'admin', isNew: true },
+      { href: '/member/attendance',      label: 'My Attendance',             icon: 'CalendarCheck', isNew: true },
       { href: '/attendance',             label: 'Attendance Records',        icon: 'ClipboardList' },
       { href: '/attendance/reports',     label: 'Attendance Reports',        icon: 'BarChart3',    role: 'admin' },
       { href: '/attendance/staff',       label: 'Staff Attendance',          icon: 'UsersRound',   roles: ['admin', 'manager'] },

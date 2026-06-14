@@ -75,6 +75,10 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     { label: 'Notifications', href: '/engagement/notifications', keywords: 'notifications alerts updates' },
     { label: 'Settings', href: '/settings', keywords: 'settings configuration preferences' },
     { label: 'AI Coach', href: '/ai-coach', keywords: 'ai coach workout nutrition fitness chatbot assistant gpt' },
+    { label: 'QR Scanner', href: '/checkin/qr-scanner', keywords: 'qr scanner checkin scan code attendance' },
+    { label: 'Self-Check-In Kiosk', href: '/checkin/kiosk', keywords: 'kiosk checkin self service qr face biometric' },
+    { label: 'Attendance Dashboard', href: '/checkin/dashboard', keywords: 'attendance dashboard live stats today visitors inside' },
+    { label: 'My Attendance', href: '/member/attendance', keywords: 'my attendance history streak visits calendar heatmap' },
   ];
 
   useEffect(() => {
