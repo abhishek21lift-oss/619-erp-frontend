@@ -977,6 +977,16 @@ export const api = {
       http<{ success: boolean; message: string }>(`/api/integrations/${id}/disconnect`, { method: 'POST' }),
   },
 
+  // ── Google Calendar ─────────────────────────────────────────────
+  calendar: {
+    status: () =>
+      http<{ connected: boolean; connectedAt?: string; lastSyncAt?: string; calendarId?: string }>('/api/calendar/status'),
+    authUrl: () =>
+      http<{ url: string }>('/api/calendar/auth-url'),
+    disconnect: () =>
+      http<{ message: string }>('/api/calendar/disconnect', { method: 'DELETE' }),
+  },
+
   // ── Activity Logs (Profile) ─────────────────────────────────────
   activity: {
     list: (params?: Record<string, string | number>) =>
