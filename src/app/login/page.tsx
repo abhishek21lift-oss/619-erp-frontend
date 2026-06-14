@@ -4,9 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Mail } from 'lucide-react';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 export default function LoginPage() {
-  const { user, login, loading } = useAuth();
+  const { user, login, loginWithGoogle, loading } = useAuth();
   const router = useRouter();
 
   const [email,    setEmail]    = useState('');
@@ -22,6 +25,19 @@ export default function LoginPage() {
       else router.replace('/pt-os');
     }
   }, [user, loading, router]);
+
+  async function handleGoogleSuccess(response: CredentialResponse) {
+    if (!response.credential) return;
+    setError('');
+    setBusy(true);
+    try {
+      await loginWithGoogle(response.credential);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -253,6 +269,30 @@ export default function LoginPage() {
                     )}
                   </span>
                 </motion.button>
+
+                {/* ── Google Sign-In (shown only when NEXT_PUBLIC_GOOGLE_CLIENT_ID is set) ── */}
+                {GOOGLE_CLIENT_ID && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-[#E5E5E5] dark:bg-[#3A3B40]" />
+                      <span className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-[0.1em]">or</span>
+                      <div className="flex-1 h-px bg-[#E5E5E5] dark:bg-[#3A3B40]" />
+                    </div>
+
+                    <div className="flex justify-center">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => setError('Google sign-in was cancelled or failed.')}
+                        theme="outline"
+                        size="large"
+                        shape="rectangular"
+                        text="signin_with"
+                        logo_alignment="left"
+                        width="358"
+                      />
+                    </div>
+                  </>
+                )}
               </form>
 
               {/* ── Support Message ── */}

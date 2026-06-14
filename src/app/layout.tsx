@@ -5,6 +5,7 @@ import { ToastProvider } from '@/lib/toast';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { GoogleAuthWrapper } from '@/components/GoogleAuthWrapper';
 import './globals.css';
 
 const inter = Inter({
@@ -104,16 +105,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
          * ErrorBoundary is outermost so a throw from AuthProvider's
          * effect still renders the fallback instead of a blank page.
          */}
-        <ErrorBoundary>
-          <ThemeProvider>
-            <AuthProvider>
-              <ToastProvider>
-                {children}
-                <CommandPalette />
-              </ToastProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </ErrorBoundary>
+        <GoogleAuthWrapper clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ''}>
+          <ErrorBoundary>
+            <ThemeProvider>
+              <AuthProvider>
+                <ToastProvider>
+                  {children}
+                  <CommandPalette />
+                </ToastProvider>
+              </AuthProvider>
+            </ThemeProvider>
+          </ErrorBoundary>
+        </GoogleAuthWrapper>
       </body>
     </html>
   );

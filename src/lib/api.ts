@@ -281,6 +281,11 @@ export const api = {
         method: 'POST',
         body: { email, password },
       }),
+    googleLogin: (credential: string) =>
+      http<{ user: User }>('/api/auth/google-login', {
+        method: 'POST',
+        body: { credential },
+      }),
     me: () => http<{ user: User }>('/api/auth/me'),
     logout: () => http('/api/auth/logout', { method: 'POST' }).catch((_err) => console.warn('[api] logout failed', _err)),
     changePassword: (currentPassword: string, newPassword: string) =>

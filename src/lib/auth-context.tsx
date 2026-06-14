@@ -10,6 +10,7 @@ interface Ctx {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<Ctx>({
   user: null,
   loading: true,
   login: async () => {},
+  loginWithGoogle: async () => {},
   logout: () => {},
 });
 
@@ -137,15 +139,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async function (email: string, password: string): Promise<void> {
     const data = await api.auth.login(email, password);
-    // Reset the redirect lock so future 401s (e.g. from a background request
-    // that was in-flight before login) will fire the session-expired event again.
     resetRedirectLock();
-    // Mark that a real login happened so the background me() call is ignored
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
     ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
-    // Unblock the login page redirect immediately — don't wait for me()
+    setLoading(false);
+  }, []);
+
+  const loginWithGoogle = useCallback(async function (credential: string): Promise<void> {
+    const data = await api.auth.googleLogin(credential);
+    resetRedirectLock();
+    loggedInRef.current = true;
+    const u = data.user;
+    setUser(u);
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
     setLoading(false);
   }, []);
 
@@ -154,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [_clearSession]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
