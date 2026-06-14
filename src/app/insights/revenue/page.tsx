@@ -169,7 +169,7 @@ function Inner() {
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, padding: '0 4px' }}>
                   {fullYear.map((m, i) => {
                     const pct = maxRevenue > 0 ? Math.max((m.revenue / maxRevenue) * 100, m.revenue > 0 ? 4 : 0) : 0;
-                    const [hovered, setHovered] = [chartHovered[0], chartHovered[1]];
+                    const hovered = chartHovered; const setHovered = setChartHovered;
                     return (
                       <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}
                         onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
