@@ -1070,10 +1070,10 @@ export const api = {
       http<{ data: { messages_this_hour: string; messages_today: string; tokens_today: string } }>('/api/ai/usage'),
     providerSettings: () =>
       http<{ data: AiProviderSettings }>('/api/ai/provider-settings'),
-    updateProviderSettings: (mode: string) =>
-      http<{ message: string; mode: string }>('/api/ai/provider-settings', {
+    updateProviderSettings: (updates: { mode?: string; gemini_model?: string }) =>
+      http<{ message: string; mode?: string; gemini_model?: string }>('/api/ai/provider-settings', {
         method: 'PUT',
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify(updates),
       }),
     providerStats: () =>
       http<{ data: AiProviderStats }>('/api/ai/provider-stats'),
@@ -1106,9 +1106,11 @@ export type AiMessage = {
 export type AiProviderSettings = {
   id: string;
   mode: string;
+  gemini_model: string;
   updated_at: string;
   openai_configured: boolean;
   gemini_configured: boolean;
+  valid_gemini_models: string[];
 };
 
 export type AiProviderStatEntry = {

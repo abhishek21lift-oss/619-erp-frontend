@@ -412,12 +412,22 @@ function StaticCard({ integration, isConnected, connectedAt, onConfigure, onTogg
   );
 }
 
+// ── Gemini model catalogue shown in the model selector ────────────────────────
+const GEMINI_MODEL_META: Record<string, { label: string; badge?: string; badgeColor?: string }> = {
+  'gemini-2.5-flash-preview-05-20': { label: 'Gemini 2.5 Flash',     badge: 'Preview',     badgeColor: '#f59e0b' },
+  'gemini-2.0-flash':               { label: 'Gemini 2.0 Flash',     badge: 'Recommended', badgeColor: '#10a37f' },
+  'gemini-2.0-flash-lite':          { label: 'Gemini 2.0 Flash Lite',badge: 'Fastest',     badgeColor: '#3b82f6' },
+  'gemini-1.5-flash':               { label: 'Gemini 1.5 Flash' },
+  'gemini-1.5-pro-latest':          { label: 'Gemini 1.5 Pro' },
+};
+
 // ── Gemini Integration Card ───────────────────────────────────────────────────
 function GeminiCard() {
-  const [settings, setSettings] = useState<AiProviderSettings | null>(null);
-  const [stats,    setStats]    = useState<AiProviderStats | null>(null);
-  const [testing,  setTesting]  = useState(false);
-  const [testMsg,  setTestMsg]  = useState<{ success: boolean; message: string } | null>(null);
+  const [settings,      setSettings]     = useState<AiProviderSettings | null>(null);
+  const [stats,         setStats]        = useState<AiProviderStats | null>(null);
+  const [testing,       setTesting]      = useState(false);
+  const [testMsg,       setTestMsg]      = useState<{ success: boolean; message: string } | null>(null);
+  const [savingModel,   setSavingModel]  = useState(false);
 
   const load = () => {
     api.ai.providerSettings().then(r => setSettings(r.data)).catch(() => {});
@@ -434,14 +444,28 @@ function GeminiCard() {
     finally { setTesting(false); }
   };
 
-  const isConnected = settings?.gemini_configured ?? false;
-  const gemStat = stats?.gemini;
+  const handleModelChange = async (gemini_model: string) => {
+    if (!settings || gemini_model === settings.gemini_model) return;
+    setSavingModel(true);
+    try {
+      await api.ai.updateProviderSettings({ gemini_model });
+      setSettings(s => s ? { ...s, gemini_model } : s);
+      setTestMsg(null); // clear previous test result — model changed
+    } catch { /* silently ignore */ }
+    finally { setSavingModel(false); }
+  };
+
+  const isConnected  = settings?.gemini_configured ?? false;
+  const activeModel  = settings?.gemini_model || 'gemini-2.0-flash';
+  const modelList    = settings?.valid_gemini_models ?? Object.keys(GEMINI_MODEL_META);
+  const gemStat      = stats?.gemini;
 
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
       whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
       style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
     >
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
         <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0ff', color: '#4f6ef7' }}>
           <Sparkles size={20} />
@@ -455,18 +479,49 @@ function GeminiCard() {
             }
           </div>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
-            Gemini 1.5 Pro · AI fallback & secondary provider
+            AI fallback &amp; secondary provider
           </p>
         </div>
       </div>
 
+      {/* API key status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: isConnected ? '#10a37f' : '#ef4444' }}>
           {isConnected ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-          {isConnected ? 'API key loaded from environment' : 'Set GEMINI_API_KEY in environment'}
+          {isConnected ? 'GEMINI_API_KEY loaded' : 'Set GEMINI_API_KEY in environment'}
         </span>
       </div>
 
+      {/* Model selector */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+          Model
+          {savingModel && <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex', color: 'var(--text-muted)' }}><Loader2 size={11} /></motion.span>}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {modelList.map(mid => {
+            const meta   = GEMINI_MODEL_META[mid] || { label: mid };
+            const active = activeModel === mid;
+            return (
+              <button key={mid} onClick={() => handleModelChange(mid)} disabled={savingModel}
+                style={{ padding: '8px 12px', borderRadius: 10, textAlign: 'left', cursor: savingModel ? 'not-allowed' : 'pointer', border: `1px solid ${active ? 'rgba(79,110,247,0.45)' : 'var(--border)'}`, background: active ? 'rgba(79,110,247,0.08)' : 'var(--bg-subtle)', transition: 'all 0.18s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+              >
+                <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? '#4f6ef7' : 'var(--text-primary)' }}>{meta.label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {meta.badge && (
+                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', padding: '2px 6px', borderRadius: 6, background: `${meta.badgeColor || '#6b7280'}20`, color: meta.badgeColor || 'var(--text-muted)', border: `1px solid ${meta.badgeColor || '#6b7280'}30` }}>
+                      {meta.badge}
+                    </span>
+                  )}
+                  {active && <CheckCircle2 size={13} color="#4f6ef7" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Usage stats */}
       {gemStat && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           {[
@@ -482,19 +537,21 @@ function GeminiCard() {
         </div>
       )}
 
+      {/* Test result banner */}
       {testMsg && (
         <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: testMsg.success ? 'rgba(16,163,127,0.1)' : 'rgba(239,68,68,0.1)', color: testMsg.success ? '#10a37f' : '#ef4444', border: `1px solid ${testMsg.success ? 'rgba(16,163,127,0.25)' : 'rgba(239,68,68,0.2)'}` }}>
           {testMsg.message}
         </div>
       )}
 
+      {/* Test button */}
       <button
         onClick={handleTest}
         disabled={testing || !isConnected}
         style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (testing || !isConnected) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: isConnected ? 'linear-gradient(135deg,#4f6ef7,#7c3aed)' : 'var(--bg-subtle)', color: isConnected ? '#ffffff' : 'var(--text-disabled)', boxShadow: isConnected ? '0 4px 12px rgba(79,110,247,0.3)' : 'none', opacity: (!isConnected || testing) ? 0.7 : 1 }}
       >
         {testing
-          ? <><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> Testing…</>
+          ? <><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> Testing {GEMINI_MODEL_META[activeModel]?.label ?? activeModel}…</>
           : <><Sparkles size={13} /> Test Connection</>
         }
       </button>
@@ -523,7 +580,7 @@ function AiProviderModeCard() {
     if (!settings || mode === settings.mode) return;
     setSaving(true);
     try {
-      await api.ai.updateProviderSettings(mode);
+      await api.ai.updateProviderSettings({ mode });
       setSettings(s => s ? { ...s, mode } : s);
     } catch { /* silently ignore */ }
     finally { setSaving(false); }
