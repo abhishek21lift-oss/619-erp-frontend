@@ -103,7 +103,7 @@ export default function TopNav() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.96 }}
                   transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className="absolute left-0 top-full mt-1.5 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-[0_12px_40px_rgba(0,0,0,0.1)]"
+                  className="absolute left-0 top-full mt-1.5 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(0,0,0,0.1)]"
                   style={{ borderTop: `2px solid ${color}` }}
                 >
                   <div className="py-1">

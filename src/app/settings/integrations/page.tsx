@@ -37,7 +37,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   CreditCard, Smartphone, MessageSquare, Send, Bot, Calendar, Camera, BarChart3,
 };
 
-const glass = { background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' };
+const glass = { background: 'var(--bg-card)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' };
 
 const catColor: Record<string, string> = {
   payments: '#f59e0b',
@@ -78,15 +78,15 @@ function ConnectModal({ integration, onClose, onDisconnect }: { integration: Int
             {Icon && <Icon size={20} />}
           </div>
           <div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#ffffff' }}>{integration.name}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{integration.description}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>{integration.name}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{integration.description}</div>
           </div>
-          <button onClick={onClose} style={{ marginLeft: 'auto', width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'rgba(255,255,255,0.08)', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}><X size={16} /></button>
+          <button onClick={onClose} style={{ marginLeft: 'auto', width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'var(--bg-subtle)', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={16} /></button>
         </div>
         <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 6, display: 'block' }}>API Key / Webhook URL</label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'block' }}>API Key / Webhook URL</label>
           <input value={apiKey} onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }} placeholder="Paste your API key or webhook URL..."
-            style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: `1px solid ${testResult === 'error' ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.1)'}`, fontSize: 13, outline: 'none', color: '#ffffff', background: 'rgba(15,23,42,0.6)', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: `1px solid ${testResult === 'error' ? 'rgba(239,68,68,0.4)' : 'var(--border)'}`, fontSize: 13, outline: 'none', color: 'var(--text-primary)', background: 'var(--bg-canvas)', boxSizing: 'border-box' }}
           />
         </div>
         <button onClick={testConnection} disabled={testing}
@@ -162,11 +162,11 @@ export default function IntegrationsPage() {
               display: 'flex', alignItems: 'center', gap: 12, ...glass,
               borderRadius: 14, padding: '4px 16px', marginBottom: 16,
             }}>
-              <Search size={16} color="rgba(255,255,255,0.3)" />
+              <Search size={16} className="text-[var(--text-muted)]" />
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search integrations..."
-                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, padding: '12px 0', color: '#ffffff', background: 'transparent' }}
+                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, padding: '12px 0', color: 'var(--text-primary)', background: 'transparent' }}
               />
-              {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 0 }}><X size={14} /></button>}
+              {search && <button onClick={() => setSearch('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}><X size={14} /></button>}
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {CATEGORIES.map((cat) => (
@@ -174,8 +174,8 @@ export default function IntegrationsPage() {
                   style={{
                     padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 600,
                     border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-                    background: category === cat.id ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'rgba(255,255,255,0.06)',
-                    color: category === cat.id ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                    background: category === cat.id ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'var(--bg-subtle)',
+                    color: category === cat.id ? '#ffffff' : 'var(--text-secondary)',
                     boxShadow: category === cat.id ? '0 4px 12px rgba(245,158,11,0.3)' : 'none',
                   }}
                 >
@@ -191,7 +191,7 @@ export default function IntegrationsPage() {
               {filtered.map((integration) => {
                 const isConnected = connected.has(integration.id);
                 const status = isConnected ? 'connected' : integration.status;
-                const sc: Record<Status, string> = { connected: '#10b981', error: '#ef4444', pending: '#f59e0b', unavailable: 'rgba(255,255,255,0.3)' };
+                const sc: Record<Status, string> = { connected: '#10b981', error: '#ef4444', pending: '#f59e0b', unavailable: 'var(--text-disabled)' };
                 const sl: Record<Status, string> = { connected: 'Connected', error: 'Error', pending: 'Pending', unavailable: 'Unavailable' };
                 const Icon = iconMap[integration.icon];
                 const catAccent = catColor[integration.category] || '#f59e0b';
@@ -210,10 +210,10 @@ export default function IntegrationsPage() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: '#ffffff' }}>{integration.name}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{integration.name}</span>
                           {integration.comingSoon && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}>Coming Soon</span>}
                         </div>
-                        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '4px 0 0', lineHeight: 1.4 }}>{integration.description}</p>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>{integration.description}</p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -221,19 +221,19 @@ export default function IntegrationsPage() {
                         {isConnected ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: sc[status], display: 'inline-block', boxShadow: `0 0 8px ${sc[status]}` }} />}
                         {sl[status]}
                       </span>
-                      {isConnected && integration.connectedAt && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Connected {integration.connectedAt}</span>}
+                      {isConnected && integration.connectedAt && <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>Connected {integration.connectedAt}</span>}
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                       {integration.comingSoon ? (
-                        <div style={{ flex: 1, padding: '8px 0', borderRadius: 12, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)', fontSize: 12, fontWeight: 600, textAlign: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ flex: 1, padding: '8px 0', borderRadius: 12, background: 'var(--bg-subtle)', color: 'var(--text-disabled)', fontSize: 12, fontWeight: 600, textAlign: 'center', border: '1px solid var(--border)' }}>
                           <Clock size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} /> Coming Soon
                         </div>
                       ) : isConnected ? (
                         <>
-                          <button onClick={() => setModalId(integration.id)} style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', color: '#ffffff' }}>
+                          <button onClick={() => setModalId(integration.id)} style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'var(--bg-subtle)', color: 'var(--text-primary)' }}>
                             <Settings size={13} /> Configure
                           </button>
-                          <button onClick={() => toggleIntegration(integration.id)} style={{ padding: '8px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.2)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}><Unlink size={13} /></button>
+                          <button onClick={() => toggleIntegration(integration.id)} style={{ padding: '8px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}><Unlink size={13} /></button>
                         </>
                       ) : (
                         <button onClick={() => setModalId(integration.id)} style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#ffffff', boxShadow: '0 4px 12px rgba(245,158,11,0.3)' }}>
@@ -250,11 +250,11 @@ export default function IntegrationsPage() {
           {filtered.length === 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ textAlign: 'center', padding: '60px 20px', ...glass, borderRadius: 20, marginTop: 16 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <Search size={24} color="rgba(255,255,255,0.3)" />
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Search size={24} color="var(--text-muted)" />
               </div>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', margin: '0 0 4px' }}>No integrations found</p>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0 }}>Try a different category or search term.</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>No integrations found</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Try a different category or search term.</p>
             </motion.div>
           )}
 
