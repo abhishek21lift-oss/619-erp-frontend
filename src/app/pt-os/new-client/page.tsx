@@ -649,7 +649,6 @@ function NewClientWizard() {
                                       planId: selected.id,
                                       plan: selected.name,
                                       basePrice: selected.base_amount,
-                                      sellingPrice: selected.base_amount,
                                       endDate: ed,
                                     };
                                   });

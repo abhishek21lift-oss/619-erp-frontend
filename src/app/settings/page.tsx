@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useId } from 'react';
+import React, { useState, useMemo, useId, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -30,11 +30,6 @@ interface Account {
   avatar: string | null;
   mfa: boolean;
 }
-
-/* ────────────────────────────────────────────────────────────────────
-   DEMO DATA
-──────────────────────────────────────────────────────────────────── */
-const DEMO_ACCOUNTS: Account[] = [];
 
 const COACHES = ['Rahul Sharma', 'Priya Mehta', 'Amit Verma', 'Neha Gupta', 'Vikram Singh', 'Sneha Patel'];
 
@@ -796,11 +791,41 @@ function ChangePasswordPanel() {
    PAGE
 ──────────────────────────────────────────────────────────────────── */
 function AccountManagementPage() {
-  const [accounts, setAccounts] = useState<Account[]>(DEMO_ACCOUNTS);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [accountsError, setAccountsError] = useState('');
   const [tab, setTab] = useState<'accounts' | 'password'>('accounts');
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState<Role | 'all'>('all');
   const [filterOpen, setFilterOpen] = useState(false);
+
+  const fetchAccounts = useCallback(async () => {
+    setAccountsLoading(true);
+    setAccountsError('');
+    try {
+      const res = await api.accounts.list();
+      const raw = Array.isArray(res) ? res : Array.isArray((res as any)?.data) ? (res as any).data : (res as any)?.users ?? [];
+      const mapped: Account[] = raw.map((u: any) => ({
+        id: u.id ?? u.user_id,
+        name: u.name ?? '',
+        email: u.email ?? '',
+        role: (u.role === 'trainer' ? 'coach' : u.role === 'reception' ? 'receptionist' : u.role || 'receptionist') as Role,
+        status: (u.status || u.is_active === false ? 'suspended' : 'active') as Status,
+        linkedCoach: u.linked_coach || undefined,
+        lastLogin: u.last_login || 'Never',
+        avatar: u.avatar_url ?? null,
+        mfa: !!u.mfa_enabled,
+      }));
+      setAccounts(mapped);
+    } catch (err: unknown) {
+      setAccountsError(err instanceof Error ? err.message : 'Failed to load accounts');
+      setAccounts([]);
+    } finally {
+      setAccountsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAccounts(); }, [fetchAccounts]);
 
   const filtered = useMemo(() => {
     return accounts
@@ -819,18 +844,23 @@ function AccountManagementPage() {
     pending: accounts.filter((a) => a.status === 'pending').length,
   }), [accounts]);
 
-  const handleAction = (id: string, action: string) => {
+  const handleAction = async (id: string, action: string) => {
     if (action === 'delete') {
-      setAccounts((prev) => prev.filter((a) => a.id !== id));
+      try {
+        await api.accounts.delete(id);
+        setAccounts((prev) => prev.filter((a) => a.id !== id));
+      } catch { alert('Failed to delete account'); }
     } else if (action === 'toggle') {
-      setAccounts((prev) => prev.map((a) =>
-        a.id === id
-          ? { ...a, status: a.status === 'active' ? 'suspended' : 'active' }
-          : a,
-      ));
+      try {
+        const res = await api.accounts.toggleStatus(id);
+        const active = (res as any)?.is_active ?? false;
+        setAccounts((prev) => prev.map((a) =>
+          a.id === id ? { ...a, status: active ? 'active' : 'suspended' } : a,
+        ));
+      } catch { alert('Failed to toggle status'); }
     } else if (action === 'copy') {
       const account = accounts.find((a) => a.id === id);
-      if (account) navigator.clipboard?.writeText(account.email).catch((_err) => console.warn('[settings] clipboard write failed', _err));
+      if (account) navigator.clipboard?.writeText(account.email).catch(() => {});
     }
   };
 
@@ -986,15 +1016,40 @@ function AccountManagementPage() {
                 {/* Account count */}
                 <div className="flex items-center justify-between">
                   <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>
-                    {filtered.length} {filtered.length === 1 ? 'account' : 'accounts'}
-                    {filterRole !== 'all' && ` · ${ROLES[filterRole].label}`}
+                    {accountsLoading ? 'Loading…' : `${filtered.length} ${filtered.length === 1 ? 'account' : 'accounts'}`}
+                    {!accountsLoading && filterRole !== 'all' && ` · ${ROLES[filterRole].label}`}
                   </p>
+                  {!accountsLoading && (
+                    <button onClick={fetchAccounts}
+                      className="flex items-center gap-1 rounded-[9px] px-2.5 py-1.5 text-[11px] font-[600] transition-all hover:shadow-sm"
+                      style={{ background: 'rgba(15,23,42,0.03)', border: '1px solid rgba(15,23,42,0.06)', color: 'rgb(71,85,105)' }}>
+                      <RefreshCw size={11} /> Refresh
+                    </button>
+                  )}
                 </div>
 
                 {/* Cards */}
                 <div className="flex flex-col gap-2.5">
                   <AnimatePresence>
-                    {filtered.length === 0
+                    {accountsLoading ? (
+                      <div className="flex items-center justify-center py-16">
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          className="h-8 w-8 rounded-full"
+                          style={{ border: '2.5px solid rgba(99,102,241,0.15)', borderTopColor: '#6366f1' }} />
+                      </div>
+                    ) : accountsError ? (
+                      <div className="flex flex-col items-center py-16 text-center">
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[16px]" style={{ background: 'rgba(239,68,68,0.10)' }}>
+                          <AlertTriangle size={20} style={{ color: '#ef4444' }} />
+                        </div>
+                        <p className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>{accountsError}</p>
+                        <button onClick={fetchAccounts}
+                          className="mt-3 flex items-center gap-2 rounded-[11px] px-4 py-2 text-[12px] font-[700] text-white"
+                          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                          <RefreshCw size={12} /> Retry
+                        </button>
+                      </div>
+                    ) : filtered.length === 0
                       ? <EmptyAccounts onAdd={() => setTab('accounts')} />
                       : filtered.map((a) => (
                           <AccountCard key={a.id} account={a} onAction={handleAction} />

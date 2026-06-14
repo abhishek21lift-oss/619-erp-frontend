@@ -55,6 +55,8 @@ const fmtDate = (d?: string) => {
 
 function StatusBadge({ status, days_left }: { status: string; days_left: number | null }) {
   const s = (() => {
+    if (status === 'active' && days_left !== null && days_left <= 0)
+      return { label: 'Expired', bg: '#f43f5e18', fg: '#f43f5e' };
     if (status === 'active' && days_left !== null && days_left <= 7)
       return { label: 'Expiring', bg: '#dc262618', fg: '#dc2626' };
     if (status === 'active') return { label: 'Active', bg: '#10b98118', fg: '#10b981' };
@@ -120,17 +122,19 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [editNotes, setEditNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [totalEarnedCommission, setTotalEarnedCommission] = useState(0);
+const [plans, setPlans] = useState<{ id: string; name: string; base_amount: number; duration_months: number }[]>([]);
 
   const fetch = async () => {
     try {
       setLoading(true);
       setError('');
-      const [clientRes, checkinsRes, assessmentsRes, goalsRes, paymentsRes] = await Promise.all([
+      const [clientRes, checkinsRes, assessmentsRes, goalsRes, paymentsRes, plansRes] = await Promise.all([
         api.pt.client(id),
         api.progress.weeklyCheckins.list({ client_id: id, limit: 5 }),
         api.progress.assessments.list({ client_id: id, limit: 10 }),
         api.progress.goals.list({ client_id: id }),
         api.pt.payments({ client_id: id }),
+        api.pt.plans.list(),
       ]);
       const c = (clientRes as any)?.data ?? null;
       setClient(c);
@@ -147,6 +151,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
       const goals = Array.isArray((goalsRes as any)?.data) ? (goalsRes as any).data : [];
       setActiveGoals(goals.filter((g: any) => g.status === 'active'));
+
+      const plansData = Array.isArray((plansRes as any)?.data) ? (plansRes as any).data : [];
+      setPlans(plansData.map((p: any) => ({ id: p.id, name: p.name, base_amount: p.base_amount, duration_months: p.duration_months })));
 
       const rawPayments = Array.isArray((paymentsRes as any)?.data) ? (paymentsRes as any).data : [];
 
@@ -233,23 +240,26 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
   useEffect(() => { fetch(); }, [id]);
 
-  const [renewData, setRenewData] = useState({ baseAmount: '', sellingPrice: '', durationMonths: '', startDate: '' });
+  const [renewData, setRenewData] = useState({ planId: '', baseAmount: '', sellingPrice: '', startDate: '' });
   const openRenew = () => {
     setRenewData({
+      planId: '',
       baseAmount: String(client?.base_amount ?? ''),
       sellingPrice: String(client?.monthly_pt_amount ?? ''),
-      durationMonths: '', startDate: ''
+      startDate: ''
     });
     setRenewOpen(true);
   };
   const handleRenew = async () => {
-    if (!renewData.durationMonths || !renewData.startDate) return;
+    const plan = plans.find(p => p.id === renewData.planId);
+    const durMonths = plan?.duration_months ?? 0;
+    if (!renewData.startDate || durMonths === 0) return;
     setSaving(true);
     try {
       await api.clients.renewPt(id, {
         base_amount: Number(renewData.baseAmount || (client?.base_amount ?? 0)),
         monthly_pt_amount: Number(renewData.sellingPrice || (client?.monthly_pt_amount ?? 0)),
-        duration_months: Number(renewData.durationMonths),
+        duration_months: durMonths,
         pt_start_date: renewData.startDate,
       });
       setRenewOpen(false);
@@ -687,14 +697,49 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         </button>
                       </div>
                       <div className="space-y-4">
+                        {/* Plan Selector */}
+                        <div>
+                          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Plan</p>
+                          <select
+                            value={renewData.planId}
+                            onChange={(e) => {
+                              const selected = plans.find(p => p.id === e.target.value);
+                              if (selected) {
+                                setRenewData(p => ({
+                                  ...p,
+                                  planId: selected.id,
+                                  baseAmount: String(selected.base_amount),
+                                }));
+                              } else {
+                                setRenewData(p => ({ ...p, planId: '', baseAmount: String(client?.base_amount ?? '') }));
+                              }
+                            }}
+                            className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500] outline-none transition-all appearance-none cursor-pointer"
+                            style={{
+                              background: 'var(--bg-subtle)',
+                              border: '1.5px solid rgba(15,23,42,0.09)',
+                              color: renewData.planId ? 'rgb(15,23,42)' : 'rgb(148,163,184)',
+                            }}>
+                            <option value="">Select a plan…</option>
+                            {plans.map(p => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <FloatInput label="Base Amount (₹)" type="number" value={renewData.baseAmount} onChange={(v) => setRenewData(p => ({ ...p, baseAmount: v }))} />
                         <FloatInput label="Monthly PT Fee (₹)" type="number" value={renewData.sellingPrice} onChange={(v) => setRenewData(p => ({ ...p, sellingPrice: v }))} />
-                        <FloatInput label="Duration (months) *" type="number" value={renewData.durationMonths} onChange={(v) => setRenewData(p => ({ ...p, durationMonths: v }))} />
                         <FloatInput label="Start Date *" type="date" value={renewData.startDate} onChange={(v) => setRenewData(p => ({ ...p, startDate: v }))} />
+                        {renewData.planId && (
+                          <p className="text-[11px] font-[500]" style={{ color: 'rgb(148,163,184)' }}>
+                            Duration: {plans.find(p => p.id === renewData.planId)?.duration_months ?? '—'} months <span style={{ color: '#10b981' }}>(from plan)</span>
+                          </p>
+                        )}
                       </div>
                       <div className="mt-6 flex gap-3 justify-end">
                         <PremiumButton tone="secondary" onClick={() => setRenewOpen(false)}>Cancel</PremiumButton>
-                        <PremiumButton tone="success" glow onClick={handleRenew} loading={saving} disabled={!renewData.durationMonths || !renewData.startDate}>
+                        <PremiumButton tone="success" glow onClick={handleRenew} loading={saving} disabled={!renewData.planId || !renewData.startDate}>
                           <CheckCircle size={13} /> Renew
                         </PremiumButton>
                       </div>

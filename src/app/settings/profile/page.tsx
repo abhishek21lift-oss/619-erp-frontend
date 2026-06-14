@@ -51,28 +51,19 @@ interface Session {
 }
 
 /* ─────────────────────────────────────────
-   DEMO DATA
+   ACTIVITY ICON MAP
 ───────────────────────────────────────── */
-const ACTIVITY: ActivityItem[] = [
-  { id: 'a1', action: 'Login successful', detail: 'Chrome on Windows · Delhi, IN', timestamp: '2 min ago', icon: <LogOut size={11} />, color: '#10b981', bgColor: 'rgba(16,185,129,0.12)' },
-  { id: 'a2', action: 'Settings updated', detail: 'Studio branding preferences changed', timestamp: '1 hr ago', icon: <Settings size={11} />, color: '#6366f1', bgColor: 'rgba(99,102,241,0.12)' },
-  { id: 'a3', action: 'Member created', detail: 'Added new member: Arjun Mehta', timestamp: '3 hrs ago', icon: <User size={11} />, color: '#0ea5e9', bgColor: 'rgba(14,165,233,0.12)' },
-  { id: 'a4', action: 'Password changed', detail: 'Account password was updated securely', timestamp: '2 days ago', icon: <Key size={11} />, color: '#f59e0b', bgColor: 'rgba(245,158,11,0.12)' },
-  { id: 'a5', action: '2FA enabled', detail: 'Two-factor auth via Authenticator', timestamp: '5 days ago', icon: <Shield size={11} />, color: '#8b5cf6', bgColor: 'rgba(139,92,246,0.12)' },
-  { id: 'a6', action: 'New device', detail: 'iPhone 15 Pro added to trusted devices', timestamp: '1 week ago', icon: <Smartphone size={11} />, color: '#06b6d4', bgColor: 'rgba(6,182,212,0.12)' },
-];
-
-const DEVICES: Device[] = [
-  { id: 'd1', name: 'Windows PC', type: 'Desktop', browser: 'Chrome 124', ip: '103.95.42.18', location: 'Delhi, IN', lastActive: 'Now', current: true, trusted: true },
-  { id: 'd2', name: 'iPhone 15 Pro', type: 'Mobile', browser: 'Safari 17', ip: '103.95.42.18', location: 'Delhi, IN', lastActive: '2 hrs ago', current: false, trusted: true },
-  { id: 'd3', name: 'MacBook Air', type: 'Laptop', browser: 'Chrome 123', ip: '203.95.42.10', location: 'Mumbai, IN', lastActive: 'Yesterday', current: false, trusted: false },
-];
-
-const SESSIONS: Session[] = [
-  { id: 's1', device: 'Windows PC · Chrome', browser: 'Chrome 124', ip: '103.95.42.18', loginTime: '09:42 AM', expiresIn: 'Active', active: true, risk: 'low' },
-  { id: 's2', device: 'iPhone 15 Pro · Safari', browser: 'Safari 17', ip: '103.95.42.18', loginTime: '07:30 AM', expiresIn: '2 hrs', active: true, risk: 'low' },
-  { id: 's3', device: 'MacBook Air · Chrome', browser: 'Chrome 123', ip: '203.95.42.10', loginTime: 'Yesterday', expiresIn: 'Expired', active: false, risk: 'medium' },
-];
+function activityIcon(type: string): { icon: React.ReactNode; color: string; bgColor: string } {
+  const map: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
+    login:     { icon: <LogOut size={11} />,       color: '#10b981', bgColor: 'rgba(16,185,129,0.12)' },
+    settings:  { icon: <Settings size={11} />,     color: '#6366f1', bgColor: 'rgba(99,102,241,0.12)' },
+    member:    { icon: <User size={11} />,          color: '#0ea5e9', bgColor: 'rgba(14,165,233,0.12)' },
+    password:  { icon: <Key size={11} />,           color: '#f59e0b', bgColor: 'rgba(245,158,11,0.12)' },
+    '2fa':     { icon: <Shield size={11} />,        color: '#8b5cf6', bgColor: 'rgba(139,92,246,0.12)' },
+    device:    { icon: <Smartphone size={11} />,    color: '#06b6d4', bgColor: 'rgba(6,182,212,0.12)' },
+  };
+  return map[type] ?? { icon: <Activity size={11} />, color: '#6366f1', bgColor: 'rgba(99,102,241,0.12)' };
+}
 
 /* ─────────────────────────────────────────
    HELPERS
@@ -449,6 +440,12 @@ export default function ProfilePage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
 
+  /* Activity / Devices / Sessions */
+  const [activityItems, setActivityItems] = useState<ActivityItem[]>([]);
+  const [deviceItems, setDeviceItems] = useState<Device[]>([]);
+  const [sessionItems, setSessionItems] = useState<Session[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -529,7 +526,66 @@ export default function ProfilePage() {
       .finally(() => setPageLoading(false));
   }, []);
 
-  useEffect(() => { loadProfile(); }, [loadProfile]);
+  const fetchActivity = useCallback(async () => {
+    setActivityLoading(true);
+    try {
+      const [act, dev, sess] = await Promise.all([
+        api.activity.list({ limit: 6 }) as Promise<unknown[]>,
+        api.activity.devices() as Promise<unknown[]>,
+        api.activity.sessions() as Promise<unknown[]>,
+      ]);
+      const rawAct = Array.isArray(act) ? act : Array.isArray((act as any)?.data) ? (act as any).data : [];
+      const rawDev = Array.isArray(dev) ? dev : Array.isArray((dev as any)?.data) ? (dev as any).data : [];
+      const rawSess = Array.isArray(sess) ? sess : Array.isArray((sess as any)?.data) ? (sess as any).data : [];
+
+      const mappedAct: ActivityItem[] = rawAct.map((a: any, i: number) => {
+        const ico = activityIcon(a.type || '');
+        return {
+          id: a.id ?? `act-${i}`,
+          action: a.action || a.type || 'Event',
+          detail: a.detail || a.description || '',
+          timestamp: a.timestamp || a.created_at || '—',
+          icon: ico.icon,
+          color: ico.color,
+          bgColor: ico.bgColor,
+        };
+      });
+      setActivityItems(mappedAct);
+
+      const mappedDev: Device[] = rawDev.map((d: any) => ({
+        id: d.id,
+        name: d.name || d.device_name || 'Unknown',
+        type: (d.type === 'Desktop' || d.type === 'Mobile' || d.type === 'Laptop' ? d.type : 'Laptop') as 'Desktop' | 'Mobile' | 'Laptop',
+        browser: d.browser || d.user_agent?.split('/')[0] || '—',
+        ip: d.ip || d.ip_address || '—',
+        location: d.location || d.city ? `${d.city ?? ''}, ${d.country ?? ''}` : '—',
+        lastActive: d.last_active || d.last_seen || '—',
+        current: !!d.is_current,
+        trusted: !!d.is_trusted,
+      }));
+      setDeviceItems(mappedDev);
+
+      const mappedSess: Session[] = rawSess.map((s: any) => ({
+        id: s.id,
+        device: s.device || s.device_name || '—',
+        browser: s.browser || '—',
+        ip: s.ip || s.ip_address || '—',
+        loginTime: s.login_time || s.created_at || '—',
+        expiresIn: s.is_active ? (s.expires_in || 'Active') : 'Expired',
+        active: !!s.is_active,
+        risk: (s.risk === 'low' || s.risk === 'medium' || s.risk === 'high' ? s.risk : 'low') as 'low' | 'medium' | 'high',
+      }));
+      setSessionItems(mappedSess);
+    } catch {
+      setActivityItems([]);
+      setDeviceItems([]);
+      setSessionItems([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadProfile(); fetchActivity(); }, [loadProfile, fetchActivity]);
 
   /* Save profile */
   const handleSave = async () => {
@@ -834,7 +890,7 @@ export default function ProfilePage() {
                           style={{ background: 'linear-gradient(to bottom, rgba(99,102,241,0.3), rgba(99,102,241,0.05))' }}
                         />
                         <div className="flex flex-col gap-4">
-                          {ACTIVITY.map((item, i) => (
+                          {activityItems.map((item, i) => (
                             <motion.div
                               key={item.id}
                               initial={{ opacity: 0, x: -8 }}
@@ -872,7 +928,7 @@ export default function ProfilePage() {
                         subtitle="All devices with access to your account"
                       />
                       <div className="flex flex-col gap-3">
-                        {DEVICES.map(device => (
+                        {deviceItems.map(device => (
                           <motion.div
                             key={device.id}
                             whileHover={{ x: 2 }}
@@ -947,7 +1003,7 @@ export default function ProfilePage() {
                         subtitle="Active and recent sessions"
                       />
                       <div className="flex flex-col gap-2.5">
-                        {SESSIONS.map(session => (
+                        {sessionItems.map(session => (
                           <div
                             key={session.id}
                             className="flex items-center gap-3 rounded-2xl p-4"

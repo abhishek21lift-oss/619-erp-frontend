@@ -73,11 +73,9 @@ function fmtINR(n: number | string | null | undefined) {
   return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
 
-function MiniSparkline({ color }: { color: string }) {
-  const bars = useMemo(() =>
-    Array.from({ length: 12 }, () => Math.random() * 100),
-  []);
-  const max = Math.max(...bars, 1);
+function MiniSparkline({ color, data = [] }: { color: string; data?: number[] }) {
+  const max = Math.max(...data, 1);
+  const bars = data.length > 0 ? data : [0];
   return (
     <div className="flex items-end gap-[2px] h-8 mt-3">
       {bars.map((v, i) => (
@@ -94,9 +92,9 @@ function MiniSparkline({ color }: { color: string }) {
   );
 }
 
-function KpiCard({ icon, label, value, sub, color, delay = 0, href }: {
+function KpiCard({ icon, label, value, sub, color, delay = 0, href, trend }: {
   icon: React.ReactNode; label: string; value: string;
-  sub?: string; color: string; delay?: number; href?: string;
+  sub?: string; color: string; delay?: number; href?: string; trend?: number[];
 }) {
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
@@ -151,7 +149,7 @@ function KpiCard({ icon, label, value, sub, color, delay = 0, href }: {
         </div>
       </div>
       <div className="relative z-10">
-        <MiniSparkline color={color} />
+        <MiniSparkline color={color} data={trend} />
       </div>
       <div
         className="absolute bottom-0 left-0 h-[3px] w-full rounded-full"
@@ -550,6 +548,7 @@ export default function PtOsDashboard() {
             color="#7c3aed"
             delay={0}
             href="/pt-os/clients"
+            trend={d?.revenueTrend?.map(x => Number(x.revenue)) ?? []}
           />
           <KpiCard
             icon={<TrendingUp size={16} />}
@@ -558,6 +557,7 @@ export default function PtOsDashboard() {
             color="#10b981"
             delay={0.05}
             href="/pt-os/reports"
+            trend={d?.revenueTrend?.map(x => Number(x.revenue)) ?? []}
           />
           <KpiCard
             icon={<Percent size={16} />}
@@ -566,6 +566,7 @@ export default function PtOsDashboard() {
             color="#dc2626"
             delay={0.1}
             href="/pt-os/commissions"
+            trend={d?.revenueTrend?.map(x => Number(x.incentives)) ?? []}
           />
           <KpiCard
             icon={<Wallet size={16} />}
@@ -575,6 +576,7 @@ export default function PtOsDashboard() {
             color="#f59e0b"
             delay={0.15}
             href="/pt-os/balance-sheet"
+            trend={d?.revenueTrend?.map(x => Number(x.revenue)) ?? []}
           />
           <KpiCard
             icon={<FileText size={16} />}
@@ -585,6 +587,7 @@ export default function PtOsDashboard() {
             color="#8b5cf6"
             delay={0.2}
             href="/pt-os/commissions"
+            trend={d?.revenueTrend?.map(x => Math.round((Number(x.incentives) / Math.max(Number(x.revenue), 1)) * 100)) ?? []}
           />
           <KpiCard
             icon={<Shield size={16} />}
@@ -593,6 +596,7 @@ export default function PtOsDashboard() {
             color={d?.total_monthly_commission && d.total_monthly_commission > 0 ? '#dc2626' : '#10b981'}
             delay={0.25}
             href="/pt-os/commissions"
+            trend={d?.revenueTrend?.map(x => Number(x.revenue)) ?? []}
           />
         </div>
 

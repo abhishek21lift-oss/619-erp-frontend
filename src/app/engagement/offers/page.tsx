@@ -1,19 +1,13 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users } from 'lucide-react';
-import { uuid } from '@/lib/uuid';
+import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loader2 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 interface Offer { id:string; name:string; type:'percent'|'flat'|'free'; value:number; code:string; plan:string; validFrom:string; validUntil:string; usageLimit:number; used:number; status:'active'|'expired'|'draft'; }
-
-const SAMPLE:Offer[] = [
-  {id:'1',name:'Summer Splash 30% Off',type:'percent',value:30,code:'SUMMER30',plan:'Quarterly Membership',validFrom:'2026-05-01',validUntil:'2026-05-31',usageLimit:50,used:12,status:'active'},
-  {id:'2',name:'Flat ₹1000 Off Annual',type:'flat',value:1000,code:'FLAT1K',plan:'Annual Membership',validFrom:'2026-05-01',validUntil:'2026-06-30',usageLimit:20,used:3,status:'active'},
-  {id:'3',name:'1 Month Free PT',type:'free',value:0,code:'FREEPT',plan:'PT Monthly',validFrom:'2026-04-01',validUntil:'2026-04-30',usageLimit:10,used:10,status:'expired'},
-  {id:'4',name:'Monsoon Special 25% Off',type:'percent',value:25,code:'MONSOON25',plan:'All Plans',validFrom:'2026-06-15',validUntil:'2026-07-15',usageLimit:100,used:0,status:'draft'},
-];
 
 const KPIS = [
   { label:'Total Offers', key:'total', color:'#8b5cf6', icon:<Tag size={18}/>, bg:'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(109,40,217,0.06))' },
@@ -35,22 +29,60 @@ export default function OffersPage() {
   return <Guard role="admin"><OffersContent/></Guard>;
 }
 function OffersContent() {
-  const [offers, setOffers] = useState(SAMPLE);
+  const toast = useToast();
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [tab, setTab] = useState<'all'|'active'|'expired'|'draft'>('all');
   const [form, setForm] = useState({name:'',type:'percent' as 'percent'|'flat'|'free',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50});
   const [copied, setCopied] = useState('');
 
+  async function load() {
+    setLoading(true); setError(null);
+    try {
+      const data = await api.offers.list() as Offer[];
+      setOffers(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load offers');
+    } finally { setLoading(false); }
+  }
+
+  async function addOffer(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const res = await api.offers.create(form as any) as { message?: string; offer: Offer };
+      const created = res?.offer;
+      if (created) {
+        setOffers(p => [...p, created]);
+        toast.success('Offer created');
+      } else {
+        load();
+      }
+      setForm({name:'',type:'percent',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50});
+      setShowForm(false);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to create offer');
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await api.offers.delete(id);
+      setOffers(p => p.filter(x => x.id !== id));
+      toast.success('Offer deleted');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete offer');
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  function genCode(){ const r=Math.random().toString(36).slice(2,8).toUpperCase(); setForm(f=>({...f,code:r})); }
+
   const visible = tab==='all' ? offers : offers.filter(o=>o.status===tab);
   const active=offers.filter(o=>o.status==='active').length;
   const totalUsed=offers.reduce((s,o)=>s+o.used,0);
-
-  function copyCode(code:string){ navigator.clipboard.writeText(code); setCopied(code); setTimeout(()=>setCopied(''),2000); }
-  function addOffer(e:React.FormEvent){ e.preventDefault();
-    setOffers(p=>[...p,{id:uuid(),...form,used:0,status:'draft'}]);
-    setForm({name:'',type:'percent',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50}); setShowForm(false);
-  }
-  function genCode(){ const r=Math.random().toString(36).slice(2,8).toUpperCase(); setForm(f=>({...f,code:r})); }
 
   const statusColor:{[k:string]:string} = {active:'#22c55e', expired:'#ef4444', draft:'#94a3b8'};
   const typeDisplay = (o:Offer) => o.type==='percent' ? <>{o.value}%</> : o.type==='flat' ? <>₹{o.value}</> : <Gift size={18} color="#a855f7"/>;
@@ -83,6 +115,12 @@ function OffersContent() {
           </div>
         </motion.div>
 
+        {error && (
+          <div style={{ borderRadius:14, padding:'14px 20px', marginBottom:22, background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#fca5a5', fontWeight:600, fontSize:13 }}>
+            {error}
+          </div>
+        )}
+
         <motion.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:28 }}>
           {KPIS.map((k,i)=>{
@@ -101,7 +139,7 @@ function OffersContent() {
                     <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'rgba(255,255,255,0.5)', marginLeft:6 }}>{k.label}</span>
                   </div>
                 </div>
-                <div style={{ fontSize:30, fontWeight:800, color:'#ffffff', lineHeight:1.2, letterSpacing:'-0.02em' }}>{vals[i]}</div>
+                <div style={{ fontSize:30, fontWeight:800, color:'#ffffff', lineHeight:1.2, letterSpacing:'-0.02em' }}>{loading ? '—' : vals[i]}</div>
               </motion.div>
             );
           })}
@@ -174,75 +212,88 @@ function OffersContent() {
           </motion.div>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          style={{ display:'flex', gap:6, marginBottom:20, flexWrap:'wrap' }}>
-          {(['all','active','expired','draft'] as const).map(t=>{
-            const isActive = tab===t;
-            return (
-              <button key={t} onClick={()=>setTab(t)}
-                style={{ padding:'8px 18px', borderRadius:10, border:'none', fontSize:12, fontWeight:600, textTransform:'capitalize', cursor:'pointer',
-                  background:isActive?'linear-gradient(135deg, #8b5cf6, #6d28d9)':'rgba(255,255,255,0.05)',
-                  color:isActive?'#fff':'rgba(255,255,255,0.5)',
-                  boxShadow:isActive?'0 4px 14px rgba(139,92,246,0.3)':'none' }}>
-                {t} {t==='all'?`(${offers.length})`:t==='active'?`(${active})`:''}
-              </button>
-            );
-          })}
-        </motion.div>
+        {!loading && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            style={{ display:'flex', gap:6, marginBottom:20, flexWrap:'wrap' }}>
+            {(['all','active','expired','draft'] as const).map(t=>{
+              const isActive = tab===t;
+              return (
+                <button key={t} onClick={()=>setTab(t)}
+                  style={{ padding:'8px 18px', borderRadius:10, border:'none', fontSize:12, fontWeight:600, textTransform:'capitalize', cursor:'pointer',
+                    background:isActive?'linear-gradient(135deg, #8b5cf6, #6d28d9)':'rgba(255,255,255,0.05)',
+                    color:isActive?'#fff':'rgba(255,255,255,0.5)',
+                    boxShadow:isActive?'0 4px 14px rgba(139,92,246,0.3)':'none' }}>
+                  {t} {t==='all'?`(${offers.length})`:t==='active'?`(${active})`:''}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
 
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:14 }}>
-          {visible.map(o=>{
-            const pct=o.usageLimit>0?(o.used/o.usageLimit)*100:0;
-            const statusC=statusColor[o.status];
-            return (
-              <motion.div key={o.id} variants={itemVariants}
-                style={{ borderRadius:20, background:'rgba(255,255,255,0.06)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 8px 32px rgba(0,0,0,0.12)', overflow:'hidden', transition:'all 0.3s ease' }}
-                onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 14px 44px rgba(0,0,0,0.2)';}}
-                onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.12)';}}>
-                <div style={{ height:4, background:`linear-gradient(90deg, ${statusC}, ${statusC}88)` }}/>
-                <div style={{ padding:'20px 22px' }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.9)', marginBottom:4 }}>{o.name}</div>
-                      <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:`${statusC}20`, color:statusC, textTransform:'capitalize' }}>{o.status}</span>
+        {loading ? (
+          <div style={{ textAlign:'center', padding:'60px 20px' }}><Loader2 size={32} color="rgba(255,255,255,0.2)" style={{ animation:'spin 1s linear infinite' }} /></div>
+        ) : (
+          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+            style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:14 }}>
+            {visible.map(o=>{
+              const pct=o.usageLimit>0?(o.used/o.usageLimit)*100:0;
+              const statusC=statusColor[o.status];
+              return (
+                <motion.div key={o.id} variants={itemVariants}
+                  style={{ borderRadius:20, background:'rgba(255,255,255,0.06)', backdropFilter:'blur(20px)', border:'1px solid rgba(255,255,255,0.1)', boxShadow:'0 8px 32px rgba(0,0,0,0.12)', overflow:'hidden', transition:'all 0.3s ease' }}
+                  onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 14px 44px rgba(0,0,0,0.2)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 8px 32px rgba(0,0,0,0.12)';}}>
+                  <div style={{ height:4, background:`linear-gradient(90deg, ${statusC}, ${statusC}88)` }}/>
+                  <div style={{ padding:'20px 22px' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontWeight:700, fontSize:15, color:'rgba(255,255,255,0.9)', marginBottom:4 }}>{o.name}</div>
+                        <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:`${statusC}20`, color:statusC, textTransform:'capitalize' }}>{o.status}</span>
+                      </div>
+                      <div style={{ fontSize:26, fontWeight:900, background:'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginLeft:12, whiteSpace:'nowrap' }}>
+                        {typeDisplay(o)}
+                      </div>
                     </div>
-                    <div style={{ fontSize:26, fontWeight:900, background:'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginLeft:12, whiteSpace:'nowrap' }}>
-                      {typeDisplay(o)}
+                    {o.plan&&<div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:10, display:'flex', alignItems:'center', gap:4 }}>
+                      <span>📦 {o.plan}</span>
+                    </div>}
+                    <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'8px 14px', marginBottom:12, border:'1px solid rgba(255,255,255,0.06)' }}>
+                      <Tag size={13} color='rgba(255,255,255,0.3)'/>
+                      <span style={{ fontFamily:'monospace', fontWeight:800, letterSpacing:'1px', fontSize:14, color:'#a855f7', flex:1 }}>{o.code}</span>
+                      <button onClick={()=>{navigator.clipboard.writeText(o.code);setCopied(o.id);setTimeout(()=>setCopied(''),2000);}} title="Copy code"
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'transparent', color:copied===o.id?'#4ade80':'rgba(255,255,255,0.3)', cursor:'pointer' }}>
+                        {copied===o.id?<CheckCircle2 size={14}/>:<Copy size={14}/>}
+                      </button>
+                    </div>
+                    <div style={{ marginBottom:12 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>
+                        <span>Used: {o.used}/{o.usageLimit}</span><span>{Math.round(pct)}%</span>
+                      </div>
+                      <div style={{ height:6, background:'rgba(255,255,255,0.06)', borderRadius:999, overflow:'hidden' }}>
+                        <div style={{ height:'100%', background:'linear-gradient(90deg, #8b5cf6, #6d28d9)', borderRadius:999, width:`${Math.min(100,pct)}%`, transition:'width 0.3s' }}/>
+                      </div>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:11, color:'rgba(255,255,255,0.35)' }}>
+                      <span style={{ display:'flex', alignItems:'center', gap:3 }}><Clock size={11}/>{o.validFrom} → {o.validUntil}</span>
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'1px solid rgba(255,255,255,0.1)', background:'transparent', color:'rgba(255,255,255,0.45)', cursor:'pointer' }}><Edit2 size={12}/></button>
+                        <button onClick={()=>handleDelete(o.id)}
+                          style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'rgba(239,68,68,0.12)', color:'#f87171', cursor:'pointer' }}><Trash2 size={12}/></button>
+                      </div>
                     </div>
                   </div>
-                  {o.plan&&<div style={{ fontSize:12, color:'rgba(255,255,255,0.4)', marginBottom:10, display:'flex', alignItems:'center', gap:4 }}>
-                    <span>📦 {o.plan}</span>
-                  </div>}
-                  <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'8px 14px', marginBottom:12, border:'1px solid rgba(255,255,255,0.06)' }}>
-                    <Tag size={13} color='rgba(255,255,255,0.3)'/>
-                    <span style={{ fontFamily:'monospace', fontWeight:800, letterSpacing:'1px', fontSize:14, color:'#a855f7', flex:1 }}>{o.code}</span>
-                    <button onClick={()=>copyCode(o.code)} title="Copy code"
-                      style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'transparent', color:copied===o.code?'#4ade80':'rgba(255,255,255,0.3)', cursor:'pointer' }}>
-                      {copied===o.code?<CheckCircle2 size={14}/>:<Copy size={14}/>}
-                    </button>
-                  </div>
-                  <div style={{ marginBottom:12 }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>
-                      <span>Used: {o.used}/{o.usageLimit}</span><span>{Math.round(pct)}%</span>
-                    </div>
-                    <div style={{ height:6, background:'rgba(255,255,255,0.06)', borderRadius:999, overflow:'hidden' }}>
-                      <div style={{ height:'100%', background:'linear-gradient(90deg, #8b5cf6, #6d28d9)', borderRadius:999, width:`${Math.min(100,pct)}%`, transition:'width 0.3s' }}/>
-                    </div>
-                  </div>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:11, color:'rgba(255,255,255,0.35)' }}>
-                    <span style={{ display:'flex', alignItems:'center', gap:3 }}><Clock size={11}/>{o.validFrom} → {o.validUntil}</span>
-                    <div style={{ display:'flex', gap:4 }}>
-                      <button style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'1px solid rgba(255,255,255,0.1)', background:'transparent', color:'rgba(255,255,255,0.45)', cursor:'pointer' }}><Edit2 size={12}/></button>
-                      <button onClick={()=>setOffers(p=>p.filter(x=>x.id!==o.id))}
-                        style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'rgba(239,68,68,0.12)', color:'#f87171', cursor:'pointer' }}><Trash2 size={12}/></button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+                </motion.div>
+              );
+            })}
+            {visible.length === 0 && (
+              <div style={{ padding:'64px 20px', textAlign:'center', gridColumn:'1/-1' }}>
+                <Tag size={40} color="rgba(255,255,255,0.12)" style={{ marginBottom:14 }} />
+                <p style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,0.35)', margin:0 }}>No offers found</p>
+                <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', marginTop:4 }}>Click "New Offer" to create one.</p>
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
     </AppShell>
   );

@@ -327,7 +327,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
     renewPt: (id: string, data: Record<string, unknown>) =>
-      http<{ message?: string }>(`/api/clients/${id}/renew-pt`, {
+      http<{ message?: string; data?: unknown }>(`/api/pt-os/clients/${id}/renew`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -910,6 +910,96 @@ export const api = {
       http<{ records: unknown[] }>(`/api/biometric-attend/member/${memberId}${buildQs(params)}`),
     report: (params?: Record<string, string>) =>
       http<{ url: string }>(`/api/biometric-attend/report${buildQs(params)}`),
+  },
+
+  // ── Campaigns (Marketing) ──────────────────────────────────────
+  campaigns: {
+    list: (params?: Record<string, string | number>) =>
+      http<unknown[]>(`/api/campaigns${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ message: string; campaign: unknown }>('/api/campaigns', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ message: string; campaign: unknown }>(`/api/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => http<{ message: string }>(`/api/campaigns/${id}`, { method: 'DELETE' }),
+    stats: () => http<{ active: number; total_sent: number; conversions: number; conv_rate: number }>('/api/campaigns/stats'),
+  },
+
+  // ── Feedback ───────────────────────────────────────────────────
+  feedback: {
+    list: (params?: Record<string, string | number>) =>
+      http<unknown[]>(`/api/feedback${buildQs(params)}`),
+    get: (id: string) => http<unknown>(`/api/feedback/${id}`),
+    reply: (id: string, data: { message: string }) =>
+      http<{ message: string }>(`/api/feedback/${id}/reply`, { method: 'POST', body: JSON.stringify(data) }),
+    resolve: (id: string) =>
+      http<{ message: string }>(`/api/feedback/${id}/resolve`, { method: 'POST' }),
+    stats: () =>
+      http<{ avg_rating: number; total: number; positive: number; open: number; nps: number }>('/api/feedback/stats'),
+  },
+
+  // ── Offers & Promotions ────────────────────────────────────────
+  offers: {
+    list: (params?: Record<string, string | number>) =>
+      http<unknown[]>(`/api/offers${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ message: string; offer: unknown }>('/api/offers', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ message: string; offer: unknown }>(`/api/offers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => http<{ message: string }>(`/api/offers/${id}`, { method: 'DELETE' }),
+    stats: () => http<{ total: number; active: number; total_used: number; expired: number }>('/api/offers/stats'),
+  },
+
+  // ── Communication (send notification) ───────────────────────────
+  communication: {
+    send: (data: { title: string; body: string; type: string; audience: string }) =>
+      http<{ message: string; notification: unknown; recipients: number }>('/api/communication/send', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    history: (params?: Record<string, string | number>) =>
+      http<unknown[]>(`/api/communication/history${buildQs(params)}`),
+    delete: (id: string) =>
+      http<{ message: string }>(`/api/communication/history/${id}`, { method: 'DELETE' }),
+  },
+
+  // ── Integrations ───────────────────────────────────────────────
+  integrations: {
+    list: () => http<unknown[]>('/api/integrations'),
+    test: (id: string, data: { api_key: string }) =>
+      http<{ success: boolean; message: string }>(`/api/integrations/${id}/test`, { method: 'POST', body: JSON.stringify(data) }),
+    connect: (id: string, data: { api_key: string }) =>
+      http<{ success: boolean; message: string }>(`/api/integrations/${id}/connect`, { method: 'POST', body: JSON.stringify(data) }),
+    disconnect: (id: string) =>
+      http<{ success: boolean; message: string }>(`/api/integrations/${id}/disconnect`, { method: 'POST' }),
+  },
+
+  // ── Activity Logs (Profile) ─────────────────────────────────────
+  activity: {
+    list: (params?: Record<string, string | number>) =>
+      http<unknown[]>(`/api/activity${buildQs(params)}`),
+    sessions: () => http<unknown[]>('/api/activity/sessions'),
+    devices: () => http<unknown[]>('/api/activity/devices'),
+  },
+
+  // ── Branches ───────────────────────────────────────────────────
+  branches: {
+    list: () => http<{ id: string; name: string; location: string; status: string; member_count: number }[]>('/api/branches'),
+    create: (data: { name: string; location?: string }) =>
+      http<{ id: string; name: string; location: string }>('/api/branches', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: { name?: string; location?: string; status?: string }) =>
+      http<{ message: string }>(`/api/branches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => http<{ message: string }>(`/api/branches/${id}`, { method: 'DELETE' }),
+  },
+
+  // ── User/Account Management (Settings) ──────────────────────────
+  accounts: {
+    list: () => http<unknown[]>('/api/auth/users'),
+    create: (data: { name: string; email: string; password: string; role: string }) =>
+      http<{ message: string; user: unknown }>('/api/auth/create-user', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: { name?: string; email?: string; role?: string; status?: string }) =>
+      http<{ message: string }>(`/api/auth/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => http<{ message: string }>(`/api/auth/users/${id}`, { method: 'DELETE' }),
+    toggleStatus: (id: string) =>
+      http<{ message: string; is_active: boolean }>(`/api/auth/users/${id}/toggle`, { method: 'PUT' }),
   },
 
   gymSettings: {

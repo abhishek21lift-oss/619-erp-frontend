@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { api } from '@/lib/api';
 
 type Status = 'connected' | 'error' | 'pending' | 'unavailable';
 
@@ -55,9 +56,12 @@ function ConnectModal({ integration, onClose, onDisconnect }: { integration: Int
 
   const testConnection = async () => {
     setTesting(true); setTestResult(null);
-    await new Promise((r) => setTimeout(r, 1500));
-    setTestResult(apiKey.length > 5 ? 'success' : 'error');
-    setTesting(false);
+    try {
+      const res = await api.integrations.test(integration.id, { api_key: apiKey });
+      setTestResult(res.success ? 'success' : 'error');
+    } catch {
+      setTestResult('error');
+    } finally { setTesting(false); }
   };
 
   const sBtn = { width: '100%', padding: '10px 0', borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#ffffff' } as const;

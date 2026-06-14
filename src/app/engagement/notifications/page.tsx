@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Bell, Send, Users, CheckCircle2, Clock, Plus, Trash2, MessageSquare, RefreshCw } from 'lucide-react';
-import { uuid } from '@/lib/uuid';
+import { Bell, Send, Users, CheckCircle2, Clock, Plus, Trash2, MessageSquare, RefreshCw, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 const TYPES = ['Birthday 🎂', 'Expiry Reminder ⚠️', 'Due Reminder 💳', 'Anniversary 🎉', 'General 📢', 'Custom'];
 const AUDIENCES = ['All Active Members', 'Expiring This Week', 'Has Outstanding Dues', 'PT Members', 'Expired Members'];
@@ -32,26 +32,56 @@ export default function NotificationsPage() {
   return <Guard role="admin"><NContent/></Guard>;
 }
 function NContent() {
+  const toast = useToast();
   const [items, setItems] = useState<Notif[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({title:'',body:'',type:TYPES[0],audience:AUDIENCES[0]});
   const [memberCount, setMemberCount] = useState(0);
   const [sending, setSending] = useState(false);
-  const [flash, setFlash] = useState('');
 
-  useEffect(()=>{
-    api.clients.list({status:'active'}).then((d:any)=>setMemberCount(Array.isArray(d)?d.length:0)).catch((err: any) => console.error('[notifications] failed to load member count', err));
-  },[]);
+  async function load() {
+    setLoading(true); setError(null);
+    try {
+      const [historyRes, membersRes] = await Promise.all([
+        api.communication.history(),
+        api.clients.list({status:'active'}).catch(() => []),
+      ]);
+      const history = (Array.isArray(historyRes) ? historyRes : []) as Notif[];
+      setItems(history);
+      setMemberCount(Array.isArray(membersRes) ? membersRes.length : 0);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load history');
+    } finally { setLoading(false); }
+  }
 
   async function handleSend(e:React.FormEvent){
     e.preventDefault(); if(!form.title||!form.body) return;
-    setSending(true); await new Promise(r=>setTimeout(r,900));
-    const rcpt = form.audience==='All Active Members'?memberCount:Math.max(1,Math.floor(memberCount*0.4));
-    setItems(prev=>[{id:uuid(),...form,status:'sent',created_at:new Date().toISOString(),recipients:rcpt},...prev]);
-    setForm({title:'',body:'',type:TYPES[0],audience:AUDIENCES[0]});
-    setSending(false); setShowForm(false);
-    setFlash(`✓ Notification sent to ${rcpt} members`); setTimeout(()=>setFlash(''),4000);
+    setSending(true);
+    try {
+      const res = await api.communication.send(form as any) as { recipients: number };
+      const rcpt = res?.recipients ?? 0;
+      await load();
+      setForm({title:'',body:'',type:TYPES[0],audience:AUDIENCES[0]});
+      setShowForm(false);
+      toast.success(`Notification sent to ${rcpt} members`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to send notification');
+    } finally { setSending(false); }
   }
+
+  async function handleDelete(id: string) {
+    try {
+      await api.communication.delete(id);
+      setItems(p => p.filter(x => x.id !== id));
+      toast.success('Notification deleted');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete notification');
+    }
+  }
+
+  useEffect(() => { load(); }, []);
 
   const total=items.length, sent=items.filter(x=>x.status==='sent').length, scheduled=items.filter(x=>x.status==='scheduled').length;
   const typeColor=(t:string)=>t.includes('Birthday')?'#a855f7':t.includes('Expiry')?'#f59e0b':t.includes('Due')?'#ef4444':t.includes('Anniversary')?'#8b5cf6':'#6d28d9';
@@ -85,10 +115,10 @@ function NContent() {
           </div>
         </motion.div>
 
-        {flash&&(
+        {error && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            style={{ borderRadius:14, padding:'14px 20px', marginBottom:22, background:'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(34,197,94,0.04))', border:'1px solid rgba(34,197,94,0.2)', backdropFilter:'blur(10px)', color:'#4ade80', fontWeight:700, fontSize:13 }}>
-            {flash}
+            style={{ borderRadius:14, padding:'14px 20px', marginBottom:22, background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#fca5a5', fontWeight:600, fontSize:13 }}>
+            {error}
           </motion.div>
         )}
 
@@ -110,7 +140,7 @@ function NContent() {
                     <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'rgba(255,255,255,0.5)', marginLeft:6 }}>{k.label}</span>
                   </div>
                 </div>
-                <div style={{ fontSize:30, fontWeight:800, color:'#ffffff', lineHeight:1.2, letterSpacing:'-0.02em' }}>{vals[i]}</div>
+                <div style={{ fontSize:30, fontWeight:800, color:'#ffffff', lineHeight:1.2, letterSpacing:'-0.02em' }}>{loading ? '—' : vals[i]}</div>
               </motion.div>
             );
           })}
@@ -166,37 +196,40 @@ function NContent() {
           <div style={{ padding:'16px 22px', borderBottom:'1px solid rgba(255,255,255,0.06)', fontWeight:700, fontSize:14, color:'rgba(255,255,255,0.9)', display:'flex', alignItems:'center', gap:8, background:'linear-gradient(90deg, rgba(139,92,246,0.08), rgba(109,40,217,0.04))' }}>
             <MessageSquare size={15} color="#a855f7"/> Notification History ({items.length})
           </div>
-          {(items ?? []).map(n=>(
-            <div key={n.id} style={{ display:'flex', gap:14, padding:'18px 22px', borderBottom:'1px solid rgba(255,255,255,0.04)', alignItems:'flex-start' }}
-              onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}
-              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-              <div style={{ width:44, height:44, borderRadius:12, background:`${typeColor(n.type)}20`, color:typeColor(n.type), display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:22, backdropFilter:'blur(4px)' }}>
-                {typeEmoji(n.type)}
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:5 }}>
-                  <span style={{ fontWeight:700, fontSize:14, color:'rgba(255,255,255,0.9)' }}>{n.title}</span>
-                  <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:n.status==='sent'?'rgba(34,197,94,0.15)':'rgba(245,158,11,0.15)', color:n.status==='sent'?'#4ade80':'#fbbf24', textTransform:'capitalize' }}>{n.status}</span>
-                </div>
-                <p style={{ margin:'0 0 8px', fontSize:13, color:'rgba(255,255,255,0.5)', lineHeight:1.6 }}>{n.body}</p>
-                <div style={{ display:'flex', gap:16, fontSize:11, color:'rgba(255,255,255,0.35)', alignItems:'center' }}>
-                  <span style={{ display:'flex', alignItems:'center', gap:4 }}><Users size={11}/>{n.recipients} recipients</span>
-                  <span style={{ display:'flex', alignItems:'center', gap:4 }}><Clock size={11}/>{new Date(n.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</span>
-                  <span style={{ background:'rgba(255,255,255,0.05)', padding:'2px 8px', borderRadius:6, fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.45)' }}>{n.audience}</span>
-                </div>
-              </div>
-              <button onClick={()=>setItems(p=>p.filter(x=>x.id!==n.id))}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', width:32, height:32, borderRadius:8, border:'none', background:'rgba(239,68,68,0.12)', color:'#f87171', cursor:'pointer', flexShrink:0 }}>
-                <Trash2 size={14}/>
-              </button>
-            </div>
-          ))}
-          {items.length===0&&(
+          {loading ? (
+            <div style={{ padding:'56px 20px', textAlign:'center' }}><Loader2 size={28} color="rgba(255,255,255,0.2)" style={{ animation:'spin 1s linear infinite' }} /></div>
+          ) : items.length === 0 ? (
             <div style={{ padding:'56px 20px', textAlign:'center' }}>
               <Bell size={36} color="rgba(255,255,255,0.12)" style={{ marginBottom:14 }}/>
               <p style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,0.35)', margin:0 }}>No notifications sent yet</p>
               <p style={{ fontSize:12, color:'rgba(255,255,255,0.2)', marginTop:4 }}>Click "Compose" to send your first notification.</p>
             </div>
+          ) : (
+            items.map(n=>(
+              <div key={n.id} style={{ display:'flex', gap:14, padding:'18px 22px', borderBottom:'1px solid rgba(255,255,255,0.04)', alignItems:'flex-start' }}
+                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.03)'}
+                onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                <div style={{ width:44, height:44, borderRadius:12, background:`${typeColor(n.type)}20`, color:typeColor(n.type), display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:22, backdropFilter:'blur(4px)' }}>
+                  {typeEmoji(n.type)}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:5 }}>
+                    <span style={{ fontWeight:700, fontSize:14, color:'rgba(255,255,255,0.9)' }}>{n.title}</span>
+                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 10px', borderRadius:20, background:n.status==='sent'?'rgba(34,197,94,0.15)':'rgba(245,158,11,0.15)', color:n.status==='sent'?'#4ade80':'#fbbf24', textTransform:'capitalize' }}>{n.status}</span>
+                  </div>
+                  <p style={{ margin:'0 0 8px', fontSize:13, color:'rgba(255,255,255,0.5)', lineHeight:1.6 }}>{n.body}</p>
+                  <div style={{ display:'flex', gap:16, fontSize:11, color:'rgba(255,255,255,0.35)', alignItems:'center' }}>
+                    <span style={{ display:'flex', alignItems:'center', gap:4 }}><Users size={11}/>{n.recipients} recipients</span>
+                    <span style={{ display:'flex', alignItems:'center', gap:4 }}><Clock size={11}/>{n.created_at ? new Date(n.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
+                    <span style={{ background:'rgba(255,255,255,0.05)', padding:'2px 8px', borderRadius:6, fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.45)' }}>{n.audience}</span>
+                  </div>
+                </div>
+                <button onClick={()=>handleDelete(n.id)}
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center', width:32, height:32, borderRadius:8, border:'none', background:'rgba(239,68,68,0.12)', color:'#f87171', cursor:'pointer', flexShrink:0 }}>
+                  <Trash2 size={14}/>
+                </button>
+              </div>
+            ))
           )}
         </motion.div>
       </div>

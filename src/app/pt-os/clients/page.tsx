@@ -23,6 +23,7 @@ type PtClient = PtClientBase & {
   pt_start_date: string;
   monthly_pt_amount: number;
   trainer_commission: number;
+  total_earned_commission: number;
 };
 
 function fmtINR(n: number | string | null | undefined) {
@@ -46,7 +47,8 @@ const STATUS_CONFIG = {
 function StatusBadge({ status, days_left }: { status: string; days_left: number | null }) {
   let cfg: (typeof STATUS_CONFIG)[keyof typeof STATUS_CONFIG] = STATUS_CONFIG.expired;
   if (status === 'active') {
-    if (days_left !== null && days_left <= 7) cfg = STATUS_CONFIG.expiring;
+    if (days_left !== null && days_left <= 0) cfg = STATUS_CONFIG.expired;
+    else if (days_left !== null && days_left <= 7) cfg = STATUS_CONFIG.expiring;
     else if (days_left !== null && days_left <= 30) cfg = STATUS_CONFIG.soon;
     else cfg = STATUS_CONFIG.active;
   } else if (status === 'frozen') cfg = STATUS_CONFIG.frozen;
@@ -201,7 +203,7 @@ function ClientRow({ client, index }: { client: PtClient; index: number }) {
       <td className="py-4 px-4 text-right hidden lg:table-cell">
         <div className="inline-block rounded-[8px] px-2.5 py-1" style={{ background: 'rgba(124,58,237,0.08)' }}>
           <p className="text-[12px] font-[800] tabular-nums tracking-[-0.02em]" style={{ color: '#7c3aed' }}>
-            {fmtShortINR(client.trainer_commission)}
+            {fmtShortINR(client.total_earned_commission)}
           </p>
         </div>
       </td>
@@ -242,7 +244,7 @@ export default function PtClientsPage() {
       total: acc.total + 1,
       revenue: acc.revenue + Number(c.final_amount || 0),
       paid: acc.paid + Number(c.paid_amount || 0),
-      commission: acc.commission + Number(c.trainer_commission || 0),
+      commission: acc.commission + Number(c.total_earned_commission || 0),
     }),
     { total: 0, revenue: 0, paid: 0, commission: 0 },
   ), [clients.data]);

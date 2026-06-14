@@ -118,12 +118,6 @@ function Inner() {
   // ── Address
   const [address, setAddress] = useState({ city: '', state: '', pincode: '' });
 
-  // auto-save simulation
-  useEffect(() => {
-    const t = setTimeout(() => { setAutoSaved(true); setTimeout(() => setAutoSaved(false), 2000); }, 3000);
-    return () => clearTimeout(t);
-  }, [personal, role, salary]);
-
   // ── helpers
   const sp = useCallback((k: string, v: string) => setPersonal(f => ({ ...f, [k]: v })), []);
 
