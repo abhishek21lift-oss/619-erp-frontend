@@ -193,7 +193,7 @@ export default function KioskContent() {
       // QR mode
       if (!jsQR) {
         const mod = await import('jsqr');
-        jsQR = (mod.default || mod) as typeof jsQR;
+        jsQR = (mod.default || mod) as unknown as typeof jsQR;
       }
       const camOk = await camera.start({ video: { facingMode: 'environment' } } as any);
       if (!camOk) { setMsg('Camera unavailable.'); setKState('scanning'); return; }
