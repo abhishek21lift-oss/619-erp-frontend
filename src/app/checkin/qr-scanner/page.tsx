@@ -132,7 +132,7 @@ export default function QrScannerPage() {
     if (!jsQR) {
       try {
         const mod = await import('jsqr');
-        jsQR = (mod.default || mod) as typeof jsQR;
+        jsQR = (mod.default || mod) as unknown as typeof jsQR;
       } catch {
         setCameraErr('Could not load QR library. Please refresh.');
         setScanState('idle');
