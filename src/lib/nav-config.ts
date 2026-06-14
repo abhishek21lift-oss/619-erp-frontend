@@ -155,7 +155,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/insights/revenue',      label: 'Revenue Report',      icon: 'TrendingUp',   role: 'admin' },
       { href: '/insights/renewal',      label: 'Renewal Report',      icon: 'RefreshCcw',   role: 'admin' },
       { href: '/insights/traffic',      label: 'Attendance Report',   icon: 'Activity',     role: 'admin' },
-      { href: '/training/transformations', label: 'Transformations',   icon: 'Sparkles',     roles: ['admin', 'manager'] },
     ],
   },
 ];

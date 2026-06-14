@@ -8,6 +8,7 @@ import Link from 'next/link';
 /* ─── Types ──────────────────────────────────────────────────────── */
 interface StaffMember {
   id: string;
+  unique_id?: string;
   name: string;
   email: string;
   role: string;
@@ -61,6 +62,7 @@ function Inner() {
   const [roleFilter, setRole]   = useState('all');
   const [view, setView]         = useState<'grid' | 'list'>('grid');
   const [panel, setPanel]       = useState<StaffMember | null>(null);
+  const [editTarget, setEditTarget] = useState<StaffMember | null>(null);
   const [edits, setEdits]       = useState<StaffEdits>({});
   const searchRef               = useRef<HTMLInputElement>(null);
 
@@ -113,6 +115,21 @@ function Inner() {
 
   const isDirty = (s: StaffMember) =>
     edits[s.id]?.role !== s.role || edits[s.id]?.status !== (s.status || 'active');
+
+  const editProfile = useCallback(async (id: string, updates: { name: string; email: string; phone: string }) => {
+    setSaving(id);
+    setError('');
+    try {
+      await api.staff.update(id, updates);
+      setStaff(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+      setEditTarget(null);
+      flash('Profile updated');
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || 'Could not update profile');
+    } finally {
+      setSaving(null);
+    }
+  }, [flash]);
 
   const filtered = staff.filter(s => {
     const q = search.toLowerCase();
@@ -281,6 +298,7 @@ function Inner() {
                 save={save}
                 isDirty={isDirty}
                 onOpen={() => setPanel(s)}
+                onEdit={() => setEditTarget(s)}
               />
             ))}
           </div>
@@ -293,6 +311,7 @@ function Inner() {
             save={save}
             isDirty={isDirty}
             onOpen={(s: StaffMember) => setPanel(s)}
+            onEdit={(s: StaffMember) => setEditTarget(s)}
           />
         )}
 
@@ -310,6 +329,16 @@ function Inner() {
           onClose={() => setPanel(null)}
         />
       )}
+
+      {/* ── EDIT MODAL ──────────────────────────────────────── */}
+      {editTarget && (
+        <EditModal
+          s={editTarget}
+          saving={saving}
+          onSave={editProfile}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
     </AppShell>
   );
 }
@@ -317,7 +346,7 @@ function Inner() {
 /* ══════════════════════════════════════════════════════════════════
    STAFF CARD
 ══════════════════════════════════════════════════════════════════ */
-function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
+function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen, onEdit }: {
   s: StaffMember;
   edits: StaffEdits;
   setEdits: React.Dispatch<React.SetStateAction<StaffEdits>>;
@@ -325,6 +354,7 @@ function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
   save: (s: StaffMember) => Promise<void>;
   isDirty: (s: StaffMember) => boolean;
   onOpen: () => void;
+  onEdit: () => void;
 }) {
   const e     = edits[s.id] || { role: s.role, status: s.status || 'active' };
   const cfg   = getRoleCfg(e.role);
@@ -348,6 +378,7 @@ function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
         </div>
         <div className="sm-card-meta">
           <div className="sm-card-name">{s.name}</div>
+          {s.unique_id && <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', color: '#6366f1', textTransform: 'uppercase', marginBottom: 1 }}>{s.unique_id}</div>}
           <div className="sm-card-email">{s.email}</div>
           {s.phone && <div className="sm-card-phone">{s.phone}</div>}
         </div>
@@ -398,7 +429,7 @@ function StaffCard({ s, edits, setEdits, saving, save, isDirty, onOpen }: {
           <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           View
         </button>
-        <button className="sm-card-action" title="Edit staff">
+        <button className="sm-card-action" onClick={onEdit} title="Edit profile">
           <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           Edit
         </button>
@@ -427,9 +458,10 @@ interface StaffTableProps {
   save: (s: StaffMember) => Promise<void>;
   isDirty: (s: StaffMember) => boolean;
   onOpen: (s: StaffMember) => void;
+  onEdit: (s: StaffMember) => void;
 }
 
-function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }: StaffTableProps) {
+function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen, onEdit }: StaffTableProps) {
   return (
     <div className="sm-table-card">
       <table className="sm-table">
@@ -454,6 +486,7 @@ function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }
                       <div style={{ fontWeight: 650, fontSize: 13, color: 'var(--text-primary)' }}>
                         {s.name}
                       </div>
+                      {s.unique_id && <div style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', letterSpacing: '0.06em' }}>{s.unique_id}</div>}
                       <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 1 }}>{s.email}</div>
                     </div>
                   </div>
@@ -494,6 +527,7 @@ function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }
                 <td style={{ textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                     <button className="sm-card-action" onClick={() => onOpen(s)}>View</button>
+                    <button className="sm-card-action" onClick={() => onEdit(s)}>Edit</button>
                     <button className={`sm-btn-save${busy ? ' busy' : ''}`} onClick={() => save(s)} disabled={!isDirty(s) || busy}>
                       {busy ? '…' : isDirty(s) ? 'Save' : '✓'}
                     </button>
@@ -505,6 +539,77 @@ function StaffTable({ filtered, edits, setEdits, saving, save, isDirty, onOpen }
         </tbody>
       </table>
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   EDIT MODAL
+══════════════════════════════════════════════════════════════════ */
+function EditModal({ s, saving, onSave, onClose }: {
+  s: StaffMember;
+  saving: string | null;
+  onSave: (id: string, updates: { name: string; email: string; phone: string }) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [name, setName]   = useState(s.name);
+  const [email, setEmail] = useState(s.email || '');
+  const [phone, setPhone] = useState(s.phone || '');
+  const busy = saving === s.id;
+
+  const handleSubmit = (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (!name.trim()) return;
+    onSave(s.id, { name: name.trim(), email: email.trim(), phone: phone.trim() });
+  };
+
+  return (
+    <>
+      <div className="sm-overlay" onClick={onClose} aria-hidden="true" />
+      <div role="dialog" aria-label="Edit staff profile" style={{
+        position: 'fixed', inset: 0, zIndex: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      }}>
+        <div style={{
+          background: 'white', borderRadius: 20, boxShadow: '0 24px 80px rgba(0,0,0,0.18)', width: '100%', maxWidth: 440,
+          border: '1px solid #e2e8f0', overflow: 'hidden',
+        }}>
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 750, color: '#0f172a' }}>Edit Profile</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Update name, email, and phone</div>
+            </div>
+            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: 'none', background: '#f8fafc', cursor: 'pointer', color: '#64748b' }}>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} style={{ padding: 24, display: 'grid', gap: 16 }}>
+            {([
+              { label: 'Full Name *', value: name, onChange: setName, type: 'text', required: true },
+              { label: 'Email', value: email, onChange: setEmail, type: 'email', required: false },
+              { label: 'Phone', value: phone, onChange: setPhone, type: 'tel', required: false },
+            ] as const).map(f => (
+              <label key={f.label} style={{ display: 'grid', gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8' }}>{f.label}</span>
+                <input
+                  type={f.type}
+                  value={f.value}
+                  onChange={e => (f.onChange as (v: string) => void)(e.target.value)}
+                  required={f.required}
+                  style={{ width: '100%', border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '9px 14px', fontSize: 13.5, fontWeight: 500, color: '#0f172a', background: '#f8fafc', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                  onFocus={e => e.currentTarget.style.borderColor = '#6366f1'}
+                  onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'}
+                />
+              </label>
+            ))}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+              <button type="button" onClick={onClose} style={{ fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: 'transparent', color: '#64748b', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={busy || !name.trim()} style={{ fontSize: 13, fontWeight: 700, padding: '9px 22px', borderRadius: 10, border: 'none', background: busy ? '#a5b4fc' : 'linear-gradient(135deg,#6366f1,#7c3aed)', color: 'white', cursor: busy ? 'not-allowed' : 'pointer', boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}>
+                {busy ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
   );
 }
 

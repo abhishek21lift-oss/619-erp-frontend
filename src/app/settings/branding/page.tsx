@@ -180,67 +180,146 @@ export default function BrandingPage() {
           )}
 
           <motion.div variants={containerVariants} initial="hidden" animate="show">
-            {/* ── Color Settings ── */}
-            <motion.div variants={itemVariants} style={glassCard}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', margin: '0 0 16px' }}>Color Settings</h2>
-              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                {([['Primary', primary, setPrimary], ['Accent', accent, setAccent]] as const).map(([name, val, set]) => (
-                  <div key={name} style={{ flex: '1 1 200px', minWidth: 0 }}>
-                    <label style={l}>{name} Color</label>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: val, border: '2px solid rgba(255,255,255,0.15)', flexShrink: 0, boxShadow: `0 0 20px ${val}40` }} />
-                      <input style={inp} value={val} onChange={(e) => set(e.target.value)} placeholder={name === 'Primary' ? '#dc2626' : '#7c3aed'} />
-                    </div>
-                    {val && !hexOk(val) && <p style={{ fontSize: 12, color: '#f87171', margin: '4px 0 0' }}>Invalid hex</p>}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            {/* ── Split layout: settings + live preview ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
+              <div>
+                {/* ── Color Settings ── */}
+                <motion.div variants={itemVariants} style={glassCard}>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', margin: '0 0 4px' }}>Colors</h2>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '0 0 20px' }}>Pick a preset or enter a custom hex value</p>
 
-            {/* ── Theme Settings ── */}
-            <motion.div variants={itemVariants} style={glassCard}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', margin: '0 0 16px' }}>Theme Settings</h2>
-              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <label style={l}>Theme Mode</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {(['dark', 'light'] as ThemeMode[]).map((m) => (
-                      <button key={m} onClick={() => setMode(m)}
-                        style={{
-                          flex: 1, padding: '10px 0', borderRadius: 10,
-                          border: `1px solid ${mode === m ? '#dc2626' : 'rgba(255,255,255,0.1)'}`,
-                          background: mode === m ? 'linear-gradient(135deg, rgba(220,38,38,0.2), rgba(225,29,72,0.1))' : 'rgba(15,23,42,0.6)',
-                          color: mode === m ? '#fff' : 'rgba(255,255,255,0.5)',
-                          fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
-                          transition: 'all 0.15s',
-                        }}>
-                        {m === 'dark' ? '🌙 Dark' : '☀️ Light'}
-                      </button>
+                  {/* Preset palettes */}
+                  {([
+                    { name: 'Primary', val: primary, set: setPrimary, presets: ['#dc2626','#e11d48','#f97316','#f59e0b','#10b981','#06b6d4','#3b82f6','#6366f1','#8b5cf6','#a855f7','#ec4899','#14b8a6'] },
+                    { name: 'Accent',  val: accent,  set: setAccent,  presets: ['#7c3aed','#6d28d9','#4f46e5','#0ea5e9','#10b981','#f59e0b','#e11d48','#db2777','#0891b2','#059669','#d97706','#dc2626'] },
+                  ] as const).map((cfg) => (
+                    <div key={cfg.name} style={{ marginBottom: 20 }}>
+                      <label style={l}>{cfg.name} Color</label>
+                      {/* Swatches */}
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                        {cfg.presets.map((c) => (
+                          <button key={c} onClick={() => cfg.set(c)} title={c}
+                            style={{ width: 26, height: 26, borderRadius: 7, background: c, border: cfg.val === c ? '2.5px solid #fff' : '2px solid transparent', cursor: 'pointer', transition: 'all 0.15s', boxShadow: cfg.val === c ? `0 0 0 2px ${c}` : 'none', transform: cfg.val === c ? 'scale(1.15)' : 'scale(1)' }} />
+                        ))}
+                      </div>
+                      {/* Native picker + hex input */}
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <div style={{ width: 42, height: 42, borderRadius: 10, background: cfg.val, border: '2px solid rgba(255,255,255,0.15)', boxShadow: `0 0 20px ${cfg.val}40`, cursor: 'pointer', overflow: 'hidden' }}>
+                            <input type="color" value={hexOk(cfg.val) ? cfg.val : '#000000'} onChange={e => cfg.set(e.target.value)}
+                              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', border: 'none', padding: 0 }} />
+                          </div>
+                        </div>
+                        <input style={inp} value={cfg.val} onChange={(e) => cfg.set(e.target.value)} placeholder={cfg.name === 'Primary' ? '#dc2626' : '#7c3aed'} />
+                      </div>
+                      {cfg.val && !hexOk(cfg.val) && <p style={{ fontSize: 12, color: '#f87171', margin: '4px 0 0' }}>Invalid hex — use format #RRGGBB</p>}
+                    </div>
+                  ))}
+                </motion.div>
+
+                {/* ── Theme Settings ── */}
+                <motion.div variants={itemVariants} style={glassCard}>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', margin: '0 0 20px' }}>Theme &amp; Typography</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                    <div>
+                      <label style={l}>Theme Mode</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {(['dark', 'light'] as ThemeMode[]).map((m) => (
+                          <button key={m} onClick={() => setMode(m)}
+                            style={{
+                              flex: 1, padding: '10px 0', borderRadius: 10,
+                              border: `1px solid ${mode === m ? primary : 'rgba(255,255,255,0.1)'}`,
+                              background: mode === m ? `${primary}20` : 'rgba(15,23,42,0.6)',
+                              color: mode === m ? '#fff' : 'rgba(255,255,255,0.5)',
+                              fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
+                              transition: 'all 0.15s',
+                            }}>
+                            {m === 'dark' ? '🌙 Dark' : '☀️ Light'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={l}>Typeface</label>
+                      <select style={sel} value={typeface} onChange={(e) => setTypeface(e.target.value as Typeface)}>
+                        {(['Inter', 'Satoshi', 'Geist'] as Typeface[]).map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label style={l}>Button Style</label>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {(['soft', 'solid', 'glass'] as ButtonStyle[]).map((b) => {
+                          const active = buttonStyle === b;
+                          const borderR = b === 'soft' ? 8 : b === 'solid' ? 6 : 20;
+                          return (
+                            <button key={b} onClick={() => setButtonStyle(b)}
+                              style={{ flex: 1, padding: '8px 0', borderRadius: borderR, border: `1.5px solid ${active ? primary : 'rgba(255,255,255,0.1)'}`, background: active ? `${primary}20` : 'rgba(15,23,42,0.6)', color: active ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.15s' }}>
+                              {b}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={l}>Radius Style</label>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {(['rounded', 'smooth', 'pill'] as RadiusStyle[]).map((r) => {
+                          const active = radiusStyle === r;
+                          const borderR = r === 'rounded' ? 8 : r === 'smooth' ? 16 : 30;
+                          return (
+                            <button key={r} onClick={() => setRadiusStyle(r)}
+                              style={{ flex: 1, padding: '8px 0', borderRadius: borderR, border: `1.5px solid ${active ? accent : 'rgba(255,255,255,0.1)'}`, background: active ? `${accent}20` : 'rgba(15,23,42,0.6)', color: active ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.15s' }}>
+                              {r}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* ── Live Preview Panel ── */}
+              <motion.div variants={itemVariants} style={{ ...glassCard, position: 'sticky', top: 80 }}>
+                <h2 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.5)', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live Preview</h2>
+                {/* Simulated app card */}
+                <div style={{ borderRadius: radiusStyle === 'pill' ? 24 : radiusStyle === 'smooth' ? 16 : 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
+                  <div style={{ padding: '14px 16px', background: primary }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: 14 }}>🏋️</span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: typeface }}>619 FITNESS STUDIO</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontFamily: typeface }}>Studio Suite</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ padding: 16, background: mode === 'dark' ? '#0f172a' : '#f8fafc' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: mode === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10, fontFamily: typeface }}>Dashboard</div>
+                    {[{ label: 'Revenue', val: '₹2.4L', color: primary }, { label: 'Members', val: '142', color: accent }, { label: 'Sessions', val: '38', color: '#10b981' }].map(stat => (
+                      <div key={stat.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '8px 12px', borderRadius: radiusStyle === 'pill' ? 20 : radiusStyle === 'smooth' ? 12 : 7, background: mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', border: `1px solid ${mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
+                        <span style={{ fontSize: 11, color: mode === 'dark' ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)', fontFamily: typeface }}>{stat.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: stat.color, fontFamily: typeface }}>{stat.val}</span>
+                      </div>
                     ))}
+                    <div style={{ marginTop: 12, display: 'flex', gap: 6 }}>
+                      <button style={{ flex: 1, padding: '8px 0', borderRadius: radiusStyle === 'pill' ? 30 : radiusStyle === 'smooth' ? 12 : 8, border: 'none', background: buttonStyle === 'glass' ? 'rgba(255,255,255,0.1)' : buttonStyle === 'soft' ? `${primary}20` : primary, color: buttonStyle === 'soft' ? primary : '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: typeface, backdropFilter: buttonStyle === 'glass' ? 'blur(8px)' : undefined }}>
+                        Record Payment
+                      </button>
+                      <button style={{ flex: 1, padding: '8px 0', borderRadius: radiusStyle === 'pill' ? 30 : radiusStyle === 'smooth' ? 12 : 8, border: 'none', background: buttonStyle === 'glass' ? 'rgba(255,255,255,0.1)' : buttonStyle === 'soft' ? `${accent}20` : accent, color: buttonStyle === 'soft' ? accent : '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: typeface, backdropFilter: buttonStyle === 'glass' ? 'blur(8px)' : undefined }}>
+                        Add Client
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <label style={l}>Typeface</label>
-                  <select style={sel} value={typeface} onChange={(e) => setTypeface(e.target.value as Typeface)}>
-                    {(['Inter', 'Satoshi', 'Geist'] as Typeface[]).map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textAlign: 'center', fontFamily: typeface }}>
+                  {typeface} · {mode} · {buttonStyle} · {radiusStyle}
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginTop: 16 }}>
-                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <label style={l}>Button Style</label>
-                  <select style={sel} value={buttonStyle} onChange={(e) => setButtonStyle(e.target.value as ButtonStyle)}>
-                    {(['soft', 'solid', 'glass'] as ButtonStyle[]).map((o) => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
-                  </select>
-                </div>
-                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <label style={l}>Radius Style</label>
-                  <select style={sel} value={radiusStyle} onChange={(e) => setRadiusStyle(e.target.value as RadiusStyle)}>
-                    {(['rounded', 'smooth', 'pill'] as RadiusStyle[]).map((o) => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
-                  </select>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
 
             {/* ── Logo & Assets ── */}
             <motion.div variants={itemVariants} style={glassCard}>

@@ -164,7 +164,7 @@ function ClientRow({ client, index }: { client: PtClient; index: number }) {
             <p className="text-[13.5px] font-[760] leading-tight tracking-[-0.01em]" style={{ color: 'rgb(15,23,42)' }}>{client.name}</p>
             <p className="text-[10px] font-medium mt-0.5 flex items-center gap-1" style={{ color: 'rgb(148,163,184)' }}>
               <span className="w-1 h-1 rounded-full" style={{ background: color }} />
-              {client.client_id || client.id.slice(0, 8)}
+              {client.unique_id || client.client_id || client.id.slice(0, 8)}
             </p>
           </div>
         </div>

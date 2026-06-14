@@ -290,6 +290,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                   </h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <InfoRow label="Full Name" value={trainer.name} />
+                    <InfoRow label="Trainer ID" value={(trainer as any).unique_id || '—'} />
                     <InfoRow label="Status" value={<StatusBadge status={trainer.status} />} />
                     <InfoRow label="Phone" value={trainer.phone} />
                     <InfoRow label="Email" value={trainer.email} />

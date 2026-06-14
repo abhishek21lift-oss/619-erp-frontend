@@ -115,6 +115,9 @@ function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
               <Link href={`/trainers/${trainer.id}`} className="hover:opacity-80 transition-opacity">
                 <h3 className="text-[15px] font-bold text-[var(--text-primary)] truncate">{trainer.name}</h3>
               </Link>
+              {(trainer as any).unique_id && (
+                <div className="text-[10px] font-bold tracking-widest uppercase mt-0.5" style={{ color: '#f97316' }}>{(trainer as any).unique_id}</div>
+              )}
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Award size={11} className="text-[#8B5CF6] shrink-0" />
                 <span className="text-[11px] text-[var(--text-muted)] truncate">{specialty}</span>

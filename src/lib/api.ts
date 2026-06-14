@@ -221,6 +221,7 @@ export type TrainerSummaryRow = {
 
 export type PtClientBase = {
   id: string;
+  unique_id?: string;
   client_id: string;
   name: string;
   mobile: string;
