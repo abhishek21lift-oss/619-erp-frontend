@@ -17,18 +17,15 @@ export interface AuthPayload extends JWTPayload {
   token_version?: number;
 }
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? ''
-);
+const _jwtSecret = process.env.JWT_SECRET;
+if (!_jwtSecret) {
+  throw new Error('[require-auth] JWT_SECRET env var is required — set it in .env.local and Vercel environment variables');
+}
+const SECRET = new TextEncoder().encode(_jwtSecret);
 
 export async function requireAuth(
   req: NextRequest
 ): Promise<AuthPayload | NextResponse> {
-  if (!process.env.JWT_SECRET) {
-    console.error('[require-auth] JWT_SECRET is not set');
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
-  }
-
   const token =
     req.cookies.get('token')?.value ??
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
