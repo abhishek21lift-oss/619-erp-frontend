@@ -127,9 +127,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Subscription',
     icon: 'CreditCard',
     items: [
-      { href: '/pt-os/plans',             label: 'Plans',                icon: 'FileText',     role: 'admin' },
+      { href: '/subscription/packages',    label: 'Plans & Packages',     icon: 'Package',      role: 'admin' },
       { href: '/subscription/subscriptions', label: 'Subscriptions',     icon: 'Users',        role: 'admin', isNew: true },
-      { href: '/subscription/packages',    label: 'Packages',             icon: 'Package',      role: 'admin', isNew: true },
     ],
   },
   {
