@@ -1048,12 +1048,12 @@ export const api = {
 
   // ── Branches ───────────────────────────────────────────────────
   branches: {
-    list: () => http<{ id: string; name: string; location: string; status: string; member_count: number }[]>('/api/branches'),
+    list: () => http<{ id: string; name: string; location: string; status: string; member_count: number }[]>('/api/settings/branches'),
     create: (data: { name: string; location?: string }) =>
-      http<{ id: string; name: string; location: string }>('/api/branches', { method: 'POST', body: JSON.stringify(data) }),
+      http<{ id: string; name: string; location: string }>('/api/settings/branches', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: { name?: string; location?: string; status?: string }) =>
-      http<{ message: string }>(`/api/branches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string) => http<{ message: string }>(`/api/branches/${id}`, { method: 'DELETE' }),
+      http<{ message: string }>(`/api/settings/branches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => http<{ message: string }>(`/api/settings/branches/${id}`, { method: 'DELETE' }),
   },
 
   // ── User/Account Management (Settings) ──────────────────────────
