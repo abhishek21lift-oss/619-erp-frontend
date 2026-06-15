@@ -69,7 +69,7 @@ function ExerciseCard({
     <div
       onClick={onClick}
       className="relative group cursor-pointer rounded-xl border overflow-hidden transition-all hover:scale-[1.01]"
-      style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+      style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}
     >
       {/* GIF / placeholder */}
       <div
@@ -166,7 +166,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
       <div
         className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
-        style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
       >
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: 'var(--border)' }}>
@@ -325,7 +325,7 @@ function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+      <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: 'var(--border)' }}>
           <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Add Exercise</h2>
           <button onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}><X size={16} /></button>
@@ -448,7 +448,7 @@ export default function ExerciseLibraryPage() {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
               <input
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
-                style={{ background: 'var(--card)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+                style={{ background: 'var(--bg-elevated)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
                 placeholder="Search exercises…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -466,7 +466,7 @@ export default function ExerciseLibraryPage() {
                   <select
                     className="appearance-none pl-3 pr-8 py-2 rounded-xl text-sm font-medium cursor-pointer"
                     style={{
-                      background: value ? 'var(--primary)' : 'var(--card)',
+                      background: value ? 'var(--primary)' : 'var(--bg-elevated)',
                       color: value ? 'white' : 'var(--foreground)',
                       border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
                     }}
@@ -474,7 +474,7 @@ export default function ExerciseLibraryPage() {
                     onChange={e => setter(e.target.value)}
                   >
                     <option value="">{label}</option>
-                    {options.map(o => <option key={o} value={o} style={{ background: 'var(--card)', color: 'var(--foreground)' }}>{o}</option>)}
+                    {options.map(o => <option key={o} value={o} style={{ background: 'var(--bg-elevated)', color: 'var(--foreground)' }}>{o}</option>)}
                   </select>
                   <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: value ? 'white' : 'var(--muted-foreground)' }} />
                 </div>
@@ -524,7 +524,7 @@ export default function ExerciseLibraryPage() {
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
                 className="p-2 rounded-xl disabled:opacity-30"
-                style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
               >
                 <ChevronLeft size={18} />
               </button>
@@ -535,7 +535,7 @@ export default function ExerciseLibraryPage() {
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 className="p-2 rounded-xl disabled:opacity-30"
-                style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
               >
                 <ChevronRight size={18} />
               </button>
