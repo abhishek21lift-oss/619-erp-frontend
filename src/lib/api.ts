@@ -895,6 +895,10 @@ export const api = {
       ),
     removeCredential: (credentialId: string) =>
       http<{ success: boolean }>(`/api/webauthn/credentials/${credentialId}`, { method: 'DELETE' }),
+    memberSearch: (q: string) =>
+      http<{ members: { id: string; name: string; email: string; source: 'member' | 'pt_client' }[] }>(
+        `/api/webauthn/member-search?q=${encodeURIComponent(q)}`,
+      ),
   },
 
   biometricAttend: {

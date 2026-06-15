@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Smartphone, Shield, Fingerprint, ScanFace, CheckCircle2, XCircle,
-  Plus, Trash2, ChevronRight, AlertTriangle, Clock, RefreshCw,
+  Plus, Trash2, AlertTriangle, RefreshCw, Search, User,
   Monitor, Laptop, Tablet, Phone,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -69,6 +69,13 @@ function EnrollContent() {
   const [enrolling, setEnrolling] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [showEnrollForm, setShowEnrollForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ id: string; name: string; email: string; source: string }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [memberConfirmed, setMemberConfirmed] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     isWebAuthnSupported() ? setSupported(true) : setSupported(false);
@@ -79,11 +86,48 @@ function EnrollContent() {
     if (stored) {
       try {
         const ctx = JSON.parse(stored);
-        if (ctx.id) setMemberId(ctx.id);
-        if (ctx.name) setMemberName(ctx.name);
+        if (ctx.id) { setMemberId(ctx.id); setMemberConfirmed(true); }
+        if (ctx.name) { setMemberName(ctx.name); setSearchQuery(ctx.name); }
       } catch {}
     }
   }, []);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  function handleSearchChange(value: string) {
+    setSearchQuery(value);
+    setMemberConfirmed(false);
+    setMemberId('');
+    setMemberName('');
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (value.length < 2) { setSearchResults([]); setShowDropdown(false); return; }
+    searchTimer.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const res = await api.webauthn.memberSearch(value) as any;
+        setSearchResults(res?.members ?? []);
+        setShowDropdown(true);
+      } catch { setSearchResults([]); }
+      finally { setSearchLoading(false); }
+    }, 300);
+  }
+
+  function selectMember(m: { id: string; name: string; email: string; source: string }) {
+    setMemberId(m.id);
+    setMemberName(m.name);
+    setSearchQuery(m.name);
+    setMemberConfirmed(true);
+    setShowDropdown(false);
+    setSearchResults([]);
+  }
 
   const loadCredentials = useCallback(async () => {
     if (!memberId) return;
@@ -200,18 +244,71 @@ function EnrollContent() {
 
       <div className="mx-auto px-5 py-6 sm:px-8" style={{ maxWidth: 900 }}>
         {/* Member Context */}
-        {!memberId && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-[18px] p-5 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
-            <p className="text-[13px] font-[600] mb-2" style={{ color: 'rgb(15,23,42)' }}>Member Information</p>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-[18px] p-5 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+          <p className="text-[13px] font-[600] mb-3" style={{ color: 'rgb(15,23,42)' }}>Member Information</p>
+          <div ref={searchRef} className="relative mb-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'rgb(148,163,184)' }} />
+              <input
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                placeholder="Search by member name, email or ID…"
+                className="w-full rounded-[11px] pl-9 pr-3.5 py-2.5 text-[13px] outline-none"
+                style={{ background: '#f8fafc', border: `1.5px solid ${memberConfirmed ? '#10b981' : '#e2e8f0'}`, color: 'rgb(15,23,42)', fontFamily: 'inherit' }}
+              />
+              {searchLoading && (
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                  <RefreshCw size={13} className="animate-spin" style={{ color: 'rgb(148,163,184)' }} />
+                </div>
+              )}
+            </div>
+            <AnimatePresence>
+              {showDropdown && searchResults.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                  className="absolute z-50 left-0 right-0 mt-1 rounded-[13px] overflow-hidden"
+                  style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
+                  {searchResults.map((m) => (
+                    <button key={m.id} onMouseDown={() => selectMember(m)}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-slate-50">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0"
+                        style={{ background: m.source === 'pt_client' ? 'rgba(249,115,22,0.10)' : 'rgba(99,102,241,0.10)' }}>
+                        <User size={13} style={{ color: m.source === 'pt_client' ? '#f97316' : '#6366f1' }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-[600] truncate" style={{ color: 'rgb(15,23,42)' }}>{m.name}</p>
+                        <p className="text-[11px] truncate" style={{ color: 'rgb(148,163,184)' }}>
+                          {m.email} · <span style={{ color: m.source === 'pt_client' ? '#f97316' : '#6366f1' }}>{m.source === 'pt_client' ? 'PT Client' : 'Member'}</span>
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          {memberConfirmed ? (
+            <div className="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5"
+              style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.20)' }}>
+              <CheckCircle2 size={14} style={{ color: '#10b981', flexShrink: 0 }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-[600]" style={{ color: '#065f46' }}>{memberName}</p>
+                <p className="text-[11px] font-mono" style={{ color: 'rgb(148,163,184)' }}>{memberId}</p>
+              </div>
+              <button onClick={() => { setMemberConfirmed(false); setMemberId(''); setMemberName(''); setSearchQuery(''); }}
+                className="text-[11px] px-2 py-0.5 rounded-[6px] transition-colors hover:bg-red-50"
+                style={{ color: 'rgb(148,163,184)' }}>Change</button>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input value={memberId} onChange={(e) => setMemberId(e.target.value)} placeholder="Member ID"
+              <input value={memberId} onChange={(e) => { setMemberId(e.target.value); setMemberConfirmed(false); }} placeholder="Member ID (manual)"
                 className="rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
-              <input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="Member Name"
+              <input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="Member Name (manual)"
                 className="rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
             </div>
-          </motion.div>
-        )}
+          )}
+        </motion.div>
 
         {/* Status */}
         <AnimatePresence>
