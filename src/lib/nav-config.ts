@@ -165,6 +165,7 @@ export const SETTINGS_GROUP: NavGroup = {
     { href: '/settings/branding',        label: 'Branding',             icon: 'Palette',        role: 'admin' },
     { href: '/settings/integrations',    label: 'Integrations',         icon: 'Zap',            role: 'admin', isNew: true },
     { href: '/settings/import-database', label: 'Import Database',      icon: 'DatabaseBackup', role: 'admin' },
+    { href: '/settings/merge-duplicates', label: 'Merge Duplicates',    icon: 'Merge',          role: 'admin', isNew: true },
   ],
 };
 

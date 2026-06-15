@@ -6,6 +6,31 @@ export { ROLES, normaliseRole, hasRole, isAdminOrManager } from './roles';
 
 // ─────────────────────────── Types ───────────────────────────────────
 
+export type DuplicateGroup = {
+  normalized_name: string;
+  display_name: string;
+  record_count: number;
+  first_seen: string;
+  subscription_starts: string[] | null;
+  total_final: string;
+  total_paid: string;
+  balance: string;
+  master_id: string;
+  all_ids: string[];
+  mobile: string | null;
+  latest_plan: string | null;
+  trainer_name: string | null;
+};
+
+export type MergeResult = {
+  name: string;
+  master_id: string;
+  merged_count: number;
+  total_final: number;
+  total_paid: number;
+  balance: number;
+};
+
 export type User = {
   id: string;
   name?: string;
@@ -876,6 +901,10 @@ export const api = {
       http<{ data: unknown }>(`/api/pt-os/clients/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     deleteClient: (id: string) =>
       http<{ message: string }>(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
+    duplicates: () =>
+      http<{ data: DuplicateGroup[]; total_groups: number; total_records: number; total_duplicates: number; total_financial_value: number }>('/api/pt-os/clients/duplicates'),
+    mergeDuplicates: () =>
+      http<{ success: boolean; run_id: string; merged_groups: number; records_removed: number; results: MergeResult[] }>('/api/pt-os/clients/merge-duplicates', { method: 'POST' }),
     plans: {
       list: () => http<{ data: unknown[] }>('/api/pt-os/plans'),
       create: (data: Record<string, unknown>) =>
