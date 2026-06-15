@@ -8,13 +8,12 @@ import {
   ArrowLeft, User, Phone, Mail, Calendar, Hash, Target,
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
   CheckCircle, AlertTriangle, Clock, Award, IndianRupee,
-  Camera, Ruler, Zap, Repeat, X, ChevronRight,
+  Camera, Ruler, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
-import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -115,8 +114,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [client, setClient] = useState<PtClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [renewOpen, setRenewOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -127,7 +124,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [editNotes, setEditNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [totalEarnedCommission, setTotalEarnedCommission] = useState(0);
-const [plans, setPlans] = useState<{ id: string; name: string; base_amount: number; duration_months: number }[]>([]);
+  const [renewalHistory, setRenewalHistory] = useState<any[]>([]);
 
   const fetch = async () => {
     try {
@@ -142,12 +139,12 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
       setNotesDraft(c?.notes || '');
 
       // Secondary: load in parallel, failures are silently ignored
-      const [checkinsRes, assessmentsRes, goalsRes, paymentsRes, plansRes] = await Promise.allSettled([
+      const [checkinsRes, assessmentsRes, goalsRes, paymentsRes, renewalsRes] = await Promise.allSettled([
         api.progress.weeklyCheckins.list({ client_id: id, limit: 5 }),
         api.progress.assessments.list({ client_id: id, limit: 10 }),
         api.progress.goals.list({ client_id: id }),
         api.pt.payments({ client_id: id }),
-        api.pt.plans.list(),
+        api.clients.renewalHistory(id),
       ]);
 
       const checkins = checkinsRes.status === 'fulfilled' && Array.isArray((checkinsRes.value as any)?.data) ? (checkinsRes.value as any).data : [];
@@ -162,8 +159,8 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
       const rawPayments = paymentsRes.status === 'fulfilled' && Array.isArray((paymentsRes.value as any)?.data) ? (paymentsRes.value as any).data : [];
       setTotalEarnedCommission(rawPayments.reduce((sum: number, p: any) => sum + Number(p.incentive_amt || 0), 0));
 
-      const plansData = plansRes.status === 'fulfilled' && Array.isArray((plansRes.value as any)?.data) ? (plansRes.value as any).data : [];
-      setPlans(plansData.map((p: any) => ({ id: p.id, name: p.name, base_amount: p.base_amount, duration_months: p.duration_months })));
+      const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
+      setRenewalHistory(renewals);
 
       const events: TimelineEvent[] = [];
 
@@ -245,33 +242,6 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
 
   useEffect(() => { fetch(); }, [id]);
 
-  const [renewData, setRenewData] = useState({ planId: '', baseAmount: '', sellingPrice: '', startDate: '' });
-  const openRenew = () => {
-    setRenewData({
-      planId: '',
-      baseAmount: String(client?.base_amount ?? ''),
-      sellingPrice: String(client?.monthly_pt_amount ?? ''),
-      startDate: ''
-    });
-    setRenewOpen(true);
-  };
-  const handleRenew = async () => {
-    const plan = plans.find(p => p.id === renewData.planId);
-    const durMonths = plan?.duration_months ?? 0;
-    if (!renewData.startDate || durMonths === 0) return;
-    setSaving(true);
-    try {
-      await api.clients.renewPt(id, {
-        base_amount: Number(renewData.baseAmount || (client?.base_amount ?? 0)),
-        monthly_pt_amount: Number(renewData.sellingPrice || (client?.monthly_pt_amount ?? 0)),
-        duration_months: durMonths,
-        pt_start_date: renewData.startDate,
-      });
-      setRenewOpen(false);
-      fetch();
-    } catch (err: any) { toast.error(err?.message || 'Failed to renew PT'); }
-    finally { setSaving(false); }
-  };
 
   const DueBadge = ({ status }: { status?: string }) => {
     if (!status || status === 'CLEAR') return null;
@@ -387,7 +357,7 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
                       <PremiumButton tone="ghost" size="sm" icon={<Pencil size={13} />} onClick={() => router.push(`/pt-os/clients/${id}/edit`)}>
                         Edit
                       </PremiumButton>
-                      <PremiumButton tone="success" glow size="sm" icon={<Repeat size={13} />} onClick={openRenew}>
+                      <PremiumButton tone="success" glow size="sm" icon={<Repeat size={13} />} onClick={() => router.push(`/pt-os/clients/${id}/renew`)}>
                         Renew PT
                       </PremiumButton>
                     </div>
@@ -683,78 +653,50 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
                 ))}
               </motion.div>
 
-              {/* ── Renew PT Modal ── */}
-              <AnimatePresence>
-                {renewOpen && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-                    onClick={() => setRenewOpen(false)}>
-                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                      className="w-full max-w-md rounded-[22px] p-6"
-                      style={{ background: 'var(--bg-card)', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}
-                      onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'rgba(16,185,129,0.12)' }}>
-                            <Repeat size={16} style={{ color: '#10B981' }} />
-                          </div>
-                          <h3 className="text-[17px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Renew PT</h3>
-                        </div>
-                        <button onClick={() => setRenewOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100">
-                          <X size={15} />
-                        </button>
-                      </div>
-                      <div className="space-y-4">
-                        {/* Plan Selector */}
-                        <div>
-                          <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Plan</p>
-                          <select
-                            value={renewData.planId}
-                            onChange={(e) => {
-                              const selected = plans.find(p => p.id === e.target.value);
-                              if (selected) {
-                                setRenewData(p => ({
-                                  ...p,
-                                  planId: selected.id,
-                                  baseAmount: String(selected.base_amount),
-                                }));
-                              } else {
-                                setRenewData(p => ({ ...p, planId: '', baseAmount: String(client?.base_amount ?? '') }));
-                              }
-                            }}
-                            className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500] outline-none transition-all appearance-none cursor-pointer"
-                            style={{
-                              background: 'var(--bg-subtle)',
-                              border: '1.5px solid rgba(15,23,42,0.09)',
-                              color: renewData.planId ? 'rgb(15,23,42)' : 'rgb(148,163,184)',
-                            }}>
-                            <option value="">Select a plan…</option>
-                            {plans.map(p => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <FloatInput label="Base Amount (₹)" type="number" value={renewData.baseAmount} onChange={(v) => setRenewData(p => ({ ...p, baseAmount: v }))} />
-                        <FloatInput label="Monthly PT Fee (₹)" type="number" value={renewData.sellingPrice} onChange={(v) => setRenewData(p => ({ ...p, sellingPrice: v }))} />
-                        <FloatInput label="Start Date *" type="date" value={renewData.startDate} onChange={(v) => setRenewData(p => ({ ...p, startDate: v }))} />
-                        {renewData.planId && (
-                          <p className="text-[11px] font-[500]" style={{ color: 'rgb(148,163,184)' }}>
-                            Duration: {plans.find(p => p.id === renewData.planId)?.duration_months ?? '—'} months <span style={{ color: '#10b981' }}>(from plan)</span>
-                          </p>
-                        )}
-                      </div>
-                      <div className="mt-6 flex gap-3 justify-end">
-                        <PremiumButton tone="secondary" onClick={() => setRenewOpen(false)}>Cancel</PremiumButton>
-                        <PremiumButton tone="success" glow onClick={handleRenew} loading={saving} disabled={!renewData.planId || !renewData.startDate}>
-                          <CheckCircle size={13} /> Renew
-                        </PremiumButton>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* ── Purchase / Renewal History ── */}
+              {renewalHistory.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  className="mt-8 rounded-[20px] p-5"
+                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                      <Repeat size={15} style={{ color: '#6366f1' }} />
+                    </div>
+                    <h3 className="text-[14px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>
+                      Purchase History <span className="ml-1 text-[11px] font-[600] px-2 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>{renewalHistory.length} renewal{renewalHistory.length !== 1 ? 's' : ''}</span>
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[12px]">
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
+                          {['Date', 'Plan', 'Period', 'Final Amt', 'Paid', 'Balance'].map(h => (
+                            <th key={h} className="pb-2 pr-4 text-left font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)', fontSize: 10 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {renewalHistory.map((r: any) => (
+                          <tr key={r.id} style={{ borderBottom: '1px solid rgba(15,23,42,0.04)' }}>
+                            <td className="py-2.5 pr-4 font-[500]" style={{ color: 'rgb(71,85,105)' }}>
+                              {r.renewed_at ? new Date(r.renewed_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                            </td>
+                            <td className="py-2.5 pr-4 font-[600]" style={{ color: 'rgb(15,23,42)' }}>{r.new_package || r.old_package || '—'}</td>
+                            <td className="py-2.5 pr-4" style={{ color: 'rgb(71,85,105)' }}>
+                              {r.new_start_date ? new Date(r.new_start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '—'}
+                              {' → '}
+                              {r.new_end_date ? new Date(r.new_end_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                            </td>
+                            <td className="py-2.5 pr-4 font-[600]" style={{ color: 'rgb(15,23,42)' }}>{'₹' + Number(r.final_amount || 0).toLocaleString('en-IN')}</td>
+                            <td className="py-2.5 pr-4 font-[600]" style={{ color: '#10b981' }}>{'₹' + Number(r.paid_amount || 0).toLocaleString('en-IN')}</td>
+                            <td className="py-2.5 font-[600]" style={{ color: Number(r.balance_amount) > 0 ? '#dc2626' : '#10b981' }}>{'₹' + Number(r.balance_amount || 0).toLocaleString('en-IN')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </motion.div>
+              )}
 
               {/* ── Delete Confirmation Modal ── */}
               <AnimatePresence>

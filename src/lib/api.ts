@@ -362,6 +362,8 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    renewalHistory: (id: string) =>
+      http<{ data: unknown[] }>(`/api/pt-os/clients/${id}/renewals`),
     combo: (id: string, data: Record<string, unknown>) =>
       http<{ message?: string }>(`/api/clients/${id}/combo`, {
         method: 'POST',

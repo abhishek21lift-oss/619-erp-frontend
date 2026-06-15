@@ -1,0 +1,290 @@
+'use client';
+
+import { use, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText } from 'lucide-react';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
+import { PremiumButton } from '@/components/premium/PremiumButton';
+import FloatInput from '@/components/ui/FloatInput';
+import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
+
+const fmtINR = (n: number | string | null | undefined) =>
+  '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+const fmtDate = (d?: string | null) => {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return d;
+  return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+interface Plan { id: string; name: string; base_amount: number; duration_months: number; }
+interface Client {
+  id: string; name: string; mobile?: string; trainer_name?: string;
+  package_type?: string; pt_end_date?: string; final_amount: number;
+  paid_amount: number; balance_amount: number;
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function ReadOnly({ label, value, highlight }: { label: string; value: string; highlight?: string }) {
+  return (
+    <div className="rounded-[13px] px-4 py-3.5" style={{ background: 'rgba(15,23,42,0.03)', border: '1.5px solid rgba(15,23,42,0.06)' }}>
+      <p className="text-[10px] font-[700] uppercase tracking-wider mb-1" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+      <p className="text-[15px] font-[700]" style={{ color: highlight || 'rgb(15,23,42)' }}>{value}</p>
+    </div>
+  );
+}
+
+export default function RenewPtPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const [client, setClient] = useState<Client | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  const [form, setForm] = useState({
+    planId: '',
+    packageType: '',
+    baseAmount: '',
+    discount: '0',
+    finalAmount: '',
+    paidNow: '',
+    startDate: '',
+    durationMonths: '',
+    notes: '',
+  });
+
+  const base = Number(form.baseAmount) || 0;
+  const disc = Number(form.discount) || 0;
+  const final = form.finalAmount !== '' ? Number(form.finalAmount) : Math.max(base - disc, 0);
+  const paidNow = Number(form.paidNow) || 0;
+  const balance = Math.max(final - paidNow, 0);
+
+  const endDate = (() => {
+    if (!form.startDate || !form.durationMonths) return null;
+    const d = new Date(form.startDate);
+    d.setMonth(d.getMonth() + Number(form.durationMonths));
+    return d.toISOString().slice(0, 10);
+  })();
+
+  useEffect(() => {
+    Promise.allSettled([api.pt.client(id), api.pt.plans.list()]).then(([cRes, pRes]) => {
+      if (cRes.status === 'fulfilled') {
+        const c = (cRes.value as any)?.data;
+        setClient(c);
+        setForm(f => ({
+          ...f,
+          packageType: c?.package_type || '',
+          baseAmount: String(c?.base_amount || ''),
+          finalAmount: String(c?.final_amount || ''),
+          startDate: new Date().toISOString().slice(0, 10),
+        }));
+      }
+      if (pRes.status === 'fulfilled') {
+        setPlans(((pRes.value as any)?.data || []).map((p: any) => ({
+          id: p.id, name: p.name, base_amount: p.base_amount, duration_months: p.duration_months,
+        })));
+      }
+    });
+  }, [id]);
+
+  const onPlanSelect = (planId: string) => {
+    const plan = plans.find(p => p.id === planId);
+    if (plan) {
+      setForm(f => ({
+        ...f,
+        planId: plan.id,
+        packageType: plan.name,
+        baseAmount: String(plan.base_amount),
+        finalAmount: String(plan.base_amount),
+        discount: '0',
+        durationMonths: String(plan.duration_months),
+      }));
+    } else {
+      setForm(f => ({ ...f, planId: '', packageType: client?.package_type || '', durationMonths: '' }));
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!form.startDate || !form.durationMonths) {
+      toast.error('Start date and duration are required');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.clients.renewPt(id, {
+        package_type: form.packageType || undefined,
+        base_amount: base,
+        discount: disc,
+        final_amount: final,
+        paid_amount: paidNow,
+        monthly_pt_amount: form.durationMonths ? Math.round(final / Number(form.durationMonths)) : 0,
+        pt_start_date: form.startDate,
+        duration_months: Number(form.durationMonths),
+        notes: form.notes || undefined,
+      });
+      toast.success('PT renewed successfully');
+      router.push(`/pt-os/clients/${id}`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to renew PT');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Guard>
+      <AppShell>
+        <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+          <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <button onClick={() => router.back()}
+                className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-black/5"
+                style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(15,23,42,0.08)' }}>
+                <ArrowLeft size={15} style={{ color: 'rgb(71,85,105)' }} />
+              </button>
+              <div>
+                <h1 className="text-[20px] font-[800] tracking-tight" style={{ color: 'rgb(15,23,42)' }}>Renew PT</h1>
+                {client && <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>{client.name}</p>}
+              </div>
+            </div>
+
+            {/* Current subscription summary */}
+            {client && (
+              <div className="rounded-[18px] p-5 mb-6"
+                style={{ background: 'linear-gradient(135deg,#0f172a,#1e293b)', boxShadow: '0 8px 32px rgba(15,23,42,0.25)' }}>
+                <p className="text-[10px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>Current Subscription</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Plan', value: client.package_type || '—' },
+                    { label: 'Expires', value: fmtDate(client.pt_end_date) },
+                    { label: 'Total Paid', value: fmtINR(client.paid_amount) },
+                    { label: 'Balance Due', value: fmtINR(client.balance_amount), red: client.balance_amount > 0 },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{item.label}</p>
+                      <p className="text-[14px] font-[700]" style={{ color: item.red ? '#f87171' : '#ffffff' }}>{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Form card */}
+            <div className="rounded-[20px] p-6 space-y-6"
+              style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 4px 24px rgba(15,23,42,0.07)' }}>
+
+              {/* Section: Plan */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(139,92,246,0.12)' }}>
+                    <Dumbbell size={13} style={{ color: '#8b5cf6' }} />
+                  </div>
+                  <h2 className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Subscription Plan</h2>
+                </div>
+                <div className="space-y-4">
+                  <Field label="Select from plans (optional)">
+                    <select value={form.planId} onChange={e => onPlanSelect(e.target.value)}
+                      className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500] outline-none appearance-none cursor-pointer"
+                      style={{ background: 'rgba(15,23,42,0.03)', border: '1.5px solid rgba(15,23,42,0.09)', color: form.planId ? 'rgb(15,23,42)' : 'rgb(148,163,184)' }}>
+                      <option value="">— Custom / No plan —</option>
+                      {plans.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <FloatInput label="Plan name / Package type" value={form.packageType} onChange={v => setForm(f => ({ ...f, packageType: v }))} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <FloatInput label="Start Date *" type="date" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} />
+                    <FloatInput label="Duration (months) *" type="number" value={form.durationMonths} onChange={v => setForm(f => ({ ...f, durationMonths: v }))} />
+                  </div>
+                  {endDate && (
+                    <div className="rounded-[10px] px-4 py-2.5 flex items-center gap-2"
+                      style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                      <Calendar size={13} style={{ color: '#10b981' }} />
+                      <span className="text-[12px] font-[600]" style={{ color: '#10b981' }}>
+                        New end date: <strong>{fmtDate(endDate)}</strong>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: 'rgba(15,23,42,0.06)' }} />
+
+              {/* Section: Financials */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                    <IndianRupee size={13} style={{ color: '#10b981' }} />
+                  </div>
+                  <h2 className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Financial Details</h2>
+                </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <FloatInput label="Base Amount (₹)" type="number" value={form.baseAmount}
+                      onChange={v => setForm(f => ({ ...f, baseAmount: v, finalAmount: String(Math.max(Number(v) - disc, 0)) }))} />
+                    <FloatInput label="Discount (₹)" type="number" value={form.discount}
+                      onChange={v => setForm(f => ({ ...f, discount: v, finalAmount: String(Math.max(base - Number(v), 0)) }))} />
+                  </div>
+                  <FloatInput label="Final Amount (₹) *" type="number" value={form.finalAmount}
+                    onChange={v => setForm(f => ({ ...f, finalAmount: v }))} />
+                  <FloatInput label="Amount Paid Now (₹)" type="number" value={form.paidNow}
+                    onChange={v => setForm(f => ({ ...f, paidNow: v }))} />
+
+                  {/* Computed summary */}
+                  <div className="grid grid-cols-3 gap-3 pt-1">
+                    <ReadOnly label="Final Amount" value={fmtINR(final)} highlight="#0f172a" />
+                    <ReadOnly label="Paid Now" value={fmtINR(paidNow)} highlight="#10b981" />
+                    <ReadOnly label="Balance Due" value={fmtINR(balance)} highlight={balance > 0 ? '#dc2626' : '#10b981'} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: 'rgba(15,23,42,0.06)' }} />
+
+              {/* Notes */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(245,158,11,0.12)' }}>
+                    <FileText size={13} style={{ color: '#f59e0b' }} />
+                  </div>
+                  <h2 className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Notes (optional)</h2>
+                </div>
+                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  rows={3} placeholder="Any notes about this renewal…"
+                  className="w-full rounded-[13px] px-4 py-3 text-[13px] outline-none resize-none"
+                  style={{ background: 'rgba(15,23,42,0.03)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <PremiumButton tone="secondary" onClick={() => router.back()}>Cancel</PremiumButton>
+                <PremiumButton tone="success" glow loading={saving}
+                  disabled={!form.startDate || !form.durationMonths || !form.finalAmount}
+                  onClick={handleSubmit}
+                  icon={<CheckCircle size={14} />}>
+                  Confirm Renewal
+                </PremiumButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppShell>
+    </Guard>
+  );
+}
