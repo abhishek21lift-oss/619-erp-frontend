@@ -142,7 +142,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16, marginBottom: 16 }}>
+            <div className="rg-sidebar" style={{ marginBottom: 16 }}>
               {/* Hourly bar chart */}
               <div style={{ ...glass, borderRadius: 16, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -209,7 +209,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="rg-2" style={{ gap: 16 }}>
               {/* 7-day trend */}
               <div style={{ ...glass, borderRadius: 16, padding: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>

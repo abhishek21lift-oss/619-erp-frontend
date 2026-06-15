@@ -13,6 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
 
 interface AppShellProps {
@@ -437,7 +438,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-80 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]"
+                      className="notif-panel absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]"
                     >
                       {/* Header */}
                       <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
@@ -587,6 +588,9 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
           </main>
         </div>
       </div>
+
+      {/* Mobile bottom navigation — hidden on lg+ */}
+      <MobileBottomNav />
     </LazyMotion>
   );
 }

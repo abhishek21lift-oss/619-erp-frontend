@@ -413,10 +413,19 @@ export default function PtClientsPage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(15,23,42,0.04)', background: 'linear-gradient(90deg, rgba(124,58,237,0.03), rgba(6,182,212,0.02))' }}>
-                      {['Client', 'Trainer', 'Package', 'Status', 'Amount', 'Balance', 'Commission', 'Days'].map((h) => (
-                        <th key={h} className="py-3.5 px-4 text-[9px] font-bold uppercase tracking-[0.1em]"
+                      {([
+                        { label: 'Client',     cls: '' },
+                        { label: 'Trainer',    cls: 'hidden sm:table-cell' },
+                        { label: 'Package',    cls: 'hidden md:table-cell' },
+                        { label: 'Status',     cls: '' },
+                        { label: 'Amount',     cls: '' },
+                        { label: 'Balance',    cls: 'hidden lg:table-cell' },
+                        { label: 'Commission', cls: 'hidden lg:table-cell' },
+                        { label: 'Days',       cls: '' },
+                      ] as const).map(({ label, cls }) => (
+                        <th key={label} className={`py-3.5 px-4 text-[9px] font-bold uppercase tracking-[0.1em] ${cls}`}
                           style={{ color: 'rgb(148,163,184)' }}>
-                          {h}
+                          {label}
                         </th>
                       ))}
                     </tr>

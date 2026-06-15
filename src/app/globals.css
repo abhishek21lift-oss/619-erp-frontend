@@ -1487,3 +1487,98 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 }
 @media (min-width: 641px) and (max-width: 1024px) { .hide-tablet { display:none !important; } }
 @media (min-width: 1025px) { .hide-desktop { display:none !important; } }
+
+/* Responsive grid utilities — use instead of inline style grids */
+.rg-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.rg-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.rg-sidebar { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
+@media (max-width: 767px) {
+  .rg-2, .rg-3, .rg-sidebar { grid-template-columns: 1fr !important; }
+}
+@media (min-width: 768px) and (max-width: 1024px) {
+  .rg-3 { grid-template-columns: repeat(2, 1fr); }
+  .rg-sidebar { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE FIRST (≤ 767px)
+   Full touch-optimized experience
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Prevent iOS font-zoom on input focus (16px threshold) */
+  .form-control  { font-size: 16px; height: 48px; }
+  textarea.form-control { height: auto; min-height: 100px; font-size: 16px; }
+  select.form-control   { height: 48px; font-size: 16px; }
+
+  /* Touch-friendly buttons (44px+ targets) */
+  .btn-xs { height: 36px; padding: 0 12px; font-size: 12px; }
+  .btn-sm { height: 40px; padding: 0 14px; font-size: 13px; }
+  .btn-md { height: 48px; padding: 0 20px; font-size: 14px; }
+  .btn-lg { height: 52px; padding: 0 24px; font-size: 15px; }
+
+  /* Modal — slide up from bottom */
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal, .modal-sm, .modal-lg, .modal-xl {
+    max-width: 100% !important;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 92dvh;
+  }
+
+  /* Search bar — full width */
+  .search-bar, .search-bar input { width: 100%; }
+
+  /* Page header stack */
+  .page-header { flex-direction: column; gap: 12px; }
+  .page-actions { width: 100%; flex-wrap: wrap; }
+
+  /* Stat grid — 2 columns on mobile */
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .pt-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-card { padding: 14px 16px; }
+  .stat-card-value { font-size: 20px; }
+
+  /* Tables: horizontal scroll, no text-wrap issues */
+  .table-wrap { -webkit-overflow-scrolling: touch; }
+  .table th, .table td { white-space: nowrap; }
+
+  /* Bottom nav spacer — prevents content hiding behind fixed nav */
+  #main-content { padding-bottom: 88px !important; }
+
+  /* Dropdowns: clamp to viewport width */
+  .notif-panel { max-width: calc(100vw - 1rem) !important; }
+  .settings-panel { max-width: calc(100vw - 1rem) !important; }
+
+  /* PT workspace: single column */
+  .pt-workspace { grid-template-columns: 1fr; }
+  .pt-form-grid, .pt-form-grid--3 { grid-template-columns: 1fr; }
+
+  /* Card: no inner overflow clipping on mobile */
+  .card { overflow: visible; }
+
+  /* Empty state: tighter padding */
+  .empty-state { padding: 32px 16px; }
+  .empty-state p { max-width: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   RESPONSIVE — TABLET (768px–1024px)
+   iPad / Android tablet layouts
+   ════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Slightly larger interactive targets for tablet touch */
+  .form-control { height: 44px; }
+  .btn-md { height: 44px; }
+  .btn-lg { height: 48px; }
+
+  /* 2-col KPI grids */
+  .pt-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-grid    { grid-template-columns: repeat(2, 1fr); }
+
+  /* Allow page header to wrap */
+  .page-header { flex-wrap: wrap; }
+
+  /* PT workspace: 1-col on tablet (sidebar below) */
+  .pt-workspace { grid-template-columns: 1fr; }
+  .pt-sidebar   { order: 2; }
+  .pt-main-panel { order: 1; }
+}

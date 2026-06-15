@@ -248,7 +248,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
           <div style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
             {/* ── Quick Stats ── */}
             <motion.div variants={containerVariants} initial="hidden" animate="visible"
-              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+              className="rg-3" style={{ gap: 14, marginBottom: 24 }}>
               {[
                 { label: 'Total Members', value: members.length, icon: <Users size={14} />, color: '#6366f1' },
                 { label: 'Active Members', value: members.filter(m => m.status === 'active').length, icon: <CheckCircle size={14} />, color: '#10b981' },
@@ -289,7 +289,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                   <h3 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <User size={14} color="rgba(255,255,255,0.4)" /> Personal Details
                   </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div className="rg-2" style={{ gap: 16 }}>
                     <InfoRow label="Full Name" value={trainer.name} />
                     <InfoRow label="Trainer ID" value={(trainer as any).unique_id ? <CopyId id={(trainer as any).unique_id} color="#f97316" /> : '—'} />
                     <InfoRow label="Status" value={<StatusBadge status={trainer.status} />} />

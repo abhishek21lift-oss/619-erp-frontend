@@ -213,15 +213,7 @@ function MemberDashboard() {
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: 14,
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 8,
-              position: 'relative',
-            }}
-          >
+          <div className="rg-2" style={{ marginTop: 14, gap: 8, position: 'relative' }}>
             <MiniHeroStat label="Ends on" value={membership?.end_date || '—'} />
             <MiniHeroStat
               label="Balance"

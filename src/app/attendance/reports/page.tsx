@@ -236,7 +236,7 @@ export default function AttendanceReportsPage() {
             })()}
 
             {/* ═══════ FOOTFALL TREND + METRICS GRID ═══════ */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24, alignItems: 'start' }}>
+            <div className="rg-2" style={{ gap: 20, marginBottom: 24, alignItems: 'start' }}>
 
               {/* Footfall Trend Card */}
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}

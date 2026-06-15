@@ -180,15 +180,7 @@ function TrainerInner() {
                 {fmt(earn?.total ?? 0)}
               </div>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '.6rem',
-                  maxWidth: 420,
-                  marginTop: 18,
-                }}
-              >
+              <div className="rg-2" style={{ maxWidth: 420, marginTop: 18, gap: '.6rem' }}>
                 <div
                   style={{
                     background: 'rgba(255,255,255,0.12)',
