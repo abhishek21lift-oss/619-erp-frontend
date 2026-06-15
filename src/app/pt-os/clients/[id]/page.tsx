@@ -117,16 +117,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editSaving, setEditSaving] = useState(false);
-  const [editData, setEditData] = useState({
-    name: '', mobile: '', email: '', gender: '', dob: '', address: '',
-    weight: '', emergency_contact: '',
-    trainer_name: '', package_type: '', pt_start_date: '', pt_end_date: '',
-    duration_months: '', monthly_pt_amount: '',
-    base_amount: '', discount: '', final_amount: '', paid_amount: '',
-    status: 'active',
-  });
 
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [recentCheckins, setRecentCheckins] = useState<any[]>([]);
@@ -251,68 +241,6 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
     } catch { toast.error('Failed to delete client'); setDeleting(false); }
   };
 
-  const openEdit = () => {
-    if (!client) return;
-    setEditData({
-      name: client.name ?? '',
-      mobile: client.mobile ?? '',
-      email: client.email ?? '',
-      gender: client.gender ?? '',
-      dob: client.dob ? client.dob.slice(0, 10) : '',
-      address: client.address ?? '',
-      weight: client.weight != null ? String(client.weight) : '',
-      emergency_contact: client.emergency_contact ?? '',
-      trainer_name: client.trainer_name ?? '',
-      package_type: client.package_type ?? '',
-      pt_start_date: client.pt_start_date ? client.pt_start_date.slice(0, 10) : '',
-      pt_end_date: client.pt_end_date ? client.pt_end_date.slice(0, 10) : '',
-      duration_months: client.duration_months != null ? String(client.duration_months) : '',
-      monthly_pt_amount: client.monthly_pt_amount != null ? String(client.monthly_pt_amount) : '',
-      base_amount: client.base_amount != null ? String(client.base_amount) : '',
-      discount: client.discount != null ? String(client.discount) : '',
-      final_amount: client.final_amount != null ? String(client.final_amount) : '',
-      paid_amount: client.paid_amount != null ? String(client.paid_amount) : '',
-      status: client.status ?? 'active',
-    });
-    setEditOpen(true);
-  };
-
-  const handleSaveEdit = async () => {
-    setEditSaving(true);
-    try {
-      const payload: Record<string, unknown> = {};
-      const str = (v: string) => v.trim() || null;
-      const num = (v: string) => v.trim() !== '' ? Number(v) : null;
-      payload.name = editData.name.trim();
-      if (!payload.name) { toast.error('Name is required'); setEditSaving(false); return; }
-      payload.mobile = str(editData.mobile);
-      payload.email = str(editData.email);
-      payload.gender = str(editData.gender);
-      payload.dob = str(editData.dob);
-      payload.address = str(editData.address);
-      payload.weight = num(editData.weight);
-      payload.emergency_contact = str(editData.emergency_contact);
-      payload.trainer_name = str(editData.trainer_name);
-      payload.package_type = str(editData.package_type);
-      payload.pt_start_date = str(editData.pt_start_date);
-      payload.pt_end_date = str(editData.pt_end_date);
-      payload.duration_months = num(editData.duration_months);
-      payload.monthly_pt_amount = num(editData.monthly_pt_amount);
-      payload.base_amount = num(editData.base_amount);
-      payload.discount = num(editData.discount);
-      payload.final_amount = num(editData.final_amount);
-      payload.paid_amount = num(editData.paid_amount);
-      payload.status = editData.status;
-      await api.pt.updateClient(id, payload);
-      setEditOpen(false);
-      toast.success('Client updated');
-      fetch();
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to save changes');
-    } finally {
-      setEditSaving(false);
-    }
-  };
 
   useEffect(() => { fetch(); }, [id]);
 
@@ -455,7 +383,7 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <PremiumButton tone="ghost" size="sm" icon={<Pencil size={13} />} onClick={openEdit}>
+                      <PremiumButton tone="ghost" size="sm" icon={<Pencil size={13} />} onClick={() => router.push(`/pt-os/clients/${id}/edit`)}>
                         Edit
                       </PremiumButton>
                       <PremiumButton tone="success" glow size="sm" icon={<Repeat size={13} />} onClick={openRenew}>
@@ -820,119 +748,6 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
                         <PremiumButton tone="secondary" onClick={() => setRenewOpen(false)}>Cancel</PremiumButton>
                         <PremiumButton tone="success" glow onClick={handleRenew} loading={saving} disabled={!renewData.planId || !renewData.startDate}>
                           <CheckCircle size={13} /> Renew
-                        </PremiumButton>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ── Edit Client Modal ── */}
-              <AnimatePresence>
-                {editOpen && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-                    onClick={() => setEditOpen(false)}>
-                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                      className="w-full max-w-xl rounded-[22px] flex flex-col"
-                      style={{ background: 'var(--bg-card)', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', maxHeight: '90vh' }}
-                      onClick={e => e.stopPropagation()}>
-
-                      {/* Header */}
-                      <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.12)' }}>
-                            <Pencil size={16} style={{ color: '#6366f1' }} />
-                          </div>
-                          <h3 className="text-[17px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Edit Client</h3>
-                        </div>
-                        <button onClick={() => setEditOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100">
-                          <X size={15} />
-                        </button>
-                      </div>
-
-                      {/* Scrollable body */}
-                      <div className="overflow-y-auto px-6 pb-2 space-y-6" style={{ flex: 1 }}>
-
-                        {/* Personal Info */}
-                        <div>
-                          <p className="text-[11px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>Personal Info</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <FloatInput label="Full Name *" value={editData.name} onChange={v => setEditData(p => ({ ...p, name: v }))} />
-                            <FloatInput label="Phone Number" type="tel" value={editData.mobile} onChange={v => setEditData(p => ({ ...p, mobile: v }))} />
-                            <FloatInput label="Email" type="email" value={editData.email} onChange={v => setEditData(p => ({ ...p, email: v }))} />
-                            <div>
-                              <label className="block text-[11px] font-[600] mb-1.5" style={{ color: 'rgb(100,116,139)' }}>Gender</label>
-                              <select value={editData.gender} onChange={e => setEditData(p => ({ ...p, gender: e.target.value }))}
-                                className="w-full rounded-[13px] px-3.5 py-3 text-[13px] outline-none transition-all appearance-none"
-                                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: editData.gender ? 'rgb(15,23,42)' : 'rgb(148,163,184)' }}>
-                                <option value="">Select gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                              </select>
-                            </div>
-                            <FloatInput label="Date of Birth" type="date" value={editData.dob} onChange={v => setEditData(p => ({ ...p, dob: v }))} />
-                            <FloatInput label="Weight (kg)" type="number" value={editData.weight} onChange={v => setEditData(p => ({ ...p, weight: v }))} />
-                            <div className="sm:col-span-2">
-                              <FloatInput label="Address" value={editData.address} onChange={v => setEditData(p => ({ ...p, address: v }))} />
-                            </div>
-                            <div className="sm:col-span-2">
-                              <FloatInput label="Emergency Contact" type="tel" value={editData.emergency_contact} onChange={v => setEditData(p => ({ ...p, emergency_contact: v }))} />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* PT Assignment */}
-                        <div>
-                          <p className="text-[11px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>PT Assignment</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <FloatInput label="Trainer Name" value={editData.trainer_name} onChange={v => setEditData(p => ({ ...p, trainer_name: v }))} />
-                            <FloatInput label="Subscription Plan" value={editData.package_type} onChange={v => setEditData(p => ({ ...p, package_type: v }))} />
-                            <FloatInput label="PT Start Date" type="date" value={editData.pt_start_date} onChange={v => setEditData(p => ({ ...p, pt_start_date: v }))} />
-                            <FloatInput label="PT End Date" type="date" value={editData.pt_end_date} onChange={v => setEditData(p => ({ ...p, pt_end_date: v }))} />
-                            <FloatInput label="Duration (months)" type="number" value={editData.duration_months} onChange={v => setEditData(p => ({ ...p, duration_months: v }))} />
-                            <FloatInput label="Monthly PT Fee (₹)" type="number" value={editData.monthly_pt_amount} onChange={v => setEditData(p => ({ ...p, monthly_pt_amount: v }))} />
-                          </div>
-                        </div>
-
-                        {/* Financial */}
-                        <div>
-                          <p className="text-[11px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>Financial</p>
-                          <div className="grid grid-cols-2 gap-3">
-                            <FloatInput label="Base Amount (₹)" type="number" value={editData.base_amount} onChange={v => setEditData(p => ({ ...p, base_amount: v }))} />
-                            <FloatInput label="Discount (₹)" type="number" value={editData.discount} onChange={v => setEditData(p => ({ ...p, discount: v }))} />
-                            <FloatInput label="Final Amount (₹)" type="number" value={editData.final_amount} onChange={v => setEditData(p => ({ ...p, final_amount: v }))} />
-                            <FloatInput label="Paid Amount (₹)" type="number" value={editData.paid_amount} onChange={v => setEditData(p => ({ ...p, paid_amount: v }))} />
-                          </div>
-                        </div>
-
-                        {/* Status */}
-                        <div>
-                          <p className="text-[11px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>Status</p>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[11px] font-[600] mb-1.5" style={{ color: 'rgb(100,116,139)' }}>Membership Status</label>
-                              <select value={editData.status} onChange={e => setEditData(p => ({ ...p, status: e.target.value }))}
-                                className="w-full rounded-[13px] px-3.5 py-3 text-[13px] outline-none transition-all appearance-none"
-                                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }}>
-                                <option value="active">Active</option>
-                                <option value="expired">Expired</option>
-                                <option value="frozen">Frozen</option>
-                                <option value="inactive">Inactive</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="h-2" />
-                      </div>
-
-                      {/* Footer */}
-                      <div className="flex gap-3 justify-end px-6 py-4 border-t shrink-0" style={{ borderColor: 'rgba(15,23,42,0.06)' }}>
-                        <PremiumButton tone="secondary" onClick={() => setEditOpen(false)}>Cancel</PremiumButton>
-                        <PremiumButton tone="primary" glow onClick={handleSaveEdit} loading={editSaving}>
-                          <Save size={13} /> Save Changes
                         </PremiumButton>
                       </div>
                     </motion.div>
