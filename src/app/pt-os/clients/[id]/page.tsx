@@ -661,7 +661,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 const totalTerms = 1 + pastTerms.length;
                 const now = new Date();
 
-                const termStatus = (startDate: string | null, endDate: string | null) => {
+                const termStatus = (startDate: string | null | undefined, endDate: string | null | undefined) => {
                   if (!endDate) return { label: 'Active', bg: '#10b98118', fg: '#10b981' };
                   const end = new Date(endDate);
                   const start = startDate ? new Date(startDate) : null;
