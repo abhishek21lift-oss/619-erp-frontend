@@ -25,14 +25,16 @@ export default function ImportDatabasePage() {
     setSuccess('');
     if (!file) { setError('Please select a file first.'); return; }
     const lower = file.name.toLowerCase();
-    if (!(lower.endsWith('.xlsx') || lower.endsWith('.xls') || lower.endsWith('.csv'))) {
-      setError('Only .xlsx, .xls, or .csv files are allowed.');
+    if (!(lower.endsWith('.xlsx') || lower.endsWith('.csv'))) {
+      setError('Only .xlsx or .csv files are allowed.');
       return;
     }
     setLoading(true);
     try {
       const res: any = await api.admin.importDatabase(file);
-      setSuccess(res?.message || 'Database import completed successfully.');
+      const stats = `Imported ${res?.imported ?? 0} of ${res?.total ?? 0} records${res?.skipped ? ` — ${res.skipped} skipped` : ''}.`;
+      const errNote = res?.errors?.length ? ` ${res.errors.length} row error(s): ${res.errors.slice(0, 3).map((e: any) => `Row ${e.row}: ${e.issue}`).join('; ')}` : '';
+      setSuccess(stats + errNote);
       setFile(null);
       const inp = document.getElementById('dbf') as HTMLInputElement | null;
       if (inp) inp.value = '';
@@ -44,10 +46,10 @@ export default function ImportDatabasePage() {
   };
 
   const downloadSampleTemplate = useCallback(() => {
-    const headers = ['name', 'email', 'mobile', 'gender', 'dob', 'address', 'weight', 'notes'];
+    const headers = ['name','mobile','email','gender','dob','address','joining_date','expiry_date','plan','amount_paid','payment_method','trainer','status','height','weight','blood_group','emergency_contact','notes'];
     const rows = [
-      ['John Doe', 'john@example.com', '9876543210', 'Male', '1995-06-15', '123 Main St, City', '75', 'Regular member'],
-      ['Jane Smith', 'jane@example.com', '9876543211', 'Female', '1998-12-20', '456 Oak Ave, Town', '62', 'New joinee'],
+      ['John Doe','9876543210','john@example.com','Male','1995-06-15','123 Main St, City','2025-01-01','2026-01-01','Monthly','2000','UPI','Rahul','active','175','75','O+','9999900000','Regular member'],
+      ['Jane Smith','9876543211','jane@example.com','Female','1998-12-20','456 Oak Ave, Town','2025-03-01','2026-03-01','Quarterly','5500','Cash','','active','162','62','A+','','New joinee'],
     ];
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -131,9 +133,9 @@ export default function ImportDatabasePage() {
                     <UploadCloud size={36} color={dragOver ? '#14b8a6' : 'rgba(255,255,255,0.4)'} />
                   </motion.div>
                   <p style={{ fontSize: 15, fontWeight: 600, color: '#e2e8f0', margin: '12px 0 2px' }}>{dragOver ? 'Drop your file here' : 'Click or drag file here'}</p>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>.xlsx &middot; .xls &middot; .csv</p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>.xlsx &middot; .csv</p>
                 </div>
-                <input id="dbf" type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                <input id="dbf" type="file" accept=".xlsx,.csv" style={{ display: 'none' }} onChange={(e) => setFile(e.target.files?.[0] || null)} />
 
                 {/* ── File info ── */}
                 {file && (
@@ -230,7 +232,6 @@ export default function ImportDatabasePage() {
                 <li>Keep column names clean and structured before upload.</li>
                 <li>Recommended for admin-only migration or bulk setup.</li>
                 <li>Download the sample template before preparing your data.</li>
-                <li>Backend endpoint used: /api/import/import-excel</li>
               </ul>
             </motion.div>
           </div>
