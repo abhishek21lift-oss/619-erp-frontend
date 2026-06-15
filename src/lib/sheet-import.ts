@@ -89,20 +89,21 @@ export interface SheetMember {
   gst_no?: string;
   company_name?: string;
   weight?: string;
-  interested_in?: string;
+  interested_in?: string;  // primary fitness goal
+  trainer_name?: string;   // assigned trainer
   address?: string;
   street?: string;
   city?: string;
   state?: string;
   country?: string;
   pincode?: string;
-  package_type?: string;
+  package_type?: string;   // subscription plan name
   pt_start_date?: string;
   pt_end_date?: string;
   base_amount?: string;
   discount?: string;
   final_amount?: string;
-  paid_amount?: string;
+  paid_amount?: string;    // selling price
   payment_method?: string;
   payment_date?: string;
   notes?: string;
@@ -147,7 +148,7 @@ const HEADER_RULES: { field: keyof SheetMember; match: RegExp }[] = [
   { field: 'name',           match: /\b(full name|member name|client name|name)\b/ },
   { field: 'alt_mobile',     match: /\b(alt|alternate|secondary)\b.*\b(mob|phone|contact)\b/ },
   { field: 'emergency_no',   match: /\bemergency\b/ },
-  { field: 'mobile',         match: /\b(mobile|mob|phone|contact|whatsapp|cell)\b/ },
+  { field: 'mobile',         match: /\b(mobile|mob|phone number|phone|contact|whatsapp|cell)\b/ },
   { field: 'email',          match: /\b(email|e mail|mail|gmail)\b/ },
   { field: 'dob',            match: /\b(dob|date of birth|birth date|birthday)\b/ },
   { field: 'anniversary',    match: /\banniversary\b/ },
@@ -158,20 +159,21 @@ const HEADER_RULES: { field: keyof SheetMember; match: RegExp }[] = [
   { field: 'company_name',   match: /\b(company|firm|organisation|organization)\b/ },
   { field: 'reference_no',   match: /\b(reference|ref no|ref|referred by)\b/ },
   { field: 'weight',         match: /\bweight|wt\b/ },
-  { field: 'interested_in',  match: /\b(interest|goal|interested in)\b/ },
+  { field: 'interested_in',  match: /\b(primary fitness goal|fitness goal|goal|interested in|interest)\b/ },
+  { field: 'trainer_name',   match: /\b(select trainer|trainer name|trainer|coach|assigned trainer)\b/ },
   { field: 'address',        match: /\b(address|flat|house|building)\b/ },
   { field: 'street',         match: /\b(street|area|locality|road)\b/ },
   { field: 'city',           match: /\bcity\b/ },
   { field: 'state',          match: /\bstate\b/ },
   { field: 'country',        match: /\bcountry\b/ },
   { field: 'pincode',        match: /\b(pincode|pin code|pin|zip|postal)\b/ },
-  { field: 'package_type',   match: /\b(package|membership type|plan)\b/ },
+  { field: 'package_type',   match: /\b(subscription plan|package|membership type|plan)\b/ },
   { field: 'pt_start_date',  match: /\b(start date|join date|joining|enrolled)\b/ },
   { field: 'pt_end_date',    match: /\b(end date|expiry|expires|valid till)\b/ },
   { field: 'final_amount',   match: /\b(total amount|net amount|final amount|grand total)\b/ },
   { field: 'discount',       match: /\bdiscount\b/ },
-  { field: 'paid_amount',    match: /\b(paid|amount paid)\b/ },
-  { field: 'base_amount',    match: /\b(base|fee|price|amount|cost)\b/ },
+  { field: 'paid_amount',    match: /\b(selling price|sale price|paid|amount paid)\b/ },
+  { field: 'base_amount',    match: /\b(base price|base|fee|price|amount|cost)\b/ },
   { field: 'payment_method', match: /\b(payment method|payment mode|mode of payment|mode)\b/ },
   { field: 'payment_date',   match: /\b(payment date|paid on)\b/ },
   { field: 'notes',          match: /\b(notes|remarks|comments|description)\b/ },
@@ -376,7 +378,7 @@ export function searchByName(query: string, limit = 10): SheetMember[] {
 export const AUTOFILL_FIELDS: (keyof SheetMember)[] = [
   'first_name', 'last_name', 'email', 'mobile', 'alt_mobile', 'emergency_no',
   'dob', 'anniversary', 'gender', 'reference_no', 'aadhaar_no', 'pan_no',
-  'gst_no', 'company_name', 'weight', 'interested_in',
+  'gst_no', 'company_name', 'weight', 'interested_in', 'trainer_name',
   'address', 'street', 'city', 'state', 'country', 'pincode',
   'package_type', 'pt_start_date', 'pt_end_date',
   'base_amount', 'discount', 'final_amount', 'paid_amount',

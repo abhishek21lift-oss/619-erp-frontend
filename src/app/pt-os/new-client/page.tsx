@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Check, User, Mail, Phone, Calendar, Hash,
   Target, Ruler, Heart, Activity, Dumbbell, Sparkles,
-  Camera, Upload, CheckCircle2, RefreshCw, Award, FileText,
+  Camera, Upload, CheckCircle2, RefreshCw, Award, FileText, FileSpreadsheet, X,
 } from 'lucide-react';
+import { getSheetCacheSync, lookupByMobile, normalizeMobile } from '@/lib/sheet-import';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -254,6 +255,9 @@ function NewClientWizard() {
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [sheetRowCount, setSheetRowCount] = useState<number | null>(null);
+  const [autofillNote, setAutofillNote] = useState('');
+  const autofillTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* ── API State ── */
   const [trainers, setTrainers] = useState<string[]>([]);
@@ -289,6 +293,75 @@ function NewClientWizard() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Check for imported sheet cache on mount
+  useEffect(() => {
+    const cache = getSheetCacheSync();
+    if (cache?.rowCount) setSheetRowCount(cache.rowCount);
+  }, []);
+
+  // Auto-fill 8 fields from imported sheet when phone number is entered
+  useEffect(() => {
+    if (autofillTimer.current) clearTimeout(autofillTimer.current);
+    const digits = form.phone.replace(/\D/g, '');
+    if (digits.length < 10) { setAutofillNote(''); return; }
+    autofillTimer.current = setTimeout(() => {
+      const rec = lookupByMobile(form.phone);
+      if (!rec) return;
+      let filled = 0;
+      setForm(prev => {
+        const next = { ...prev };
+        // 1. Full Name
+        const sheetName = rec.name || [rec.first_name, rec.last_name].filter(Boolean).join(' ');
+        if (sheetName && !prev.name) { next.name = sheetName; filled++; }
+        // 2. Gender
+        const gMap: Record<string, string> = { male: 'Male', female: 'Female', other: 'Other', 'm': 'Male', 'f': 'Female' };
+        const gKey = (rec.gender || '').toLowerCase().trim();
+        const mappedGender = gMap[gKey] || rec.gender || '';
+        if (mappedGender && GENDERS.includes(mappedGender)) { next.gender = mappedGender; filled++; }
+        // 3. Primary Fitness Goal — fuzzy match to GOALS list
+        if (rec.interested_in) {
+          const goalNorm = rec.interested_in.toLowerCase().replace(/[^a-z ]/g, '').trim();
+          const matched = GOALS.find(g => g.toLowerCase().includes(goalNorm) || goalNorm.includes(g.toLowerCase().replace(/[^a-z ]/g, '')));
+          if (matched) { next.goal = matched as typeof next.goal; filled++; }
+        }
+        // 4. Trainer — match against loaded trainers (case-insensitive)
+        if (rec.trainer_name && trainers.length) {
+          const tNorm = rec.trainer_name.toLowerCase().trim();
+          const matchedTrainer = trainers.find(t => t.toLowerCase() === tNorm || t.toLowerCase().includes(tNorm) || tNorm.includes(t.toLowerCase()));
+          if (matchedTrainer) { next.trainer = matchedTrainer; filled++; }
+        }
+        // 5. Subscription Plan — match by name against loaded plans
+        if (rec.package_type && plans.length) {
+          const pNorm = rec.package_type.toLowerCase().trim();
+          const matchedPlan = plans.find(p => p.name.toLowerCase() === pNorm || p.name.toLowerCase().includes(pNorm) || pNorm.includes(p.name.toLowerCase()));
+          if (matchedPlan) {
+            let ed = prev.endDate;
+            if (prev.startDate && matchedPlan.duration_months > 0) {
+              const d = new Date(prev.startDate);
+              d.setMonth(d.getMonth() + matchedPlan.duration_months);
+              ed = d.toISOString().slice(0, 10);
+            }
+            next.planId = matchedPlan.id;
+            next.plan = matchedPlan.name;
+            next.basePrice = matchedPlan.base_amount;
+            next.endDate = ed;
+            filled++;
+          }
+        }
+        // 6. Start Date
+        if (rec.pt_start_date && !prev.startDate) { next.startDate = rec.pt_start_date; filled++; }
+        // 7. Selling Price
+        if (rec.paid_amount) {
+          const sp = parseFloat(rec.paid_amount);
+          if (!isNaN(sp) && prev.sellingPrice === null) { next.sellingPrice = sp; filled++; }
+        }
+        return next;
+      });
+      if (filled > 0) setAutofillNote(`Auto-filled ${filled} field${filled > 1 ? 's' : ''} from imported sheet`);
+    }, 350);
+    return () => { if (autofillTimer.current) clearTimeout(autofillTimer.current); };
+  }, [form.phone, trainers, plans]);
 
   const trainerOptions = trainers;
 
@@ -450,6 +523,20 @@ function NewClientWizard() {
           <DataErrorState message={dataError} onRetry={fetchData} />
         ) : (
           <>
+            {/* Sheet import banner */}
+            {sheetRowCount !== null && (
+              <div className="mb-4 flex items-center gap-2.5 rounded-[13px] px-4 py-3"
+                style={{ background: 'rgba(13,148,136,0.07)', border: '1px solid rgba(13,148,136,0.2)' }}>
+                <FileSpreadsheet size={14} style={{ color: '#0d9488', flexShrink: 0 }} />
+                <span className="text-[12.5px] font-[600]" style={{ color: '#065f46' }}>
+                  {sheetRowCount} records imported — enter phone number to auto-fill all fields
+                </span>
+                <button onClick={() => setSheetRowCount(null)} className="ml-auto" style={{ color: '#9ca3af', lineHeight: 0 }}>
+                  <X size={13} />
+                </button>
+              </div>
+            )}
+
             {/* Step Indicator */}
             <StepIndicator current={step} onStep={(s) => { if (s <= step + 1) { setStep(s); setError(''); } }} />
 
@@ -483,7 +570,17 @@ function NewClientWizard() {
                           <FloatInput label="Email Address" type="email" value={form.email} onChange={(v) => set('email', v)} />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <FloatInput label="Phone Number" type="tel" required value={form.phone} onChange={(v) => set('phone', v)} />
+                          <div>
+                            <FloatInput label="Phone Number" type="tel" required value={form.phone} onChange={(v) => set('phone', v)} />
+                            {autofillNote && (
+                              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                                className="mt-1.5 flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5"
+                                style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
+                                <CheckCircle2 size={11} style={{ color: '#0d9488', flexShrink: 0 }} />
+                                <span className="text-[11px] font-[600]" style={{ color: '#065f46' }}>{autofillNote}</span>
+                              </motion.div>
+                            )}
+                          </div>
                           <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={(v) => set('dob', v)} />
                           <div>
                             <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Gender</p>

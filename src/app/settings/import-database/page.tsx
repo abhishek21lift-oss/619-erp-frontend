@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
-import { DatabaseBackup, Download, FileSpreadsheet, UploadCloud, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { importSheetFile } from '@/lib/sheet-import';
+import { DatabaseBackup, Download, FileSpreadsheet, UploadCloud, X, Loader2, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 
 const sz = (b: number) => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
 
@@ -35,6 +36,8 @@ export default function ImportDatabasePage() {
       const stats = `Imported ${res?.imported ?? 0} of ${res?.total ?? 0} records${res?.skipped ? ` — ${res.skipped} skipped` : ''}.`;
       const errNote = res?.errors?.length ? ` ${res.errors.length} row error(s): ${res.errors.slice(0, 3).map((e: any) => `Row ${e.row}: ${e.issue}`).join('; ')}` : '';
       setSuccess(stats + errNote);
+      // Also cache the sheet client-side so New Client form can auto-fill from it
+      try { await importSheetFile(file); } catch { /* non-blocking */ }
       setFile(null);
       const inp = document.getElementById('dbf') as HTMLInputElement | null;
       if (inp) inp.value = '';
@@ -46,10 +49,10 @@ export default function ImportDatabasePage() {
   };
 
   const downloadSampleTemplate = useCallback(() => {
-    const headers = ['name','mobile','email','gender','dob','address','joining_date','expiry_date','plan','amount_paid','payment_method','trainer','status','height','weight','blood_group','emergency_contact','notes'];
+    const headers = ['Full Name','Phone Number','Gender','Primary Fitness Goal','Trainer','Subscription Plan','Start Date','Selling Price'];
     const rows = [
-      ['John Doe','9876543210','john@example.com','Male','1995-06-15','123 Main St, City','2025-01-01','2026-01-01','Monthly','2000','UPI','Rahul','active','175','75','O+','9999900000','Regular member'],
-      ['Jane Smith','9876543211','jane@example.com','Female','1998-12-20','456 Oak Ave, Town','2025-03-01','2026-03-01','Quarterly','5500','Cash','','active','162','62','A+','','New joinee'],
+      ['John Doe','9876543210','Male','Weight Loss','Rahul Sharma','Monthly Premium','2025-01-01','4500'],
+      ['Jane Smith','9876543211','Female','Muscle Gain','Priya Kapoor','Quarterly Elite','2025-03-01','12000'],
     ];
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -224,15 +227,26 @@ export default function ImportDatabasePage() {
                 <FileSpreadsheet size={22} color="#14b8a6" />
               </div>
               <h2 style={{ fontSize: 17, fontWeight: 700, color: '#e2e8f0', margin: '16px 0 0' }}>Import notes</h2>
+              <p style={{ marginTop: 12, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Required columns</p>
               <ul style={{
-                marginTop: 16, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 10,
-                fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6,
+                marginTop: 8, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 6,
+                fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6,
               }}>
-                <li>Use Excel or CSV file exported from another software.</li>
-                <li>Keep column names clean and structured before upload.</li>
-                <li>Recommended for admin-only migration or bulk setup.</li>
-                <li>Download the sample template before preparing your data.</li>
+                <li><strong style={{ color: '#5eead4' }}>Full Name</strong> — client's full name</li>
+                <li><strong style={{ color: '#5eead4' }}>Phone Number</strong> — 10-digit mobile</li>
+                <li><strong style={{ color: '#5eead4' }}>Gender</strong> — Male / Female / Other</li>
+                <li><strong style={{ color: '#5eead4' }}>Primary Fitness Goal</strong> — e.g. Weight Loss</li>
+                <li><strong style={{ color: '#5eead4' }}>Trainer</strong> — trainer's full name</li>
+                <li><strong style={{ color: '#5eead4' }}>Subscription Plan</strong> — plan name</li>
+                <li><strong style={{ color: '#5eead4' }}>Start Date</strong> — YYYY-MM-DD format</li>
+                <li><strong style={{ color: '#5eead4' }}>Selling Price</strong> — amount in ₹</li>
               </ul>
+              <div style={{ marginTop: 14, borderRadius: 10, padding: '10px 13px', background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <Sparkles size={13} color="#5eead4" style={{ marginTop: 1, flexShrink: 0 }} />
+                <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, margin: 0 }}>
+                  After import, the New Client form auto-fills all 8 fields when you type a phone number.
+                </p>
+              </div>
             </motion.div>
           </div>
         </div>
