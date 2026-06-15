@@ -379,7 +379,7 @@ export default function ExerciseLibraryPage() {
         api.exercises.list(params.toString()),
         api.exercises.count(params.toString()),
       ]);
-      setExercises(data);
+      setExercises(data as Exercise[]);
       setTotal(countRes?.total ?? data.length);
     } catch { toast.error('Failed to load exercises'); }
     finally { setLoading(false); }
