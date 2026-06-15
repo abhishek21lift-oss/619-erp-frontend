@@ -29,11 +29,12 @@ function PageContent() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [plansRes, clientsRes] = await Promise.all([
-        (api.pt.plans.list() as any).data as any[],
+      const [plansResult, clientsRes] = await Promise.all([
+        api.pt.plans.list(),
         api.clients.list({}),
       ]);
-      const plans = new Map((Array.isArray(plansRes) ? plansRes : []).map((p: any) => [p.id ?? p.name, p]));
+      const plansArr = ((plansResult as any)?.data ?? (Array.isArray(plansResult) ? plansResult : [])) as any[];
+      const plans = new Map(plansArr.map((p: any) => [p.id ?? p.name, p]));
       const clients = Array.isArray(clientsRes) ? clientsRes : [];
       const result: Subscription[] = [];
       for (const c of clients as any[]) {

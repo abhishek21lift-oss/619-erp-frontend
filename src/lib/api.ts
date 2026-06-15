@@ -795,6 +795,19 @@ export const api = {
         http<{ data: unknown[]; total: number }>(`/api/automation/communication-logs${buildQs(params)}`),
       stats: () => http<{ data: unknown }>('/api/automation/communication-logs/stats'),
     },
+    ptPackages: {
+      list: (params?: Record<string, string | number>) =>
+        http<{ data: unknown[] }>(`/api/automation/pt-packages${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: unknown }>('/api/automation/pt-packages', {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: unknown }>(`/api/automation/pt-packages/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+      delete: (id: string) => http(`/api/automation/pt-packages/${id}`, { method: 'DELETE' }),
+    },
     sessionBalance: {
       list: (params?: Record<string, string | number>) =>
         http<{ data: unknown[] }>(`/api/automation/session-balance${buildQs(params)}`),
@@ -939,7 +952,7 @@ export const api = {
     list: (params?: Record<string, string | number>) =>
       http<unknown[]>(`/api/feedback${buildQs(params)}`),
     get: (id: string) => http<unknown>(`/api/feedback/${id}`),
-    reply: (id: string, data: { message: string }) =>
+    reply: (id: string, data: { reply: string }) =>
       http<{ message: string }>(`/api/feedback/${id}/reply`, { method: 'POST', body: JSON.stringify(data) }),
     resolve: (id: string) =>
       http<{ message: string }>(`/api/feedback/${id}/resolve`, { method: 'POST' }),

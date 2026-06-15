@@ -51,7 +51,17 @@ function OffersContent() {
   async function addOffer(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const res = await api.offers.create(form as any) as { message?: string; offer: Offer };
+      const payload = {
+        title: form.name,
+        discount_type: form.type,
+        discount_value: form.value,
+        code: form.code,
+        audience: form.plan,
+        max_uses: form.usageLimit,
+        valid_from: form.validFrom || null,
+        valid_until: form.validUntil || null,
+      };
+      const res = await api.offers.create(payload as any) as { message?: string; offer: Offer };
       const created = res?.offer;
       if (created) {
         setOffers(p => [...p, created]);

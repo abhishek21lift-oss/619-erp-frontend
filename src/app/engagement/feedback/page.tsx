@@ -68,7 +68,7 @@ function FeedbackContent() {
   async function handleReply(id: string) {
     if (!reply.trim()) return;
     try {
-      await api.feedback.reply(id, { message: reply });
+      await api.feedback.reply(id, { reply: reply });
       toast.success('Reply sent');
       await handleResolve(id);
     } catch (err: any) {
