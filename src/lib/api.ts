@@ -542,6 +542,10 @@ export const api = {
       formData.append('file', file);
       return http<{ message?: string }>('/api/import/import-excel', { method: 'POST', body: formData });
     },
+    smartImport: (clients: unknown[]) =>
+      http<{ clients_created: number; clients_updated: number; subscriptions_created: number; total_clients: number; review: unknown[]; errors: unknown[] }>(
+        '/api/import/smart-import', { method: 'POST', body: JSON.stringify(clients.length ? { clients } : { clients: [] }) }
+      ),
     exportDatabase: () => http<{ message?: string; url?: string }>('/api/admin/export-database'),
     backupDatabase: () => http<{ message?: string }>('/api/admin/backup-database', { method: 'POST' }),
   },
@@ -925,6 +929,8 @@ export const api = {
       http<{ data: unknown }>(`/api/pt-os/clients/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     deleteClient: (id: string) =>
       http<{ message: string }>(`/api/pt-os/clients/${id}`, { method: 'DELETE' }),
+    subscriptions: (id: string) =>
+      http<{ data: unknown[]; total: number }>(`/api/pt-os/clients/${id}/subscriptions`),
     duplicates: () =>
       http<{ data: DuplicateGroup[]; total_groups: number; total_records: number; total_duplicates: number; total_financial_value: number }>('/api/pt-os/clients/duplicates'),
     mergeDuplicates: () =>
