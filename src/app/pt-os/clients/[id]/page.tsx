@@ -653,50 +653,137 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 ))}
               </motion.div>
 
-              {/* ── Purchase / Renewal History ── */}
-              {renewalHistory.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                  className="mt-8 rounded-[20px] p-5"
-                  style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(99,102,241,0.12)' }}>
-                      <Repeat size={15} style={{ color: '#6366f1' }} />
+              {/* ── PT Subscription History (all terms) ── */}
+              {(() => {
+                // Build full term list: initial term (from pt_clients) + each renewal
+                // Renewals are stored newest-first; reverse to show oldest first
+                const pastTerms = [...renewalHistory].reverse();
+                const totalTerms = 1 + pastTerms.length;
+                const now = new Date();
+
+                const termStatus = (startDate: string | null, endDate: string | null) => {
+                  if (!endDate) return { label: 'Active', bg: '#10b98118', fg: '#10b981' };
+                  const end = new Date(endDate);
+                  const start = startDate ? new Date(startDate) : null;
+                  if (end < now) return { label: 'Expired', bg: '#6b728018', fg: '#6b7280' };
+                  if (start && start > now) return { label: 'Upcoming', bg: '#3b82f618', fg: '#3b82f6' };
+                  return { label: 'Active', bg: '#10b98118', fg: '#10b981' };
+                };
+
+                return (
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                    className="mt-8 rounded-[20px] p-5"
+                    style={{ background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(99,102,241,0.12)' }}>
+                          <Repeat size={15} style={{ color: '#6366f1' }} />
+                        </div>
+                        <div>
+                          <h3 className="text-[14px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>PT Subscription History</h3>
+                          <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{totalTerms} term{totalTerms !== 1 ? 's' : ''} total</p>
+                        </div>
+                      </div>
+                      <button onClick={() => router.push(`/pt-os/clients/${client.id}/renew`)}
+                        className="flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[11px] font-[700] transition hover:opacity-80"
+                        style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                        <Repeat size={11} /> New Term
+                      </button>
                     </div>
-                    <h3 className="text-[14px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>
-                      Purchase History <span className="ml-1 text-[11px] font-[600] px-2 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>{renewalHistory.length} renewal{renewalHistory.length !== 1 ? 's' : ''}</span>
-                    </h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-[12px]">
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
-                          {['Date', 'Plan', 'Period', 'Final Amt', 'Paid', 'Balance'].map(h => (
-                            <th key={h} className="pb-2 pr-4 text-left font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)', fontSize: 10 }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {renewalHistory.map((r: any) => (
-                          <tr key={r.id} style={{ borderBottom: '1px solid rgba(15,23,42,0.04)' }}>
-                            <td className="py-2.5 pr-4 font-[500]" style={{ color: 'rgb(71,85,105)' }}>
-                              {r.renewed_at ? new Date(r.renewed_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                            </td>
-                            <td className="py-2.5 pr-4 font-[600]" style={{ color: 'rgb(15,23,42)' }}>{r.new_package || r.old_package || '—'}</td>
-                            <td className="py-2.5 pr-4" style={{ color: 'rgb(71,85,105)' }}>
-                              {r.new_start_date ? new Date(r.new_start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '—'}
-                              {' → '}
-                              {r.new_end_date ? new Date(r.new_end_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                            </td>
-                            <td className="py-2.5 pr-4 font-[600]" style={{ color: 'rgb(15,23,42)' }}>{'₹' + Number(r.final_amount || 0).toLocaleString('en-IN')}</td>
-                            <td className="py-2.5 pr-4 font-[600]" style={{ color: '#10b981' }}>{'₹' + Number(r.paid_amount || 0).toLocaleString('en-IN')}</td>
-                            <td className="py-2.5 font-[600]" style={{ color: Number(r.balance_amount) > 0 ? '#dc2626' : '#10b981' }}>{'₹' + Number(r.balance_amount || 0).toLocaleString('en-IN')}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </motion.div>
-              )}
+
+                    {/* Term cards */}
+                    <div className="space-y-3">
+
+                      {/* Past terms from renewals (oldest first) */}
+                      {pastTerms.map((r: any, idx: number) => {
+                        const st = termStatus(r.new_start_date, r.new_end_date);
+                        const termNum = idx + 1;
+                        return (
+                          <div key={r.id} className="rounded-[14px] p-4"
+                            style={{ background: 'rgba(15,23,42,0.025)', border: '1px solid rgba(15,23,42,0.06)' }}>
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-[800]"
+                                  style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>{termNum}</span>
+                                <div>
+                                  <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{r.new_package || r.old_package || '—'}</p>
+                                  <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
+                                    {r.duration_months ? `${r.duration_months} months · ` : ''}
+                                    {r.new_start_date ? new Date(r.new_start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                                    {' → '}
+                                    {r.new_end_date ? new Date(r.new_end_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-[700] uppercase tracking-wider px-2 py-0.5 rounded-[6px]"
+                                style={{ background: st.bg, color: st.fg }}>{st.label}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { label: 'Final', value: fmtINR(r.final_amount), color: 'rgb(15,23,42)' },
+                                { label: 'Paid', value: fmtINR(r.paid_amount), color: '#10b981' },
+                                { label: 'Balance', value: fmtINR(r.balance_amount), color: Number(r.balance_amount) > 0 ? '#dc2626' : '#10b981' },
+                              ].map(f => (
+                                <div key={f.label} className="rounded-[10px] px-3 py-2"
+                                  style={{ background: 'rgba(255,255,255,0.8)' }}>
+                                  <p className="text-[9px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'rgb(148,163,184)' }}>{f.label}</p>
+                                  <p className="text-[13px] font-[700]" style={{ color: f.color }}>{f.value}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Current term (always shown, always last/latest) */}
+                      {(() => {
+                        const st = termStatus(client.pt_start_date, client.pt_end_date);
+                        const termNum = totalTerms;
+                        return (
+                          <div className="rounded-[14px] p-4"
+                            style={{ background: 'rgba(99,102,241,0.04)', border: '1.5px solid rgba(99,102,241,0.2)' }}>
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-[800]"
+                                  style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}>{termNum}</span>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{client.package_type || '—'}</p>
+                                    <span className="text-[9px] font-[800] uppercase tracking-wider px-1.5 py-0.5 rounded-[4px]"
+                                      style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>Current</span>
+                                  </div>
+                                  <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
+                                    {client.duration_months ? `${client.duration_months} months · ` : ''}
+                                    {fmtDate(client.pt_start_date)} → {fmtDate(client.pt_end_date)}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-[700] uppercase tracking-wider px-2 py-0.5 rounded-[6px]"
+                                style={{ background: st.bg, color: st.fg }}>{st.label}</span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {[
+                                { label: 'Final', value: fmtINR(client.final_amount), color: 'rgb(15,23,42)' },
+                                { label: 'Paid', value: fmtINR(client.paid_amount), color: '#10b981' },
+                                { label: 'Balance', value: fmtINR(client.balance_amount), color: client.balance_amount > 0 ? '#dc2626' : '#10b981' },
+                                { label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' },
+                              ].map(f => (
+                                <div key={f.label} className="rounded-[10px] px-3 py-2"
+                                  style={{ background: 'rgba(255,255,255,0.8)' }}>
+                                  <p className="text-[9px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'rgb(148,163,184)' }}>{f.label}</p>
+                                  <p className="text-[13px] font-[700]" style={{ color: f.color }}>{f.value}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </motion.div>
+                );
+              })()}
 
               {/* ── Delete Confirmation Modal ── */}
               <AnimatePresence>
