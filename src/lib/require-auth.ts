@@ -17,15 +17,28 @@ export interface AuthPayload extends JWTPayload {
   token_version?: number;
 }
 
-const _jwtSecret = process.env.JWT_SECRET;
-if (!_jwtSecret) {
-  throw new Error('[require-auth] JWT_SECRET env var is required — set it in .env.local and Vercel environment variables');
+// Lazily initialised so the module can be imported during Next.js build-time
+// page collection without JWT_SECRET being present. The secret is resolved and
+// validated on the first real request, not at module load time.
+let _secret: Uint8Array | null = null;
+function getSecret(): Uint8Array {
+  if (_secret) return _secret;
+  const raw = process.env.JWT_SECRET;
+  if (!raw) throw new Error('[require-auth] JWT_SECRET env var is required — set it in .env.local and Vercel environment variables');
+  _secret = new TextEncoder().encode(raw);
+  return _secret;
 }
-const SECRET = new TextEncoder().encode(_jwtSecret);
 
 export async function requireAuth(
   req: NextRequest
 ): Promise<AuthPayload | NextResponse> {
+  let secret: Uint8Array;
+  try {
+    secret = getSecret();
+  } catch {
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+  }
+
   const token =
     req.cookies.get('token')?.value ??
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
@@ -35,7 +48,7 @@ export async function requireAuth(
   }
 
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, secret);
     if (!payload.id || !payload.role) {
       return NextResponse.json({ error: 'Invalid token payload' }, { status: 401 });
     }
