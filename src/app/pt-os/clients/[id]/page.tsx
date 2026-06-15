@@ -55,14 +55,16 @@ const fmtDate = (d?: string) => {
   return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-function StatusBadge({ status, days_left }: { status: string; days_left: number | null }) {
+function StatusBadge({ status, days_left, pt_end_date }: { status: string; days_left: number | null; pt_end_date?: string }) {
   const s = (() => {
-    if (status === 'active' && days_left !== null && days_left <= 0)
-      return { label: 'Expired', bg: '#f43f5e18', fg: '#f43f5e' };
+    const endPassed = pt_end_date ? new Date(pt_end_date) < new Date() : (days_left !== null && days_left <= 0);
+    if (endPassed)
+      return { label: 'Inactive', bg: '#6b728018', fg: '#6b7280' };
     if (status === 'active' && days_left !== null && days_left <= 7)
       return { label: 'Expiring', bg: '#dc262618', fg: '#dc2626' };
     if (status === 'active') return { label: 'Active', bg: '#10b98118', fg: '#10b981' };
-    if (status === 'expired') return { label: 'Expired', bg: '#f43f5e18', fg: '#f43f5e' };
+    if (status === 'expired' || status === 'inactive')
+      return { label: 'Inactive', bg: '#6b728018', fg: '#6b7280' };
     if (status === 'frozen') return { label: 'Frozen', bg: '#3b82f618', fg: '#3b82f6' };
     return { label: status, bg: '#6b728018', fg: '#6b7280' };
   })();
@@ -359,7 +361,7 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
                     <div className="flex-1">
                       <div className="flex items-center gap-3 flex-wrap">
                         <h1 className="text-[26px] font-[860] tracking-[-0.03em]" style={{ color: '#ffffff' }}>{client.name}</h1>
-                        <StatusBadge status={client.status} days_left={client.days_left} />
+                        <StatusBadge status={client.status} days_left={client.days_left} pt_end_date={client.pt_end_date} />
                       </div>
                       <p className="mt-1 text-[13px] flex items-center gap-2 flex-wrap" style={{ color: 'rgba(255,255,255,0.5)' }}>
                         <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="rgba(255,255,255,0.7)" />
@@ -583,7 +585,7 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
                   {/* ── PT Assignment ── */}
                   <SectionCard title="PT Assignment" icon={<Dumbbell size={16} />}>
                     <InfoRow label="Trainer" value={client.trainer_name || '—'} />
-                    <InfoRow label="Package" value={client.package_type || '—'} />
+                    <InfoRow label="Plan" value={client.package_type || '—'} />
                     <InfoRow label="Start Date" value={fmtDate(client.pt_start_date)} />
                     <InfoRow label="End Date" value={fmtDate(client.pt_end_date)} />
                     <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
