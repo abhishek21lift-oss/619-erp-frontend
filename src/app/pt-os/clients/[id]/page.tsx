@@ -133,37 +133,37 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
     try {
       setLoading(true);
       setError('');
-      const [clientRes, checkinsRes, assessmentsRes, goalsRes, paymentsRes, plansRes] = await Promise.all([
-        api.pt.client(id),
+
+      // Essential: client data must succeed or we show error
+      const clientRes = await api.pt.client(id);
+      const c = (clientRes as any)?.data ?? null;
+      if (!c) { setError('Client not found'); setLoading(false); return; }
+      setClient(c);
+      setNotesDraft(c?.notes || '');
+
+      // Secondary: load in parallel, failures are silently ignored
+      const [checkinsRes, assessmentsRes, goalsRes, paymentsRes, plansRes] = await Promise.allSettled([
         api.progress.weeklyCheckins.list({ client_id: id, limit: 5 }),
         api.progress.assessments.list({ client_id: id, limit: 10 }),
         api.progress.goals.list({ client_id: id }),
         api.pt.payments({ client_id: id }),
         api.pt.plans.list(),
       ]);
-      const c = (clientRes as any)?.data ?? null;
-      setClient(c);
 
-      const checkins = Array.isArray((checkinsRes as any)?.data) ? (checkinsRes as any).data : [];
+      const checkins = checkinsRes.status === 'fulfilled' && Array.isArray((checkinsRes.value as any)?.data) ? (checkinsRes.value as any).data : [];
       setRecentCheckins(checkins);
 
-      const assessments = Array.isArray((assessmentsRes as any)?.data) ? (assessmentsRes as any).data : [];
-      setRecentWeights(assessments.filter((a: any) => a.weight));
-      setRecentWeights(prev => {
-        const weights = assessments.filter((a: any) => a.weight).slice(0, 5);
-        return weights;
-      });
+      const assessments = assessmentsRes.status === 'fulfilled' && Array.isArray((assessmentsRes.value as any)?.data) ? (assessmentsRes.value as any).data : [];
+      setRecentWeights(assessments.filter((a: any) => a.weight).slice(0, 5));
 
-      const goals = Array.isArray((goalsRes as any)?.data) ? (goalsRes as any).data : [];
+      const goals = goalsRes.status === 'fulfilled' && Array.isArray((goalsRes.value as any)?.data) ? (goalsRes.value as any).data : [];
       setActiveGoals(goals.filter((g: any) => g.status === 'active'));
 
-      const plansData = Array.isArray((plansRes as any)?.data) ? (plansRes as any).data : [];
+      const rawPayments = paymentsRes.status === 'fulfilled' && Array.isArray((paymentsRes.value as any)?.data) ? (paymentsRes.value as any).data : [];
+      setTotalEarnedCommission(rawPayments.reduce((sum: number, p: any) => sum + Number(p.incentive_amt || 0), 0));
+
+      const plansData = plansRes.status === 'fulfilled' && Array.isArray((plansRes.value as any)?.data) ? (plansRes.value as any).data : [];
       setPlans(plansData.map((p: any) => ({ id: p.id, name: p.name, base_amount: p.base_amount, duration_months: p.duration_months })));
-
-      const rawPayments = Array.isArray((paymentsRes as any)?.data) ? (paymentsRes as any).data : [];
-
-      const totalComm = rawPayments.reduce((sum: number, p: any) => sum + Number(p.incentive_amt || 0), 0);
-      setTotalEarnedCommission(totalComm);
 
       const events: TimelineEvent[] = [];
 
@@ -219,7 +219,6 @@ const [plans, setPlans] = useState<{ id: string; name: string; base_amount: numb
 
       events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setTimeline(events.slice(0, 10));
-      setNotesDraft(c?.notes || '');
     } catch (err: any) {
       setError(err?.message || 'Failed to load client');
     } finally {
