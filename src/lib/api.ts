@@ -637,6 +637,28 @@ export const api = {
       http<{ message: string; invoice: unknown }>(`/api/invoices/${id}/cancel`, { method: 'POST' }),
   },
 
+  // ── Exercise Library ─────────────────────────────────────────────
+  exercises: {
+    list: (qs?: string) =>
+      http<unknown[]>(`/api/workouts/exercises${qs ? `?${qs}` : ''}`),
+    meta: () =>
+      http<{ body_parts: string[]; equipment_types: string[]; exercise_types: string[]; difficulties: string[]; total: number }>(
+        '/api/workouts/exercises/meta'
+      ),
+    count: (qs?: string) =>
+      http<{ total: number }>(`/api/workouts/exercises/meta${qs ? `?${qs}` : ''}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ message: string; exercise: unknown }>('/api/workouts/exercises', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ message: string; exercise: unknown }>(`/api/workouts/exercises/${id}`, {
+        method: 'PUT', body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      http<{ message: string }>(`/api/workouts/exercises/${id}`, { method: 'DELETE' }),
+  },
+
   // ── Workouts / Exercises ──────────────────────────────────────────
   workouts: {
     exercises: {
