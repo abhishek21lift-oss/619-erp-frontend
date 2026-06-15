@@ -36,17 +36,11 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Attendance',
     icon: 'ScanFace',
     items: [
-      { href: '/checkin',                label: 'QR / Face Check-In',        icon: 'ScanFace' },
-      { href: '/checkin/qr-scanner',     label: 'QR Scanner',                icon: 'QrCode',       roles: ['admin', 'manager', 'trainer'], isNew: true },
-      { href: '/checkin/kiosk',          label: 'Self-Check-In Kiosk',       icon: 'Monitor',      role: 'admin', isNew: true },
-      { href: '/checkin/enroll',         label: 'Enroll Passkey',            icon: 'Shield',       role: 'admin', isNew: true },
-      { href: '/checkin/mark',           label: 'Biometric Attendance',      icon: 'Fingerprint',  isNew: true },
-      { href: '/checkin/dashboard',      label: 'Attendance Dashboard',      icon: 'Activity',     role: 'admin', isNew: true },
-      { href: '/checkin/reports',        label: 'Biometric Reports',         icon: 'FileBarChart', role: 'admin', isNew: true },
-      { href: '/member/attendance',      label: 'My Attendance',             icon: 'CalendarCheck', isNew: true },
-      { href: '/attendance',             label: 'Attendance Records',        icon: 'ClipboardList' },
-      { href: '/attendance/reports',     label: 'Attendance Reports',        icon: 'BarChart3',    role: 'admin' },
-      { href: '/attendance/staff',       label: 'Staff Attendance',          icon: 'UsersRound',   roles: ['admin', 'manager'] },
+      { href: '/checkin',            label: 'Check In',            icon: 'ScanFace' },
+      { href: '/member/attendance',  label: 'My Attendance',       icon: 'CalendarCheck' },
+      { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['admin', 'manager', 'trainer'] },
+      { href: '/attendance/staff',   label: 'Staff Attendance',    icon: 'UsersRound',     roles: ['admin', 'manager'] },
+      { href: '/attendance/reports', label: 'Reports & Dashboard', icon: 'BarChart3',      role: 'admin' },
     ],
   },
   {
@@ -179,7 +173,7 @@ export const QUICK_ACTIONS = [
 
   { id: 'qa-record-pay',   label: 'Record payment',        icon: 'Wallet',        href: '/finance/record-payment' },
   { id: 'qa-book-session', label: 'Book PT session',       icon: 'CalendarPlus',  href: '/pt-os/schedule-session' },
-  { id: 'qa-face-checkin', label: 'QR / Face check-in',    icon: 'ScanFace',      href: '/checkin' },
+  { id: 'qa-face-checkin', label: 'Check In',               icon: 'ScanFace',      href: '/checkin' },
   { id: 'qa-add-coach',    label: 'Add trainer',            icon: 'UserCog',       href: '/trainers/add', role: 'admin' as Role },
 ];
 

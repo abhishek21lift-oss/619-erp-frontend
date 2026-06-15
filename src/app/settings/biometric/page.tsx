@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Fingerprint, Shield, MapPin, Navigation, Clock, ToggleLeft,
   ToggleRight, Save, RefreshCw, AlertTriangle, CheckCircle2,
-  Smartphone, ScanFace,
+  Smartphone, ScanFace, Monitor, ChevronRight, UserPlus,
 } from 'lucide-react';
+import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
@@ -262,6 +263,43 @@ function BiometricSettingsContent() {
                   style={{ background: 'white', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
               </div>
             )}
+          </div>
+        </motion.div>
+
+        {/* Quick Links: Enroll & Kiosk */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+          className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
+              <Shield size={18} style={{ color: '#6366f1' }} />
+            </div>
+            <h2 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Check-In Tools</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link href="/checkin/enroll"
+              className="flex items-center gap-3 rounded-[14px] p-4 transition-all hover:bg-slate-50"
+              style={{ background: '#f8fafc', border: '1px solid #f1f5f9', textDecoration: 'none' }}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.10)', color: '#6366f1', flexShrink: 0 }}>
+                <UserPlus size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>Enroll Member Passkey</p>
+                <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>Register Face ID / Touch ID for a member</p>
+              </div>
+              <ChevronRight size={15} style={{ color: 'rgb(203,213,225)', flexShrink: 0 }} />
+            </Link>
+            <Link href="/checkin/kiosk"
+              className="flex items-center gap-3 rounded-[14px] p-4 transition-all hover:bg-slate-50"
+              style={{ background: '#f8fafc', border: '1px solid #f1f5f9', textDecoration: 'none' }}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ background: 'rgba(16,185,129,0.10)', color: '#10b981', flexShrink: 0 }}>
+                <Monitor size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>Launch Entrance Kiosk</p>
+                <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>Full-screen terminal for gym entrance tablet</p>
+              </div>
+              <ChevronRight size={15} style={{ color: 'rgb(203,213,225)', flexShrink: 0 }} />
+            </Link>
           </div>
         </motion.div>
 

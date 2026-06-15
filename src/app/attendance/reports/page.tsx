@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Loader2, Download, Calendar, Users, CheckCircle, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
+import { BarChart3, Loader2, Download, Calendar, Users, CheckCircle, Clock, AlertTriangle, TrendingUp, QrCode, ScanFace, Fingerprint, ClipboardList } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAsync } from '@/lib/use-async';
@@ -99,10 +99,10 @@ export default function AttendanceReportsPage() {
                   background: 'linear-gradient(135deg, #ffffff, #bae6fd, #7dd3fc)',
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 }}>
-                  Attendance Reports & Analytics
+                  Reports & Dashboard
                 </h1>
                 <p style={{ marginTop: 8, fontSize: 14, color: 'rgba(255,255,255,0.6)', maxWidth: 520 }}>
-                  Track footfall trends, peak hours, check-in summaries, and export-ready audit reports.
+                  Unified footfall trends across all check-in methods — QR, face, passkey, manual, and biometric.
                 </p>
               </div>
             </motion.div>
@@ -179,6 +179,61 @@ export default function AttendanceReportsPage() {
                 );
               })}
             </motion.div>
+
+            {/* ═══════ METHOD BREAKDOWN ═══════ */}
+            {records.length > 0 && (() => {
+              const METHOD_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+                qr:        { label: 'QR Code',      icon: <QrCode size={14} />,       color: '#06b6d4' },
+                face:      { label: 'Face',          icon: <ScanFace size={14} />,     color: '#6366f1' },
+                face_id:   { label: 'Face ID',       icon: <ScanFace size={14} />,     color: '#6366f1' },
+                touch_id:  { label: 'Touch ID',      icon: <Fingerprint size={14} />,  color: '#10b981' },
+                fingerprint:{ label: 'Fingerprint',  icon: <Fingerprint size={14} />,  color: '#10b981' },
+                passkey:   { label: 'Passkey',       icon: <Fingerprint size={14} />,  color: '#8b5cf6' },
+                biometric: { label: 'Biometric',     icon: <Fingerprint size={14} />,  color: '#f59e0b' },
+                manual:    { label: 'Manual',        icon: <ClipboardList size={14} />,color: '#94a3b8' },
+              };
+              const methodCounts = records.reduce((acc: Record<string, number>, r) => {
+                const m = (r as any).check_in_method || 'manual';
+                acc[m] = (acc[m] || 0) + 1;
+                return acc;
+              }, {});
+              const total = records.length || 1;
+              return (
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                  style={{ background: 'white', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.06)', marginBottom: 24, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#6366f1,#06b6d4)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#6366f118', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
+                      <BarChart3 size={16} />
+                    </div>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Check-In Methods</h2>
+                    <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 4 }}>Last {dateRange} days</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    {Object.entries(methodCounts).sort((a, b) => b[1] - a[1]).map(([method, count]) => {
+                      const meta = METHOD_META[method] || { label: method, icon: <ClipboardList size={14} />, color: '#94a3b8' };
+                      const pct = Math.round((count / total) * 100);
+                      return (
+                        <div key={method} style={{ flex: '1 1 140px', background: '#f8fafc', borderRadius: 14, padding: '14px 16px', border: '1px solid #f1f5f9' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 8, background: `${meta.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: meta.color }}>
+                              {meta.icon}
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{meta.label}</span>
+                          </div>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{count}</div>
+                          <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: '#e2e8f0' }}>
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: 'easeOut' }}
+                              style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${meta.color}, ${meta.color}99)` }} />
+                          </div>
+                          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{pct}% of check-ins</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              );
+            })()}
 
             {/* ═══════ FOOTFALL TREND + METRICS GRID ═══════ */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24, alignItems: 'start' }}>

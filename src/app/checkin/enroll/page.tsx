@@ -50,7 +50,7 @@ function fmtDate(d: string | null) {
 
 export default function EnrollPage() {
   return (
-    <Guard>
+    <Guard role="admin">
       <AppShell>
         <EnrollContent />
       </AppShell>
