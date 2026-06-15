@@ -144,7 +144,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
   const [form, setForm] = useState<Partial<Exercise>>({});
   const [saving, setSaving] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (exercise) { setForm(exercise); setEditing(false); setImgError(false); }
@@ -158,7 +158,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
   async function handleSave() {
     setSaving(true);
     try { await onSave(form); setEditing(false); }
-    catch { showToast('Save failed', 'error'); }
+    catch { toast.error('Save failed'); }
     finally { setSaving(false); }
   }
 
@@ -291,17 +291,17 @@ function ExerciseModal({ exercise, onClose, onSave }: {
 function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState({ name: '', body_part: 'Core', difficulty: 'beginner', equipment: '', exercise_type: 'strength', instructions: '' });
   const [saving, setSaving] = useState(false);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   async function handleCreate() {
-    if (!form.name.trim()) return showToast('Name required', 'error');
+    if (!form.name.trim()) return toast.error('Name required');
     setSaving(true);
     try {
       await api.exercises.create({ ...form, muscle_group: form.body_part });
-      showToast('Exercise created', 'success');
+      toast.success('Exercise created');
       onCreated();
       onClose();
-    } catch { showToast('Failed to create exercise', 'error'); }
+    } catch { toast.error('Failed to create exercise'); }
     finally { setSaving(false); }
   }
 
@@ -362,7 +362,7 @@ export default function ExerciseLibraryPage() {
   const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<Exercise | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async (pg = 0) => {
@@ -381,7 +381,7 @@ export default function ExerciseLibraryPage() {
       ]);
       setExercises(data);
       setTotal(countRes?.total ?? data.length);
-    } catch { showToast('Failed to load exercises', 'error'); }
+    } catch { toast.error('Failed to load exercises'); }
     finally { setLoading(false); }
   }, [search, bodyPart, equipment, exerciseType, difficulty]);
 
@@ -405,15 +405,15 @@ export default function ExerciseLibraryPage() {
     if (!confirm('Delete this exercise?')) return;
     try {
       await api.exercises.delete(id);
-      showToast('Exercise deleted', 'success');
+      toast.success('Exercise deleted');
       load(page);
-    } catch { showToast('Failed to delete', 'error'); }
+    } catch { toast.error('Failed to delete'); }
   }
 
   async function handleSave(updated: Partial<Exercise>) {
     if (!selected) return;
     await api.exercises.update(selected.id, updated);
-    showToast('Exercise saved', 'success');
+    toast.success('Exercise saved');
     load(page);
     setSelected(prev => prev ? { ...prev, ...updated } : null);
   }
