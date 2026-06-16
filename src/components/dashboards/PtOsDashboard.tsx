@@ -136,68 +136,8 @@ function SkeletonDash() {
 }
 
 // ─── HeroBanner ───────────────────────────────────────────────────────────────
-function HeroBanner({ d, loading, onRefresh }: { d: DashData | null | undefined; loading: boolean; onRefresh: () => void }) {
-  const router = useRouter();
+function HeroBanner({ loading, onRefresh }: { d: DashData | null | undefined; loading: boolean; onRefresh: () => void }) {
   const dateStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-  const netRevenue = (d?.total_monthly_pt_revenue ?? 0) - (d?.total_monthly_commission ?? 0);
-
-  const heroStats = [
-    {
-      label: 'Active Clients', icon: <Users size={15} />,
-      value: d ? d.active_pt_clients.toLocaleString() : '—',
-      sub: 'PT clients',
-      color: '#d8b4fe',
-      bg: 'rgba(124,58,237,0.28)',
-      border: 'rgba(167,139,250,0.45)',
-      glow: '0 4px 24px rgba(124,58,237,0.35)',
-    },
-    {
-      label: 'Monthly Revenue', icon: <TrendingUp size={15} />,
-      value: d ? fmtINR(d.total_monthly_pt_revenue) : '—',
-      sub: 'this month',
-      color: '#6ee7b7',
-      bg: 'rgba(5,150,105,0.28)',
-      border: 'rgba(52,211,153,0.45)',
-      glow: '0 4px 24px rgba(5,150,105,0.35)',
-    },
-    {
-      label: 'Net Revenue', icon: <BarChart3 size={15} />,
-      value: d ? fmtINR(netRevenue) : '—',
-      sub: 'after commission',
-      color: '#93c5fd',
-      bg: 'rgba(29,78,216,0.28)',
-      border: 'rgba(96,165,250,0.45)',
-      glow: '0 4px 24px rgba(29,78,216,0.35)',
-    },
-    {
-      label: 'Outstanding Dues', icon: <Wallet size={15} />,
-      value: d ? fmtINR(d.total_outstanding) : '—',
-      sub: d ? `${d.clients_with_balance} clients` : '',
-      color: '#fcd34d',
-      bg: 'rgba(180,83,9,0.28)',
-      border: 'rgba(251,191,36,0.45)',
-      glow: '0 4px 24px rgba(180,83,9,0.35)',
-    },
-    {
-      label: 'Commission', icon: <Percent size={15} />,
-      value: d ? fmtINR(d.total_monthly_commission) : '—',
-      sub: 'trainer payouts',
-      color: '#fda4af',
-      bg: 'rgba(190,18,60,0.28)',
-      border: 'rgba(251,113,133,0.45)',
-      glow: '0 4px 24px rgba(190,18,60,0.35)',
-    },
-    {
-      label: 'Expired Packages', icon: <AlertTriangle size={15} />,
-      value: d ? d.expired_clients.toLocaleString() : '—',
-      sub: 'need renewal',
-      color: '#a5b4fc',
-      bg: 'rgba(67,56,202,0.28)',
-      border: 'rgba(165,180,252,0.45)',
-      glow: '0 4px 24px rgba(67,56,202,0.35)',
-    },
-  ];
 
   return (
     <motion.div
@@ -231,106 +171,37 @@ function HeroBanner({ d, loading, onRefresh }: { d: DashData | null | undefined;
           style={{ background: 'linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.7) 50%, transparent 70%)' }} />
       </div>
 
-      <div className="relative z-10 p-6 sm:p-8">
-        {/* ── Centred brand block ── */}
-        <div className="flex flex-col items-center text-center mb-8">
-          {/* Date + refresh */}
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-[10px] font-[600] uppercase tracking-[0.20em] text-white/40">{dateStr}</span>
-            <button onClick={onRefresh} aria-label="Refresh"
-              className="rounded-full p-1 transition-colors hover:bg-white/10"
-              style={{ color: 'rgba(255,255,255,0.35)' }}>
-              <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
-            </button>
-          </div>
-
-          {/* Main title */}
-          <h1 style={{
-            fontSize: 'clamp(26px, 5vw, 48px)',
-            fontWeight: 900,
-            letterSpacing: '-0.04em',
-            lineHeight: 1,
-            background: 'linear-gradient(135deg, #ffffff 0%, #e0d7ff 35%, #c4b5fd 60%, #93c5fd 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>
-            619 PERSONAL TRAINING
-          </h1>
-
-          {/* Subtitle */}
-          <p className="mt-3 text-[12.5px] sm:text-[13px] font-[450] tracking-[0.04em]"
-            style={{ color: 'rgba(255,255,255,0.50)' }}>
-            Professional Client &amp; Fitness Management System
-          </p>
-
-          {/* Action buttons centred */}
-          <div className="flex gap-3 mt-5">
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/pt-os/new-client')}
-              className="flex items-center gap-2 rounded-[14px] px-5 py-2.5 text-[12.5px] font-[700]"
-              style={{
-                background: 'linear-gradient(135deg, rgba(167,139,250,0.35), rgba(139,92,246,0.50))',
-                border: '1px solid rgba(167,139,250,0.50)',
-                color: '#fff',
-                backdropFilter: 'blur(12px)',
-                boxShadow: '0 6px 20px rgba(124,58,237,0.30)',
-              }}>
-              <UserPlus size={13} /> New Client
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/pt-os/schedule-session')}
-              className="flex items-center gap-2 rounded-[14px] px-5 py-2.5 text-[12.5px] font-[700]"
-              style={{
-                background: 'rgba(255,255,255,0.10)',
-                border: '1px solid rgba(255,255,255,0.20)',
-                color: 'rgba(255,255,255,0.88)',
-                backdropFilter: 'blur(12px)',
-              }}>
-              <Calendar size={13} /> Schedule
-            </motion.button>
-          </div>
+      <div className="relative z-10 px-6 py-10 sm:px-8 sm:py-14 flex flex-col items-center text-center">
+        {/* Date + refresh */}
+        <div className="flex items-center gap-2 mb-5">
+          <span className="text-[10px] font-[600] uppercase tracking-[0.22em] text-white/38">{dateStr}</span>
+          <button onClick={onRefresh} aria-label="Refresh"
+            className="rounded-full p-1 transition-colors hover:bg-white/10"
+            style={{ color: 'rgba(255,255,255,0.32)' }}>
+            <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
 
-        {/* ── 6 premium stat boxes ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {heroStats.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.18 + i * 0.06, duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-              className="group rounded-[16px] p-4 cursor-default transition-transform duration-200 hover:scale-[1.03]"
-              style={{
-                background: s.bg,
-                border: `1px solid ${s.border}`,
-                backdropFilter: 'blur(18px)',
-                boxShadow: s.glow,
-              }}
-            >
-              {/* Icon + label row */}
-              <div className="flex items-center gap-1.5 mb-3" style={{ color: s.color }}>
-                {s.icon}
-                <span className="text-[8.5px] font-[700] uppercase tracking-[0.12em] leading-none opacity-85">
-                  {s.label}
-                </span>
-              </div>
-              {/* Value */}
-              <p className="text-[19px] sm:text-[21px] font-[900] tracking-[-0.03em] leading-none text-white">
-                {s.value}
-              </p>
-              {/* Sub */}
-              <p className="mt-2 text-[9.5px] font-[500]" style={{ color: 'rgba(255,255,255,0.42)' }}>
-                {s.sub}
-              </p>
-              {/* Bottom accent line */}
-              <div className="mt-3 h-[2px] rounded-full w-full opacity-60"
-                style={{ background: `linear-gradient(90deg, ${s.color}, transparent)` }} />
-            </motion.div>
-          ))}
-        </div>
+        {/* Main title — full rainbow gradient */}
+        <h1 style={{
+          fontSize: 'clamp(28px, 6vw, 56px)',
+          fontWeight: 900,
+          letterSpacing: '-0.04em',
+          lineHeight: 1.05,
+          background: 'linear-gradient(90deg, #f9a8d4 0%, #c084fc 18%, #818cf8 34%, #38bdf8 50%, #34d399 66%, #fbbf24 82%, #f97316 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          filter: 'drop-shadow(0 0 32px rgba(167,139,250,0.45))',
+        }}>
+          619 PERSONAL TRAINING
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-4 text-[12.5px] sm:text-[14px] font-[450] tracking-[0.05em]"
+          style={{ color: 'rgba(255,255,255,0.48)' }}>
+          Professional Client &amp; Fitness Management System
+        </p>
       </div>
 
       {/* Bottom shimmer line */}
