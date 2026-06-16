@@ -136,7 +136,7 @@ function SkeletonDash() {
 }
 
 // ─── HeroBanner ───────────────────────────────────────────────────────────────
-function HeroBanner({ d, loading, onRefresh }: { d: DashData | undefined; loading: boolean; onRefresh: () => void }) {
+function HeroBanner({ d, loading, onRefresh }: { d: DashData | null | undefined; loading: boolean; onRefresh: () => void }) {
   const router = useRouter();
   const dateStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
