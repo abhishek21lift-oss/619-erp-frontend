@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
+import { PermissionsProvider } from '@/lib/permissions-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -109,10 +110,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ErrorBoundary>
             <ThemeProvider>
               <AuthProvider>
-                <ToastProvider>
-                  {children}
-                  <CommandPalette />
-                </ToastProvider>
+                <PermissionsProvider>
+                  <ToastProvider>
+                    {children}
+                    <CommandPalette />
+                  </ToastProvider>
+                </PermissionsProvider>
               </AuthProvider>
             </ThemeProvider>
           </ErrorBoundary>

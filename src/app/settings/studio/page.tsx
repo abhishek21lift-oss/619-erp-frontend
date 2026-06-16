@@ -7,7 +7,8 @@ import {
   Building2, MapPin, Clock, Globe, IndianRupee, Fingerprint, Palette,
   Zap, DatabaseBackup, GitMerge, Bell, Mail, MessageSquare, Smartphone,
   Save, RefreshCw, Loader, ChevronRight, CheckCircle2, AlertTriangle,
-  X, Settings, CreditCard, Users, Shield,
+  X, Settings, CreditCard, Users, Shield, Lock, Eye, BarChart2,
+  DollarSign, Dumbbell, UserCheck,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
@@ -119,6 +120,23 @@ export default function StudioSettingsPage() {
   const [smsNotif, setSmsNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(false);
 
+  // Role permissions
+  const [trainerFinance, setTrainerFinance] = useState(false);
+  const [trainerReports, setTrainerReports] = useState(false);
+  const [trainerInsights, setTrainerInsights] = useState(false);
+  const [trainerStaffView, setTrainerStaffView] = useState(true);
+  const [trainerSettings, setTrainerSettings] = useState(false);
+  const [trainerAllClients, setTrainerAllClients] = useState(false);
+  const [trainerCommissions, setTrainerCommissions] = useState(true);
+  const [trainerRecordPayment, setTrainerRecordPayment] = useState(false);
+  const [receptionFinance, setReceptionFinance] = useState(false);
+  const [receptionReports, setReceptionReports] = useState(false);
+  const [receptionInsights, setReceptionInsights] = useState(false);
+  const [receptionPtModule, setReceptionPtModule] = useState(false);
+  const [receptionSettings, setReceptionSettings] = useState(false);
+  const [receptionStaffView, setReceptionStaffView] = useState(true);
+  const [receptionRecordPayment, setReceptionRecordPayment] = useState(true);
+
   const [branchCount, setBranchCount] = useState(0);
   const [memberCount, setMemberCount] = useState(0);
 
@@ -132,9 +150,10 @@ export default function StudioSettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [studioRes, branchRes] = await Promise.all([
+      const [studioRes, branchRes, permsRes] = await Promise.all([
         api.settings.getStudio(),
         api.settings.getBranches(),
+        api.settings.getPermissions(),
       ]);
       const s: Record<string, unknown> = studioRes.settings ?? {};
       setStudioName(String(s.name ?? s.studio_name ?? '619 Fitness Studio'));
@@ -152,6 +171,23 @@ export default function StudioSettingsPage() {
       const branches = branchRes as { id: string; member_count: number }[];
       setBranchCount(branches.length);
       setMemberCount(branches.reduce((t, b) => t + (Number(b.member_count) || 0), 0));
+
+      const p = permsRes.permissions ?? {};
+      setTrainerFinance(!!p.perm_trainer_finance);
+      setTrainerReports(!!p.perm_trainer_reports);
+      setTrainerInsights(!!p.perm_trainer_insights);
+      setTrainerStaffView(p.perm_trainer_staff_view !== false);
+      setTrainerSettings(!!p.perm_trainer_settings);
+      setTrainerAllClients(!!p.perm_trainer_all_pt_clients);
+      setTrainerCommissions(p.perm_trainer_commissions !== false);
+      setTrainerRecordPayment(!!p.perm_trainer_record_payment);
+      setReceptionFinance(!!p.perm_reception_finance);
+      setReceptionReports(!!p.perm_reception_reports);
+      setReceptionInsights(!!p.perm_reception_insights);
+      setReceptionPtModule(!!p.perm_reception_pt_module);
+      setReceptionSettings(!!p.perm_reception_settings);
+      setReceptionStaffView(p.perm_reception_staff_view !== false);
+      setReceptionRecordPayment(p.perm_reception_record_payment !== false);
     } catch {
       setError('Failed to load settings. Please try again.');
     } finally {
@@ -170,21 +206,40 @@ export default function StudioSettingsPage() {
     setError(null);
     setSuccess(null);
     try {
-      await api.settings.update({
-        name: studioName,
-        studio_name: studioName,
-        location,
-        timezone,
-        currency,
-        phone,
-        email,
-        gst_rate: gstRate,
-        gst: gstRate,
-        invoice_prefix: invoicePrefix,
-        email_notifications: String(emailNotif),
-        sms_notifications: String(smsNotif),
-        push_notifications: String(pushNotif),
-      });
+      await Promise.all([
+        api.settings.update({
+          name: studioName,
+          studio_name: studioName,
+          location,
+          timezone,
+          currency,
+          phone,
+          email,
+          gst_rate: gstRate,
+          gst: gstRate,
+          invoice_prefix: invoicePrefix,
+          email_notifications: String(emailNotif),
+          sms_notifications: String(smsNotif),
+          push_notifications: String(pushNotif),
+        }),
+        api.settings.updatePermissions({
+          perm_trainer_finance: trainerFinance,
+          perm_trainer_reports: trainerReports,
+          perm_trainer_insights: trainerInsights,
+          perm_trainer_staff_view: trainerStaffView,
+          perm_trainer_settings: trainerSettings,
+          perm_trainer_all_pt_clients: trainerAllClients,
+          perm_trainer_commissions: trainerCommissions,
+          perm_trainer_record_payment: trainerRecordPayment,
+          perm_reception_finance: receptionFinance,
+          perm_reception_reports: receptionReports,
+          perm_reception_insights: receptionInsights,
+          perm_reception_pt_module: receptionPtModule,
+          perm_reception_settings: receptionSettings,
+          perm_reception_staff_view: receptionStaffView,
+          perm_reception_record_payment: receptionRecordPayment,
+        }),
+      ]);
       setSuccess('Settings saved');
       setDirty(false);
       setTimeout(() => setSuccess(null), 3000);
@@ -375,6 +430,105 @@ export default function StudioSettingsPage() {
                     <Toggle on={row.on} onChange={row.set} />
                   </div>
                 ))}
+              </div>
+            </motion.div>
+
+            {/* ROLE PERMISSIONS */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+              className="rounded-[22px] overflow-hidden"
+              style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
+
+              {/* header */}
+              <div className="px-5 sm:px-6 pt-5 pb-4 flex items-center gap-2.5"
+                style={{ borderBottom: '1px solid rgba(15,23,42,0.05)' }}>
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
+                  <Lock size={14} style={{ color: '#6366f1' }} />
+                </div>
+                <div>
+                  <h2 className="text-[14px] font-[720]" style={{ color: 'rgb(15,23,42)' }}>Role Permissions</h2>
+                  <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>Control what trainers &amp; receptionists can access in the app</p>
+                </div>
+              </div>
+
+              {/* two columns */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x" style={{ borderColor: 'rgba(15,23,42,0.05)' }}>
+
+                {/* TRAINER column */}
+                <div className="px-5 sm:px-6 py-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-[6px]" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                      <Dumbbell size={10} style={{ color: '#10b981' }} />
+                    </div>
+                    <span className="text-[11.5px] font-[720] uppercase tracking-wider" style={{ color: '#10b981' }}>Trainer</span>
+                  </div>
+                  <div className="flex flex-col gap-0">
+                    {[
+                      { label: 'View Finance pages', desc: 'Payments, collections, dues', on: trainerFinance, set: wrap(setTrainerFinance), icon: <DollarSign size={12} /> },
+                      { label: 'View Reports', desc: 'Member & revenue analytics', on: trainerReports, set: wrap(setTrainerReports), icon: <BarChart2 size={12} /> },
+                      { label: 'View Insights', desc: 'Revenue trends & renewal data', on: trainerInsights, set: wrap(setTrainerInsights), icon: <Eye size={12} /> },
+                      { label: 'Record Payment', desc: 'Can accept & log payments', on: trainerRecordPayment, set: wrap(setTrainerRecordPayment), icon: <CreditCard size={12} /> },
+                      { label: 'View Staff List', desc: 'Access staff directory', on: trainerStaffView, set: wrap(setTrainerStaffView), icon: <Users size={12} /> },
+                      { label: 'View All PT Clients', desc: 'See other trainers\' clients', on: trainerAllClients, set: wrap(setTrainerAllClients), icon: <UserCheck size={12} /> },
+                      { label: 'View Commissions', desc: 'Commission & payout data', on: trainerCommissions, set: wrap(setTrainerCommissions), icon: <IndianRupee size={12} /> },
+                      { label: 'Access Settings', desc: 'Studio configuration pages', on: trainerSettings, set: wrap(setTrainerSettings), icon: <Settings size={12} /> },
+                    ].map(row => (
+                      <div key={row.label} className="flex items-center justify-between gap-3 py-2.5"
+                        style={{ borderBottom: '1px solid rgba(15,23,42,0.04)' }}>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span style={{ color: 'rgb(148,163,184)', flexShrink: 0 }}>{row.icon}</span>
+                          <div className="min-w-0">
+                            <p className="text-[12px] font-[640] truncate" style={{ color: 'rgb(15,23,42)' }}>{row.label}</p>
+                            <p className="text-[10.5px] truncate" style={{ color: 'rgb(148,163,184)' }}>{row.desc}</p>
+                          </div>
+                        </div>
+                        <Toggle on={row.on} onChange={row.set} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* RECEPTIONIST column */}
+                <div className="px-5 sm:px-6 py-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-[6px]" style={{ background: 'rgba(139,92,246,0.12)' }}>
+                      <UserCheck size={10} style={{ color: '#8b5cf6' }} />
+                    </div>
+                    <span className="text-[11.5px] font-[720] uppercase tracking-wider" style={{ color: '#8b5cf6' }}>Receptionist</span>
+                  </div>
+                  <div className="flex flex-col gap-0">
+                    {[
+                      { label: 'View Finance pages', desc: 'Payments, collections, dues', on: receptionFinance, set: wrap(setReceptionFinance), icon: <DollarSign size={12} /> },
+                      { label: 'View Reports', desc: 'Member & revenue analytics', on: receptionReports, set: wrap(setReceptionReports), icon: <BarChart2 size={12} /> },
+                      { label: 'View Insights', desc: 'Revenue trends & renewal data', on: receptionInsights, set: wrap(setReceptionInsights), icon: <Eye size={12} /> },
+                      { label: 'Record Payment', desc: 'Can accept & log payments', on: receptionRecordPayment, set: wrap(setReceptionRecordPayment), icon: <CreditCard size={12} /> },
+                      { label: 'View Staff List', desc: 'Access staff directory', on: receptionStaffView, set: wrap(setReceptionStaffView), icon: <Users size={12} /> },
+                      { label: 'Access PT Module', desc: 'PT-OS dashboard & clients', on: receptionPtModule, set: wrap(setReceptionPtModule), icon: <Dumbbell size={12} /> },
+                      { label: 'Access Settings', desc: 'Studio configuration pages', on: receptionSettings, set: wrap(setReceptionSettings), icon: <Settings size={12} /> },
+                    ].map(row => (
+                      <div key={row.label} className="flex items-center justify-between gap-3 py-2.5"
+                        style={{ borderBottom: '1px solid rgba(15,23,42,0.04)' }}>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span style={{ color: 'rgb(148,163,184)', flexShrink: 0 }}>{row.icon}</span>
+                          <div className="min-w-0">
+                            <p className="text-[12px] font-[640] truncate" style={{ color: 'rgb(15,23,42)' }}>{row.label}</p>
+                            <p className="text-[10.5px] truncate" style={{ color: 'rgb(148,163,184)' }}>{row.desc}</p>
+                          </div>
+                        </div>
+                        <Toggle on={row.on} onChange={row.set} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* note */}
+              <div className="px-5 sm:px-6 py-3 flex items-center gap-2"
+                style={{ background: 'rgba(99,102,241,0.04)', borderTop: '1px solid rgba(99,102,241,0.08)' }}>
+                <Shield size={11} style={{ color: '#6366f1', flexShrink: 0 }} />
+                <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
+                  Admins &amp; Managers always have full access. Changes take effect on next login.
+                </p>
               </div>
             </motion.div>
 

@@ -609,6 +609,17 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+
+    /** Get role permissions matrix */
+    getPermissions: () =>
+      http<{ permissions: Record<string, boolean>; role: string }>('/api/settings/permissions'),
+
+    /** Update role permissions (admin only) */
+    updatePermissions: (data: Record<string, boolean>) =>
+      http<{ message: string }>('/api/settings/permissions', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
   },
 
   // ── Invoices ──────────────────────────────────────────────────────

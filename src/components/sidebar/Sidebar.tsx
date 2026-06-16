@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
+import { usePermissions } from '@/lib/permissions-context';
 import {
   LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
   ClipboardList, ScanFace, User, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
@@ -76,16 +77,40 @@ const GROUP_THEMES: Record<string, GroupTheme> = {
 
 const DEFAULT_THEME = buildTheme('#3B82F6');
 
+// Maps nav group/href patterns to permission feature keys
+function canSeeByPermission(href: string, groupId: string, can: (f: string) => boolean): boolean {
+  if (href === '/pt-os/commissions') return can('commissions');
+  if (href === '/finance/record-payment') return can('record_payment');
+  if (groupId === 'finance' || href.startsWith('/finance')) return can('finance');
+  if (groupId === 'reports' || href.startsWith('/reports') || href.startsWith('/insights')) return can('reports');
+  if (href.startsWith('/staff') || href.startsWith('/trainers') || href === '/attendance/staff') return can('staff_view');
+  if (href.startsWith('/pt-os') || groupId === 'personal-training' || groupId === 'session-management' || groupId === 'progress-tracking') return can('pt_module');
+  if (href.startsWith('/settings')) return can('settings');
+  return true;
+}
+
 function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkClick?: () => void }) {
   const { user } = useAuth();
+  const { can } = usePermissions();
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+
+  const filterItem = (i: { href: string; role?: string; roles?: string[] }, groupId: string): boolean => {
+    if (!isVisibleForRole(i as Parameters<typeof isVisibleForRole>[0], user?.role)) {
+      // Item requires admin but permissions grant it
+      return canSeeByPermission(i.href, groupId, can);
+    }
+    // Item visible by role — check if permissions restrict it
+    return canSeeByPermission(i.href, groupId, isAdmin ? () => true : can);
+  };
 
   const navItems = [
     ...NAV_GROUPS.filter(g => isGroupVisibleForRole(g, user?.role)).map(g => ({
       ...g,
-      items: g.items.filter(i => isVisibleForRole(i, user?.role)).flatMap(i =>
-        i.children ? i.children.filter(c => isVisibleForRole(c, user?.role)) : [i]
+      items: g.items.filter(i => filterItem(i, g.id)).flatMap(i =>
+        i.children ? i.children.filter(c => filterItem(c, g.id)) : [i]
       ),
       single: false, href: '',
     })).filter(g => g.items.length > 0),
