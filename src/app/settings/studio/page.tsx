@@ -181,9 +181,9 @@ export default function StudioSettingsPage() {
         gst_rate: gstRate,
         gst: gstRate,
         invoice_prefix: invoicePrefix,
-        email_notifications: emailNotif,
-        sms_notifications: smsNotif,
-        push_notifications: pushNotif,
+        email_notifications: String(emailNotif),
+        sms_notifications: String(smsNotif),
+        push_notifications: String(pushNotif),
       });
       setSuccess('Settings saved');
       setDirty(false);
