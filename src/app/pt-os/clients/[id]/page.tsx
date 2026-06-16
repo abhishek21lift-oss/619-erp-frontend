@@ -124,7 +124,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [editNotes, setEditNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [totalEarnedCommission, setTotalEarnedCommission] = useState(0);
-  const [renewalHistory, setRenewalHistory] = useState<any[]>([]);
+  const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
 
   const fetch = async () => {
     try {
@@ -144,7 +144,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
         api.progress.assessments.list({ client_id: id, limit: 10 }),
         api.progress.goals.list({ client_id: id }),
         api.pt.payments({ client_id: id }),
-        api.clients.renewalHistory(id),
+        api.pt.subscriptions(id),
       ]);
 
       const checkins = checkinsRes.status === 'fulfilled' && Array.isArray((checkinsRes.value as any)?.data) ? (checkinsRes.value as any).data : [];
@@ -160,7 +160,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       setTotalEarnedCommission(rawPayments.reduce((sum: number, p: any) => sum + Number(p.incentive_amt || 0), 0));
 
       const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
-      setRenewalHistory(renewals);
+      setSubscriptionHistory(renewals);
 
       const events: TimelineEvent[] = [];
 
@@ -655,10 +655,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
               {/* ── PT Subscription History (all terms) ── */}
               {(() => {
-                // Build full term list: initial term (from pt_clients) + each renewal
-                // Renewals are stored newest-first; reverse to show oldest first
-                const pastTerms = [...renewalHistory].reverse();
-                const totalTerms = 1 + pastTerms.length;
+                // pt_client_subscriptions is the canonical term history (populated by CSV import + renewals)
+                // Terms come back ordered oldest→newest from the API
+                const allTerms = subscriptionHistory;
+                // If subscriptions table has no data yet, fall back to showing just current term from pt_clients
+                const useSubscriptions = allTerms.length > 0;
+                const totalTerms = useSubscriptions ? allTerms.length : 1;
                 const now = new Date();
 
                 const termStatus = (startDate: string | null | undefined, endDate: string | null | undefined) => {
@@ -669,6 +671,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   if (start && start > now) return { label: 'Upcoming', bg: '#3b82f618', fg: '#3b82f6' };
                   return { label: 'Active', bg: '#10b98118', fg: '#10b981' };
                 };
+
+                const fmtD = (d?: string) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
                 return (
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
@@ -695,91 +699,97 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* Term cards */}
                     <div className="space-y-3">
-
-                      {/* Past terms from renewals (oldest first) */}
-                      {pastTerms.map((r: any, idx: number) => {
-                        const st = termStatus(r.new_start_date, r.new_end_date);
-                        const termNum = idx + 1;
-                        return (
-                          <div key={r.id} className="rounded-[14px] p-4"
-                            style={{ background: 'rgba(15,23,42,0.025)', border: '1px solid rgba(15,23,42,0.06)' }}>
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-[800]"
-                                  style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>{termNum}</span>
-                                <div>
-                                  <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{r.new_package || r.old_package || '—'}</p>
-                                  <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
-                                    {r.duration_months ? `${r.duration_months} months · ` : ''}
-                                    {r.new_start_date ? new Date(r.new_start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                                    {' → '}
-                                    {r.new_end_date ? new Date(r.new_end_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                                  </p>
-                                </div>
-                              </div>
-                              <span className="text-[10px] font-[700] uppercase tracking-wider px-2 py-0.5 rounded-[6px]"
-                                style={{ background: st.bg, color: st.fg }}>{st.label}</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              {[
-                                { label: 'Final', value: fmtINR(r.final_amount), color: 'rgb(15,23,42)' },
-                                { label: 'Paid', value: fmtINR(r.paid_amount), color: '#10b981' },
-                                { label: 'Balance', value: fmtINR(r.balance_amount), color: Number(r.balance_amount) > 0 ? '#dc2626' : '#10b981' },
-                              ].map(f => (
-                                <div key={f.label} className="rounded-[10px] px-3 py-2"
-                                  style={{ background: 'rgba(255,255,255,0.8)' }}>
-                                  <p className="text-[9px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'rgb(148,163,184)' }}>{f.label}</p>
-                                  <p className="text-[13px] font-[700]" style={{ color: f.color }}>{f.value}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Current term (always shown, always last/latest) */}
-                      {(() => {
-                        const st = termStatus(client.pt_start_date, client.pt_end_date);
-                        const termNum = totalTerms;
-                        return (
-                          <div className="rounded-[14px] p-4"
-                            style={{ background: 'rgba(99,102,241,0.04)', border: '1.5px solid rgba(99,102,241,0.2)' }}>
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-[800]"
-                                  style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}>{termNum}</span>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{client.package_type || '—'}</p>
-                                    <span className="text-[9px] font-[800] uppercase tracking-wider px-1.5 py-0.5 rounded-[4px]"
-                                      style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>Current</span>
+                      {useSubscriptions ? (
+                        // Show all terms from pt_client_subscriptions (canonical history)
+                        allTerms.map((s: any, idx: number) => {
+                          const isLast = idx === allTerms.length - 1;
+                          const st = termStatus(s.start_date, s.end_date);
+                          return (
+                            <div key={s.id ?? idx}
+                              className="rounded-[14px] p-4"
+                              style={isLast
+                                ? { background: 'rgba(99,102,241,0.04)', border: '1.5px solid rgba(99,102,241,0.2)' }
+                                : { background: 'rgba(15,23,42,0.025)', border: '1px solid rgba(15,23,42,0.06)' }}>
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-[800]"
+                                    style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>{idx + 1}</span>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{s.plan_name || '—'}</p>
+                                      {isLast && (
+                                        <span className="text-[9px] font-[800] uppercase tracking-wider px-1.5 py-0.5 rounded-[4px]"
+                                          style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>Current</span>
+                                      )}
+                                    </div>
+                                    <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
+                                      {s.duration_months ? `${s.duration_months} months · ` : ''}
+                                      {fmtD(s.start_date)} → {fmtD(s.end_date)}
+                                    </p>
                                   </div>
-                                  <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
-                                    {client.duration_months ? `${client.duration_months} months · ` : ''}
-                                    {fmtDate(client.pt_start_date)} → {fmtDate(client.pt_end_date)}
-                                  </p>
                                 </div>
+                                <span className="text-[10px] font-[700] uppercase tracking-wider px-2 py-0.5 rounded-[6px]"
+                                  style={{ background: st.bg, color: st.fg }}>{st.label}</span>
                               </div>
-                              <span className="text-[10px] font-[700] uppercase tracking-wider px-2 py-0.5 rounded-[6px]"
-                                style={{ background: st.bg, color: st.fg }}>{st.label}</span>
+                              <div className={`grid gap-2 ${isLast ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                                {[
+                                  { label: 'Fee', value: fmtINR(s.selling_price), color: 'rgb(15,23,42)' },
+                                  { label: 'Paid', value: fmtINR(s.amount_paid), color: '#10b981' },
+                                  { label: 'Balance', value: fmtINR(s.balance_amount), color: Number(s.balance_amount) > 0 ? '#dc2626' : '#10b981' },
+                                  ...(isLast ? [{ label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' }] : []),
+                                ].map(f => (
+                                  <div key={f.label} className="rounded-[10px] px-3 py-2" style={{ background: 'rgba(255,255,255,0.8)' }}>
+                                    <p className="text-[9px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'rgb(148,163,184)' }}>{f.label}</p>
+                                    <p className="text-[13px] font-[700]" style={{ color: f.color }}>{f.value}</p>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <div className="grid grid-cols-4 gap-2">
-                              {[
-                                { label: 'Final', value: fmtINR(client.final_amount), color: 'rgb(15,23,42)' },
-                                { label: 'Paid', value: fmtINR(client.paid_amount), color: '#10b981' },
-                                { label: 'Balance', value: fmtINR(client.balance_amount), color: client.balance_amount > 0 ? '#dc2626' : '#10b981' },
-                                { label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' },
-                              ].map(f => (
-                                <div key={f.label} className="rounded-[10px] px-3 py-2"
-                                  style={{ background: 'rgba(255,255,255,0.8)' }}>
-                                  <p className="text-[9px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'rgb(148,163,184)' }}>{f.label}</p>
-                                  <p className="text-[13px] font-[700]" style={{ color: f.color }}>{f.value}</p>
+                          );
+                        })
+                      ) : (
+                        // Fallback: no subscriptions yet — show current term from pt_clients
+                        (() => {
+                          const st = termStatus(client.pt_start_date, client.pt_end_date);
+                          return (
+                            <div className="rounded-[14px] p-4"
+                              style={{ background: 'rgba(99,102,241,0.04)', border: '1.5px solid rgba(99,102,241,0.2)' }}>
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-[800]"
+                                    style={{ background: 'rgba(99,102,241,0.15)', color: '#6366f1' }}>1</span>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{client.package_type || '—'}</p>
+                                      <span className="text-[9px] font-[800] uppercase tracking-wider px-1.5 py-0.5 rounded-[4px]"
+                                        style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>Current</span>
+                                    </div>
+                                    <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
+                                      {client.duration_months ? `${client.duration_months} months · ` : ''}
+                                      {fmtDate(client.pt_start_date)} → {fmtDate(client.pt_end_date)}
+                                    </p>
+                                  </div>
                                 </div>
-                              ))}
+                                <span className="text-[10px] font-[700] uppercase tracking-wider px-2 py-0.5 rounded-[6px]"
+                                  style={{ background: st.bg, color: st.fg }}>{st.label}</span>
+                              </div>
+                              <div className="grid grid-cols-4 gap-2">
+                                {[
+                                  { label: 'Fee', value: fmtINR(client.final_amount), color: 'rgb(15,23,42)' },
+                                  { label: 'Paid', value: fmtINR(client.paid_amount), color: '#10b981' },
+                                  { label: 'Balance', value: fmtINR(client.balance_amount), color: client.balance_amount > 0 ? '#dc2626' : '#10b981' },
+                                  { label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' },
+                                ].map(f => (
+                                  <div key={f.label} className="rounded-[10px] px-3 py-2" style={{ background: 'rgba(255,255,255,0.8)' }}>
+                                    <p className="text-[9px] font-[700] uppercase tracking-wider mb-0.5" style={{ color: 'rgb(148,163,184)' }}>{f.label}</p>
+                                    <p className="text-[13px] font-[700]" style={{ color: f.color }}>{f.value}</p>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })()}
+                          );
+                        })()
+                      )}
                     </div>
                   </motion.div>
                 );
