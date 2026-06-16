@@ -171,20 +171,22 @@ function HeroBanner({ loading, onRefresh }: { d: DashData | null | undefined; lo
           style={{ background: 'linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.7) 50%, transparent 70%)' }} />
       </div>
 
-      <div className="relative z-10 px-6 py-10 sm:px-8 sm:py-14 flex flex-col items-center text-center">
+      <div className="relative z-10 px-6 py-4 sm:px-8 sm:py-5 flex flex-col items-center text-center">
         {/* Date + refresh */}
-        <div className="flex items-center gap-2 mb-5">
-          <span className="text-[10px] font-[600] uppercase tracking-[0.22em] text-white/38">{dateStr}</span>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-white" style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.85, WebkitTextFillColor: 'white' }}>
+            {dateStr}
+          </span>
           <button onClick={onRefresh} aria-label="Refresh"
-            className="rounded-full p-1 transition-colors hover:bg-white/10"
-            style={{ color: 'rgba(255,255,255,0.32)' }}>
-            <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
+            className="rounded-full p-1 transition-colors hover:bg-white/10 text-white"
+            style={{ opacity: 0.6, WebkitTextFillColor: 'white' }}>
+            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
 
         {/* Main title — full rainbow gradient */}
         <h1 style={{
-          fontSize: 'clamp(28px, 6vw, 56px)',
+          fontSize: 'clamp(26px, 5vw, 48px)',
           fontWeight: 900,
           letterSpacing: '-0.04em',
           lineHeight: 1.05,
@@ -192,14 +194,13 @@ function HeroBanner({ loading, onRefresh }: { d: DashData | null | undefined; lo
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
-          filter: 'drop-shadow(0 0 32px rgba(167,139,250,0.45))',
+          filter: 'drop-shadow(0 0 28px rgba(167,139,250,0.45))',
         }}>
           619 PERSONAL TRAINING
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-4 text-[12.5px] sm:text-[14px] font-[450] tracking-[0.05em]"
-          style={{ color: 'rgba(255,255,255,0.48)' }}>
+        <p className="mt-2.5" style={{ fontSize: 13, fontWeight: 450, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.50)' }}>
           Professional Client &amp; Fitness Management System
         </p>
       </div>
@@ -696,7 +697,7 @@ export default function PtOsDashboard() {
     : undefined;
 
   return (
-    <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="relative mx-auto w-full max-w-7xl px-4 pt-2 pb-6 sm:px-6 sm:pt-3 sm:pb-8">
       {/* Subtle page-level ambient color wash */}
       <div className="pointer-events-none fixed inset-0" style={{ zIndex: 0 }}>
         <div className="absolute inset-0"
