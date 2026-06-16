@@ -7,7 +7,7 @@ import {
   Activity, Users, TrendingUp, Clock,
   Award, Target, Heart, Zap, BarChart3,
   CheckCircle, RefreshCw, FileText, Wallet, Percent,
-  ChevronRight, AlertTriangle, Sparkles, Star,
+  ChevronRight, AlertTriangle, Sparkles,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -140,30 +140,62 @@ function HeroBanner({ d, loading, onRefresh }: { d: DashData | null | undefined;
   const router = useRouter();
   const dateStr = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+  const netRevenue = (d?.total_monthly_pt_revenue ?? 0) - (d?.total_monthly_commission ?? 0);
+
   const heroStats = [
     {
-      label: 'Active Clients', icon: <Users size={16} />,
+      label: 'Active Clients', icon: <Users size={15} />,
       value: d ? d.active_pt_clients.toLocaleString() : '—',
-      sub: d ? `${d.expired_clients} expired` : '',
-      glow: 'rgba(196,181,253,0.5)', color: '#c4b5fd', bg: 'rgba(167,139,250,0.15)',
+      sub: 'PT clients',
+      color: '#d8b4fe',
+      bg: 'rgba(124,58,237,0.28)',
+      border: 'rgba(167,139,250,0.45)',
+      glow: '0 4px 24px rgba(124,58,237,0.35)',
     },
     {
-      label: 'Monthly Revenue', icon: <TrendingUp size={16} />,
+      label: 'Monthly Revenue', icon: <TrendingUp size={15} />,
       value: d ? fmtINR(d.total_monthly_pt_revenue) : '—',
       sub: 'this month',
-      glow: 'rgba(110,231,183,0.5)', color: '#6ee7b7', bg: 'rgba(52,211,153,0.15)',
+      color: '#6ee7b7',
+      bg: 'rgba(5,150,105,0.28)',
+      border: 'rgba(52,211,153,0.45)',
+      glow: '0 4px 24px rgba(5,150,105,0.35)',
     },
     {
-      label: 'Outstanding Dues', icon: <Wallet size={16} />,
+      label: 'Net Revenue', icon: <BarChart3 size={15} />,
+      value: d ? fmtINR(netRevenue) : '—',
+      sub: 'after commission',
+      color: '#93c5fd',
+      bg: 'rgba(29,78,216,0.28)',
+      border: 'rgba(96,165,250,0.45)',
+      glow: '0 4px 24px rgba(29,78,216,0.35)',
+    },
+    {
+      label: 'Outstanding Dues', icon: <Wallet size={15} />,
       value: d ? fmtINR(d.total_outstanding) : '—',
       sub: d ? `${d.clients_with_balance} clients` : '',
-      glow: 'rgba(252,211,77,0.5)', color: '#fcd34d', bg: 'rgba(251,191,36,0.15)',
+      color: '#fcd34d',
+      bg: 'rgba(180,83,9,0.28)',
+      border: 'rgba(251,191,36,0.45)',
+      glow: '0 4px 24px rgba(180,83,9,0.35)',
     },
     {
-      label: 'Net Commission', icon: <Percent size={16} />,
+      label: 'Commission', icon: <Percent size={15} />,
       value: d ? fmtINR(d.total_monthly_commission) : '—',
       sub: 'trainer payouts',
-      glow: 'rgba(253,164,175,0.5)', color: '#fda4af', bg: 'rgba(251,113,133,0.15)',
+      color: '#fda4af',
+      bg: 'rgba(190,18,60,0.28)',
+      border: 'rgba(251,113,133,0.45)',
+      glow: '0 4px 24px rgba(190,18,60,0.35)',
+    },
+    {
+      label: 'Expired Packages', icon: <AlertTriangle size={15} />,
+      value: d ? d.expired_clients.toLocaleString() : '—',
+      sub: 'need renewal',
+      color: '#a5b4fc',
+      bg: 'rgba(67,56,202,0.28)',
+      border: 'rgba(165,180,252,0.45)',
+      glow: '0 4px 24px rgba(67,56,202,0.35)',
     },
   ];
 
@@ -180,14 +212,14 @@ function HeroBanner({ d, loading, onRefresh }: { d: DashData | null | undefined;
     >
       {/* Decorative background orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #818cf8 0%, transparent 70%)', filter: 'blur(40px)' }} />
-        <div className="absolute -bottom-16 -left-16 h-72 w-72 rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)', filter: 'blur(50px)' }} />
-        <div className="absolute top-1/2 left-1/3 h-48 w-48 rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)', filter: 'blur(35px)' }} />
+        <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #818cf8 0%, transparent 70%)', filter: 'blur(45px)' }} />
+        <div className="absolute -bottom-16 -left-16 h-80 w-80 rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)', filter: 'blur(55px)' }} />
+        <div className="absolute top-1/3 left-1/2 h-56 w-56 rounded-full opacity-12"
+          style={{ background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)', filter: 'blur(40px)' }} />
         {/* Grid mesh */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="hero-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.8" />
@@ -195,110 +227,107 @@ function HeroBanner({ d, loading, onRefresh }: { d: DashData | null | undefined;
           </defs>
           <rect width="100%" height="100%" fill="url(#hero-grid)" />
         </svg>
-        {/* Diagonal shimmer stripe */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{ background: 'linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%)' }} />
+        <div className="absolute inset-0 opacity-[0.035]"
+          style={{ background: 'linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.7) 50%, transparent 70%)' }} />
       </div>
 
       <div className="relative z-10 p-6 sm:p-8">
-        {/* Top row: Brand + date + actions */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-7">
-          <div>
-            {/* Date + refresh */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-[600] uppercase tracking-[0.18em] text-white/45">{dateStr}</span>
-              <button onClick={onRefresh} aria-label="Refresh"
-                className="rounded-full p-1 transition-colors hover:bg-white/10"
-                style={{ color: 'rgba(255,255,255,0.40)' }}>
-                <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
-              </button>
-            </div>
-            {/* Brand identity */}
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px]"
-                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.20)' }}>
-                <Star size={18} strokeWidth={2} className="text-amber-300 fill-amber-300" />
-              </div>
-              <h1 style={{
-                fontSize: 'clamp(22px, 4vw, 36px)',
-                fontWeight: 900,
-                letterSpacing: '-0.04em',
-                lineHeight: 1,
-                background: 'linear-gradient(135deg, #fff 0%, #c4b5fd 55%, #93c5fd 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>
-                619 PERSONAL TRAINING
-              </h1>
-            </div>
-            <p className="text-[12.5px] font-[450] tracking-wide" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Professional Client &amp; Fitness Management System
-            </p>
+        {/* ── Centred brand block ── */}
+        <div className="flex flex-col items-center text-center mb-8">
+          {/* Date + refresh */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-[10px] font-[600] uppercase tracking-[0.20em] text-white/40">{dateStr}</span>
+            <button onClick={onRefresh} aria-label="Refresh"
+              className="rounded-full p-1 transition-colors hover:bg-white/10"
+              style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
+            </button>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-2.5 shrink-0">
+          {/* Main title */}
+          <h1 style={{
+            fontSize: 'clamp(26px, 5vw, 48px)',
+            fontWeight: 900,
+            letterSpacing: '-0.04em',
+            lineHeight: 1,
+            background: 'linear-gradient(135deg, #ffffff 0%, #e0d7ff 35%, #c4b5fd 60%, #93c5fd 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            619 PERSONAL TRAINING
+          </h1>
+
+          {/* Subtitle */}
+          <p className="mt-3 text-[12.5px] sm:text-[13px] font-[450] tracking-[0.04em]"
+            style={{ color: 'rgba(255,255,255,0.50)' }}>
+            Professional Client &amp; Fitness Management System
+          </p>
+
+          {/* Action buttons centred */}
+          <div className="flex gap-3 mt-5">
             <motion.button
-              whileHover={{ scale: 1.04, y: -1 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/pt-os/new-client')}
-              className="flex items-center gap-2 rounded-[14px] px-4 py-2.5 text-[12.5px] font-[700]"
+              className="flex items-center gap-2 rounded-[14px] px-5 py-2.5 text-[12.5px] font-[700]"
               style={{
-                background: 'linear-gradient(135deg, rgba(167,139,250,0.30), rgba(139,92,246,0.40))',
-                border: '1px solid rgba(167,139,250,0.45)',
+                background: 'linear-gradient(135deg, rgba(167,139,250,0.35), rgba(139,92,246,0.50))',
+                border: '1px solid rgba(167,139,250,0.50)',
                 color: '#fff',
                 backdropFilter: 'blur(12px)',
-                boxShadow: '0 4px 16px rgba(124,58,237,0.25)',
-              }}
-            >
-              <UserPlus size={13} />
-              New Client
+                boxShadow: '0 6px 20px rgba(124,58,237,0.30)',
+              }}>
+              <UserPlus size={13} /> New Client
             </motion.button>
             <motion.button
-              whileHover={{ scale: 1.04, y: -1 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
               onClick={() => router.push('/pt-os/schedule-session')}
-              className="flex items-center gap-2 rounded-[14px] px-4 py-2.5 text-[12.5px] font-[700]"
+              className="flex items-center gap-2 rounded-[14px] px-5 py-2.5 text-[12.5px] font-[700]"
               style={{
                 background: 'rgba(255,255,255,0.10)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                color: 'rgba(255,255,255,0.85)',
+                border: '1px solid rgba(255,255,255,0.20)',
+                color: 'rgba(255,255,255,0.88)',
                 backdropFilter: 'blur(12px)',
-              }}
-            >
-              <Calendar size={13} />
-              Schedule
+              }}>
+              <Calendar size={13} /> Schedule
             </motion.button>
           </div>
         </div>
 
-        {/* Hero stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* ── 6 premium stat boxes ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {heroStats.map((s, i) => (
             <motion.div
               key={s.label}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 + i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="rounded-[16px] p-4"
+              transition={{ delay: 0.18 + i * 0.06, duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+              className="group rounded-[16px] p-4 cursor-default transition-transform duration-200 hover:scale-[1.03]"
               style={{
                 background: s.bg,
-                border: '1px solid rgba(255,255,255,0.12)',
-                backdropFilter: 'blur(16px)',
-                boxShadow: `0 4px 20px ${s.glow}`,
+                border: `1px solid ${s.border}`,
+                backdropFilter: 'blur(18px)',
+                boxShadow: s.glow,
               }}
             >
-              <div className="flex items-center gap-2 mb-2.5" style={{ color: s.color }}>
+              {/* Icon + label row */}
+              <div className="flex items-center gap-1.5 mb-3" style={{ color: s.color }}>
                 {s.icon}
-                <span className="text-[9px] font-[700] uppercase tracking-[0.12em] opacity-80">{s.label}</span>
+                <span className="text-[8.5px] font-[700] uppercase tracking-[0.12em] leading-none opacity-85">
+                  {s.label}
+                </span>
               </div>
-              <p className="text-[20px] sm:text-[22px] font-[880] tracking-[-0.03em] leading-none text-white">
+              {/* Value */}
+              <p className="text-[19px] sm:text-[21px] font-[900] tracking-[-0.03em] leading-none text-white">
                 {s.value}
               </p>
-              {s.sub && (
-                <p className="mt-1.5 text-[9.5px] font-[500]" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.sub}</p>
-              )}
+              {/* Sub */}
+              <p className="mt-2 text-[9.5px] font-[500]" style={{ color: 'rgba(255,255,255,0.42)' }}>
+                {s.sub}
+              </p>
+              {/* Bottom accent line */}
+              <div className="mt-3 h-[2px] rounded-full w-full opacity-60"
+                style={{ background: `linear-gradient(90deg, ${s.color}, transparent)` }} />
             </motion.div>
           ))}
         </div>
@@ -306,7 +335,7 @@ function HeroBanner({ d, loading, onRefresh }: { d: DashData | null | undefined;
 
       {/* Bottom shimmer line */}
       <div className="absolute bottom-0 left-0 right-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.6), rgba(147,197,253,0.6), transparent)' }} />
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.7), rgba(147,197,253,0.7), transparent)' }} />
     </motion.div>
   );
 }
