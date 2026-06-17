@@ -184,7 +184,7 @@ export default function KioskContent() {
 
     if (newMode === 'face') {
       const modOk = await detection.loadModels();
-      if (!modOk) { setMsg('Could not load face models.'); setKState('scanning'); return; }
+      if (!modOk) { setMsg(detection.modelError || 'Could not load face models'); setKState('error'); return; }
       const camOk = await camera.start();
       if (!camOk) { setMsg('Camera unavailable.'); setKState('scanning'); return; }
       setKState('scanning');
@@ -211,7 +211,7 @@ export default function KioskContent() {
       setMsg('Loading face recognition…');
       const modOk = await detection.loadModels();
       if (cancelled) return;
-      if (!modOk) { setMsg('Could not load models.'); return; }
+      if (!modOk) { setMsg(detection.modelError || 'Could not load models'); setKState('error'); return; }
       const camOk = await camera.start();
       if (cancelled) return;
       if (!camOk) { setMsg('Camera unavailable.'); return; }
@@ -316,7 +316,7 @@ export default function KioskContent() {
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           style={{ textAlign: 'center', maxWidth: 400 }}
         >
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{msg}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{kstate === 'loading' && detection.loadingModel ? detection.loadingModel : msg}</div>
           {kstate === 'liveness' && (
             <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>This confirms you are a real person</div>
           )}

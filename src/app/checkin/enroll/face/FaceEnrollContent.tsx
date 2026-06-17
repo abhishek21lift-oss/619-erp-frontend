@@ -136,7 +136,7 @@ function FaceEnrollContent() {
     setStatusMsg('Loading face models…');
     const modelsOk = await faceDetect.loadModels();
     if (!modelsOk) {
-      setErrorMsg(faceDetect.modelError || 'Failed to load face recognition models');
+      setErrorMsg(faceDetect.modelError || 'Failed to load face recognition models. Check your internet connection and try again.');
       setStep('error');
       return;
     }
@@ -337,7 +337,9 @@ function FaceEnrollContent() {
                 <div className="px-5 py-4" style={{ borderTop: '1px solid #f1f5f9' }}>
                   <div className="flex items-center gap-2.5 mb-4">
                     <div className="flex h-2 w-2 rounded-full flex-shrink-0" style={{ background: blinkReady ? '#10b981' : '#6366f1', animation: blinkReady ? 'none' : 'pulse 1.5s infinite' }} />
-                    <p className="text-[13px] font-[500]" style={{ color: 'rgb(71,85,105)' }}>{statusMsg}</p>
+                    <p className="text-[13px] font-[500]" style={{ color: 'rgb(71,85,105)' }}>
+                      {faceDetect.loadingModel || statusMsg}
+                    </p>
                   </div>
 
                   {/* Steps indicator */}

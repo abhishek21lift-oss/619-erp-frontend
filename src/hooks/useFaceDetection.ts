@@ -9,29 +9,19 @@
  *     excluding this entire module tree from the SSR bundle
  *  4. next.config.js marks @vladmandic/face-api + tfjs as webpack server externals
  *     (defense-in-depth for the RSC bundle pass)
- *
- * faceApiRef is typed as the resolved module type, imported lazily so
- * the static import never reaches the server bundler.
- *
- * Uses @vladmandic/face-api fork (bundles its own tfjs) so we do NOT
- * import @tensorflow/tfjs separately — it's available via faceapi.tf.
  */
 import { useRef, useState, useCallback, useEffect } from 'react';
 import type { FaceDescriptorEntry, DetectionResult } from '@/types/checkin';
 
-// Lazy type — only used at runtime after the dynamic import resolves.
-// We use `typeof import('@vladmandic/face-api')` so TypeScript can check call sites
-// without actually bundling @vladmandic/face-api at static analysis time.
 type FaceApiModule = typeof import('@vladmandic/face-api');
 
-// Concrete shape we extract from each detection result.
-// Defined here once so the loop body stays readable.
 type FaceDetection = {
   detection: { box: { x: number; y: number; width: number; height: number } };
   landmarks?: { positions?: Array<{ x: number; y: number }> };
   descriptor?: Float32Array;
 };
 
+// Local public/ directory first, then the npm package CDN as fallback.
 const MODEL_SOURCES = [
   '/models',
   'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model',
@@ -41,11 +31,17 @@ const RECOGNITION_THRESHOLD = 0.50;
 const DETECTION_INTERVAL_MS = 150;
 const MIN_FACE_SIZE_PX = 60;
 
+// Generous timeouts — face_recognition_model.bin is 6 MB
+const TIMEOUT_TF_INIT_MS   = 12_000;
+const TIMEOUT_MODEL_MS     = 45_000;
+const TIMEOUT_SSD_MS       = 30_000;
+
 type ModelStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 interface UseFaceDetectionReturn {
   modelStatus: ModelStatus;
   modelError: string;
+  loadingModel: string;
   loadModels: () => Promise<boolean>;
   startDetectionLoop: (
     videoEl: HTMLVideoElement,
@@ -59,46 +55,73 @@ interface UseFaceDetectionReturn {
   ) => { matched: boolean; entry?: FaceDescriptorEntry; distance: number };
 }
 
+function withTimeout<T>(p: Promise<T>, label: string, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timed out loading ${label} after ${ms / 1000}s`)), ms)
+    ),
+  ]);
+}
+
 export function useFaceDetection(): UseFaceDetectionReturn {
   const [modelStatus, setModelStatus] = useState<ModelStatus>('idle');
-  const [modelError, setModelError] = useState('');
+  const [modelError, setModelError]   = useState('');
+  const [loadingModel, setLoadingModel] = useState('');
 
-  const modelStatusRef = useRef<ModelStatus>('idle');
-  const setModelStatusSync = (s: ModelStatus) => {
+  const modelStatusRef  = useRef<ModelStatus>('idle');
+  const faceApiRef      = useRef<FaceApiModule | null>(null);
+  const rafRef          = useRef<number>(0);
+  const lastRunRef      = useRef<number>(0);
+  const processingRef   = useRef(false);
+  const detectorRef     = useRef<'ssd' | 'tiny'>('tiny');
+
+  const setStatus = (s: ModelStatus) => {
     modelStatusRef.current = s;
     setModelStatus(s);
   };
 
-  // Typed as FaceApiModule | null — eliminates all `any` usage below
-  const faceApiRef = useRef<FaceApiModule | null>(null);
-  const rafRef = useRef<number>(0);
-  const lastRunRef = useRef<number>(0);
-  const processingRef = useRef(false);
-  const detectorRef = useRef<'ssd' | 'tiny'>('tiny');
+  // Reset everything — called on error so next loadModels() starts fresh
+  const resetState = useCallback(() => {
+    faceApiRef.current = null;  // force re-import + TF re-init on retry
+    setStatus('idle');
+    setModelError('');
+    setLoadingModel('');
+  }, []);
 
   const getFaceApi = useCallback(async (): Promise<FaceApiModule> => {
     if (faceApiRef.current) return faceApiRef.current;
-    // Safety guard — should never reach here on server due to ssr:false wrapper
     if (typeof window === 'undefined') throw new Error('Browser only');
 
     const faceapi = await import('@vladmandic/face-api');
-
-    // faceapi.tf is the bundled tfjs instance inside @vladmandic/face-api.
-    // Its internal typings don't expose setBackend/getBackend on the public
-    // type surface, so we cast to `any` for these runtime-only calls.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tf = faceapi.tf as any;
 
+    // tf.ready() can hang forever in some environments — always race with a timeout.
     try {
-      await tf.setBackend('cpu');
-      await tf.ready();
-      console.info('[face] tf backend:', tf.getBackend());
+      await withTimeout(
+        (async () => { await tf.setBackend('webgl'); await tf.ready(); })(),
+        'TF WebGL backend',
+        TIMEOUT_TF_INIT_MS
+      );
+      console.info('[face] TF backend: webgl');
     } catch {
-      try { await tf.ready(); } catch { /* ignore */ }
-    }
-
-    if (tf.getBackend() === 'cpu') {
-      console.info('[face] Using CPU backend for reliable detection');
+      try {
+        await withTimeout(
+          (async () => { await tf.setBackend('cpu'); await tf.ready(); })(),
+          'TF CPU backend',
+          TIMEOUT_TF_INIT_MS
+        );
+        console.info('[face] TF backend: cpu');
+      } catch (e) {
+        // Last resort — try whatever TF.js defaults to
+        try {
+          await withTimeout(tf.ready(), 'TF default backend', TIMEOUT_TF_INIT_MS);
+          console.info('[face] TF backend: default');
+        } catch {
+          throw new Error(`TensorFlow.js failed to initialize. Try a different browser. (${e instanceof Error ? e.message : e})`);
+        }
+      }
     }
 
     faceApiRef.current = faceapi;
@@ -109,62 +132,92 @@ export function useFaceDetection(): UseFaceDetectionReturn {
     const url = base.replace(/\/$/, '');
     console.info('[face] trying model source:', url);
 
-    const withTimeout = <T>(p: Promise<T>, label: string, ms = 15000): Promise<T> =>
-      Promise.race([
-        p,
-        new Promise<T>((_, r) =>
-          setTimeout(() => r(new Error(`timeout:${label}`)), ms)
-        ),
-      ]);
+    // Skip models already loaded — avoids conflicts on remount / StrictMode double-fire
+    const nets = faceapi.nets;
 
-    await withTimeout(faceapi.nets.tinyFaceDetector.loadFromUri(url), 'tinyFaceDetector');
-    await withTimeout(faceapi.nets.faceLandmark68Net.loadFromUri(url), 'faceLandmark68Net');
-    await withTimeout(faceapi.nets.faceRecognitionNet.loadFromUri(url), 'faceRecognitionNet');
+    if (!nets.tinyFaceDetector.isLoaded) {
+      setLoadingModel('Tiny face detector');
+      await withTimeout(nets.tinyFaceDetector.loadFromUri(url), 'tinyFaceDetector', TIMEOUT_MODEL_MS);
+    }
 
-    try {
-      await withTimeout(faceapi.nets.ssdMobilenetv1.loadFromUri(url), 'ssdMobilenetv1', 20000);
+    if (!nets.faceLandmark68Net.isLoaded) {
+      setLoadingModel('Face landmarks');
+      await withTimeout(nets.faceLandmark68Net.loadFromUri(url), 'faceLandmark68Net', TIMEOUT_MODEL_MS);
+    }
+
+    if (!nets.faceRecognitionNet.isLoaded) {
+      setLoadingModel('Face recognition (6 MB)');
+      await withTimeout(nets.faceRecognitionNet.loadFromUri(url), 'faceRecognitionNet', TIMEOUT_MODEL_MS);
+    }
+
+    // SSD is optional — improves accuracy but not required
+    if (!nets.ssdMobilenetv1.isLoaded) {
+      try {
+        setLoadingModel('SSD detector (optional)');
+        await withTimeout(nets.ssdMobilenetv1.loadFromUri(url), 'ssdMobilenetv1', TIMEOUT_SSD_MS);
+        detectorRef.current = 'ssd';
+        console.info('[face] SSD loaded — using SSD detector');
+      } catch {
+        detectorRef.current = 'tiny';
+        console.warn('[face] SSD unavailable, using TinyFaceDetector only');
+      }
+    } else {
       detectorRef.current = 'ssd';
-      console.info('[face] SSD loaded — using SSD detector');
-    } catch {
-      detectorRef.current = 'tiny';
-      console.warn('[face] SSD unavailable, using TinyFaceDetector only');
     }
 
     console.info('[face] models ready from', url, '| detector:', detectorRef.current);
   }, []);
 
   const loadModels = useCallback(async (): Promise<boolean> => {
+    // Already ready — nothing to do
     if (modelStatusRef.current === 'ready') return true;
+
+    // Another call is already in progress — wait for it
     if (modelStatusRef.current === 'loading') {
       return new Promise((resolve) => {
         const check = setInterval(() => {
           if (modelStatusRef.current === 'ready') { clearInterval(check); resolve(true); }
-          if (modelStatusRef.current === 'error') { clearInterval(check); resolve(false); }
-        }, 100);
+          if (modelStatusRef.current === 'error' || modelStatusRef.current === 'idle') {
+            clearInterval(check); resolve(false);
+          }
+        }, 200);
       });
     }
 
-    setModelStatusSync('loading');
+    setStatus('loading');
     setModelError('');
+    setLoadingModel('Initializing…');
 
     try {
       const faceapi = await getFaceApi();
       let lastErr: unknown = null;
+
       for (const source of MODEL_SOURCES) {
         try {
           await loadOne(faceapi, source);
-          setModelStatusSync('ready');
+          setLoadingModel('');
+          setStatus('ready');
           return true;
         } catch (e) {
           lastErr = e;
           console.warn('[face] source failed:', source, e);
+          // On source failure, clear loaded nets so the next source starts fresh
+          try {
+            faceapi.nets.tinyFaceDetector.dispose();
+            faceapi.nets.faceLandmark68Net.dispose();
+            faceapi.nets.faceRecognitionNet.dispose();
+          } catch { /* ignore */ }
         }
       }
+
       throw lastErr ?? new Error('All model sources failed');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Could not load face recognition models';
+      const msg = err instanceof Error ? err.message : 'Could not load face recognition models. Check your internet connection and try again.';
       setModelError(msg);
-      setModelStatusSync('error');
+      setLoadingModel('');
+      // Reset so the user can retry from a clean state
+      faceApiRef.current = null;
+      setStatus('error');
       console.error('[face] model load failed:', err);
       return false;
     }
@@ -212,9 +265,6 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         const ctx = canvasEl.getContext('2d');
         ctx?.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
-        // Collect all detections into a typed array.
-        // Try SSD first (more accurate); fall back to TinyFaceDetector.
-        // Both detector paths return the same shape via withFaceDescriptors().
         let dArr: FaceDetection[] = [];
 
         if (detectorRef.current === 'ssd') {
@@ -341,6 +391,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
   return {
     modelStatus,
     modelError,
+    loadingModel,
     loadModels,
     startDetectionLoop,
     stopDetectionLoop,

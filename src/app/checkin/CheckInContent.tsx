@@ -56,7 +56,7 @@ const CARD = {
 export default function CheckInContent() {
   const camera    = useCamera();
   const detection = useFaceDetection();
-  const { modelStatus, startDetectionLoop, stopDetectionLoop } = detection;
+  const { modelStatus, loadingModel, startDetectionLoop, stopDetectionLoop } = detection;
   const antiSpoof = useAntiSpoof();
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const cooldownRef = useRef<number>(0);
@@ -191,7 +191,7 @@ export default function CheckInContent() {
       if (cancelled) return;
       if (!ok) {
         setState('error');
-        setStatusMsg('Could not load models — check /public/models/');
+        setStatusMsg(detection.modelError || 'Could not load models — check your connection and retry');
         return;
       }
       setStatusMsg('Starting camera…');
@@ -545,7 +545,7 @@ export default function CheckInContent() {
               size={13}
               style={isSpinning ? { animation: 'ck-spin 0.9s linear infinite' } : {}}
             />
-            {statusMsg}
+            {state === 'loading' && loadingModel ? loadingModel : statusMsg}
           </div>
 
           {/* Result display */}
