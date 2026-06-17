@@ -181,9 +181,16 @@ function FaceEnrollContent() {
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+      <style>{`
+        button, [role=button] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        @media (max-width: 640px) {
+          .fe-header-pad { padding: 20px 16px 18px !important; border-radius: 0 0 20px 20px !important; }
+          .fe-container-pad { padding: 12px 12px !important; }
+        }
+      `}</style>
       {/* Header */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f0a1e 0%,#1a0a2e 30%,#0f172a 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px' }}>
-        <div className="relative z-10 mx-auto" style={{ maxWidth: 860 }}>
+        <div className="fe-header-pad relative z-10 mx-auto" style={{ maxWidth: 860 }}>
           <div className="flex items-center gap-4">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px]"
@@ -203,7 +210,7 @@ function FaceEnrollContent() {
         </div>
       </div>
 
-      <div className="mx-auto px-5 py-6 sm:px-8" style={{ maxWidth: 860 }}>
+      <div className="fe-container-pad mx-auto px-5 py-6 sm:px-8" style={{ maxWidth: 860 }}>
 
         {/* ── Search Step ── */}
         <AnimatePresence mode="wait">
@@ -302,7 +309,7 @@ function FaceEnrollContent() {
                 </div>
 
                 {/* Camera viewport */}
-                <div style={{ position: 'relative', width: '100%', maxWidth: 520, margin: '0 auto', aspectRatio: '4/3', background: '#0f172a' }}>
+                <div style={{ position: 'relative', width: '100%', maxWidth: 520, margin: '0 auto', aspectRatio: '4/3', background: '#0f172a', minHeight: 260 }}>
                   <video
                     ref={camera.videoRef}
                     autoPlay playsInline muted

@@ -28,8 +28,15 @@ const MODEL_SOURCES = [
 ];
 
 const RECOGNITION_THRESHOLD = 0.50;
-const DETECTION_INTERVAL_MS = 150;
 const MIN_FACE_SIZE_PX = 60;
+
+// Mobile gets a slower interval and smaller input to keep UI responsive
+const isMobileDevice = () =>
+  typeof window !== 'undefined' &&
+  (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 768);
+
+const DETECTION_INTERVAL_MS = isMobileDevice() ? 220 : 150;
+const TINY_INPUT_SIZE       = isMobileDevice() ? 160 : 320;
 
 // Generous timeouts — face_recognition_model.bin is 6 MB
 const TIMEOUT_TF_INIT_MS   = 12_000;
@@ -282,7 +289,7 @@ export function useFaceDetection(): UseFaceDetectionReturn {
         if (dArr.length === 0) {
           dArr = (await faceapi
             .detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({
-              inputSize: 320,
+              inputSize: TINY_INPUT_SIZE,
               scoreThreshold: 0.40,
             }))
             .withFaceLandmarks()

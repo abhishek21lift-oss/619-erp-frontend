@@ -277,6 +277,15 @@ export default function CheckInContent() {
         @keyframes ck-float3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px,30px) scale(1.06); } }
         @keyframes ck-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); } 100% { box-shadow: 0 0 0 20px rgba(99,102,241,0); } }
         @keyframes ck-guide-pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+        button, [role=button] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        * { -webkit-font-smoothing: antialiased; }
+        @media (max-width: 640px) {
+          .ck-hero-padding { padding: 12px 16px !important; }
+          .ck-hero-title { font-size: 18px !important; }
+          .ck-hero-orbs { display: none !important; }
+          .ck-cam-aspect { aspect-ratio: 3/4 !important; }
+          .ck-action-btn { padding: 12px 16px !important; font-size: 13px !important; min-height: 44px; }
+        }
       `}</style>
 
       {/* ── Premium Dark Hero ── */}
@@ -319,7 +328,7 @@ export default function CheckInContent() {
         </div>
 
         {/* Content row */}
-        <div style={{
+        <div className="ck-hero-padding" style={{
           position: 'relative', display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', padding: '20px 24px',
         }}>
@@ -328,6 +337,7 @@ export default function CheckInContent() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="ck-hero-title"
               style={{
                 fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em',
                 background: 'linear-gradient(135deg, #e0e7ff 0%, #a78bfa 40%, #22d3ee 100%)',
@@ -434,7 +444,7 @@ export default function CheckInContent() {
           }}
         >
           {/* Camera area */}
-          <div style={{
+          <div className="ck-cam-aspect" style={{
             position: 'relative', width: '100%',
             aspectRatio: '4 / 3',
             background: '#0f172a',
@@ -598,14 +608,14 @@ export default function CheckInContent() {
                   flex: 1,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   gap: 6,
-                  padding: '8px 16px', borderRadius: 10,
-                  border: 'none',
-                  fontSize: 12, fontWeight: 600,
+                  padding: '10px 16px', borderRadius: 10,
+                  border: 'none', minHeight: 44,
+                  fontSize: 13, fontWeight: 600,
                   color: '#fff',
                   cursor: 'pointer',
                   background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
                   boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
-                  outline: 'none',
+                  outline: 'none', touchAction: 'manipulation',
                 }}
               >
                 <RefreshCw size={13} /> Retry scan
@@ -620,14 +630,14 @@ export default function CheckInContent() {
                   flex: 1,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   gap: 6,
-                  padding: '8px 16px', borderRadius: 10,
-                  border: 'none',
-                  fontSize: 12, fontWeight: 600,
+                  padding: '10px 16px', borderRadius: 10,
+                  border: 'none', minHeight: 44,
+                  fontSize: 13, fontWeight: 600,
                   color: '#fff',
                   cursor: 'pointer',
                   background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
                   boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
-                  outline: 'none',
+                  outline: 'none', touchAction: 'manipulation',
                 }}
               >
                 <Camera size={13} /> Enable camera

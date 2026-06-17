@@ -249,6 +249,13 @@ export default function KioskContent() {
         @keyframes kk-pulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
         @keyframes kk-spin { to { transform: rotate(360deg); } }
         @keyframes kk-bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        button, [role=button] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        @media (max-width: 480px) {
+          .kk-msg { font-size: 16px !important; }
+          .kk-viewport { max-width: 100% !important; }
+          .kk-face-ring { width: 160px !important; height: 160px !important; }
+          .kk-btn { min-height: 48px !important; font-size: 15px !important; padding: 12px 20px !important; }
+        }
       `}</style>
 
       {/* Top bar */}
@@ -271,14 +278,14 @@ export default function KioskContent() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', gap: 20 }}>
 
         {/* Camera viewport */}
-        <div style={{ position: 'relative', width: '100%', maxWidth: 520, borderRadius: 24, overflow: 'hidden', border: `2px solid ${color}40`, boxShadow: `0 0 40px ${color}20` }}>
+        <div className="kk-viewport" style={{ position: 'relative', width: '100%', maxWidth: 520, borderRadius: 24, overflow: 'hidden', border: `2px solid ${color}40`, boxShadow: `0 0 40px ${color}20` }}>
           <video ref={camera.videoRef} autoPlay playsInline muted style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', transform: mode === 'face' ? 'scaleX(-1)' : 'none', display: 'block' }} />
           <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: mode === 'face' ? 'scaleX(-1)' : 'none', display: mode === 'face' ? 'block' : 'none' }} />
           <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
 
           {/* Face guide ring */}
           {mode === 'face' && (kstate === 'scanning' || kstate === 'liveness') && (
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 200, height: 200, borderRadius: '50%', border: `2px solid ${color}`, pointerEvents: 'none', animation: 'kk-pulse 2s ease-in-out infinite', boxShadow: `0 0 30px ${color}30` }} />
+            <div className="kk-face-ring" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 200, height: 200, borderRadius: '50%', border: `2px solid ${color}`, pointerEvents: 'none', animation: 'kk-pulse 2s ease-in-out infinite', boxShadow: `0 0 30px ${color}30` }} />
           )}
 
           {/* QR scan frame */}
@@ -316,7 +323,7 @@ export default function KioskContent() {
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           style={{ textAlign: 'center', maxWidth: 400 }}
         >
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{kstate === 'loading' && detection.loadingModel ? detection.loadingModel : msg}</div>
+          <div className="kk-msg" style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{kstate === 'loading' && detection.loadingModel ? detection.loadingModel : msg}</div>
           {kstate === 'liveness' && (
             <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>This confirms you are a real person</div>
           )}
@@ -333,7 +340,7 @@ export default function KioskContent() {
               onClick={() => switchMode(m)}
               disabled={kstate === 'processing' || mode === m}
               style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, border: 'none', cursor: mode === m ? 'default' : 'pointer', fontSize: 14, fontWeight: 700, transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, border: 'none', cursor: mode === m ? 'default' : 'pointer', fontSize: 14, fontWeight: 700, transition: 'all 0.2s', minHeight: 48, touchAction: 'manipulation',
                 background: mode === m ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent',
                 color: mode === m ? '#fff' : 'rgba(255,255,255,0.4)',
                 boxShadow: mode === m ? '0 4px 16px rgba(99,102,241,0.3)' : 'none',

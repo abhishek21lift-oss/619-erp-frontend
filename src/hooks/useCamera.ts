@@ -1,12 +1,5 @@
 'use client';
-/**
- * useCamera — manages webcam lifecycle with fixes for:
- * - Safari autoPlay policy (play() wrapped in catch)
- * - onloadedmetadata timeout rejecting with undefined
- * - Front camera selection on all devices
- * - Stream cleanup on stop
- */
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 
 export type CameraStatus = 'idle' | 'starting' | 'active' | 'denied' | 'error';
 
@@ -17,26 +10,38 @@ interface UseCameraReturn {
   start: () => Promise<boolean>;
   stop: () => void;
   dimensions: { width: number; height: number };
+  isMobile: boolean;
+}
+
+function detectMobile() {
+  if (typeof window === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    || window.innerWidth <= 768;
 }
 
 export function useCamera(): UseCameraReturn {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [status, setStatus] = useState<CameraStatus>('idle');
-  const [error, setError] = useState('');
+  const videoRef   = useRef<HTMLVideoElement>(null);
+  const streamRef  = useRef<MediaStream | null>(null);
+  const [status, setStatus]   = useState<CameraStatus>('idle');
+  const [error,  setError]    = useState('');
   const [dimensions, setDimensions] = useState({ width: 640, height: 480 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => { setIsMobile(detectMobile()); }, []);
 
   const stop = useCallback(() => {
-    try {
-      streamRef.current?.getTracks().forEach(t => t.stop());
-    } catch {}
+    try { streamRef.current?.getTracks().forEach(t => t.stop()); } catch {}
     streamRef.current = null;
     if (videoRef.current) {
       videoRef.current.srcObject = null;
-      videoRef.current.load(); // force reset on Safari
+      videoRef.current.load();
     }
     setStatus('idle');
     setError('');
+  }, []);
+
+  const startStream = useCallback(async (constraints: MediaStreamConstraints): Promise<MediaStream> => {
+    return navigator.mediaDevices.getUserMedia(constraints);
   }, []);
 
   const start = useCallback(async (): Promise<boolean> => {
@@ -45,58 +50,72 @@ export function useCamera(): UseCameraReturn {
     setError('');
 
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setError('Your browser does not support camera access. Use Chrome or Safari 14+.');
+      setError('Camera not supported. Use Chrome, Safari 14+, or Samsung Internet.');
       setStatus('error');
       return false;
     }
 
     try {
-      // Stop any existing stream first
       streamRef.current?.getTracks().forEach(t => t.stop());
       streamRef.current = null;
 
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: 'user',
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 },
-          frameRate: { ideal: 24, max: 30 },
-        },
-        audio: false,
-      };
+      const mobile = detectMobile();
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      // Progressive constraint fallback:
+      // 1. Ideal resolution + front camera
+      // 2. Just front camera (no resolution hints — avoids OverconstrainedError on many Androids)
+      // 3. Any video (last resort for old devices)
+      const constraintOptions: MediaStreamConstraints[] = [
+        {
+          video: {
+            facingMode: 'user',
+            width:  { ideal: mobile ? 480 : 640 },
+            height: { ideal: mobile ? 640 : 480 },
+            frameRate: { ideal: mobile ? 15 : 24, max: mobile ? 20 : 30 },
+          },
+          audio: false,
+        },
+        { video: { facingMode: 'user' }, audio: false },
+        { video: true, audio: false },
+      ];
+
+      let stream: MediaStream | null = null;
+      let lastErr: unknown = null;
+
+      for (const c of constraintOptions) {
+        try { stream = await startStream(c); break; }
+        catch (e) { lastErr = e; }
+      }
+
+      if (!stream) throw lastErr ?? new Error('Could not access camera');
       streamRef.current = stream;
 
       if (!videoRef.current) {
         stream.getTracks().forEach(t => t.stop());
         setStatus('error');
-        setError('Video element not available.');
+        setError('Video element not ready.');
         return false;
       }
 
       const video = videoRef.current;
       video.srcObject = stream;
 
-      // FIX: properly typed timeout rejection
       await new Promise<void>((resolve, reject) => {
         let settled = false;
+        // iOS/Android can be slow to warm up — give 12s
         const timer = window.setTimeout(() => {
           if (!settled) { settled = true; reject(new Error('Camera stream timed out')); }
-        }, 8000);
+        }, 12_000);
 
         video.onloadedmetadata = () => {
           if (settled) return;
           settled = true;
           window.clearTimeout(timer);
-          setDimensions({
-            width: video.videoWidth || 640,
-            height: video.videoHeight || 480,
-          });
+          setDimensions({ width: video.videoWidth || 640, height: video.videoHeight || 480 });
           resolve();
         };
 
-        video.onerror = (e) => {
+        video.onerror = () => {
           if (settled) return;
           settled = true;
           window.clearTimeout(timer);
@@ -104,30 +123,52 @@ export function useCamera(): UseCameraReturn {
         };
       });
 
-      // FIX: Safari autoplay — play() may throw NotAllowedError, catch and ignore
-      try { await video.play(); } catch (playErr: any) {
-        // Safari sometimes rejects play() even on muted video — the stream still works
-        console.warn('[camera] play() failed (often benign on Safari):', playErr?.name);
+      // Safari sometimes rejects play() on muted video — safe to ignore
+      try { await video.play(); } catch (e: any) {
+        console.warn('[camera] play() suppressed (Safari):', e?.name);
       }
 
       setStatus('active');
       return true;
     } catch (err: any) {
       const name = err?.name ?? '';
-      const msg = name === 'NotAllowedError' || name === 'PermissionDeniedError'
-        ? 'Camera permission denied. Please allow camera access in your browser settings.'
-        : name === 'NotFoundError' || name === 'DevicesNotFoundError'
-        ? 'No camera found on this device.'
-        : name === 'NotReadableError' || name === 'TrackStartError'
-        ? 'Camera is in use by another application. Close it and try again.'
-        : name === 'OverconstrainedError'
-        ? 'Camera does not meet requirements. Try a different browser.'
-        : (err?.message || 'Could not start camera. Please check your device.');
+      const msg =
+        name === 'NotAllowedError' || name === 'PermissionDeniedError'
+          ? 'Camera permission denied. Tap the lock icon in your browser address bar to allow camera access.'
+          : name === 'NotFoundError' || name === 'DevicesNotFoundError'
+          ? 'No camera found. Make sure a camera is connected and not covered.'
+          : name === 'NotReadableError' || name === 'TrackStartError'
+          ? 'Camera is busy. Close other apps using the camera and try again.'
+          : name === 'OverconstrainedError'
+          ? 'Camera setup failed. Try reloading the page.'
+          : (err?.message || 'Could not start camera. Try reloading the page.');
       setError(msg);
       setStatus(name === 'NotAllowedError' || name === 'PermissionDeniedError' ? 'denied' : 'error');
       return false;
     }
+  }, [status, startStream]);
+
+  // Restart camera on orientation change (phone rotation)
+  useEffect(() => {
+    const handler = () => {
+      if (status !== 'active') return;
+      // Brief delay for the browser to finish rotating
+      setTimeout(() => {
+        if (videoRef.current && streamRef.current) {
+          const track = streamRef.current.getVideoTracks()[0];
+          if (track) {
+            const settings = track.getSettings();
+            setDimensions({
+              width: settings.width || videoRef.current.videoWidth || 640,
+              height: settings.height || videoRef.current.videoHeight || 480,
+            });
+          }
+        }
+      }, 400);
+    };
+    window.addEventListener('orientationchange', handler);
+    return () => window.removeEventListener('orientationchange', handler);
   }, [status]);
 
-  return { videoRef, status, error, start, stop, dimensions };
+  return { videoRef, status, error, start, stop, dimensions, isMobile };
 }
