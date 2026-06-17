@@ -273,7 +273,7 @@ export default function KioskContent() {
         {/* Camera viewport */}
         <div style={{ position: 'relative', width: '100%', maxWidth: 520, borderRadius: 24, overflow: 'hidden', border: `2px solid ${color}40`, boxShadow: `0 0 40px ${color}20` }}>
           <video ref={camera.videoRef} autoPlay playsInline muted style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', transform: mode === 'face' ? 'scaleX(-1)' : 'none', display: 'block' }} />
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
+          <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: mode === 'face' ? 'scaleX(-1)' : 'none', display: mode === 'face' ? 'block' : 'none' }} />
           <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
 
           {/* Face guide ring */}

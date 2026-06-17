@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Smartphone, Shield, Fingerprint, ScanFace, CheckCircle2, XCircle,
   Plus, Trash2, AlertTriangle, RefreshCw, Search, User,
-  Monitor, Laptop, Tablet, Phone,
+  Monitor, Laptop, Tablet, Phone, Camera, ArrowRight,
 } from 'lucide-react';
+import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
@@ -321,6 +322,31 @@ function EnrollContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Face Enrollment Card */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,#10b981,#6366f1)' }} />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.10)' }}>
+                <ScanFace size={18} style={{ color: '#10b981' }} />
+              </div>
+              <div>
+                <h2 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Face Check-in Enrollment</h2>
+                <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>Camera-based biometric with blink anti-spoof</p>
+              </div>
+            </div>
+          </div>
+          <p className="text-[12px] mb-4" style={{ color: 'rgb(100,116,139)' }}>
+            Enroll a member's face so they can check in automatically at the kiosk. Requires a webcam. No images are stored — only a 128-D mathematical descriptor.
+          </p>
+          <Link href="/checkin/enroll/face">
+            <PremiumButton tone="primary" glow icon={<Camera size={14} />}>
+              Open Face Enrollment <ArrowRight size={13} style={{ marginLeft: 4 }} />
+            </PremiumButton>
+          </Link>
+        </motion.div>
 
         {/* Enroll Card */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}

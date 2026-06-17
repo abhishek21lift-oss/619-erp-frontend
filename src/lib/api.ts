@@ -512,6 +512,12 @@ export const api = {
       http<{ success: boolean; error?: string; member?: { id: string; name: string; status: string; photo_url?: string; member_code?: string } }>(
         '/api/checkin/face', { method: 'POST', body: JSON.stringify({ descriptor }) }
       ),
+    enroll: (client_id: string, descriptor: number[]) =>
+      http<{ message: string; client_id: string; descriptor_id: string }>(
+        '/api/checkin/enroll', { method: 'POST', body: JSON.stringify({ client_id, descriptor }) }
+      ),
+    revokeEnrollment: (clientId: string) =>
+      http<{ message: string }>(`/api/checkin/enroll/${clientId}`, { method: 'DELETE' }),
   },
 
   notifications: {
