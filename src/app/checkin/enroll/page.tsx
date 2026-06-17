@@ -232,11 +232,11 @@ function EnrollContent() {
               <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
                 style={{ background: 'linear-gradient(135deg,#c7d2fe,#6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Face Enrollment
+                Member Enrollment
               </motion.h1>
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
                 className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                Register your passkey for biometric attendance
+                Register face biometrics or device passkeys for attendance
               </motion.p>
             </div>
           </div>

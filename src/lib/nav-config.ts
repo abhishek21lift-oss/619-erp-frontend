@@ -36,7 +36,10 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Attendance',
     icon: 'ScanFace',
     items: [
-      { href: '/checkin',            label: 'Check In',            icon: 'ScanFace' },
+      { href: '/checkin',             label: 'Check In',            icon: 'ScanFace' },
+      { href: '/checkin/enroll',     label: 'Enroll Member',       icon: 'UserCheck',      roles: ['admin', 'manager'] },
+      { href: '/checkin/enroll/face', label: 'Face Enrollment',    icon: 'Camera',         roles: ['admin', 'manager'], hidden: true, matchPrefix: '/checkin/enroll/face' },
+      { href: '/checkin/kiosk',      label: 'Kiosk Mode',          icon: 'Monitor',        roles: ['admin', 'manager'] },
       { href: '/member/attendance',  label: 'My Attendance',       icon: 'CalendarCheck' },
       { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['admin', 'manager', 'trainer'] },
       { href: '/attendance/staff',   label: 'Staff Attendance',    icon: 'UsersRound',     roles: ['admin', 'manager'] },
