@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, type User } from './api';
+import { api, type User, http } from './api';
 import { resetRedirectLock } from './http';
 import type { Role } from './roles';
 export type { Role } from './roles';
@@ -81,8 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     //   - network / timeout / 5xx → keep cached session (Render cold start, etc.)
     //   - If login() already completed before me() returns, ignore me() result
     //     entirely — the fresh login data is the source of truth.
-    api.auth.me()
+    const ac = new AbortController();
+    const meTimeout = setTimeout(() => ac.abort(), 10_000);
+    http<{ user: User }>('/api/auth/me', { signal: ac.signal })
       .then((res) => {
+        clearTimeout(meTimeout);
         if (loggedInRef.current) return;
         if (res?.user) {
           const u = res.user as User;
@@ -94,13 +97,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((err: unknown) => {
+        clearTimeout(meTimeout);
         if (loggedInRef.current) return; // same — don't touch a freshly logged-in user
         const status = (err as { status?: number })?.status;
         if (status === 401 || status === 403) {
           setUser(null);
           ssDel(SESSION_USER_KEY);
         }
-        // All other errors: keep cached user silently
+        // All other errors (network, timeout, 5xx): keep cached session silently
       })
       .finally(() => {
         // Only set loading=false here if login() hasn't already done it

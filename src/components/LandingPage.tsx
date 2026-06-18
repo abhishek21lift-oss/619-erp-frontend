@@ -68,6 +68,8 @@ export default function LandingPage() {
         }
         html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
         body{background:var(--black);color:var(--white);font-family:var(--font);overflow-x:hidden;line-height:1.5}
+        nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background 0.3s}
+        .nav-logo-wrap{display:flex;align-items:center;gap:8px;text-decoration:none}
         .reveal{opacity:0;transform:translateY(40px);transition:opacity 0.8s cubic-bezier(.22,1,.36,1),transform 0.8s cubic-bezier(.22,1,.36,1)}
         .reveal.visible{opacity:1;transform:none}
         .reveal-delay-1{transition-delay:.1s}
