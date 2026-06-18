@@ -102,6 +102,12 @@ export function resetRedirectLock(): void {
 function handleUnauthorized(): void {
   if (typeof window === 'undefined' || _redirecting) return;
   if (window.location.pathname === '/login') return;
+  // Only fire session-expired when a session actually existed. A 401 on the
+  // initial me() check for a fresh (unauthenticated) visitor is expected and
+  // must not redirect — the landing page should render instead.
+  try {
+    if (!sessionStorage.getItem('619_user_minimal_v3')) return;
+  } catch { /* storage blocked — fall through and redirect */ }
   _redirecting = true;
   try { localStorage.removeItem(SESSION_USER_KEY); } catch { /* noop */ }
   window.dispatchEvent(new CustomEvent('session-expired'));
