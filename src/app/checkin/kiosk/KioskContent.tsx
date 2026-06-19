@@ -229,13 +229,16 @@ export default function KioskContent() {
   }, []); // eslint-disable-line
 
   // ── Start detection loop when face mode is ready ──────────────────────────
+  // Destructure stable references to avoid the whole `detection` object
+  // (new plain object every render) triggering a loop restart on every render.
+  const { modelStatus: detModelStatus, startDetectionLoop, stopDetectionLoop } = detection;
   useEffect(() => {
     if (mode !== 'face') return;
-    if (camera.status !== 'active' || detection.modelStatus !== 'ready') return;
+    if (camera.status !== 'active' || detModelStatus !== 'ready') return;
     if (!camera.videoRef.current || !canvasRef.current) return;
-    detection.startDetectionLoop(camera.videoRef.current, canvasRef.current, handleFaceDetection);
-    return () => detection.stopDetectionLoop();
-  }, [mode, camera.status, camera.videoRef, detection, handleFaceDetection]);
+    startDetectionLoop(camera.videoRef.current, canvasRef.current, handleFaceDetection);
+    return () => stopDetectionLoop();
+  }, [mode, camera.status, camera.videoRef, detModelStatus, startDetectionLoop, stopDetectionLoop, handleFaceDetection]);
 
   const color = COLORS[kstate];
   const isSuccess = kstate === 'success';

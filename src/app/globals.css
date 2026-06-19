@@ -1582,3 +1582,291 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   .pt-sidebar   { order: 2; }
   .pt-main-panel { order: 1; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   PREMIUM v7 ENHANCEMENTS  —  Obsidian / Crimson Edition
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Card: refined glass + micro-glow ── */
+.card {
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+.card-hover:hover {
+  box-shadow: var(--shadow-card-hover), 0 0 0 1px var(--border-2);
+}
+/* Card with left accent stripe — use .card.accent-brand etc. */
+.card.accent-brand { border-left: 3px solid var(--brand); }
+.card.accent-gold   { border-left: 3px solid var(--gold); }
+.card.accent-success{ border-left: 3px solid var(--success); }
+.card.accent-danger { border-left: 3px solid var(--danger); }
+.card.accent-accent { border-left: 3px solid var(--accent); }
+
+/* ── Premium glass panel ── */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-ring);
+  border-radius: var(--radius-xl);
+}
+
+/* ── Table: premium header with gradient tint ── */
+.table th {
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-2);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.dark .table th,
+[data-theme="dark"] .table th {
+  background: rgba(255,255,255,0.025);
+}
+.table tbody tr {
+  transition: background var(--dur-fast) var(--ease);
+}
+.table tbody tr:hover td {
+  background: var(--bg-hover);
+}
+
+/* ── Premium stat card glow ── */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--brand) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease);
+}
+.stat-card:hover::before { opacity: 1; }
+
+/* ── Premium section divider with glow ── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--border-2) 20%, var(--border-2) 80%, transparent 100%);
+  margin: 0;
+}
+.section-divider-brand {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--brand) 30%, var(--brand-hi) 50%, var(--brand) 70%, transparent 100%);
+  opacity: 0.4;
+}
+
+/* ── Premium badge refinements ── */
+.badge {
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(4px);
+}
+.badge-success { box-shadow: 0 0 0 1px var(--success-border) inset; }
+.badge-danger  { box-shadow: 0 0 0 1px var(--danger-border)  inset; }
+.badge-warning { box-shadow: 0 0 0 1px var(--warning-border) inset; }
+.badge-brand   { box-shadow: 0 0 0 1px var(--brand-soft) inset; }
+
+/* ── Premium page title bar ── */
+.page-title {
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.dark .page-title,
+[data-theme="dark"] .page-title {
+  background: linear-gradient(135deg, #F8FAFC 0%, #94A3B8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Premium metric number ── */
+.metric-value {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.metric-value.gold {
+  background: linear-gradient(135deg, var(--gold-hi), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.metric-value.brand {
+  background: linear-gradient(135deg, var(--brand-hi), var(--brand));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Premium modal ── */
+.modal {
+  border: 1px solid var(--border-2);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255,255,255,0.04) inset;
+}
+.modal-header {
+  background: linear-gradient(180deg, var(--bg-subtle) 0%, transparent 100%);
+}
+.modal-backdrop { backdrop-filter: blur(8px) saturate(140%); }
+
+/* ── Premium button shimmer on hover ── */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+.btn-primary:hover::after { transform: translateX(100%); }
+
+/* ── Page canvas subtle pattern ── */
+.page-bg-pattern {
+  background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* ── Premium empty state ── */
+.empty-state {
+  background: var(--bg-subtle);
+  border: 1px dashed var(--border-2);
+  border-radius: var(--radius-xl);
+}
+
+/* ── Glowing input focus ── */
+.form-control:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft), 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* ── Premium progress bar ── */
+.progress { position: relative; }
+.progress-bar {
+  background: linear-gradient(90deg, var(--brand-lo) 0%, var(--brand-hi) 100%);
+  box-shadow: 0 0 8px var(--brand-glow);
+}
+.progress-bar.gold {
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-hi) 100%);
+  box-shadow: 0 0 8px var(--gold-glow);
+}
+.progress-bar.success {
+  background: linear-gradient(90deg, var(--success-lo) 0%, var(--success) 100%);
+  box-shadow: 0 0 6px rgba(34,197,94,0.3);
+}
+
+/* ── Premium topbar (used by shell-topbar in light mode) ── */
+.shell-topbar {
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 2px 8px rgba(15,23,42,0.04);
+}
+[data-theme="dark"] .shell-topbar,
+.dark .shell-topbar {
+  background: rgba(7,6,14,0.92);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 4px 24px rgba(0,0,0,0.4);
+}
+
+/* ── Tab active indicator with glow ── */
+.tab.active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+  text-shadow: 0 0 8px var(--brand-soft);
+}
+
+/* ── Premium tooltip ── */
+.tooltip {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+  pointer-events: none;
+  letter-spacing: 0.01em;
+}
+
+/* ── Glass button variant ── */
+.btn-glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  box-shadow: 0 1px 0 var(--glass-ring) inset;
+}
+.btn-glass:hover {
+  background: rgba(255,255,255,0.9);
+  border-color: var(--border-2);
+}
+[data-theme="dark"] .btn-glass,
+.dark .btn-glass {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.10);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .btn-glass:hover,
+.dark .btn-glass:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* ── Crimson brand accent utilities ── */
+.text-crimson      { color: #DC2626; }
+.bg-crimson        { background: #DC2626; }
+.border-crimson    { border-color: rgba(220,38,38,0.3); }
+.glow-crimson      { box-shadow: 0 0 20px rgba(220,38,38,0.35); }
+.gradient-crimson  { background: linear-gradient(135deg, #EF4444, #DC2626, #B91C1C); }
+
+/* ── Luxury card with top gradient border ── */
+.card-luxury {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.card-luxury::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--brand) 0%, var(--accent) 50%, var(--brand-hi) 100%);
+}
+
+/* ── Animated counter number ── */
+.counter-up {
+  font-variant-numeric: tabular-nums;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Animated shimmer skeleton ── */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-subtle)     0%,
+    var(--bg-hover)     40%,
+    var(--bg-subtle)    80%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease infinite;
+  border-radius: var(--radius-sm);
+}

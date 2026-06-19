@@ -8,10 +8,10 @@
  * A blink is detected when EAR drops below BLINK_THRESHOLD for
  * CONSEC_FRAMES consecutive frames, then rises above it again.
  */
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 
-const BLINK_THRESHOLD = 0.22;  // EAR below this = eye closing
-const CONSEC_FRAMES   = 2;     // Frames below threshold to count as blink
+const BLINK_THRESHOLD = 0.25;  // EAR below this = eye closing
+const CONSEC_FRAMES   = 1;     // 1 frame is enough — a blink is 100-200ms, detection runs every 150-220ms
 
 // face-api.js landmark indices for left eye (points 36-41) and right eye (42-47)
 const LEFT_EYE_IDX  = [36, 37, 38, 39, 40, 41];
@@ -82,10 +82,13 @@ export function useAntiSpoof(): UseAntiSpoofReturn {
     currentEARRef.current    = 0.3;
   }, []);
 
-  return {
+  // useMemo so the returned object has a stable reference across renders.
+  // processFaceLandmarks and reset are both useCallback with [] deps (stable),
+  // so this memo only recomputes once on mount.
+  return useMemo(() => ({
     processFaceLandmarks,
     get blinkDetected() { return blinkDetectedRef.current; },
     reset,
     get currentEAR() { return currentEARRef.current; },
-  };
+  }), [processFaceLandmarks, reset]);
 }

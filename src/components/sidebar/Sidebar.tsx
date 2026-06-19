@@ -309,12 +309,15 @@ export default function Sidebar({
     >
       {/* Brand header */}
       <div className={cn('relative shrink-0', collapsed ? 'px-3 pb-2 pt-4' : 'px-5 pb-3 pt-6')}>
-        {!collapsed && <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r from-transparent via-[var(--brand-lo)] to-transparent opacity-70" />}
+        {!collapsed && <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r from-transparent via-[#DC2626] to-transparent opacity-50" />}
         <div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between')}>
           <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-3')}>
             <div className="relative">
-              <div className={cn('rounded-xl bg-gradient-to-br from-[var(--brand-lo)] via-[var(--brand)] to-purple-500 p-[2px] shadow-[0_4px_20px_var(--brand-glow)] transition-all duration-300 group-hover:shadow-[0_6px_28px_var(--brand-glow-2)]',
-                collapsed ? 'h-10 w-10' : 'h-[52px] w-[52px]')}>
+              {/* Glow ring behind logo */}
+              {!collapsed && <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ boxShadow: '0 0 20px rgba(220,38,38,0.35)', borderRadius: 12 }} />}
+              <div className={cn('rounded-xl p-[2px] transition-all duration-300',
+                collapsed ? 'h-10 w-10' : 'h-[52px] w-[52px]')}
+                style={{ background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #7C3AED 100%)', boxShadow: '0 4px 20px rgba(220,38,38,0.30), 0 2px 8px rgba(0,0,0,0.25)' }}>
                 <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
                   <Image src="/logo.png" alt="619 Fitness" width={collapsed ? 28 : 40} height={collapsed ? 28 : 40} className={cn('rounded-lg object-cover', collapsed ? 'h-7 w-7' : 'h-10 w-10')} />
                 </div>
@@ -322,11 +325,11 @@ export default function Sidebar({
             </div>
             {!collapsed && (
               <div className="overflow-hidden">
-                <h2 className="text-[17px] font-extrabold tracking-tight text-[var(--text-primary)] leading-none whitespace-nowrap">
+                <h2 className="text-[17px] font-extrabold tracking-tight leading-none whitespace-nowrap">
                   <span className="bg-clip-text text-transparent"
-                    style={{ backgroundImage: 'linear-gradient(135deg, #3B82F6, #60A5FA, #93C5FD)' }}>619</span>
+                    style={{ backgroundImage: 'linear-gradient(135deg, #EF4444, #DC2626, #B91C1C)' }}>619</span>
                   {' '}
-                  <span className="tracking-[0.04em] text-[14px]">FITNESS</span>
+                  <span className="text-[var(--text-primary)] tracking-[0.04em] text-[14px]">FITNESS</span>
                 </h2>
                 <p className="mt-[3px] text-[10px] font-semibold text-[var(--text-muted)] tracking-[0.1em] uppercase whitespace-nowrap">
                   Studio Suite

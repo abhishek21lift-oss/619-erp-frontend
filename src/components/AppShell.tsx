@@ -257,11 +257,20 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
         {/* Right column */}
         <div className={cn('flex flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}>
           {/* ── Top header bar ── */}
-          <header className="sticky top-0 z-40 border-b border-white/[0.06]"
-            style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 40%, #1e1b4b 70%, #1e40af 100%)' }}
+          <header
+            className="sticky top-0 z-40"
+            style={{
+              background: 'linear-gradient(135deg, #070510 0%, #0C0920 30%, #100D30 60%, #130F45 100%)',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              boxShadow: '0 1px 0 rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.4)',
+            }}
           >
-            {/* Subtle shimmer line at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400/30 to-transparent" />
+            {/* Top inner highlight */}
+            <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 70%, transparent 100%)' }} />
+            {/* Bottom accent glow line */}
+            <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(139,92,246,0.4) 20%, rgba(99,102,241,0.6) 45%, rgba(59,130,246,0.5) 70%, transparent 100%)' }} />
+            {/* Subtle noise texture overlay */}
+            <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: '150px 150px' }} />
 
             <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
               {/* Mobile menu toggle */}
