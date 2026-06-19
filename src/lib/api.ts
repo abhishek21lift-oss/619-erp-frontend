@@ -338,6 +338,60 @@ export const api = {
       http<{ message?: string }>(`/api/auth/users/${id}`, { method: 'DELETE' }),
   },
 
+  // ── WebAuthn / Passkey — user-level biometric auth ─────────────────────────
+  webauthn: {
+    // Registration (user must be logged in)
+    registerOptions: () =>
+      http<Record<string, unknown>>('/api/auth/webauthn/register/options', { method: 'POST' }),
+    registerVerify: (body: { registration: Record<string, unknown>; deviceName?: string }) =>
+      http<{ success: boolean; credential: { id: string; device_name: string; created_at: string } }>(
+        '/api/auth/webauthn/register/verify', { method: 'POST', body: JSON.stringify(body) }
+      ),
+
+    // Login (no session required)
+    loginOptions: (body?: { email?: string }) =>
+      http<Record<string, unknown>>('/api/auth/webauthn/login/options', {
+        method: 'POST',
+        body: JSON.stringify(body ?? {}),
+      }),
+    loginVerify: (body: { authentication: Record<string, unknown> }) =>
+      http<{ user: { id: string; name?: string; email: string; role?: string; trainer_id?: string; member_id?: string } }>(
+        '/api/auth/webauthn/login/verify', { method: 'POST', body: JSON.stringify(body) }
+      ),
+
+    // Action verification (user must be logged in)
+    actionOptions: () =>
+      http<Record<string, unknown>>('/api/auth/webauthn/action/options', { method: 'POST' }),
+    actionVerify: (body: { authentication: Record<string, unknown> }) =>
+      http<{ verified: boolean; actionToken: string }>(
+        '/api/auth/webauthn/action/verify', { method: 'POST', body: JSON.stringify(body) }
+      ),
+
+    // Credential management (user's own passkeys)
+    listCredentials: () =>
+      http<{ credentials: { id: string; device_name: string; device_type: string; backed_up: boolean; created_at: string; last_used_at: string | null }[] }>(
+        '/api/auth/webauthn/credentials'
+      ),
+    deleteCredential: (id: string) =>
+      http<{ success: boolean }>(`/api/auth/webauthn/credentials/${id}`, { method: 'DELETE' }),
+
+    // Admin
+    adminStats: () =>
+      http<{ totalCredentials: number; enrolledUsers: number; loginsLast24h: number; failedAttemptsLast24h: number }>(
+        '/api/auth/webauthn/admin/stats'
+      ),
+    adminCredentials: () =>
+      http<{ credentials: Array<{ id: string; device_name: string; device_type: string; backed_up: boolean; created_at: string; last_used_at: string | null; user_id: string; user_name: string; user_email: string; role: string }> }>(
+        '/api/auth/webauthn/admin/credentials'
+      ),
+    adminRevokeCredential: (id: string) =>
+      http<{ success: boolean }>(`/api/auth/webauthn/admin/credentials/${id}`, { method: 'DELETE' }),
+    adminAuditLogs: (limit = 100) =>
+      http<{ logs: Array<{ id: string; event: string; detail: Record<string, unknown>; ip: string | null; created_at: string; user_name: string | null; user_email: string | null; role: string | null }> }>(
+        `/api/auth/webauthn/admin/audit-logs?limit=${limit}`
+      ),
+  },
+
   clients: {
     list: (params?: Record<string, string | number>) =>
       http<Client[]>(`/api/clients${buildQs(params)}`),

@@ -11,6 +11,7 @@ interface Ctx {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithPasskey: (email?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -19,6 +20,7 @@ const AuthContext = createContext<Ctx>({
   loading: true,
   login: async () => {},
   loginWithGoogle: async () => {},
+  loginWithPasskey: async () => {},
   logout: () => {},
 });
 
@@ -157,12 +159,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
+  const loginWithPasskey = useCallback(async function (email?: string): Promise<void> {
+    const data = await api.webauthn.loginVerify(
+      { authentication: await (async () => {
+        const opts = await api.webauthn.loginOptions({ email });
+        // Dynamic import keeps this hook SSR-safe
+        const { default: doAuth } = await import('./webauthn-passkey-auth');
+        return doAuth(opts);
+      })() }
+    );
+    resetRedirectLock();
+    loggedInRef.current = true;
+    const u = data.user;
+    setUser(u as User);
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
+    setLoading(false);
+  }, []);
+
   const logout = useCallback(function (): void {
     _clearSession();
   }, [_clearSession]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, loginWithPasskey, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,21 +3,30 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Mail, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, ArrowRight, Fingerprint, Loader2 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
+import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 export default function LoginPage() {
-  const { user, login, loginWithGoogle, loading } = useAuth();
+  const { user, login, loginWithGoogle, loginWithPasskey, loading } = useAuth();
   const router = useRouter();
 
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [showPw,   setShowPw]   = useState(false);
-  const [error,    setError]    = useState('');
-  const [busy,     setBusy]     = useState(false);
-  const [focused,  setFocused]  = useState<'email' | 'password' | null>(null);
+  const [email,          setEmail]          = useState('');
+  const [password,       setPassword]       = useState('');
+  const [showPw,         setShowPw]         = useState(false);
+  const [error,          setError]          = useState('');
+  const [busy,           setBusy]           = useState(false);
+  const [focused,        setFocused]        = useState<'email' | 'password' | null>(null);
+  const [passkeyReady,   setPasskeyReady]   = useState(false);
+  const [passkeyBusy,    setPasskeyBusy]    = useState(false);
+
+  useEffect(() => {
+    if (isWebAuthnSupported()) {
+      isBiometricAvailable().then(setPasskeyReady);
+    }
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -26,6 +35,18 @@ export default function LoginPage() {
       else router.replace('/pt-os');
     }
   }, [user, loading, router]);
+
+  async function handlePasskeyLogin() {
+    setError('');
+    setPasskeyBusy(true);
+    try {
+      await loginWithPasskey(email.trim() || undefined);
+    } catch (err: unknown) {
+      setError(webAuthnError(err));
+    } finally {
+      setPasskeyBusy(false);
+    }
+  }
 
   async function handleGoogleSuccess(response: CredentialResponse) {
     if (!response.credential) return;
@@ -391,27 +412,73 @@ export default function LoginPage() {
                   </span>
                 </motion.button>
 
+                {/* ── Divider ── */}
+                {(GOOGLE_CLIENT_ID || passkeyReady) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '22px 0' }}>
+                    <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(71,85,105,0.8)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>or</span>
+                    <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                  </div>
+                )}
+
                 {/* Google Sign-In */}
                 {GOOGLE_CLIENT_ID && (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '22px 0' }}>
-                      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(71,85,105,0.8)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>or</span>
-                      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-                    </div>
-                    <div className="flex justify-center">
-                      <GoogleLogin
-                        onSuccess={handleGoogleSuccess}
-                        onError={() => setError('Google sign-in was cancelled or failed.')}
-                        theme="filled_black"
-                        size="large"
-                        shape="rectangular"
-                        text="signin_with"
-                        logo_alignment="left"
-                        width="358"
-                      />
-                    </div>
-                  </>
+                  <div className="flex justify-center" style={{ marginBottom: passkeyReady ? 12 : 0 }}>
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => setError('Google sign-in was cancelled or failed.')}
+                      theme="filled_black"
+                      size="large"
+                      shape="rectangular"
+                      text="signin_with"
+                      logo_alignment="left"
+                      width="358"
+                    />
+                  </div>
+                )}
+
+                {/* ── Passkey / Biometric Sign-In ── */}
+                {passkeyReady && (
+                  <motion.button
+                    type="button"
+                    onClick={handlePasskeyLogin}
+                    disabled={passkeyBusy || busy}
+                    whileHover={!passkeyBusy ? { scale: 1.012 } : {}}
+                    whileTap={!passkeyBusy  ? { scale: 0.988 } : {}}
+                    style={{
+                      position: 'relative',
+                      width: '100%', height: 50,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                      borderRadius: 14,
+                      background: passkeyBusy
+                        ? 'rgba(124,58,237,0.12)'
+                        : 'rgba(124,58,237,0.08)',
+                      border: '1px solid rgba(124,58,237,0.30)',
+                      boxShadow: passkeyBusy ? 'none' : '0 0 16px rgba(124,58,237,0.10)',
+                      color: '#C4B5FD', fontSize: 14, fontWeight: 700,
+                      letterSpacing: '0.03em',
+                      cursor: passkeyBusy ? 'not-allowed' : 'pointer',
+                      transition: 'all 250ms ease',
+                    }}
+                  >
+                    {passkeyBusy ? (
+                      <>
+                        <Loader2 size={17} style={{ animation: 'spin 1s linear infinite' }} />
+                        <span>Waiting for biometric…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Fingerprint size={18} style={{ opacity: 0.85 }} />
+                        <span>Sign in with Fingerprint / Face ID</span>
+                      </>
+                    )}
+                    {/* Inner glow */}
+                    <div style={{
+                      position: 'absolute', inset: 0, borderRadius: 'inherit',
+                      background: 'radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.08) 0%, transparent 70%)',
+                      pointerEvents: 'none',
+                    }} />
+                  </motion.button>
                 )}
               </form>
 
