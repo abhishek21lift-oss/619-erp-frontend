@@ -222,7 +222,7 @@ export function useWebAuthn() {
     setBusy(true);
     try {
       const options = await api.webauthn.loginOptions({ email });
-      const authentication = await doAuthenticate(options);
+      const authentication = await doAuthenticate(options as Parameters<typeof doAuthenticate>[0]);
       const data = await api.webauthn.loginVerify({ authentication });
       setState((s) => ({ ...s, loading: false, error: null }));
       return data.user;
@@ -238,7 +238,7 @@ export function useWebAuthn() {
     setBusy(true);
     try {
       const options = await api.webauthn.actionOptions();
-      const authentication = await doAuthenticate(options);
+      const authentication = await doAuthenticate(options as Parameters<typeof doAuthenticate>[0]);
       const data = await api.webauthn.actionVerify({ authentication });
       setState((s) => ({ ...s, loading: false, error: null }));
       return data.actionToken as string;
