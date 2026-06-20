@@ -206,7 +206,7 @@ export function useWebAuthn() {
     setBusy(true);
     try {
       const options = await api.webauthn.registerOptions();
-      const registration = await doRegister(options);
+      const registration = await doRegister(options as Parameters<typeof doRegister>[0]);
       await api.webauthn.registerVerify({ registration, deviceName });
       setState((s) => ({ ...s, loading: false, error: null }));
       return true;
