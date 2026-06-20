@@ -113,7 +113,7 @@ function EnrollContent() {
     searchTimer.current = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const res = await api.webauthn.memberSearch(value) as any;
+        const res = await api.memberWebauthn.memberSearch(value) as any;
         setSearchResults(res?.members ?? []);
         setShowDropdown(true);
       } catch { setSearchResults([]); }
@@ -134,7 +134,7 @@ function EnrollContent() {
     if (!memberId) return;
     setLoading(true);
     try {
-      const res = await api.webauthn.listCredentials(memberId) as any;
+      const res = await api.memberWebauthn.listCredentials(memberId) as any;
       setCredentials(res?.credentials ?? []);
     } catch { setCredentials([]); }
     finally { setLoading(false); }
@@ -159,14 +159,14 @@ function EnrollContent() {
     setEnrolling(true);
     setStatus(null);
     try {
-      const beginRes = await api.webauthn.registerBegin(memberId) as any;
+      const beginRes = await api.memberWebauthn.registerBegin(memberId) as any;
       const credential = await registerCredential({
         challenge: beginRes.challenge,
         rp: beginRes.rp,
         user: beginRes.user,
         pubKeyCredParams: beginRes.pubKeyCredParams,
       });
-      const completeRes = await api.webauthn.registerComplete({
+      const completeRes = await api.memberWebauthn.registerComplete({
         memberId, deviceName,
         credentialId: credential.credentialId,
         rawId: credential.rawId,
@@ -190,7 +190,7 @@ function EnrollContent() {
 
   const handleRemove = async (credId: string) => {
     try {
-      await api.webauthn.removeCredential(credId);
+      await api.memberWebauthn.removeCredential(credId);
       setCredentials((prev) => prev.filter((c) => c.id !== credId));
     } catch {}
   };

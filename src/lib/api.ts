@@ -1017,7 +1017,7 @@ export const api = {
     },
   },
 
-  webauthn: {
+  memberWebauthn: {
     registerBegin: (memberId: string) =>
       http<{ challenge: string; rp: { name: string; id: string }; user: { id: string; name: string; displayName: string }; pubKeyCredParams: { type: 'public-key'; alg: number }[] }>(
         `/api/webauthn/register/begin?member_id=${memberId}`,

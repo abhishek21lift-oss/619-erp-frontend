@@ -116,13 +116,13 @@ function MarkAttendanceContent() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const beginRes = await api.webauthn.authenticateBegin(memberId || undefined) as any;
+      const beginRes = await api.memberWebauthn.authenticateBegin(memberId || undefined) as any;
       const assertion = await authenticateCredential({
         challenge: beginRes.challenge,
         allowCredentials: beginRes.allowCredentials,
         rpId: beginRes.rpId,
       });
-      const verifyRes = await api.webauthn.authenticateComplete({
+      const verifyRes = await api.memberWebauthn.authenticateComplete({
         credentialId: assertion.credentialId,
         rawId: assertion.rawId,
         authenticatorData: assertion.response.authenticatorData,

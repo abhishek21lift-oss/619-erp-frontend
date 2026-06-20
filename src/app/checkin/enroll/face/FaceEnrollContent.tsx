@@ -83,7 +83,7 @@ function FaceEnrollContent() {
     searchTimer.current = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const res = await api.webauthn.memberSearch(val) as any;
+        const res = await api.memberWebauthn.memberSearch(val) as any;
         setSearchResults(res?.members ?? []);
         setShowDropdown(true);
       } catch { setSearchResults([]); }
