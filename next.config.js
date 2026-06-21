@@ -71,6 +71,18 @@ const nextConfig = {
     ];
   },
 
+  async redirects() {
+    return [
+      { source: '/admin',              destination: '/admin/dashboard',         permanent: true },
+      { source: '/member',             destination: '/member/dashboard',         permanent: true },
+      { source: '/pt-os',              destination: '/',                         permanent: true },
+      { source: '/trainer',            destination: '/trainer/dashboard',        permanent: true },
+      { source: '/operations',         destination: '/operations/leaderboard',   permanent: true },
+      { source: '/checkin/reports',    destination: '/attendance/reports',       permanent: true },
+      { source: '/pt-os/plans',        destination: '/subscription/packages',    permanent: true },
+    ];
+  },
+
   async rewrites() {
     const passThrough = [
       { source: '/models/:path*', destination: '/models/:path*' },

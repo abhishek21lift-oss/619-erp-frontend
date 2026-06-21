@@ -789,12 +789,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             <p className="text-[10.5px] text-slate-500">{totalTerms} term{totalTerms !== 1 ? 's' : ''} total</p>
                           </div>
                         </div>
-                        <button onClick={() => router.push(`/pt-os/clients/${client.id}/renew`)}
-                          className="flex items-center gap-1.5 rounded-[11px] px-3.5 py-2 text-[11.5px] font-[700] text-white transition hover:opacity-80"
-                          style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 3px 12px rgba(16,185,129,0.35)' }}>
-                          <Repeat size={12} /> New Term
-                        </button>
-                      </div>
+                        </div>
 
                       {/* Terms */}
                       <div className="space-y-3">
