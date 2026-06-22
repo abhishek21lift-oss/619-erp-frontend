@@ -3,8 +3,17 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Mail } from 'lucide-react';
+import { Eye, EyeOff, Mail, Fingerprint } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
+import { isNative } from '@/lib/native/platform';
+import {
+  getAvailableBiometric,
+  authenticateWithBiometric,
+  getStoredCredentials,
+  storeCredentials,
+  deleteStoredCredentials,
+} from '@/lib/native/biometric';
+import { get as nativeGet, set as nativeSet, STORAGE_KEYS } from '@/lib/native/storage';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
@@ -12,11 +21,14 @@ export default function LoginPage() {
   const { user, login, loginWithGoogle, loading } = useAuth();
   const router = useRouter();
 
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [showPw,   setShowPw]   = useState(false);
-  const [error,    setError]    = useState('');
-  const [busy,     setBusy]     = useState(false);
+  const [email,            setEmail]            = useState('');
+  const [password,         setPassword]         = useState('');
+  const [showPw,           setShowPw]           = useState(false);
+  const [error,            setError]            = useState('');
+  const [busy,             setBusy]             = useState(false);
+  const [biometricType,    setBiometricType]    = useState<'fingerprint' | 'face' | 'none'>('none');
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [onNative,         setOnNative]         = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -25,6 +37,36 @@ export default function LoginPage() {
       else router.replace('/pt-os');
     }
   }, [user, loading, router]);
+
+  // Detect native platform and available biometrics on mount
+  useEffect(() => {
+    async function detectNative() {
+      const native = isNative();
+      setOnNative(native);
+      if (!native) return;
+      const type = await getAvailableBiometric();
+      setBiometricType(type);
+      const stored = await nativeGet(STORAGE_KEYS.BIOMETRIC_ENABLED);
+      setBiometricEnabled(stored === 'true' && type !== 'none');
+    }
+    detectNative().catch(() => {});
+  }, []);
+
+  async function handleBiometricLogin() {
+    setBusy(true);
+    setError('');
+    try {
+      const ok = await authenticateWithBiometric('Sign in to 619 Fitness');
+      if (!ok) { setError('Biometric authentication failed.'); return; }
+      const creds = await getStoredCredentials();
+      if (!creds) { setError('No stored credentials. Please sign in with email first.'); return; }
+      await login(creds.username, creds.password);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Biometric sign-in failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleGoogleSuccess(response: CredentialResponse) {
     if (!response.credential) return;
@@ -47,6 +89,12 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await login(email.trim(), password);
+      // On native with biometrics available, store credentials for future biometric logins
+      if (isNative() && biometricType !== 'none') {
+        await storeCredentials(email.trim(), password);
+        await nativeSet(STORAGE_KEYS.BIOMETRIC_ENABLED, 'true');
+        setBiometricEnabled(true);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
     } finally {
@@ -270,8 +318,28 @@ export default function LoginPage() {
                   </span>
                 </motion.button>
 
-                {/* ── Google Sign-In (shown only when NEXT_PUBLIC_GOOGLE_CLIENT_ID is set) ── */}
-                {GOOGLE_CLIENT_ID && (
+                {/* ── Biometric login (native only) ── */}
+                {onNative && biometricEnabled && biometricType !== 'none' && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-[#E5E5E5] dark:bg-[#3A3B40]" />
+                      <span className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-[0.1em]">or</span>
+                      <div className="flex-1 h-px bg-[#E5E5E5] dark:bg-[#3A3B40]" />
+                    </div>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={handleBiometricLogin}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#E5E5E5] dark:border-[#3A3B40] py-3 text-[14px] font-semibold text-[#374151] dark:text-white transition-colors hover:bg-[#F9FAFB] dark:hover:bg-white/5"
+                    >
+                      <Fingerprint size={18} />
+                      {biometricType === 'face' ? 'Sign in with Face ID' : 'Sign in with Fingerprint'}
+                    </button>
+                  </>
+                )}
+
+                {/* ── Google Sign-In (web only — popup not supported in native WebView) ── */}
+                {GOOGLE_CLIENT_ID && !onNative && (
                   <>
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-px bg-[#E5E5E5] dark:bg-[#3A3B40]" />

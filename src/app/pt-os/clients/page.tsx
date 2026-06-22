@@ -360,7 +360,7 @@ export default function PtClientsPage() {
             >
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-3 p-4 border-b" style={{ borderColor: 'rgba(15,23,42,0.05)' }}>
-                <div className="relative flex-1 min-w-[200px] max-w-xs">
+                <div className="relative flex-1 min-w-0 sm:min-w-[200px] max-w-xs">
                   <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'rgb(148,163,184)' }} />
                   <input
                     type="text"

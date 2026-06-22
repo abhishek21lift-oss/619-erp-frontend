@@ -55,18 +55,21 @@ const API_HOST = process.env.NEXT_PUBLIC_API_URL
 
 function buildCsp(): string {
   const apiConnect = API_HOST ? ` https://${API_HOST}` : '';
+  // capacitor:// is the scheme used by Capacitor's native WebView.
+  // We allow it in frame-ancestors and connect-src so the native shell can
+  // load pages and make API requests without CSP violations.
   return [
-    "default-src 'self'",
-    // Next.js requires 'unsafe-inline' for its runtime chunk and React streaming
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    `img-src 'self' data: blob: https://${SUPABASE_HOST}`,
-    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://cdn.jsdelivr.net`,
-    "font-src 'self' https://fonts.gstatic.com",
+    "default-src 'self' capacitor://localhost",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' capacitor://localhost",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com capacitor://localhost",
+    `img-src 'self' data: blob: https://${SUPABASE_HOST} capacitor://localhost`,
+    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://cdn.jsdelivr.net capacitor://localhost`,
+    "font-src 'self' https://fonts.gstatic.com capacitor://localhost",
     // blob: for camera MediaStream → canvas; worker-src for TF.js workers
-    "media-src 'self' blob:",
+    "media-src 'self' blob: capacitor://localhost",
     "worker-src 'self' blob:",
-    "frame-ancestors 'none'",
+    // Allow Capacitor native WebView to embed pages
+    "frame-ancestors 'self' capacitor://localhost",
     "form-action 'self'",
     "base-uri 'self'",
   ].join('; ');

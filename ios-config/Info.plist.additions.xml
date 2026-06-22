@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  619 Fitness ERP — iOS Info.plist additions
+
+  These key-value pairs must be merged into ios/App/App/Info.plist
+  after running: npx cap add ios (on macOS with Xcode installed)
+
+  Run on macOS:
+    npx cap add ios
+    # Then merge these entries into ios/App/App/Info.plist
+    npx cap sync ios
+-->
+<plist version="1.0">
+<dict>
+
+    <!-- Camera usage — required by App Store -->
+    <key>NSCameraUsageDescription</key>
+    <string>619 Fitness uses your camera for face recognition check-in and member enrollment.</string>
+
+    <!-- Photo library — for uploading profile photos -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>619 Fitness needs access to your photo library to upload profile photos.</string>
+
+    <!-- Biometric (Face ID) usage — required for Face ID -->
+    <key>NSFaceIDUsageDescription</key>
+    <string>619 Fitness uses Face ID for fast, secure login.</string>
+
+    <!-- Push Notifications — configured in Xcode Signing & Capabilities -->
+
+    <!-- URL scheme for deep linking: 619fitness:// -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.fitness619.erp</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>619fitness</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- App Transport Security — all traffic goes to HTTPS only -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+    </dict>
+
+    <!-- Background modes for push notifications -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- Status bar appearance -->
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleLightContent</string>
+
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+
+    <!-- Supported interface orientations -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+</dict>
+</plist>

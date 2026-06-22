@@ -299,14 +299,7 @@ function MemberDashboard() {
               View all →
             </button>
           </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3,1fr)',
-              gap: 12,
-              textAlign: 'center',
-            }}
-          >
+          <div className="grid grid-cols-3 gap-3 text-center">
             <Stat label="Workouts" value="42" sub="this month" />
             <Stat
               label="Weight"
