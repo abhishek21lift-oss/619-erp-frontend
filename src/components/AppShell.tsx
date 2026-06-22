@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import {
-  Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint,
-  Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown,
+  Search, LogOut, Bell, User, HelpCircle, ChevronDown,
   Menu, X, CheckCheck, ExternalLink, ChevronRight,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
@@ -83,7 +82,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<typeof SEARCH_PAGES>([]);
   const [searchFocusIdx, setSearchFocusIdx] = useState(-1);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -96,23 +94,11 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const pathname = usePathname();
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const settingsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.read_at).length;
 
-  const settingsLinks = [
-    { href: '/settings/studio', label: 'Studio Settings', icon: Building2 },
-    { href: '/settings/profile', label: 'My Profile', icon: User },
-    { href: '/settings/branches', label: 'Branches', icon: Building2 },
-    { href: '/settings/staff', label: 'Staff & Access', icon: ShieldCheck },
-    { href: '/settings/biometric', label: 'Biometric & Face', icon: Fingerprint },
-    { href: '/settings/billing', label: 'GST / Invoice', icon: Receipt },
-    { href: '/settings/branding', label: 'Branding', icon: Palette },
-    { href: '/settings/integrations', label: 'Integrations', icon: Zap },
-    { href: '/settings/import-database', label: 'Import Database', icon: DatabaseBackup },
-  ];
 
   const handleLogout = async () => {
     await logout();
@@ -161,7 +147,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
         setSearchOpen(false);
         setSearchFocusIdx(-1);
       }
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false);
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
     };
@@ -353,57 +338,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
 
               {/* Spacer */}
               <div className="hidden lg:block flex-1" />
-
-              {/* ── Settings dropdown ── */}
-              <div ref={settingsRef} className="relative">
-                <motion.button
-                  type="button"
-                  aria-label="Settings"
-                  onClick={() => setSettingsOpen(s => !s)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200"
-                  style={{
-                    background: settingsOpen ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
-                    boxShadow: settingsOpen ? '0 4px 12px rgba(167,139,250,0.3)' : undefined,
-                  }}
-                >
-                  <motion.div
-                    animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
-                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className={settingsOpen ? 'text-purple-300' : 'text-white/60'}
-                  >
-                    <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} className="relative z-10" />
-                  </motion.div>
-                </motion.button>
-                <AnimatePresence>
-                  {settingsOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.96 }}
-                      transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_var(--brand-glow)]"
-                    >
-                      <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">Settings</div>
-                      <div className="pb-2">
-                        {settingsLinks.map((link) => {
-                          const Icon = link.icon;
-                          const active = pathname === link.href;
-                          return (
-                            <Link key={link.href} href={link.href} onClick={() => setSettingsOpen(false)}
-                              className={cn('flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium transition-colors',
-                                active ? 'bg-[var(--brand-soft)] text-[var(--brand)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]')}>
-                              <Icon size={14} strokeWidth={1.5} />
-                              {link.label}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
 
               {/* ── Notification bell ── */}
               <div ref={notifRef} className="relative">

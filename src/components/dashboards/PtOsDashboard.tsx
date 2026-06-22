@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  UserPlus, Salad, Dumbbell, Calendar,
-  Activity, Users, TrendingUp, Clock,
-  Award, Target, Heart, Zap, BarChart3,
-  CheckCircle, RefreshCw, FileText, Wallet, Percent,
-  ChevronRight, AlertTriangle, Sparkles,
+  Users, TrendingUp,
+  RefreshCw, Wallet, Percent,
+  ChevronRight, AlertTriangle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -36,53 +34,6 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 const MEDAL_BG = ['rgba(251,191,36,0.10)', 'rgba(148,163,184,0.09)', 'rgba(180,83,9,0.07)'];
 const MEDAL_BORDER = ['rgba(251,191,36,0.30)', 'rgba(148,163,184,0.22)', 'rgba(180,83,9,0.18)'];
 
-const QUICK = [
-  { label: 'New Client',    icon: <UserPlus size={15} />,  href: '/pt-os/new-client',       color: '#7c3aed', g: 'linear-gradient(135deg,#7c3aed,#6d28d9)' },
-  { label: 'Schedule',      icon: <Calendar size={15} />,  href: '/pt-os/schedule-session',  color: '#0284c7', g: 'linear-gradient(135deg,#0284c7,#0369a1)' },
-  { label: 'Diet Plans',    icon: <Salad size={15} />,     href: '/pt-os/diet-plans',        color: '#059669', g: 'linear-gradient(135deg,#059669,#047857)' },
-  { label: 'Workouts',      icon: <Dumbbell size={15} />,  href: '/pt-os/workout-plans',     color: '#7c3aed', g: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' },
-  { label: 'Balance Sheet', icon: <Wallet size={15} />,    href: '/pt-os/balance-sheet',     color: '#d97706', g: 'linear-gradient(135deg,#f59e0b,#d97706)' },
-  { label: 'Commissions',   icon: <Percent size={15} />,   href: '/pt-os/commissions',       color: '#dc2626', g: 'linear-gradient(135deg,#e11d48,#be123c)' },
-  { label: 'Sessions',      icon: <Clock size={15} />,     href: '/pt-os/sessions',          color: '#0ea5e9', g: 'linear-gradient(135deg,#38bdf8,#0284c7)' },
-  { label: 'Reports',       icon: <BarChart3 size={15} />, href: '/pt-os/reports',           color: '#6366f1', g: 'linear-gradient(135deg,#818cf8,#4f46e5)' },
-];
-
-const FEATURE_TABS = [
-  {
-    id: 'clients',
-    label: 'Training',
-    features: [
-      { icon: <Users size={19} />,      label: 'PT Clients',      desc: 'All client profiles',    href: '/pt-os/clients',          color: '#7c3aed' },
-      { icon: <Dumbbell size={19} />,   label: 'Workout Plans',   desc: 'Design programs',        href: '/pt-os/workout-plans',    color: '#8b5cf6' },
-      { icon: <Salad size={19} />,      label: 'Diet Plans',      desc: 'Manage meal plans',      href: '/pt-os/diet-plans',       color: '#059669' },
-      { icon: <Clock size={19} />,      label: 'Sessions',        desc: 'Session history',        href: '/pt-os/sessions',         color: '#0284c7' },
-      { icon: <Calendar size={19} />,   label: 'Schedule',        desc: 'Book PT sessions',       href: '/pt-os/schedule-session', color: '#0d9488' },
-      { icon: <CheckCircle size={19} />, label: 'Session Balance', desc: 'Remaining credits',     href: '/pt-os/session-balance',  color: '#0891b2' },
-    ],
-  },
-  {
-    id: 'progress',
-    label: 'Progress & Health',
-    features: [
-      { icon: <Heart size={19} />,      label: 'Assessment',      desc: 'Health assessments',     href: '/pt-os/assessment',        color: '#e11d48' },
-      { icon: <Activity size={19} />,   label: 'Measurements',    desc: 'Body stats tracking',    href: '/pt-os/measurements',      color: '#0891b2' },
-      { icon: <Zap size={19} />,        label: 'Strength',        desc: 'Log lifts & gains',      href: '/pt-os/strength-tracking', color: '#7c3aed' },
-      { icon: <Award size={19} />,      label: 'Progress Photos', desc: 'Visual transformation',  href: '/pt-os/progress-photos',   color: '#059669' },
-      { icon: <Target size={19} />,     label: 'Goals',           desc: 'Fitness goal tracking',  href: '/pt-os/goals',             color: '#d97706' },
-      { icon: <CheckCircle size={19} />, label: 'Weekly Check-in', desc: 'Daily workflows',       href: '/pt-os/weekly-checkin',    color: '#65a30d' },
-    ],
-  },
-  {
-    id: 'business',
-    label: 'Business',
-    features: [
-      { icon: <Wallet size={19} />,     label: 'Balance Sheet',   desc: 'Outstanding dues',       href: '/pt-os/balance-sheet',    color: '#d97706' },
-      { icon: <Percent size={19} />,    label: 'Commissions',     desc: 'Payouts & commission',   href: '/pt-os/commissions',      color: '#e11d48' },
-      { icon: <BarChart3 size={19} />,  label: 'Reports',         desc: 'Business analytics',     href: '/pt-os/reports',          color: '#6366f1' },
-      { icon: <FileText size={19} />,   label: 'PT Plans',        desc: 'Packages & pricing',     href: '/pt-os/plans',            color: '#0284c7' },
-    ],
-  },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtINR(n: number | string | null | undefined) {
@@ -247,52 +198,6 @@ function AlertBar({ d }: { d: DashData }) {
   );
 }
 
-// ─── QuickActions ─────────────────────────────────────────────────────────────
-function QuickActions() {
-  const router = useRouter();
-  return (
-    <div>
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles size={13} style={{ color: '#7c3aed' }} />
-        <span className="text-[10px] font-[700] uppercase tracking-[0.12em]" style={{ color: 'rgba(100,80,180,0.7)' }}>
-          Quick Actions
-        </span>
-      </div>
-      <div className="relative">
-        <div className="overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-          <div className="flex gap-2 min-w-max pr-4">
-            {QUICK.map((q, i) => (
-              <motion.button
-                key={q.label}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={{ y: -3, scale: 1.04 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => router.push(q.href)}
-                className="flex items-center gap-2.5 rounded-[14px] px-4 py-3 shrink-0 min-h-[44px]"
-                style={{
-                  background: 'rgba(255,255,255,0.82)',
-                  border: `1px solid ${q.color}22`,
-                  boxShadow: `0 2px 12px ${q.color}10, 0 1px 3px rgba(0,0,0,0.04)`,
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <div className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[8px] text-white"
-                  style={{ background: q.g, boxShadow: `0 3px 8px ${q.color}30` }}>
-                  {q.icon}
-                </div>
-                <span className="text-[13px] font-[660]" style={{ color: '#1e293b' }}>{q.label}</span>
-              </motion.button>
-            ))}
-          </div>
-        </div>
-        {/* Scroll-fade hint */}
-        <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-white/60 to-transparent" />
-      </div>
-    </div>
-  );
-}
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 function StatCard({
@@ -615,76 +520,6 @@ function TrainerRanking({ trainers, onRefetch, loading }: {
   );
 }
 
-// ─── FeatureTabs ──────────────────────────────────────────────────────────────
-function FeatureTabs() {
-  const router = useRouter();
-  const [active, setActive] = useState(0);
-  const tab = FEATURE_TABS[active];
-
-  return (
-    <div>
-      <div className="mb-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="h-6 w-1.5 rounded-full shrink-0"
-            style={{ background: 'linear-gradient(180deg,#6d28d9,#0284c7)' }} />
-          <h2 className="text-[17px] font-[800] tracking-[-0.02em]" style={{ color: '#0f172a' }}>PT OS Features</h2>
-        </div>
-        <div className="overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-          <div className="flex gap-2 min-w-max">
-            {FEATURE_TABS.map((t, i) => (
-              <button key={t.id} onClick={() => setActive(i)}
-                className="shrink-0 rounded-full px-4 py-2.5 text-[12px] font-[700] transition-all duration-200 whitespace-nowrap min-h-[40px]"
-                style={active === i
-                  ? { background: 'linear-gradient(135deg,#6d28d9,#4338ca)', color: '#fff', boxShadow: '0 4px 14px rgba(109,40,217,0.35)' }
-                  : { background: 'rgba(100,80,200,0.07)', color: '#4b5563' }
-                }>
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div key={active}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {tab.features.map((f, i) => (
-            <motion.div key={f.label}
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.035, duration: 0.28 }}
-              whileHover={{ y: -6, scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => router.push(f.href)}
-              className="group relative cursor-pointer overflow-hidden rounded-[18px] p-3 sm:p-4 flex flex-col items-center text-center gap-2 sm:gap-2.5 min-h-[100px]"
-              style={{
-                background: `linear-gradient(160deg, ${f.color}0c 0%, rgba(255,255,255,0.88) 100%)`,
-                border: `1px solid ${f.color}18`,
-                boxShadow: `0 3px 14px ${f.color}0a, 0 1px 3px rgba(0,0,0,0.03)`,
-                backdropFilter: 'blur(8px)',
-              }}>
-              <div className="pointer-events-none absolute inset-0 translate-x-[-100%] skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
-              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-[12px] sm:rounded-[13px] transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
-                style={{ background: `linear-gradient(135deg,${f.color},${f.color}bb)`, color: '#fff', boxShadow: `0 5px 14px ${f.color}30` }}>
-                {f.icon}
-              </div>
-              <div>
-                <p className="text-[11px] sm:text-[12px] font-[730] tracking-tight" style={{ color: '#0f172a' }}>{f.label}</p>
-                <p className="text-[9px] sm:text-[9.5px] mt-0.5 leading-snug" style={{ color: 'rgba(100,116,139,0.75)' }}>{f.desc}</p>
-              </div>
-              <div className="absolute inset-x-0 bottom-0 h-[2.5px] origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100 rounded-full"
-                style={{ background: `linear-gradient(90deg,${f.color},${f.color}44)` }} />
-            </motion.div>
-          ))}
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-}
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function PtOsDashboard() {
@@ -719,9 +554,6 @@ export default function PtOsDashboard() {
 
         {/* ── Alerts ── */}
         {d && <AlertBar d={d} />}
-
-        {/* ── Quick Actions ── */}
-        <QuickActions />
 
         {/* ── Skeleton ── */}
         {dash.loading && !d && <SkeletonDash />}
@@ -779,8 +611,6 @@ export default function PtOsDashboard() {
               </div>
             </div>
 
-            {/* ── Feature browser ── */}
-            <FeatureTabs />
           </>
         )}
       </div>

@@ -811,7 +811,6 @@ function QuickActionsPanel({ onMarkAll }: { onMarkAll?: () => void }) {
     { label: 'Export CSV',       icon: <Download className="h-5 w-5" />,      color: 'from-violet-500/20 to-purple-500/10', onClick: () => window.open(`/api/attendance?format=csv&date=${new Date().toISOString().split('T')[0]}`, '_blank') },
     { label: 'Send Reminders',   icon: <Bell className="h-5 w-5" />,          color: 'from-amber-500/20 to-yellow-500/10', onClick: () => router.push('/engagement/notifications') },
     { label: 'Open Reports',     icon: <BarChart3 className="h-5 w-5" />,     color: 'from-rose-500/20 to-red-500/10', onClick: () => router.push('/attendance/reports') },
-    { label: 'Start Live Scan',  icon: <Scan className="h-5 w-5" />,          color: 'from-rose-500/20 to-red-500/10', onClick: () => router.push('/checkin') },
   ];
   return (
     <section className="mt-6">

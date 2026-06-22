@@ -449,20 +449,6 @@ export default function PtClientsPage() {
                   <p className="mt-1.5 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>
                     {search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Get started by adding a new client'}
                   </p>
-                  {!search && statusFilter === 'all' && (
-                    <PremiumButton
-                      tone="primary" glow
-                      icon={<UserPlus size={13} />}
-                      onClick={() => router.push('/pt-os/new-client')}
-                      className="mt-5"
-                      style={{
-                        background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                        boxShadow: '0 6px 24px rgba(124,58,237,0.35)',
-                      }}
-                    >
-                      New Client
-                    </PremiumButton>
-                  )}
                 </div>
               )}
 
