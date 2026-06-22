@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 
 type Props = {
   size?: number;
@@ -16,21 +17,7 @@ export default function BrandLogo({
   showText = false,
   textPosition = 'right',
 }: Props) {
-  const candidates = [
-    '/logo.PNG',
-    '/logo.png',
-    '/logo.jpg',
-    '/logo.jpeg',
-    '/logo.svg',
-    '/logo.webp',
-  ];
-  const [idx, setIdx] = useState(0);
   const [failed, setFailed] = useState(false);
-
-  const onError = () => {
-    if (idx < candidates.length - 1) setIdx(idx + 1);
-    else setFailed(true);
-  };
 
   const radius = Math.round(size * 0.22);
 
@@ -73,18 +60,17 @@ export default function BrandLogo({
         boxShadow:
           '0 0 16px var(--brand-glow), 0 2px 8px var(--border)',
         flexShrink: 0,
+        overflow: 'hidden',
+        position: 'relative',
       }}
     >
-      <img
-        src={candidates[idx]}
+      <Image
+        src="/logo.png"
         alt="619 FITNESS STUDIO"
-        onError={onError}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-          display: 'block',
-        }}
+        fill
+        className="object-contain"
+        onError={() => setFailed(true)}
+        sizes={`${size}px`}
       />
     </div>
   );
