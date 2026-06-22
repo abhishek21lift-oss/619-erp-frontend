@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export interface WorkflowHeroProps {
   backHref: string;
@@ -54,7 +55,7 @@ export function WorkflowHero({
         {(resolvedAvatar || resolvedInitials) && (
           <div className="shrink-0">
             {resolvedAvatar ? (
-              <img src={resolvedAvatar} alt={resolvedTitle} className="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow-md" />
+              <Image src={resolvedAvatar} alt={resolvedTitle ?? ''} width={56} height={56} className="rounded-full object-cover ring-2 ring-white shadow-md" />
             ) : (
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#dc2626] to-[#b91c1c] flex items-center justify-center text-white font-bold text-lg shadow-md">
                 {resolvedInitials}

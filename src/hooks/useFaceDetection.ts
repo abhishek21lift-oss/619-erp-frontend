@@ -27,7 +27,11 @@ const MODEL_SOURCES = [
   'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model',
 ];
 
-const RECOGNITION_THRESHOLD = 0.50;
+// Aligned with backend RECOGNITION_THRESHOLD (0.40 — stricter than face-api default 0.6)
+const RECOGNITION_THRESHOLD =
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_FACE_RECOGNITION_THRESHOLD
+    ? parseFloat(process.env.NEXT_PUBLIC_FACE_RECOGNITION_THRESHOLD)
+    : 0.40;
 const MIN_FACE_SIZE_PX = 60;
 
 // Mobile gets a slower interval and smaller input to keep UI responsive

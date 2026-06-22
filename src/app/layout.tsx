@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import { LazyMotion, domAnimation } from 'framer-motion';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
 import { PermissionsProvider } from '@/lib/permissions-context';
@@ -112,8 +113,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AuthProvider>
                 <PermissionsProvider>
                   <ToastProvider>
-                    {children}
-                    <CommandPalette />
+                    <LazyMotion features={domAnimation}>
+                      {children}
+                      <CommandPalette />
+                    </LazyMotion>
                   </ToastProvider>
                 </PermissionsProvider>
               </AuthProvider>

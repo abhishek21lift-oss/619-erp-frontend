@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Plus, Loader2, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAsync } from '@/lib/use-async';
@@ -90,6 +91,7 @@ export default function ProgressPhotosPage() {
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
                   style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)' }} />
                 {photoUrl && photoUrl.startsWith('data:image/') && (
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={photoUrl} alt="Preview" className="w-full h-40 object-cover rounded-[12px]" />
                 )}
                 <Button type="submit" disabled={!clientId || !photoUrl || saving}
@@ -105,7 +107,7 @@ export default function ProgressPhotosPage() {
               <div className="grid grid-cols-2 gap-3 max-h-[500px] overflow-y-auto">
                 {(photos.data as any[] || []).map((p: any) => (
                   <div key={p.id} className="relative rounded-[12px] overflow-hidden group" style={{ aspectRatio: '3/4' }}>
-                    <img src={p.photo_url} alt={p.photo_type} className="w-full h-full object-cover" />
+                    <Image src={p.photo_url} alt={p.photo_type} fill className="object-cover" sizes="(max-width:768px) 50vw,33vw" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
                       <span className="text-white text-[10px] font-semibold capitalize">{p.photo_type} · {p.taken_at}</span>
                       <button onClick={() => handleDelete(p.id)} className="text-white/80 hover:text-red-400 mt-1">

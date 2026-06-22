@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { http } from '@/lib/http';
 import { useToast } from '@/lib/toast';
+import Image from 'next/image';
 import {
   Camera, Save, User, Mail, Phone, MapPin,
   Calendar, Briefcase, Edit3, Check, Loader2
@@ -150,7 +151,7 @@ export default function ProfileOverviewPage() {
           <div className="relative">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FF2E63] to-[#7C3AED] flex items-center justify-center text-[22px] font-bold overflow-hidden">
               {avatarUrl
-                ? <img src={avatarUrl} alt={form.name} className="w-full h-full object-cover" />
+                ? <Image src={avatarUrl} alt={form.name} fill className="object-cover" sizes="80px" />
                 : initials
               }
             </div>

@@ -958,6 +958,7 @@ function NewClientWizard() {
                           <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
                           {photoPreview ? (
                             <div className="text-center">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={photoPreview} alt="Preview" className="mx-auto h-24 w-24 rounded-[14px] object-cover shadow-md" />
                               <p className="mt-2 text-[12px] font-[600]" style={{ color: '#10b981' }}>Photo uploaded</p>
                             </div>

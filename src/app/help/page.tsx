@@ -157,7 +157,7 @@ export default function HelpPage() {
                   <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>support@619fitness.com</p>
                 </div>
               </a>
-              <a href="tel:+918756562188"
+              <a href={`tel:${process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+918756562188'}`}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
                   borderRadius: 16, background: 'rgba(255,255,255,0.03)',
@@ -174,10 +174,10 @@ export default function HelpPage() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', margin: 0 }}>Call Us</p>
-                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>+91-8756562188</p>
+                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
                 </div>
               </a>
-              <a href="https://wa.me/918756562188" target="_blank" rel="noopener noreferrer"
+              <a href={`https://wa.me/${(process.env.NEXT_PUBLIC_SUPPORT_PHONE || '918756562188').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
                   borderRadius: 16, background: 'rgba(255,255,255,0.03)',
@@ -194,7 +194,7 @@ export default function HelpPage() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', margin: 0 }}>WhatsApp Support</p>
-                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>+91-8756562188</p>
+                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
                 </div>
               </a>
             </div>

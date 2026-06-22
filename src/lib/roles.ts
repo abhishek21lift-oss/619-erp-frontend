@@ -24,7 +24,7 @@ export function hasRole(
   required: Role | Role[] | undefined
 ): boolean {
   const role = normaliseRole(userRole);
-  if (!required) return true;
+  if (!required) return false;
   if (role === 'admin') return true;
   const list = Array.isArray(required) ? required : [required];
   return !!role && (list as string[]).includes(role);

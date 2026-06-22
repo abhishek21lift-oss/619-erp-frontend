@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { MessageCircle, Send, Users, CheckCircle2, Phone, Clock, Search, X, ExternalLink } from 'lucide-react';
@@ -128,7 +129,7 @@ function WAContent() {
                   <input type="checkbox" checked={selected.includes(m.id)} onChange={()=>toggleSelect(m.id)} onClick={e=>e.stopPropagation()}
                     style={{ accentColor:'#8b5cf6', width:16, height:16 }} />
                   <div style={{ width:38, height:38, borderRadius:'50%', background:'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(109,40,217,0.08))', color:'#7c3aed', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:12, flexShrink:0, border:'1px solid rgba(139,92,246,0.15)' }}>
-                    {m.photo_url?<img src={m.photo_url} alt={m.name} style={{ width:38, height:38, borderRadius:'50%', objectFit:'cover' }}/>:(m.name||'?').slice(0,2).toUpperCase()}
+                    {m.photo_url?<Image src={m.photo_url} alt={m.name} width={38} height={38} style={{ borderRadius:'50%', objectFit:'cover' }}/>:(m.name||'?').slice(0,2).toUpperCase()}
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontWeight:700, fontSize:13, color:'#111827' }}>{m.name}</div>
