@@ -619,21 +619,25 @@ function FeatureTabs() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-6 w-1.5 rounded-full shrink-0"
-          style={{ background: 'linear-gradient(180deg,#6d28d9,#0284c7)' }} />
-        <h2 className="text-[17px] font-[800] tracking-[-0.02em]" style={{ color: '#0f172a' }}>PT OS Features</h2>
-        <div className="flex gap-1.5 ml-auto overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {FEATURE_TABS.map((t, i) => (
-            <button key={t.id} onClick={() => setActive(i)}
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-[700] transition-all duration-200 whitespace-nowrap"
-              style={active === i
-                ? { background: 'linear-gradient(135deg,#6d28d9,#4338ca)', color: '#fff', boxShadow: '0 4px 14px rgba(109,40,217,0.35)' }
-                : { background: 'rgba(100,80,200,0.07)', color: '#4b5563' }
-              }>
-              {t.label}
-            </button>
-          ))}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="h-6 w-1.5 rounded-full shrink-0"
+            style={{ background: 'linear-gradient(180deg,#6d28d9,#0284c7)' }} />
+          <h2 className="text-[17px] font-[800] tracking-[-0.02em]" style={{ color: '#0f172a' }}>PT OS Features</h2>
+        </div>
+        <div className="overflow-x-auto sm:ml-auto" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-1.5 pb-0.5">
+            {FEATURE_TABS.map((t, i) => (
+              <button key={t.id} onClick={() => setActive(i)}
+                className="shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-[700] transition-all duration-200 whitespace-nowrap"
+                style={active === i
+                  ? { background: 'linear-gradient(135deg,#6d28d9,#4338ca)', color: '#fff', boxShadow: '0 4px 14px rgba(109,40,217,0.35)' }
+                  : { background: 'rgba(100,80,200,0.07)', color: '#4b5563' }
+                }>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
