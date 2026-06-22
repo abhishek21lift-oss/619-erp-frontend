@@ -99,9 +99,11 @@ export function resetRedirectLock(): void {
   _redirecting = false;
 }
 
+const PUBLIC_CLIENT_PATHS = ['/', '/login', '/reset-password'];
+
 function handleUnauthorized(): void {
   if (typeof window === 'undefined' || _redirecting) return;
-  if (window.location.pathname === '/login') return;
+  if (PUBLIC_CLIENT_PATHS.includes(window.location.pathname)) return;
   _redirecting = true;
   try { localStorage.removeItem(SESSION_USER_KEY); } catch { /* noop */ }
   window.dispatchEvent(new CustomEvent('session-expired'));
