@@ -171,7 +171,7 @@ function HeroBanner({ loading, onRefresh }: { d: DashData | null | undefined; lo
           style={{ background: 'linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.7) 50%, transparent 70%)' }} />
       </div>
 
-      <div className="relative z-10 px-6 py-4 sm:px-8 sm:py-5 flex flex-col items-center text-center">
+      <div className="relative z-10 px-4 py-5 sm:px-8 sm:py-6 flex flex-col items-center text-center">
         {/* Date + refresh */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-white" style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.85, WebkitTextFillColor: 'white' }}>
@@ -236,7 +236,7 @@ function AlertBar({ d }: { d: DashData }) {
         <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 + i * 0.08, duration: 0.35 }}
           onClick={() => router.push(a.href)}
-          className="flex items-center gap-2.5 rounded-[14px] px-4 py-2.5 cursor-pointer transition-all hover:scale-[1.005]"
+          className="flex items-center gap-2.5 rounded-[14px] px-4 py-3 cursor-pointer transition-all hover:scale-[1.005]"
           style={{ background: a.bg, border: `1px solid ${a.border}` }}>
           <AlertTriangle size={13} style={{ color: a.color, flexShrink: 0 }} />
           <p className="text-[11.5px] font-[640] flex-1" style={{ color: a.color }}>{a.msg}</p>
@@ -258,33 +258,37 @@ function QuickActions() {
           Quick Actions
         </span>
       </div>
-      <div className="overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-        <div className="flex gap-2 min-w-max">
-          {QUICK.map((q, i) => (
-            <motion.button
-              key={q.label}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              whileHover={{ y: -3, scale: 1.04 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push(q.href)}
-              className="flex items-center gap-2.5 rounded-[14px] px-4 py-2.5 shrink-0"
-              style={{
-                background: 'rgba(255,255,255,0.82)',
-                border: `1px solid ${q.color}22`,
-                boxShadow: `0 2px 12px ${q.color}10, 0 1px 3px rgba(0,0,0,0.04)`,
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[8px] text-white"
-                style={{ background: q.g, boxShadow: `0 3px 8px ${q.color}30` }}>
-                {q.icon}
-              </div>
-              <span className="text-[12px] font-[660]" style={{ color: '#1e293b' }}>{q.label}</span>
-            </motion.button>
-          ))}
+      <div className="relative">
+        <div className="overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+          <div className="flex gap-2 min-w-max pr-4">
+            {QUICK.map((q, i) => (
+              <motion.button
+                key={q.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -3, scale: 1.04 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => router.push(q.href)}
+                className="flex items-center gap-2.5 rounded-[14px] px-4 py-3 shrink-0 min-h-[44px]"
+                style={{
+                  background: 'rgba(255,255,255,0.82)',
+                  border: `1px solid ${q.color}22`,
+                  boxShadow: `0 2px 12px ${q.color}10, 0 1px 3px rgba(0,0,0,0.04)`,
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <div className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[8px] text-white"
+                  style={{ background: q.g, boxShadow: `0 3px 8px ${q.color}30` }}>
+                  {q.icon}
+                </div>
+                <span className="text-[13px] font-[660]" style={{ color: '#1e293b' }}>{q.label}</span>
+              </motion.button>
+            ))}
+          </div>
         </div>
+        {/* Scroll-fade hint */}
+        <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-white/60 to-transparent" />
       </div>
     </div>
   );
@@ -332,8 +336,8 @@ function StatCard({
       </div>
 
       <div className="relative z-10">
-        <p className="text-[9px] font-[700] uppercase tracking-[0.1em] mb-1" style={{ color: `${color}99` }}>{label}</p>
-        <p className="text-[22px] font-[880] tracking-[-0.03em] leading-none" style={{ color }}>{value}</p>
+        <p className="text-[9.5px] font-[700] uppercase tracking-[0.1em] mb-1" style={{ color: `${color}99` }}>{label}</p>
+        <p className="text-[20px] sm:text-[22px] font-[880] tracking-[-0.03em] leading-none" style={{ color }}>{value}</p>
         {sub && <p className="mt-1.5 text-[10px] font-[500]" style={{ color: 'rgba(100,116,139,0.8)' }}>{sub}</p>}
       </div>
 
@@ -408,7 +412,7 @@ function DualChart({ data }: { data: DashData['revenueTrend'] }) {
         border: '1px solid rgba(124,58,237,0.10)',
         boxShadow: '0 4px 28px rgba(124,58,237,0.06), 0 1px 4px rgba(0,0,0,0.04)',
       }}>
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex flex-wrap items-start justify-between gap-y-2 mb-5">
         <div>
           <h3 className="text-[15px] font-[760] tracking-[-0.01em]" style={{ color: '#0f172a' }}>
             Revenue &amp; Commission
@@ -619,21 +623,25 @@ function FeatureTabs() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-6 w-1.5 rounded-full shrink-0"
-          style={{ background: 'linear-gradient(180deg,#6d28d9,#0284c7)' }} />
-        <h2 className="text-[17px] font-[800] tracking-[-0.02em]" style={{ color: '#0f172a' }}>PT OS Features</h2>
-        <div className="flex gap-1.5 ml-auto overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {FEATURE_TABS.map((t, i) => (
-            <button key={t.id} onClick={() => setActive(i)}
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-[700] transition-all duration-200 whitespace-nowrap"
-              style={active === i
-                ? { background: 'linear-gradient(135deg,#6d28d9,#4338ca)', color: '#fff', boxShadow: '0 4px 14px rgba(109,40,217,0.35)' }
-                : { background: 'rgba(100,80,200,0.07)', color: '#4b5563' }
-              }>
-              {t.label}
-            </button>
-          ))}
+      <div className="mb-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="h-6 w-1.5 rounded-full shrink-0"
+            style={{ background: 'linear-gradient(180deg,#6d28d9,#0284c7)' }} />
+          <h2 className="text-[17px] font-[800] tracking-[-0.02em]" style={{ color: '#0f172a' }}>PT OS Features</h2>
+        </div>
+        <div className="overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+          <div className="flex gap-2 min-w-max">
+            {FEATURE_TABS.map((t, i) => (
+              <button key={t.id} onClick={() => setActive(i)}
+                className="shrink-0 rounded-full px-4 py-2.5 text-[12px] font-[700] transition-all duration-200 whitespace-nowrap min-h-[40px]"
+                style={active === i
+                  ? { background: 'linear-gradient(135deg,#6d28d9,#4338ca)', color: '#fff', boxShadow: '0 4px 14px rgba(109,40,217,0.35)' }
+                  : { background: 'rgba(100,80,200,0.07)', color: '#4b5563' }
+                }>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -652,7 +660,7 @@ function FeatureTabs() {
               whileHover={{ y: -6, scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               onClick={() => router.push(f.href)}
-              className="group relative cursor-pointer overflow-hidden rounded-[18px] p-4 flex flex-col items-center text-center gap-2.5"
+              className="group relative cursor-pointer overflow-hidden rounded-[18px] p-3 sm:p-4 flex flex-col items-center text-center gap-2 sm:gap-2.5 min-h-[100px]"
               style={{
                 background: `linear-gradient(160deg, ${f.color}0c 0%, rgba(255,255,255,0.88) 100%)`,
                 border: `1px solid ${f.color}18`,
@@ -660,13 +668,13 @@ function FeatureTabs() {
                 backdropFilter: 'blur(8px)',
               }}>
               <div className="pointer-events-none absolute inset-0 translate-x-[-100%] skew-x-[-12deg] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
-              <div className="flex h-10 w-10 items-center justify-center rounded-[13px] transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-[12px] sm:rounded-[13px] transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
                 style={{ background: `linear-gradient(135deg,${f.color},${f.color}bb)`, color: '#fff', boxShadow: `0 5px 14px ${f.color}30` }}>
                 {f.icon}
               </div>
               <div>
-                <p className="text-[12px] font-[730] tracking-tight" style={{ color: '#0f172a' }}>{f.label}</p>
-                <p className="text-[9.5px] mt-0.5 leading-snug" style={{ color: 'rgba(100,116,139,0.75)' }}>{f.desc}</p>
+                <p className="text-[11px] sm:text-[12px] font-[730] tracking-tight" style={{ color: '#0f172a' }}>{f.label}</p>
+                <p className="text-[9px] sm:text-[9.5px] mt-0.5 leading-snug" style={{ color: 'rgba(100,116,139,0.75)' }}>{f.desc}</p>
               </div>
               <div className="absolute inset-x-0 bottom-0 h-[2.5px] origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100 rounded-full"
                 style={{ background: `linear-gradient(90deg,${f.color},${f.color}44)` }} />
@@ -697,7 +705,7 @@ export default function PtOsDashboard() {
     : undefined;
 
   return (
-    <div className="relative mx-auto w-full max-w-7xl px-4 pt-2 pb-6 sm:px-6 sm:pt-3 sm:pb-8">
+    <div className="relative mx-auto w-full max-w-7xl pt-2 pb-24 sm:pt-3 sm:pb-8">
       {/* Subtle page-level ambient color wash */}
       <div className="pointer-events-none fixed inset-0" style={{ zIndex: 0 }}>
         <div className="absolute inset-0"
