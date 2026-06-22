@@ -21,9 +21,14 @@ type FaceDetection = {
   descriptor?: Float32Array;
 };
 
-// Local public/ directory first, then the npm package CDN as fallback.
+// When NEXT_PUBLIC_FACE_MODEL_VERSION is set (e.g. "v2"), models are loaded from
+// /models/v2/ which carries immutable cache headers — this is the cache-bust mechanism.
+// Without the env var, /models/ is used (24-hour TTL, updated within a day).
+const _modelVersion = process.env.NEXT_PUBLIC_FACE_MODEL_VERSION;
+const _localModels  = _modelVersion ? `/models/${_modelVersion}` : '/models';
+
 const MODEL_SOURCES = [
-  '/models',
+  _localModels,
   'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model',
 ];
 
