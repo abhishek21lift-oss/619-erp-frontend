@@ -24,6 +24,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PUBLIC_PATHS: string[] = [
+  '/',
   '/login',
   '/reset-password',
 ];

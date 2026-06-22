@@ -1,6 +1,7 @@
 'use client';
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Mail, ArrowRight, Fingerprint, Loader2 } from 'lucide-react';
@@ -101,8 +102,8 @@ export default function LoginPage() {
       style={{ background: '#07060E', fontFamily: "'Inter', system-ui, sans-serif" }}
     >
       {/* ── Back to home ── */}
-      <button
-        onClick={() => router.push('/')}
+      <Link
+        href="/"
         style={{
           position: 'absolute', top: 20, left: 20, zIndex: 20,
           display: 'flex', alignItems: 'center', gap: 7,
@@ -110,14 +111,14 @@ export default function LoginPage() {
           border: '1px solid rgba(255,255,255,0.10)',
           borderRadius: 980, padding: '7px 14px',
           color: 'rgba(148,163,184,0.80)', fontSize: 12, fontWeight: 600,
-          cursor: 'pointer', transition: 'all 200ms',
+          textDecoration: 'none', transition: 'all 200ms',
           letterSpacing: '0.02em',
         }}
         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = '#F1F5F9'; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(148,163,184,0.80)'; }}
       >
         ← Home
-      </button>
+      </Link>
       {/* ── Atmospheric Background ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Primary crimson glow — bottom center */}
