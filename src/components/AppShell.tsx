@@ -255,7 +255,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
         />
 
         {/* Right column */}
-        <div className={cn('flex flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}>
+        <div className={cn('flex flex-1 flex-col min-w-0 overflow-x-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}>
           {/* ── Top header bar ── */}
           <header className="sticky top-0 z-40 border-b border-white/[0.06]"
             style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 40%, #1e1b4b 70%, #1e40af 100%)' }}
@@ -578,7 +578,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             </div>
           )}
 
-          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8">
+          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-8 pt-6 sm:px-6 lg:px-8">
             {title && (
               <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 {title}

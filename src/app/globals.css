@@ -285,12 +285,14 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 body {
   min-height: 100dvh;
   color: var(--text-primary);
   background: var(--bg-canvas);
   overflow-x: hidden;
+  max-width: 100vw;
 }
 :focus { outline: none; }
 :focus-visible {
