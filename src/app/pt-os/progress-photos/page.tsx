@@ -91,8 +91,10 @@ export default function ProgressPhotosPage() {
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
                   style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)' }} />
                 {photoUrl && photoUrl.startsWith('data:image/') && (
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photoUrl} alt="Preview" className="w-full h-40 object-cover rounded-[12px]" />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photoUrl} alt="Preview" className="w-full h-40 object-cover rounded-[12px]" />
+                  </>
                 )}
                 <Button type="submit" disabled={!clientId || !photoUrl || saving}
                   className="!w-full !rounded-[14px] !py-3 !font-[700]"
