@@ -17,7 +17,7 @@ import {
   List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
-  CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap,
+  CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -27,7 +27,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   List, Filter, PieChart, IndianRupee, Wallet, FileText, AlertCircle, ArrowUpRight, BarChart3, Award,
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
-  CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap,
+  CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen,
 };
 
 type GroupTheme = {
@@ -71,7 +71,7 @@ const GROUP_THEMES: Record<string, GroupTheme> = {
   'finance':             buildTheme('#14B8A6'),
   'communication':       buildTheme('#A855F7'),
   'subscription':        buildTheme('#F59E0B'),
-  'reports':             buildTheme('#64748B'),
+  'insights':            buildTheme('#64748B'),
   'ai-coach':            buildTheme('#10A37F'),
 };
 
@@ -82,7 +82,7 @@ function canSeeByPermission(href: string, groupId: string, can: (f: string) => b
   if (href === '/pt-os/commissions') return can('commissions');
   if (href === '/finance/record-payment') return can('record_payment');
   if (groupId === 'finance' || href.startsWith('/finance')) return can('finance');
-  if (groupId === 'reports' || href.startsWith('/reports') || href.startsWith('/insights')) return can('reports');
+  if (groupId === 'insights' || groupId === 'reports' || href.startsWith('/reports') || href.startsWith('/insights')) return can('reports');
   if (href.startsWith('/staff') || href.startsWith('/trainers') || href === '/attendance/staff') return can('staff_view');
   if (href.startsWith('/pt-os') || groupId === 'personal-training' || groupId === 'session-management' || groupId === 'progress-tracking') return can('pt_module');
   if (href.startsWith('/settings')) return can('settings');
@@ -97,12 +97,31 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
 
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
+  const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    Promise.allSettled([
+      fetch('/api/trainers/leave?status=pending', { credentials: 'include' }).then(r => r.json()),
+      fetch('/api/finance/dues', { credentials: 'include' }).then(r => r.json()),
+    ]).then(([leavesRes, duesRes]) => {
+      const counts: Record<string, number> = {};
+      if (leavesRes.status === 'fulfilled') {
+        const d = leavesRes.value;
+        counts.pendingLeaves = Array.isArray(d?.data) ? d.data.length : Array.isArray(d) ? d.length : (d?.count ?? 0);
+      }
+      if (duesRes.status === 'fulfilled') {
+        const d = duesRes.value;
+        counts.duesCount = Array.isArray(d?.data) ? d.data.length : Array.isArray(d) ? d.length : (d?.count ?? 0);
+      }
+      setBadgeCounts(counts);
+    }).catch(() => {});
+  }, [isAdmin]);
+
   const filterItem = (i: { href: string; role?: string; roles?: string[] }, groupId: string): boolean => {
     if (!isVisibleForRole(i as Parameters<typeof isVisibleForRole>[0], user?.role)) {
-      // Item requires admin but permissions grant it
-      return canSeeByPermission(i.href, groupId, can);
+      return false; // hidden or role not met — never override with permissions
     }
-    // Item visible by role — check if permissions restrict it
     return canSeeByPermission(i.href, groupId, isAdmin ? () => true : can);
   };
 
@@ -214,6 +233,60 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                       {group.items.map((item) => {
                         const ItemIcon = ICON_MAP[item.icon];
                         const active = isActive(item.href);
+                        const isDisabled = !!item.comingSoon;
+                        const badgeCount = item.badge ? (badgeCounts[item.badge] ?? 0) : 0;
+
+                        const sharedInner = (
+                          <>
+                            {active && !isDisabled && (
+                              <motion.div layoutId={`sidebar-active-${group.id}`}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-r-full"
+                                style={{
+                                  background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}66)`,
+                                  boxShadow: `0 0 8px ${theme.borderColor}50`,
+                                }} />
+                            )}
+                            <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-lg"
+                              style={{ background: !active && !isDisabled ? theme.activeBg : undefined }} />
+                            <div className="flex h-[22px] w-[22px] items-center justify-center rounded-md shrink-0 transition-all duration-200 relative z-10"
+                              style={{ background: active && !isDisabled ? theme.iconBg : 'transparent' }}>
+                              {ItemIcon && (
+                                <ItemIcon size={12} strokeWidth={active && !isDisabled ? 2.5 : 1.5}
+                                  style={{ color: active && !isDisabled ? '#ffffff' : 'var(--sidebar-icon)' }} />
+                              )}
+                            </div>
+                            <span className="truncate relative z-10 text-[12px] flex-1">{item.label}</span>
+                            {isDisabled && (
+                              <span className="relative z-10 ml-1 shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                                style={{ background: 'rgba(148,163,184,0.12)', color: '#94A3B8', border: '1px solid rgba(148,163,184,0.2)' }}>
+                                SOON
+                              </span>
+                            )}
+                            {!isDisabled && item.isNew && badgeCount === 0 && (
+                              <span className="relative z-10 ml-1 shrink-0 block h-1.5 w-1.5 rounded-full"
+                                style={{ background: '#22C55E', boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
+                            )}
+                            {!isDisabled && badgeCount > 0 && (
+                              <span className="relative z-10 ml-1 shrink-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+                                style={{ background: theme.borderColor }}>
+                                {badgeCount > 99 ? '99+' : badgeCount}
+                              </span>
+                            )}
+                          </>
+                        );
+
+                        if (isDisabled) {
+                          return (
+                            <div
+                              key={item.href}
+                              className="relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] font-medium overflow-hidden cursor-default select-none"
+                              style={{ color: 'var(--text-disabled)', opacity: 0.55 }}
+                            >
+                              {sharedInner}
+                            </div>
+                          );
+                        }
+
                         return (
                           <Link
                             key={item.href}
@@ -228,24 +301,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                               background: active ? theme.subActiveBg : 'transparent',
                             }}
                           >
-                            {active && (
-                              <motion.div layoutId={`sidebar-active-${group.id}`}
-                                className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-r-full"
-                                style={{
-                                  background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}66)`,
-                                  boxShadow: `0 0 8px ${theme.borderColor}50`,
-                                }} />
-                            )}
-                            <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-lg"
-                              style={{ background: !active ? theme.activeBg : undefined }} />
-                            <div className="flex h-[22px] w-[22px] items-center justify-center rounded-md shrink-0 transition-all duration-200 relative z-10"
-                              style={{ background: active ? theme.iconBg : 'transparent' }}>
-                              {ItemIcon && (
-                                <ItemIcon size={12} strokeWidth={active ? 2.5 : 1.5}
-                                  style={{ color: active ? '#ffffff' : 'var(--sidebar-icon)' }} />
-                              )}
-                            </div>
-                            <span className="truncate relative z-10 text-[12px]">{item.label}</span>
+                            {sharedInner}
                           </Link>
                         );
                       })}

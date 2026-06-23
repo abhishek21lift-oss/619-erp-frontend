@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 
 export default function LeaderboardPage() {
   return (
-    <Guard>
+    <Guard roles={['admin', 'manager']}>
       <Inner />
     </Guard>
   );

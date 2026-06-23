@@ -12,6 +12,7 @@ export type NavItem = {
   href: string;
   label: string;
   icon: string;
+  /** @deprecated use `roles` array instead */
   role?: Role;
   roles?: Role[];
   hidden?: boolean;
@@ -43,7 +44,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/member/attendance',  label: 'My Attendance',       icon: 'CalendarCheck' },
       { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['admin', 'manager', 'trainer'] },
       { href: '/attendance/staff',   label: 'Staff Attendance',    icon: 'UsersRound',     roles: ['admin', 'manager'] },
-      { href: '/attendance/reports', label: 'Reports & Dashboard', icon: 'BarChart3',      role: 'admin' },
+      { href: '/attendance/reports', label: 'Reports & Dashboard', icon: 'BarChart3',      roles: ['admin'] },
     ],
   },
   {
@@ -63,14 +64,14 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Trainers',
     icon: 'UserCog',
     items: [
-      { href: '/trainers/add',              label: 'Add Trainer',          icon: 'UserPlus',    role: 'admin' },
-      { href: '/trainers',                  label: 'Trainer Profiles',     icon: 'UserCog',     role: 'admin' },
+      { href: '/trainers/add',              label: 'Add Trainer',          icon: 'UserPlus',    roles: ['admin'] },
+      { href: '/trainers',                  label: 'Trainer Profiles',     icon: 'UserCog',     roles: ['admin'] },
       { href: '/pt-os/workout-plans',       label: 'Workout Plans',        icon: 'Dumbbell' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
       { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['admin', 'manager'], comingSoon: true },
       { href: '/trainers/leave',            label: 'Leave Requests',       icon: 'CalendarOff', roles: ['admin', 'manager'], badge: 'pendingLeaves' },
-      { href: '/trainer/dashboard',         label: 'Trainer Dashboard',    icon: 'LayoutGrid',  role: 'trainer' },
+      { href: '/trainer/dashboard',         label: 'Trainer Dashboard',    icon: 'LayoutGrid',  roles: ['trainer'] },
       { href: '/trainers/[id]',             label: 'Trainer Profile',      icon: 'UserCog',     hidden: true, matchPrefix: '/trainers/' },
     ],
   },
@@ -82,7 +83,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/schedule-session',  label: 'Book Session',         icon: 'CalendarPlus' },
       { href: '/pt-os/session-balance',   label: 'Session Balance',      icon: 'Gauge',         isNew: true },
       { href: '/pt-os/sessions',          label: 'Session History',      icon: 'History' },
-      { href: '/insights/sessions',       label: 'Session Utilisation',  icon: 'Clock', role: 'admin' },
     ],
   },
   {
@@ -102,15 +102,15 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Finance',
     icon: 'IndianRupee',
     items: [
-      { href: '/finance/record-payment',  label: 'Record Payment',     icon: 'Wallet', role: 'admin' },
-      { href: '/finance/collected-payments', label: 'Collected Payments', icon: 'Banknote', role: 'admin' },
-      { href: '/finance/invoices',        label: 'Invoices',           icon: 'FileText', role: 'admin' },
-      { href: '/finance/dues',            label: 'Outstanding Dues',   icon: 'AlertCircle',  badge: 'duesCount', role: 'admin' },
-      { href: '/finance/pl',              label: 'Profit & Loss',      icon: 'BarChart3',    role: 'admin' },
-      { href: '/finance/collection',      label: 'Collection',         icon: 'ArrowUpRight', role: 'admin' },
-      { href: '/finance/forecast',        label: 'Revenue Forecast',   icon: 'TrendingUp',   role: 'admin' },
-      { href: '/pt-os/commissions',       label: 'Trainer Commissions', icon: 'Percent',     role: 'admin', isNew: true },
-      { href: '/finance/trainer-revenue', label: 'Trainer Payouts',    icon: 'Award',        role: 'admin' },
+      { href: '/finance/record-payment',    label: 'Record Payment',      icon: 'Wallet',       roles: ['admin'] },
+      { href: '/finance/collected-payments', label: 'Collected Payments', icon: 'Banknote',     roles: ['admin'] },
+      { href: '/finance/invoices',          label: 'Invoices',            icon: 'FileText',     roles: ['admin'] },
+      { href: '/finance/dues',              label: 'Outstanding Dues',    icon: 'AlertCircle',  badge: 'duesCount', roles: ['admin'] },
+      { href: '/finance/pl',                label: 'Profit & Loss',       icon: 'BarChart3',    roles: ['admin'] },
+      { href: '/finance/collection',        label: 'Collection',          icon: 'ArrowUpRight', roles: ['admin'] },
+      { href: '/finance/forecast',          label: 'Revenue Forecast',    icon: 'TrendingUp',   roles: ['admin'] },
+      { href: '/pt-os/commissions',         label: 'Trainer Commissions', icon: 'Percent',      roles: ['admin'], isNew: true },
+      { href: '/finance/trainer-revenue',   label: 'Trainer Payouts',     icon: 'Award',        roles: ['admin'] },
     ],
   },
   {
@@ -118,12 +118,12 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Communication',
     icon: 'MessageCircle',
     items: [
-      { href: '/engagement/whatsapp',      label: 'WhatsApp / SMS',       icon: 'MessageCircle', role: 'admin' },
-      { href: '/engagement/notifications', label: 'Notifications',        icon: 'Bell', role: 'admin' },
-      { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',        role: 'admin' },
-      { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',         role: 'admin' },
-      { href: '/engagement/feedback',      label: 'Feedback',             icon: 'Star',        role: 'admin' },
-      { href: '/engagement/automation',    label: 'Automation Rules',     icon: 'Bot',         role: 'admin', isNew: true },
+      { href: '/engagement/whatsapp',      label: 'WhatsApp / SMS',       icon: 'MessageCircle', roles: ['admin'] },
+      { href: '/engagement/notifications', label: 'Notifications',        icon: 'Bell',          roles: ['admin'] },
+      { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',          roles: ['admin'] },
+      { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',           roles: ['admin'] },
+      { href: '/engagement/feedback',      label: 'Feedback',             icon: 'Star',          roles: ['admin'] },
+      { href: '/engagement/automation',    label: 'Automation Rules',     icon: 'Bot',           roles: ['admin'], isNew: true },
     ],
   },
   {
@@ -131,8 +131,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Subscription',
     icon: 'CreditCard',
     items: [
-      { href: '/subscription/packages',    label: 'Plans & Packages',     icon: 'Package',      role: 'admin' },
-      { href: '/subscription/subscriptions', label: 'Subscriptions',     icon: 'Users',        role: 'admin', isNew: true },
+      { href: '/subscription/packages',      label: 'Plans & Packages', icon: 'Package', roles: ['admin'] },
+      { href: '/subscription/subscriptions', label: 'Subscriptions',    icon: 'Users',   roles: ['admin'], isNew: true },
     ],
   },
   {
@@ -144,14 +144,16 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'reports',
-    label: 'Reports',
+    id: 'insights',
+    label: 'Insights',
     icon: 'FileBarChart',
+    roles: ['admin'],
     items: [
-      { href: '/reports',               label: 'All Reports',         icon: 'FileBarChart', role: 'admin' },
-      { href: '/insights/revenue',      label: 'Revenue Report',      icon: 'TrendingUp',   role: 'admin' },
-      { href: '/insights/renewal',      label: 'Renewal Report',      icon: 'RefreshCcw',   role: 'admin' },
-      { href: '/insights/traffic',      label: 'Attendance Report',   icon: 'Activity',     role: 'admin' },
+      { href: '/reports',               label: 'All Reports',         icon: 'FileBarChart',  roles: ['admin'] },
+      { href: '/insights/sessions',     label: 'Session Utilisation', icon: 'Clock',         roles: ['admin'] },
+      { href: '/insights/revenue',      label: 'Revenue Report',      icon: 'TrendingUp',    roles: ['admin'] },
+      { href: '/insights/renewal',      label: 'Renewal Report',      icon: 'RefreshCcw',    roles: ['admin'] },
+      { href: '/insights/traffic',      label: 'Attendance Report',   icon: 'Activity',      roles: ['admin'] },
     ],
   },
 ];
@@ -161,24 +163,25 @@ export const SETTINGS_GROUP: NavGroup = {
   label: 'Settings',
   icon: 'Settings',
   items: [
-    { href: '/settings/studio',          label: 'Studio Settings',      icon: 'Building2',      role: 'admin', isNew: true },
-    { href: '/settings/profile',         label: 'My Profile',           icon: 'User',           isNew: true },
-    { href: '/settings/branches',        label: 'Branches',             icon: 'Building2',      role: 'admin' },
-    { href: '/settings/biometric',       label: 'Biometric & Face',     icon: 'Fingerprint',    role: 'admin' },
-    { href: '/settings/billing',         label: 'GST / Invoice',        icon: 'Receipt',        role: 'admin' },
-    { href: '/settings/branding',        label: 'Branding',             icon: 'Palette',        role: 'admin' },
-    { href: '/settings/integrations',    label: 'Integrations',         icon: 'Zap',            role: 'admin', isNew: true },
-    { href: '/settings/import-database', label: 'Import Database',      icon: 'DatabaseBackup', role: 'admin' },
-    { href: '/settings/merge-duplicates', label: 'Merge Duplicates',    icon: 'Merge',          role: 'admin', isNew: true },
+    { href: '/settings/studio',           label: 'Studio Settings',      icon: 'Building2',      roles: ['admin'], isNew: true },
+    { href: '/settings/profile',          label: 'My Profile',           icon: 'User' },
+    { href: '/settings/staff',            label: 'Staff & Access',       icon: 'Shield',         roles: ['admin'] },
+    { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['admin'] },
+    { href: '/settings/biometric',        label: 'Biometric & Face',     icon: 'Fingerprint',    roles: ['admin'] },
+    { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['admin'] },
+    { href: '/settings/billing',          label: 'GST / Invoice',        icon: 'Receipt',        roles: ['admin'] },
+    { href: '/settings/branding',         label: 'Branding',             icon: 'Palette',        roles: ['admin'] },
+    { href: '/settings/integrations',     label: 'Integrations',         icon: 'Zap',            roles: ['admin'], isNew: true },
+    { href: '/settings/import-database',  label: 'Import Database',      icon: 'DatabaseBackup', roles: ['admin'] },
+    { href: '/settings/merge-duplicates', label: 'Merge Duplicates',     icon: 'Merge',          roles: ['admin'], isNew: true },
   ],
 };
 
 export const QUICK_ACTIONS = [
-
-  { id: 'qa-record-pay',   label: 'Record payment',        icon: 'Wallet',        href: '/finance/record-payment' },
-  { id: 'qa-book-session', label: 'Book PT session',       icon: 'CalendarPlus',  href: '/pt-os/schedule-session' },
-  { id: 'qa-face-checkin', label: 'Check In',               icon: 'ScanFace',      href: '/checkin' },
-  { id: 'qa-add-coach',    label: 'Add trainer',            icon: 'UserCog',       href: '/trainers/add', role: 'admin' as Role },
+  { id: 'qa-record-pay',   label: 'Record payment',  icon: 'Wallet',       href: '/finance/record-payment',    roles: ['admin'] as Role[] },
+  { id: 'qa-book-session', label: 'Book PT session', icon: 'CalendarPlus', href: '/pt-os/schedule-session' },
+  { id: 'qa-face-checkin', label: 'Check In',         icon: 'ScanFace',     href: '/checkin' },
+  { id: 'qa-add-coach',    label: 'Add trainer',      icon: 'UserCog',      href: '/trainers/add',              roles: ['admin'] as Role[] },
 ];
 
 export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: string }> {
@@ -211,7 +214,7 @@ export function isVisibleForRole(item: NavItem, userRole?: string): boolean {
   if (item.hidden) return false;
   const role = normaliseRole(userRole);
   if (item.roles?.length) return !!role && (item.roles as string[]).includes(role);
-  if (item.role)          return role === item.role;
+  if (item.role)           return role === item.role;
   return true;
 }
 

@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Fingerprint, ShieldCheck, ShieldAlert, Users, Activity, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -102,8 +103,16 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: n
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function BiometricAdminPage() {
-  const { user } = useAuth();
+  return (
+    <Guard roles={['admin', 'manager']}>
+      <AppShell>
+        <BiometricInner />
+      </AppShell>
+    </Guard>
+  );
+}
 
+function BiometricInner() {
   const [stats,     setStats]     = useState<Stats | null>(null);
   const [creds,     setCreds]     = useState<AdminCred[]>([]);
   const [logs,      setLogs]      = useState<AuditLog[]>([]);
@@ -132,15 +141,6 @@ export default function BiometricAdminPage() {
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
-
-  if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-    return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-        <ShieldAlert size={40} style={{ margin: '0 auto 12px', color: '#F87171' }} />
-        <p style={{ fontWeight: 600 }}>Access denied. Admin only.</p>
-      </div>
-    );
-  }
 
   async function handleRevoke(credId: string) {
     setRevoking(credId);
