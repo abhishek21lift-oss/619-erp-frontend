@@ -149,7 +149,7 @@ function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
             <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-0.5">{trainer.active_clients ?? 0}</p>
           </div>
           <div className="rounded-[12px] bg-[rgba(16,185,129,0.05)] p-2.5 text-center ring-1 ring-[rgba(16,185,129,0.08)]">
-            <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-[#10B981]">Revenue</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.06em] text-[#10B981]">This Month</p>
             <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-0.5">{fmtINR(trainer.month_revenue)}</p>
           </div>
           <div className="rounded-[12px] bg-[rgba(139,92,246,0.05)] p-2.5 text-center ring-1 ring-[rgba(139,92,246,0.08)]">
@@ -417,11 +417,11 @@ export default function TrainersPage() {
               hint="Across all trainers"
             />
             <KpiCard
-              label="Monthly Revenue"
+              label="Revenue This Month"
               value={loading ? '—' : fmtINR(stats.revenue)}
               icon={<DollarSign size={18} />}
               accent="purple"
-              hint="Combined trainer revenue"
+              hint="Current month · combined trainer revenue"
             />
             <KpiCard
               label="Trainer Performance"
@@ -563,7 +563,7 @@ export default function TrainersPage() {
                     <table className="w-full text-left">
                       <thead>
                         <tr className="border-t border-b border-[rgba(0,0,0,0.04)]">
-                          {['Rank', 'Trainer', 'Clients', 'Revenue', 'Score'].map(h => (
+                          {['Rank', 'Trainer', 'Clients', 'Revenue (This Month)', 'Score'].map(h => (
                             <th key={h} className="py-2.5 px-4 text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--text-muted)]">
                               {h}
                             </th>
