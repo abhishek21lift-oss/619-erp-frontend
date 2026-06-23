@@ -15,6 +15,8 @@ import {
   Loader2, RefreshCw, Clock,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { useRouter } from 'next/navigation';
 import { useCamera } from '@/hooks/useCamera';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
 import { useAntiSpoof } from '@/hooks/useAntiSpoof';
@@ -50,12 +52,16 @@ function Clock2() {
   return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{time}</span>;
 }
 
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5-minute idle timeout for kiosk security
+
 export default function KioskContent() {
   const [mode,   setMode]   = useState<Mode>('face');
   const [kstate, setKState] = useState<KState>('welcome');
   const [result, setResult] = useState<KResult | null>(null);
   const [msg,    setMsg]    = useState('Welcome! Please scan your face or QR code.');
 
+  const { logout } = useAuth();
+  const router = useRouter();
   const camera    = useCamera();
   const detection = useFaceDetection();
   const antiSpoof = useAntiSpoof();
@@ -64,6 +70,7 @@ export default function KioskContent() {
   const rafRef       = useRef<number>(0);
   const cooldownRef  = useRef<number>(0);
   const resetTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const speak = useCallback((text: string) => {
     if (!('speechSynthesis' in window)) return;
@@ -72,6 +79,25 @@ export default function KioskContent() {
     u.rate = 1.05;
     window.speechSynthesis.speak(u);
   }, []);
+
+  // ── Idle timeout — logs out and redirects after 5 minutes of inactivity ──
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      logout();
+      router.replace('/login');
+    }, IDLE_TIMEOUT_MS);
+  }, [logout, router]);
+
+  useEffect(() => {
+    const events = ['mousemove', 'keydown', 'touchstart', 'click'] as const;
+    events.forEach((e) => document.addEventListener(e, resetIdleTimer));
+    resetIdleTimer(); // start the timer on mount
+    return () => {
+      events.forEach((e) => document.removeEventListener(e, resetIdleTimer));
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [resetIdleTimer]);
 
   const scheduleReset = useCallback(() => {
     if (resetTimer.current) clearTimeout(resetTimer.current);

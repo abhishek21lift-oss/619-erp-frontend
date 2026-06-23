@@ -21,6 +21,8 @@ export default function ProgressPhotosPage() {
   const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const photos = useAsync(() => api.progress.progressPhotos.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
 
+  const pageError = clients.error || photos.error;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!clientId || !photoUrl) return;
@@ -38,6 +40,49 @@ export default function ProgressPhotosPage() {
   async function handleDelete(id: string) {
     await api.progress.progressPhotos.delete(id);
     photos.refetch();
+  }
+
+  if (pageError && !clients.loading && !photos.loading) {
+    return (
+      <Guard>
+        <AppShell>
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, padding: 40 }}>
+              <div style={{
+                background: 'rgba(255,255,255,0.7)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.6)',
+                borderRadius: 20,
+                padding: '40px 32px',
+                textAlign: 'center',
+                maxWidth: 400,
+                boxShadow: '0 4px 24px rgba(15,23,42,0.06)',
+              }}>
+                <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'rgb(15,23,42)', margin: '0 0 8px' }}>
+                  Unable to Load Data
+                </h2>
+                <p style={{ fontSize: 13, color: 'rgb(100,116,139)', margin: '0 0 20px' }}>
+                  This feature is not available yet or there was a problem loading the page. Please try again later.
+                </p>
+                <button
+                  onClick={() => { clients.refetch(); photos.refetch(); }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #4b5563, #6b7280)',
+                    color: '#fff', fontSize: 13, fontWeight: 700,
+                    boxShadow: '0 4px 12px rgba(75,85,99,0.25)',
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </AppShell>
+      </Guard>
+    );
   }
 
   return (

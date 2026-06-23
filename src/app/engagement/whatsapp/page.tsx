@@ -31,6 +31,7 @@ export default function WhatsAppPage() {
 function WAContent() {
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [template, setTemplate] = useState(TEMPLATES[0]);
@@ -39,7 +40,14 @@ function WAContent() {
   const { toast } = useToast();
 
   useEffect(()=>{
-    api.clients.list({status:'active'}).then((d:any)=>{setMembers(Array.isArray(d)?d:[]); setLoading(false);}).catch((err:any)=>{toast.error(err?.message || 'Failed to load members'); setLoading(false);});
+    api.clients.list({status:'active'})
+      .then((d:any)=>{ setMembers(Array.isArray(d)?d:[]); setLoading(false); })
+      .catch((err:any)=>{
+        const msg = err?.message || 'Failed to load members';
+        setLoadError(msg);
+        toast.error(msg);
+        setLoading(false);
+      });
   },[toast]);
 
   const filtered = useMemo(() => search.trim() ? members.filter(m=>(m.name||'').toLowerCase().includes(search.toLowerCase())||(m.mobile||'').includes(search)) : members, [members, search]);
@@ -52,10 +60,18 @@ function WAContent() {
     return body.replace('{name}',member.name||'there').replace('{date}',member.pt_end_date||'soon').replace('{amount}',String(member.balance_amount||0));
   }
   function openWhatsApp(member:any){
-    const phone = (member.mobile||'').replace(/\D/g,'');
-    const num = phone.startsWith('91')?phone:`91${phone}`;
-    window.open(`https://wa.me/${num}?text=${encodeURIComponent(buildMsg(member))}`,'_blank');
-    setSent(s=>s+1);
+    try {
+      const phone = (member.mobile||'').replace(/\D/g,'');
+      if (!phone) {
+        toast.error(`${member.name || 'Member'} has no phone number on file`);
+        return;
+      }
+      const num = phone.startsWith('91')?phone:`91${phone}`;
+      window.open(`https://wa.me/${num}?text=${encodeURIComponent(buildMsg(member))}`,'_blank');
+      setSent(s=>s+1);
+    } catch {
+      toast.error('Could not open WhatsApp — please check your browser settings');
+    }
   }
   function sendBulk(){ members.filter(m=>selected.includes(m.id)).forEach((m,i)=>setTimeout(()=>openWhatsApp(m),i*300)); }
 
@@ -80,6 +96,14 @@ function WAContent() {
             <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.55)' }}>Send personalised WhatsApp messages to members using templates or custom messages.</p>
           </div>
         </motion.div>
+
+        {/* ── ERROR BANNER ── */}
+        {loadError && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            style={{ marginBottom: 20, borderRadius: 14, padding: '14px 18px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', fontSize: 13, color: '#fca5a5', lineHeight: 1.5 }}>
+            <strong style={{ color: '#f87171' }}>Unable to load members:</strong> {loadError}. WhatsApp integration is not configured — contact your administrator if this problem persists.
+          </motion.div>
+        )}
 
         {/* ── KPI CARDS ── */}
         <motion.div variants={containerVariants} initial="hidden" animate="visible"

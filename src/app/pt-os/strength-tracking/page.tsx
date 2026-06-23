@@ -22,6 +22,8 @@ export default function StrengthTrackingPage() {
   const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
   const logs = useAsync(() => api.progress.strengthLogs.list(clientId ? { client_id: clientId } : {}).then(r => r.data), [clientId]);
 
+  const pageError = clients.error || logs.error;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!clientId || !weightKg) return;
@@ -38,6 +40,49 @@ export default function StrengthTrackingPage() {
   }
 
   function calc1RM(weight: number, reps: number) { return Math.round(weight * (1 + reps / 30)); }
+
+  if (pageError && !clients.loading && !logs.loading) {
+    return (
+      <Guard>
+        <AppShell>
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, padding: 40 }}>
+              <div style={{
+                background: 'rgba(255,255,255,0.7)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.6)',
+                borderRadius: 20,
+                padding: '40px 32px',
+                textAlign: 'center',
+                maxWidth: 400,
+                boxShadow: '0 4px 24px rgba(15,23,42,0.06)',
+              }}>
+                <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'rgb(15,23,42)', margin: '0 0 8px' }}>
+                  Unable to Load Data
+                </h2>
+                <p style={{ fontSize: 13, color: 'rgb(100,116,139)', margin: '0 0 20px' }}>
+                  This feature is not available yet or there was a problem loading the page. Please try again later.
+                </p>
+                <button
+                  onClick={() => { clients.refetch(); logs.refetch(); }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #9a3412, #ea580c)',
+                    color: '#fff', fontSize: 13, fontWeight: 700,
+                    boxShadow: '0 4px 12px rgba(234,88,12,0.25)',
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </AppShell>
+      </Guard>
+    );
+  }
 
   return (
     <Guard>

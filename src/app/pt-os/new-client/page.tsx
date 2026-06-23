@@ -378,7 +378,24 @@ function NewClientWizard() {
     }));
   };
 
+  const validateStep = (s: StepId): string | null => {
+    if (s === 1) {
+      if (!form.name.trim()) return 'Full name is required.';
+      if (!form.phone.trim()) return 'Phone number is required.';
+    }
+    if (s === 2) {
+      if (!form.goal) return 'Please select a fitness goal.';
+    }
+    if (s === 3) {
+      if (!form.trainer) return 'Please select a trainer.';
+      if (!form.planId) return 'Please select a subscription plan.';
+    }
+    return null;
+  };
+
   const handleNext = () => {
+    const err = validateStep(step);
+    if (err) { setError(err); return; }
     setError('');
     setStep((s) => Math.min(s + 1, 4) as StepId);
   };
@@ -406,7 +423,15 @@ function NewClientWizard() {
           gender: form.gender,
           trainer_id: trainerIdMap[form.trainer] || undefined,
 
+          // fitness profile — collected by wizard but previously not sent (ISSUE-002)
+          goal: form.goal || undefined,
+          height: form.height ? Number(form.height) : undefined,
           weight: form.weight ? Number(form.weight) : undefined,
+          body_fat: form.bodyFat ? Number(form.bodyFat) : undefined,
+          health_conditions: form.healthConditions.length ? form.healthConditions.join(', ') : undefined,
+          injuries: form.injuries.trim() || undefined,
+          frequency: form.frequency || undefined,
+
           notes: form.transformationGoals,
           base_amount: form.basePrice,
           discount: disc,
