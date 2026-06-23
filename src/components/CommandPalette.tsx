@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { allNavItems, QUICK_ACTIONS, NAV_GROUPS } from '@/lib/nav-config';
+import { allNavItems, isVisibleForRole, QUICK_ACTIONS, NAV_GROUPS } from '@/lib/nav-config';
 import type { Role } from '@/lib/nav-config';
 import { api, type Client } from '@/lib/api';
 
@@ -105,8 +105,7 @@ export default function CommandPalette() {
   // ── Build static results ──
   const staticResults = useMemo<Result[]>(() => {
     const items = allNavItems()
-      .filter(i => !i.hidden)
-      .filter(i => !i.role || i.role === user?.role);
+      .filter(i => isVisibleForRole(i, user?.role));
     const navResults: Result[] = (items ?? []).map(i => ({
       id: 'nav-' + i.href,
       label: i.label,
