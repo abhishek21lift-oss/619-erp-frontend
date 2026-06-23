@@ -21,13 +21,22 @@ type FaceDetection = {
   descriptor?: Float32Array;
 };
 
-// Local public/ directory first, then the npm package CDN as fallback.
+// When NEXT_PUBLIC_FACE_MODEL_VERSION is set (e.g. "v2"), models are loaded from
+// /models/v2/ which carries immutable cache headers — this is the cache-bust mechanism.
+// Without the env var, /models/ is used (24-hour TTL, updated within a day).
+const _modelVersion = process.env.NEXT_PUBLIC_FACE_MODEL_VERSION;
+const _localModels  = _modelVersion ? `/models/${_modelVersion}` : '/models';
+
 const MODEL_SOURCES = [
-  '/models',
+  _localModels,
   'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model',
 ];
 
-const RECOGNITION_THRESHOLD = 0.50;
+// Aligned with backend RECOGNITION_THRESHOLD (0.40 — stricter than face-api default 0.6)
+const RECOGNITION_THRESHOLD =
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_FACE_RECOGNITION_THRESHOLD
+    ? parseFloat(process.env.NEXT_PUBLIC_FACE_RECOGNITION_THRESHOLD)
+    : 0.40;
 const MIN_FACE_SIZE_PX = 60;
 
 // Mobile gets a slower interval and smaller input to keep UI responsive

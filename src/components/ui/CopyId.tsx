@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Copy, Check } from 'lucide-react';
 
 interface Props {
@@ -10,12 +10,18 @@ interface Props {
 
 export function CopyId({ id, color = '#6366f1', className = '' }: Props) {
   const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
 
   const copy = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(id).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 1800);
     });
   };
 

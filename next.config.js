@@ -63,10 +63,19 @@ const nextConfig = {
   },
 
   async headers() {
+    // Versioned path (/models/v2/…) gets long-lived immutable caching.
+    // Unversioned path (/models/…) gets a 24-hour TTL so model updates are
+    // picked up within a day without requiring a full cache invalidation.
+    // To force an immediate cache bust: set NEXT_PUBLIC_FACE_MODEL_VERSION=v2,
+    // copy new model files to public/models/v2/, and redeploy.
     return [
       {
-        source: '/models/(.*)',
+        source: '/models/v:version/(.*)',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/models/(.*)',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400' }],
       },
     ];
   },

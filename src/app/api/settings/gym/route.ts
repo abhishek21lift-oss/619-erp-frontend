@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/require-auth';
 
 const BACKEND = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -12,6 +13,9 @@ function forwardHeaders(req: NextRequest): HeadersInit {
 }
 
 export async function GET(req: NextRequest) {
+  const authResult = await requireAuth(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const res = await fetch(`${BACKEND}/api/settings/gym`, {
       headers: forwardHeaders(req),
@@ -25,6 +29,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const authResult = await requireAuth(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await req.text();
     const res = await fetch(`${BACKEND}/api/settings/gym`, {

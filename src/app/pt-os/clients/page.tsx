@@ -442,7 +442,7 @@ export default function PtClientsPage() {
                 style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
 
                 {/* Search */}
-                <div className="relative min-w-[200px] flex-1 max-w-sm">
+                <div className="relative min-w-0 sm:min-w-[200px] flex-1 max-w-sm">
                   <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     type="text" placeholder="Search clients or trainers…"

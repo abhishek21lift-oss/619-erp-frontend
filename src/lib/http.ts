@@ -14,11 +14,22 @@
 //     event, clears state, and uses the Next.js router for a soft redirect.
 
 function apiBase(): string {
-  // In production (Vercel), use same-origin proxy via next.config.js rewrites.
-  // This avoids cross-origin cookie issues with the httpOnly JWT cookie.
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+  if (typeof window === 'undefined') {
+    // SSR: use the configured URL directly (server-to-server, no proxy needed)
+    const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');
+    return raw;
+  }
+
+  const hostname = window.location.hostname;
+
+  // Capacitor native WebView loads the live Vercel URL, so hostname is the
+  // Vercel domain.  Same-origin fetch works — return '' (relative URLs).
+  // Also handles capacitor://localhost when serving local www/ build.
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
     return '';
   }
+
+  // Local development (web browser on localhost)
   const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');
   if (!raw) {
     throw new Error(

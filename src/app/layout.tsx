@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import { LazyMotion, domAnimation } from 'framer-motion';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
 import { PermissionsProvider } from '@/lib/permissions-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import CapacitorInit from '@/components/CapacitorInit';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAuthWrapper } from '@/components/GoogleAuthWrapper';
 import './globals.css';
@@ -112,8 +114,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AuthProvider>
                 <PermissionsProvider>
                   <ToastProvider>
-                    {children}
-                    <CommandPalette />
+                    <LazyMotion features={domAnimation}>
+                      <CapacitorInit />
+                      {children}
+                      <CommandPalette />
+                    </LazyMotion>
                   </ToastProvider>
                 </PermissionsProvider>
               </AuthProvider>

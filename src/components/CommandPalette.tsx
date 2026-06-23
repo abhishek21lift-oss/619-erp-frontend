@@ -42,6 +42,7 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // ── Open / close hotkey + custom event from topbar button ──
   useEffect(() => {
@@ -73,20 +74,30 @@ export default function CommandPalette() {
     }
   }, [open]);
 
-  // ── Fetch members (debounced) ──
+  // ── Fetch members (debounced, with abort to prevent stale results) ──
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
     if (!open || !q.trim()) { setMemberResults([]); return; }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     searchTimer.current = setTimeout(async () => {
       setMemberLoading(true);
       try {
         const res = await api.clients.list({ search: q });
-        setMemberResults(res.slice(0, 6));
-      } catch { /* ignore */ }
-      finally { setMemberLoading(false); }
+        if (!controller.signal.aborted) setMemberResults(res.slice(0, 6));
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      } finally {
+        if (!controller.signal.aborted) setMemberLoading(false);
+      }
     }, 200);
+
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
+      controller.abort();
     };
   }, [q, open]);
 

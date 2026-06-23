@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+
+const SUPPORT_PHONE_RAW  = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+918756562188';
+const SUPPORT_PHONE_DIGITS = SUPPORT_PHONE_RAW.replace(/\D/g, '');
+const SUPPORT_WA_URL     = `https://wa.me/${SUPPORT_PHONE_DIGITS}`;
+const SUPPORT_TEL_URL    = `tel:${SUPPORT_PHONE_RAW}`;
 
 export default function LandingPage() {
   const router = useRouter();
@@ -68,6 +74,8 @@ export default function LandingPage() {
         }
         html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
         body{background:var(--black);color:var(--white);font-family:var(--font);overflow-x:hidden;line-height:1.5}
+        nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background 0.3s}
+        .nav-logo-wrap{display:flex;align-items:center;gap:8px;text-decoration:none}
         .reveal{opacity:0;transform:translateY(40px);transition:opacity 0.8s cubic-bezier(.22,1,.36,1),transform 0.8s cubic-bezier(.22,1,.36,1)}
         .reveal.visible{opacity:1;transform:none}
         .reveal-delay-1{transition-delay:.1s}
@@ -404,7 +412,7 @@ export default function LandingPage() {
           Walk in, train with our coaches, experience the studio — completely free, no strings attached. We&apos;re confident you&apos;ll stay.
         </p>
         <div className="reveal reveal-delay-3">
-          <a href="https://wa.me/91XXXXXXXXXX" className="btn-fill" style={{
+          <a href={SUPPORT_WA_URL} className="btn-fill" style={{
             background: 'var(--red)', color: '#fff', padding: '16px 36px', borderRadius: 980,
             fontSize: '1rem', fontWeight: 600, textDecoration: 'none', border: 'none', cursor: 'pointer', display: 'inline-block',
             transition: 'opacity 0.2s, transform 0.15s',
@@ -471,7 +479,7 @@ export default function LandingPage() {
               Whether you have questions about programs, pricing, or just want to see the studio — we&apos;re here. Come in or reach out directly.
             </p>
             {[
-              { label: 'Phone / WhatsApp', value: <a href="tel:+91XXXXXXXXXX" style={{ color: 'var(--red)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>+91 XXXXX XXXXX</a>, delay: '' },
+              { label: 'Phone / WhatsApp', value: <a href={SUPPORT_TEL_URL} style={{ color: 'var(--red)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>{SUPPORT_PHONE_RAW}</a>, delay: '' },
               { label: 'Location', value: <>619 Fitness Studio<br />Lucknow, Uttar Pradesh, India</>, delay: 'reveal-delay-1' },
               { label: 'Studio Hours', value: <>Mon – Sat &nbsp;·&nbsp; 6:00 AM – 9:00 PM<br />Sunday &nbsp;·&nbsp; 7:00 AM – 12:00 PM</>, delay: 'reveal-delay-2' },
               { label: 'Owned By', value: 'Narayan Chandel & Rishi Gaur', delay: 'reveal-delay-3' },
@@ -527,7 +535,7 @@ export default function LandingPage() {
           3-day free trial. No card required. Just show up — we&apos;ll handle the rest.
         </p>
         <div className="reveal reveal-delay-2" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="https://wa.me/91XXXXXXXXXX" className="btn-fill" style={{
+          <a href={SUPPORT_WA_URL} className="btn-fill" style={{
             background: 'var(--red)', color: '#fff', padding: '16px 36px', borderRadius: 980,
             fontSize: '1rem', fontWeight: 600, textDecoration: 'none', border: 'none', cursor: 'pointer', display: 'inline-block',
             transition: 'opacity 0.2s, transform 0.15s',
@@ -537,7 +545,7 @@ export default function LandingPage() {
           >
             Book Free Trial on WhatsApp
           </a>
-          <a href="tel:+91XXXXXXXXXX" className="btn-ghost" style={{
+          <a href={SUPPORT_TEL_URL} className="btn-ghost" style={{
             background: 'rgba(255,255,255,0.1)', color: 'var(--white)', padding: '16px 36px', borderRadius: 980,
             fontSize: '1rem', fontWeight: 500, textDecoration: 'none', border: 'none', cursor: 'pointer', display: 'inline-block',
             backdropFilter: 'blur(8px)', transition: 'background 0.2s, transform 0.15s',

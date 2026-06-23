@@ -164,6 +164,7 @@ export default function SecurityPage() {
                 <p className="text-[13px] text-white/50">Scan with Google Authenticator or Authy.</p>
                 {mfaLoading
                   ? <div className="w-40 h-40 mx-auto bg-white/[0.06] rounded-xl animate-pulse" />
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   : qrUrl && <img src={qrUrl} alt="QR Code" className="w-40 h-40 mx-auto rounded-xl bg-white p-2" />
                 }
                 <button onClick={() => setStep('verify')} className="w-full py-2.5 rounded-xl bg-[#FF2E63] text-white text-[13px] font-medium">I've scanned it →</button>

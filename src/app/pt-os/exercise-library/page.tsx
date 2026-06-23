@@ -215,6 +215,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
         {/* GIF */}
         {exercise.gif_url && !imgError && (
           <div className="w-full h-56 overflow-hidden" style={{ background: 'var(--muted)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- external user-provided GIF URL, domain unknown */}
             <img src={exercise.gif_url} alt={exercise.name} className="w-full h-full object-contain" onError={() => setImgError(true)} />
           </div>
         )}

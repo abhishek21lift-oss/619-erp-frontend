@@ -26,8 +26,16 @@ function ResetPasswordContent() {
       setError('Please fill all password fields.');
       return;
     }
-    if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters long.');
+    if (newPassword.length < 8) {
+      setError('New password must be at least 8 characters long.');
+      return;
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      setError('New password must contain at least one uppercase letter.');
+      return;
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      setError('New password must contain at least one number.');
       return;
     }
     if (newPassword !== confirmPassword) {

@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   ArrowLeft, User, Phone, Mail, Edit2, Trash2, Users,
   MessageCircle, Award, Calendar, Dumbbell, CheckCircle, XCircle,
-  Star, Clock, MapPin, ChevronRight, AlertTriangle, Sparkles,
+  Star, Clock, MapPin, AlertTriangle, Sparkles,
 } from 'lucide-react';
 import { CopyId } from '@/components/ui/CopyId';
 
@@ -355,7 +355,6 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                           <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Plan</th>
                           <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Expiry</th>
                           <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Phone</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }} />
                         </tr>
                       </thead>
                       <tbody>
@@ -370,12 +369,6 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                             <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{m.membership_plan ?? '—'}</td>
                             <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{fmtDate(m.expiry_date)}</td>
                             <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{m.phone ?? '—'}</td>
-                            <td style={{ padding: '12px 16px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                              <Link href={`/clients/${m.id}`}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', fontSize: 11, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(99,102,241,0.15)', transition: 'all 0.2s' }}>
-                                View <ChevronRight size={11} />
-                              </Link>
-                            </td>
                           </motion.tr>
                         ))}
                       </tbody>

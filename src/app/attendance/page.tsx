@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
@@ -938,7 +939,6 @@ function QuickActionsPanel({ onMarkAll }: { onMarkAll?: () => void }) {
     { label: 'Export CSV',       icon: <Download className="h-5 w-5" />,      color: 'from-violet-500/20 to-purple-500/10', onClick: () => window.open(`/api/attendance?format=csv&date=${new Date().toISOString().split('T')[0]}`, '_blank') },
     { label: 'Send Reminders',   icon: <Bell className="h-5 w-5" />,          color: 'from-amber-500/20 to-yellow-500/10', onClick: () => router.push('/engagement/notifications') },
     { label: 'Open Reports',     icon: <BarChart3 className="h-5 w-5" />,     color: 'from-rose-500/20 to-red-500/10', onClick: () => router.push('/attendance/reports') },
-    { label: 'Start Live Scan',  icon: <Scan className="h-5 w-5" />,          color: 'from-rose-500/20 to-red-500/10', onClick: () => router.push('/checkin') },
   ];
   return (
     <section className="mt-6">
@@ -1049,7 +1049,7 @@ function MemberAvatar({ client, large }: { client: Client; large?: boolean }) {
   const sz = large ? 'h-12 w-12 text-sm' : 'h-9 w-9 text-xs';
   const initials = (client.name || '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
   if (client.photo_url) {
-    return <img src={client.photo_url} alt={client.name} className={`${sz} rounded-full object-cover`} loading="lazy" />;
+    return <Image src={client.photo_url} alt={client.name} width={48} height={48} className={`${sz} rounded-full object-cover`} />;
   }
   return (
     <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#dc2626,#7c3aed)] flex items-center justify-center font-semibold text-white shadow-sm`}>

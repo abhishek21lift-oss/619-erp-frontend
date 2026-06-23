@@ -183,6 +183,11 @@ function FaceEnrollContent() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       <style>{`
         button, [role=button] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
         @media (max-width: 640px) {
           .fe-header-pad { padding: 20px 16px 18px !important; border-radius: 0 0 20px 20px !important; }
           .fe-container-pad { padding: 12px 12px !important; }
@@ -320,6 +325,68 @@ function FaceEnrollContent() {
                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: 'scaleX(-1)' }}
                   />
 
+                  {/* Model loading overlay — visible while AI models download */}
+                  <AnimatePresence>
+                    {faceDetect.modelStatus === 'loading' && (
+                      <motion.div
+                        key="model-loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        style={{
+                          position: 'absolute', inset: 0,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          gap: 16,
+                          background: 'rgba(15,23,42,0.86)',
+                          backdropFilter: 'blur(4px)',
+                          padding: 28,
+                        }}
+                      >
+                        {/* Spinner */}
+                        <div style={{
+                          width: 48, height: 48,
+                          border: '3.5px solid rgba(99,102,241,0.25)',
+                          borderTopColor: '#6366f1',
+                          borderRadius: '50%',
+                          animation: 'spin 0.85s linear infinite',
+                          flexShrink: 0,
+                        }} />
+                        <div style={{ textAlign: 'center' }}>
+                          <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginBottom: 6, letterSpacing: '-0.01em' }}>
+                            Loading Face AI Models
+                          </p>
+                          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, minHeight: 18 }}>
+                            {faceDetect.loadingModel || 'Initializing…'}
+                          </p>
+                        </div>
+                        {/* Model steps strip */}
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 300 }}>
+                          {([
+                            { label: 'Detector', key: 'Tiny face detector' },
+                            { label: 'Landmarks', key: 'Face landmarks' },
+                            { label: 'Recognition', key: 'Face recognition' },
+                            { label: 'SSD', key: 'SSD detector' },
+                          ] as { label: string; key: string }[]).map(({ label, key }) => {
+                            const isCurrent = faceDetect.loadingModel?.startsWith(key);
+                            return (
+                              <span key={key} style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                padding: '3px 8px',
+                                borderRadius: 20,
+                                background: isCurrent ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.07)',
+                                color: isCurrent ? '#c7d2fe' : 'rgba(255,255,255,0.30)',
+                                border: `1px solid ${isCurrent ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                                transition: 'all 0.3s ease',
+                              }}>{label}</span>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Blink indicator overlay */}
                   <AnimatePresence>
                     {blinkReady && (
@@ -359,10 +426,10 @@ function FaceEnrollContent() {
                     </div>
                     <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
                     <div className="flex items-center gap-1.5">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: capturedDescriptor.current ? 'rgba(16,185,129,0.15)' : 'rgba(148,163,184,0.1)' }}>
-                        <ScanFace size={10} style={{ color: capturedDescriptor.current ? '#10b981' : 'rgb(148,163,184)' }} />
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: faceDetect.modelStatus === 'ready' ? 'rgba(16,185,129,0.15)' : faceDetect.modelStatus === 'loading' ? 'rgba(99,102,241,0.15)' : 'rgba(148,163,184,0.1)' }}>
+                        <ScanFace size={10} style={{ color: faceDetect.modelStatus === 'ready' ? '#10b981' : faceDetect.modelStatus === 'loading' ? '#6366f1' : 'rgb(148,163,184)' }} />
                       </div>
-                      Face detected
+                      {faceDetect.modelStatus === 'loading' ? 'Loading models…' : faceDetect.modelStatus === 'ready' ? 'Models ready' : 'Face detected'}
                     </div>
                     <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
                     <div className="flex items-center gap-1.5">
@@ -439,13 +506,6 @@ function FaceEnrollContent() {
           )}
         </AnimatePresence>
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
     </div>
   );
 }
