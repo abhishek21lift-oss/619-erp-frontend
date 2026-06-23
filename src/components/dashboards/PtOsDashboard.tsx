@@ -223,11 +223,12 @@ function HealthRing({ score, color, size = 64 }: { score: number; color: string;
 }
 
 // ─── Section 1 — Hero Welcome Header ───────────────────────────────────────────
-function HeroHeader({ d, coach, loading, onRefresh }: {
+function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRefresh }: {
   d: DashData; coach: string; loading: boolean; onRefresh: () => void;
 }) {
-  const h = healthScore(d);
-  const dateStr = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  const now = new Date();
+  const dayStr  = now.toLocaleDateString('en-IN', { weekday: 'long' }).toUpperCase();
+  const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <motion.div
@@ -253,43 +254,31 @@ function HeroHeader({ d, coach, loading, onRefresh }: {
         </svg>
       </div>
 
-      <div className="relative z-10 p-4 sm:p-6">
-        {/* Top row: date + refresh */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] sm:text-[11px] font-[650] uppercase tracking-[0.14em]"
-            style={{ color: 'rgba(255,255,255,0.65)' }}>
-            {dateStr}
-          </span>
-          <button onClick={onRefresh} aria-label="Refresh"
-            className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-white/15"
-            style={{ color: '#fff' }}>
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          </button>
-        </div>
+      <div className="relative z-10 flex flex-col items-center justify-center py-10 sm:py-14 px-6 text-center">
+        <h1
+          className="text-[28px] sm:text-[38px] font-[900] tracking-[0.18em] leading-none uppercase"
+          style={{
+            background: 'linear-gradient(90deg, #ffffff 0%, #fca5a5 35%, #e879f9 65%, #ffffff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            filter: 'drop-shadow(0 2px 12px rgba(251,113,133,0.45))',
+          }}
+        >
+          619 PERSONAL TRAINING
+        </h1>
 
-        {/* Main content: health ring + greeting */}
-        <div className="flex items-center gap-3.5 sm:gap-5">
-          <div className="rounded-[16px] p-1.5 shrink-0"
-            style={{ background: 'rgba(255,255,255,0.13)', border: '1px solid rgba(255,255,255,0.2)' }}>
-            <HealthRing score={h.score} color={h.color} size={60} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-[500] mb-0.5"
-              style={{ color: 'rgba(255,255,255,0.72)' }}>
-              {greeting()} ·&nbsp;
-              <span className="font-[700]" style={{ color: h.color === C.emerald ? '#6ee7b7' : h.color === C.amber ? '#fde68a' : '#fca5a5' }}>
-                {h.label}
-              </span>
-            </p>
-            <h1 className="text-[22px] sm:text-[28px] font-[850] leading-[1.05] tracking-[-0.03em] truncate text-white">
-              {coach}
-            </h1>
-            <p className="mt-1 text-[11px] font-[500] leading-snug"
-              style={{ color: 'rgba(255,255,255,0.65)' }}>
-              {d.active_pt_clients} active · {fmtCompact(d.total_monthly_pt_revenue)}/mo · {d.expired_clients > 0 ? `${d.expired_clients} expired` : 'all current'}
-            </p>
-          </div>
-        </div>
+        <div className="mt-4 h-px w-24 sm:w-32"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(251,113,133,0.7), rgba(192,132,252,0.7), transparent)' }} />
+
+        <p className="mt-4 text-[13px] sm:text-[15px] font-[700] tracking-[0.22em] uppercase"
+          style={{ color: 'rgba(255,255,255,0.55)' }}>
+          {dayStr}
+        </p>
+        <p className="mt-1 text-[11px] sm:text-[12px] font-[500] tracking-[0.08em]"
+          style={{ color: 'rgba(255,255,255,0.4)' }}>
+          {dateStr}
+        </p>
       </div>
 
       <div className="absolute bottom-0 inset-x-0 h-px"
