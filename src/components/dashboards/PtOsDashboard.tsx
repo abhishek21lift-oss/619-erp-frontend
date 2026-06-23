@@ -3,12 +3,14 @@
 /**
  * PtOsDashboard — Premium fitness-business command center.
  *
- * A high-end, Apple-inspired SaaS dashboard built ENTIRELY on the real
- * /api/pt-os/dashboard contract. Every figure is either a raw backend value
- * or an honestly-derived metric (composite health score, least-squares
- * revenue forecast, rule-based insights). Nothing on this screen is faked —
- * sections that would require data the backend does not expose (per-member
- * attendance, session timelines) are intentionally omitted.
+ * A high-end, Apple-inspired SaaS dashboard built ENTIRELY on real backend
+ * data from two endpoints:
+ *   /api/pt-os/dashboard      — KPIs, revenue trend, trainer earnings
+ *   /api/pt-os/dashboard/ops  — today's sessions, renewals due, outstanding
+ *                               balances, monthly session stats per-trainer
+ * Every figure is a raw backend value or honestly-derived metric
+ * (composite health score, least-squares forecast, rule-based insights).
+ * Nothing on this screen is fabricated.
  *
  * Design system
  *   Palette   maroon→crimson brand, with purple / blue / emerald / amber accents
@@ -24,6 +26,7 @@ import {
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
   UserPlus, CreditCard, CalendarPlus, FileBarChart, Dumbbell, Receipt,
   Trophy, ShieldCheck, Target, Gauge, Crown,
+  Clock, CalendarClock, AlertCircle, CheckCircle2, XCircle, PhoneCall,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -44,6 +47,36 @@ type DashData = {
   }>;
   revenueTrend: Array<{
     label: string; month: string; revenue: number; incentives: number;
+  }>;
+};
+
+type SessionStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
+type OpsData = {
+  today_sessions: Array<{
+    id: string; title: string; session_date: string;
+    start_time: string | null; end_time: string | null;
+    status: SessionStatus; notes: string | null;
+    client_name: string | null; client_photo: string | null;
+    trainer_name: string | null;
+  }>;
+  renewals_due: Array<{
+    id: string; name: string; mobile: string | null;
+    trainer_name: string | null; package_type: string | null;
+    pt_end_date: string; days_left: number;
+    balance_amount: number; monthly_pt_amount: number;
+  }>;
+  top_dues: Array<{
+    id: string; name: string; mobile: string | null;
+    trainer_name: string | null; balance_amount: number;
+    pt_end_date: string | null; due_status: 'overdue' | 'due';
+  }>;
+  session_stats: {
+    this_month_total: number;
+    this_month_completed: number;
+    last_month_completed: number;
+  };
+  trainer_sessions: Array<{
+    trainer_name: string; completed: number; scheduled: number; missed: number;
   }>;
 };
 
@@ -732,6 +765,360 @@ function TrainerLeaderboard({ trainers, onRefetch, loading }: {
   );
 }
 
+// ─── TodayOps (Section 8 — Today's Sessions) ───────────────────────────────────
+const STATUS_META: Record<SessionStatus, { label: string; color: string; icon: React.ReactNode }> = {
+  scheduled:  { label: 'Scheduled',  color: C.blue,    icon: <Clock size={11} />          },
+  completed:  { label: 'Completed',  color: C.emerald, icon: <CheckCircle2 size={11} />   },
+  cancelled:  { label: 'Cancelled',  color: C.muted,   icon: <XCircle size={11} />        },
+  no_show:    { label: 'No Show',    color: C.amber,   icon: <AlertCircle size={11} />    },
+};
+
+function fmt12(t: string | null) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return t;
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 || 12;
+  return `${hh}:${String(m).padStart(2, '0')} ${suffix}`;
+}
+
+function TodayOps({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
+  const router = useRouter();
+  const sessions = ops?.today_sessions ?? [];
+  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
+
+  return (
+    <Glass className="p-5 flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
+            style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.cyan})`, boxShadow: `0 6px 14px ${C.blue}40` }}>
+            <CalendarClock size={15} />
+          </span>
+          <div>
+            <h3 className="text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Today&apos;s Sessions</h3>
+            <p className="text-[10.5px] font-[500]" style={{ color: C.muted }}>{today}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {sessions.length > 0 && (
+            <span className="rounded-full px-2.5 py-0.5 text-[10px] font-[700]"
+              style={{ background: `${C.blue}15`, color: C.blue }}>{sessions.length}</span>
+          )}
+          <button onClick={() => router.push('/pt-os/sessions')}
+            className="rounded-full px-3 py-1.5 text-[10.5px] font-[650] transition hover:scale-[1.03]"
+            style={{ background: `${C.blue}12`, color: C.blue }}>
+            View all
+          </button>
+        </div>
+      </div>
+
+      {loading && !ops && (
+        <div className="space-y-2.5 flex-1">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="rounded-[14px] p-3 flex items-center gap-3" style={{ background: 'rgba(15,23,42,0.03)' }}>
+              <Skel w="w-9" h="h-9" r="rounded-full" /><div className="flex-1 space-y-1.5"><Skel w="w-32" h="h-3" /><Skel w="w-20" h="h-2.5" /></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && sessions.length === 0 && (
+        <div className="flex flex-col items-center justify-center flex-1 py-8 text-center">
+          <CalendarClock size={28} style={{ color: `${C.blue}55` }} />
+          <p className="mt-2 text-[12.5px] font-[640]" style={{ color: C.ink }}>No sessions today</p>
+          <p className="text-[10.5px] mt-0.5" style={{ color: C.muted }}>Schedule one to get started</p>
+          <button onClick={() => router.push('/pt-os/schedule-session')}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[10.5px] font-[680] transition hover:scale-[1.03]"
+            style={{ background: `${C.blue}15`, color: C.blue }}>
+            <CalendarPlus size={12} /> Schedule Session
+          </button>
+        </div>
+      )}
+
+      {sessions.length > 0 && (
+        <div className="space-y-2 flex-1 overflow-y-auto" style={{ maxHeight: 340 }}>
+          {sessions.map((s, i) => {
+            const meta = STATUS_META[s.status] ?? STATUS_META.scheduled;
+            const initials = (s.client_name ?? '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+            const timeStr = fmt12(s.start_time);
+            return (
+              <motion.div key={s.id}
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05, duration: 0.35 }}
+                className="flex items-center gap-3 rounded-[14px] p-3"
+                style={{ background: `${meta.color}08`, border: `1px solid ${meta.color}18` }}>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820] text-white"
+                  style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}bb)` }}>
+                  {initials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-[720] truncate" style={{ color: C.ink }}>{s.client_name ?? 'Unknown'}</p>
+                  <p className="text-[9.5px] font-[500]" style={{ color: C.muted }}>
+                    {s.title} {s.trainer_name ? `· ${s.trainer_name}` : ''}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  {timeStr && <span className="text-[10px] font-[700] tabular-nums" style={{ color: C.ink }}>{timeStr}</span>}
+                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-[700]"
+                    style={{ background: `${meta.color}15`, color: meta.color }}>
+                    {meta.icon}{meta.label}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </Glass>
+  );
+}
+
+// ─── RenewalsDue (Section 9 — Renewals Due) ────────────────────────────────────
+function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
+  const router = useRouter();
+  const renewals = ops?.renewals_due ?? [];
+
+  return (
+    <Glass className="p-5 flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
+            style={{ background: `linear-gradient(135deg, ${C.amber}, #fbbf24)`, boxShadow: `0 6px 14px ${C.amber}40` }}>
+            <CalendarClock size={15} />
+          </span>
+          <div>
+            <h3 className="text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Renewals Due</h3>
+            <p className="text-[10.5px] font-[500]" style={{ color: C.muted }}>Next 7 days</p>
+          </div>
+        </div>
+        {renewals.length > 0 && (
+          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-[700]"
+            style={{ background: `${C.amber}15`, color: C.amber }}>{renewals.length}</span>
+        )}
+      </div>
+
+      {loading && !ops && (
+        <div className="space-y-2.5 flex-1">
+          {[1, 2, 3].map(i => <div key={i} className="rounded-[14px] p-3" style={{ background: 'rgba(15,23,42,0.03)' }}><Skel h="h-3" w="w-28" /></div>)}
+        </div>
+      )}
+
+      {!loading && renewals.length === 0 && (
+        <div className="flex flex-col items-center justify-center flex-1 py-8 text-center">
+          <CheckCircle2 size={28} style={{ color: `${C.emerald}88` }} />
+          <p className="mt-2 text-[12.5px] font-[640]" style={{ color: C.ink }}>No renewals this week</p>
+          <p className="text-[10.5px] mt-0.5" style={{ color: C.muted }}>All clients are well within their packages</p>
+        </div>
+      )}
+
+      {renewals.length > 0 && (
+        <div className="space-y-2 flex-1 overflow-y-auto" style={{ maxHeight: 340 }}>
+          {renewals.map((r, i) => {
+            const urgent = r.days_left <= 2;
+            const color = urgent ? C.crimson : r.days_left <= 5 ? C.amber : C.blue;
+            return (
+              <motion.div key={r.id}
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05, duration: 0.35 }}
+                onClick={() => router.push(`/pt-os/clients/${r.id}`)}
+                className="flex items-center gap-3 rounded-[14px] p-3 cursor-pointer transition hover:scale-[1.015]"
+                style={{ background: `${color}08`, border: `1px solid ${color}1f` }}>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-[10px] font-[820] text-white"
+                  style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
+                  {(r.name ?? '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-[720] truncate" style={{ color: C.ink }}>{r.name}</p>
+                  <p className="text-[9.5px] font-[500]" style={{ color: C.muted }}>
+                    {r.trainer_name ?? '—'} · {r.package_type ?? 'PT Package'}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-[11px] font-[800] tabular-nums" style={{ color }}>
+                    {r.days_left === 0 ? 'Today' : `${r.days_left}d left`}
+                  </span>
+                  {r.balance_amount > 0 && (
+                    <span className="text-[9px] font-[640]" style={{ color: C.rose }}>
+                      {fmtCompact(r.balance_amount)} due
+                    </span>
+                  )}
+                </div>
+                <ChevronRight size={13} style={{ color, flexShrink: 0 }} />
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </Glass>
+  );
+}
+
+// ─── TopDues (Section 9 — Outstanding Balances) ────────────────────────────────
+function TopDues({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
+  const router = useRouter();
+  const dues = ops?.top_dues ?? [];
+
+  return (
+    <Glass className="p-5 flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
+            style={{ background: `linear-gradient(135deg, ${C.rose}, ${C.crimson})`, boxShadow: `0 6px 14px ${C.rose}40` }}>
+            <Receipt size={15} />
+          </span>
+          <div>
+            <h3 className="text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Top Outstanding</h3>
+            <p className="text-[10.5px] font-[500]" style={{ color: C.muted }}>Clients with highest balance</p>
+          </div>
+        </div>
+        <button onClick={() => router.push('/pt-os/balance-sheet')}
+          className="rounded-full px-3 py-1.5 text-[10.5px] font-[650] transition hover:scale-[1.03]"
+          style={{ background: `${C.rose}12`, color: C.rose }}>
+          View all
+        </button>
+      </div>
+
+      {loading && !ops && (
+        <div className="space-y-2.5 flex-1">{[1, 2, 3].map(i => <div key={i} className="rounded-[14px] p-3" style={{ background: 'rgba(15,23,42,0.03)' }}><Skel h="h-3" w="w-28" /></div>)}</div>
+      )}
+
+      {!loading && dues.length === 0 && (
+        <div className="flex flex-col items-center justify-center flex-1 py-8 text-center">
+          <CheckCircle2 size={28} style={{ color: `${C.emerald}88` }} />
+          <p className="mt-2 text-[12.5px] font-[640]" style={{ color: C.ink }}>No outstanding balances</p>
+          <p className="text-[10.5px] mt-0.5" style={{ color: C.muted }}>All accounts are settled</p>
+        </div>
+      )}
+
+      {dues.length > 0 && (
+        <div className="space-y-2 flex-1">
+          {dues.map((due, i) => {
+            const color = due.due_status === 'overdue' ? C.crimson : C.rose;
+            return (
+              <motion.div key={due.id}
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05, duration: 0.35 }}
+                onClick={() => router.push(`/pt-os/clients/${due.id}`)}
+                className="flex items-center gap-3 rounded-[14px] p-3 cursor-pointer transition hover:scale-[1.015]"
+                style={{ background: `${color}08`, border: `1px solid ${color}1f` }}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-[720] truncate" style={{ color: C.ink }}>{due.name}</p>
+                  <p className="text-[9.5px] font-[500]" style={{ color: C.muted }}>
+                    {due.trainer_name ?? '—'}
+                    {due.due_status === 'overdue' ? ' · Overdue' : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {due.mobile && (
+                    <a href={`tel:${due.mobile}`} onClick={e => e.stopPropagation()}
+                      className="flex h-7 w-7 items-center justify-center rounded-full transition hover:scale-110"
+                      style={{ background: `${C.emerald}15` }}>
+                      <PhoneCall size={11} style={{ color: C.emerald }} />
+                    </a>
+                  )}
+                  <span className="text-[12.5px] font-[820] tabular-nums" style={{ color }}>{fmtCompact(due.balance_amount)}</span>
+                  <ChevronRight size={13} style={{ color, flexShrink: 0 }} />
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </Glass>
+  );
+}
+
+// ─── SessionActivity (Section 10 — Session Stats) ──────────────────────────────
+function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
+  const stats = ops?.session_stats;
+  const trainerSessions = ops?.trainer_sessions ?? [];
+  const completionRate = stats && stats.this_month_total > 0
+    ? (stats.this_month_completed / stats.this_month_total) * 100 : null;
+  const momDelta = stats && stats.last_month_completed > 0
+    ? ((stats.this_month_completed - stats.last_month_completed) / stats.last_month_completed) * 100 : null;
+  const maxCompleted = Math.max(...trainerSessions.map(t => t.completed), 1);
+
+  return (
+    <Glass className="p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
+            style={{ background: `linear-gradient(135deg, ${C.emerald}, #34d399)`, boxShadow: `0 6px 14px ${C.emerald}40` }}>
+            <Activity size={15} />
+          </span>
+          <div>
+            <h3 className="text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Session Activity</h3>
+            <p className="text-[10.5px] font-[500]" style={{ color: C.muted }}>This month&apos;s training stats</p>
+          </div>
+        </div>
+        {momDelta !== null && <TrendBadge pct={momDelta} />}
+      </div>
+
+      {loading && !ops && <div className="space-y-2">{[1,2,3].map(i=><Skel key={i} h="h-10" r="rounded-[12px]" />)}</div>}
+
+      {stats && (
+        <>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[
+              { label: 'Total', value: stats.this_month_total, color: C.blue },
+              { label: 'Done', value: stats.this_month_completed, color: C.emerald },
+              { label: 'Last mo.', value: stats.last_month_completed, color: C.muted.split(',')[0] || C.purple },
+            ].map(t => (
+              <div key={t.label} className="rounded-[14px] p-3" style={{ background: `${t.color}0d` }}>
+                <p className="text-[8.5px] font-[700] uppercase tracking-[0.09em] mb-0.5" style={{ color: `${t.color}aa` }}>{t.label}</p>
+                <p className="text-[20px] font-[860] tracking-[-0.02em]" style={{ color: t.color }}>{t.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {completionRate !== null && (
+            <div className="mb-4">
+              <div className="flex justify-between mb-1">
+                <span className="text-[9.5px] font-[650]" style={{ color: C.muted }}>Completion rate</span>
+                <span className="text-[9.5px] font-[750]" style={{ color: C.emerald }}>{completionRate.toFixed(0)}%</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.emerald}18` }}>
+                <motion.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${C.emerald}, #34d399)` }}
+                  initial={{ width: 0 }} animate={{ width: `${completionRate}%` }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} />
+              </div>
+            </div>
+          )}
+
+          {trainerSessions.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[10px] font-[700] uppercase tracking-[0.09em]" style={{ color: C.muted }}>By Trainer</p>
+              {trainerSessions.map((t, i) => {
+                const color = TRAINER_COLORS[i % TRAINER_COLORS.length];
+                const pct = (t.completed / maxCompleted) * 100;
+                return (
+                  <motion.div key={t.trainer_name}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.06 }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-[640] truncate max-w-[140px]" style={{ color: C.ink }}>{t.trainer_name}</span>
+                      <div className="flex items-center gap-2 text-[9px] font-[650] shrink-0">
+                        <span style={{ color: C.emerald }}>{t.completed} done</span>
+                        {t.scheduled > 0 && <span style={{ color: C.blue }}>{t.scheduled} sched</span>}
+                        {t.missed > 0 && <span style={{ color: C.amber }}>{t.missed} missed</span>}
+                      </div>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
+                      <motion.div className="h-full rounded-full" style={{ background: color }}
+                        initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                        transition={{ delay: 0.2 + i * 0.06, duration: 0.55, ease: [0.16, 1, 0.3, 1] }} />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </Glass>
+  );
+}
+
 // ─── QuickDock (Section 7 — Floating Apple-style dock, desktop) ─────────────────
 function QuickDock() {
   const router = useRouter();
@@ -774,7 +1161,12 @@ export default function PtOsDashboard() {
     (signal) => http<{ data: DashData }>('/api/pt-os/dashboard', { signal }).then((r) => r.data),
     [],
   );
+  const ops = useAsync<OpsData>(
+    (signal) => http<{ data: OpsData }>('/api/pt-os/dashboard/ops', { signal }).then((r) => r.data),
+    [],
+  );
   const d = dash.data;
+  const o = ops.data;
 
   const coach = (user?.name?.split(' ')[0]) || 'Coach';
   const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
@@ -836,6 +1228,16 @@ export default function PtOsDashboard() {
               <AICopilot d={d} />
               <TrainerLeaderboard trainers={d.trainers} onRefetch={dash.refetch} loading={dash.loading} />
             </div>
+
+            {/* Section 8 — Today's Operations: sessions + renewals + outstanding */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <TodayOps  ops={o} loading={ops.loading} />
+              <RenewalsDue ops={o} loading={ops.loading} />
+              <TopDues   ops={o} loading={ops.loading} />
+            </div>
+
+            {/* Section 10 — Session Activity */}
+            <SessionActivity ops={o} loading={ops.loading} />
           </>
         )}
       </div>
