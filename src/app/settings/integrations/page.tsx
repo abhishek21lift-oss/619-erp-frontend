@@ -12,7 +12,7 @@ import {
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
-import type { AiProviderSettings, AiProviderStats } from '@/lib/api';
+import type { AiProviderSettings, AiProviderStats, AiProviderStatEntry } from '@/lib/api';
 
 type Status = 'connected' | 'error' | 'pending' | 'unavailable';
 
@@ -179,7 +179,7 @@ function AiCoachCard() {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#10a37f' }}>
-          <CheckCircle2 size={12} /> Connected · GPT-4o
+          <CheckCircle2 size={12} /> Connected · MiniMax-M3
         </span>
         {usage && (
           <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>
@@ -412,53 +412,29 @@ function StaticCard({ integration, isConnected, connectedAt, onConfigure, onTogg
   );
 }
 
-// ── Gemini model catalogue shown in the model selector ────────────────────────
-const GEMINI_MODEL_META: Record<string, { label: string; badge?: string; badgeColor?: string }> = {
-  'gemini-2.5-flash-preview-05-20': { label: 'Gemini 2.5 Flash',     badge: 'Preview',     badgeColor: '#f59e0b' },
-  'gemini-2.0-flash':               { label: 'Gemini 2.0 Flash',     badge: 'Recommended', badgeColor: '#10a37f' },
-  'gemini-2.0-flash-lite':          { label: 'Gemini 2.0 Flash Lite',badge: 'Fastest',     badgeColor: '#3b82f6' },
-  'gemini-1.5-flash':               { label: 'Gemini 1.5 Flash' },
-  'gemini-1.5-pro-latest':          { label: 'Gemini 1.5 Pro' },
-};
+// ── Token Router / MiniMax-M3 Card ───────────────────────────────────────────
+function TokenRouterCard() {
+  const [settings, setSettings] = useState<AiProviderSettings | null>(null);
+  const [stats,    setStats]    = useState<AiProviderStats | null>(null);
+  const [testing,  setTesting]  = useState(false);
+  const [testMsg,  setTestMsg]  = useState<{ success: boolean; message: string } | null>(null);
 
-// ── Gemini Integration Card ───────────────────────────────────────────────────
-function GeminiCard() {
-  const [settings,      setSettings]     = useState<AiProviderSettings | null>(null);
-  const [stats,         setStats]        = useState<AiProviderStats | null>(null);
-  const [testing,       setTesting]      = useState(false);
-  const [testMsg,       setTestMsg]      = useState<{ success: boolean; message: string } | null>(null);
-  const [savingModel,   setSavingModel]  = useState(false);
-
-  const load = () => {
+  useEffect(() => {
     api.ai.providerSettings().then(r => setSettings(r.data)).catch(() => {});
     api.ai.providerStats().then(r => setStats(r.data)).catch(() => {});
-  };
-  useEffect(() => { load(); }, []);
+  }, []);
 
   const handleTest = async () => {
     setTesting(true); setTestMsg(null);
     try {
-      const r = await api.ai.testProvider('gemini');
+      const r = await api.ai.testProvider();
       setTestMsg(r);
     } catch { setTestMsg({ success: false, message: 'Test failed — network error' }); }
     finally { setTesting(false); }
   };
 
-  const handleModelChange = async (gemini_model: string) => {
-    if (!settings || gemini_model === settings.gemini_model) return;
-    setSavingModel(true);
-    try {
-      await api.ai.updateProviderSettings({ gemini_model });
-      setSettings(s => s ? { ...s, gemini_model } : s);
-      setTestMsg(null); // clear previous test result — model changed
-    } catch { /* silently ignore */ }
-    finally { setSavingModel(false); }
-  };
-
-  const isConnected  = settings?.gemini_configured ?? false;
-  const activeModel  = settings?.gemini_model || 'gemini-2.0-flash';
-  const modelList    = settings?.valid_gemini_models ?? Object.keys(GEMINI_MODEL_META);
-  const gemStat      = stats?.gemini;
+  const isConnected = settings?.configured ?? false;
+  const mmStat      = stats?.minimax as AiProviderStatEntry | undefined;
 
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
@@ -467,67 +443,46 @@ function GeminiCard() {
     >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f0ff', color: '#4f6ef7' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
           <Sparkles size={20} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Google Gemini</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Token Router · MiniMax-M3</span>
             {isConnected
               ? <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(16,163,127,0.12)', color: '#10a37f', border: '1px solid rgba(16,163,127,0.25)' }}>Connected</span>
               : <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>Not configured</span>
             }
           </div>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
-            AI fallback &amp; secondary provider
+            AI provider — all requests route via Token Router
           </p>
         </div>
       </div>
 
-      {/* API key status */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: isConnected ? '#10a37f' : '#ef4444' }}>
-          {isConnected ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-          {isConnected ? 'GEMINI_API_KEY loaded' : 'Set GEMINI_API_KEY in environment'}
-        </span>
-      </div>
-
-      {/* Model selector */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-          Model
-          {savingModel && <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex', color: 'var(--text-muted)' }}><Loader2 size={11} /></motion.span>}
+      {/* Model + API key status */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: isConnected ? '#10a37f' : '#ef4444' }}>
+            {isConnected ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+            {isConnected ? 'TOKEN_ROUTER_API_KEY loaded' : 'Set TOKEN_ROUTER_API_KEY in environment'}
+          </span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-          {modelList.map(mid => {
-            const meta   = GEMINI_MODEL_META[mid] || { label: mid };
-            const active = activeModel === mid;
-            return (
-              <button key={mid} onClick={() => handleModelChange(mid)} disabled={savingModel}
-                style={{ padding: '8px 12px', borderRadius: 10, textAlign: 'left', cursor: savingModel ? 'not-allowed' : 'pointer', border: `1px solid ${active ? 'rgba(79,110,247,0.45)' : 'var(--border)'}`, background: active ? 'rgba(79,110,247,0.08)' : 'var(--bg-subtle)', transition: 'all 0.18s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
-              >
-                <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? '#4f6ef7' : 'var(--text-primary)' }}>{meta.label}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {meta.badge && (
-                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', padding: '2px 6px', borderRadius: 6, background: `${meta.badgeColor || '#6b7280'}20`, color: meta.badgeColor || 'var(--text-muted)', border: `1px solid ${meta.badgeColor || '#6b7280'}30` }}>
-                      {meta.badge}
-                    </span>
-                  )}
-                  {active && <CheckCircle2 size={13} color="#4f6ef7" />}
-                </div>
-              </button>
-            );
-          })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Zap size={11} style={{ color: '#8b5cf6' }} />
+            Model: <strong style={{ color: 'var(--text-primary)' }}>minimax-m3</strong>
+          </span>
         </div>
       </div>
 
       {/* Usage stats */}
-      {gemStat && (
+      {mmStat && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           {[
-            { label: 'Requests (30d)', value: Number(gemStat.requests).toLocaleString() },
-            { label: 'Tokens (30d)',   value: Number(gemStat.tokens_total).toLocaleString() },
-            { label: 'Today',          value: `${gemStat.requests_today} req` },
+            { label: 'Requests (30d)', value: Number(mmStat.requests).toLocaleString() },
+            { label: 'Tokens (30d)',   value: Number(mmStat.tokens_total).toLocaleString() },
+            { label: 'Today',          value: `${mmStat.requests_today} req` },
           ].map(({ label, value }) => (
             <div key={label} style={{ flex: 1, background: 'var(--bg-subtle)', borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
@@ -548,76 +503,13 @@ function GeminiCard() {
       <button
         onClick={handleTest}
         disabled={testing || !isConnected}
-        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (testing || !isConnected) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: isConnected ? 'linear-gradient(135deg,#4f6ef7,#7c3aed)' : 'var(--bg-subtle)', color: isConnected ? '#ffffff' : 'var(--text-disabled)', boxShadow: isConnected ? '0 4px 12px rgba(79,110,247,0.3)' : 'none', opacity: (!isConnected || testing) ? 0.7 : 1 }}
+        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (testing || !isConnected) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: isConnected ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : 'var(--bg-subtle)', color: isConnected ? '#ffffff' : 'var(--text-disabled)', boxShadow: isConnected ? '0 4px 12px rgba(139,92,246,0.3)' : 'none', opacity: (!isConnected || testing) ? 0.7 : 1 }}
       >
         {testing
-          ? <><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> Testing {GEMINI_MODEL_META[activeModel]?.label ?? activeModel}…</>
+          ? <><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> Testing MiniMax-M3…</>
           : <><Sparkles size={13} /> Test Connection</>
         }
       </button>
-    </motion.div>
-  );
-}
-
-// ── AI Provider Mode Card ─────────────────────────────────────────────────────
-const MODES = [
-  { id: 'auto',            label: 'Auto',                  desc: 'Use whichever provider is configured (OpenAI preferred)' },
-  { id: 'openai_only',     label: 'OpenAI Only',           desc: 'Always use OpenAI, never Gemini' },
-  { id: 'gemini_only',     label: 'Gemini Only',           desc: 'Always use Gemini, never OpenAI' },
-  { id: 'openai_primary',  label: 'OpenAI + Gemini backup', desc: 'OpenAI primary, Gemini as fallback' },
-  { id: 'gemini_primary',  label: 'Gemini + OpenAI backup', desc: 'Gemini primary, OpenAI as fallback' },
-];
-
-function AiProviderModeCard() {
-  const [settings, setSettings] = useState<AiProviderSettings | null>(null);
-  const [saving,   setSaving]   = useState(false);
-
-  useEffect(() => {
-    api.ai.providerSettings().then(r => setSettings(r.data)).catch(() => {});
-  }, []);
-
-  const handleMode = async (mode: string) => {
-    if (!settings || mode === settings.mode) return;
-    setSaving(true);
-    try {
-      await api.ai.updateProviderSettings({ mode });
-      setSettings(s => s ? { ...s, mode } : s);
-    } catch { /* silently ignore */ }
-    finally { setSaving(false); }
-  };
-
-  return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
-      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
-          <Settings size={16} />
-        </div>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Provider Mode</div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>How AI requests are routed</div>
-        </div>
-        {saving && <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex', marginLeft: 'auto', color: 'var(--text-muted)' }}><Loader2 size={14} /></motion.span>}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {MODES.map(m => {
-          const active = settings?.mode === m.id;
-          return (
-            <button key={m.id} onClick={() => handleMode(m.id)} disabled={saving}
-              style={{ padding: '10px 14px', borderRadius: 12, textAlign: 'left', cursor: saving ? 'not-allowed' : 'pointer', border: `1px solid ${active ? 'rgba(139,92,246,0.4)' : 'var(--border)'}`, background: active ? 'rgba(139,92,246,0.08)' : 'var(--bg-subtle)', transition: 'all 0.18s' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: active ? '#8b5cf6' : 'var(--text-primary)' }}>{m.label}</span>
-                {active && <CheckCircle2 size={13} color="#8b5cf6" />}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{m.desc}</div>
-            </button>
-          );
-        })}
-      </div>
     </motion.div>
   );
 }
@@ -746,10 +638,7 @@ export default function IntegrationsPage() {
                 <AiCoachCard key="ai-coach" />
               )}
               {filtered.showAi && (
-                <GeminiCard key="gemini" />
-              )}
-              {filtered.showAi && (
-                <AiProviderModeCard key="ai-mode" />
+                <TokenRouterCard key="token-router" />
               )}
               {filtered.showCalendar && (
                 <GoogleCalendarCard key="calendar" flashSuccess={flashSuccess} />

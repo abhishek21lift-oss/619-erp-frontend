@@ -420,7 +420,7 @@ export default function AiCoachPage() {
                 <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>619 AI Coach</div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-                  GPT-4o · Personalized to your profile
+                  MiniMax-M3 · Personalized to your profile
                   {user && <span>· {user.name?.split(' ')[0]}</span>}
                 </div>
               </div>

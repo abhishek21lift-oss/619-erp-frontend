@@ -1216,17 +1216,12 @@ export const api = {
       http<{ data: { messages_this_hour: string; messages_today: string; tokens_today: string } }>('/api/ai/usage'),
     providerSettings: () =>
       http<{ data: AiProviderSettings }>('/api/ai/provider-settings'),
-    updateProviderSettings: (updates: { mode?: string; gemini_model?: string }) =>
-      http<{ message: string; mode?: string; gemini_model?: string }>('/api/ai/provider-settings', {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      }),
     providerStats: () =>
       http<{ data: AiProviderStats }>('/api/ai/provider-stats'),
-    testProvider: (provider: 'openai' | 'gemini') =>
+    testProvider: () =>
       http<{ success: boolean; message: string }>('/api/ai/test-provider', {
         method: 'POST',
-        body: JSON.stringify({ provider }),
+        body: JSON.stringify({}),
       }),
   },
 };
@@ -1250,18 +1245,15 @@ export type AiMessage = {
 };
 
 export type AiProviderSettings = {
-  id: string;
-  mode: string;
-  gemini_model: string;
-  updated_at: string;
-  openai_configured: boolean;
-  gemini_configured: boolean;
-  valid_gemini_models: string[];
+  provider: string;
+  model: string;
+  configured: boolean;
 };
 
 export type AiProviderStatEntry = {
   configured: boolean;
   model: string;
+  provider: string;
   requests: string;
   tokens_total: string;
   tokens_prompt: string;
@@ -1271,6 +1263,5 @@ export type AiProviderStatEntry = {
 };
 
 export type AiProviderStats = {
-  openai: AiProviderStatEntry;
-  gemini: AiProviderStatEntry;
+  minimax: AiProviderStatEntry;
 };
