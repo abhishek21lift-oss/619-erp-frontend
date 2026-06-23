@@ -163,7 +163,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(function (): void {
     _clearSession();
-  }, [_clearSession]);
+    router.replace('/login');
+  }, [_clearSession, router]);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout }}>

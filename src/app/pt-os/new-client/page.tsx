@@ -378,7 +378,24 @@ function NewClientWizard() {
     }));
   };
 
+  const validateStep = (s: StepId): string | null => {
+    if (s === 1) {
+      if (!form.name.trim()) return 'Full name is required.';
+      if (!form.phone.trim()) return 'Phone number is required.';
+    }
+    if (s === 2) {
+      if (!form.goal) return 'Please select a fitness goal.';
+    }
+    if (s === 3) {
+      if (!form.trainer) return 'Please select a trainer.';
+      if (!form.planId) return 'Please select a subscription plan.';
+    }
+    return null;
+  };
+
   const handleNext = () => {
+    const err = validateStep(step);
+    if (err) { setError(err); return; }
     setError('');
     setStep((s) => Math.min(s + 1, 4) as StepId);
   };
