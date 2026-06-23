@@ -1248,6 +1248,7 @@ export type AiProviderSettings = {
   provider: string;
   model: string;
   configured: boolean;
+  base_url?: string;
 };
 
 export type AiProviderStatEntry = {

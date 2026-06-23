@@ -471,9 +471,16 @@ function TokenRouterCard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Zap size={11} style={{ color: '#8b5cf6' }} />
-            Model: <strong style={{ color: 'var(--text-primary)' }}>minimax-m3</strong>
+            Model: <strong style={{ color: 'var(--text-primary)' }}>{settings?.model ?? 'minimax-m3'}</strong>
           </span>
         </div>
+        {settings?.base_url && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+              {settings.base_url}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Usage stats */}
