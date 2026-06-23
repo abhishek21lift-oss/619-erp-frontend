@@ -204,32 +204,48 @@ export default function AddCoachPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
-  // Form state (essential fields)
+  // Form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [gender, setGender] = useState('');
+  const [dob, setDob] = useState('');
+  const [joinDate, setJoinDate] = useState('');
+  const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [stateField, setStateField] = useState('');
+  const [pinCode, setPinCode] = useState('');
   const [experience, setExperience] = useState('');
+  const [notes, setNotes] = useState('');
   const [salary, setSalary] = useState('');
+  const [incentiveRate, setIncentiveRate] = useState('');
 
   const current = STEPS[step - 1];
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
 
   const handleSubmit = useCallback(async function() {
-    if (!firstName || !email || !phone) {
+    if (!firstName || !email || !mobile) {
       setError('First name, email, and phone are required');
       return;
     }
     setSubmitting(true);
     setError('');
     try {
-      const name = firstName + ' ' + (lastName || '').trim();
+      const fullAddress = [address, city, stateField, pinCode].filter(Boolean).join(', ');
       await api.trainers.create({
-        name: name.trim(),
-        email: email,
-        phone: phone,
-        specialization: specs.join(', '),
-        experience_years: parseInt(experience) || 0,
+        name: (firstName + ' ' + lastName).trim(),
+        mobile,
+        email,
+        dob: dob || null,
+        gender: gender || null,
+        joining_date: joinDate || null,
+        address: fullAddress || null,
+        specialization: specs.join(', ') || null,
+        certifications: certs.join(', ') || null,
+        salary: parseFloat(salary) || null,
+        incentive_rate: parseFloat(incentiveRate) || null,
+        notes: notes || null,
       });
       router.push('/trainers');
     } catch (err: unknown) {
@@ -237,7 +253,7 @@ export default function AddCoachPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [firstName, lastName, email, phone, specs, experience, router]);
+  }, [firstName, lastName, mobile, email, dob, gender, joinDate, address, city, stateField, pinCode, specs, certs, salary, incentiveRate, notes, router]);
 
   const stepContent: Record<number, React.ReactNode> = {
     1: (
@@ -257,30 +273,30 @@ export default function AddCoachPage() {
           <Input label="Last Name" value={lastName} onChange={setLastName} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Select label="Gender" options={['Male', 'Female', 'Other']} />
-          <Input label="Date of Birth" type="date" />
+          <Select label="Gender" options={['Male', 'Female', 'Other']} value={gender} onChange={setGender} />
+          <Input label="Date of Birth" type="date" value={dob} onChange={setDob} />
         </div>
         <Select label="Experience Level" options={['Beginner (0-1 yr)', 'Intermediate (1-3 yrs)', 'Advanced (3-5 yrs)', 'Expert (5+ yrs)']} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Employee ID" placeholder="AUTO-GENERATED" />
-          <Input label="Join Date" type="date" />
+          <Input label="Join Date" type="date" value={joinDate} onChange={setJoinDate} />
         </div>
       </div>
     ),
     2: (
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Phone Number" type="tel" required value={phone} onChange={setPhone} />
+          <Input label="Phone Number" type="tel" required value={mobile} onChange={setMobile} />
           <Input label="Alternate Phone" type="tel" />
         </div>
         <Input label="Email Address" type="email" required value={email} onChange={setEmail} />
         <Input label="Emergency Contact Name" />
         <Input label="Emergency Contact Phone" type="tel" />
-        <Input label="Address Line 1" />
+        <Input label="Address Line 1" value={address} onChange={setAddress} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Input label="City" />
-          <Input label="State" />
-          <Input label="PIN Code" />
+          <Input label="City" value={city} onChange={setCity} />
+          <Input label="State" value={stateField} onChange={setStateField} />
+          <Input label="PIN Code" value={pinCode} onChange={setPinCode} />
         </div>
       </div>
     ),
@@ -298,7 +314,7 @@ export default function AddCoachPage() {
           <Input label="Years of Experience" type="number" value={experience} onChange={setExperience} />
           <Select label="Primary Language" options={['Hindi', 'English', 'Both']} />
         </div>
-        <Input label="Bio / About Coach" />
+        <Input label="Bio / About Coach" value={notes} onChange={setNotes} />
         <DragDropUpload label="Certification Documents" accept=".pdf,.jpg,.png" />
       </div>
     ),
@@ -310,7 +326,7 @@ export default function AddCoachPage() {
           <Input label="Session Rate (₹)" type="number" />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Revenue Share %" type="number" />
+          <Input label="Revenue Share %" type="number" value={incentiveRate} onChange={setIncentiveRate} />
           <Select label="Payment Frequency" options={['Monthly', 'Bi-Weekly', 'Weekly']} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
