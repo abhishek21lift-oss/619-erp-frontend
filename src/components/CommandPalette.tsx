@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { allNavItems, QUICK_ACTIONS, NAV_GROUPS } from '@/lib/nav-config';
+import type { Role } from '@/lib/nav-config';
 import { api, type Client } from '@/lib/api';
 
 type Result = {
@@ -115,7 +116,7 @@ export default function CommandPalette() {
       group: 'Navigate',
     }));
     const actions: Result[] = QUICK_ACTIONS
-      .filter(a => !a.role || a.role === user?.role)
+      .filter(a => !a.roles?.length || (!!user?.role && a.roles.includes(user.role as Role)))
       .map(a => ({
         id: a.id,
         label: a.label,
