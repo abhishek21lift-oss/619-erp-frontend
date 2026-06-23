@@ -254,9 +254,9 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
         </svg>
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center py-10 sm:py-14 px-6 text-center">
+      <div className="relative z-10 flex flex-col items-center justify-center py-6 sm:py-8 px-6 text-center">
         <h1
-          className="text-[28px] sm:text-[38px] font-[900] tracking-[0.18em] leading-none uppercase"
+          className="text-[34px] sm:text-[46px] font-[900] tracking-[0.18em] leading-none uppercase"
           style={{
             background: 'linear-gradient(90deg, #ffffff 0%, #fca5a5 35%, #e879f9 65%, #ffffff 100%)',
             WebkitBackgroundClip: 'text',
@@ -268,16 +268,12 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
           619 PERSONAL TRAINING
         </h1>
 
-        <div className="mt-4 h-px w-24 sm:w-32"
+        <div className="mt-3 h-px w-24 sm:w-32"
           style={{ background: 'linear-gradient(90deg, transparent, rgba(251,113,133,0.7), rgba(192,132,252,0.7), transparent)' }} />
 
-        <p className="mt-4 text-[13px] sm:text-[15px] font-[700] tracking-[0.22em] uppercase"
-          style={{ color: 'rgba(255,255,255,0.55)' }}>
-          {dayStr}
-        </p>
-        <p className="mt-1 text-[11px] sm:text-[12px] font-[500] tracking-[0.08em]"
-          style={{ color: 'rgba(255,255,255,0.4)' }}>
-          {dateStr}
+        <p className="mt-3 text-[11px] sm:text-[12px] font-[600] tracking-[0.18em] uppercase"
+          style={{ color: 'rgba(255,255,255,0.45)' }}>
+          {dayStr} · {dateStr}
         </p>
       </div>
 
