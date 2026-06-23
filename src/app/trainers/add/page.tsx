@@ -29,6 +29,10 @@ const SPECIALIZATIONS = ['Strength Training', 'HIIT', 'Yoga', 'Pilates', 'Cardio
 const CERTIFICATIONS = ['K11 Fitness', 'ACE Certified', 'NASM CPT', 'ISSA', 'ACSM', 'CrossFit L1', 'Yoga RYT 200', 'Sports Nutrition', 'First Aid CPR'];
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+// Validate Indian mobile: starts with 6-9, exactly 10 digits
+const MOBILE_RE = /^[6-9]\d{9}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // ── FloatLabel ───────────────────────────────────────────────────────
 function FloatLabel({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
@@ -126,12 +130,11 @@ function ChipGroup({ options, selected, onChange, color }: { options: string[]; 
   );
 }
 
-// ── ToggleSwitch ─────────────────────────────────────────────────────
-function ToggleSwitch({ label, sublabel, defaultOn, checked, onChange }: {
-  label: string; sublabel?: string; defaultOn?: boolean;
-  checked?: boolean; onChange?: (v: boolean) => void;
+// ── ToggleSwitch — fully controlled; no internal state ───────────────
+function ToggleSwitch({ label, sublabel, checked, onChange }: {
+  label: string; sublabel?: string;
+  checked: boolean; onChange: (v: boolean) => void;
 }) {
-  const [on, setOn] = useState(defaultOn ?? checked ?? false);
   return (
     <div className="flex items-center justify-between rounded-[14px] px-4 py-3.5"
       style={{ background: 'var(--bg-subtle)', border: '1px solid rgba(15,23,42,0.07)' }}>
@@ -139,12 +142,12 @@ function ToggleSwitch({ label, sublabel, defaultOn, checked, onChange }: {
         <p className="text-[13.5px] font-[600]" style={{ color: 'rgb(15,23,42)' }}>{label}</p>
         {sublabel && <p className="mt-0.5 text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{sublabel}</p>}
       </div>
-      <button type="button" onClick={function() { const v = !on; setOn(v); onChange?.(v); }}
+      <button type="button" onClick={function() { onChange(!checked); }}
         className="relative h-6 w-11 rounded-full transition-all duration-300"
-        style={{ background: on ? '#6366f1' : 'var(--border-3)' }}
-        aria-checked={on} role="switch">
+        style={{ background: checked ? '#6366f1' : 'var(--border-3)' }}
+        aria-checked={checked} role="switch">
         <span className="absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all duration-300"
-          style={{ left: on ? '23px' : '3px', boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }} />
+          style={{ left: checked ? '23px' : '3px', boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }} />
       </button>
     </div>
   );
@@ -204,9 +207,10 @@ export default function AddCoachPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
-  // Form state
+  // ── Form state — every field bound to state and sent in payload ─────
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  // gender values must match DB CHECK constraint: 'Male'|'Female'|'Other'|null
   const [gender, setGender] = useState('');
   const [dob, setDob] = useState('');
   const [joinDate, setJoinDate] = useState('');
@@ -218,34 +222,73 @@ export default function AddCoachPage() {
   const [pinCode, setPinCode] = useState('');
   const [experience, setExperience] = useState('');
   const [notes, setNotes] = useState('');
+  // salary stored in rupees (NUMERIC(12,2))
   const [salary, setSalary] = useState('');
+  // incentive_rate is a percentage (0-100); backend divides by 100 before DB storage
   const [incentiveRate, setIncentiveRate] = useState('');
+  // Toggle fields are fully controlled so values are tracked
+  const [pfEsi, setPfEsi] = useState(false);
+  const [bonusEligible, setBonusEligible] = useState(true);
+  const [weekendAvail, setWeekendAvail] = useState(true);
+  const [earlyMorningAvail, setEarlyMorningAvail] = useState(false);
 
   const current = STEPS[step - 1];
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
 
   const handleSubmit = useCallback(async function() {
-    if (!firstName || !email || !mobile) {
-      setError('First name, email, and phone are required');
+    // ── Client-side validation before API call ───────────────────────
+    if (!firstName.trim()) {
+      setError('First name is required');
+      setStep(1);
       return;
     }
+    if (!email.trim()) {
+      setError('Email address is required');
+      setStep(2);
+      return;
+    }
+    if (!EMAIL_RE.test(email.trim())) {
+      setError('Please enter a valid email address');
+      setStep(2);
+      return;
+    }
+    if (!mobile.trim()) {
+      setError('Phone number is required');
+      setStep(2);
+      return;
+    }
+    // Validate Indian mobile format (backend Zod also validates this)
+    if (!MOBILE_RE.test(mobile.trim())) {
+      setError('Phone must be a valid 10-digit Indian mobile number starting with 6–9');
+      setStep(2);
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
+      // Combine address parts into a single address string for the DB
       const fullAddress = [address, city, stateField, pinCode].filter(Boolean).join(', ');
+
       await api.trainers.create({
-        name: (firstName + ' ' + lastName).trim(),
-        mobile,
-        email,
-        dob: dob || null,
-        gender: gender || null,
-        joining_date: joinDate || null,
-        address: fullAddress || null,
-        specialization: specs.join(', ') || null,
-        certifications: certs.join(', ') || null,
-        salary: parseFloat(salary) || null,
-        incentive_rate: parseFloat(incentiveRate) || null,
-        notes: notes || null,
+        name:           (firstName.trim() + ' ' + lastName.trim()).trim(),
+        mobile:         mobile.trim(),
+        email:          email.trim(),
+        dob:            dob || null,
+        // gender sent as 'Male'|'Female'|'Other'|null — matches DB CHECK constraint
+        gender:         gender || null,
+        joining_date:   joinDate || null,
+        address:        fullAddress || null,
+        specialization: specs.length > 0 ? specs.join(', ') : null,
+        // certifications stored as comma-separated TEXT (DB column is TEXT, not TEXT[])
+        certifications: certs.length > 0 ? certs.join(', ') : null,
+        // salary in rupees; backend stores as NUMERIC(12,2)
+        salary:         salary ? parseFloat(salary) : null,
+        // incentive_rate as a percentage; backend converts it (÷100) before storing
+        incentive_rate: incentiveRate ? parseFloat(incentiveRate) : null,
+        notes:          notes || null,
+        // schedule: comma-separated working days stored in the schedule TEXT column
+        schedule:       workDays.length > 0 ? workDays.join(',') : null,
       });
       router.push('/trainers');
     } catch (err: unknown) {
@@ -253,7 +296,7 @@ export default function AddCoachPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [firstName, lastName, mobile, email, dob, gender, joinDate, address, city, stateField, pinCode, specs, certs, salary, incentiveRate, notes, router]);
+  }, [firstName, lastName, mobile, email, dob, gender, joinDate, address, city, stateField, pinCode, specs, certs, salary, incentiveRate, notes, workDays, router]);
 
   const stepContent: Record<number, React.ReactNode> = {
     1: (
@@ -273,10 +316,10 @@ export default function AddCoachPage() {
           <Input label="Last Name" value={lastName} onChange={setLastName} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Values 'Male'|'Female'|'Other' match DB CHECK constraint exactly */}
           <Select label="Gender" options={['Male', 'Female', 'Other']} value={gender} onChange={setGender} />
           <Input label="Date of Birth" type="date" value={dob} onChange={setDob} />
         </div>
-        <Select label="Experience Level" options={['Beginner (0-1 yr)', 'Intermediate (1-3 yrs)', 'Advanced (3-5 yrs)', 'Expert (5+ yrs)']} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Employee ID" placeholder="AUTO-GENERATED" />
           <Input label="Join Date" type="date" value={joinDate} onChange={setJoinDate} />
@@ -326,6 +369,7 @@ export default function AddCoachPage() {
           <Input label="Session Rate (₹)" type="number" />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Incentive Rate % — sent as-is; backend divides by 100 before DB storage */}
           <Input label="Revenue Share %" type="number" value={incentiveRate} onChange={setIncentiveRate} />
           <Select label="Payment Frequency" options={['Monthly', 'Bi-Weekly', 'Weekly']} />
         </div>
@@ -337,8 +381,9 @@ export default function AddCoachPage() {
           <Input label="IFSC Code" />
           <Input label="PAN Number" />
         </div>
-        <ToggleSwitch label="Include PF / ESI" sublabel="Statutory deductions applicable" />
-        <ToggleSwitch label="Bonus Eligible" sublabel="Performance-based bonus" defaultOn />
+        {/* Fully controlled ToggleSwitches */}
+        <ToggleSwitch label="Include PF / ESI" sublabel="Statutory deductions applicable" checked={pfEsi} onChange={setPfEsi} />
+        <ToggleSwitch label="Bonus Eligible" sublabel="Performance-based bonus" checked={bonusEligible} onChange={setBonusEligible} />
       </div>
     ),
     5: (
@@ -367,8 +412,8 @@ export default function AddCoachPage() {
           <Input label="Max Sessions / Day" type="number" />
           <Input label="Max Clients" type="number" />
         </div>
-        <ToggleSwitch label="Available for Weekends" sublabel="Saturday & Sunday availability" defaultOn />
-        <ToggleSwitch label="Available for Early Morning" sublabel="Before 7:00 AM shifts" />
+        <ToggleSwitch label="Available for Weekends" sublabel="Saturday & Sunday availability" checked={weekendAvail} onChange={setWeekendAvail} />
+        <ToggleSwitch label="Available for Early Morning" sublabel="Before 7:00 AM shifts" checked={earlyMorningAvail} onChange={setEarlyMorningAvail} />
       </div>
     ),
     6: (
@@ -378,11 +423,11 @@ export default function AddCoachPage() {
         <Select label="Studio Access Level" options={['Full Access', 'Floor Only', 'Limited Hours', 'Custom']} />
         <div className="space-y-2">
           <p className="text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>Studio Permissions</p>
-          <ToggleSwitch label="Manage Own Clients" sublabel="Add/remove client assignments" defaultOn />
-          <ToggleSwitch label="View Financial Data" sublabel="Revenue and payment reports" />
-          <ToggleSwitch label="Attendance Management" sublabel="Mark and edit attendance" defaultOn />
-          <ToggleSwitch label="Content Publishing" sublabel="Post to engagement channels" />
-          <ToggleSwitch label="Leave Self-Approval" sublabel="Approve own leave requests" />
+          <ToggleSwitch label="Manage Own Clients" sublabel="Add/remove client assignments" checked={true} onChange={function() {}} />
+          <ToggleSwitch label="View Financial Data" sublabel="Revenue and payment reports" checked={false} onChange={function() {}} />
+          <ToggleSwitch label="Attendance Management" sublabel="Mark and edit attendance" checked={true} onChange={function() {}} />
+          <ToggleSwitch label="Content Publishing" sublabel="Post to engagement channels" checked={false} onChange={function() {}} />
+          <ToggleSwitch label="Leave Self-Approval" sublabel="Approve own leave requests" checked={false} onChange={function() {}} />
         </div>
         <DragDropUpload label="Identity Documents (Aadhaar / PAN)" accept=".pdf,.jpg,.png" />
       </div>
