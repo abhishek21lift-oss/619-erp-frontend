@@ -93,7 +93,8 @@ export default function Guard({ children, role, roles }: Props) {
     );
   }
 
-  if (!user || !hasRole(user.role, roles ?? role)) {
+  const roleRequired = role !== undefined || roles !== undefined;
+  if (!user || (roleRequired && !hasRole(user.role, roles ?? role))) {
     return null;
   }
 
