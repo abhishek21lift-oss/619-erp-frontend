@@ -61,15 +61,17 @@ function buildCsp(): string {
   // load pages and make API requests without CSP violations.
   return [
     "default-src 'self' capacitor://localhost",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' capacitor://localhost",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com capacitor://localhost",
-    `img-src 'self' data: blob: https://${SUPABASE_HOST} capacitor://localhost`,
-    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://cdn.jsdelivr.net capacitor://localhost`,
+    // accounts.google.com is required for Google Sign-In (GSI) popup flow
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/ capacitor://localhost",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/ capacitor://localhost",
+    `img-src 'self' data: blob: https://${SUPABASE_HOST} https://lh3.googleusercontent.com capacitor://localhost`,
+    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://cdn.jsdelivr.net https://accounts.google.com capacitor://localhost`,
     "font-src 'self' https://fonts.gstatic.com capacitor://localhost",
     // blob: for camera MediaStream → canvas; worker-src for TF.js workers
     "media-src 'self' blob: capacitor://localhost",
     "worker-src 'self' blob:",
-    // Allow Capacitor native WebView to embed pages
+    // Allow Google Sign-In iframe and Capacitor native WebView to embed pages
+    "frame-src 'self' https://accounts.google.com capacitor://localhost",
     "frame-ancestors 'self' capacitor://localhost",
     "form-action 'self'",
     "base-uri 'self'",

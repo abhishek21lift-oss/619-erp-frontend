@@ -25,8 +25,13 @@ export default function Guard({ children, role, roles }: Props) {
       return;
     }
 
-    if (!hasRole(user.role, roles ?? role)) {
-      router.replace('/pt-os');
+    // When no role constraint is specified, any authenticated user passes.
+    // hasRole(x, undefined) returns false for everyone — so we must skip the
+    // check when neither `role` nor `roles` was provided.
+    const roleRequired = role !== undefined || roles !== undefined;
+    if (roleRequired && !hasRole(user.role, roles ?? role)) {
+      // Redirect to the dashboard root (not /pt-os which redirects back here)
+      router.replace('/login');
       return;
     }
 

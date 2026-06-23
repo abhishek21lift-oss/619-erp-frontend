@@ -62,6 +62,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Guard against React StrictMode double-invocation: if already initialised,
+    // skip — but we must reset the flag in the cleanup so a genuine remount
+    // (e.g. HMR) restarts the flow and doesn't leave loading=true forever.
     if (initDone.current) return;
     initDone.current = true;
 
@@ -77,6 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     if (cachedUser) setUser(cachedUser);
 
+    console.debug('[auth] init: starting me() validation');
+
     // Silently validate the session cookie with the server.
     // Rules:
     //   - 401 / 403  → token is genuinely invalid, clear everything
@@ -84,11 +89,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     //   - If login() already completed before me() returns, ignore me() result
     //     entirely — the fresh login data is the source of truth.
     const ac = new AbortController();
-    const meTimeout = setTimeout(() => ac.abort(), 10_000);
+    const meTimeout = setTimeout(() => {
+      console.debug('[auth] me() timeout — aborting');
+      ac.abort();
+    }, 10_000);
+
     http<{ user: User }>('/api/auth/me', { signal: ac.signal })
       .then((res) => {
         clearTimeout(meTimeout);
         if (loggedInRef.current) return;
+        console.debug('[auth] me() ok, user:', res?.user?.role ?? 'none');
         if (res?.user) {
           const u = res.user as User;
           setUser(u);
@@ -100,8 +110,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((err: unknown) => {
         clearTimeout(meTimeout);
-        if (loggedInRef.current) return; // same — don't touch a freshly logged-in user
+        if (loggedInRef.current) return;
         const status = (err as { status?: number })?.status;
+        console.debug('[auth] me() error, status:', status);
         if (status === 401 || status === 403) {
           setUser(null);
           ssDel(SESSION_USER_KEY);
@@ -109,9 +120,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // All other errors (network, timeout, 5xx): keep cached session silently
       })
       .finally(() => {
+        console.debug('[auth] me() done, setting loading=false');
         // Only set loading=false here if login() hasn't already done it
         if (!loggedInRef.current) setLoading(false);
       });
+
+    return () => {
+      // Cleanup: abort the in-flight request and reset the guard so a genuine
+      // remount (StrictMode second pass or HMR) restarts initialisation.
+      clearTimeout(meTimeout);
+      ac.abort();
+      initDone.current = false;
+    };
   }, []);
 
   useEffect(() => {
