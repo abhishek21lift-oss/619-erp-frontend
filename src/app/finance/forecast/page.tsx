@@ -52,7 +52,9 @@ function Inner() {
       return { month: name, revenue: found ? Number(found.revenue) : 0, actual: i <= currentMonth };
     });
     const realised = arr.filter((_, i) => i <= currentMonth);
-    const avg = realised.reduce((s, m) => s + m.revenue, 0) / Math.max(realised.length, 1);
+    // Use a 3-month rolling average for a more responsive projection
+    const rolling3 = realised.slice(-3);
+    const avg = rolling3.reduce((s, m) => s + m.revenue, 0) / Math.max(rolling3.length, 1);
     return arr.map((m, i) => ({ ...m, forecast: i > currentMonth ? Math.round(avg * 1.05) : null }));
   }, [monthly, currentMonth]);
 
@@ -92,7 +94,7 @@ function Inner() {
                 <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(139,92,246,0.4)' }}>
                   <TrendingUp size={20} color="white" />
                 </div>
-                <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #e2e8f0, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Revenue Forecast</h1>
+                <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #e2e8f0, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Projected Revenue (estimate)</h1>
               </div>
               <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: 0 }}>Projected vs actual revenue &middot; {year} full year view</p>
             </div>
@@ -246,6 +248,12 @@ function Inner() {
               </table>
             </div>
           )}
+        </div>
+        {/* Disclaimer */}
+        <div style={{ marginTop: 12, padding: '10px 16px', background: 'rgba(139,92,246,0.06)', borderRadius: 10, border: '1px solid rgba(139,92,246,0.12)' }}>
+          <p style={{ margin: 0, fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
+            <strong style={{ color: '#8b5cf6' }}>Note:</strong> Projection based on 3-month rolling average with a 5% uplift. Figures are estimates only and may not reflect seasonal variations or planned business changes.
+          </p>
         </div>
       </div>
     </AppShell>
