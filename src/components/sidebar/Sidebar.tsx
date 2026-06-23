@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { ChevronDown, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
