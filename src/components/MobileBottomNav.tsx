@@ -2,19 +2,27 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, LogIn, DollarSign, Dumbbell, LayoutGrid } from 'lucide-react';
+import { Home, Users, ScanFace, Dumbbell, IndianRupee } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
+import { useAuth } from '@/lib/auth-context';
+import { normaliseRole } from '@/lib/nav-config';
 
-const NAV_ITEMS = [
-  { href: '/pt-os/clients', icon: Users,       label: 'Clients'  },
-  { href: '/checkin',       icon: LogIn,        label: 'Check-in' },
-  { href: '/finance/collected-payments', icon: DollarSign, label: 'Finance' },
-  { href: '/pt-os/sessions', icon: Dumbbell,   label: 'Sessions' },
-  { href: '/pt-os',         icon: LayoutGrid,  label: 'PT OS'    },
+const BASE_ITEMS = [
+  { href: '/',               icon: Home,        label: 'Home'     },
+  { href: '/pt-os/clients',  icon: Users,       label: 'Clients'  },
+  { href: '/checkin',        icon: ScanFace,    label: 'Check-in' },
+  { href: '/pt-os/sessions', icon: Dumbbell,    label: 'Sessions' },
 ];
+
+const FINANCE_ITEM = { href: '/finance/collected-payments', icon: IndianRupee, label: 'Finance' };
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const role = normaliseRole(user?.role);
+  const isAdminOrManager = role === 'admin' || role === 'manager';
+
+  const items = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
 
   return (
     <nav
@@ -26,8 +34,10 @@ export default function MobileBottomNav() {
       }}
     >
       <div className="flex items-stretch h-16">
-        {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
-          const isActive = pathname === href || (href !== '/pt-os' && pathname.startsWith(href));
+        {items.map(({ href, icon: Icon, label }) => {
+          const isActive = href === '/'
+            ? pathname === '/'
+            : pathname === href || pathname.startsWith(href + '/');
           return (
             <Link
               key={href}

@@ -15,6 +15,7 @@ import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
+import { allNavItems } from '@/lib/nav-config';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -32,34 +33,49 @@ interface Notification {
   created_at: string;
 }
 
+const NAV_KEYWORDS: Record<string, string> = {
+  '/checkin':                    'walk-in walkin drop-in checkin daily visit attendance',
+  '/checkin/kiosk':              'kiosk self service qr face biometric',
+  '/ai-coach':                   'ai coach workout nutrition fitness chatbot assistant gpt',
+  '/member/attendance':          'my attendance history streak visits calendar heatmap',
+  '/pt-os/weekly-checkin':       'progress tracking weekly check-in measurements goals',
+  '/pt-os/schedule-session':     'session booking schedule appointments',
+  '/pt-os/session-balance':      'session balance remaining credits',
+  '/pt-os/measurements':         'measurements body stats metrics weight',
+  '/pt-os/strength-tracking':    'strength tracking lifts weights lifting',
+  '/pt-os/progress-photos':      'progress photos pictures transformation',
+  '/pt-os/commissions':          'commissions incentives bonuses trainer earnings',
+  '/engagement/automation':      'automation workflows triggers rules',
+  '/finance/collected-payments': 'payments transactions collected',
+  '/engagement/notifications':   'communication messaging notifications alerts',
+  '/trainers':                   'trainers coaches instructors profiles staff',
+  '/settings':                   'settings configuration preferences',
+  '/reports':                    'reports analytics insights',
+  '/attendance':                 'attendance check-in sign-in records',
+};
+
+const EXTRA_SEARCH_PAGES = [
+  { label: 'QR Scanner',          href: '/checkin/qr-scanner', keywords: 'qr scanner checkin scan code attendance',               category: 'feature' },
+  { label: 'Attendance Dashboard', href: '/checkin/dashboard',  keywords: 'attendance dashboard live stats today visitors inside',  category: 'report'  },
+];
+
+function navSearchCategory(groupId: string): string {
+  if (groupId === 'settings') return 'nav';
+  if (groupId === 'insights' || groupId === 'reports') return 'report';
+  if (groupId === 'attendance') return 'nav';
+  return 'feature';
+}
+
 const SEARCH_PAGES = [
-  { label: 'PT OS', href: '/pt-os', keywords: 'personal training pt dashboard', category: 'nav' },
-  { label: 'Attendance', href: '/attendance', keywords: 'attendance check-in sign-in', category: 'nav' },
-  { label: 'Finance', href: '/finance/collected-payments', keywords: 'finance payments billing invoices', category: 'nav' },
-  { label: 'Walk-in / Check-in', href: '/checkin', keywords: 'walk-in walkin drop-in checkin daily visit', category: 'nav' },
-  { label: 'Staff', href: '/staff', keywords: 'staff employees trainers', category: 'nav' },
-  { label: 'Trainers', href: '/trainers', keywords: 'trainers coaches instructors', category: 'nav' },
-  { label: 'Reports', href: '/reports', keywords: 'reports analytics insights', category: 'nav' },
-  { label: 'Settings', href: '/settings', keywords: 'settings configuration preferences', category: 'nav' },
-  { label: 'Session Booking', href: '/pt-os/schedule-session', keywords: 'session booking schedule appointments', category: 'feature' },
-  { label: 'Progress Tracking', href: '/pt-os/weekly-checkin', keywords: 'progress tracking measurements goals weekly check-in checkin', category: 'feature' },
-  { label: 'Goals', href: '/pt-os/goals', keywords: 'goals objectives targets', category: 'feature' },
-  { label: 'Assessment', href: '/pt-os/assessment', keywords: 'assessment evaluation fitness test', category: 'feature' },
-  { label: 'Session Balance', href: '/pt-os/session-balance', keywords: 'session balance remaining credits', category: 'feature' },
-  { label: 'Measurements', href: '/pt-os/measurements', keywords: 'measurements body stats metrics', category: 'feature' },
-  { label: 'Strength Tracking', href: '/pt-os/strength-tracking', keywords: 'strength tracking lifts weights', category: 'feature' },
-  { label: 'Progress Photos', href: '/pt-os/progress-photos', keywords: 'progress photos pictures transformation', category: 'feature' },
-  { label: 'Commissions', href: '/pt-os/commissions', keywords: 'commissions incentives bonuses', category: 'feature' },
-  { label: 'Automation', href: '/engagement/automation', keywords: 'automation workflows triggers', category: 'feature' },
-  { label: 'Collected Payments', href: '/finance/collected-payments', keywords: 'payments transactions collected', category: 'feature' },
-  { label: 'AI Coach', href: '/ai-coach', keywords: 'ai coach workout nutrition fitness chatbot assistant gpt', category: 'feature' },
-  { label: 'QR Scanner', href: '/checkin/qr-scanner', keywords: 'qr scanner checkin scan code attendance', category: 'feature' },
-  { label: 'Self-Check-In Kiosk', href: '/checkin/kiosk', keywords: 'kiosk checkin self service qr face biometric', category: 'feature' },
-  { label: 'My Attendance', href: '/member/attendance', keywords: 'my attendance history streak visits calendar heatmap', category: 'feature' },
-  { label: 'Attendance Reports', href: '/attendance/reports', keywords: 'attendance reports analytics', category: 'report' },
-  { label: 'Communication', href: '/engagement/notifications', keywords: 'communication messaging notifications', category: 'report' },
-  { label: 'Notifications', href: '/engagement/notifications', keywords: 'notifications alerts updates', category: 'report' },
-  { label: 'Attendance Dashboard', href: '/checkin/dashboard', keywords: 'attendance dashboard live stats today visitors inside', category: 'report' },
+  ...allNavItems()
+    .filter(item => !item.hidden)
+    .map(item => ({
+      label: item.label,
+      href: item.href,
+      keywords: NAV_KEYWORDS[item.href] ?? item.label.toLowerCase(),
+      category: navSearchCategory(item.groupId),
+    })),
+  ...EXTRA_SEARCH_PAGES,
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
