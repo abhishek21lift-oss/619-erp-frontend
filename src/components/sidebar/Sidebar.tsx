@@ -161,9 +161,9 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                 background: hasActiveChild
                   ? theme.activeBg
                   : open && !collapsed
-                    ? `linear-gradient(135deg, ${theme.borderColor}15, transparent)`
-                    : 'transparent',
-                boxShadow: hasActiveChild ? `0 2px 12px ${hexToRgba(theme.borderColor, 0.08)}` : 'none',
+                    ? `linear-gradient(135deg, ${theme.borderColor}18, transparent)`
+                    : hexToRgba(theme.borderColor, 0.04),
+                boxShadow: hasActiveChild ? `0 2px 12px ${hexToRgba(theme.borderColor, 0.10)}` : 'none',
               }}
               title={collapsed ? group.label : undefined}
             >
@@ -172,9 +172,9 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-300"
                   style={{
                     background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}66)`,
-                    height: hasActiveChild || open ? '55%' : '0%',
-                    opacity: hasActiveChild || open ? 1 : 0,
-                    boxShadow: theme.glow,
+                    height: hasActiveChild ? '60%' : open ? '45%' : '25%',
+                    opacity: hasActiveChild ? 1 : open ? 0.7 : 0.25,
+                    boxShadow: hasActiveChild || open ? theme.glow : 'none',
                   }}
                 />
               )}
@@ -189,12 +189,12 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                   style={{ background: hasActiveChild ? theme.iconBg : 'transparent' }}>
                   <GroupIcon size={16} strokeWidth={hasActiveChild ? 2.5 : 1.5}
                     style={{
-                      color: hasActiveChild || open ? '#ffffff' : 'var(--sidebar-icon)',
+                      color: hasActiveChild || open ? '#ffffff' : hexToRgba(theme.borderColor, 0.75),
                     }} />
                 </div>
               ) : (
                 <div className="relative flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium transition-all duration-200"
-                  style={{ color: hasActiveChild ? theme.borderColor : 'var(--text-muted)' }}>
+                  style={{ color: hasActiveChild ? theme.borderColor : hexToRgba(theme.borderColor, 0.65) }}>
                   <div className={cn(
                     'flex h-[28px] w-[28px] items-center justify-center rounded-lg shrink-0 transition-all duration-300',
                     (hasActiveChild || open) && 'shadow-[0_0_12px_rgba(0,0,0,0.08)]',
@@ -202,15 +202,15 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                     style={{ background: (hasActiveChild || open) ? theme.iconBg : 'transparent' }}>
                     <GroupIcon size={14} strokeWidth={hasActiveChild ? 2.2 : 1.5}
                       style={{
-                        color: hasActiveChild || open ? '#ffffff' : 'var(--sidebar-icon)',
-                        filter: hasActiveChild ? 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' : 'none',
+                        color: hasActiveChild || open ? '#ffffff' : hexToRgba(theme.borderColor, 0.7),
+                        filter: hasActiveChild ? 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' : `drop-shadow(0 0 6px ${hexToRgba(theme.borderColor, 0.4)})`,
                       }} />
                   </div>
                   <span className="flex-1 text-left text-[13px] font-semibold tracking-tight">{group.label}</span>
                   <ChevronDown size={12} strokeWidth={2.5}
                     className="shrink-0 transition-transform duration-300"
                     style={{
-                      color: hasActiveChild ? theme.borderColor : 'var(--text-disabled)',
+                      color: hasActiveChild ? theme.borderColor : hexToRgba(theme.borderColor, 0.4),
                       transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
                     }} />
                 </div>
@@ -252,7 +252,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                               style={{ background: active && !isDisabled ? theme.iconBg : 'transparent' }}>
                               {ItemIcon && (
                                 <ItemIcon size={12} strokeWidth={active && !isDisabled ? 2.5 : 1.5}
-                                  style={{ color: active && !isDisabled ? '#ffffff' : 'var(--sidebar-icon)' }} />
+                                  style={{ color: active && !isDisabled ? '#ffffff' : hexToRgba(theme.borderColor, 0.6) }} />
                               )}
                             </div>
                             <span className="truncate relative z-10 text-[12px] flex-1">{item.label}</span>
@@ -297,7 +297,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                               active && 'font-semibold',
                             )}
                             style={{
-                              color: active ? theme.borderColor : 'var(--text-muted)',
+                              color: active ? theme.borderColor : hexToRgba(theme.borderColor, 0.6),
                               background: active ? theme.subActiveBg : 'transparent',
                             }}
                           >
@@ -360,7 +360,7 @@ export default function Sidebar({
         ],
       )}
       style={{
-        background: 'linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
+        background: 'linear-gradient(180deg, rgba(249,115,22,0.10) 0%, rgba(249,115,22,0.04) 22%, transparent 45%), linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
         paddingTop: 'env(safe-area-inset-top, 0px)',
         boxShadow: isMobile
           ? '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(167,139,250,0.06)'
