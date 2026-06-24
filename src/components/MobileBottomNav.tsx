@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Users, ScanFace, Dumbbell, IndianRupee } from 'lucide-react';
@@ -17,12 +18,67 @@ const BASE_ITEMS = [
 const FINANCE_ITEM = { href: '/finance/collected-payments', icon: IndianRupee, label: 'Finance' };
 
 export default function MobileBottomNav() {
-  const pathname = usePathname();
-  const { user } = useAuth();
-  const role = normaliseRole(user?.role);
+  const pathname  = usePathname();
+  const { user }  = useAuth();
+  const role      = normaliseRole(user?.role);
   const isAdminOrManager = role === 'admin' || role === 'manager';
+  const items     = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
 
-  const items = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
+  const [visible, setVisible] = useState(true);
+
+  // Track scroll position to hide nav while scrolling
+  const lastScrollY  = useRef(0);
+  const scrollTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Track touch start position to distinguish tap from scroll
+  const touchStartY  = useRef(0);
+  const touchStartX  = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      // Hide while actively scrolling
+      setVisible(false);
+
+      // Clear any pending show timer
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+      // Show again 400ms after scrolling stops
+      scrollTimer.current = setTimeout(() => setVisible(true), 400);
+
+      lastScrollY.current = currentY;
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+      touchStartX.current = e.touches[0].clientX;
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+      const dx = Math.abs(e.changedTouches[0].clientX - touchStartX.current);
+      // If finger barely moved it's a tap — show the nav immediately
+      if (dy < 10 && dx < 10) {
+        if (scrollTimer.current) clearTimeout(scrollTimer.current);
+        setVisible(true);
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    };
+  }, []);
+
+  // Always show on route change
+  useEffect(() => {
+    setVisible(true);
+  }, [pathname]);
 
   return (
     <nav
@@ -31,6 +87,8 @@ export default function MobileBottomNav() {
         background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 60%, #1e1b4b 100%)',
         borderTop: '1px solid rgba(167,139,250,0.15)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        transform: visible ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       <div className="flex items-stretch h-12">
