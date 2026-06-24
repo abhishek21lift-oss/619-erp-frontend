@@ -35,17 +35,10 @@ export default function MobileBottomNav() {
   const touchStartX  = useRef(0);
 
   useEffect(() => {
-    const onScroll = () => {
-      const currentY = window.scrollY;
-      // Hide while actively scrolling
+    const hide = () => {
       setVisible(false);
-
-      // Clear any pending show timer
       if (scrollTimer.current) clearTimeout(scrollTimer.current);
-      // Show again 400ms after scrolling stops
-      scrollTimer.current = setTimeout(() => setVisible(true), 400);
-
-      lastScrollY.current = currentY;
+      scrollTimer.current = setTimeout(() => setVisible(true), 500);
     };
 
     const onTouchStart = (e: TouchEvent) => {
@@ -53,24 +46,40 @@ export default function MobileBottomNav() {
       touchStartX.current = e.touches[0].clientX;
     };
 
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+      const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
+      // Only treat as scroll if finger moved more than 8px vertically
+      if (dy > 8 && dy > dx) hide();
+    };
+
     const onTouchEnd = (e: TouchEvent) => {
       const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
       const dx = Math.abs(e.changedTouches[0].clientX - touchStartX.current);
-      // If finger barely moved it's a tap — show the nav immediately
+      // Tap (barely moved) — show the nav immediately
       if (dy < 10 && dx < 10) {
         if (scrollTimer.current) clearTimeout(scrollTimer.current);
         setVisible(true);
       }
     };
 
-    window.addEventListener('scroll', onScroll, { passive: true });
+    // Fallback scroll listener for desktop / non-touch
+    const onScroll = () => {
+      const delta = Math.abs(window.scrollY - lastScrollY.current);
+      if (delta > 4) hide();
+      lastScrollY.current = window.scrollY;
+    };
+
     document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
     document.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
-      window.removeEventListener('scroll', onScroll);
       document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('scroll', onScroll);
       if (scrollTimer.current) clearTimeout(scrollTimer.current);
     };
   }, []);
@@ -87,8 +96,8 @@ export default function MobileBottomNav() {
         background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 60%, #1e1b4b 100%)',
         borderTop: '1px solid rgba(167,139,250,0.15)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        transform: visible ? 'translateY(0)' : 'translateY(100%)',
-        transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: visible ? 'translateY(0)' : 'translateY(calc(100% + env(safe-area-inset-bottom, 20px) + 10px))',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       <div className="flex items-stretch h-12">
