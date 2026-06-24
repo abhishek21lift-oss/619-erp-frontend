@@ -1204,4 +1204,245 @@ export const api = {
       ),
   },
 
+  // ── AI (OpenRouter multi-model) ─────────────────────────────────────────
+  ai: {
+    /** SSE streaming chat — use fetchEventSource or manual ReadableStream */
+    chatUrl: () => `/api/ai/chat`,
+
+    conversations: (params?: { limit?: number; offset?: number }) =>
+      http<{ data: AiConversation[] }>(`/api/ai/conversations${buildQs(params)}`),
+
+    conversation: (id: string) =>
+      http<{ data: AiConversation & { messages: AiMessage[] } }>(`/api/ai/conversations/${id}`),
+
+    deleteConversation: (id: string) =>
+      http<{ message: string }>(`/api/ai/conversations/${id}`, { method: 'DELETE' }),
+
+    usage: () =>
+      http<{ data: AiUsageStats }>('/api/ai/usage'),
+
+    modelStats: () =>
+      http<{ data: AiModelStat[] }>('/api/ai/model-stats'),
+
+    health: () =>
+      http<AiHealthResponse>('/api/ai/health'),
+
+    providerSettings: () =>
+      http<{ data: AiProviderSettings }>('/api/ai/provider-settings'),
+
+    test: (body?: { intent?: string; prompt?: string }) =>
+      http<{ success: boolean; message: string; model: string; tier: string; latency_ms: number }>('/api/ai/test', {
+        method: 'POST',
+        body: JSON.stringify(body || {}),
+      }),
+
+    generateWorkout: (params: AiWorkoutParams) =>
+      http<{ data: AiWorkoutPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/workout/generate', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+
+    generateDiet: (params: AiDietParams) =>
+      http<{ data: AiDietPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/diet/generate', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }),
+
+    analyzeProgress: (client_id: string) =>
+      http<{ data: AiProgressAnalysis; model: string; tier: string; used_fallback: boolean }>('/api/ai/progress/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ client_id }),
+      }),
+
+    businessInsights: (params?: { from?: string; to?: string }) =>
+      http<{ data: AiBusinessInsights; model: string; tier: string; used_fallback: boolean }>('/api/ai/business/insights', {
+        method: 'POST',
+        body: JSON.stringify(params || {}),
+      }),
+  },
+
+};
+
+// ── AI types ────────────────────────────────────────────────────────────────
+
+export type AiConversation = {
+  id: string;
+  title: string | null;
+  client_id: string | null;
+  last_message?: string | null;
+  message_count?: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AiMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  provider?: string;
+  created_at: string;
+};
+
+export type AiUsageStats = {
+  requests_this_hour: string;
+  requests_today: string;
+  tokens_today: string;
+  requests_30d: string;
+  tokens_30d: string;
+  fallback_count_30d: string;
+};
+
+export type AiModelStat = {
+  model: string;
+  provider: string;
+  intent_type: string;
+  requests: string;
+  tokens_total: string;
+  requests_today: string;
+  avg_latency_ms: number;
+  fallback_count: string;
+};
+
+export type AiHealthResponse = {
+  configured: boolean;
+  overall?: string;
+  models: {
+    primary:   { model: string; status: string; latency_ms?: number; error?: string };
+    secondary: { model: string; status: string; latency_ms?: number; error?: string };
+    fallback:  { model: string; status: string; latency_ms?: number; error?: string };
+  };
+};
+
+export type AiProviderSettings = {
+  provider: string;
+  configured: boolean;
+  base_url: string;
+  models: { primary: string; secondary: string; fallback: string };
+};
+
+export type AiWorkoutParams = {
+  age: number;
+  gender: string;
+  weight_kg: number;
+  height_cm: number;
+  goal: string;
+  experience_level: string;
+  injuries?: string;
+  equipment?: string;
+  training_days?: number;
+  duration_weeks?: number;
+  client_id?: string;
+};
+
+export type AiWorkoutExercise = {
+  name: string;
+  sets: number;
+  reps: string;
+  tempo: string;
+  rest_seconds: number;
+  notes?: string;
+};
+
+export type AiWorkoutDay = {
+  name: string;
+  focus: string;
+  exercises: AiWorkoutExercise[];
+};
+
+export type AiWorkoutPlan = {
+  name: string;
+  description: string;
+  goal: string;
+  level: string;
+  weeks: number;
+  days_per_week: number;
+  equipment: string[];
+  warm_up: string;
+  cool_down: string;
+  progression_notes: string;
+  weekly_schedule: Record<string, AiWorkoutDay>;
+  nutrition_notes: string;
+};
+
+export type AiDietParams = {
+  age: number;
+  gender: string;
+  weight_kg: number;
+  height_cm: number;
+  activity_level: string;
+  goal: string;
+  dietary_preferences?: string;
+  allergies?: string;
+  budget?: string;
+  meal_frequency?: number;
+  client_id?: string;
+};
+
+export type AiDietFood = {
+  name: string;
+  quantity: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+};
+
+export type AiDietMeal = {
+  name: string;
+  time: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  foods: AiDietFood[];
+};
+
+export type AiDietPlan = {
+  name: string;
+  description: string;
+  goal: string;
+  total_calories: number;
+  macros: { protein_g: number; carbs_g: number; fat_g: number };
+  meal_frequency: number;
+  meals: AiDietMeal[];
+  grocery_list: { category: string; items: string[] }[];
+  supplements: { name: string; dose: string; timing: string; reason: string }[];
+  hydration_ml: number;
+  notes: string;
+};
+
+export type AiProgressRisk = {
+  risk: string;
+  severity: 'low' | 'medium' | 'high';
+  action: string;
+};
+
+export type AiProgressRec = {
+  priority: number;
+  action: string;
+  rationale: string;
+};
+
+export type AiProgressAnalysis = {
+  summary: string;
+  period_analysed: string;
+  wins: string[];
+  weight_trend: { direction: string; change_kg: number; insight: string };
+  strength_trend: { direction: string; insight: string; highlight: string };
+  attendance_trend: { rate_pct: number; insight: string };
+  risks: AiProgressRisk[];
+  recommendations: AiProgressRec[];
+  next_month_strategy: string;
+  motivation_message: string;
+};
+
+export type AiBusinessInsights = {
+  summary: string;
+  period: string;
+  kpis: { mrr: number; retention_rate_pct: number; avg_session_utilisation_pct: number; revenue_per_trainer: number };
+  trends: { metric: string; direction: string; change_pct: number; insight: string }[];
+  opportunities: { opportunity: string; estimated_impact: string; effort: string }[];
+  risks: { risk: string; severity: string; recommended_action: string }[];
+  recommendations: { priority: number; action: string; rationale: string; timeframe: string }[];
+  executive_summary: string;
 };

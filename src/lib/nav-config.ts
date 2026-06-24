@@ -136,6 +136,18 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: 'ai-coach',
+    label: 'AI Suite',
+    icon: 'Bot',
+    items: [
+      { href: '/ai-coach',            label: 'AI Coach',           icon: 'Bot',        isNew: true },
+      { href: '/ai/workout-generator',label: 'Workout Generator',  icon: 'Dumbbell',   isNew: true },
+      { href: '/ai/diet-generator',   label: 'Diet Generator',     icon: 'Apple',      isNew: true },
+      { href: '/ai/progress-analysis',label: 'Progress Analyzer',  icon: 'TrendingUp', isNew: true },
+      { href: '/ai/business-insights',label: 'Business Insights',  icon: 'BarChart3',  isNew: true, roles: ['admin'] },
+    ],
+  },
+  {
     id: 'insights',
     label: 'Insights',
     icon: 'FileBarChart',

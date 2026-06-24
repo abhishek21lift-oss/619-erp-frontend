@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Search, X, CreditCard, Smartphone, MessageSquare, Send,
   Calendar, Camera, BarChart3, Loader2, Link2, Unlink,
-  Settings, Clock, CheckCircle2, RefreshCw,
+  Settings, Clock, CheckCircle2, RefreshCw, Bot, Activity,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -143,6 +143,100 @@ function ConnectModal({ integration, isConnected, onClose, onConnect, onDisconne
         </div>
       </motion.div>
     </div>
+  );
+}
+
+// ── OpenRouter AI Card (live status) ─────────────────────────────────────────
+type HealthModelInfo = { model: string; status: string; latency_ms?: number; error?: string };
+type HealthResult = { primary?: HealthModelInfo; secondary?: HealthModelInfo; fallback?: HealthModelInfo };
+
+function OpenRouterCard() {
+  const [settings, setSettings] = useState<{ configured: boolean; models?: { primary: string; secondary: string; fallback: string } } | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [health, setHealth]     = useState<HealthResult>({});
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    api.ai.providerSettings()
+      .then((res) => setSettings({ configured: res.data.configured, models: res.data.models }))
+      .catch(() => setSettings({ configured: false }))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const checkHealth = async () => {
+    setChecking(true);
+    try {
+      const res = await api.ai.health();
+      setHealth(res.models as HealthResult);
+    } catch {
+      // ignore
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const currentStatus: Status = loading ? 'pending' : settings?.configured ? 'connected' : 'unavailable';
+  const modelEntries: { label: string; key: keyof HealthResult; name?: string }[] = [
+    { label: 'Primary', key: 'primary', name: settings?.models?.primary },
+    { label: 'Secondary', key: 'secondary', name: settings?.models?.secondary },
+    { label: 'Fallback', key: 'fallback', name: settings?.models?.fallback },
+  ];
+
+  return (
+    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
+      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
+      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ff', color: '#8b5cf6' }}>
+          <Bot size={20} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>OpenRouter AI</span>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
+            Multi-model AI gateway powering coaching, workouts &amp; insights
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        {loading ? (
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={11} /></motion.span>
+            Checking…
+          </span>
+        ) : (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: sc[currentStatus] }}>
+            {settings?.configured ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: sc[currentStatus], display: 'inline-block' }} />}
+            {settings?.configured ? 'Configured' : 'Not Configured'}
+          </span>
+        )}
+      </div>
+
+      {settings?.configured && (
+        <div style={{ marginBottom: 14, fontSize: 11, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {modelEntries.filter((e) => e.name).map(({ label, key, name }) => {
+            const h = health[key];
+            return (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ minWidth: 58 }}>{label}:</span>
+                <code style={{ fontSize: 10, background: 'var(--bg-subtle)', padding: '1px 6px', borderRadius: 6, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</code>
+                {h && <span style={{ fontSize: 9, fontWeight: 700, color: h.status === 'ok' ? '#10b981' : '#ef4444' }}>{h.status === 'ok' ? '●' : '✕'}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <button
+        onClick={checkHealth}
+        disabled={checking || !settings?.configured}
+        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (checking || !settings?.configured) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: settings?.configured ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : 'var(--bg-subtle)', color: settings?.configured ? '#ffffff' : 'var(--text-disabled)', opacity: !settings?.configured ? 0.6 : 1, boxShadow: settings?.configured ? '0 4px 12px rgba(139,92,246,0.3)' : 'none' }}
+      >
+        {checking ? <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> : <Activity size={13} />}
+        {checking ? 'Checking…' : 'Check Model Health'}
+      </button>
+    </motion.div>
   );
 }
 
@@ -416,7 +510,10 @@ export default function IntegrationsPage() {
     const showCalendar =
       (category === 'all' || category === 'scheduling') &&
       (!search || 'google calendar'.includes(search.toLowerCase()) || 'sync sessions bookings'.includes(search.toLowerCase()));
-    return { staticFiltered, showCalendar };
+    const showOpenRouter =
+      (category === 'all' || category === 'ai') &&
+      (!search || 'openrouter ai'.includes(search.toLowerCase()) || 'coaching workout diet insights'.includes(search.toLowerCase()));
+    return { staticFiltered, showCalendar, showOpenRouter };
   }, [category, search]);
 
   const modalIntegration = modalId ? STATIC_INTEGRATIONS.find((i) => i.id === modalId) ?? null : null;
@@ -478,10 +575,13 @@ export default function IntegrationsPage() {
               {filtered.showCalendar && (
                 <GoogleCalendarCard key="calendar" flashSuccess={flashSuccess} />
               )}
+              {filtered.showOpenRouter && (
+                <OpenRouterCard key="openrouter" />
+              )}
             </AnimatePresence>
           </div>
 
-          {!filtered.staticFiltered.length && !filtered.showCalendar && (
+          {!filtered.staticFiltered.length && !filtered.showCalendar && !filtered.showOpenRouter && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ textAlign: 'center', padding: '60px 20px', ...glass, borderRadius: 20, marginTop: 16 }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>

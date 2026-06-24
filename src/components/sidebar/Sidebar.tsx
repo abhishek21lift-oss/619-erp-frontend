@@ -71,6 +71,7 @@ const GROUP_THEMES: Record<string, GroupTheme> = {
   'finance':             buildTheme('#14B8A6'),
   'communication':       buildTheme('#A855F7'),
   'subscription':        buildTheme('#F59E0B'),
+  'ai-coach':            buildTheme('#10A37F'),
   'insights':            buildTheme('#64748B'),
 };
 
