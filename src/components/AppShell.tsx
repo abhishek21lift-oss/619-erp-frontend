@@ -277,10 +277,11 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             transition: 'transform 0.32s cubic-bezier(0.32,0.72,0,1), border-radius 0.32s cubic-bezier(0.32,0.72,0,1), padding-left 300ms cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {/* Scoped backdrop — inside right column so it clips to border-radius and respects stacking context */}
+          {/* Scoped backdrop — starts below the header so the top bar stays fully visible */}
           <div
             className="absolute inset-0 z-50 lg:hidden"
             style={{
+              top: 'calc(56px + env(safe-area-inset-top, 0px))',
               background: 'rgba(7,5,16,0.45)',
               backdropFilter: 'blur(4px)',
               WebkitBackdropFilter: 'blur(4px)',

@@ -416,7 +416,7 @@ export default function Sidebar({
           'border-r border-[var(--sidebar-border)]',
         ],
         isMobile && [
-          'fixed inset-y-0 left-0 z-50 flex flex-col',
+          'fixed left-0 z-50 flex flex-col',
           'w-[240px]',
           'transition-transform duration-[320ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
@@ -424,9 +424,11 @@ export default function Sidebar({
       )}
       style={{
         background: 'linear-gradient(180deg, rgba(249,115,22,0.07) 0%, rgba(249,115,22,0.02) 18%, transparent 38%), linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-        paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : undefined,
+        paddingTop: isMobile ? '12px' : 'env(safe-area-inset-top, 0px)',
         willChange: isMobile ? 'transform' : undefined,
+        top: isMobile ? 'calc(56px + env(safe-area-inset-top, 0px))' : undefined,
+        bottom: isMobile ? 'calc(48px + env(safe-area-inset-bottom, 0px))' : undefined,
+        borderRadius: isMobile ? '0 12px 12px 0' : undefined,
         boxShadow: isMobile
           ? '6px 0 24px rgba(0,0,0,0.30), 2px 0 8px rgba(0,0,0,0.20)'
           : 'inset 0 0 0 1px rgba(167,139,250,0.05), 4px 0 24px rgba(0,0,0,0.35)',
