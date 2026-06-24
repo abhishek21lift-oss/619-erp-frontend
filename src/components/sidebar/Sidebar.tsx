@@ -427,7 +427,7 @@ export default function Sidebar({
         paddingTop: isMobile ? '12px' : 'env(safe-area-inset-top, 0px)',
         willChange: isMobile ? 'transform' : undefined,
         top: isMobile ? 'calc(56px + env(safe-area-inset-top, 0px))' : undefined,
-        bottom: isMobile ? 'calc(48px + env(safe-area-inset-bottom, 0px))' : undefined,
+        bottom: isMobile ? 'calc(72px + env(safe-area-inset-bottom, 0px))' : undefined,
         borderRadius: isMobile ? '0 12px 12px 0' : undefined,
         boxShadow: isMobile
           ? '6px 0 24px rgba(0,0,0,0.30), 2px 0 8px rgba(0,0,0,0.20)'

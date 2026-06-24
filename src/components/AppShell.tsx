@@ -295,35 +295,34 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
           <header
             className="sticky top-0 z-40"
             style={{
-              background: 'linear-gradient(135deg, #070510 0%, #0C0920 30%, #100D30 60%, #130F45 100%)',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-              boxShadow: '0 1px 0 rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.4)',
+              background: 'linear-gradient(135deg, #050816 0%, #0F172A 50%, #1E1B4B 100%)',
+              borderBottom: '1px solid rgba(212,175,55,0.12)',
+              boxShadow: '0 4px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(212,175,55,0.08)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
             }}
           >
-            {/* Top inner highlight */}
-            <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 70%, transparent 100%)' }} />
-            {/* Bottom accent glow line */}
-            <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(139,92,246,0.4) 20%, rgba(99,102,241,0.6) 45%, rgba(59,130,246,0.5) 70%, transparent 100%)' }} />
-            {/* Subtle noise texture overlay */}
-            <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: '150px 150px' }} />
+            {/* Gold top shimmer */}
+            <div className="absolute top-0 left-0 right-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.08) 25%, rgba(247,231,161,0.22) 50%, rgba(212,175,55,0.08) 75%, transparent 100%)' }} />
+            {/* Gold bottom accent line */}
+            <div className="absolute bottom-0 left-0 right-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.22) 20%, rgba(247,231,161,0.45) 50%, rgba(212,175,55,0.22) 80%, transparent 100%)' }} />
+            {/* Subtle noise texture */}
+            <div className="absolute inset-0 opacity-[0.018] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: '150px 150px' }} />
 
             <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
               {/* Mobile menu toggle */}
               <button type="button" aria-label="Open navigation menu" onClick={() => setMobileMenuOpen(true)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white/60 transition-colors hover:bg-white/10 hover:text-white lg:hidden">
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#6B7280] transition-all duration-200 hover:text-[#D4AF37] hover:bg-white/[0.06] lg:hidden">
                 <Menu size={17} strokeWidth={1.5} />
               </button>
 
               {/* ── Search ── */}
               <div ref={searchRef} className="relative flex-1 max-w-[360px] lg:max-w-[420px]">
                 <div className="group relative">
-                  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400 via-violet-500 to-cyan-400 p-[1.5px] opacity-50 transition-opacity duration-300 group-focus-within:opacity-100">
-                    <div className="h-full w-full rounded-2xl" style={{ background: 'rgba(15,12,41,0.7)' }} />
-                  </div>
                   <div className="relative flex items-center">
                     <Search size={14} strokeWidth={2}
-                      className="absolute left-3 z-10 text-white/40 transition-colors duration-200 group-focus-within:text-purple-300" />
+                      className="absolute left-3 z-10 text-[#6B7280] transition-colors duration-200 group-focus-within:text-[#D4AF37]" />
                     <input
                       ref={searchInputRef}
                       type="text"
@@ -332,11 +331,11 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                       onFocus={() => { if (searchQuery.trim()) setSearchOpen(searchResults.length > 0); }}
                       onKeyDown={handleSearchKeyDown}
                       placeholder="Search pages… (Ctrl K)"
-                      className="relative w-full rounded-2xl border border-white/10 bg-white/5 py-[7px] pl-9 pr-8 text-[12px] text-white outline-none transition-all duration-200 placeholder-white/30 focus:border-transparent focus:bg-white/10 focus:shadow-[0_0_0_1.5px_#a78bfa,0_8px_24px_rgba(167,139,250,0.2)]"
+                      className="relative w-full rounded-2xl border border-[rgba(212,175,55,0.2)] bg-[rgba(255,255,255,0.04)] py-[7px] pl-9 pr-8 text-[13px] text-[#F8FAFC] outline-none transition-all duration-300 placeholder:text-[#6B7280]/60 focus:border-[rgba(212,175,55,0.55)] focus:bg-[rgba(255,255,255,0.06)] focus:shadow-[0_0_25px_rgba(212,175,55,0.18)]"
                     />
                     {searchQuery && (
                       <button onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchOpen(false); }}
-                        className="absolute right-2.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-white/60 hover:bg-white/30 transition-colors">
+                        className="absolute right-2.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[#6B7280] hover:bg-[rgba(212,175,55,0.15)] hover:text-[#D4AF37] transition-all duration-200">
                         <X size={9} />
                       </button>
                     )}
@@ -367,20 +366,25 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                                   className={cn(
                                     'flex w-full items-center gap-3 px-4 py-2 text-left text-[13px] transition-all duration-100',
                                     isActive
-                                      ? 'bg-[var(--brand-soft)] text-[var(--brand)] pl-5'
+                                      ? 'bg-[rgba(212,175,55,0.08)] pl-5'
                                       : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:pl-5',
                                   )}
+                                  style={isActive ? { color: '#D4AF37' } : undefined}
                                 >
-                                  <span className={cn(
-                                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold text-white shadow-sm',
-                                    isActive
-                                      ? 'bg-gradient-to-br from-violet-500 to-indigo-600'
-                                      : 'bg-gradient-to-br from-[var(--brand-lo)] to-[var(--brand)]',
-                                  )}>
+                                  <span
+                                    className={cn(
+                                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold shadow-sm',
+                                      isActive ? 'text-[#050816]' : 'text-white',
+                                    )}
+                                    style={isActive
+                                      ? { background: 'linear-gradient(135deg, #D4AF37 0%, #F7E7A1 100%)' }
+                                      : { background: 'linear-gradient(135deg, var(--brand-lo), var(--brand))' }
+                                    }
+                                  >
                                     {r.label.charAt(0)}
                                   </span>
                                   <span className="font-medium flex-1">{r.label}</span>
-                                  {isActive && <ChevronRight size={12} className="text-[var(--brand)] opacity-70" />}
+                                  {isActive && <ChevronRight size={12} style={{ color: '#D4AF37', opacity: 0.8 }} />}
                                 </button>
                               );
                             })}
@@ -409,14 +413,14 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                   whileTap={{ scale: 0.95 }}
                   className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200"
                   style={{
-                    background: settingsOpen ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
-                    boxShadow: settingsOpen ? '0 4px 12px rgba(167,139,250,0.3)' : undefined,
+                    background: settingsOpen ? 'rgba(212,175,55,0.14)' : 'rgba(255,255,255,0.06)',
+                    boxShadow: settingsOpen ? '0 4px 16px rgba(212,175,55,0.22)' : undefined,
                   }}
                 >
                   <motion.div
                     animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className={settingsOpen ? 'text-purple-300' : 'text-white/60'}
+                    style={{ color: settingsOpen ? '#D4AF37' : '#6B7280' }}
                   >
                     <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} />
                   </motion.div>
@@ -428,7 +432,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_var(--brand-glow)]"
+                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.12)]"
                     >
                       <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">Settings</div>
                       <div className="pb-2">
@@ -462,7 +466,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                     boxShadow: notifOpen ? '0 4px 12px rgba(251,113,133,0.25)' : undefined,
                   }}
                 >
-                  <Bell size={16} strokeWidth={1.5} className={notifOpen ? 'text-rose-300' : 'text-white/60'} />
+                  <Bell size={16} strokeWidth={1.5} style={{ color: notifOpen ? '#fda4af' : '#6B7280' }} />
                   {unreadCount > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
@@ -562,16 +566,20 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
               {/* ── Profile dropdown ── */}
               <div ref={profileRef} className="relative">
                 <button onClick={() => setProfileOpen(s => !s)}
-                  className="flex items-center gap-2 border-l border-white/10 pl-3 transition-colors hover:opacity-80">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg shadow-[0_2px_6px_rgba(167,139,250,0.4)] overflow-hidden"
-                    style={{ background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)' }}>
+                  className="flex items-center gap-2.5 pl-3 transition-all duration-200 hover:opacity-90"
+                  style={{ borderLeft: '1px solid rgba(212,175,55,0.15)' }}>
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg overflow-hidden"
+                    style={{
+                      background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
+                      boxShadow: '0 0 0 1px rgba(212,175,55,0.25), 0 2px 8px rgba(0,0,0,0.3)',
+                    }}>
                     <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
                   </div>
                   <div className="hidden sm:block text-left">
-                    <p className="text-[12px] font-semibold leading-tight text-white">619 FITNESS STUDIO</p>
-                    <p className="text-[10px] leading-tight text-white/50 capitalize">{user?.role || '—'}</p>
+                    <p className="text-[12px] font-semibold leading-tight text-[#F8FAFC]">619 FITNESS STUDIO</p>
+                    <p className="text-[10px] leading-tight capitalize" style={{ color: '#6B7280' }}>{user?.role || '—'}</p>
                   </div>
-                  <ChevronDown size={12} strokeWidth={1.5} className="text-white/40 shrink-0" />
+                  <ChevronDown size={12} strokeWidth={1.5} className="shrink-0" style={{ color: '#6B7280' }} />
                 </button>
                 <AnimatePresence>
                   {profileOpen && (
@@ -580,12 +588,13 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_var(--brand-glow)]"
+                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.10)]"
                     >
                       <div className="px-3 py-2.5 border-b border-[var(--border)]">
                         <p className="text-[12px] font-semibold text-[var(--text-primary)]">{user?.name || 'Admin'}</p>
                         <p className="text-[10px] text-[var(--text-muted)]">{user?.email || '—'}</p>
-                        <span className="mt-1 inline-flex items-center rounded-full bg-[var(--brand-soft)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--brand)]">
+                        <span className="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                          style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>
                           {user?.role || 'admin'}
                         </span>
                       </div>
@@ -621,7 +630,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             </div>
           )}
 
-          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-20 pt-6 sm:px-6 lg:pb-8 lg:px-8">
+          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-24 pt-6 sm:px-6 lg:pb-8 lg:px-8">
             {title && (
               <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 {title}
