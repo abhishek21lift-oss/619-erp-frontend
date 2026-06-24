@@ -266,16 +266,26 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
         {/* Sidebar — mobile drawer */}
         <Sidebar variant="mobile" mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
 
-        {/* Mobile backdrop */}
+        {/* Mobile backdrop — dark-purple tint, no blur, so the app feels continuous */}
         <div onClick={() => setMobileMenuOpen(false)}
           className={cn(
-            'fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden',
+            'fixed inset-0 z-40 transition-opacity duration-300 lg:hidden',
             mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
           )}
+          style={{ background: 'rgba(7,5,16,0.72)' }}
         />
 
-        {/* Right column */}
-        <div className={cn('flex flex-1 flex-col min-w-0 overflow-x-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}>
+        {/* Right column — iOS-style push-back depth when mobile drawer is open */}
+        <div
+          className={cn('flex flex-1 flex-col min-w-0 overflow-x-hidden', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}
+          style={{
+            transform: mobileMenuOpen ? 'scale(0.94) translateX(14px)' : 'scale(1) translateX(0)',
+            transformOrigin: 'right center',
+            borderRadius: mobileMenuOpen ? '18px' : '0px',
+            overflow: mobileMenuOpen ? 'hidden' : undefined,
+            transition: 'transform 0.35s cubic-bezier(0.16,1,0.3,1), border-radius 0.35s ease, padding-left 300ms cubic-bezier(0.16,1,0.3,1)',
+          }}
+        >
           {/* ── Top header bar ── */}
           <header
             className="sticky top-0 z-40"
