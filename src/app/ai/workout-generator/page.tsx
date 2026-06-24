@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Dumbbell, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Flame, Clock, Target } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
-import { api } from '@/lib/api';
 import type { AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -36,6 +35,59 @@ const inputStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
   color: 'rgba(255,255,255,0.9)', outline: 'none', boxSizing: 'border-box',
 };
+
+function getApiBase() {
+  if (typeof window === 'undefined') return '';
+  const h = window.location.hostname;
+  return (h === 'localhost' || h === '127.0.0.1')
+    ? (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/+$/, '')
+    : '';
+}
+
+async function streamAiPost<T>(
+  path: string,
+  body: Record<string, unknown>,
+  onDone: (data: T, model: string, tier: string, usedFallback: boolean) => void,
+  onError: (msg: string) => void,
+): Promise<void> {
+  const res = await fetch(`${getApiBase()}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { const j = await res.json() as Record<string, string>; msg = j.message || j.error || msg; } catch { /* ignore */ }
+    onError(msg); return;
+  }
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  type SseEvent = { type: string; data?: T; model?: string; tier?: string; used_fallback?: boolean; message?: string };
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+        try {
+          const ev = JSON.parse(raw) as SseEvent;
+          if (ev.type === 'done' && ev.data) { onDone(ev.data, ev.model ?? '', ev.tier ?? '', ev.used_fallback ?? false); return; }
+          if (ev.type === 'error') { onError(ev.message ?? 'Generation failed'); return; }
+        } catch { /* skip malformed line */ }
+      }
+    }
+    onError('Connection closed before plan was generated — please retry');
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 const labelStyle: React.CSSProperties = {
   fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)',
@@ -115,15 +167,18 @@ export default function WorkoutGeneratorPage() {
     if (!form.age || !form.weight_kg || !form.height_cm) { setError('Age, weight and height are required.'); return; }
     setError(''); setLoading(true); setPlan(null); setMeta(null);
     try {
-      const res = await api.ai.generateWorkout({
-        age: parseInt(form.age), gender: form.gender,
-        weight_kg: parseFloat(form.weight_kg), height_cm: parseFloat(form.height_cm),
-        goal: form.goal, experience_level: form.experience_level,
-        injuries: form.injuries || undefined, equipment: form.equipment,
-        training_days: parseInt(form.training_days),
-      });
-      setPlan(res.data);
-      setMeta({ model: res.model, tier: res.tier, used_fallback: res.used_fallback });
+      await streamAiPost<AiWorkoutPlan>(
+        '/api/ai/workout/generate',
+        {
+          age: parseInt(form.age), gender: form.gender,
+          weight_kg: parseFloat(form.weight_kg), height_cm: parseFloat(form.height_cm),
+          goal: form.goal, experience_level: form.experience_level,
+          injuries: form.injuries || undefined, equipment: form.equipment,
+          training_days: parseInt(form.training_days),
+        },
+        (data, model, tier, usedFallback) => { setPlan(data); setMeta({ model, tier, used_fallback: usedFallback }); },
+        (msg) => setError(msg),
+      );
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to generate workout plan.');
     } finally { setLoading(false); }
