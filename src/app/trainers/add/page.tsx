@@ -207,30 +207,58 @@ export default function AddCoachPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
-  // ── Form state — every field bound to state and sent in payload ─────
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  // Step 1
+  const [firstName, setFirstName]           = useState('');
+  const [lastName, setLastName]             = useState('');
   // gender values must match DB CHECK constraint: 'Male'|'Female'|'Other'|null
-  const [gender, setGender] = useState('');
-  const [dob, setDob] = useState('');
-  const [joinDate, setJoinDate] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [stateField, setStateField] = useState('');
-  const [pinCode, setPinCode] = useState('');
-  const [experience, setExperience] = useState('');
-  const [notes, setNotes] = useState('');
+  const [gender, setGender]                 = useState('');
+  const [dob, setDob]                       = useState('');
+  const [joinDate, setJoinDate]             = useState('');
+  // Step 2
+  const [mobile, setMobile]                 = useState('');
+  const [altPhone, setAltPhone]             = useState('');
+  const [email, setEmail]                   = useState('');
+  const [emergencyName, setEmergencyName]   = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
+  const [address, setAddress]               = useState('');
+  const [city, setCity]                     = useState('');
+  const [stateField, setStateField]         = useState('');
+  const [pinCode, setPinCode]               = useState('');
+  // Step 3
+  const [experience, setExperience]         = useState('');
+  const [language, setLanguage]             = useState('');
+  const [bio, setBio]                       = useState('');
+  const [notes, setNotes]                   = useState('');
+  // Step 4
+  const [salaryType, setSalaryType]         = useState('');
   // salary stored in rupees (NUMERIC(12,2))
-  const [salary, setSalary] = useState('');
+  const [salary, setSalary]                 = useState('');
+  const [sessionRate, setSessionRate]       = useState('');
   // incentive_rate is a percentage (0-100); backend divides by 100 before DB storage
-  const [incentiveRate, setIncentiveRate] = useState('');
-  // Toggle fields are fully controlled so values are tracked
-  const [pfEsi, setPfEsi] = useState(false);
-  const [bonusEligible, setBonusEligible] = useState(true);
-  const [weekendAvail, setWeekendAvail] = useState(true);
+  const [incentiveRate, setIncentiveRate]   = useState('');
+  const [paymentFrequency, setPaymentFrequency] = useState('');
+  const [bank, setBank]                     = useState('');
+  const [accountNumber, setAccountNumber]   = useState('');
+  const [ifsc, setIfsc]                     = useState('');
+  const [pan, setPan]                       = useState('');
+  const [pfEsi, setPfEsi]                   = useState(false);
+  const [bonusEligible, setBonusEligible]   = useState(true);
+  // Step 5
+  const [shiftStart, setShiftStart]         = useState('');
+  const [shiftEnd, setShiftEnd]             = useState('');
+  const [maxSessions, setMaxSessions]       = useState('');
+  const [maxClients, setMaxClients]         = useState('');
+  const [weekendAvail, setWeekendAvail]     = useState(true);
   const [earlyMorningAvail, setEarlyMorningAvail] = useState(false);
+  // Step 6
+  const [monthlyClientTarget, setMonthlyClientTarget]   = useState('');
+  const [monthlyRevenueTarget, setMonthlyRevenueTarget] = useState('');
+  const [studioAccess, setStudioAccess]                 = useState('');
+  const [permManageClients, setPermManageClients]       = useState(true);
+  const [permViewFinancials, setPermViewFinancials]     = useState(false);
+  const [permAttendance, setPermAttendance]             = useState(true);
+  const [permContent, setPermContent]                   = useState(false);
+  const [permLeaveApproval, setPermLeaveApproval]       = useState(false);
 
   const current = STEPS[step - 1];
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
@@ -286,9 +314,40 @@ export default function AddCoachPage() {
         salary:         salary ? parseFloat(salary) : null,
         // incentive_rate as a percentage; backend converts it (÷100) before storing
         incentive_rate: incentiveRate ? parseFloat(incentiveRate) : null,
+        bio:            bio || null,
         notes:          notes || null,
         // schedule: comma-separated working days stored in the schedule TEXT column
-        schedule:       workDays.length > 0 ? workDays.join(',') : null,
+        schedule:       workDays.length > 0 ? workDays.join(', ') : null,
+        metadata: {
+          alternate_phone:          altPhone || null,
+          emergency_contact_name:   emergencyName || null,
+          emergency_contact_phone:  emergencyPhone || null,
+          primary_language:         language || null,
+          experience_years:         experience ? parseInt(experience, 10) : null,
+          salary_type:              salaryType || null,
+          session_rate:             sessionRate ? parseFloat(sessionRate) : null,
+          payment_frequency:        paymentFrequency || null,
+          bank:                     bank || null,
+          account_number:           accountNumber || null,
+          ifsc_code:                ifsc || null,
+          pan_number:               pan || null,
+          include_pf_esi:           pfEsi,
+          bonus_eligible:           bonusEligible,
+          shift_start:              shiftStart || null,
+          shift_end:                shiftEnd || null,
+          max_sessions_per_day:     maxSessions ? parseInt(maxSessions, 10) : null,
+          max_clients:              maxClients ? parseInt(maxClients, 10) : null,
+          weekend_available:        weekendAvail,
+          early_morning_available:  earlyMorningAvail,
+          monthly_client_target:    monthlyClientTarget ? parseInt(monthlyClientTarget, 10) : null,
+          monthly_revenue_target:   monthlyRevenueTarget ? parseFloat(monthlyRevenueTarget) : null,
+          studio_access_level:      studioAccess || null,
+          perm_manage_clients:      permManageClients,
+          perm_view_financials:     permViewFinancials,
+          perm_attendance:          permAttendance,
+          perm_content:             permContent,
+          perm_leave_approval:      permLeaveApproval,
+        },
       });
       router.push('/trainers');
     } catch (err: unknown) {
@@ -296,7 +355,17 @@ export default function AddCoachPage() {
     } finally {
       setSubmitting(false);
     }
-  }, [firstName, lastName, mobile, email, dob, gender, joinDate, address, city, stateField, pinCode, specs, certs, salary, incentiveRate, notes, workDays, router]);
+  }, [
+    firstName, lastName, mobile, email, dob, gender, joinDate,
+    address, city, stateField, pinCode, specs, certs,
+    salary, incentiveRate, bio, notes, workDays,
+    altPhone, emergencyName, emergencyPhone, language, experience,
+    salaryType, sessionRate, paymentFrequency, bank, accountNumber, ifsc, pan, pfEsi, bonusEligible,
+    shiftStart, shiftEnd, maxSessions, maxClients, weekendAvail, earlyMorningAvail,
+    monthlyClientTarget, monthlyRevenueTarget, studioAccess,
+    permManageClients, permViewFinancials, permAttendance, permContent, permLeaveApproval,
+    router,
+  ]);
 
   const stepContent: Record<number, React.ReactNode> = {
     1: (
@@ -330,11 +399,11 @@ export default function AddCoachPage() {
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Phone Number" type="tel" required value={mobile} onChange={setMobile} />
-          <Input label="Alternate Phone" type="tel" />
+          <Input label="Alternate Phone" type="tel" value={altPhone} onChange={setAltPhone} />
         </div>
         <Input label="Email Address" type="email" required value={email} onChange={setEmail} />
-        <Input label="Emergency Contact Name" />
-        <Input label="Emergency Contact Phone" type="tel" />
+        <Input label="Emergency Contact Name" value={emergencyName} onChange={setEmergencyName} />
+        <Input label="Emergency Contact Phone" type="tel" value={emergencyPhone} onChange={setEmergencyPhone} />
         <Input label="Address Line 1" value={address} onChange={setAddress} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Input label="City" value={city} onChange={setCity} />
@@ -355,31 +424,31 @@ export default function AddCoachPage() {
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Years of Experience" type="number" value={experience} onChange={setExperience} />
-          <Select label="Primary Language" options={['Hindi', 'English', 'Both']} />
+          <Select label="Primary Language" options={['Hindi', 'English', 'Both']} value={language} onChange={setLanguage} />
         </div>
-        <Input label="Bio / About Coach" value={notes} onChange={setNotes} />
+        <Input label="Bio / About Coach" value={bio} onChange={setBio} />
         <DragDropUpload label="Certification Documents" accept=".pdf,.jpg,.png" />
       </div>
     ),
     4: (
       <div className="space-y-4">
-        <Select label="Salary Type" options={['Fixed Monthly', 'Per Session', 'Revenue Share', 'Hybrid']} />
+        <Select label="Salary Type" options={['Fixed Monthly', 'Per Session', 'Revenue Share', 'Hybrid']} value={salaryType} onChange={setSalaryType} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Base Salary (₹)" type="number" value={salary} onChange={setSalary} />
-          <Input label="Session Rate (₹)" type="number" />
+          <Input label="Session Rate (₹)" type="number" value={sessionRate} onChange={setSessionRate} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {/* Incentive Rate % — sent as-is; backend divides by 100 before DB storage */}
           <Input label="Revenue Share %" type="number" value={incentiveRate} onChange={setIncentiveRate} />
-          <Select label="Payment Frequency" options={['Monthly', 'Bi-Weekly', 'Weekly']} />
+          <Select label="Payment Frequency" options={['Monthly', 'Bi-Weekly', 'Weekly']} value={paymentFrequency} onChange={setPaymentFrequency} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Select label="Bank" options={['SBI', 'HDFC', 'ICICI', 'Axis', 'Kotak', 'Other']} />
-          <Input label="Account Number" />
+          <Select label="Bank" options={['SBI', 'HDFC', 'ICICI', 'Axis', 'Kotak', 'Other']} value={bank} onChange={setBank} />
+          <Input label="Account Number" value={accountNumber} onChange={setAccountNumber} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="IFSC Code" />
-          <Input label="PAN Number" />
+          <Input label="IFSC Code" value={ifsc} onChange={setIfsc} />
+          <Input label="PAN Number" value={pan} onChange={setPan} />
         </div>
         {/* Fully controlled ToggleSwitches */}
         <ToggleSwitch label="Include PF / ESI" sublabel="Statutory deductions applicable" checked={pfEsi} onChange={setPfEsi} />
@@ -389,8 +458,8 @@ export default function AddCoachPage() {
     5: (
       <div className="space-y-5">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Shift Start Time" type="time" />
-          <Input label="Shift End Time" type="time" />
+          <Input label="Shift Start Time" type="time" value={shiftStart} onChange={setShiftStart} />
+          <Input label="Shift End Time" type="time" value={shiftEnd} onChange={setShiftEnd} />
         </div>
         <div>
           <p className="mb-2.5 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>Working Days</p>
@@ -409,25 +478,29 @@ export default function AddCoachPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Max Sessions / Day" type="number" />
-          <Input label="Max Clients" type="number" />
+          <Input label="Max Sessions / Day" type="number" value={maxSessions} onChange={setMaxSessions} />
+          <Input label="Max Clients" type="number" value={maxClients} onChange={setMaxClients} />
         </div>
-        <ToggleSwitch label="Available for Weekends" sublabel="Saturday & Sunday availability" checked={weekendAvail} onChange={setWeekendAvail} />
-        <ToggleSwitch label="Available for Early Morning" sublabel="Before 7:00 AM shifts" checked={earlyMorningAvail} onChange={setEarlyMorningAvail} />
+        <div className="space-y-2.5">
+          <ToggleSwitch label="Available for Weekends" sublabel="Saturday & Sunday availability" checked={weekendAvail} onChange={setWeekendAvail} />
+          <ToggleSwitch label="Available for Early Morning" sublabel="Before 7:00 AM shifts" checked={earlyMorningAvail} onChange={setEarlyMorningAvail} />
+        </div>
       </div>
     ),
     6: (
       <div className="space-y-4">
-        <Input label="Monthly Client Target" type="number" />
-        <Input label="Monthly Revenue Target (₹)" type="number" />
-        <Select label="Studio Access Level" options={['Full Access', 'Floor Only', 'Limited Hours', 'Custom']} />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Input label="Monthly Client Target" type="number" value={monthlyClientTarget} onChange={setMonthlyClientTarget} />
+          <Input label="Monthly Revenue Target (₹)" type="number" value={monthlyRevenueTarget} onChange={setMonthlyRevenueTarget} />
+        </div>
+        <Select label="Studio Access Level" options={['Full Access', 'Floor Only', 'Limited Hours', 'Custom']} value={studioAccess} onChange={setStudioAccess} />
         <div className="space-y-2">
           <p className="text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>Studio Permissions</p>
-          <ToggleSwitch label="Manage Own Clients" sublabel="Add/remove client assignments" checked={true} onChange={function() {}} />
-          <ToggleSwitch label="View Financial Data" sublabel="Revenue and payment reports" checked={false} onChange={function() {}} />
-          <ToggleSwitch label="Attendance Management" sublabel="Mark and edit attendance" checked={true} onChange={function() {}} />
-          <ToggleSwitch label="Content Publishing" sublabel="Post to engagement channels" checked={false} onChange={function() {}} />
-          <ToggleSwitch label="Leave Self-Approval" sublabel="Approve own leave requests" checked={false} onChange={function() {}} />
+          <ToggleSwitch label="Manage Own Clients" sublabel="Add/remove client assignments" checked={permManageClients} onChange={setPermManageClients} />
+          <ToggleSwitch label="View Financial Data" sublabel="Revenue and payment reports" checked={permViewFinancials} onChange={setPermViewFinancials} />
+          <ToggleSwitch label="Attendance Management" sublabel="Mark and edit attendance" checked={permAttendance} onChange={setPermAttendance} />
+          <ToggleSwitch label="Content Publishing" sublabel="Post to engagement channels" checked={permContent} onChange={setPermContent} />
+          <ToggleSwitch label="Leave Self-Approval" sublabel="Approve own leave requests" checked={permLeaveApproval} onChange={setPermLeaveApproval} />
         </div>
         <DragDropUpload label="Identity Documents (Aadhaar / PAN)" accept=".pdf,.jpg,.png" />
       </div>
