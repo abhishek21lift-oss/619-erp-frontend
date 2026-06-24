@@ -152,10 +152,12 @@ type HealthResult = { primary?: HealthModelInfo; secondary?: HealthModelInfo; fa
 
 function OpenRouterCard() {
   const [settings, setSettings] = useState<{ configured: boolean; models?: { primary: string; secondary: string; fallback: string } } | null>(null);
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading]     = useState(true);
   const [callError, setCallError] = useState(false);
-  const [health, setHealth]     = useState<HealthResult>({});
-  const [checking, setChecking] = useState(false);
+  const [health, setHealth]       = useState<HealthResult>({});
+  const [checking, setChecking]   = useState(false);
+  const [healthError, setHealthError] = useState<string | null>(null);
+  const [checkedAt, setCheckedAt]   = useState<string | null>(null);
 
   useEffect(() => {
     api.ai.providerSettings()
@@ -166,11 +168,14 @@ function OpenRouterCard() {
 
   const checkHealth = async () => {
     setChecking(true);
+    setHealthError(null);
     try {
       const res = await api.ai.health();
       setHealth(res.models as HealthResult);
-    } catch {
-      // ignore
+      setCheckedAt(new Date().toLocaleTimeString());
+    } catch (e: unknown) {
+      setHealthError(e instanceof Error ? e.message : 'Health check failed — check your API key and model IDs');
+      setCheckedAt(new Date().toLocaleTimeString());
     } finally {
       setChecking(false);
     }
@@ -178,10 +183,13 @@ function OpenRouterCard() {
 
   const currentStatus: Status = loading ? 'pending' : (callError ? 'pending' : (settings?.configured ? 'connected' : 'unavailable'));
   const modelEntries: { label: string; key: keyof HealthResult; name?: string }[] = [
-    { label: 'Primary', key: 'primary', name: settings?.models?.primary },
+    { label: 'Primary',   key: 'primary',   name: settings?.models?.primary },
     { label: 'Secondary', key: 'secondary', name: settings?.models?.secondary },
-    { label: 'Fallback', key: 'fallback', name: settings?.models?.fallback },
+    { label: 'Fallback',  key: 'fallback',  name: settings?.models?.fallback },
   ];
+
+  const healthValues = Object.values(health) as HealthModelInfo[];
+  const okCount = healthValues.filter((h) => h.status === 'ok').length;
 
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
@@ -215,17 +223,49 @@ function OpenRouterCard() {
       </div>
 
       {settings?.configured && (
-        <div style={{ marginBottom: 14, fontSize: 11, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ marginBottom: 14, fontSize: 11, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {modelEntries.filter((e) => e.name).map(({ label, key, name }) => {
             const h = health[key];
+            const isError = h && h.status !== 'ok';
             return (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ minWidth: 58 }}>{label}:</span>
-                <code style={{ fontSize: 10, background: 'var(--bg-subtle)', padding: '1px 6px', borderRadius: 6, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</code>
-                {h && <span style={{ fontSize: 9, fontWeight: 700, color: h.status === 'ok' ? '#10b981' : '#ef4444' }}>{h.status === 'ok' ? '●' : '✕'}</span>}
+              <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ minWidth: 58 }}>{label}:</span>
+                  <code style={{ fontSize: 10, background: 'var(--bg-subtle)', padding: '1px 6px', borderRadius: 6, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</code>
+                  {h && (
+                    <span style={{ fontSize: 9, fontWeight: 700, flexShrink: 0, color: h.status === 'ok' ? '#10b981' : '#ef4444' }}>
+                      {h.status === 'ok' ? `● ${h.latency_ms}ms` : '✕'}
+                    </span>
+                  )}
+                </div>
+                {isError && h.error && (
+                  <div style={{ paddingLeft: 66, fontSize: 10, color: '#ef4444', lineHeight: 1.3, wordBreak: 'break-all' }}>
+                    {h.error.slice(0, 120)}
+                  </div>
+                )}
               </div>
             );
           })}
+        </div>
+      )}
+
+      {checkedAt && !healthError && (
+        <div style={{ marginBottom: 10, padding: '6px 10px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+          background: okCount === healthValues.length ? '#d1fae5' : okCount > 0 ? '#fef3c7' : '#fee2e2',
+          color:      okCount === healthValues.length ? '#065f46' : okCount > 0 ? '#92400e' : '#991b1b' }}>
+          {okCount === healthValues.length
+            ? `All ${okCount} models healthy`
+            : okCount > 0
+            ? `${okCount} / ${healthValues.length} models healthy — check errors above`
+            : `All models failed — verify model IDs and API key`}
+          <span style={{ float: 'right', fontWeight: 400, opacity: 0.7 }}>{checkedAt}</span>
+        </div>
+      )}
+
+      {healthError && (
+        <div style={{ marginBottom: 10, padding: '6px 10px', borderRadius: 8, fontSize: 11, background: '#fee2e2', color: '#991b1b' }}>
+          {healthError}
+          <span style={{ float: 'right', fontWeight: 400, opacity: 0.7 }}>{checkedAt}</span>
         </div>
       )}
 
@@ -235,7 +275,7 @@ function OpenRouterCard() {
         style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (checking || !settings?.configured) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: settings?.configured ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : 'var(--bg-subtle)', color: settings?.configured ? '#ffffff' : 'var(--text-disabled)', opacity: !settings?.configured ? 0.6 : 1, boxShadow: settings?.configured ? '0 4px 12px rgba(139,92,246,0.3)' : 'none' }}
       >
         {checking ? <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> : <Activity size={13} />}
-        {checking ? 'Checking…' : 'Check Model Health'}
+        {checking ? 'Pinging models…' : 'Check Model Health'}
       </button>
     </motion.div>
   );
