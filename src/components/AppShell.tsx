@@ -291,25 +291,25 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
           <header
             className="sticky top-0 z-40"
             style={{
-              background: 'linear-gradient(135deg, #050816 0%, #0F172A 50%, #1E1B4B 100%)',
-              borderBottom: '1px solid rgba(212,175,55,0.12)',
-              boxShadow: '0 4px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(212,175,55,0.08)',
-              backdropFilter: 'blur(30px)',
-              WebkitBackdropFilter: 'blur(30px)',
+              background: 'linear-gradient(135deg, rgba(255,176,0,0.92) 0%, rgba(255,143,0,0.92) 50%, rgba(230,106,0,0.92) 100%)',
+              borderBottom: '1px solid rgba(255,255,255,0.15)',
+              boxShadow: '0 8px 30px rgba(255,176,0,0.25)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
             }}
           >
-            {/* Gold top shimmer */}
-            <div className="absolute top-0 left-0 right-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.08) 25%, rgba(247,231,161,0.22) 50%, rgba(212,175,55,0.08) 75%, transparent 100%)' }} />
-            {/* Gold bottom accent line */}
-            <div className="absolute bottom-0 left-0 right-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.22) 20%, rgba(247,231,161,0.45) 50%, rgba(212,175,55,0.22) 80%, transparent 100%)' }} />
+            {/* Saffron top shimmer */}
+            <div className="absolute top-0 left-0 right-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.08) 75%, transparent 100%)' }} />
+            {/* Saffron bottom accent line */}
+            <div className="absolute bottom-0 left-0 right-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 20%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.18) 80%, transparent 100%)' }} />
             {/* Subtle noise texture */}
             <div className="absolute inset-0 opacity-[0.018] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: '150px 150px' }} />
 
             <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
               {/* Mobile menu toggle */}
               <button type="button" aria-label="Open navigation menu" onClick={() => setMobileMenuOpen(true)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#6B7280] transition-all duration-200 hover:text-[#D4AF37] hover:bg-white/[0.06] lg:hidden">
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/80 transition-all duration-200 hover:text-white hover:bg-white/[0.15] lg:hidden">
                 <Menu size={17} strokeWidth={1.5} />
               </button>
 
@@ -318,7 +318,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                 <div className="group relative">
                   <div className="relative flex items-center">
                     <Search size={14} strokeWidth={2}
-                      className="absolute left-3 z-10 text-[#6B7280] transition-colors duration-200 group-focus-within:text-[#D4AF37]" />
+                      className="absolute left-3 z-10 text-white/60 transition-colors duration-200 group-focus-within:text-white" />
                     <input
                       ref={searchInputRef}
                       type="text"
@@ -327,11 +327,11 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                       onFocus={() => { if (searchQuery.trim()) setSearchOpen(searchResults.length > 0); }}
                       onKeyDown={handleSearchKeyDown}
                       placeholder="Search pages… (Ctrl K)"
-                      className="relative w-full rounded-2xl border border-[rgba(212,175,55,0.2)] bg-[rgba(255,255,255,0.04)] py-[7px] pl-9 pr-8 text-[13px] text-[#F8FAFC] outline-none transition-all duration-300 placeholder:text-[#6B7280]/60 focus:border-[rgba(212,175,55,0.55)] focus:bg-[rgba(255,255,255,0.06)] focus:shadow-[0_0_25px_rgba(212,175,55,0.18)]"
+                      className="relative w-full rounded-2xl border border-white/25 bg-white/10 py-[7px] pl-9 pr-8 text-[13px] text-white outline-none transition-all duration-300 placeholder:text-white/50 focus:border-white/60 focus:bg-white/15 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
                     />
                     {searchQuery && (
                       <button onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchOpen(false); }}
-                        className="absolute right-2.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-white/10 text-[#6B7280] hover:bg-[rgba(212,175,55,0.15)] hover:text-[#D4AF37] transition-all duration-200">
+                        className="absolute right-2.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-white/15 text-white/70 hover:bg-white/25 hover:text-white transition-all duration-200">
                         <X size={9} />
                       </button>
                     )}
@@ -409,14 +409,14 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                   whileTap={{ scale: 0.95 }}
                   className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200"
                   style={{
-                    background: settingsOpen ? 'rgba(212,175,55,0.14)' : 'rgba(255,255,255,0.06)',
-                    boxShadow: settingsOpen ? '0 4px 16px rgba(212,175,55,0.22)' : undefined,
+                    background: settingsOpen ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.10)',
+                    boxShadow: settingsOpen ? '0 4px 16px rgba(255,255,255,0.20)' : undefined,
                   }}
                 >
                   <motion.div
                     animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    style={{ color: settingsOpen ? '#D4AF37' : '#6B7280' }}
+                    style={{ color: settingsOpen ? '#FFFFFF' : 'rgba(255,255,255,0.80)' }}
                   >
                     <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} />
                   </motion.div>
@@ -458,11 +458,11 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                   whileTap={{ scale: 0.95 }}
                   className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200"
                   style={{
-                    background: notifOpen ? 'rgba(251,113,133,0.15)' : 'rgba(255,255,255,0.06)',
-                    boxShadow: notifOpen ? '0 4px 12px rgba(251,113,133,0.25)' : undefined,
+                    background: notifOpen ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.10)',
+                    boxShadow: notifOpen ? '0 4px 12px rgba(255,255,255,0.20)' : undefined,
                   }}
                 >
-                  <Bell size={16} strokeWidth={1.5} style={{ color: notifOpen ? '#fda4af' : '#6B7280' }} />
+                  <Bell size={16} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.85)' }} />
                   {unreadCount > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
@@ -563,19 +563,19 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
               <div ref={profileRef} className="relative">
                 <button onClick={() => setProfileOpen(s => !s)}
                   className="flex items-center gap-2.5 pl-3 transition-all duration-200 hover:opacity-90"
-                  style={{ borderLeft: '1px solid rgba(212,175,55,0.15)' }}>
+                  style={{ borderLeft: '1px solid rgba(255,255,255,0.20)' }}>
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg overflow-hidden"
                     style={{
                       background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
-                      boxShadow: '0 0 0 1px rgba(212,175,55,0.25), 0 2px 8px rgba(0,0,0,0.3)',
+                      boxShadow: '0 0 0 1.5px rgba(255,255,255,0.30), 0 2px 8px rgba(0,0,0,0.20)',
                     }}>
                     <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
                   </div>
                   <div className="hidden sm:block text-left">
-                    <p className="text-[12px] font-semibold leading-tight text-[#F8FAFC]">619 FITNESS STUDIO</p>
-                    <p className="text-[10px] leading-tight capitalize" style={{ color: '#6B7280' }}>{user?.role || '—'}</p>
+                    <p className="text-[12px] font-semibold leading-tight text-white">619 FITNESS STUDIO</p>
+                    <p className="text-[10px] leading-tight capitalize" style={{ color: 'rgba(255,255,255,0.70)' }}>{user?.role || '—'}</p>
                   </div>
-                  <ChevronDown size={12} strokeWidth={1.5} className="shrink-0" style={{ color: '#6B7280' }} />
+                  <ChevronDown size={12} strokeWidth={1.5} className="shrink-0" style={{ color: 'rgba(255,255,255,0.70)' }} />
                 </button>
                 <AnimatePresence>
                   {profileOpen && (

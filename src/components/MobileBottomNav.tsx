@@ -99,11 +99,11 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
         <div
           className="overflow-hidden rounded-2xl"
           style={{
-            background: 'rgba(5,8,22,0.92)',
-            backdropFilter: 'blur(30px)',
-            WebkitBackdropFilter: 'blur(30px)',
-            border: '1px solid rgba(212,175,55,0.12)',
-            boxShadow: '0 -8px 32px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(212,175,55,0.05)',
+            background: 'linear-gradient(135deg, #FF9E00 0%, #F57C00 55%, #E65100 100%)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            boxShadow: '0 -10px 30px rgba(255,140,0,0.20), 0 4px 20px rgba(0,0,0,0.12)',
           }}
         >
           <div className="flex h-[60px] items-stretch">
@@ -123,8 +123,8 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                       layoutId="gold-nav-pill"
                       className="absolute inset-x-2 inset-y-[7px] rounded-xl"
                       style={{
-                        background: 'linear-gradient(135deg, #D4AF37 0%, #F7E7A1 100%)',
-                        boxShadow: '0 0 24px rgba(212,175,55,0.40)',
+                        background: 'linear-gradient(135deg, #FFF3C4 0%, #FFE082 100%)',
+                        boxShadow: '0 6px 20px rgba(255,176,0,0.35)',
                       }}
                       transition={{ type: 'spring', stiffness: 520, damping: 38, mass: 0.7 }}
                     />
@@ -137,12 +137,12 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                     <Icon
                       size={17}
                       strokeWidth={isActive ? 2.5 : 1.5}
-                      style={{ color: isActive ? '#050816' : '#6B7280' }}
+                      style={{ color: isActive ? '#C25A00' : 'rgba(255,255,255,0.80)' }}
                     />
                   </motion.div>
                   <span
                     className="relative z-10 text-[9px] font-bold tracking-[0.05em] uppercase leading-none"
-                    style={{ color: isActive ? '#050816' : '#6B7280' }}
+                    style={{ color: isActive ? '#7A3900' : 'rgba(255,255,255,0.80)' }}
                   >
                     {label}
                   </span>

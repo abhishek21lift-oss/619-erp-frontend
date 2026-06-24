@@ -37,6 +37,14 @@
   --gold-soft:     rgba(245,158,11,0.10);
   --gold-glow:     rgba(245,158,11,0.18);
 
+  /* ── Saffron ─────────────────────────────────────────────── */
+  --saffron-50:  #FFFBEB;
+  --saffron-100: #FEF3C7;
+  --saffron-300: #FCD34D;
+  --saffron-500: #F59E0B;
+  --saffron-700: #B45309;
+  --saffron-900: #78350F;
+
   /* ── Accent (purple) ───────────────────────────────────────── */
   --accent:        #8B5CF6;
   --accent-hi:     #A855F7;
