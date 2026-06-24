@@ -266,28 +266,24 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
         {/* Sidebar — mobile drawer */}
         <Sidebar variant="mobile" mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
 
-        {/* Right column — iOS-style push-back depth when mobile drawer is open */}
+        {/* Right column — blur overlay when mobile drawer is open */}
         <div
           className={cn('relative flex flex-1 flex-col min-w-0 overflow-x-hidden', sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64 xl:pl-72')}
           style={{
-            transform: mobileMenuOpen ? 'scale(0.93) translateX(6px)' : 'scale(1) translateX(0)',
-            transformOrigin: 'right center',
-            borderRadius: mobileMenuOpen ? '16px' : '0px',
-            overflow: mobileMenuOpen ? 'hidden' : undefined,
-            transition: 'transform 0.32s cubic-bezier(0.32,0.72,0,1), border-radius 0.32s cubic-bezier(0.32,0.72,0,1), padding-left 300ms cubic-bezier(0.16,1,0.3,1)',
+            isolation: 'isolate',
+            transition: 'padding-left 300ms cubic-bezier(0.16,1,0.3,1)',
           }}
         >
-          {/* Scoped backdrop — starts below the header so the top bar stays fully visible */}
+          {/* Scoped blur overlay — background stays in place, only blurs + dims */}
           <div
             className="absolute inset-0 z-50 lg:hidden"
             style={{
-              top: '0',
-              background: 'rgba(7,5,16,0.45)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
+              background: 'rgba(5,8,22,0.50)',
+              backdropFilter: mobileMenuOpen ? 'blur(12px)' : 'blur(0px)',
+              WebkitBackdropFilter: mobileMenuOpen ? 'blur(12px)' : 'blur(0px)',
               opacity: mobileMenuOpen ? 1 : 0,
               pointerEvents: mobileMenuOpen ? 'auto' : 'none',
-              transition: 'opacity 0.32s cubic-bezier(0.32,0.72,0,1)',
+              transition: 'opacity 0.32s cubic-bezier(0.32,0.72,0,1), backdrop-filter 0.32s cubic-bezier(0.32,0.72,0,1)',
             }}
             onClick={() => setMobileMenuOpen(false)}
           />
