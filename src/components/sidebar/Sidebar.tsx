@@ -342,6 +342,7 @@ export default function Sidebar({
   return (
     <aside
       data-sidebar={variant}
+      data-theme="dark"
       onMouseEnter={!isMobile ? handleMouseEnter : undefined}
       onMouseLeave={!isMobile ? handleMouseLeave : undefined}
       className={cn(
@@ -349,19 +350,21 @@ export default function Sidebar({
           'fixed inset-y-0 left-0 z-40 hidden flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
           'lg:flex',
           collapsed ? 'w-16' : 'w-64 xl:w-72',
-          'bg-[var(--sidebar-bg)] backdrop-blur-[24px] saturate-[180%]',
           'border-r border-[var(--sidebar-border)]',
-          'shadow-[0_0_0_1px_rgba(255,255,255,0.6)_inset,0_16px_48px_rgba(11,11,15,0.08)]',
-          'dark:shadow-[0_0_0_1px_rgba(255,255,255,0.03)_inset,0_16px_48px_rgba(0,0,0,0.3)]',
         ],
         isMobile && [
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col shadow-2xl',
+          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col',
           'transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
-          'bg-[var(--sidebar-bg)] backdrop-blur-[24px]',
           'border-r border-[var(--sidebar-border)]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ],
       )}
+      style={{
+        background: 'linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
+        boxShadow: isMobile
+          ? '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(167,139,250,0.06)'
+          : 'inset 0 0 0 1px rgba(167,139,250,0.06), 4px 0 24px rgba(0,0,0,0.4)',
+      }}
     >
       {/* Brand header */}
       <div className={cn('relative shrink-0', collapsed ? 'px-3 pb-2 pt-4' : 'px-5 pb-3 pt-6')}>
