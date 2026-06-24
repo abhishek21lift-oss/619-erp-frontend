@@ -424,11 +424,12 @@ export default function Sidebar({
       )}
       style={{
         background: 'linear-gradient(180deg, rgba(249,115,22,0.07) 0%, rgba(249,115,22,0.02) 18%, transparent 38%), linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
-        paddingTop: isMobile ? '12px' : 'env(safe-area-inset-top, 0px)',
+        paddingTop: isMobile ? 'calc(12px + env(safe-area-inset-top, 0px))' : 'env(safe-area-inset-top, 0px)',
+        paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : undefined,
         willChange: isMobile ? 'transform' : undefined,
-        top: isMobile ? 'calc(56px + env(safe-area-inset-top, 0px))' : undefined,
-        bottom: isMobile ? 'calc(72px + env(safe-area-inset-bottom, 0px))' : undefined,
-        borderRadius: isMobile ? '0 12px 12px 0' : undefined,
+        top: isMobile ? '0' : undefined,
+        bottom: isMobile ? '0' : undefined,
+        borderRadius: isMobile ? '0 16px 16px 0' : undefined,
         boxShadow: isMobile
           ? '6px 0 24px rgba(0,0,0,0.30), 2px 0 8px rgba(0,0,0,0.20)'
           : 'inset 0 0 0 1px rgba(167,139,250,0.05), 4px 0 24px rgba(0,0,0,0.35)',

@@ -281,7 +281,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
           <div
             className="absolute inset-0 z-50 lg:hidden"
             style={{
-              top: 'calc(56px + env(safe-area-inset-top, 0px))',
+              top: '0',
               background: 'rgba(7,5,16,0.45)',
               backdropFilter: 'blur(4px)',
               WebkitBackdropFilter: 'blur(4px)',
