@@ -153,13 +153,14 @@ type HealthResult = { primary?: HealthModelInfo; secondary?: HealthModelInfo; fa
 function OpenRouterCard() {
   const [settings, setSettings] = useState<{ configured: boolean; models?: { primary: string; secondary: string; fallback: string } } | null>(null);
   const [loading, setLoading]   = useState(true);
+  const [callError, setCallError] = useState(false);
   const [health, setHealth]     = useState<HealthResult>({});
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     api.ai.providerSettings()
-      .then((res) => setSettings({ configured: res.data.configured, models: res.data.models }))
-      .catch(() => setSettings({ configured: false }))
+      .then((res) => { setCallError(false); setSettings({ configured: res.data.configured, models: res.data.models }); })
+      .catch(() => { setCallError(true); setSettings({ configured: false }); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -175,7 +176,7 @@ function OpenRouterCard() {
     }
   };
 
-  const currentStatus: Status = loading ? 'pending' : settings?.configured ? 'connected' : 'unavailable';
+  const currentStatus: Status = loading ? 'pending' : (callError ? 'pending' : (settings?.configured ? 'connected' : 'unavailable'));
   const modelEntries: { label: string; key: keyof HealthResult; name?: string }[] = [
     { label: 'Primary', key: 'primary', name: settings?.models?.primary },
     { label: 'Secondary', key: 'secondary', name: settings?.models?.secondary },
@@ -206,9 +207,9 @@ function OpenRouterCard() {
             Checking…
           </span>
         ) : (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: sc[currentStatus] }}>
-            {settings?.configured ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: sc[currentStatus], display: 'inline-block' }} />}
-            {settings?.configured ? 'Configured' : 'Not Configured'}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: callError ? '#f59e0b' : sc[currentStatus] }}>
+            {settings?.configured ? <CheckCircle2 size={12} /> : <span style={{ width: 8, height: 8, borderRadius: '50%', background: callError ? '#f59e0b' : sc[currentStatus], display: 'inline-block' }} />}
+            {callError ? 'Error — backend unreachable' : (settings?.configured ? 'Configured' : 'Not Configured')}
           </span>
         )}
       </div>
