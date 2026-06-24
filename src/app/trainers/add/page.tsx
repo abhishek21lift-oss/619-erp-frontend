@@ -15,65 +15,60 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
 // ── Types ────────────────────────────────────────────────────────────
-type Step = { id: number; title: string; subtitle: string; icon: React.ReactNode; color: string };
+type Step = {
+  id: number; title: string; subtitle: string; icon: React.ReactNode;
+  color: string; gradient: string; soft: string;
+};
 
 const STEPS: Step[] = [
-  { id: 1, title: 'Personal Details',        subtitle: 'Basic info & photo',       icon: <User size={16}/>,       color: '#6366f1' },
-  { id: 2, title: 'Contact Information',     subtitle: 'Phone, email, address',    icon: <Phone size={16}/>,      color: '#8b5cf6' },
-  { id: 3, title: 'Coaching Specialization', subtitle: 'Expertise & certifications',icon: <Dumbbell size={16}/>,  color: '#06b6d4' },
-  { id: 4, title: 'Salary & Payroll',        subtitle: 'Compensation details',     icon: <DollarSign size={16}/>, color: '#10b981' },
-  { id: 5, title: 'Shift & Schedule',        subtitle: 'Working hours',            icon: <Clock size={16}/>,      color: '#f59e0b' },
-  { id: 6, title: 'Clients & Permissions',   subtitle: 'Access & assignments',     icon: <Shield size={16}/>,     color: '#ef4444' },
+  { id: 1, title: 'Personal Details',        subtitle: 'Basic info & photo',        icon: <User size={18}/>,       color: '#6366f1', gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', soft: 'rgba(99,102,241,0.12)'  },
+  { id: 2, title: 'Contact Information',     subtitle: 'Phone, email, address',     icon: <Phone size={18}/>,      color: '#0ea5e9', gradient: 'linear-gradient(135deg,#0ea5e9,#38bdf8)', soft: 'rgba(14,165,233,0.12)'  },
+  { id: 3, title: 'Coaching Specialization', subtitle: 'Expertise & certifications',icon: <Dumbbell size={18}/>,  color: '#f43f5e', gradient: 'linear-gradient(135deg,#f43f5e,#fb7185)', soft: 'rgba(244,63,94,0.12)'   },
+  { id: 4, title: 'Salary & Payroll',        subtitle: 'Compensation details',      icon: <DollarSign size={18}/>, color: '#10b981', gradient: 'linear-gradient(135deg,#10b981,#34d399)', soft: 'rgba(16,185,129,0.12)'  },
+  { id: 5, title: 'Shift & Schedule',        subtitle: 'Working hours',             icon: <Clock size={18}/>,      color: '#f59e0b', gradient: 'linear-gradient(135deg,#f59e0b,#fbbf24)', soft: 'rgba(245,158,11,0.12)'  },
+  { id: 6, title: 'Clients & Permissions',   subtitle: 'Access & assignments',      icon: <Shield size={18}/>,     color: '#8b5cf6', gradient: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', soft: 'rgba(139,92,246,0.12)'  },
 ];
 
 const SPECIALIZATIONS = ['Strength Training', 'HIIT', 'Yoga', 'Pilates', 'Cardio', 'Powerlifting', 'CrossFit', 'Functional Training', 'Rehabilitation', 'Nutrition', 'Weight Loss', 'Muscle Gain', 'Endurance', 'Flexibility'];
-const CERTIFICATIONS = ['K11 Fitness', 'ACE Certified', 'NASM CPT', 'ISSA', 'ACSM', 'CrossFit L1', 'Yoga RYT 200', 'Sports Nutrition', 'First Aid CPR'];
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const CERTIFICATIONS  = ['K11 Fitness', 'ACE Certified', 'NASM CPT', 'ISSA', 'ACSM', 'CrossFit L1', 'Yoga RYT 200', 'Sports Nutrition', 'First Aid CPR'];
+const DAYS            = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-// Validate Indian mobile: starts with 6-9, exactly 10 digits
 const MOBILE_RE = /^[6-9]\d{9}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ── FloatLabel ───────────────────────────────────────────────────────
 function FloatLabel({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
     <div className="relative">
       {children}
-      <label className="pointer-events-none absolute left-4 top-3.5 origin-left scale-75 -translate-y-3 text-[11px] font-[600] uppercase tracking-widest"
-        style={{ color: 'rgb(148,163,184)', letterSpacing: '0.12em' }}>
-        {label}{required && <span className="ml-0.5 text-rose-400">*</span>}
+      <label className="pointer-events-none absolute left-4 top-[10px] text-[10.5px] font-[700] uppercase tracking-[0.10em]"
+        style={{ color: 'rgb(148,163,184)' }}>
+        {label}{required && <span className="ml-0.5" style={{ color: '#f43f5e' }}>*</span>}
       </label>
     </div>
   );
 }
 
 // ── Input ────────────────────────────────────────────────────────────
-function Input({ label, type = 'text', placeholder, required, value, onChange }: {
+function Input({ label, type = 'text', placeholder, required, value, onChange, accentColor = '#6366f1' }: {
   label: string; type?: string; placeholder?: string; required?: boolean;
-  value?: string; onChange?: (v: string) => void;
+  value?: string; onChange?: (v: string) => void; accentColor?: string;
 }) {
   return (
     <FloatLabel label={label} required={required}>
       <input
         type={type} placeholder={placeholder}
         value={value ?? ''}
-        onChange={function(e) { onChange?.(e.target.value); }}
-        className="w-full rounded-[14px] px-4 pb-3 pt-7 text-[14px] font-[500] outline-none transition-all"
-        style={{
-          background: 'var(--bg-subtle)',
-          border: '1px solid rgba(15,23,42,0.08)',
-          color: 'rgb(15,23,42)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)',
+        onChange={e => onChange?.(e.target.value)}
+        className="w-full rounded-[16px] px-4 pb-3 pt-[30px] text-[14px] font-[500] outline-none transition-all duration-200"
+        style={{ background: '#ffffff', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)' }}
+        onFocus={e => {
+          e.currentTarget.style.border = `1.5px solid ${accentColor}`;
+          e.currentTarget.style.boxShadow = `0 0 0 3.5px ${accentColor}22, 0 1px 4px rgba(15,23,42,0.05)`;
         }}
-        onFocus={function(e) {
-          e.currentTarget.style.border = '1px solid rgba(99,102,241,0.40)';
-          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.9)';
-          e.currentTarget.style.background = 'var(--bg-card)';
-        }}
-        onBlur={function(e) {
-          e.currentTarget.style.border = '1px solid rgba(15,23,42,0.08)';
-          e.currentTarget.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.9)';
-          e.currentTarget.style.background = 'var(--bg-subtle)';
+        onBlur={e => {
+          e.currentTarget.style.border = '1.5px solid rgba(15,23,42,0.09)';
+          e.currentTarget.style.boxShadow = '0 1px 4px rgba(15,23,42,0.05)';
         }}
       />
     </FloatLabel>
@@ -81,49 +76,56 @@ function Input({ label, type = 'text', placeholder, required, value, onChange }:
 }
 
 // ── Select ───────────────────────────────────────────────────────────
-function Select({ label, options, required, value, onChange }: {
+function Select({ label, options, required, value, onChange, accentColor = '#6366f1' }: {
   label: string; options: string[]; required?: boolean;
-  value?: string; onChange?: (v: string) => void;
+  value?: string; onChange?: (v: string) => void; accentColor?: string;
 }) {
   return (
     <FloatLabel label={label} required={required}>
       <select
         value={value ?? ''}
-        onChange={function(e) { onChange?.(e.target.value); }}
-        className="w-full appearance-none rounded-[14px] px-4 pb-3 pt-7 text-[14px] font-[500] outline-none transition-all"
-        style={{
-          background: 'var(--bg-subtle)',
-          border: '1px solid rgba(15,23,42,0.08)',
-          color: 'rgb(15,23,42)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)',
+        onChange={e => onChange?.(e.target.value)}
+        className="w-full appearance-none rounded-[16px] px-4 pb-3 pt-[30px] text-[14px] font-[500] outline-none transition-all duration-200"
+        style={{ background: '#ffffff', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)' }}
+        onFocus={e => {
+          e.currentTarget.style.border = `1.5px solid ${accentColor}`;
+          e.currentTarget.style.boxShadow = `0 0 0 3.5px ${accentColor}22, 0 1px 4px rgba(15,23,42,0.05)`;
+        }}
+        onBlur={e => {
+          e.currentTarget.style.border = '1.5px solid rgba(15,23,42,0.09)';
+          e.currentTarget.style.boxShadow = '0 1px 4px rgba(15,23,42,0.05)';
         }}
       >
         <option value="">Select</option>
-        {options.map(function(o) { return <option key={o} value={o}>{o}</option>; })}
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     </FloatLabel>
   );
 }
 
 // ── ChipGroup ────────────────────────────────────────────────────────
-function ChipGroup({ options, selected, onChange, color }: { options: string[]; selected: string[]; onChange: (v: string[]) => void; color: string }) {
+function ChipGroup({ options, selected, onChange, gradient, color }: {
+  options: string[]; selected: string[]; onChange: (v: string[]) => void;
+  gradient: string; color: string;
+}) {
   function toggle(o: string) {
-    onChange(selected.includes(o) ? selected.filter(function(s) { return s !== o; }) : [...selected, o]);
+    onChange(selected.includes(o) ? selected.filter(s => s !== o) : [...selected, o]);
   }
   return (
     <div className="flex flex-wrap gap-2">
-      {options.map(function(o) {
+      {options.map(o => {
         const on = selected.includes(o);
         return (
-          <button key={o} type="button" onClick={function() { toggle(o); }}
-            className="rounded-full px-3 py-1.5 text-[12px] font-[600] transition-all duration-150 active:scale-95"
+          <button key={o} type="button" onClick={() => toggle(o)}
+            className="flex items-center gap-1 rounded-full px-3.5 py-2 text-[12.5px] font-[600] transition-all duration-200 active:scale-95"
             style={{
-              background: on ? color : 'var(--border)',
+              background: on ? gradient : 'rgba(15,23,42,0.04)',
               color: on ? '#fff' : 'rgb(71,85,105)',
-              border: on ? '1.5px solid ' + color : '1.5px solid transparent',
-              boxShadow: on ? '0 2px 8px ' + color + '30' : 'none',
+              border: on ? 'none' : '1.5px solid rgba(15,23,42,0.07)',
+              boxShadow: on ? `0 4px 14px ${color}40` : 'none',
             }}>
-            {on && <Check size={10} className="mr-1 inline" />}{o}
+            {on && <Check size={11} strokeWidth={3} />}
+            {o}
           </button>
         );
       })}
@@ -131,146 +133,145 @@ function ChipGroup({ options, selected, onChange, color }: { options: string[]; 
   );
 }
 
-// ── ToggleSwitch — fully controlled; no internal state ───────────────
-function ToggleSwitch({ label, sublabel, checked, onChange }: {
+// ── ToggleSwitch — fully controlled ─────────────────────────────────
+function ToggleSwitch({ label, sublabel, checked, onChange, accentColor = '#6366f1' }: {
   label: string; sublabel?: string;
-  checked: boolean; onChange: (v: boolean) => void;
+  checked: boolean; onChange: (v: boolean) => void; accentColor?: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-[14px] px-4 py-3.5"
-      style={{ background: 'var(--bg-subtle)', border: '1px solid rgba(15,23,42,0.07)' }}>
+    <div className="flex items-center justify-between rounded-[16px] px-4 py-3.5 transition-all duration-200"
+      style={{
+        background: checked ? accentColor + '0D' : '#ffffff',
+        border: `1.5px solid ${checked ? accentColor + '35' : 'rgba(15,23,42,0.08)'}`,
+        boxShadow: '0 1px 4px rgba(15,23,42,0.05)',
+      }}>
       <div>
         <p className="text-[13.5px] font-[600]" style={{ color: 'rgb(15,23,42)' }}>{label}</p>
         {sublabel && <p className="mt-0.5 text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>{sublabel}</p>}
       </div>
-      <button type="button" onClick={function() { onChange(!checked); }}
-        className="relative h-6 w-11 rounded-full transition-all duration-300"
-        style={{ background: checked ? '#6366f1' : 'var(--border-3)' }}
+      <button type="button" onClick={() => onChange(!checked)}
+        className="relative ml-4 h-7 w-[50px] shrink-0 rounded-full transition-all duration-300"
+        style={{ background: checked ? accentColor : 'rgba(15,23,42,0.14)' }}
         aria-checked={checked} role="switch">
-        <span className="absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all duration-300"
-          style={{ left: checked ? '23px' : '3px', boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }} />
+        <span className="absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white transition-all duration-300"
+          style={{ left: checked ? '25px' : '3px', boxShadow: '0 2px 6px rgba(0,0,0,0.22)' }} />
       </button>
     </div>
   );
 }
 
 // ── DragDropUpload ───────────────────────────────────────────────────
-function DragDropUpload({ label, accept }: { label: string; accept: string }) {
+function DragDropUpload({ label, accept, accentColor = '#6366f1', accentGradient }: {
+  label: string; accept: string; accentColor?: string; accentGradient?: string;
+}) {
   const [dragging, setDragging] = useState(false);
-  const [files, setFiles] = useState<string[]>([]);
+  const [files, setFiles]       = useState<string[]>([]);
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div>
-      <p className="mb-2 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+      <p className="mb-2.5 text-[10.5px] font-[700] uppercase tracking-[0.10em]" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
       <div
-        onClick={function() { ref.current?.click(); }}
-        onDragOver={function(e) { e.preventDefault(); setDragging(true); }}
-        onDragLeave={function() { setDragging(false); }}
-        onDrop={function(e) { e.preventDefault(); setDragging(false); setFiles(function(p) { return [...p, ...Array.from(e.dataTransfer.files).map(function(f) { return f.name; })]; }); }}
-        className="flex cursor-pointer flex-col items-center gap-2 rounded-[16px] px-6 py-8 text-center transition-all"
-        style={{ border: dragging ? '2px dashed #6366f1' : '2px dashed rgba(15,23,42,0.12)', background: dragging ? 'rgba(99,102,241,0.04)' : 'rgba(248,250,252,0.6)' }}>
-        <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.08)' }}>
-          <Upload size={18} style={{ color: '#6366f1' }} />
+        onClick={() => ref.current?.click()}
+        onDragOver={e => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={e => { e.preventDefault(); setDragging(false); setFiles(p => [...p, ...Array.from(e.dataTransfer.files).map(f => f.name)]); }}
+        className="flex cursor-pointer flex-col items-center gap-3 rounded-[20px] px-6 py-8 text-center transition-all duration-200"
+        style={{
+          border: `2px dashed ${dragging ? accentColor : 'rgba(15,23,42,0.11)'}`,
+          background: dragging ? accentColor + '08' : 'rgba(248,250,252,0.7)',
+        }}>
+        <div className="flex h-12 w-12 items-center justify-center rounded-[14px]"
+          style={{ background: accentGradient || accentColor, boxShadow: `0 6px 18px ${accentColor}45` }}>
+          <Upload size={20} className="text-white" />
         </div>
-        <p className="text-[13px] font-[600]" style={{ color: 'rgb(71,85,105)' }}>Drop files here or <span style={{ color: '#6366f1' }}>browse</span></p>
-        <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{accept}</p>
+        <div>
+          <p className="text-[13px] font-[600]" style={{ color: 'rgb(71,85,105)' }}>
+            Drop files here or <span style={{ color: accentColor }}>browse</span>
+          </p>
+          <p className="mt-0.5 text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{accept}</p>
+        </div>
         <input ref={ref} type="file" accept={accept} multiple className="hidden"
-          onChange={function(e) { setFiles(function(p) { return [...p, ...Array.from(e.target.files || []).map(function(f) { return f.name; })]; }); }} />
+          onChange={e => setFiles(p => [...p, ...Array.from(e.target.files || []).map(f => f.name)])} />
       </div>
       {files.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {files.map(function(f, i) {
-            return (
-              <span key={i} className="flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-[600]"
-                style={{ background: 'rgba(99,102,241,0.09)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.18)' }}>
-                <FileText size={10} />{f}
-                <button onClick={function() { setFiles(function(p) { return p.filter(function(_, j) { return j !== i; }); }); }} className="ml-0.5">
-                  <X size={9} />
-                </button>
-              </span>
-            );
-          })}
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {files.map((f, i) => (
+            <span key={i} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[600]"
+              style={{ background: accentColor + '12', color: accentColor, border: `1px solid ${accentColor}28` }}>
+              <FileText size={10} />{f}
+              <button onClick={() => setFiles(p => p.filter((_, j) => j !== i))} className="ml-0.5 opacity-60 hover:opacity-100">
+                <X size={9} />
+              </button>
+            </span>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
+// ── SectionLabel ─────────────────────────────────────────────────────
+function SectionLabel({ children, color }: { children: React.ReactNode; color: string }) {
+  return (
+    <p className="mb-3 text-[10.5px] font-[700] uppercase tracking-[0.12em]" style={{ color }}>
+      {children}
+    </p>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────
 export default function AddCoachPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [step, setStep]           = useState(1);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [specs, setSpecs] = useState<string[]>([]);
-  const [certs, setCerts] = useState<string[]>([]);
-  const [workDays, setWorkDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+  const [error, setError]         = useState('');
+  const [specs, setSpecs]         = useState<string[]>([]);
+  const [certs, setCerts]         = useState<string[]>([]);
+  const [workDays, setWorkDays]   = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
-  // ── Form state — every field bound to state and sent in payload ─────
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName]           = useState('');
+  const [lastName, setLastName]             = useState('');
   // gender values must match DB CHECK constraint: 'Male'|'Female'|'Other'|null
-  const [gender, setGender] = useState('');
-  const [dob, setDob] = useState('');
-  const [joinDate, setJoinDate] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [stateField, setStateField] = useState('');
-  const [pinCode, setPinCode] = useState('');
-  const [experience, setExperience] = useState('');
-  const [notes, setNotes] = useState('');
+  const [gender, setGender]                 = useState('');
+  const [dob, setDob]                       = useState('');
+  const [joinDate, setJoinDate]             = useState('');
+  const [mobile, setMobile]                 = useState('');
+  const [email, setEmail]                   = useState('');
+  const [address, setAddress]               = useState('');
+  const [city, setCity]                     = useState('');
+  const [stateField, setStateField]         = useState('');
+  const [pinCode, setPinCode]               = useState('');
+  const [experience, setExperience]         = useState('');
+  const [notes, setNotes]                   = useState('');
   // salary stored in rupees (NUMERIC(12,2))
-  const [salary, setSalary] = useState('');
+  const [salary, setSalary]                 = useState('');
   // incentive_rate is a percentage (0-100); backend divides by 100 before DB storage
-  const [incentiveRate, setIncentiveRate] = useState('');
-  // Toggle fields are fully controlled so values are tracked
-  const [pfEsi, setPfEsi] = useState(false);
-  const [bonusEligible, setBonusEligible] = useState(true);
-  const [weekendAvail, setWeekendAvail] = useState(true);
+  const [incentiveRate, setIncentiveRate]   = useState('');
+  const [pfEsi, setPfEsi]                   = useState(false);
+  const [bonusEligible, setBonusEligible]   = useState(true);
+  const [weekendAvail, setWeekendAvail]     = useState(true);
   const [earlyMorningAvail, setEarlyMorningAvail] = useState(false);
 
-  const current = STEPS[step - 1];
+  const current  = STEPS[step - 1];
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
+  const ac       = current.color;
+  const ag       = current.gradient;
+  const as_      = current.soft;
 
-  const handleSubmit = useCallback(async function() {
-    // ── Client-side validation before API call ───────────────────────
-    if (!firstName.trim()) {
-      setError('First name is required');
-      setStep(1);
-      return;
-    }
-    if (!email.trim()) {
-      setError('Email address is required');
-      setStep(2);
-      return;
-    }
-    if (!EMAIL_RE.test(email.trim())) {
-      setError('Please enter a valid email address');
-      setStep(2);
-      return;
-    }
-    if (!mobile.trim()) {
-      setError('Phone number is required');
-      setStep(2);
-      return;
-    }
+  const handleSubmit = useCallback(async () => {
+    if (!firstName.trim()) { setError('First name is required'); setStep(1); return; }
+    if (!email.trim()) { setError('Email address is required'); setStep(2); return; }
+    if (!EMAIL_RE.test(email.trim())) { setError('Please enter a valid email address'); setStep(2); return; }
+    if (!mobile.trim()) { setError('Phone number is required'); setStep(2); return; }
     // Validate Indian mobile format (backend Zod also validates this)
-    if (!MOBILE_RE.test(mobile.trim())) {
-      setError('Phone must be a valid 10-digit Indian mobile number starting with 6–9');
-      setStep(2);
-      return;
-    }
-
+    if (!MOBILE_RE.test(mobile.trim())) { setError('Phone must be a valid 10-digit Indian mobile number starting with 6–9'); setStep(2); return; }
     setSubmitting(true);
     setError('');
     try {
       // Combine address parts into a single address string for the DB
       const fullAddress = [address, city, stateField, pinCode].filter(Boolean).join(', ');
-
       await api.trainers.create({
         name:           (firstName.trim() + ' ' + lastName.trim()).trim(),
         mobile:         mobile.trim(),
@@ -302,107 +303,124 @@ export default function AddCoachPage() {
   const stepContent: Record<number, React.ReactNode> = {
     1: (
       <div className="space-y-4">
+        {/* Photo upload */}
         <div className="flex justify-center pb-2">
-          <button type="button" onClick={function() { photoRef.current?.click(); }}
-            className="group relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-[24px] transition-all"
-            style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.08) 0%,rgba(139,92,246,0.06) 100%)', border: '2px dashed rgba(99,102,241,0.25)' }}>
+          <button type="button" onClick={() => photoRef.current?.click()}
+            className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-[28px] transition-all duration-300"
+            style={{
+              background: photoPreview ? 'transparent' : ag,
+              boxShadow: `0 10px 36px ${ac}45`,
+            }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {photoPreview ? <img src={photoPreview} alt="" className="h-full w-full object-cover" /> : <Camera size={24} style={{ color: 'rgba(99,102,241,0.5)' }} />}
-            <span className="absolute inset-0 flex items-center justify-center rounded-[22px] bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"><Camera size={20} className="text-white" /></span>
+            {photoPreview
+              ? <img src={photoPreview} alt="" className="h-full w-full rounded-[28px] object-cover" />
+              : <Camera size={30} className="text-white" />
+            }
+            <span className="absolute inset-0 flex items-center justify-center rounded-[28px] bg-black/25 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <Camera size={22} className="text-white" />
+            </span>
           </button>
-          <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={function(e) { const f = e.target.files?.[0]; if (f) setPhotoPreview(URL.createObjectURL(f)); }} />
+          <input ref={photoRef} type="file" accept="image/*" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) setPhotoPreview(URL.createObjectURL(f)); }} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="First Name" required value={firstName} onChange={setFirstName} />
-          <Input label="Last Name" value={lastName} onChange={setLastName} />
+          <Input label="First Name" required value={firstName} onChange={setFirstName} accentColor={ac} />
+          <Input label="Last Name" value={lastName} onChange={setLastName} accentColor={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {/* Values 'Male'|'Female'|'Other' match DB CHECK constraint exactly */}
-          <Select label="Gender" options={['Male', 'Female', 'Other']} value={gender} onChange={setGender} />
-          <Input label="Date of Birth" type="date" value={dob} onChange={setDob} />
+          <Select label="Gender" options={['Male', 'Female', 'Other']} value={gender} onChange={setGender} accentColor={ac} />
+          <Input label="Date of Birth" type="date" value={dob} onChange={setDob} accentColor={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Employee ID" placeholder="AUTO-GENERATED" />
-          <Input label="Join Date" type="date" value={joinDate} onChange={setJoinDate} />
+          <Input label="Employee ID" placeholder="AUTO-GENERATED" accentColor={ac} />
+          <Input label="Join Date" type="date" value={joinDate} onChange={setJoinDate} accentColor={ac} />
         </div>
       </div>
     ),
     2: (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Phone Number" type="tel" required value={mobile} onChange={setMobile} />
-          <Input label="Alternate Phone" type="tel" />
+          <Input label="Phone Number" type="tel" required value={mobile} onChange={setMobile} accentColor={ac} />
+          <Input label="Alternate Phone" type="tel" accentColor={ac} />
         </div>
-        <Input label="Email Address" type="email" required value={email} onChange={setEmail} />
-        <Input label="Emergency Contact Name" />
-        <Input label="Emergency Contact Phone" type="tel" />
-        <Input label="Address Line 1" value={address} onChange={setAddress} />
+        <Input label="Email Address" type="email" required value={email} onChange={setEmail} accentColor={ac} />
+        <Input label="Emergency Contact Name" accentColor={ac} />
+        <Input label="Emergency Contact Phone" type="tel" accentColor={ac} />
+        <Input label="Address Line 1" value={address} onChange={setAddress} accentColor={ac} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Input label="City" value={city} onChange={setCity} />
-          <Input label="State" value={stateField} onChange={setStateField} />
-          <Input label="PIN Code" value={pinCode} onChange={setPinCode} />
+          <Input label="City" value={city} onChange={setCity} accentColor={ac} />
+          <Input label="State" value={stateField} onChange={setStateField} accentColor={ac} />
+          <Input label="PIN Code" value={pinCode} onChange={setPinCode} accentColor={ac} />
         </div>
       </div>
     ),
     3: (
       <div className="space-y-5">
         <div>
-          <p className="mb-2.5 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>Coaching Specializations</p>
-          <ChipGroup options={SPECIALIZATIONS} selected={specs} onChange={setSpecs} color="#06b6d4" />
+          <SectionLabel color={ac}>Coaching Specializations</SectionLabel>
+          <ChipGroup options={SPECIALIZATIONS} selected={specs} onChange={setSpecs} gradient={ag} color={ac} />
         </div>
         <div>
-          <p className="mb-2.5 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>Certifications</p>
-          <ChipGroup options={CERTIFICATIONS} selected={certs} onChange={setCerts} color="#8b5cf6" />
+          <SectionLabel color={ac}>Certifications</SectionLabel>
+          <ChipGroup options={CERTIFICATIONS} selected={certs} onChange={setCerts} gradient={ag} color={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Years of Experience" type="number" value={experience} onChange={setExperience} />
-          <Select label="Primary Language" options={['Hindi', 'English', 'Both']} />
+          <Input label="Years of Experience" type="number" value={experience} onChange={setExperience} accentColor={ac} />
+          <Select label="Primary Language" options={['Hindi', 'English', 'Both']} accentColor={ac} />
         </div>
-        <Input label="Bio / About Coach" value={notes} onChange={setNotes} />
-        <DragDropUpload label="Certification Documents" accept=".pdf,.jpg,.png" />
+        <Input label="Bio / About Coach" value={notes} onChange={setNotes} accentColor={ac} />
+        <DragDropUpload label="Certification Documents" accept=".pdf,.jpg,.png" accentColor={ac} accentGradient={ag} />
       </div>
     ),
     4: (
-      <div className="space-y-4">
-        <Select label="Salary Type" options={['Fixed Monthly', 'Per Session', 'Revenue Share', 'Hybrid']} />
+      <div className="space-y-3">
+        <Select label="Salary Type" options={['Fixed Monthly', 'Per Session', 'Revenue Share', 'Hybrid']} accentColor={ac} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Base Salary (₹)" type="number" value={salary} onChange={setSalary} />
-          <Input label="Session Rate (₹)" type="number" />
+          <Input label="Base Salary (₹)" type="number" value={salary} onChange={setSalary} accentColor={ac} />
+          <Input label="Session Rate (₹)" type="number" accentColor={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {/* Incentive Rate % — sent as-is; backend divides by 100 before DB storage */}
-          <Input label="Revenue Share %" type="number" value={incentiveRate} onChange={setIncentiveRate} />
-          <Select label="Payment Frequency" options={['Monthly', 'Bi-Weekly', 'Weekly']} />
+          <Input label="Revenue Share %" type="number" value={incentiveRate} onChange={setIncentiveRate} accentColor={ac} />
+          <Select label="Payment Frequency" options={['Monthly', 'Bi-Weekly', 'Weekly']} accentColor={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Select label="Bank" options={['SBI', 'HDFC', 'ICICI', 'Axis', 'Kotak', 'Other']} />
-          <Input label="Account Number" />
+          <Select label="Bank" options={['SBI', 'HDFC', 'ICICI', 'Axis', 'Kotak', 'Other']} accentColor={ac} />
+          <Input label="Account Number" accentColor={ac} />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="IFSC Code" />
-          <Input label="PAN Number" />
+          <Input label="IFSC Code" accentColor={ac} />
+          <Input label="PAN Number" accentColor={ac} />
         </div>
         {/* Fully controlled ToggleSwitches */}
-        <ToggleSwitch label="Include PF / ESI" sublabel="Statutory deductions applicable" checked={pfEsi} onChange={setPfEsi} />
-        <ToggleSwitch label="Bonus Eligible" sublabel="Performance-based bonus" checked={bonusEligible} onChange={setBonusEligible} />
+        <div className="space-y-2.5">
+          <ToggleSwitch label="Include PF / ESI" sublabel="Statutory deductions applicable" checked={pfEsi} onChange={setPfEsi} accentColor={ac} />
+          <ToggleSwitch label="Bonus Eligible" sublabel="Performance-based bonus" checked={bonusEligible} onChange={setBonusEligible} accentColor={ac} />
+        </div>
       </div>
     ),
     5: (
       <div className="space-y-5">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Shift Start Time" type="time" />
-          <Input label="Shift End Time" type="time" />
+          <Input label="Shift Start Time" type="time" accentColor={ac} />
+          <Input label="Shift End Time" type="time" accentColor={ac} />
         </div>
         <div>
-          <p className="mb-2.5 text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>Working Days</p>
+          <SectionLabel color={ac}>Working Days</SectionLabel>
           <div className="flex flex-wrap gap-2">
-            {DAYS.map(function(d) {
+            {DAYS.map(d => {
               const on = workDays.includes(d);
               return (
                 <button key={d} type="button"
-                  onClick={function() { setWorkDays(on ? workDays.filter(function(x) { return x !== d; }) : [...workDays, d]); }}
-                  className="h-10 w-12 rounded-[12px] text-[13px] font-[700] transition-all"
-                  style={{ background: on ? '#10b981' : 'var(--border)', color: on ? '#fff' : 'rgb(100,116,139)', border: on ? '1.5px solid #10b981' : '1.5px solid transparent', boxShadow: on ? '0 2px 8px rgba(16,185,129,0.25)' : 'none' }}>
+                  onClick={() => setWorkDays(on ? workDays.filter(x => x !== d) : [...workDays, d])}
+                  className="h-11 w-14 rounded-[14px] text-[13px] font-[700] transition-all duration-200 active:scale-95"
+                  style={{
+                    background: on ? ag : '#ffffff',
+                    color: on ? '#fff' : 'rgb(100,116,139)',
+                    border: on ? 'none' : '1.5px solid rgba(15,23,42,0.09)',
+                    boxShadow: on ? `0 4px 16px ${ac}45` : '0 1px 4px rgba(15,23,42,0.05)',
+                  }}>
                   {d}
                 </button>
               );
@@ -410,27 +428,31 @@ export default function AddCoachPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Max Sessions / Day" type="number" />
-          <Input label="Max Clients" type="number" />
+          <Input label="Max Sessions / Day" type="number" accentColor={ac} />
+          <Input label="Max Clients" type="number" accentColor={ac} />
         </div>
-        <ToggleSwitch label="Available for Weekends" sublabel="Saturday & Sunday availability" checked={weekendAvail} onChange={setWeekendAvail} />
-        <ToggleSwitch label="Available for Early Morning" sublabel="Before 7:00 AM shifts" checked={earlyMorningAvail} onChange={setEarlyMorningAvail} />
+        <div className="space-y-2.5">
+          <ToggleSwitch label="Available for Weekends" sublabel="Saturday & Sunday availability" checked={weekendAvail} onChange={setWeekendAvail} accentColor={ac} />
+          <ToggleSwitch label="Available for Early Morning" sublabel="Before 7:00 AM shifts" checked={earlyMorningAvail} onChange={setEarlyMorningAvail} accentColor={ac} />
+        </div>
       </div>
     ),
     6: (
-      <div className="space-y-4">
-        <Input label="Monthly Client Target" type="number" />
-        <Input label="Monthly Revenue Target (₹)" type="number" />
-        <Select label="Studio Access Level" options={['Full Access', 'Floor Only', 'Limited Hours', 'Custom']} />
-        <div className="space-y-2">
-          <p className="text-[12px] font-[700] uppercase tracking-widest" style={{ color: 'rgb(148,163,184)' }}>Studio Permissions</p>
-          <ToggleSwitch label="Manage Own Clients" sublabel="Add/remove client assignments" checked={true} onChange={function() {}} />
-          <ToggleSwitch label="View Financial Data" sublabel="Revenue and payment reports" checked={false} onChange={function() {}} />
-          <ToggleSwitch label="Attendance Management" sublabel="Mark and edit attendance" checked={true} onChange={function() {}} />
-          <ToggleSwitch label="Content Publishing" sublabel="Post to engagement channels" checked={false} onChange={function() {}} />
-          <ToggleSwitch label="Leave Self-Approval" sublabel="Approve own leave requests" checked={false} onChange={function() {}} />
+      <div className="space-y-3">
+        <Input label="Monthly Client Target" type="number" accentColor={ac} />
+        <Input label="Monthly Revenue Target (₹)" type="number" accentColor={ac} />
+        <Select label="Studio Access Level" options={['Full Access', 'Floor Only', 'Limited Hours', 'Custom']} accentColor={ac} />
+        <div>
+          <SectionLabel color={ac}>Studio Permissions</SectionLabel>
+          <div className="space-y-2.5">
+            <ToggleSwitch label="Manage Own Clients"    sublabel="Add/remove client assignments"  checked={true}  onChange={() => {}} accentColor={ac} />
+            <ToggleSwitch label="View Financial Data"   sublabel="Revenue and payment reports"    checked={false} onChange={() => {}} accentColor={ac} />
+            <ToggleSwitch label="Attendance Management" sublabel="Mark and edit attendance"       checked={true}  onChange={() => {}} accentColor={ac} />
+            <ToggleSwitch label="Content Publishing"    sublabel="Post to engagement channels"   checked={false} onChange={() => {}} accentColor={ac} />
+            <ToggleSwitch label="Leave Self-Approval"   sublabel="Approve own leave requests"    checked={false} onChange={() => {}} accentColor={ac} />
+          </div>
         </div>
-        <DragDropUpload label="Identity Documents (Aadhaar / PAN)" accept=".pdf,.jpg,.png" />
+        <DragDropUpload label="Identity Documents (Aadhaar / PAN)" accept=".pdf,.jpg,.png" accentColor={ac} accentGradient={ag} />
       </div>
     ),
   };
@@ -438,109 +460,151 @@ export default function AddCoachPage() {
   return (
     <Guard role="admin">
       <AppShell title="Add New Coach">
-        <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#f8fafc 0%,#f1f5f9 50%,#f8f4ff 100%)' }}>
-      <div className="sticky top-0 z-30 border-b" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderColor: 'var(--border)' }}>
-        <div className="mx-auto flex max-w-3xl items-center gap-4 px-5 py-4">
-          <Link href="/trainers"
-            className="flex h-9 w-9 items-center justify-center rounded-[11px] transition-all hover:bg-black/5 active:scale-95"
-            style={{ border: '1px solid rgba(15,23,42,0.08)' }}>
-            <ChevronLeft size={16} style={{ color: 'rgb(71,85,105)' }} />
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Add New Coach</h1>
-            <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>Step {step} of {STEPS.length} &mdash; {current.title}</p>
-          </div>
-          <span className="rounded-full px-3 py-1 text-[11px] font-[700]"
-            style={{ background: 'rgba(99,102,241,0.08)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.15)' }}>
-            {Math.round(progress)}% complete
-          </span>
-        </div>
-        <div className="h-[2px] w-full" style={{ background: 'var(--border)' }}>
-          <div className="h-full transition-all duration-500 ease-out"
-            style={{ width: progress + '%', background: 'linear-gradient(90deg,#6366f1,#8b5cf6)' }} />
-        </div>
-      </div>
+        {/* Page background — vivid pastel mesh gradient */}
+        <div className="min-h-screen" style={{
+          background: 'linear-gradient(160deg, #ede9fe 0%, #e0f2fe 32%, #dcfce7 62%, #fef3c7 100%)',
+        }}>
 
-      <div className="mx-auto max-w-3xl px-5 py-8">
-        {/* Step navigator */}
-        <div className="mb-8 flex gap-2 overflow-x-auto pb-2">
-          {STEPS.map(function(s) {
-            return (
-              <button key={s.id} onClick={function() { setStep(s.id); }}
-                className="flex shrink-0 items-center gap-2 rounded-[14px] px-3.5 py-2.5 text-left transition-all"
-                style={{
-                  background: step === s.id ? s.color : step > s.id ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.7)',
-                  border: step === s.id ? '1.5px solid ' + s.color : step > s.id ? '1.5px solid rgba(16,185,129,0.20)' : '1.5px solid rgba(15,23,42,0.08)',
-                  boxShadow: step === s.id ? '0 4px 16px ' + s.color + '30' : 'none',
-                }}>
-                <span style={{ color: step === s.id ? '#fff' : step > s.id ? '#059669' : 'rgb(148,163,184)' }}>
-                  {step > s.id ? <Check size={14} /> : s.icon}
-                </span>
-                <span className="hidden text-[12px] font-[700] sm:block"
-                  style={{ color: step === s.id ? '#fff' : step > s.id ? '#059669' : 'rgb(100,116,139)' }}>
-                  {s.title}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-4 flex items-center gap-3 rounded-[14px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.16)' }}>
-            <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
-            <p className="text-[13px] font-[600]" style={{ color: '#b91c1c' }}>{error}</p>
-          </div>
-        )}
-
-        {/* Card */}
-        <AnimatePresence mode="wait">
-          <motion.div key={step}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-[24px] p-6"
-            style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 4px 24px rgba(15,23,42,0.07), 0 1px 3px rgba(15,23,42,0.04)', backdropFilter: 'blur(20px)' }}>
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
-                style={{ background: current.color + '14', color: current.color, border: '1.5px solid ' + current.color + '25' }}>
-                {current.icon}
+          {/* ── Sticky header ───────────────────────────────────────────── */}
+          <div className="sticky top-0 z-30"
+            style={{
+              background: 'rgba(255,255,255,0.82)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              borderBottom: '1px solid rgba(255,255,255,0.55)',
+              boxShadow: '0 1px 0 rgba(15,23,42,0.06)',
+            }}>
+            <div className="mx-auto flex max-w-3xl items-center gap-4 px-5 py-3.5">
+              <Link href="/trainers"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition-all duration-200 hover:scale-105 active:scale-95"
+                style={{ background: as_, border: `1.5px solid ${ac}30` }}>
+                <ChevronLeft size={16} style={{ color: ac }} />
+              </Link>
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Add New Coach</h1>
+                <p className="text-[12px] font-[600]" style={{ color: ac }}>Step {step} of {STEPS.length} — {current.title}</p>
               </div>
-              <div>
-                <h2 className="text-[17px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>{current.title}</h2>
-                <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>{current.subtitle}</p>
-              </div>
+              <motion.span
+                key={step}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="rounded-full px-3.5 py-1.5 text-[12px] font-[800] text-white"
+                style={{ background: ag, boxShadow: `0 3px 12px ${ac}45` }}>
+                {Math.round(progress)}%
+              </motion.span>
             </div>
-            {stepContent[step]}
-          </motion.div>
-        </AnimatePresence>
+            {/* Animated progress bar */}
+            <div className="h-[3px] w-full" style={{ background: 'rgba(15,23,42,0.06)' }}>
+              <motion.div className="h-full" style={{ background: ag }}
+                animate={{ width: progress + '%' }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} />
+            </div>
+          </div>
 
-        {/* Navigation buttons */}
-        <div className="mt-6 flex items-center justify-between">
-          <button type="button" onClick={function() { setStep(function(s) { return Math.max(1, s - 1); }); }}
-            disabled={step === 1}
-            className="flex items-center gap-2 rounded-[14px] px-5 py-3 text-[14px] font-[700] transition-all active:scale-95 disabled:opacity-30"
-            style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(15,23,42,0.10)', color: 'rgb(71,85,105)' }}>
-            <ChevronLeft size={16} /> Previous
-          </button>
+          <div className="mx-auto max-w-3xl px-5 py-8">
 
-          {step < STEPS.length ? (
-            <button type="button" onClick={function() { setStep(function(s) { return Math.min(STEPS.length, s + 1); }); }}
-              className="flex items-center gap-2 rounded-[14px] px-6 py-3 text-[14px] font-[700] text-white transition-all active:scale-95"
-              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.30)' }}>
-              Continue <ChevronRight size={16} />
-            </button>
-          ) : (
-            <button type="button" onClick={handleSubmit} disabled={submitting}
-              className="flex items-center gap-2 rounded-[14px] px-6 py-3 text-[14px] font-[700] text-white transition-all active:scale-95 disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 16px rgba(16,185,129,0.30)' }}>
-              {submitting ? <span className="animate-spin">&#9696;</span> : <Check size={16} />}
-              {submitting ? 'Creating…' : 'Add Coach'}
-            </button>
-          )}
-        </div>
-      </div>
+            {/* ── Step navigator ─────────────────────────────────────────── */}
+            <div className="mb-8 flex gap-2 overflow-x-auto pb-1">
+              {STEPS.map(s => (
+                <button key={s.id} type="button" onClick={() => setStep(s.id)}
+                  className="flex shrink-0 items-center gap-2 rounded-[16px] px-4 py-2.5 transition-all duration-200 active:scale-95"
+                  style={{
+                    background: step === s.id ? s.gradient : step > s.id ? 'rgba(16,185,129,0.09)' : 'rgba(255,255,255,0.80)',
+                    border: step === s.id ? 'none' : step > s.id ? '1.5px solid rgba(16,185,129,0.28)' : '1.5px solid rgba(15,23,42,0.08)',
+                    boxShadow: step === s.id ? `0 4px 18px ${s.color}42` : step > s.id ? 'none' : '0 1px 4px rgba(15,23,42,0.05)',
+                  }}>
+                  <span style={{ color: step === s.id ? '#fff' : step > s.id ? '#059669' : 'rgb(148,163,184)' }}>
+                    {step > s.id ? <Check size={14} strokeWidth={3} /> : s.icon}
+                  </span>
+                  <span className="hidden text-[12.5px] font-[700] sm:block"
+                    style={{ color: step === s.id ? '#fff' : step > s.id ? '#059669' : 'rgb(100,116,139)' }}>
+                    {s.title}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* ── Error banner ───────────────────────────────────────────── */}
+            <AnimatePresence>
+              {error && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  className="mb-5 flex items-start gap-3 rounded-[16px] p-4"
+                  style={{ background: 'rgba(244,63,94,0.07)', border: '1.5px solid rgba(244,63,94,0.20)' }}>
+                  <AlertCircle size={16} style={{ color: '#f43f5e', flexShrink: 0, marginTop: '1px' }} />
+                  <p className="text-[13px] font-[600]" style={{ color: '#be123c' }}>{error}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ── Form card ──────────────────────────────────────────────── */}
+            <AnimatePresence mode="wait">
+              <motion.div key={step}
+                initial={{ opacity: 0, y: 20, scale: 0.985 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.985 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden rounded-[28px]"
+                style={{ boxShadow: `0 12px 48px rgba(0,0,0,0.10), 0 0 0 1px rgba(255,255,255,0.85)` }}>
+
+                {/* Colorful gradient card header */}
+                <div className="px-6 py-5" style={{ background: ag }}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
+                      style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)' }}>
+                      <span style={{ color: '#fff' }}>{current.icon}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-[17px] font-[800] tracking-[-0.01em] text-white">{current.title}</h2>
+                      <p className="text-[12px] font-[500]" style={{ color: 'rgba(255,255,255,0.75)' }}>{current.subtitle}</p>
+                    </div>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                      style={{ background: 'rgba(255,255,255,0.22)' }}>
+                      <span className="text-[14px] font-[800] text-white">{step}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* White card body */}
+                <div className="p-6" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)' }}>
+                  {stepContent[step]}
+                </div>
+
+              </motion.div>
+            </AnimatePresence>
+
+            {/* ── Navigation buttons ─────────────────────────────────────── */}
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <button type="button"
+                onClick={() => setStep(s => Math.max(1, s - 1))}
+                disabled={step === 1}
+                className="flex items-center gap-2 rounded-[16px] px-5 py-3 text-[14px] font-[700] transition-all duration-200 active:scale-95 disabled:opacity-30"
+                style={{
+                  background: 'rgba(255,255,255,0.85)',
+                  border: '1.5px solid rgba(15,23,42,0.10)',
+                  color: 'rgb(71,85,105)',
+                  boxShadow: '0 1px 5px rgba(15,23,42,0.07)',
+                }}>
+                <ChevronLeft size={16} /> Previous
+              </button>
+
+              {step < STEPS.length ? (
+                <button type="button"
+                  onClick={() => setStep(s => Math.min(STEPS.length, s + 1))}
+                  className="flex items-center gap-2 rounded-[16px] px-7 py-3 text-[14px] font-[700] text-white transition-all duration-200 active:scale-95"
+                  style={{ background: ag, boxShadow: `0 4px 20px ${ac}48` }}>
+                  Continue <ChevronRight size={16} />
+                </button>
+              ) : (
+                <button type="button" onClick={handleSubmit} disabled={submitting}
+                  className="flex items-center gap-2 rounded-[16px] px-7 py-3 text-[14px] font-[700] text-white transition-all duration-200 active:scale-95 disabled:opacity-60"
+                  style={{ background: ag, boxShadow: `0 4px 20px ${ac}48` }}>
+                  {submitting ? <span className="animate-spin">&#9696;</span> : <Check size={16} strokeWidth={3} />}
+                  {submitting ? 'Creating…' : 'Add Coach'}
+                </button>
+              )}
+            </div>
+
+          </div>
         </div>
       </AppShell>
     </Guard>
