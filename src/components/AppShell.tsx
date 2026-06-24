@@ -13,7 +13,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
-import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
 import { allNavItems } from '@/lib/nav-config';
 
@@ -616,7 +615,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             </div>
           )}
 
-          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-20 pt-6 sm:px-6 lg:pb-8 lg:px-8">
+          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-8 pt-6 sm:px-6 lg:px-8">
             {title && (
               <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 {title}
@@ -627,8 +626,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
         </div>
       </div>
 
-      {/* Mobile bottom navigation — hidden on lg+ */}
-      <MobileBottomNav />
     </LazyMotion>
   );
 }
