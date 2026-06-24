@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Fingerprint, Plus, Trash2, ShieldCheck, Smartphone, Monitor, AlertCircle, Loader2 } from 'lucide-react';
 import { useWebAuthn } from '@/hooks/useWebAuthn';
 import type { PasskeyCredential } from '@/hooks/useWebAuthn';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
 function DeviceIcon({ type }: { type: string }) {
   const isMobile = type === 'singleDevice' || type?.toLowerCase().includes('phone') || type?.toLowerCase().includes('mobile');
@@ -58,7 +60,9 @@ export default function PasskeysPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 py-6 px-4">
+    <Guard>
+      <AppShell title="Passkeys">
+        <div className="mx-auto max-w-2xl space-y-6 py-6 px-4">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -334,6 +338,8 @@ export default function PasskeysPage() {
           <li>Add multiple devices — each has its own key that can be revoked independently.</li>
         </ul>
       </div>
-    </div>
+        </div>
+      </AppShell>
+    </Guard>
   );
 }

@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
 // ── Types ────────────────────────────────────────────────────────────
 type Step = { id: number; title: string; subtitle: string; icon: React.ReactNode; color: string };
@@ -436,7 +437,8 @@ export default function AddCoachPage() {
 
   return (
     <Guard role="admin">
-      <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#f8fafc 0%,#f1f5f9 50%,#f8f4ff 100%)' }}>
+      <AppShell title="Add New Coach">
+        <div className="min-h-screen" style={{ background: 'linear-gradient(135deg,#f8fafc 0%,#f1f5f9 50%,#f8f4ff 100%)' }}>
       <div className="sticky top-0 z-30 border-b" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderColor: 'var(--border)' }}>
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-5 py-4">
           <Link href="/trainers"
@@ -539,6 +541,8 @@ export default function AddCoachPage() {
           )}
         </div>
       </div>
-    </div></Guard>
+        </div>
+      </AppShell>
+    </Guard>
   );
 }

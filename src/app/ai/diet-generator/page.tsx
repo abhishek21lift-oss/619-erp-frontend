@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Apple, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { AiDietPlan, AiDietMeal } from '@/lib/api';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
 const ACTIVITY_LEVELS = ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'];
 const GOALS = ['weight_loss', 'muscle_gain', 'maintenance', 'recomposition'];
@@ -105,10 +107,12 @@ export default function DietGeneratorPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-green-500/10">
-          <Apple className="w-6 h-6 text-green-600" />
+    <Guard>
+      <AppShell title="AI Diet Generator">
+        <div className="max-w-4xl mx-auto p-6 space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-green-500/10">
+              <Apple className="w-6 h-6 text-green-600" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-foreground">AI Diet Generator</h1>
@@ -262,6 +266,8 @@ export default function DietGeneratorPage() {
           )}
         </div>
       )}
-    </div>
+        </div>
+      </AppShell>
+    </Guard>
   );
 }

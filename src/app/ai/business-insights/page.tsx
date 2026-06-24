@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { BarChart3, Loader2, Sparkles, TrendingUp, TrendingDown, Minus, AlertCircle, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { AiBusinessInsights } from '@/lib/api';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
 const PERIODS = [
   { label: 'Last 7 days', value: '7d' },
@@ -58,10 +60,12 @@ export default function BusinessInsightsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-violet-500/10">
-          <BarChart3 className="w-6 h-6 text-violet-600" />
+    <Guard>
+      <AppShell title="AI Business Insights">
+        <div className="max-w-4xl mx-auto p-6 space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-violet-500/10">
+              <BarChart3 className="w-6 h-6 text-violet-600" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-foreground">AI Business Insights</h1>
@@ -212,6 +216,8 @@ export default function BusinessInsightsPage() {
           ) : null}
         </div>
       )}
-    </div>
+        </div>
+      </AppShell>
+    </Guard>
   );
 }

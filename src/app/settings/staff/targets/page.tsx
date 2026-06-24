@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { api, StaffTarget, StaffMember } from '@/lib/api';
 import SetTargetModal from '@/components/staff/SetTargetModal';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
 /* ─── Helpers ────────────────────────────────────────── */
 const INR = (n: number) =>
@@ -418,7 +420,9 @@ export default function StaffTargetsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f4f5fb]">
+    <Guard>
+      <AppShell title="Staff Targets">
+        <main className="min-h-screen bg-[#f4f5fb]">
       <div className="mx-auto max-w-[1560px] px-4 py-6 lg:px-8">
 
         {/* ── Header ── */}
@@ -662,6 +666,8 @@ export default function StaffTargetsPage() {
           onSaved={handleSaved}
         />
       )}
-    </main>
+        </main>
+      </AppShell>
+    </Guard>
   );
 }

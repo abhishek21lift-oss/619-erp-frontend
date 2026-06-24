@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, Loader2, Sparkles, AlertTriangle, CheckCircle2, User, TrendingDown, Minus } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { AiProgressAnalysis } from '@/lib/api';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
 interface Client {
   id: number;
@@ -59,10 +61,12 @@ export default function ProgressAnalysisPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-blue-500/10">
-          <TrendingUp className="w-6 h-6 text-blue-600" />
+    <Guard>
+      <AppShell title="AI Progress Analyzer">
+        <div className="max-w-4xl mx-auto p-6 space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/10">
+              <TrendingUp className="w-6 h-6 text-blue-600" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-foreground">AI Progress Analyzer</h1>
@@ -235,6 +239,8 @@ export default function ProgressAnalysisPage() {
           )}
         </div>
       )}
-    </div>
+        </div>
+      </AppShell>
+    </Guard>
   );
 }

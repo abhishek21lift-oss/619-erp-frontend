@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Dumbbell, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { AiWorkoutPlan, AiWorkoutDay, AiWorkoutExercise } from '@/lib/api';
+import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 
 const GOALS = ['weight_loss', 'muscle_gain', 'strength', 'endurance', 'flexibility', 'general_fitness'];
 const EXPERIENCE = ['beginner', 'intermediate', 'advanced'];
@@ -105,10 +107,12 @@ export default function WorkoutGeneratorPage() {
   const scheduleEntries = plan ? Object.entries(plan.weekly_schedule ?? {}) : [];
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-primary/10">
-          <Dumbbell className="w-6 h-6 text-primary" />
+    <Guard>
+      <AppShell title="AI Workout Generator">
+        <div className="max-w-4xl mx-auto p-6 space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <Dumbbell className="w-6 h-6 text-primary" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-foreground">AI Workout Generator</h1>
@@ -235,6 +239,8 @@ export default function WorkoutGeneratorPage() {
           )}
         </div>
       )}
-    </div>
+        </div>
+      </AppShell>
+    </Guard>
   );
 }
