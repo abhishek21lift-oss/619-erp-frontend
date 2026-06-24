@@ -283,6 +283,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
               background: 'linear-gradient(135deg, #070510 0%, #0C0920 30%, #100D30 60%, #130F45 100%)',
               borderBottom: '1px solid rgba(255,255,255,0.05)',
               boxShadow: '0 1px 0 rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.4)',
+              paddingTop: 'env(safe-area-inset-top, 0px)',
             }}
           >
             {/* Top inner highlight */}
