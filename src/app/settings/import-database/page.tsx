@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -614,10 +615,10 @@ export default function ImportDatabasePage() {
                 )}
 
                 <div style={{ display: 'flex', gap: 12 }}>
-                  <a href="/pt-os/clients"
+                  <Link href="/pt-os/clients"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '12px 24px', background: 'linear-gradient(135deg, #0d9488, #14b8a6)', border: 'none', fontSize: 13, fontWeight: 700, color: '#fff', textDecoration: 'none', boxShadow: '0 4px 16px rgba(13,148,136,0.3)' }}>
                     <Users size={15} /> View All Clients
-                  </a>
+                  </Link>
                   <button onClick={resetAll}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '12px 20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
                     <UploadCloud size={14} /> Import Another File
