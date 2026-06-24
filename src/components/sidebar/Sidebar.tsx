@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
@@ -30,52 +30,21 @@ const ICON_MAP: Record<string, React.ElementType> = {
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen,
 };
 
-type GroupTheme = {
-  gradient: string;
-  glow: string;
-  borderColor: string;
-  iconBg: string;
-  activeBg: string;
-  subBorder: string;
-  subActiveBg: string;
-  badgeBg: string;
-  badgeText: string;
+// ── Single unified brand theme (replaces per-group rainbow colours) ──────────
+// All groups share this palette. Only active/hover states use the brand red.
+const BRAND_COLOR = '#DC2626';
+
+const THEME = {
+  brand:       BRAND_COLOR,
+  iconBg:      'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
+  activeBg:    'rgba(220,38,38,0.09)',
+  subBorder:   'rgba(255,255,255,0.07)',
+  subActiveBg: 'rgba(220,38,38,0.08)',
+  // Neutral inactive colours — no colour tint
+  inactiveText:  'rgba(255,255,255,0.52)',
+  inactiveIcon:  'rgba(255,255,255,0.38)',
+  hoverBg:       'rgba(255,255,255,0.05)',
 };
-
-const hexToRgba = (hex: string, alpha: number) => {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-};
-
-const buildTheme = (color: string): GroupTheme => ({
-  gradient: `linear-gradient(135deg, ${color} 0%, ${hexToRgba(color, 0.6)} 100%)`,
-  glow: `0 0 20px ${hexToRgba(color, 0.3)}, 0 0 60px ${hexToRgba(color, 0.1)}`,
-  borderColor: color,
-  iconBg: `linear-gradient(135deg, ${color}, ${hexToRgba(color, 0.5)})`,
-  activeBg: hexToRgba(color, 0.08),
-  subBorder: hexToRgba(color, 0.2),
-  subActiveBg: hexToRgba(color, 0.1),
-  badgeBg: `linear-gradient(135deg, ${color}, ${hexToRgba(color, 0.6)})`,
-  badgeText: '#ffffff',
-});
-
-const GROUP_THEMES: Record<string, GroupTheme> = {
-  'attendance':          buildTheme('#06B6D4'),
-  'personal-training':   buildTheme('#8B5CF6'),
-  'trainer-management':  buildTheme('#F97316'),
-  'session-management':  buildTheme('#0EA5E9'),
-  'progress-tracking':   buildTheme('#EC4899'),
-  'finance':             buildTheme('#14B8A6'),
-  'communication':       buildTheme('#A855F7'),
-  'subscription':        buildTheme('#F59E0B'),
-  'ai-coach':            buildTheme('#10A37F'),
-  'insights':            buildTheme('#64748B'),
-};
-
-const DEFAULT_THEME = buildTheme('#3B82F6');
 
 // Maps nav group/href patterns to permission feature keys
 function canSeeByPermission(href: string, groupId: string, can: (f: string) => boolean): boolean {
@@ -120,7 +89,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
 
   const filterItem = (i: { href: string; role?: string; roles?: string[] }, groupId: string): boolean => {
     if (!isVisibleForRole(i as Parameters<typeof isVisibleForRole>[0], user?.role)) {
-      return false; // hidden or role not met — never override with permissions
+      return false;
     }
     return canSeeByPermission(i.href, groupId, isAdmin ? () => true : can);
   };
@@ -141,78 +110,80 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
     items.some(i => isActive(i.href || '') || i.children?.some(c => isActive(c.href || '')));
 
   return (
-    <div className="space-y-[2px] px-3">
-      {/* Groups */}
-      {navItems.slice(0).map(group => {
+    <div className="space-y-[1px] px-2.5">
+      {navItems.map(group => {
         const GroupIcon = ICON_MAP[group.icon] || LayoutDashboard;
         const open = expanded[group.id] ?? anyChildActive(group.items);
         const hasActiveChild = anyChildActive(group.items);
-        const theme = GROUP_THEMES[group.id] || DEFAULT_THEME;
 
         return (
-          <div key={group.id} className="relative group/group">
+          <div key={group.id} className="relative">
             <button
               onClick={() => { if (!collapsed) toggleGroup(group.id); }}
               className={cn(
-                'relative w-full rounded-xl transition-all duration-300 overflow-hidden',
+                'relative w-full rounded-xl transition-all duration-200 overflow-hidden',
                 collapsed ? 'flex justify-center px-0 py-2' : '',
               )}
               style={{
-                background: hasActiveChild
-                  ? theme.activeBg
-                  : open && !collapsed
-                    ? `linear-gradient(135deg, ${theme.borderColor}18, transparent)`
-                    : hexToRgba(theme.borderColor, 0.04),
-                boxShadow: hasActiveChild ? `0 2px 12px ${hexToRgba(theme.borderColor, 0.10)}` : 'none',
+                background: hasActiveChild ? THEME.activeBg : 'transparent',
               }}
               title={collapsed ? group.label : undefined}
             >
-              {/* Left glow strip */}
-              {!collapsed && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-300"
+              {/* Left accent strip — only visible when group is active or open */}
+              {!collapsed && (hasActiveChild || open) && (
+                <div
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-200"
                   style={{
-                    background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}66)`,
-                    height: hasActiveChild ? '60%' : open ? '45%' : '25%',
-                    opacity: hasActiveChild ? 1 : open ? 0.7 : 0.25,
-                    boxShadow: hasActiveChild || open ? theme.glow : 'none',
+                    background: `linear-gradient(180deg, ${BRAND_COLOR}, ${BRAND_COLOR}88)`,
+                    height: hasActiveChild ? '55%' : '40%',
+                    opacity: hasActiveChild ? 1 : 0.5,
+                    boxShadow: hasActiveChild ? `0 0 8px ${BRAND_COLOR}60` : 'none',
                   }}
                 />
               )}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl"
-                style={{ background: theme.activeBg }} />
+
+              {/* Hover overlay */}
+              <div
+                className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-xl"
+                style={{ background: THEME.hoverBg }}
+              />
 
               {collapsed ? (
-                <div className={cn(
-                  'flex h-[32px] w-[32px] items-center justify-center rounded-lg transition-all duration-300',
-                  (hasActiveChild) && 'shadow-[0_0_12px_rgba(0,0,0,0.08)]',
-                )}
-                  style={{ background: hasActiveChild ? theme.iconBg : 'transparent' }}>
-                  <GroupIcon size={16} strokeWidth={hasActiveChild ? 2.5 : 1.5}
-                    style={{
-                      color: hasActiveChild || open ? '#ffffff' : hexToRgba(theme.borderColor, 0.75),
-                    }} />
+                <div
+                  className="flex h-[32px] w-[32px] items-center justify-center rounded-lg transition-all duration-200"
+                  style={{ background: hasActiveChild ? THEME.iconBg : 'transparent' }}
+                >
+                  <GroupIcon
+                    size={16}
+                    strokeWidth={hasActiveChild ? 2.5 : 1.5}
+                    style={{ color: hasActiveChild ? '#ffffff' : THEME.inactiveIcon }}
+                  />
                 </div>
               ) : (
-                <div className="relative flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium transition-all duration-200"
-                  style={{ color: hasActiveChild ? theme.borderColor : hexToRgba(theme.borderColor, 0.65) }}>
-                  <div className={cn(
-                    'flex h-[28px] w-[28px] items-center justify-center rounded-lg shrink-0 transition-all duration-300',
-                    (hasActiveChild || open) && 'shadow-[0_0_12px_rgba(0,0,0,0.08)]',
-                  )}
-                    style={{ background: (hasActiveChild || open) ? theme.iconBg : 'transparent' }}>
-                    <GroupIcon size={14} strokeWidth={hasActiveChild ? 2.2 : 1.5}
-                      style={{
-                        color: hasActiveChild || open ? '#ffffff' : hexToRgba(theme.borderColor, 0.7),
-                        filter: hasActiveChild ? 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' : `drop-shadow(0 0 6px ${hexToRgba(theme.borderColor, 0.4)})`,
-                      }} />
+                <div
+                  className="relative flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium transition-all duration-200"
+                  style={{ color: hasActiveChild ? BRAND_COLOR : THEME.inactiveText }}
+                >
+                  <div
+                    className="flex h-[26px] w-[26px] items-center justify-center rounded-lg shrink-0 transition-all duration-200"
+                    style={{ background: hasActiveChild || open ? THEME.iconBg : 'transparent' }}
+                  >
+                    <GroupIcon
+                      size={13}
+                      strokeWidth={hasActiveChild ? 2.2 : 1.5}
+                      style={{ color: hasActiveChild || open ? '#ffffff' : THEME.inactiveIcon }}
+                    />
                   </div>
-                  <span className="flex-1 text-left text-[13px] font-semibold tracking-tight">{group.label}</span>
-                  <ChevronDown size={12} strokeWidth={2.5}
-                    className="shrink-0 transition-transform duration-300"
+                  <span className="flex-1 text-left text-[12.5px] font-semibold tracking-tight">{group.label}</span>
+                  <ChevronDown
+                    size={11}
+                    strokeWidth={2.5}
+                    className="shrink-0 transition-transform duration-250"
                     style={{
-                      color: hasActiveChild ? theme.borderColor : hexToRgba(theme.borderColor, 0.4),
+                      color: hasActiveChild ? BRAND_COLOR : 'rgba(255,255,255,0.28)',
                       transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }} />
+                    }}
+                  />
                 </div>
               )}
             </button>
@@ -225,11 +196,13 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    transition={{ duration: 0.18, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="ml-7 mt-1 space-y-[1px] border-l-[1.5px] pl-2"
-                      style={{ borderColor: theme.subBorder }}>
+                    <div
+                      className="ml-6 mt-0.5 space-y-[1px] border-l pl-2 pb-0.5"
+                      style={{ borderColor: THEME.subBorder }}
+                    >
                       {group.items.map((item) => {
                         const ItemIcon = ICON_MAP[item.icon];
                         const active = isActive(item.href);
@@ -239,36 +212,56 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                         const sharedInner = (
                           <>
                             {active && !isDisabled && (
-                              <motion.div layoutId={`sidebar-active-${group.id}`}
-                                className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-r-full"
+                              <motion.div
+                                layoutId={`sidebar-active-${group.id}`}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3.5 rounded-r-full"
                                 style={{
-                                  background: `linear-gradient(180deg, ${theme.borderColor}, ${theme.borderColor}66)`,
-                                  boxShadow: `0 0 8px ${theme.borderColor}50`,
-                                }} />
+                                  background: `linear-gradient(180deg, ${BRAND_COLOR}, ${BRAND_COLOR}66)`,
+                                  boxShadow: `0 0 6px ${BRAND_COLOR}50`,
+                                }}
+                              />
                             )}
-                            <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-lg"
-                              style={{ background: !active && !isDisabled ? theme.activeBg : undefined }} />
-                            <div className="flex h-[22px] w-[22px] items-center justify-center rounded-md shrink-0 transition-all duration-200 relative z-10"
-                              style={{ background: active && !isDisabled ? theme.iconBg : 'transparent' }}>
+                            <div
+                              className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-150 rounded-lg"
+                              style={{ background: !active && !isDisabled ? THEME.hoverBg : undefined }}
+                            />
+                            <div
+                              className="flex h-[20px] w-[20px] items-center justify-center rounded-md shrink-0 transition-all duration-200 relative z-10"
+                              style={{ background: active && !isDisabled ? THEME.iconBg : 'transparent' }}
+                            >
                               {ItemIcon && (
-                                <ItemIcon size={12} strokeWidth={active && !isDisabled ? 2.5 : 1.5}
-                                  style={{ color: active && !isDisabled ? '#ffffff' : hexToRgba(theme.borderColor, 0.6) }} />
+                                <ItemIcon
+                                  size={11}
+                                  strokeWidth={active && !isDisabled ? 2.5 : 1.5}
+                                  style={{ color: active && !isDisabled ? '#ffffff' : THEME.inactiveIcon }}
+                                />
                               )}
                             </div>
-                            <span className="truncate relative z-10 text-[12px] flex-1">{item.label}</span>
+                            <span
+                              className="truncate relative z-10 text-[11.5px] flex-1"
+                              style={{ color: active && !isDisabled ? BRAND_COLOR : THEME.inactiveText }}
+                            >
+                              {item.label}
+                            </span>
                             {isDisabled && (
-                              <span className="relative z-10 ml-1 shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider"
-                                style={{ background: 'rgba(148,163,184,0.12)', color: '#94A3B8', border: '1px solid rgba(148,163,184,0.2)' }}>
+                              <span
+                                className="relative z-10 ml-1 shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                                style={{ background: 'rgba(148,163,184,0.12)', color: '#94A3B8', border: '1px solid rgba(148,163,184,0.2)' }}
+                              >
                                 SOON
                               </span>
                             )}
                             {!isDisabled && item.isNew && badgeCount === 0 && (
-                              <span className="relative z-10 ml-1 shrink-0 block h-1.5 w-1.5 rounded-full"
-                                style={{ background: '#22C55E', boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
+                              <span
+                                className="relative z-10 ml-1 shrink-0 block h-1.5 w-1.5 rounded-full"
+                                style={{ background: '#22C55E', boxShadow: '0 0 5px rgba(34,197,94,0.5)' }}
+                              />
                             )}
                             {!isDisabled && badgeCount > 0 && (
-                              <span className="relative z-10 ml-1 shrink-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
-                                style={{ background: theme.borderColor }}>
+                              <span
+                                className="relative z-10 ml-1 shrink-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+                                style={{ background: BRAND_COLOR }}
+                              >
                                 {badgeCount > 99 ? '99+' : badgeCount}
                               </span>
                             )}
@@ -279,8 +272,8 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                           return (
                             <div
                               key={item.href}
-                              className="relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] font-medium overflow-hidden cursor-default select-none"
-                              style={{ color: 'var(--text-disabled)', opacity: 0.55 }}
+                              className="relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11.5px] font-medium overflow-hidden cursor-default select-none"
+                              style={{ opacity: 0.45 }}
                             >
                               {sharedInner}
                             </div>
@@ -293,12 +286,11 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                             href={item.href}
                             onClick={onLinkClick}
                             className={cn(
-                              'relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[12px] font-medium transition-all duration-200 overflow-hidden',
+                              'relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[11.5px] font-medium transition-all duration-150 overflow-hidden',
                               active && 'font-semibold',
                             )}
                             style={{
-                              color: active ? theme.borderColor : hexToRgba(theme.borderColor, 0.6),
-                              background: active ? theme.subActiveBg : 'transparent',
+                              background: active ? THEME.subActiveBg : 'transparent',
                             }}
                           >
                             {sharedInner}
@@ -313,6 +305,77 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?: () => void }) {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const initials = user?.name
+    ? user.name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : (user?.email?.[0] || '?').toUpperCase();
+
+  const handleLogout = async () => {
+    onClose?.();
+    await logout();
+    router.push('/login');
+  };
+
+  if (collapsed) {
+    return (
+      <div className="shrink-0 flex justify-center border-t border-[var(--sidebar-border)] py-3">
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Logout"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition-colors hover:bg-red-500/15 hover:text-red-400"
+        >
+          <LogOut size={14} strokeWidth={1.5} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="shrink-0 border-t border-[var(--sidebar-border)] px-3 py-2.5">
+      <div className="flex items-center gap-2.5">
+        {/* Avatar with online dot */}
+        <div className="relative shrink-0">
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-white select-none"
+            style={{ background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)' }}
+          >
+            {initials}
+          </div>
+          <span
+            className="absolute -bottom-[1px] -right-[1px] block h-2 w-2 rounded-full border-[1.5px]"
+            style={{ background: '#22C55E', borderColor: '#070510' }}
+          />
+        </div>
+
+        {/* Name + role */}
+        <div className="flex-1 min-w-0">
+          <p className="truncate text-[12px] font-semibold leading-tight" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            {user?.name || 'User'}
+          </p>
+          <p className="truncate text-[10px] capitalize leading-tight mt-0.5" style={{ color: 'rgba(255,255,255,0.38)' }}>
+            {user?.role || 'member'}
+          </p>
+        </div>
+
+        {/* Logout */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Logout"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-red-500/15 hover:text-red-400"
+          style={{ color: 'rgba(255,255,255,0.30)' }}
+        >
+          <LogOut size={13} strokeWidth={1.5} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -353,63 +416,88 @@ export default function Sidebar({
           'border-r border-[var(--sidebar-border)]',
         ],
         isMobile && [
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col',
+          'fixed inset-y-0 left-0 z-50 flex flex-col',
+          'w-[240px]',
           'transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
           'border-r border-[var(--sidebar-border)]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
         ],
       )}
       style={{
-        background: 'linear-gradient(180deg, rgba(249,115,22,0.10) 0%, rgba(249,115,22,0.04) 22%, transparent 45%), linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
+        background: 'linear-gradient(180deg, rgba(249,115,22,0.07) 0%, rgba(249,115,22,0.02) 18%, transparent 38%), linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
         paddingTop: 'env(safe-area-inset-top, 0px)',
         boxShadow: isMobile
-          ? '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(167,139,250,0.06)'
-          : 'inset 0 0 0 1px rgba(167,139,250,0.06), 4px 0 24px rgba(0,0,0,0.4)',
+          ? '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(167,139,250,0.05)'
+          : 'inset 0 0 0 1px rgba(167,139,250,0.05), 4px 0 24px rgba(0,0,0,0.35)',
       }}
     >
-      {/* Brand header */}
-      <div className={cn('relative shrink-0', collapsed ? 'px-3 pb-2 pt-4' : 'px-5 pb-3 pt-6')}>
-        {!collapsed && <div className="absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r from-transparent via-[#DC2626] to-transparent opacity-50" />}
+      {/* ── Brand header ── */}
+      <div className={cn('relative shrink-0', collapsed ? 'px-3 pb-2 pt-3' : 'px-4 pb-2.5 pt-3.5')}>
+        {!collapsed && (
+          <div className="absolute top-0 left-3 right-3 h-[1.5px] rounded-full bg-gradient-to-r from-transparent via-[#DC2626] to-transparent opacity-40" />
+        )}
         <div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between')}>
-          <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-3')}>
-            <div className="relative">
-              {/* Glow ring behind logo */}
-              {!collapsed && <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ boxShadow: '0 0 20px rgba(220,38,38,0.35)', borderRadius: 12 }} />}
-              <div className={cn('rounded-xl p-[2px] transition-all duration-300',
-                collapsed ? 'h-10 w-10' : 'h-[52px] w-[52px]')}
-                style={{ background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #7C3AED 100%)', boxShadow: '0 4px 20px rgba(220,38,38,0.30), 0 2px 8px rgba(0,0,0,0.25)' }}>
+          <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}>
+            <div className="relative shrink-0">
+              <div
+                className={cn(
+                  'rounded-xl p-[2px] transition-all duration-300',
+                  collapsed ? 'h-9 w-9' : 'h-9 w-9',
+                )}
+                style={{
+                  background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #7C3AED 100%)',
+                  boxShadow: '0 2px 12px rgba(220,38,38,0.25)',
+                }}
+              >
                 <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
-                  <Image src="/logo.png" alt="619 Fitness" width={collapsed ? 28 : 40} height={collapsed ? 28 : 40} className={cn('rounded-lg object-cover', collapsed ? 'h-7 w-7' : 'h-10 w-10')} />
+                  <Image
+                    src="/logo.png"
+                    alt="619 Fitness"
+                    width={collapsed ? 24 : 28}
+                    height={collapsed ? 24 : 28}
+                    className={cn('rounded-lg object-cover', collapsed ? 'h-6 w-6' : 'h-7 w-7')}
+                  />
                 </div>
               </div>
             </div>
             {!collapsed && (
               <div className="overflow-hidden">
-                <h2 className="text-[17px] font-extrabold tracking-tight leading-none whitespace-nowrap">
-                  <span className="bg-clip-text text-transparent"
-                    style={{ backgroundImage: 'linear-gradient(135deg, #EF4444, #DC2626, #B91C1C)' }}>619</span>
+                <h2 className="text-[15px] font-extrabold tracking-tight leading-none whitespace-nowrap">
+                  <span
+                    className="bg-clip-text text-transparent"
+                    style={{ backgroundImage: 'linear-gradient(135deg, #EF4444, #DC2626, #B91C1C)' }}
+                  >619</span>
                   {' '}
-                  <span className="text-[var(--text-primary)] tracking-[0.04em] text-[14px]">FITNESS</span>
+                  <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">FITNESS</span>
                 </h2>
-                <p className="mt-[3px] text-[10px] font-semibold text-[var(--text-muted)] tracking-[0.1em] uppercase whitespace-nowrap">
+                <p className="mt-[2px] text-[9px] font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase whitespace-nowrap">
                   Studio Suite
                 </p>
               </div>
             )}
           </Link>
+
           {isMobile && (
-            <button type="button" aria-label="Close sidebar" onClick={onMobileClose}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-muted)] transition-all hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]">
-              <X size={14} />
+            <button
+              type="button"
+              aria-label="Close sidebar"
+              onClick={onMobileClose}
+              className="flex h-6 w-6 items-center justify-center rounded-lg transition-colors"
+              style={{ color: 'rgba(255,255,255,0.40)' }}
+            >
+              <X size={13} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Nav */}
+      {/* ── Nav ── */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden py-1 scrollbar-thin scrollbar-thumb-[var(--border)]">
         <SidebarNav collapsed={collapsed} onLinkClick={isMobile ? onMobileClose : undefined} />
       </div>
+
+      {/* ── User profile footer ── */}
+      <SidebarProfile collapsed={collapsed} onClose={isMobile ? onMobileClose : undefined} />
     </aside>
   );
 }
