@@ -17,14 +17,18 @@ const BASE_ITEMS = [
 
 const FINANCE_ITEM = { href: '/finance/collected-payments', icon: IndianRupee, label: 'Finance' };
 
-export default function MobileBottomNav() {
+interface MobileBottomNavProps {
+  sidebarOpen?: boolean;
+}
+
+export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNavProps) {
   const pathname  = usePathname();
   const { user }  = useAuth();
   const role      = normaliseRole(user?.role);
   const isAdminOrManager = role === 'admin' || role === 'manager';
   const items     = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
 
-  const [visible, setVisible] = useState(true);
+  const [scrollVisible, setScrollVisible] = useState(true);
 
   // Track scroll position to hide nav while scrolling
   const lastScrollY  = useRef(0);
@@ -36,9 +40,9 @@ export default function MobileBottomNav() {
 
   useEffect(() => {
     const hide = () => {
-      setVisible(false);
+      setScrollVisible(false);
       if (scrollTimer.current) clearTimeout(scrollTimer.current);
-      scrollTimer.current = setTimeout(() => setVisible(true), 500);
+      scrollTimer.current = setTimeout(() => setScrollVisible(true), 500);
     };
 
     const onTouchStart = (e: TouchEvent) => {
@@ -59,7 +63,7 @@ export default function MobileBottomNav() {
       // Tap (barely moved) — show the nav immediately
       if (dy < 10 && dx < 10) {
         if (scrollTimer.current) clearTimeout(scrollTimer.current);
-        setVisible(true);
+        setScrollVisible(true);
       }
     };
 
@@ -69,6 +73,7 @@ export default function MobileBottomNav() {
       if (delta > 4) hide();
       lastScrollY.current = window.scrollY;
     };
+
 
     document.addEventListener('touchstart', onTouchStart, { passive: true });
     document.addEventListener('touchmove', onTouchMove, { passive: true });
@@ -86,17 +91,20 @@ export default function MobileBottomNav() {
 
   // Always show on route change
   useEffect(() => {
-    setVisible(true);
+    setScrollVisible(true);
   }, [pathname]);
+
+  // Hidden when sidebar drawer is open OR during scroll
+  const isVisible = !sidebarOpen && scrollVisible;
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 lg:hidden"
       style={{
         background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 60%, #1e1b4b 100%)',
         borderTop: '1px solid rgba(167,139,250,0.15)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        transform: visible ? 'translateY(0)' : 'translateY(calc(100% + env(safe-area-inset-bottom, 20px) + 10px))',
+        transform: isVisible ? 'translateY(0)' : 'translateY(calc(100% + env(safe-area-inset-bottom, 20px) + 10px))',
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
