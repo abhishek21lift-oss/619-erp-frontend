@@ -72,7 +72,6 @@ const GROUP_THEMES: Record<string, GroupTheme> = {
   'communication':       buildTheme('#A855F7'),
   'subscription':        buildTheme('#F59E0B'),
   'insights':            buildTheme('#64748B'),
-  'ai-coach':            buildTheme('#10A37F'),
 };
 
 const DEFAULT_THEME = buildTheme('#3B82F6');

@@ -36,8 +36,7 @@ interface Notification {
 const NAV_KEYWORDS: Record<string, string> = {
   '/checkin':                    'walk-in walkin drop-in checkin daily visit attendance',
   '/checkin/kiosk':              'kiosk self service qr face biometric',
-  '/ai-coach':                   'ai coach workout nutrition fitness chatbot assistant gpt',
-  '/member/attendance':          'my attendance history streak visits calendar heatmap',
+'/member/attendance':          'my attendance history streak visits calendar heatmap',
   '/pt-os/weekly-checkin':       'progress tracking weekly check-in measurements goals',
   '/pt-os/schedule-session':     'session booking schedule appointments',
   '/pt-os/session-balance':      'session balance remaining credits',

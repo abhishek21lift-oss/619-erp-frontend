@@ -136,14 +136,6 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'ai-coach',
-    label: 'AI Coach',
-    icon: 'Bot',
-    items: [
-      { href: '/ai-coach', label: 'AI Coach', icon: 'Bot', isNew: true },
-    ],
-  },
-  {
     id: 'insights',
     label: 'Insights',
     icon: 'FileBarChart',

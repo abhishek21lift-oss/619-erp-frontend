@@ -5,14 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Search, X, CreditCard, Smartphone, MessageSquare, Send,
-  Bot, Calendar, Camera, BarChart3, Loader2, Link2, Unlink,
-  Settings, Clock, CheckCircle2, RefreshCw, ArrowRight, Sparkles,
-  AlertCircle,
+  Calendar, Camera, BarChart3, Loader2, Link2, Unlink,
+  Settings, Clock, CheckCircle2, RefreshCw,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
-import type { AiProviderSettings, AiProviderStats, AiProviderStatEntry } from '@/lib/api';
 
 type Status = 'connected' | 'error' | 'pending' | 'unavailable';
 
@@ -46,7 +44,7 @@ const CATEGORIES = [
 ];
 
 const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
-  CreditCard, Smartphone, MessageSquare, Send, Bot, Calendar, Camera, BarChart3,
+  CreditCard, Smartphone, MessageSquare, Send, Calendar, Camera, BarChart3,
 };
 
 const glass = {
@@ -145,58 +143,6 @@ function ConnectModal({ integration, isConnected, onClose, onConnect, onDisconne
         </div>
       </motion.div>
     </div>
-  );
-}
-
-// ── AI Coach Card (live) ──────────────────────────────────────────────────────
-function AiCoachCard() {
-  const router = useRouter();
-  const [usage, setUsage] = useState<{ messages_today: string; tokens_today: string } | null>(null);
-
-  useEffect(() => {
-    api.ai.usage().then((r) => setUsage(r.data)).catch(() => {});
-  }, []);
-
-  return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
-      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', color: '#10a37f' }}>
-          <Bot size={20} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>619 AI Coach</span>
-            <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(16,163,127,0.12)', color: '#10a37f', border: '1px solid rgba(16,163,127,0.25)' }}>Active</span>
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
-            AI-powered workout &amp; nutrition coach with member context
-          </p>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#10a37f' }}>
-          <CheckCircle2 size={12} /> Connected · MiniMax-M3
-        </span>
-        {usage && (
-          <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>
-            {usage.messages_today} messages today
-          </span>
-        )}
-      </div>
-
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          onClick={() => router.push('/ai-coach')}
-          style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#10a37f,#059669)', color: '#ffffff', boxShadow: '0 4px 12px rgba(16,163,127,0.3)' }}
-        >
-          Open AI Coach <ArrowRight size={13} />
-        </button>
-      </div>
-    </motion.div>
   );
 }
 
@@ -412,115 +358,6 @@ function StaticCard({ integration, isConnected, connectedAt, onConfigure, onTogg
   );
 }
 
-// ── Token Router / MiniMax-M3 Card ───────────────────────────────────────────
-function TokenRouterCard() {
-  const [settings, setSettings] = useState<AiProviderSettings | null>(null);
-  const [stats,    setStats]    = useState<AiProviderStats | null>(null);
-  const [testing,  setTesting]  = useState(false);
-  const [testMsg,  setTestMsg]  = useState<{ success: boolean; message: string } | null>(null);
-
-  useEffect(() => {
-    api.ai.providerSettings().then(r => setSettings(r.data)).catch(() => {});
-    api.ai.providerStats().then(r => setStats(r.data)).catch(() => {});
-  }, []);
-
-  const handleTest = async () => {
-    setTesting(true); setTestMsg(null);
-    try {
-      const r = await api.ai.testProvider();
-      setTestMsg(r);
-    } catch { setTestMsg({ success: false, message: 'Test failed — network error' }); }
-    finally { setTesting(false); }
-  };
-
-  const isConnected = settings?.configured ?? false;
-  const mmStat      = stats?.minimax as AiProviderStatEntry | undefined;
-
-  return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
-      whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
-      style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>
-          <Sparkles size={20} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Token Router · MiniMax-M3</span>
-            {isConnected
-              ? <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(16,163,127,0.12)', color: '#10a37f', border: '1px solid rgba(16,163,127,0.25)' }}>Connected</span>
-              : <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 8px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>Not configured</span>
-            }
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', lineHeight: 1.4 }}>
-            AI provider — all requests route via Token Router
-          </p>
-        </div>
-      </div>
-
-      {/* Model + API key status */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: isConnected ? '#10a37f' : '#ef4444' }}>
-            {isConnected ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-            {isConnected ? 'TOKEN_ROUTER_API_KEY loaded' : 'Set TOKEN_ROUTER_API_KEY in environment'}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Zap size={11} style={{ color: '#8b5cf6' }} />
-            Model: <strong style={{ color: 'var(--text-primary)' }}>{settings?.model ?? 'minimax-m3'}</strong>
-          </span>
-        </div>
-        {settings?.base_url && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
-              {settings.base_url}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Usage stats */}
-      {mmStat && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          {[
-            { label: 'Requests (30d)', value: Number(mmStat.requests).toLocaleString() },
-            { label: 'Tokens (30d)',   value: Number(mmStat.tokens_total).toLocaleString() },
-            { label: 'Today',          value: `${mmStat.requests_today} req` },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ flex: 1, background: 'var(--bg-subtle)', borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{label}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Test result banner */}
-      {testMsg && (
-        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600, background: testMsg.success ? 'rgba(16,163,127,0.1)' : 'rgba(239,68,68,0.1)', color: testMsg.success ? '#10a37f' : '#ef4444', border: `1px solid ${testMsg.success ? 'rgba(16,163,127,0.25)' : 'rgba(239,68,68,0.2)'}` }}>
-          {testMsg.message}
-        </div>
-      )}
-
-      {/* Test button */}
-      <button
-        onClick={handleTest}
-        disabled={testing || !isConnected}
-        style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (testing || !isConnected) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: isConnected ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : 'var(--bg-subtle)', color: isConnected ? '#ffffff' : 'var(--text-disabled)', boxShadow: isConnected ? '0 4px 12px rgba(139,92,246,0.3)' : 'none', opacity: (!isConnected || testing) ? 0.7 : 1 }}
-      >
-        {testing
-          ? <><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> Testing MiniMax-M3…</>
-          : <><Sparkles size={13} /> Test Connection</>
-        }
-      </button>
-    </motion.div>
-  );
-}
-
 type ApiIntegration = { id: string; status: string; connected_at?: string; last_sync_at?: string };
 
 // ── Main page ─────────────────────────────────────────────────────────────────
@@ -579,10 +416,7 @@ export default function IntegrationsPage() {
     const showCalendar =
       (category === 'all' || category === 'scheduling') &&
       (!search || 'google calendar'.includes(search.toLowerCase()) || 'sync sessions bookings'.includes(search.toLowerCase()));
-    const showAi =
-      (category === 'all' || category === 'ai') &&
-      (!search || 'ai coach'.includes(search.toLowerCase()) || '619 ai workout nutrition'.includes(search.toLowerCase()));
-    return { staticFiltered, showCalendar, showAi };
+    return { staticFiltered, showCalendar };
   }, [category, search]);
 
   const modalIntegration = modalId ? STATIC_INTEGRATIONS.find((i) => i.id === modalId) ?? null : null;
@@ -641,19 +475,13 @@ export default function IntegrationsPage() {
                   onToggle={() => disconnectIntegration(integration.id)}
                 />
               ))}
-              {filtered.showAi && (
-                <AiCoachCard key="ai-coach" />
-              )}
-              {filtered.showAi && (
-                <TokenRouterCard key="token-router" />
-              )}
               {filtered.showCalendar && (
                 <GoogleCalendarCard key="calendar" flashSuccess={flashSuccess} />
               )}
             </AnimatePresence>
           </div>
 
-          {!filtered.staticFiltered.length && !filtered.showCalendar && !filtered.showAi && (
+          {!filtered.staticFiltered.length && !filtered.showCalendar && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ textAlign: 'center', padding: '60px 20px', ...glass, borderRadius: 20, marginTop: 16 }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
