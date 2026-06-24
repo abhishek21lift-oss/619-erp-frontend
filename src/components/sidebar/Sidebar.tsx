@@ -361,6 +361,7 @@ export default function Sidebar({
       )}
       style={{
         background: 'linear-gradient(160deg, #070510 0%, #0C0920 30%, #100D30 65%, #130F45 100%)',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
         boxShadow: isMobile
           ? '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(167,139,250,0.06)'
           : 'inset 0 0 0 1px rgba(167,139,250,0.06), 4px 0 24px rgba(0,0,0,0.4)',
