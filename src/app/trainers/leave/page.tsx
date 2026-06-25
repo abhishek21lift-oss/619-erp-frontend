@@ -25,13 +25,14 @@ const initials = initialsAvatar;
 const TYPE_STYLES: Record<string, { bg: string; color: string; icon: string }> = {
   sick:      { bg: 'rgba(239,68,68,0.12)', color: '#fca5a5', icon: '🤒' },
   casual:    { bg: 'rgba(59,130,246,0.12)', color: '#93c5fd', icon: '😎' },
+  personal:  { bg: 'rgba(99,102,241,0.12)', color: '#a5b4fc', icon: '🙋' },
   earned:    { bg: 'rgba(16,185,129,0.12)', color: '#6ee7b7', icon: '🎯' },
   emergency: { bg: 'rgba(245,158,11,0.12)', color: '#fcd34d', icon: '🚨' },
   unpaid:    { bg: 'rgba(139,92,246,0.12)', color: '#c4b5fd', icon: '📋' },
   other:     { bg: 'rgba(148,163,184,0.12)', color: '#cbd5e1', icon: '📝' },
 };
 
-const LEAVE_TYPES = ['sick', 'casual', 'earned', 'emergency', 'unpaid', 'other'];
+const LEAVE_TYPES = ['sick', 'casual', 'personal', 'earned', 'emergency', 'unpaid', 'other'];
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string; icon: React.ReactNode }> = {
   pending:  { label: 'Pending',  bg: 'rgba(245,158,11,0.15)', color: '#fcd34d', icon: <Clock size={11} /> },
