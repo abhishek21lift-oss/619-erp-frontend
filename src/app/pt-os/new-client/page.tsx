@@ -344,7 +344,7 @@ function NewClientWizard() {
             }
             next.planId = matchedPlan.id;
             next.plan = matchedPlan.name;
-            next.basePrice = matchedPlan.base_amount;
+            next.basePrice = matchedPlan.base_amount != null ? Number(matchedPlan.base_amount) : null;
             next.endDate = ed;
             filled++;
           }
@@ -433,9 +433,9 @@ function NewClientWizard() {
           frequency: form.frequency || undefined,
 
           notes: form.transformationGoals,
-          base_amount: form.basePrice,
-          discount: disc,
-          monthly_pt_amount: selling,
+          base_amount: form.basePrice != null ? Number(form.basePrice) : null,
+          discount: Number(disc),
+          monthly_pt_amount: Number(selling),
           pt_start_date: form.startDate,
           pt_end_date: form.endDate || undefined,
           pt_package_id: form.planId || undefined,
@@ -770,7 +770,7 @@ function NewClientWizard() {
                                       ...prev,
                                       planId: selected.id,
                                       plan: selected.name,
-                                      basePrice: selected.base_amount,
+                                      basePrice: selected.base_amount != null ? Number(selected.base_amount) : null,
                                       endDate: ed,
                                     };
                                   });
