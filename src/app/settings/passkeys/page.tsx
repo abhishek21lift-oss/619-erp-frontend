@@ -120,16 +120,35 @@ function PasskeysContent() {
     clearError();
     setError('');
     try {
-      const options = await api.webauthn.registerOptions();
+      let options: Record<string, unknown>;
+      try {
+        options = await api.webauthn.registerOptions();
+      } catch (err: unknown) {
+        setError('[Step 1 - server] ' + webAuthnError(err));
+        return;
+      }
+
       const { default: doRegister } = await import('@/lib/webauthn-passkey-register');
-      const registration = await doRegister(options);
-      await api.webauthn.registerVerify({ registration, deviceName: deviceName.trim() || undefined });
+
+      let registration: Record<string, unknown>;
+      try {
+        registration = await doRegister(options);
+      } catch (err: unknown) {
+        setError('[Step 2 - device] ' + webAuthnError(err));
+        return;
+      }
+
+      try {
+        await api.webauthn.registerVerify({ registration, deviceName: deviceName.trim() || undefined });
+      } catch (err: unknown) {
+        setError('[Step 3 - verify] ' + webAuthnError(err));
+        return;
+      }
+
       showSuccess('Passkey registered successfully!');
       setDeviceName('');
       setShowForm(false);
       loadCreds();
-    } catch (err: unknown) {
-      setError(webAuthnError(err));
     } finally {
       setRegistering(false);
     }
