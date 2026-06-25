@@ -28,60 +28,46 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   const isAdminOrManager = role === 'admin' || role === 'manager';
   const items     = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
 
-  const [scrollVisible, setScrollVisible] = useState(true);
+  const [scrollVisible, setScrollVisible] = useState(false);
   const lastScrollY  = useRef(0);
-  const scrollTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartY  = useRef(0);
   const touchStartX  = useRef(0);
 
   useEffect(() => {
-    const hide = () => {
-      setScrollVisible(false);
-      if (scrollTimer.current) clearTimeout(scrollTimer.current);
-      scrollTimer.current = setTimeout(() => setScrollVisible(true), 500);
-    };
-
     const onTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
       touchStartX.current = e.touches[0].clientX;
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+      const dy = e.touches[0].clientY - touchStartY.current;
       const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
-      if (dy > 8 && dy > dx) hide();
-    };
-
-    const onTouchEnd = (e: TouchEvent) => {
-      const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
-      const dx = Math.abs(e.changedTouches[0].clientX - touchStartX.current);
-      if (dy < 10 && dx < 10) {
-        if (scrollTimer.current) clearTimeout(scrollTimer.current);
-        setScrollVisible(true);
+      const absDy = Math.abs(dy);
+      if (absDy > 8 && absDy > dx) {
+        // dy > 0 = finger moving down = scrolling content up → show
+        // dy < 0 = finger moving up = scrolling content down → hide
+        setScrollVisible(dy > 0);
       }
     };
 
     const onScroll = () => {
-      const delta = Math.abs(window.scrollY - lastScrollY.current);
-      if (delta > 4) hide();
-      lastScrollY.current = window.scrollY;
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollY.current;
+      if (delta < -4) setScrollVisible(true);   // scrolling up → show
+      else if (delta > 4) setScrollVisible(false); // scrolling down → hide
+      lastScrollY.current = currentY;
     };
 
     document.addEventListener('touchstart', onTouchStart, { passive: true });
     document.addEventListener('touchmove', onTouchMove, { passive: true });
-    document.addEventListener('touchend', onTouchEnd, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true });
 
     return () => {
       document.removeEventListener('touchstart', onTouchStart);
       document.removeEventListener('touchmove', onTouchMove);
-      document.removeEventListener('touchend', onTouchEnd);
       window.removeEventListener('scroll', onScroll);
-      if (scrollTimer.current) clearTimeout(scrollTimer.current);
     };
   }, []);
-
-  useEffect(() => { setScrollVisible(true); }, [pathname]);
 
   const isVisible = !sidebarOpen && scrollVisible;
 
