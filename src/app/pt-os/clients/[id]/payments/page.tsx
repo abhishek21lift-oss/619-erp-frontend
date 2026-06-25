@@ -132,6 +132,8 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
   const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
 
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -172,6 +174,9 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
     if (statusFilter !== 'all' && p.status !== statusFilter) return false;
     return true;
   });
+
+  const totalPages = Math.ceil(filteredPayments.length / PAGE_SIZE);
+  const pagedPayments = filteredPayments.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const handleCreatePayment = async () => {
     if (!form.amount || Number(form.amount) <= 0) return;
@@ -415,7 +420,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       type="text"
                       placeholder="Search payments..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
                       className="w-48 pl-8 pr-3 py-1.5 rounded-[8px] text-[12px] outline-none transition-all"
                       style={{
                         background: 'rgba(0,0,0,0.2)',
@@ -428,7 +433,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   </div>
                   <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
                     className="px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium outline-none cursor-pointer"
                     style={{
                       background: 'rgba(0,0,0,0.2)',
@@ -466,7 +471,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredPayments.length > 0 ? filteredPayments.map((p, i) => {
+                      {pagedPayments.length > 0 ? pagedPayments.map((p, i) => {
                         const methodIcon = paymentMethods.find(m => m.value === p.payment_method);
                         const MethodIcon = methodIcon?.icon || Banknote;
                         return (
@@ -548,10 +553,29 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 </div>
 
                 {filteredPayments.length > 0 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
                     <span className="text-[11px]" style={{ color: 'rgb(100,116,139)' }}>
-                      Showing {filteredPayments.length} of {payments.length} payments
+                      Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredPayments.length)} of {filteredPayments.length} payments
                     </span>
+                    {totalPages > 1 && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setPage(p => Math.max(0, p - 1))}
+                          disabled={page === 0}
+                          className="px-2.5 py-1 rounded-[6px] text-[11px] font-[600] transition-all disabled:opacity-30"
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgb(148,163,184)' }}
+                        >← Prev</button>
+                        <span className="text-[11px] px-2" style={{ color: 'rgb(100,116,139)' }}>
+                          {page + 1} / {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                          disabled={page >= totalPages - 1}
+                          className="px-2.5 py-1 rounded-[6px] text-[11px] font-[600] transition-all disabled:opacity-30"
+                          style={{ background: 'rgba(255,255,255,0.05)', color: 'rgb(148,163,184)' }}
+                        >Next →</button>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-[11px] font-[600]" style={{ color: '#10b981' }}>
                       <TrendingDown size={12} />
                       Total: {fmtINR(filteredPayments.reduce((s, p) => s + Number(p.amount), 0))}
