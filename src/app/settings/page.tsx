@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useId, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -11,7 +12,7 @@ import {
   Eye, EyeOff, ChevronDown, Check, X, Mail, Lock, User,
   Link2, ShieldCheck, Clock, Activity, AlertTriangle,
   CheckCircle2, Circle, Zap, Crown, Headphones, Briefcase,
-  Sparkles, LogIn, RefreshCw, Trash2, Edit3, Copy,
+  Sparkles, LogIn, RefreshCw, Trash2, Edit3, Copy, Fingerprint,
 } from 'lucide-react';
 
 /* ────────────────────────────────────────────────────────────────────
@@ -897,14 +898,23 @@ function AccountManagementPage() {
               <p className="mt-1.5 ml-0 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Manage staff login access, permissions, and security settings.</p>
             </div>
 
-            {/* Quick invite button */}
-            <button
-              onClick={() => setTab('accounts')}
-              className="flex items-center gap-2 rounded-[13px] px-4 py-2.5 text-[13px] font-[740] text-white transition-all hover:brightness-105 active:scale-95"
-              style={{ background: 'linear-gradient(135deg,#3730a3,#6366f1)', boxShadow: '0 4px 16px rgba(99,102,241,0.28)' }}
-            >
-              <UserPlus size={14} /> New Account
-            </button>
+            {/* Action buttons */}
+            <div className="flex items-center gap-2.5">
+              <Link
+                href="/settings/passkeys"
+                className="flex items-center gap-2 rounded-[13px] px-4 py-2.5 text-[13px] font-[740] transition-all hover:brightness-105 active:scale-95"
+                style={{ background: 'rgba(16,185,129,0.10)', color: '#059669', border: '1px solid rgba(16,185,129,0.20)' }}
+              >
+                <Fingerprint size={14} /> Set Up Face ID / Passkey
+              </Link>
+              <button
+                onClick={() => setTab('accounts')}
+                className="flex items-center gap-2 rounded-[13px] px-4 py-2.5 text-[13px] font-[740] text-white transition-all hover:brightness-105 active:scale-95"
+                style={{ background: 'linear-gradient(135deg,#3730a3,#6366f1)', boxShadow: '0 4px 16px rgba(99,102,241,0.28)' }}
+              >
+                <UserPlus size={14} /> New Account
+              </button>
+            </div>
           </div>
 
           {/* KPI chips */}
