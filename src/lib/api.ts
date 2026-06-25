@@ -369,11 +369,21 @@ export const api = {
 
     // Credential management (user's own passkeys)
     listCredentials: () =>
-      http<{ credentials: { id: string; device_name: string; device_type: string; backed_up: boolean; created_at: string; last_used_at: string | null }[] }>(
+      http<{ credentials: { id: string; device_name: string; device_type: string; backed_up: boolean; is_active: boolean; created_at: string; last_used_at: string | null }[] }>(
         '/api/auth/webauthn/credentials'
       ),
     deleteCredential: (id: string) =>
       http<{ success: boolean }>(`/api/auth/webauthn/credentials/${id}`, { method: 'DELETE' }),
+    renameCredential: (id: string, deviceName: string) =>
+      http<{ success: boolean; credential: { id: string; device_name: string } }>(
+        `/api/auth/webauthn/credentials/${id}`,
+        { method: 'PATCH', body: JSON.stringify({ deviceName }) }
+      ),
+    toggleCredential: (id: string) =>
+      http<{ success: boolean; is_active: boolean }>(
+        `/api/auth/webauthn/credentials/${id}/toggle`,
+        { method: 'PUT' }
+      ),
 
     // Admin
     adminStats: () =>
