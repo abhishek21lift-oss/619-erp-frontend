@@ -44,6 +44,31 @@ function DueBadge({ status }: { status: string }) {
 const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const itemVariants = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] } } };
 
+function exportCSV(rows: BalanceItem[]) {
+  const headers = ['Name', 'Mobile', 'Trainer', 'Package', 'Final Amount', 'Paid Amount', 'Balance', 'Status', 'Days Left', 'PT End Date'];
+  const escape = (v: unknown) => {
+    const s = String(v ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [
+    headers.join(','),
+    ...rows.map(r => [
+      r.name, r.mobile ?? '', r.trainer_name ?? '', r.package_type ?? '',
+      Number(r.final_amount), Number(r.paid_amount), Number(r.balance_amount),
+      r.due_status, r.days_left ?? '', r.pt_end_date ?? '',
+    ].map(escape).join(',')),
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `balance-sheet-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export default function BalanceSheetPage() {
   const bs = useAsync<{ data: BalanceItem[]; total: number; total_outstanding: number }>(
     () => api.pt.balanceSheet().then((r) => r as { data: BalanceItem[]; total: number; total_outstanding: number }),
@@ -171,8 +196,9 @@ export default function BalanceSheetPage() {
               })}
             </div>
             <button style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
-              onClick={() => { /* CSV export can be wired here */ }}>
-              <Download size={13} /> Export
+              onClick={() => exportCSV(filtered)}
+              disabled={filtered.length === 0}>
+              <Download size={13} /> Export CSV
             </button>
           </div>
 
