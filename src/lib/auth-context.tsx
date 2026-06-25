@@ -80,7 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     if (cachedUser) setUser(cachedUser);
 
-    console.debug('[auth] init: starting me() validation');
 
     // Silently validate the session cookie with the server.
     // Rules:
@@ -89,16 +88,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     //   - If login() already completed before me() returns, ignore me() result
     //     entirely — the fresh login data is the source of truth.
     const ac = new AbortController();
-    const meTimeout = setTimeout(() => {
-      console.debug('[auth] me() timeout — aborting');
-      ac.abort();
-    }, 10_000);
+    const meTimeout = setTimeout(() => ac.abort(), 10_000);
 
     http<{ user: User }>('/api/auth/me', { signal: ac.signal })
       .then((res) => {
         clearTimeout(meTimeout);
         if (loggedInRef.current) return;
-        console.debug('[auth] me() ok, user:', res?.user?.role ?? 'none');
         if (res?.user) {
           const u = res.user as User;
           setUser(u);
@@ -112,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearTimeout(meTimeout);
         if (loggedInRef.current) return;
         const status = (err as { status?: number })?.status;
-        console.debug('[auth] me() error, status:', status);
         if (status === 401 || status === 403) {
           setUser(null);
           ssDel(SESSION_USER_KEY);
@@ -120,8 +114,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // All other errors (network, timeout, 5xx): keep cached session silently
       })
       .finally(() => {
-        console.debug('[auth] me() done, setting loading=false');
-        // Only set loading=false here if login() hasn't already done it
         if (!loggedInRef.current) setLoading(false);
       });
 
