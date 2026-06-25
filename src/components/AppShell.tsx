@@ -110,6 +110,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(false);
 
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -119,6 +120,9 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const settingsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const headerScrollY = useRef(0);
+  const headerTouchY = useRef(0);
+  const headerTouchX = useRef(0);
 
   const unreadCount = notifications.filter(n => !n.read_at).length;
 
@@ -214,6 +218,37 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     setSearchFocusIdx(-1);
   }, [pathname]);
 
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      headerTouchY.current = e.touches[0].clientY;
+      headerTouchX.current = e.touches[0].clientX;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = e.touches[0].clientY - headerTouchY.current;
+      const dx = Math.abs(e.touches[0].clientX - headerTouchX.current);
+      if (Math.abs(dy) > 8 && Math.abs(dy) > dx) {
+        // finger up (dy < 0) = scrolling content down → show header
+        // finger down (dy > 0) = scrolling content up → hide header
+        setHeaderVisible(dy < 0);
+      }
+    };
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - headerScrollY.current;
+      if (delta > 4) setHeaderVisible(true);   // scrolling down → show
+      else if (delta < -4) setHeaderVisible(false); // scrolling up → hide
+      headerScrollY.current = currentY;
+    };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSearchFocusIdx(-1);
@@ -289,7 +324,10 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
           />
           {/* ── Top header bar ── */}
           <header
-            className="sticky top-0 z-40"
+            className={cn(
+              'fixed top-0 right-0 z-40',
+              sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64 xl:left-72',
+            )}
             style={{
               background: 'linear-gradient(135deg, rgba(255,176,0,0.92) 0%, rgba(255,143,0,0.92) 50%, rgba(230,106,0,0.92) 100%)',
               borderBottom: '1px solid rgba(255,255,255,0.15)',
@@ -297,6 +335,8 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
+              transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)',
+              transition: 'transform 0.35s cubic-bezier(0.32,0.72,0,1), left 300ms cubic-bezier(0.16,1,0.3,1)',
             }}
           >
             {/* Saffron top shimmer */}
