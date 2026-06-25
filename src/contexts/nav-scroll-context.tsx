@@ -7,8 +7,8 @@
  * Both bars always read from here — no duplicate listeners.
  *
  * State machine:
- *   scroll down (slow)  → topBar: compact,  bottomBar: compact
- *   scroll down (fast)  → topBar: hidden,   bottomBar: compact   ← never hide both
+ *   scroll down (slow)  → topBar: compact,  bottomBar: expanded  ← bottom never compacts
+ *   scroll down (fast)  → topBar: hidden,   bottomBar: expanded  ← bottom never hides
  *   scroll up           → topBar: expanded, bottomBar: expanded
  *   at page top/bottom  → topBar: expanded, bottomBar: expanded
  *   route change        → topBar: expanded, bottomBar: expanded  (instant reset)
@@ -130,23 +130,18 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
 
       if (down) {
         if (v > FAST_V) {
-          // Fast scroll down: hide top, compact bottom (bottom is always accessible)
-          topBar    = 'hidden';
-          bottomBar = 'compact';
+          // Fast scroll down: hide top bar only — bottom bar stays put
+          topBar = 'hidden';
         } else {
-          // Slow scroll down: compact both
-          topBar    = 'compact';
-          bottomBar = 'compact';
+          // Slow scroll down: compact top bar only — bottom bar stays put
+          topBar = 'compact';
         }
+        // Bottom bar never compacts or hides — it is primary mobile navigation
+        bottomBar = 'expanded';
       } else if (up) {
         // Any scroll up: expand both immediately
         topBar    = 'expanded';
         bottomBar = 'expanded';
-      }
-
-      // Safety invariant: NEVER hide both bars simultaneously
-      if (topBar === 'hidden' && bottomBar === 'hidden') {
-        bottomBar = 'compact';
       }
 
       return { topBar, bottomBar, isAtTop: atTop, scrollY: currentY };

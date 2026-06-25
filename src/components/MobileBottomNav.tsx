@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Users, ScanFace, Dumbbell, IndianRupee } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { normaliseRole } from '@/lib/nav-config';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
@@ -35,12 +35,10 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   const isAdminOrManager = role === 'admin' || role === 'manager';
   const items = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
 
-  const { bottomBar, reducedMotion } = useNavScroll();
+  const { reducedMotion } = useNavScroll();
 
-  const isVisible  = !sidebarOpen;
-  const isCompact  = bottomBar === 'compact';
-  const dur        = reducedMotion ? 0 : 0.22;
-  const labelDur   = reducedMotion ? 0 : 0.14;
+  const isVisible = !sidebarOpen;
+  const dur       = reducedMotion ? 0 : 0.22;
 
   return (
     <motion.nav
@@ -53,21 +51,16 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       initial={false}
     >
       <div className="px-3 pb-3">
-        {/* Animated pill — height transitions between expanded (60px) and compact (44px) */}
-        <motion.div
+        <div
           className="overflow-hidden rounded-2xl"
-          animate={{ height: isCompact ? 44 : 60 }}
-          transition={{ duration: dur, ease: EASE }}
           style={{
+            height: 60,
             background:
               'linear-gradient(135deg, #FF9E00 0%, #F57C00 55%, #E65100 100%)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             border: '1px solid rgba(255,255,255,0.15)',
-            boxShadow: isCompact
-              ? '0 -4px 16px rgba(255,140,0,0.15), 0 2px 10px rgba(0,0,0,0.10)'
-              : '0 -10px 30px rgba(255,140,0,0.20), 0 4px 20px rgba(0,0,0,0.12)',
-            willChange: 'height, transform',
+            boxShadow: '0 -10px 30px rgba(255,140,0,0.20), 0 4px 20px rgba(0,0,0,0.12)',
           }}
         >
           <div className="flex h-full items-stretch">
@@ -91,8 +84,8 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                       layoutId="bottom-nav-active"
                       className="absolute inset-x-2 rounded-xl"
                       style={{
-                        top:    isCompact ? 4  : 7,
-                        bottom: isCompact ? 4  : 7,
+                        top:    7,
+                        bottom: 7,
                         background:
                           'linear-gradient(135deg, #FFF3C4 0%, #FFE082 100%)',
                         boxShadow: '0 4px 16px rgba(255,176,0,0.35)',
@@ -124,32 +117,21 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                     />
                   </motion.span>
 
-                  {/* Label — fades out in compact mode */}
-                  <AnimatePresence initial={false}>
-                    {!isCompact && (
-                      <motion.span
-                        key="label"
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 4 }}
-                        transition={{ duration: labelDur, ease: 'easeOut' }}
-                        className="relative z-10 select-none text-[9px] font-bold uppercase tracking-[0.05em] leading-none"
-                        style={{
-                          color: isActive
-                            ? '#7A3900'
-                            : 'rgba(255,255,255,0.80)',
-                        }}
-                        aria-hidden="true"
-                      >
-                        {label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
+                  {/* Label — always visible */}
+                  <span
+                    className="relative z-10 select-none text-[9px] font-bold uppercase tracking-[0.05em] leading-none"
+                    style={{
+                      color: isActive ? '#7A3900' : 'rgba(255,255,255,0.80)',
+                    }}
+                    aria-hidden="true"
+                  >
+                    {label}
+                  </span>
                 </Link>
               );
             })}
           </div>
-        </motion.div>
+        </div>
       </div>
     </motion.nav>
   );
