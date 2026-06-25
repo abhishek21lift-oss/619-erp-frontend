@@ -16,6 +16,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
 const PUBLIC_PREFIXES: string[] = [
   '/',
@@ -44,8 +45,6 @@ function isPublicPath(pathname: string): boolean {
 }
 
 // ── CSP ───────────────────────────────────────────────────────────────────────
-// Build env vars are inlined at edge compile time; runtime env vars are not
-// available in the Edge Runtime, so we fall back to wildcards when absent.
 const SUPABASE_HOST = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
   : '*.supabase.co';
@@ -56,21 +55,15 @@ const API_HOST = process.env.NEXT_PUBLIC_API_URL
 
 function buildCsp(): string {
   const apiConnect = API_HOST ? ` https://${API_HOST}` : '';
-  // capacitor:// is the scheme used by Capacitor's native WebView.
-  // We allow it in frame-ancestors and connect-src so the native shell can
-  // load pages and make API requests without CSP violations.
   return [
     "default-src 'self' capacitor://localhost",
-    // accounts.google.com is required for Google Sign-In (GSI) popup flow
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/ capacitor://localhost",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/ capacitor://localhost",
     `img-src 'self' data: blob: https://${SUPABASE_HOST} https://lh3.googleusercontent.com capacitor://localhost`,
     `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://cdn.jsdelivr.net https://accounts.google.com capacitor://localhost`,
     "font-src 'self' https://fonts.gstatic.com capacitor://localhost",
-    // blob: for camera MediaStream → canvas; worker-src for TF.js workers
     "media-src 'self' blob: capacitor://localhost",
     "worker-src 'self' blob:",
-    // Allow Google Sign-In iframe and Capacitor native WebView to embed pages
     "frame-src 'self' https://accounts.google.com capacitor://localhost",
     "frame-ancestors 'self' capacitor://localhost",
     "form-action 'self'",
@@ -87,7 +80,19 @@ function addSecurityHeaders(response: NextResponse): void {
   response.headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
 }
 
-export function proxy(req: NextRequest) {
+function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextResponse {
+  const loginUrl = req.nextUrl.clone();
+  loginUrl.pathname = '/login';
+  const { pathname } = req.nextUrl;
+  if (pathname !== '/' && !pathname.startsWith('/login')) {
+    loginUrl.searchParams.set('redirect', pathname);
+  }
+  const res = NextResponse.redirect(loginUrl);
+  if (deleteTokenCookie) res.cookies.delete('token');
+  return res;
+}
+
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (isPublicPath(pathname)) {
@@ -102,24 +107,37 @@ export function proxy(req: NextRequest) {
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
 
   if (!token) {
-    // API routes return 401 JSON; page routes redirect to /login
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const loginUrl = req.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    if (pathname !== '/') {
-      loginUrl.searchParams.set('redirect', pathname);
-    }
-    return NextResponse.redirect(loginUrl);
+    return redirectToLogin(req);
   }
 
-  // Basic JWT format validation: 3 non-empty base64 segments separated by dots
-  const segments = token.split('.');
-  if (segments.length !== 3 || !segments.every(s => s.length > 0)) {
-    const loginUrl = req.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    return NextResponse.redirect(loginUrl);
+  const secret = process.env.JWT_SECRET;
+  if (secret) {
+    // Full cryptographic verification — requires JWT_SECRET in frontend env
+    try {
+      await jwtVerify(token, new TextEncoder().encode(secret));
+      const res = NextResponse.next();
+      addSecurityHeaders(res);
+      return res;
+    } catch {
+      return redirectToLogin(req, true);
+    }
+  }
+
+  // Fallback: decode without verify, check expiry only.
+  // Signature is still verified by the backend on every API call.
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3 || !parts.every(s => s.length > 0)) throw new Error('malformed');
+    const padded = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(padded)) as { exp?: number };
+    if (payload.exp && Date.now() / 1000 > payload.exp) {
+      return redirectToLogin(req, true);
+    }
+  } catch {
+    return redirectToLogin(req, true);
   }
 
   const res = NextResponse.next();
