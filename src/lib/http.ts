@@ -100,7 +100,7 @@ function serializeBody(body: unknown): BodyInit | undefined {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-//  Global 401 handler
+//  Global 401 handler + token refresh
 // ──────────────────────────────────────────────────────────────────────
 const SESSION_USER_KEY = '619_user_v2';
 let _redirecting = false;
@@ -118,6 +118,22 @@ function handleUnauthorized(): void {
   _redirecting = true;
   try { localStorage.removeItem(SESSION_USER_KEY); } catch { /* noop */ }
   window.dispatchEvent(new CustomEvent('session-expired'));
+}
+
+// In-flight refresh promise — deduplicates concurrent 401 retries
+let _refreshPromise: Promise<boolean> | null = null;
+
+function tryRefreshToken(): Promise<boolean> {
+  if (_refreshPromise) return _refreshPromise;
+  const BASE = (() => { try { return apiBase(); } catch { return ''; } })();
+  _refreshPromise = fetch(`${BASE}/api/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+    .then(r => r.ok)
+    .catch(() => false)
+    .finally(() => { _refreshPromise = null; });
+  return _refreshPromise;
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -146,10 +162,7 @@ async function fetchOnce<T>(url: string, init: RequestInit): Promise<T> {
       }
     } catch { /* ignore parse error */ }
 
-    if (res.status === 401) {
-      handleUnauthorized();
-    }
-
+    // 401 handling is done by http() after attempting a token refresh — not here
     throw new ApiError(msg, res.status, code, payload);
   }
 
@@ -218,7 +231,28 @@ export async function http<T = unknown>(
     }
   };
 
-  const promise = doFetch();
+  // Wrap doFetch with 401→refresh→retry logic (skipAuth skips the refresh attempt)
+  const doFetchWithRefresh = async (): Promise<T> => {
+    try {
+      return await doFetch();
+    } catch (err) {
+      if (!(err instanceof ApiError) || err.status !== 401) throw err;
+      if (options.skipAuth) { handleUnauthorized(); throw err; }
+
+      const refreshed = await tryRefreshToken();
+      if (!refreshed) { handleUnauthorized(); throw err; }
+
+      // One retry after successful token refresh
+      try {
+        return await doFetch();
+      } catch (retryErr) {
+        if (retryErr instanceof ApiError && retryErr.status === 401) handleUnauthorized();
+        throw retryErr;
+      }
+    }
+  };
+
+  const promise = doFetchWithRefresh();
   if (method === 'GET' && cacheKey) inflight.set(cacheKey, promise as Promise<unknown>);
   return promise;
 }
