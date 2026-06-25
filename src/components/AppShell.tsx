@@ -16,6 +16,7 @@ import Sidebar from '@/components/sidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
 import { allNavItems } from '@/lib/nav-config';
+import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -98,7 +99,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-export default function AppShell({ children, title, headerLeft }: AppShellProps) {
+function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<typeof SEARCH_PAGES>([]);
@@ -110,7 +111,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
-  const [headerVisible, setHeaderVisible] = useState(false);
 
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -120,11 +120,24 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
   const settingsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
-  const headerScrollY = useRef(0);
-  const headerTouchY = useRef(0);
-  const headerTouchX = useRef(0);
 
   const unreadCount = notifications.filter(n => !n.read_at).length;
+
+  // Unified scroll state — shared with MobileBottomNav via context
+  const { topBar, reducedMotion } = useNavScroll();
+  const EASE = [0.32, 0.72, 0, 1] as const;
+  const dur  = reducedMotion ? 0 : 0.22;
+  const transConfig = { duration: dur, ease: EASE };
+
+  // Close all dropdowns when header slides away — no orphaned panels
+  useEffect(() => {
+    if (topBar === 'hidden') {
+      setSettingsOpen(false);
+      setProfileOpen(false);
+      setNotifOpen(false);
+      setSearchOpen(false);
+    }
+  }, [topBar]);
 
   const settingsLinks = [
     { href: '/settings/studio',          label: 'Studio Settings',  icon: Building2 },
@@ -218,37 +231,6 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
     setSearchFocusIdx(-1);
   }, [pathname]);
 
-  useEffect(() => {
-    const onTouchStart = (e: TouchEvent) => {
-      headerTouchY.current = e.touches[0].clientY;
-      headerTouchX.current = e.touches[0].clientX;
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      const dy = e.touches[0].clientY - headerTouchY.current;
-      const dx = Math.abs(e.touches[0].clientX - headerTouchX.current);
-      if (Math.abs(dy) > 8 && Math.abs(dy) > dx) {
-        // finger up (dy < 0) = scrolling content down → show header
-        // finger down (dy > 0) = scrolling content up → hide header
-        setHeaderVisible(dy < 0);
-      }
-    };
-    const onScroll = () => {
-      const currentY = window.scrollY;
-      const delta = currentY - headerScrollY.current;
-      if (delta > 4) setHeaderVisible(true);   // scrolling down → show
-      else if (delta < -4) setHeaderVisible(false); // scrolling up → hide
-      headerScrollY.current = currentY;
-    };
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchmove', onTouchMove, { passive: true });
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      document.removeEventListener('touchstart', onTouchStart);
-      document.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, []);
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSearchFocusIdx(-1);
@@ -323,7 +305,7 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* ── Top header bar ── */}
-          <header
+          <motion.header
             className={cn(
               'fixed top-0 right-0 z-40',
               sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64 xl:left-72',
@@ -331,13 +313,21 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             style={{
               background: 'linear-gradient(135deg, rgba(255,176,0,0.92) 0%, rgba(255,143,0,0.92) 50%, rgba(230,106,0,0.92) 100%)',
               borderBottom: '1px solid rgba(255,255,255,0.15)',
-              boxShadow: '0 8px 30px rgba(255,176,0,0.25)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
-              transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)',
-              transition: 'transform 0.35s cubic-bezier(0.32,0.72,0,1), left 300ms cubic-bezier(0.16,1,0.3,1)',
+              // CSS transition only for `left` (sidebar expand/collapse) — FM handles transform
+              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1)',
+              willChange: 'transform',
             }}
+            animate={{
+              y: topBar === 'hidden' ? '-100%' : 0,
+              boxShadow: topBar === 'compact'
+                ? '0 4px 20px rgba(255,176,0,0.15)'
+                : '0 8px 30px rgba(255,176,0,0.25)',
+            }}
+            transition={transConfig}
+            initial={false}
           >
             {/* Saffron top shimmer */}
             <div className="absolute top-0 left-0 right-0 h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.08) 75%, transparent 100%)' }} />
@@ -346,7 +336,11 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
             {/* Subtle noise texture */}
             <div className="absolute inset-0 opacity-[0.018] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: '150px 150px' }} />
 
-            <div className="flex h-14 items-center gap-3 px-4 sm:px-6 lg:px-8">
+            <motion.div
+              className="flex items-center gap-3 px-4 sm:px-6 lg:px-8"
+              animate={{ height: topBar === 'compact' ? 40 : 56 }}
+              transition={transConfig}
+            >
               {/* Mobile menu toggle */}
               <button type="button" aria-label="Open navigation menu" onClick={() => setMobileMenuOpen(true)}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/80 transition-all duration-200 hover:text-white hover:bg-white/[0.15] lg:hidden">
@@ -657,16 +651,16 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
                   )}
                 </AnimatePresence>
               </div>
-            </div>
-          </header>
+            </motion.div>
+          </motion.header>
 
           {headerLeft && (
-            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 pt-4">
+            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 pt-16">
               {headerLeft}
             </div>
           )}
 
-          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-24 pt-6 sm:px-6 lg:pb-8 lg:px-8">
+          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-24 pt-16 sm:px-6 lg:pb-8 lg:px-8">
             {title && (
               <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 {title}
@@ -680,5 +674,13 @@ export default function AppShell({ children, title, headerLeft }: AppShellProps)
       {/* Mobile bottom navigation — hidden when sidebar drawer is open */}
       <MobileBottomNav sidebarOpen={mobileMenuOpen} />
     </LazyMotion>
+  );
+}
+
+export default function AppShell(props: AppShellProps) {
+  return (
+    <NavScrollProvider>
+      <AppShellContent {...props} />
+    </NavScrollProvider>
   );
 }
