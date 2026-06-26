@@ -125,8 +125,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
   // Unified scroll state — shared with MobileBottomNav via context
   const { topBar, reducedMotion } = useNavScroll();
-  const EASE = [0.32, 0.72, 0, 1] as const;
-  const dur  = reducedMotion ? 0 : 0.22;
+  // Spec: transform 280ms cubic-bezier(0.22, 1, 0.36, 1)
+  const EASE = [0.22, 1, 0.36, 1] as const;
+  const dur  = reducedMotion ? 0 : 0.28;
   const transConfig = { duration: dur, ease: EASE };
 
   // Close all dropdowns when header slides away — no orphaned panels
