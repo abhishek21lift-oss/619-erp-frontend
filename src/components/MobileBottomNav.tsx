@@ -25,113 +25,104 @@ interface MobileBottomNavProps {
   sidebarOpen?: boolean;
 }
 
-// Shared easing curve (matches top bar)
-const EASE = [0.32, 0.72, 0, 1] as const;
+// Spec: transform 280ms cubic-bezier(0.22, 1, 0.36, 1)
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNavProps) {
   const pathname = usePathname();
-  const { user }  = useAuth();
-  const role      = normaliseRole(user?.role);
+  const { user } = useAuth();
+  const role     = normaliseRole(user?.role);
   const isAdminOrManager = role === 'admin' || role === 'manager';
-  const items = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
+  const items    = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
 
-  const { reducedMotion } = useNavScroll();
+  const { bottomBar, reducedMotion } = useNavScroll();
 
-  const isVisible = !sidebarOpen;
-  const dur       = reducedMotion ? 0 : 0.22;
+  // Hidden when sidebar drawer is open OR when scroll state says hidden
+  const isVisible = !sidebarOpen && bottomBar !== 'hidden';
+  const dur       = reducedMotion ? 0 : 0.28;
 
   return (
     <motion.nav
       className="fixed bottom-0 left-0 right-0 z-40 lg:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-      animate={{ y: isVisible ? 0 : '120%' }}
+      style={{
+        // Flush to device edge — gradient extends through safe-area zone
+        background: 'linear-gradient(135deg, #FF9E00 0%, #F57C00 55%, #E65100 100%)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        // GPU compositing
+        willChange: 'transform',
+      }}
+      animate={{ y: isVisible ? 0 : '100%' }}
       transition={{ duration: dur, ease: EASE }}
       aria-label="Primary navigation"
-      // Ensure GPU compositing — no layout thrashing
       initial={false}
     >
-      <div className="px-3 pb-3">
-        <div
-          className="overflow-hidden rounded-2xl"
-          style={{
-            height: 60,
-            background:
-              'linear-gradient(135deg, #FF9E00 0%, #F57C00 55%, #E65100 100%)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            boxShadow: '0 -10px 30px rgba(255,140,0,0.20), 0 4px 20px rgba(0,0,0,0.12)',
-          }}
-        >
-          <div className="flex h-full items-stretch">
-            {items.map(({ href, icon: Icon, label }) => {
-              const isActive =
-                href === '/'
-                  ? pathname === '/'
-                  : pathname === href || pathname.startsWith(href + '/');
+      <div className="flex h-[60px] items-stretch">
+        {items.map(({ href, icon: Icon, label }) => {
+          const isActive =
+            href === '/'
+              ? pathname === '/'
+              : pathname === href || pathname.startsWith(href + '/');
 
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className="relative flex flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden"
-                  aria-label={label}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {/* Active tab background pill — springs between tabs */}
-                  {isActive && (
-                    <motion.span
-                      layoutId="bottom-nav-active"
-                      className="absolute inset-x-2 rounded-xl"
-                      style={{
-                        top:    7,
-                        bottom: 7,
-                        background:
-                          'linear-gradient(135deg, #FFF3C4 0%, #FFE082 100%)',
-                        boxShadow: '0 4px 16px rgba(255,176,0,0.35)',
-                      }}
-                      transition={{
-                        type: 'spring',
-                        stiffness: 520,
-                        damping: 38,
-                        mass: 0.7,
-                      }}
-                    />
-                  )}
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="relative flex flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden"
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              {/* Active tab background pill — springs between tabs */}
+              {isActive && (
+                <motion.span
+                  layoutId="bottom-nav-active"
+                  className="absolute inset-x-2 rounded-xl"
+                  style={{
+                    top:    7,
+                    bottom: 7,
+                    background:
+                      'linear-gradient(135deg, #FFF3C4 0%, #FFE082 100%)',
+                    boxShadow: '0 4px 16px rgba(255,176,0,0.35)',
+                  }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 520,
+                    damping: 38,
+                    mass: 0.7,
+                  }}
+                />
+              )}
 
-                  {/* Icon — tap scales down for tactile feedback */}
-                  <motion.span
-                    className="relative z-10 flex h-[22px] w-[22px] items-center justify-center"
-                    whileTap={reducedMotion ? {} : { scale: 0.82 }}
-                    transition={{ type: 'spring', stiffness: 700, damping: 22 }}
-                  >
-                    <Icon
-                      size={17}
-                      strokeWidth={isActive ? 2.5 : 1.5}
-                      style={{
-                        color: isActive
-                          ? '#C25A00'
-                          : 'rgba(255,255,255,0.82)',
-                      }}
-                      aria-hidden="true"
-                    />
-                  </motion.span>
+              {/* Icon — tap scales down for tactile feedback */}
+              <motion.span
+                className="relative z-10 flex h-[22px] w-[22px] items-center justify-center"
+                whileTap={reducedMotion ? {} : { scale: 0.82 }}
+                transition={{ type: 'spring', stiffness: 700, damping: 22 }}
+              >
+                <Icon
+                  size={17}
+                  strokeWidth={isActive ? 2.5 : 1.5}
+                  style={{
+                    color: isActive
+                      ? '#C25A00'
+                      : 'rgba(255,255,255,0.82)',
+                  }}
+                  aria-hidden="true"
+                />
+              </motion.span>
 
-                  {/* Label — always visible */}
-                  <span
-                    className="relative z-10 select-none text-[9px] font-bold uppercase tracking-[0.05em] leading-none"
-                    style={{
-                      color: isActive ? '#7A3900' : 'rgba(255,255,255,0.80)',
-                    }}
-                    aria-hidden="true"
-                  >
-                    {label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+              {/* Label — always visible */}
+              <span
+                className="relative z-10 select-none text-[9px] font-bold uppercase tracking-[0.05em] leading-none"
+                style={{
+                  color: isActive ? '#7A3900' : 'rgba(255,255,255,0.80)',
+                }}
+                aria-hidden="true"
+              >
+                {label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </motion.nav>
   );
