@@ -3,15 +3,17 @@
 /**
  * NavScrollContext — unified scroll state machine for the top bar and bottom bar.
  *
- * Single RAF loop. Velocity-based state transitions. Scroll-stop debounce.
- * Both bars always read from here — no duplicate listeners.
+ * Single RAF loop. Direction hysteresis prevents flicker. Scroll-stop debounce.
  *
- * State machine:
- *   scroll down (slow)  → topBar: compact,  bottomBar: expanded  ← bottom never compacts
- *   scroll down (fast)  → topBar: hidden,   bottomBar: expanded  ← bottom never hides
- *   scroll up           → topBar: expanded, bottomBar: expanded
- *   at page top/bottom  → topBar: expanded, bottomBar: expanded
- *   route change        → topBar: expanded, bottomBar: expanded  (instant reset)
+ * State machine (Instagram / WhatsApp native-mobile pattern):
+ *   scroll down  → topBar: compact (visible, shrunk)   bottomBar: hidden
+ *   scroll up    → topBar: hidden  (off screen)         bottomBar: expanded
+ *   at page top  → topBar: expanded                     bottomBar: expanded
+ *   at page btm  → topBar: expanded                     bottomBar: expanded
+ *   route change → topBar: expanded                     bottomBar: expanded (instant reset)
+ *
+ * Direction hysteresis: DIRECTION_HYSTERESIS px must accumulate in a new direction
+ * before the state transitions — prevents flicker from micro-jitter.
  */
 
 import {
@@ -44,12 +46,14 @@ const DEFAULT: NavScrollValue = {
 
 const NavScrollContext = createContext<NavScrollValue>(DEFAULT);
 
-// Velocity threshold (px/ms) above which scroll is considered "fast"
-const FAST_V = 0.6;
 // ScrollY below which page is considered "at top"
 const TOP_THRESHOLD = 64;
-// Distance from bottom of page to be considered "at bottom"
+// Distance from bottom to be considered "at bottom"
 const BOTTOM_MARGIN = 80;
+// Minimum delta to register as a scroll event (sub-pixel jitter filter)
+const MICRO_THRESHOLD = 3;
+// Must accumulate this many px in a new direction before committing to it
+const DIRECTION_HYSTERESIS = 12;
 
 interface NavState {
   topBar: BarState;
@@ -72,8 +76,13 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
   const rafRef      = useRef<number | null>(null);
   const lastY       = useRef(0);
   const lastTs      = useRef(0);
-  const velEMA      = useRef(0); // px/ms, signed; exponential moving average
+  const velEMA      = useRef(0); // px/ms, signed — exponential moving average
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Direction hysteresis refs
+  const committedDir  = useRef<'down' | 'up'>('down');
+  const pendingDir    = useRef<'down' | 'up' | null>(null);
+  const pendingAccum  = useRef(0); // accumulated px in pending (uncommitted) direction
 
   // Detect prefers-reduced-motion
   useEffect(() => {
@@ -85,11 +94,14 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // Reset both bars to expanded on every route change
+  // Reset both bars on every route change
   useEffect(() => {
     setNav({ topBar: 'expanded', bottomBar: 'expanded', isAtTop: true, scrollY: 0 });
-    lastY.current  = 0;
-    velEMA.current = 0;
+    lastY.current        = 0;
+    velEMA.current       = 0;
+    committedDir.current = 'down';
+    pendingDir.current   = null;
+    pendingAccum.current = 0;
   }, [pathname]);
 
   const processFrame = useCallback(() => {
@@ -100,8 +112,7 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
     const dt       = Math.max(now - lastTs.current, 1);
     const dy       = currentY - lastY.current;
 
-    // Exponential moving average for velocity — smooths out per-frame jitter
-    // Weight: 40% history, 60% current sample (more responsive)
+    // Exponential moving average — 40% history, 60% current (responsive but smooth)
     velEMA.current = velEMA.current * 0.4 + (dy / dt) * 0.6;
 
     const atTop    = currentY < TOP_THRESHOLD;
@@ -112,35 +123,57 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
     lastTs.current = now;
 
     setNav(prev => {
-      // At page edges → always expand both
+      // Page edges — always expand both bars regardless of direction
       if (atTop || atBottom) {
+        committedDir.current = atBottom ? committedDir.current : 'down';
+        pendingDir.current   = null;
+        pendingAccum.current = 0;
         return { topBar: 'expanded', bottomBar: 'expanded', isAtTop: atTop, scrollY: currentY };
       }
 
-      // Micro-movement — update position only, no state change
-      if (Math.abs(dy) < 2) {
+      // Sub-pixel jitter — update position only, no state change
+      if (Math.abs(dy) < MICRO_THRESHOLD) {
         return { ...prev, isAtTop: atTop, scrollY: currentY };
       }
 
-      const v    = Math.abs(velEMA.current);
-      const down = dy > 0;
-      const up   = dy < 0;
+      // ── Direction detection with hysteresis ──────────────────────────────
+      const rawDir: 'down' | 'up' = dy > 0 ? 'down' : 'up';
+      let resolvedDir = committedDir.current;
+
+      if (rawDir === committedDir.current) {
+        // Continuing in the committed direction — clear any pending candidate
+        pendingDir.current   = null;
+        pendingAccum.current = 0;
+      } else {
+        // Potential direction change — accumulate until threshold reached
+        if (pendingDir.current === rawDir) {
+          pendingAccum.current += Math.abs(dy);
+        } else {
+          pendingDir.current   = rawDir;
+          pendingAccum.current = Math.abs(dy);
+        }
+
+        if (pendingAccum.current >= DIRECTION_HYSTERESIS) {
+          // Commit to new direction
+          committedDir.current = rawDir;
+          pendingDir.current   = null;
+          pendingAccum.current = 0;
+          resolvedDir = rawDir;
+        } else {
+          // Not committed yet — hold current state
+          return { ...prev, isAtTop: atTop, scrollY: currentY };
+        }
+      }
 
       let { topBar, bottomBar } = prev;
 
-      if (down) {
-        if (v > FAST_V) {
-          // Fast scroll down: hide top bar only — bottom bar stays put
-          topBar = 'hidden';
-        } else {
-          // Slow scroll down: compact top bar only — bottom bar stays put
-          topBar = 'compact';
-        }
-        // Bottom bar never compacts or hides — it is primary mobile navigation
-        bottomBar = 'expanded';
-      } else if (up) {
-        // Any scroll up: expand both immediately
-        topBar    = 'expanded';
+      if (resolvedDir === 'down') {
+        // Scroll down: top bar stays visible (compact); bottom bar hides
+        topBar    = 'compact';
+        bottomBar = 'hidden';
+      } else {
+        // Scroll up: top bar hides; bottom bar reappears immediately
+        topBar    = 'hidden';
         bottomBar = 'expanded';
       }
 
@@ -155,7 +188,7 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const onScroll = useCallback(() => {
-    // Skip if a frame is already queued — throttle to exactly one process per animation frame
+    // Throttle: at most one processFrame per animation frame
     if (rafRef.current !== null) return;
     rafRef.current = requestAnimationFrame(processFrame);
   }, [processFrame]);
@@ -166,7 +199,7 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener('scroll', onScroll);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      if (settleTimer.current) clearTimeout(settleTimer.current);
+      if (settleTimer.current)     clearTimeout(settleTimer.current);
     };
   }, [onScroll]);
 
