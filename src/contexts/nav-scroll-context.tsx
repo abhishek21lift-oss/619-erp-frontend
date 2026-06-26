@@ -6,8 +6,8 @@
  * Single RAF loop. Direction hysteresis prevents flicker. Scroll-stop debounce.
  *
  * State machine (Instagram / WhatsApp native-mobile pattern):
- *   scroll down  → topBar: compact (visible, shrunk)   bottomBar: hidden
- *   scroll up    → topBar: hidden  (off screen)         bottomBar: expanded
+ *   scroll down  → topBar: hidden  (off screen)         bottomBar: expanded
+ *   scroll up    → topBar: compact (visible, shrunk)   bottomBar: hidden
  *   at page top  → topBar: expanded                     bottomBar: expanded
  *   at page btm  → topBar: expanded                     bottomBar: expanded
  *   route change → topBar: expanded                     bottomBar: expanded (instant reset)
@@ -168,13 +168,13 @@ export function NavScrollProvider({ children }: { children: React.ReactNode }) {
       let { topBar, bottomBar } = prev;
 
       if (resolvedDir === 'down') {
-        // Scroll down: top bar stays visible (compact); bottom bar hides
-        topBar    = 'compact';
-        bottomBar = 'hidden';
-      } else {
-        // Scroll up: top bar hides; bottom bar reappears immediately
+        // Scroll down: top bar hides; bottom bar reappears
         topBar    = 'hidden';
         bottomBar = 'expanded';
+      } else {
+        // Scroll up: top bar stays visible (compact); bottom bar hides
+        topBar    = 'compact';
+        bottomBar = 'hidden';
       }
 
       return { topBar, bottomBar, isAtTop: atTop, scrollY: currentY };
