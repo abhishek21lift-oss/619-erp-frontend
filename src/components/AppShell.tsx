@@ -657,12 +657,14 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
           </motion.header>
 
           {headerLeft && (
-            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 pt-14">
+            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8"
+              style={{ paddingTop: 'calc(46px + env(safe-area-inset-top, 0px))' }}>
               {headerLeft}
             </div>
           )}
 
-          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-24 pt-14 sm:px-6 lg:pb-8 lg:px-8">
+          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-24 sm:px-6 lg:pb-8 lg:px-8"
+            style={{ paddingTop: 'calc(46px + env(safe-area-inset-top, 0px))' }}>
             {title && (
               <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 {title}
