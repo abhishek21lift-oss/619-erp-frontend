@@ -56,7 +56,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       aria-label="Primary navigation"
       initial={false}
     >
-      <div className="flex h-[50px] items-stretch">
+      <div className="flex h-[44px] items-stretch">
         {items.map(({ href, icon: Icon, label }) => {
           const isActive =
             href === '/'
@@ -77,8 +77,8 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   layoutId="bottom-nav-active"
                   className="absolute inset-x-2 rounded-xl"
                   style={{
-                    top:    7,
-                    bottom: 7,
+                    top:    5,
+                    bottom: 5,
                     background:
                       'linear-gradient(135deg, #FFF3C4 0%, #FFE082 100%)',
                     boxShadow: '0 4px 16px rgba(255,176,0,0.35)',
@@ -94,12 +94,12 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
               {/* Icon — tap scales down for tactile feedback */}
               <motion.span
-                className="relative z-10 flex h-[22px] w-[22px] items-center justify-center"
+                className="relative z-10 flex h-[20px] w-[20px] items-center justify-center"
                 whileTap={reducedMotion ? {} : { scale: 0.82 }}
                 transition={{ type: 'spring', stiffness: 700, damping: 22 }}
               >
                 <Icon
-                  size={17}
+                  size={16}
                   strokeWidth={isActive ? 2.5 : 1.5}
                   style={{
                     color: isActive
