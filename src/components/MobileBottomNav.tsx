@@ -56,7 +56,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       aria-label="Primary navigation"
       initial={false}
     >
-      <div className="flex h-[44px] items-stretch">
+      <div className="flex h-[38px] items-stretch">
         {items.map(({ href, icon: Icon, label }) => {
           const isActive =
             href === '/'
@@ -77,8 +77,8 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   layoutId="bottom-nav-active"
                   className="absolute inset-x-2 rounded-xl"
                   style={{
-                    top:    5,
-                    bottom: 5,
+                    top:    4,
+                    bottom: 4,
                     background:
                       'linear-gradient(135deg, #FFF3C4 0%, #FFE082 100%)',
                     boxShadow: '0 4px 16px rgba(255,176,0,0.35)',
@@ -94,12 +94,12 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
               {/* Icon — tap scales down for tactile feedback */}
               <motion.span
-                className="relative z-10 flex h-[20px] w-[20px] items-center justify-center"
+                className="relative z-10 flex h-[18px] w-[18px] items-center justify-center"
                 whileTap={reducedMotion ? {} : { scale: 0.82 }}
                 transition={{ type: 'spring', stiffness: 700, damping: 22 }}
               >
                 <Icon
-                  size={16}
+                  size={14}
                   strokeWidth={isActive ? 2.5 : 1.5}
                   style={{
                     color: isActive
@@ -112,7 +112,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
               {/* Label — always visible */}
               <span
-                className="relative z-10 select-none text-[9px] font-bold uppercase tracking-[0.05em] leading-none"
+                className="relative z-10 select-none text-[8px] font-bold uppercase tracking-[0.05em] leading-none"
                 style={{
                   color: isActive ? '#7A3900' : 'rgba(255,255,255,0.80)',
                 }}
