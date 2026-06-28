@@ -56,7 +56,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
       aria-label="Primary navigation"
       initial={false}
     >
-      <div className="flex h-[60px] items-stretch">
+      <div className="flex h-[38px] items-stretch">
         {items.map(({ href, icon: Icon, label }) => {
           const isActive =
             href === '/'

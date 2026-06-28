@@ -339,8 +339,8 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             <div className="absolute inset-0 opacity-[0.018] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: '150px 150px' }} />
 
             <motion.div
-              className="flex items-center gap-3 px-4 sm:px-6 lg:px-8"
-              animate={{ height: topBar === 'compact' ? 40 : 56 }}
+              className="flex items-center gap-3 px-3 sm:px-4 lg:px-6"
+              animate={{ height: topBar === 'compact' ? 32 : 46 }}
               transition={transConfig}
             >
               {/* Mobile menu toggle */}
@@ -657,12 +657,14 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
           </motion.header>
 
           {headerLeft && (
-            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 pt-16">
+            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8"
+              style={{ paddingTop: 'calc(46px + env(safe-area-inset-top, 0px))' }}>
               {headerLeft}
             </div>
           )}
 
-          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-24 pt-16 sm:px-6 lg:pb-8 lg:px-8">
+          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 pb-24 sm:px-6 lg:pb-8 lg:px-8"
+            style={{ paddingTop: 'calc(46px + env(safe-area-inset-top, 0px))' }}>
             {title && (
               <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 {title}
