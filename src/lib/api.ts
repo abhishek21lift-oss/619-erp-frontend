@@ -1,4 +1,4 @@
-import { http } from './http';
+import { http, httpSSE } from './http';
 export { http };
 import type { Role } from './roles';
 
@@ -1247,19 +1247,19 @@ export const api = {
       }),
 
     generateWorkout: (params: AiWorkoutParams) =>
-      http<{ data: AiWorkoutPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/workout/generate', {
+      httpSSE<{ data: AiWorkoutPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/workout/generate', {
         method: 'POST',
         body: JSON.stringify(params),
       }),
 
     generateDiet: (params: AiDietParams) =>
-      http<{ data: AiDietPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/diet/generate', {
+      httpSSE<{ data: AiDietPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/diet/generate', {
         method: 'POST',
         body: JSON.stringify(params),
       }),
 
     analyzeProgress: (client_id: string) =>
-      http<{ data: AiProgressAnalysis; model: string; tier: string; used_fallback: boolean }>('/api/ai/progress/analyze', {
+      httpSSE<{ data: AiProgressAnalysis; model: string; tier: string; used_fallback: boolean }>('/api/ai/progress/analyze', {
         method: 'POST',
         body: JSON.stringify({ client_id }),
       }),
