@@ -88,9 +88,8 @@ function Inner() {
   const [trainers, setTrainers] = useState<string[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState('');
-  const [builderOpen, setBuilderOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'builder' | 'ai'>('plans');
   const [builderStep, setBuilderStep] = useState(0);
-  const [aiTab, setAiTab] = useState<'suggestions' | 'progress'>('suggestions');
 
   const fetchData = useCallback(async () => {
     setDataLoading(true); setDataError('');
@@ -185,12 +184,12 @@ function Inner() {
             { key: 'builder', label: 'Plan Builder', color: '#f59e0b' },
             { key: 'ai', label: 'AI Suggestions', color: '#ec4899' },
           ].map((tab) => (
-            <button key={tab.key} onClick={() => { if (tab.key === 'builder') { setBuilderOpen(true); setBuilderStep(0); } else setBuilderOpen(false); }}
+            <button key={tab.key} onClick={() => { setActiveTab(tab.key as typeof activeTab); if (tab.key === 'builder') setBuilderStep(0); }}
               style={{
                 padding: '8px 18px', borderRadius: 9, border: 'none', cursor: 'pointer',
                 fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
-                background: !builderOpen && ((tab.key === 'plans') || (tab.key === 'library' && !builderOpen)) ? `linear-gradient(135deg, ${tab.color}22, ${tab.color}11)` : 'transparent',
-                color: !builderOpen ? tab.color : 'rgba(255,255,255,0.3)',
+                background: activeTab === tab.key ? `linear-gradient(135deg, ${tab.color}22, ${tab.color}11)` : 'transparent',
+                color: activeTab === tab.key ? tab.color : 'rgba(255,255,255,0.3)',
               }}>
               {tab.label}{tab.count !== undefined ? <span style={{ marginLeft: 6, padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: `${tab.color}22`, color: tab.color }}>{tab.count}</span> : null}
             </button>
@@ -198,7 +197,7 @@ function Inner() {
         </div>
 
         {/* ── Plan Cards ── */}
-        <div style={{ marginBottom: 28 }}>
+        {activeTab === 'plans' && <div style={{ marginBottom: 28 }}>
           <motion.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
             {plans.slice(0, 4).map((plan, i) => (
@@ -234,10 +233,10 @@ function Inner() {
               </motion.div>
             ))}
           </motion.div>
-        </div>
+        </div>}
 
         {/* ── Exercise Library ── */}
-        <div style={{ marginBottom: 28 }}>
+        {activeTab === 'library' && <div style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
             <button onClick={() => setActiveMuscle('All')}
               style={{ padding: '6px 16px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s', background: activeMuscle === 'All' ? 'rgba(99,102,241,0.2)' : 'transparent', color: activeMuscle === 'All' ? '#a5b4fc' : 'rgba(255,255,255,0.4)', borderColor: activeMuscle === 'All' ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.08)' }}>
@@ -276,10 +275,43 @@ function Inner() {
               </motion.div>
             ))}
           </motion.div>
-        </div>
+        </div>}
+
+        {/* ── Plan Builder ── */}
+        {activeTab === 'builder' && <div style={{ marginBottom: 28, borderRadius: 20, padding: 28, background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.12)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Dumbbell size={17} color="#fbbf24" />
+            </div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>Plan Builder</h3>
+          </div>
+          {[
+            { step: 0, label: 'Choose Client', icon: <User size={16} />, desc: 'Select the client this plan is for' },
+            { step: 1, label: 'Set Goal & Duration', icon: <Target size={16} />, desc: 'Define fitness goal and program length' },
+            { step: 2, label: 'Add Exercises', icon: <Dumbbell size={16} />, desc: 'Pick exercises from the library' },
+            { step: 3, label: 'Review & Save', icon: <Check size={16} />, desc: 'Review and publish the plan' },
+          ].map((s) => (
+            <div key={s.step} onClick={() => setBuilderStep(s.step)}
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', marginBottom: 8, borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s', background: builderStep === s.step ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.02)', border: `1px solid ${builderStep === s.step ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.05)'}` }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: builderStep === s.step ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: builderStep === s.step ? '#fbbf24' : 'rgba(255,255,255,0.3)' }}>
+                {s.icon}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: builderStep === s.step ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>Step {s.step + 1}: {s.label}</div>
+                <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{s.desc}</div>
+              </div>
+              {builderStep === s.step && <ChevronRight size={16} color="#fbbf24" style={{ marginLeft: 'auto' }} />}
+            </div>
+          ))}
+          <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+            <PremiumButton onClick={() => { toast.info('Select a client first to start building a plan.'); }} style={{ fontSize: 12, padding: '8px 20px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+              Start Building
+            </PremiumButton>
+          </div>
+        </div>}
 
         {/* ── AI Section ── */}
-        <div style={{ borderRadius: 20, padding: 22, background: 'linear-gradient(135deg, rgba(139,92,246,0.06), rgba(236,72,153,0.04))', border: '1px solid rgba(139,92,246,0.12)' }}>
+        {activeTab === 'ai' && <div style={{ borderRadius: 20, padding: 22, background: 'linear-gradient(135deg, rgba(139,92,246,0.06), rgba(236,72,153,0.04))', border: '1px solid rgba(139,92,246,0.12)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Sparkles size={17} color="#c4b5fd" />
@@ -310,7 +342,7 @@ function Inner() {
               </motion.div>
             ))}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

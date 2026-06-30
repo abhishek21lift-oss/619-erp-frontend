@@ -62,8 +62,6 @@ function Inner() {
   const { toast } = useToast();
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [water, setWater] = useState(5);
-  const goalCalories = 2400;
-  const [consumed, setConsumed] = useState(1850);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [templates, setTemplates] = useState<DietTemplate[]>([]);
   const [supplements, setSupplements] = useState<Supplement[]>([]);
@@ -88,6 +86,12 @@ function Inner() {
   }, [date]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const consumed = meals.reduce((s, m) => s + (m.calories || 0), 0);
+  const totalProtein = meals.reduce((s, m) => s + (m.protein || 0), 0);
+  const totalCarbs = meals.reduce((s, m) => s + (m.carbs || 0), 0);
+  const totalFats = meals.reduce((s, m) => s + (m.fats || 0), 0);
+  const goalCalories = 2400;
 
   const waterPct = Math.min((water / 8) * 100, 100);
   const calPct = Math.min((consumed / goalCalories) * 100, 100);
@@ -134,9 +138,9 @@ function Inner() {
           style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           {[
             { label: 'Calories', value: consumed, max: goalCalories, unit: 'kcal', color: '#ef4444', icon: <Flame size={15} /> },
-            { label: 'Protein', value: 120, max: 160, unit: 'g', color: '#6366f1', icon: <Activity size={15} /> },
-            { label: 'Carbs', value: 210, max: 260, unit: 'g', color: '#f59e0b', icon: <Banana size={15} /> },
-            { label: 'Fats', value: 45, max: 65, unit: 'g', color: '#ec4899', icon: <Droplets size={15} /> },
+            { label: 'Protein', value: totalProtein, max: 160, unit: 'g', color: '#6366f1', icon: <Activity size={15} /> },
+            { label: 'Carbs', value: totalCarbs, max: 260, unit: 'g', color: '#f59e0b', icon: <Banana size={15} /> },
+            { label: 'Fats', value: totalFats, max: 65, unit: 'g', color: '#ec4899', icon: <Droplets size={15} /> },
           ].map((m, i) => {
             const pct = Math.min((m.value / m.max) * 100, 100);
             return (

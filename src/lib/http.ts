@@ -259,3 +259,92 @@ export async function http<T = unknown>(
 
 export const request = http;
 export default http;
+
+// ──────────────────────────────────────────────────────────────────────
+//  SSE helper — for endpoints that stream Server-Sent Events while the
+//  AI processes, then emit a final `data: {"type":"done",...}` event.
+//  Reads the full SSE body as text, skips keepalive lines, parses the
+//  "done" event, and returns its payload with the same shape as http().
+// ──────────────────────────────────────────────────────────────────────
+export async function httpSSE<T = unknown>(
+  path: string,
+  options: FetchOptions = {},
+): Promise<T> {
+  const BASE = apiBase();
+  const url  = path.startsWith('http') ? path : `${BASE}${path}`;
+  const method = (options.method ?? 'POST').toUpperCase();
+
+  const body = serializeBody(options.body);
+  const isMultipart = isFormDataBody(options.body);
+  const headers: Record<string, string> = {
+    ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.headers as Record<string, string> | undefined),
+  };
+
+  const init: RequestInit = {
+    ...options,
+    method,
+    headers,
+    credentials: 'include',
+    signal: options.signal,
+    body,
+  };
+
+  const doFetch = async (): Promise<T> => {
+    const res = await fetch(url, init);
+
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      let code: string | undefined;
+      let payload: unknown;
+      try {
+        payload = await res.json();
+        if (payload && typeof payload === 'object') {
+          const p = payload as Record<string, unknown>;
+          const errField = p.error;
+          if (errField && typeof errField === 'object') {
+            const nested = errField as Record<string, unknown>;
+            msg  = (nested.message ?? msg) as string;
+            code = nested.code as string | undefined;
+          } else {
+            msg  = (p.message ?? p.error ?? msg) as string;
+            code = p.code as string | undefined;
+          }
+        }
+      } catch { /* ignore */ }
+      throw new ApiError(msg, res.status, code, payload);
+    }
+
+    const text = await res.text();
+    for (const line of text.split('\n')) {
+      if (!line.startsWith('data: ')) continue;
+      const jsonStr = line.slice('data: '.length).trim();
+      if (!jsonStr) continue;
+      let event: Record<string, unknown>;
+      try { event = JSON.parse(jsonStr); } catch { continue; }
+      if (event.type === 'error') {
+        throw new ApiError((event.message as string) ?? 'AI generation failed', 500);
+      }
+      if (event.type === 'done') {
+        return event as unknown as T;
+      }
+    }
+
+    throw new ApiError('No result received from AI generation', 500);
+  };
+
+  try {
+    return await doFetch();
+  } catch (err) {
+    if (!(err instanceof ApiError) || err.status !== 401) throw err;
+    if (options.skipAuth) { handleUnauthorized(); throw err; }
+    const refreshed = await tryRefreshToken();
+    if (!refreshed) { handleUnauthorized(); throw err; }
+    try {
+      return await doFetch();
+    } catch (retryErr) {
+      if (retryErr instanceof ApiError && retryErr.status === 401) handleUnauthorized();
+      throw retryErr;
+    }
+  }
+}

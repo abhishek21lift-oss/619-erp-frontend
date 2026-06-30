@@ -32,11 +32,11 @@ export default function CommissionsPage() {
   const perf = useAsync(() => api.pt.trainerPerformance().then(r => (r as any).data as any[]), []);
 
   const [editingCommission, setEditingCommission] = useState<string | null>(null);
-  const [editingPayout, setEditingPayout] = useState<number | null>(null);
+  const [editingPayout, setEditingPayout] = useState<string | null>(null);
   const [commissionDraft, setCommissionDraft] = useState<Record<string, { commission_pct?: number; commission_amount?: number; incentives?: number }>>({});
-  const [payoutDraft, setPayoutDraft] = useState<Record<number, { payout_status?: string; paid_amount?: number }>>({});
+  const [payoutDraft, setPayoutDraft] = useState<Record<string, { payout_status?: string; paid_amount?: number }>>({});
   const [savingCommission, setSavingCommission] = useState<string | null>(null);
-  const [savingPayout, setSavingPayout] = useState<number | null>(null);
+  const [savingPayout, setSavingPayout] = useState<string | null>(null);
 
   const perfData = (perf.data || []) as any[];
   const payoutsData = (payouts.data || []) as any[];
@@ -91,25 +91,23 @@ export default function CommissionsPage() {
     }
   }, [commissionDraft, toast, perf, commissions]);
 
-  const handleEditPayout = useCallback((idx: number, payout: any) => {
-    setEditingPayout(idx);
+  const handleEditPayout = useCallback((trainerId: string, payout: any) => {
+    setEditingPayout(trainerId);
     setPayoutDraft(prev => ({
       ...prev,
-      [idx]: {
+      [trainerId]: {
         payout_status: payout.payout_status || 'pending',
         paid_amount: Number(payout.paid_amount ?? payout.total_commission ?? 0),
       },
     }));
   }, []);
 
-  const handleSavePayout = useCallback(async (idx: number) => {
-    const draft = payoutDraft[idx];
+  const handleSavePayout = useCallback(async (trainerId: string) => {
+    const draft = payoutDraft[trainerId];
     if (!draft) return;
-    const payout = payoutsData[idx];
-    if (!payout) return;
-    setSavingPayout(idx);
+    setSavingPayout(trainerId);
     try {
-      await api.pt.updatePayout(payout.trainer_id, draft);
+      await api.pt.updatePayout(trainerId, draft);
       toast.success('Payout updated');
       setEditingPayout(null);
       payouts.refetch();
@@ -118,7 +116,7 @@ export default function CommissionsPage() {
     } finally {
       setSavingPayout(null);
     }
-  }, [payoutDraft, payoutsData, toast, payouts]);
+  }, [payoutDraft, toast, payouts]);
 
   const handleMarkAllPaid = useCallback(async () => {
     try {
@@ -361,12 +359,13 @@ export default function CommissionsPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 600, overflowY: 'auto' }}>
-                {payoutsData.map((p: any, i: number) => {
-                  const isEditing = editingPayout === i;
-                  const draft = payoutDraft[i] || {};
-                  const saving = savingPayout === i;
+                {payoutsData.map((p: any) => {
+                  const tid = String(p.trainer_id);
+                  const isEditing = editingPayout === tid;
+                  const draft = payoutDraft[tid] || {};
+                  const saving = savingPayout === tid;
                   return (
-                    <motion.div key={p.trainer_id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                    <motion.div key={tid} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                       style={{
                         borderRadius: 14, padding: '14px 16px',
                         background: isEditing ? '#1e3a2f' : '#0f172a',
@@ -388,7 +387,7 @@ export default function CommissionsPage() {
                           )}
                         </div>
                         {!isEditing && (
-                          <button onClick={() => handleEditPayout(i, p)}
+                          <button onClick={() => handleEditPayout(tid, p)}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, color: '#64748b', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             onMouseOver={e => (e.currentTarget.style.color = '#22c55e')}
                             onMouseOut={e => (e.currentTarget.style.color = '#64748b')}>
@@ -413,7 +412,7 @@ export default function CommissionsPage() {
                           <div>
                             <label style={{ ...label, textTransform: 'uppercase' }}>Status</label>
                             <select value={draft.payout_status || 'pending'}
-                              onChange={e => setPayoutDraft(prev => ({ ...prev, [i]: { ...prev[i], payout_status: e.target.value } }))}
+                              onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], payout_status: e.target.value } }))}
                               style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #475569', fontSize: 13, fontWeight: 600, color: '#f8fafc', background: '#0f172a', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
                               <option value="pending">Pending</option>
                               <option value="paid">Paid</option>
@@ -422,7 +421,7 @@ export default function CommissionsPage() {
                           <div>
                             <label style={{ ...label, textTransform: 'uppercase' }}>Paid Amount (₹)</label>
                             <input type="number" value={draft.paid_amount ?? ''}
-                              onChange={e => setPayoutDraft(prev => ({ ...prev, [i]: { ...prev[i], paid_amount: Number(e.target.value) } }))}
+                              onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], paid_amount: Number(e.target.value) } }))}
                               style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #475569', fontSize: 13, fontWeight: 600, color: '#4ade80', background: '#0f172a', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
@@ -431,7 +430,7 @@ export default function CommissionsPage() {
                               style={{ background: '#334155', border: '1px solid #475569', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                               <X size={13} /> Cancel
                             </button>
-                            <button onClick={() => handleSavePayout(i)} disabled={saving}
+                            <button onClick={() => handleSavePayout(tid)} disabled={saving}
                               style={{
                                 background: saving ? '#166534' : 'linear-gradient(135deg, #16a34a, #22c55e)',
                                 border: 'none', cursor: saving ? 'not-allowed' : 'pointer',

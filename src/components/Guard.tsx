@@ -30,8 +30,9 @@ export default function Guard({ children, role, roles }: Props) {
     // check when neither `role` nor `roles` was provided.
     const roleRequired = role !== undefined || roles !== undefined;
     if (roleRequired && !hasRole(user.role, roles ?? role)) {
-      // Redirect to the dashboard root (not /pt-os which redirects back here)
-      router.replace('/login');
+      // User is logged in but lacks the required role — send them home rather
+      // than to /login, which would just detect the session and bounce back here.
+      router.replace('/');
       return;
     }
 
