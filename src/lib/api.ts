@@ -1265,7 +1265,7 @@ export const api = {
       }),
 
     businessInsights: (params?: { from?: string; to?: string }) =>
-      http<{ data: AiBusinessInsights; model: string; tier: string; used_fallback: boolean }>('/api/ai/business/insights', {
+      httpSSE<{ data: AiBusinessInsights; model: string; tier: string; used_fallback: boolean }>('/api/ai/business/insights', {
         method: 'POST',
         body: JSON.stringify(params || {}),
       }),
