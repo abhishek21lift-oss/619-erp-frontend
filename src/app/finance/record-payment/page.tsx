@@ -13,6 +13,7 @@ import {
   Printer, Sparkles, TrendingUp, CircleDot,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
 
 type PaymentMethod = 'upi' | 'card' | 'cash' | 'razorpay' | 'stripe';
 
@@ -63,6 +64,7 @@ export default function RecordPaymentPage() {
   const [partialPayment, setPartialPayment] = React.useState(false);
   const [notes, setNotes] = React.useState('');
   const [generateReceipt, setGenerateReceipt] = React.useState(true);
+  const { toast } = useToast();
   const [saving, setSaving] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [members, setMembers] = React.useState<Member[]>([]);
@@ -109,7 +111,10 @@ export default function RecordPaymentPage() {
         setStep('form'); setSelectedMember(null); setSelectedInvoice(null); setAmount(''); setNotes('');
         setPartialPayment(false); setSplitPayment(false); setSplitRows([{ method: 'upi', amount: '' }]);
       }, 3000);
-    } catch (err) { console.error('Payment failed', err); }
+    } catch (err: any) {
+      const msg = err?.message || err?.error || 'Payment failed. Please try again.';
+      toast.error(msg);
+    }
     finally { setSaving(false); }
   };
 
