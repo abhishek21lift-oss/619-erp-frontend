@@ -24,7 +24,7 @@ export default function NotFound() {
           fontSize: 96,
           fontWeight: 900,
           letterSpacing: '-0.04em',
-          color: '#dc2626',
+          color: '#F59E0B',
           lineHeight: 1,
           marginBottom: 16,
         }}
@@ -60,13 +60,13 @@ export default function NotFound() {
           alignItems: 'center',
           gap: 8,
           padding: '12px 24px',
-          background: '#dc2626',
+          background: 'linear-gradient(135deg,#F59E0B,#D97706)',
           color: '#fff',
           borderRadius: 10,
           fontSize: 14,
           fontWeight: 700,
           textDecoration: 'none',
-          boxShadow: '0 4px 14px rgba(220,38,38,0.35)',
+          boxShadow: '0 4px 14px rgba(245,158,11,0.35)',
         }}
       >
         ← Go to Dashboard
