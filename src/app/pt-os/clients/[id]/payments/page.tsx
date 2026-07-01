@@ -129,6 +129,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showPaymentPanel, setShowPaymentPanel] = useState(false);
+  const [showOptional, setShowOptional] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -584,7 +585,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 )}
               </motion.div>
 
-              {/* ── Record Payment Slide-in Panel ── */}
+              {/* ── Record Payment Slide-in Panel (Apple Style) ── */}
               <AnimatePresence>
                 {showPaymentPanel && (
                   <>
@@ -593,7 +594,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       className="fixed inset-0 z-40"
-                      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+                      style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}
                       onClick={() => setShowPaymentPanel(false)}
                     />
                     <motion.div
@@ -602,207 +603,196 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       animate={{ x: 0 }}
                       exit={{ x: '100%' }}
                       transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                      className="fixed right-0 top-0 bottom-0 w-full max-w-md z-50 overflow-y-auto"
+                      className="fixed right-0 top-0 bottom-0 w-full max-w-sm z-50 overflow-y-auto"
                       style={{
-                        background: 'linear-gradient(180deg, #1e293b, #0f172a)',
-                        borderLeft: '1px solid rgba(255,255,255,0.08)',
-                        boxShadow: '-8px 0 32px rgba(0,0,0,0.4)',
+                        background: '#0d1424',
+                        borderLeft: '1px solid rgba(255,255,255,0.07)',
+                        boxShadow: '-20px 0 60px rgba(0,0,0,0.7)',
                       }}
                     >
-                      <div className="p-6">
-                        <div className="flex items-center justify-between mb-6">
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-[10px]"
-                              style={{ background: 'rgba(16,185,129,0.15)' }}>
-                              <Plus size={16} style={{ color: '#10b981' }} />
-                            </div>
-                            <h2 className="text-[16px] font-[700]" style={{ color: '#f1f5f9' }}>Record Payment</h2>
-                          </div>
-                          <button
-                            onClick={() => setShowPaymentPanel(false)}
-                            className="flex h-8 w-8 items-center justify-center rounded-[8px] transition-colors hover:bg-white/5"
-                            style={{ color: 'rgb(148,163,184)' }}
-                          >
-                            <X size={16} />
-                          </button>
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-5 pt-6 pb-4">
+                        <div>
+                          <p className="text-[10px] font-[700] uppercase tracking-[0.12em]" style={{ color: 'rgb(71,85,105)' }}>Record Payment</p>
+                          <p className="text-[20px] font-[800] tracking-[-0.025em] mt-0.5" style={{ color: '#f1f5f9' }}>{client.name}</p>
+                        </div>
+                        <button
+                          onClick={() => setShowPaymentPanel(false)}
+                          className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                          style={{ background: 'rgba(255,255,255,0.06)', color: 'rgb(148,163,184)' }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      {/* Balance chip */}
+                      <div className="px-5 mb-1">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-[600]"
+                          style={{
+                            background: client.balance_amount > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
+                            color: client.balance_amount > 0 ? '#f59e0b' : '#10b981',
+                          }}>
+                          <Wallet size={12} />
+                          {client.balance_amount > 0 ? `Balance due: ${fmtINR(client.balance_amount)}` : 'Fully paid'}
+                        </div>
+                      </div>
+
+                      {/* Hero amount display */}
+                      <div className="text-center px-5 pt-6 pb-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <p className="text-[60px] font-[800] tracking-[-0.04em] tabular-nums leading-none" style={{
+                          color: form.amount && Number(form.amount) > 0 ? '#ffffff' : 'rgba(255,255,255,0.15)',
+                        }}>
+                          ₹{form.amount || '0'}
+                        </p>
+                      </div>
+
+                      <div className="px-5 pt-5 pb-8 space-y-4">
+                        {/* Payment method pills */}
+                        <div className="flex gap-2">
+                          {[
+                            { value: 'CASH', label: 'Cash', icon: Banknote, color: '#10b981' },
+                            { value: 'UPI', label: 'UPI', icon: Smartphone, color: '#6366f1' },
+                            { value: 'CARD', label: 'Card', icon: CreditCard, color: '#3b82f6' },
+                            { value: 'BANK_TRANSFER', label: 'Bank', icon: Landmark, color: '#f59e0b' },
+                          ].map(m => {
+                            const Icon = m.icon;
+                            const sel = form.payment_method === m.value;
+                            return (
+                              <button
+                                key={m.value}
+                                onClick={() => setForm(f => ({ ...f, payment_method: m.value }))}
+                                className="flex-1 flex items-center justify-center gap-1 py-2.5 rounded-full text-[11px] font-[700] transition-all"
+                                style={{
+                                  background: sel ? m.color : 'rgba(255,255,255,0.06)',
+                                  color: sel ? '#fff' : 'rgb(148,163,184)',
+                                  boxShadow: sel ? `0 4px 16px ${m.color}40` : 'none',
+                                }}
+                              >
+                                <Icon size={13} />
+                                <span className="ml-0.5">{m.label}</span>
+                              </button>
+                            );
+                          })}
                         </div>
 
-                        <div className="space-y-5">
-                          {/* Client summary */}
-                          <div className="rounded-[12px] p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[11px] font-[600] uppercase tracking-wider" style={{ color: 'rgb(100,116,139)' }}>Client</span>
-                              <span className="text-[12px] font-[600]" style={{ color: '#e2e8f0' }}>{client.name}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-[600] uppercase tracking-wider" style={{ color: 'rgb(100,116,139)' }}>Balance</span>
-                              <span className="text-[14px] font-[700]" style={{ color: client.balance_amount > 0 ? '#f59e0b' : '#10b981' }}>
-                                {fmtINR(client.balance_amount)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Amount */}
-                          <div>
-                            <label className="block text-[11px] font-[600] uppercase tracking-wider mb-1.5" style={{ color: 'rgb(148,163,184)' }}>
-                              Amount *
-                            </label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-[700]" style={{ color: 'rgb(100,116,139)' }}>₹</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={form.amount}
-                                onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
-                                placeholder="0.00"
-                                className="w-full pl-8 pr-4 py-3 rounded-[12px] text-[15px] font-[700] tabular-nums outline-none transition-all"
-                                style={{
-                                  background: 'rgba(0,0,0,0.25)',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  color: '#f1f5f9',
-                                }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = '#10b981'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.15)'; }}
-                                onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = ''; }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Payment Method */}
-                          <div>
-                            <label className="block text-[11px] font-[600] uppercase tracking-wider mb-2" style={{ color: 'rgb(148,163,184)' }}>
-                              Payment Method
-                            </label>
-                            <div className="grid grid-cols-5 gap-1.5">
-                              {paymentMethods.map(m => {
-                                const Icon = m.icon;
-                                const isSelected = form.payment_method === m.value;
-                                return (
-                                  <button
-                                    key={m.value}
-                                    onClick={() => setForm(f => ({ ...f, payment_method: m.value }))}
-                                    className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-[10px] text-[10px] font-[500] transition-all"
-                                    style={{
-                                      background: isSelected ? `${m.color}18` : 'rgba(255,255,255,0.03)',
-                                      border: `1px solid ${isSelected ? m.color : 'rgba(255,255,255,0.06)'}`,
-                                      color: isSelected ? m.color : 'rgb(148,163,184)',
-                                    }}
-                                  >
-                                    <Icon size={16} />
-                                    {m.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            {/* Reference */}
-                            <div>
-                              <label className="block text-[11px] font-[600] uppercase tracking-wider mb-1.5" style={{ color: 'rgb(148,163,184)' }}>
-                                Reference
-                              </label>
-                              <input
-                                type="text"
-                                value={form.payment_ref}
-                                onChange={(e) => setForm(f => ({ ...f, payment_ref: e.target.value }))}
-                                placeholder="TXN ID / UTR"
-                                className="w-full px-3 py-2.5 rounded-[10px] text-[13px] outline-none transition-all"
-                                style={{
-                                  background: 'rgba(0,0,0,0.25)',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  color: '#e2e8f0',
-                                }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(129,140,248,0.15)'; }}
-                                onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = ''; }}
-                              />
-                            </div>
-
-                            {/* Date */}
-                            <div>
-                              <label className="block text-[11px] font-[600] uppercase tracking-wider mb-1.5" style={{ color: 'rgb(148,163,184)' }}>
-                                Date
-                              </label>
-                              <input
-                                type="date"
-                                value={form.date}
-                                onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))}
-                                className="w-full px-3 py-2.5 rounded-[10px] text-[13px] outline-none transition-all"
-                                style={{
-                                  background: 'rgba(0,0,0,0.25)',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  color: '#e2e8f0',
-                                  colorScheme: 'dark',
-                                }}
-                                onFocus={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(129,140,248,0.15)'; }}
-                                onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = ''; }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Notes */}
-                          <div>
-                            <label className="block text-[11px] font-[600] uppercase tracking-wider mb-1.5" style={{ color: 'rgb(148,163,184)' }}>
-                              Notes
-                            </label>
-                            <textarea
-                              value={form.notes}
-                              onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
-                              placeholder="Optional notes..."
-                              rows={3}
-                              className="w-full px-3 py-2.5 rounded-[10px] text-[13px] outline-none resize-none transition-all"
-                              style={{
-                                background: 'rgba(0,0,0,0.25)',
-                                border: '1px solid rgba(255,255,255,0.08)',
-                                color: '#e2e8f0',
+                        {/* Number pad */}
+                        <div className="grid grid-cols-3 gap-2">
+                          {['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(key => (
+                            <button
+                              key={key}
+                              onClick={() => {
+                                setForm(f => {
+                                  if (key === '⌫') return { ...f, amount: f.amount.slice(0, -1) };
+                                  if (key === '.') return f.amount.includes('.') ? f : { ...f, amount: (f.amount || '0') + '.' };
+                                  const next = f.amount === '' || f.amount === '0' ? key : f.amount + key;
+                                  if (next.includes('.') && next.split('.')[1].length > 2) return f;
+                                  return { ...f, amount: next };
+                                });
                               }}
-                              onFocus={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(129,140,248,0.15)'; }}
-                              onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = ''; }}
-                            />
-                          </div>
-
-                          {/* Summary */}
-                          <div className="rounded-[12px] p-4 space-y-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div className="flex justify-between text-[12px]">
-                              <span style={{ color: 'rgb(148,163,184)' }}>Current Paid</span>
-                              <span className="font-[600]" style={{ color: '#10b981' }}>{fmtINR(client.paid_amount)}</span>
-                            </div>
-                            <div className="flex justify-between text-[12px]">
-                              <span style={{ color: 'rgb(148,163,184)' }}>This Payment</span>
-                              <span className="font-[700]" style={{ color: '#f1f5f9' }}>
-                                {form.amount ? fmtINR(form.amount) : '—'}
-                              </span>
-                            </div>
-                            <div className="border-t pt-2" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                              <div className="flex justify-between text-[13px]">
-                                <span style={{ color: 'rgb(148,163,184)' }}>New Paid Total</span>
-                                <span className="font-[800]" style={{ color: '#f1f5f9' }}>
-                                  {fmtINR(Number(client.paid_amount) + (Number(form.amount) || 0))}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex justify-between text-[12px]">
-                              <span style={{ color: 'rgb(148,163,184)' }}>New Balance</span>
-                              <span className="font-[700]" style={{
-                                color: (client.final_amount - (client.paid_amount + (Number(form.amount) || 0))) > 0 ? '#f59e0b' : '#10b981',
-                              }}>
-                                {fmtINR(Math.max(0, client.final_amount - (client.paid_amount + (Number(form.amount) || 0))))}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Submit */}
-                          <PremiumButton
-                            tone="primary"
-                            glow
-                            icon={<Plus size={14} />}
-                            onClick={handleCreatePayment}
-                            disabled={!form.amount || Number(form.amount) <= 0 || submitting}
-                            className="w-full justify-center !py-3"
-                          >
-                            {submitting ? 'Recording...' : 'Record Payment'}
-                          </PremiumButton>
+                              className="h-[62px] rounded-[16px] font-[500] transition-all active:scale-90 select-none"
+                              style={{
+                                background: key === '⌫' ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.06)',
+                                color: key === '⌫' ? '#f87171' : '#f1f5f9',
+                                fontSize: key === '⌫' ? '18px' : '22px',
+                              }}
+                            >
+                              {key}
+                            </button>
+                          ))}
                         </div>
+
+                        {/* Optional details toggle */}
+                        <button
+                          onClick={() => setShowOptional(v => !v)}
+                          className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-[12px] text-[11px] font-[600] transition-colors hover:bg-white/5"
+                          style={{ color: 'rgb(100,116,139)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+                        >
+                          <span>Reference / Date / Notes</span>
+                          <span style={{ fontSize: '9px', display: 'inline-block', transition: 'transform 0.2s', transform: showOptional ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                        </button>
+                        <AnimatePresence>
+                          {showOptional && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              style={{ overflow: 'hidden' }}
+                              className="space-y-3"
+                            >
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'rgb(100,116,139)' }}>Reference</label>
+                                  <input type="text" value={form.payment_ref}
+                                    onChange={(e) => setForm(f => ({ ...f, payment_ref: e.target.value }))}
+                                    placeholder="TXN / UTR"
+                                    className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
+                                    style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'rgb(100,116,139)' }}>Date</label>
+                                  <input type="date" value={form.date}
+                                    onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))}
+                                    className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
+                                    style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0', colorScheme: 'dark' }}
+                                  />
+                                </div>
+                              </div>
+                              <textarea value={form.notes}
+                                onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
+                                placeholder="Notes (optional)"
+                                rows={2}
+                                className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none resize-none"
+                                style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Summary */}
+                        <div className="rounded-[14px] p-4 space-y-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                          <div className="flex justify-between text-[12px]">
+                            <span style={{ color: 'rgb(148,163,184)' }}>Already paid</span>
+                            <span className="font-[600] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(client.paid_amount)}</span>
+                          </div>
+                          <div className="flex justify-between text-[12px]">
+                            <span style={{ color: 'rgb(148,163,184)' }}>This payment</span>
+                            <span className="font-[700] tabular-nums" style={{ color: form.amount && Number(form.amount) > 0 ? '#f1f5f9' : 'rgba(255,255,255,0.2)' }}>
+                              {form.amount && Number(form.amount) > 0 ? fmtINR(form.amount) : '—'}
+                            </span>
+                          </div>
+                          <div className="h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                          <div className="flex justify-between">
+                            <span className="text-[13px] font-[700]" style={{ color: '#e2e8f0' }}>New balance</span>
+                            <span className="text-[15px] font-[800] tabular-nums" style={{
+                              color: Math.max(0, client.final_amount - (client.paid_amount + (Number(form.amount) || 0))) > 0 ? '#f59e0b' : '#10b981',
+                            }}>
+                              {fmtINR(Math.max(0, client.final_amount - (client.paid_amount + (Number(form.amount) || 0))))}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Submit */}
+                        <button
+                          onClick={handleCreatePayment}
+                          disabled={!form.amount || Number(form.amount) <= 0 || submitting}
+                          className="w-full py-4 rounded-[18px] text-[16px] font-[800] tracking-[-0.01em] transition-all select-none"
+                          style={{
+                            background: !form.amount || Number(form.amount) <= 0 || submitting
+                              ? 'rgba(255,255,255,0.07)'
+                              : 'linear-gradient(135deg, #10b981, #059669)',
+                            color: !form.amount || Number(form.amount) <= 0 || submitting
+                              ? 'rgba(255,255,255,0.25)'
+                              : '#ffffff',
+                            boxShadow: !form.amount || Number(form.amount) <= 0 || submitting
+                              ? 'none'
+                              : '0 8px 24px rgba(16,185,129,0.4)',
+                            cursor: !form.amount || Number(form.amount) <= 0 || submitting ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {submitting ? 'Recording…' : 'Record Payment'}
+                        </button>
                       </div>
                     </motion.div>
                   </>
