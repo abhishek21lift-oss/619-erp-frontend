@@ -243,30 +243,115 @@ function Inner() {
         {/* Main Content */}
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
           {/* Search & Filters */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ flex: '1 1 280px', position: 'relative' }}>
+          <div className="mb-5 flex flex-col gap-3">
+            <div className="relative w-full">
               <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
               <input
                 placeholder="Search by client, receipt, notes..."
                 onChange={(e) => handleSearch(e.target.value)}
-                style={{ width: '100%', padding: '10px 14px 10px 36px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, background: 'white', outline: 'none', color: 'var(--text-primary)' }}
+                className="w-full h-11 rounded-xl outline-none transition-all focus:border-[#06b6d4]/40 focus:shadow-[0_0_0_3px_rgba(6,182,212,0.06)]"
+                style={{ padding: '10px 14px 10px 36px', border: '1.5px solid #e2e8f0', fontSize: 14, background: 'white', color: 'var(--text-primary)' }}
               />
             </div>
-            <select
-              value={methodFilter}
-              onChange={(e) => { setMethodFilter(e.target.value); setPage(0); }}
-              style={{ padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 13, background: 'white', color: 'var(--text-primary)', cursor: 'pointer', outline: 'none' }}
-            >
-              <option value="all">All Methods</option>
-              {methods.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-            <div style={{ fontSize: 12, color: 'var(--text-disabled)' }}>
-              {filtered.length > 0 && `Page ${page + 1} of ${pageCount}`}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {['all', ...methods].map(m => {
+                const isActive = methodFilter === m;
+                const color = METHOD_COLORS[m] || '#06b6d4';
+                return (
+                  <button key={m} onClick={() => { setMethodFilter(m); setPage(0); }}
+                    className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold whitespace-nowrap transition-all duration-150"
+                    style={{
+                      background: isActive ? color : 'rgba(0,0,0,0.04)',
+                      color: isActive ? '#fff' : '#6B7280',
+                      minHeight: 36,
+                    }}>
+                    {m === 'all' ? 'All Methods' : m}
+                  </button>
+                );
+              })}
+              <span className="ml-auto shrink-0 text-[12px] text-[var(--text-disabled)]">
+                {filtered.length > 0 && `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`}
+              </span>
             </div>
           </div>
 
-          {/* Table */}
-          <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+          {/* Mobile Cards (shown on small screens) */}
+          <div className="md:hidden">
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-[88px] rounded-[16px] bg-white border border-slate-100 animate-pulse" />
+                ))}
+              </div>
+            ) : paged.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
+                  <Inbox size={24} color="#94a3b8" />
+                </div>
+                <p className="text-[14px] font-semibold text-[var(--text-primary)] mb-1">No payments found</p>
+                <p className="text-[13px] text-[var(--text-muted)]">{search ? 'Try a different search term.' : 'Record your first payment to get started.'}</p>
+                {!search && (
+                  <button onClick={() => router.push('/finance/record-payment')}
+                    className="mt-4 flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[13px] font-semibold text-white"
+                    style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }}>
+                    <Banknote size={14} /> Record Payment
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {paged.map((p) => (
+                  <motion.div key={p.id}
+                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    className="rounded-[16px] bg-white border border-slate-100 p-4 shadow-sm active:scale-[0.985] transition-all"
+                    style={{ boxShadow: '0 1px 8px rgba(15,23,42,0.06)' }}>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
+                          style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>
+                          <User size={14} color="white" />
+                        </div>
+                        <span className="font-semibold text-[14px] text-[var(--text-primary)] truncate">{p.client_name || '—'}</span>
+                      </div>
+                      <span className="shrink-0 text-[18px] font-[800] tabular-nums ml-2" style={{ color: '#06b6d4', letterSpacing: '-0.02em' }}>{fmtINR(p.amount)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11px] font-[600]"
+                        style={{ background: `${METHOD_COLORS[p.method] || '#94a3b8'}15`, color: METHOD_COLORS[p.method] || '#94a3b8' }}>
+                        {METHOD_ICONS[p.method] || null}
+                        {p.method || 'Other'}
+                      </span>
+                      {p.receipt_no && <span className="text-[10px] text-slate-400 font-mono">{p.receipt_no}</span>}
+                      <div className="ml-auto flex items-center gap-1 text-[11px] text-slate-400">
+                        <CalendarDays size={11} color="#94a3b8" />
+                        {p.date || '—'}
+                      </div>
+                    </div>
+                    {p.notes && <p className="mt-1.5 text-[11px] text-slate-400 truncate">{p.notes}</p>}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+            {/* Mobile Pagination */}
+            {pageCount > 1 && !loading && (
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <button disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}
+                  className="rounded-[10px] px-4 py-2 text-[13px] font-[600] transition-all disabled:opacity-40"
+                  style={{ border: '1px solid #e2e8f0', background: 'white', color: 'var(--text-primary)' }}>
+                  Previous
+                </button>
+                <span className="text-[12px] text-[var(--text-muted)]">{page + 1} / {pageCount}</span>
+                <button disabled={page >= pageCount - 1} onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
+                  className="rounded-[10px] px-4 py-2 text-[13px] font-[600] transition-all disabled:opacity-40"
+                  style={{ border: '1px solid #e2e8f0', background: 'white', color: 'var(--text-primary)' }}>
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table (hidden on mobile) */}
+          <div className="hidden md:block" style={{ background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>

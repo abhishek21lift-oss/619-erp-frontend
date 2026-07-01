@@ -285,6 +285,13 @@ export default function PtClientsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
+
+  // Default to grid/card view on mobile screens
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setViewMode('grid');
+    }
+  }, []);
   const clients = useAsync<{ data: PtClient[]; total: number }>(
     () => api.pt.clients().then(r => r as { data: PtClient[]; total: number }),
     [],
@@ -362,7 +369,7 @@ export default function PtClientsPage() {
             {/* ── KPI HERO ── */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {[
                 {
                   label: 'Total Clients', value: summary?.total ?? 0, prefix: '',
@@ -438,11 +445,11 @@ export default function PtClientsPage() {
               }}>
 
               {/* ── TOOLBAR ── */}
-              <div className="flex flex-wrap items-center gap-3 border-b px-5 py-4"
+              <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5 sm:py-4"
                 style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
 
                 {/* Search */}
-                <div className="relative min-w-0 sm:min-w-[200px] flex-1 max-w-sm">
+                <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-sm">
                   <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     type="text" placeholder="Search clients or trainers…"
@@ -454,45 +461,48 @@ export default function PtClientsPage() {
                   />
                 </div>
 
-                {/* Status filter pills */}
-                <div className="flex gap-1 rounded-[12px] p-1"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  {STATUS_FILTERS.map(f => (
-                    <button key={f.value} onClick={() => setStatusFilter(f.value)}
-                      className="rounded-[8px] px-3.5 py-1.5 text-[11px] font-[700] transition-all duration-200"
-                      style={statusFilter === f.value
-                        ? { background: `linear-gradient(135deg, ${f.from}, ${f.to})`, color: '#fff', boxShadow: `0 2px 10px ${f.from}40` }
-                        : { color: 'rgb(100,116,139)' }}>
-                      {f.label}
-                    </button>
-                  ))}
+                {/* Filter row — horizontal scroll on mobile */}
+                <div className="flex w-full items-center gap-2 overflow-x-auto pb-0.5 sm:w-auto sm:overflow-visible">
+                  {/* Status filter pills */}
+                  <div className="flex shrink-0 gap-1 rounded-[12px] p-1"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    {STATUS_FILTERS.map(f => (
+                      <button key={f.value} onClick={() => setStatusFilter(f.value)}
+                        className="rounded-[8px] px-3.5 py-2 text-[11px] font-[700] transition-all duration-200"
+                        style={statusFilter === f.value
+                          ? { background: `linear-gradient(135deg, ${f.from}, ${f.to})`, color: '#fff', boxShadow: `0 2px 10px ${f.from}40` }
+                          : { color: 'rgb(100,116,139)' }}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* View mode */}
+                  <div className="flex shrink-0 gap-1 rounded-[10px] p-1"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    {([['table', LayoutList], ['grid', LayoutGrid]] as const).map(([mode, Icon]) => (
+                      <button key={mode} onClick={() => setViewMode(mode)}
+                        className="rounded-[7px] p-2 transition-all duration-200"
+                        style={viewMode === mode
+                          ? { background: 'rgba(124,58,237,0.25)', color: '#a78bfa' }
+                          : { color: 'rgb(100,116,139)' }}>
+                        <Icon size={14} />
+                      </button>
+                    ))}
+                  </div>
+
+                  <button onClick={() => clients.refetch()}
+                    className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[11px] font-[600] text-slate-400 transition-all duration-200 hover:text-slate-300"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <RefreshCw size={11} />Refresh
+                  </button>
+
+                  <span className="ml-auto shrink-0 text-[11px] font-[600] text-slate-500">
+                    <span className="text-slate-300">{filtered.length}</span>
+                    <span className="mx-1 text-slate-600">/</span>
+                    {clients.data?.data?.length ?? 0}
+                  </span>
                 </div>
-
-                {/* View mode */}
-                <div className="flex gap-1 rounded-[10px] p-1"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  {([['table', LayoutList], ['grid', LayoutGrid]] as const).map(([mode, Icon]) => (
-                    <button key={mode} onClick={() => setViewMode(mode)}
-                      className="rounded-[7px] p-1.5 transition-all duration-200"
-                      style={viewMode === mode
-                        ? { background: 'rgba(124,58,237,0.25)', color: '#a78bfa' }
-                        : { color: 'rgb(100,116,139)' }}>
-                      <Icon size={14} />
-                    </button>
-                  ))}
-                </div>
-
-                <button onClick={() => clients.refetch()}
-                  className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[11px] font-[600] text-slate-400 transition-all duration-200 hover:text-slate-300"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <RefreshCw size={11} />Refresh
-                </button>
-
-                <span className="ml-auto text-[11px] font-[600] text-slate-500">
-                  <span className="text-slate-300">{filtered.length}</span>
-                  <span className="mx-1 text-slate-600">/</span>
-                  {clients.data?.data?.length ?? 0}
-                </span>
               </div>
 
               {/* ── GRID VIEW ── */}

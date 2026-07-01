@@ -25,7 +25,6 @@ interface MobileBottomNavProps {
   sidebarOpen?: boolean;
 }
 
-// Spec: transform 280ms cubic-bezier(0.22, 1, 0.36, 1)
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNavProps) {
@@ -37,7 +36,6 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
   const { bottomBar, reducedMotion } = useNavScroll();
 
-  // Hidden when sidebar drawer is open OR when scroll state says hidden
   const isVisible = !sidebarOpen && bottomBar !== 'hidden';
   const dur       = reducedMotion ? 0 : 0.28;
 
@@ -45,18 +43,20 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
     <motion.nav
       className="fixed bottom-0 left-0 right-0 z-40 lg:hidden"
       style={{
-        // Flush to device edge — gradient extends through safe-area zone
         background: 'linear-gradient(135deg, #FF9E00 0%, #F57C00 55%, #E65100 100%)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        // GPU compositing
         willChange: 'transform',
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
       }}
       animate={{ y: isVisible ? 0 : '100%' }}
       transition={{ duration: dur, ease: EASE }}
       aria-label="Primary navigation"
       initial={false}
     >
-      <div className="flex h-[38px] items-stretch">
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'rgba(255,255,255,0.25)' }} />
+
+      <div className="flex h-[60px] items-stretch">
         {items.map(({ href, icon: Icon, label }) => {
           const isActive =
             href === '/'
@@ -67,20 +67,20 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
             <Link
               key={href}
               href={href}
-              className="relative flex flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden"
+              className="relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden"
               aria-label={label}
               aria-current={isActive ? 'page' : undefined}
+              style={{ minHeight: 44 }}
             >
-              {/* Active tab background pill — springs between tabs */}
+              {/* Active tab background pill */}
               {isActive && (
                 <motion.span
                   layoutId="bottom-nav-active"
                   className="absolute inset-x-2 rounded-xl"
                   style={{
-                    top:    4,
-                    bottom: 4,
-                    background:
-                      'linear-gradient(135deg, #FFF3C4 0%, #FFE082 100%)',
+                    top:    6,
+                    bottom: 6,
+                    background: 'linear-gradient(135deg, #FFF3C4 0%, #FFE082 100%)',
                     boxShadow: '0 4px 16px rgba(255,176,0,0.35)',
                   }}
                   transition={{
@@ -92,27 +92,25 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                 />
               )}
 
-              {/* Icon — tap scales down for tactile feedback */}
+              {/* Icon */}
               <motion.span
-                className="relative z-10 flex h-[18px] w-[18px] items-center justify-center"
-                whileTap={reducedMotion ? {} : { scale: 0.82 }}
+                className="relative z-10 flex h-[26px] w-[26px] items-center justify-center"
+                whileTap={reducedMotion ? {} : { scale: 0.80 }}
                 transition={{ type: 'spring', stiffness: 700, damping: 22 }}
               >
                 <Icon
-                  size={14}
-                  strokeWidth={isActive ? 2.5 : 1.5}
+                  size={20}
+                  strokeWidth={isActive ? 2.5 : 1.8}
                   style={{
-                    color: isActive
-                      ? '#C25A00'
-                      : 'rgba(255,255,255,0.82)',
+                    color: isActive ? '#C25A00' : 'rgba(255,255,255,0.85)',
                   }}
                   aria-hidden="true"
                 />
               </motion.span>
 
-              {/* Label — always visible */}
+              {/* Label */}
               <span
-                className="relative z-10 select-none text-[8px] font-bold uppercase tracking-[0.05em] leading-none"
+                className="relative z-10 select-none text-[10px] font-bold uppercase tracking-[0.04em] leading-none"
                 style={{
                   color: isActive ? '#7A3900' : 'rgba(255,255,255,0.80)',
                 }}

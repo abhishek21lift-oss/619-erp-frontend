@@ -532,7 +532,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     </div>
                     <h3 className="text-[13.5px] font-[740] text-white">Quick Actions</h3>
                   </div>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-11 gap-2.5">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-11 gap-2.5">
                     {QUICK_ACTIONS.map((action, i) => (
                       <motion.button key={action.label}
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -823,7 +823,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                                 <span className="rounded-[7px] px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wider"
                                   style={{ background: st.bg, color: st.color }}>{st.label}</span>
                               </div>
-                              <div className={`grid gap-2 ${isLast ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                              <div className={`grid gap-2 ${isLast ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
                                 {[
                                   { label: 'Fee', value: fmtINR(s.selling_price), color: 'rgba(255,255,255,0.85)' },
                                   { label: 'Paid', value: fmtINR(s.amount_paid), color: '#34d399' },
@@ -862,7 +862,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                                 <span className="rounded-[7px] px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wider"
                                   style={{ background: st.bg, color: st.color }}>{st.label}</span>
                               </div>
-                              <div className="grid grid-cols-4 gap-2">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 {[
                                   { label: 'Fee', value: fmtINR(client.final_amount), color: 'rgba(255,255,255,0.85)' },
                                   { label: 'Paid', value: fmtINR(client.paid_amount), color: '#34d399' },

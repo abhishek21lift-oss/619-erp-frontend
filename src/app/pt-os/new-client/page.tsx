@@ -1008,7 +1008,7 @@ function NewClientWizard() {
             </div>
 
             {/* Navigation Bar */}
-            <div className="sticky bottom-0 mt-6 z-40 rounded-[18px] p-4"
+            <div className="sticky-above-mobile-nav mt-6 z-40 rounded-[18px] p-4"
               style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', border: '1px solid rgba(15,23,42,0.07)', boxShadow: '0 -4px 24px rgba(15,23,42,0.06)' }}>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">

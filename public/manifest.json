@@ -1,0 +1,45 @@
+{
+  "name": "619 FITNESS STUDIO — Operating System",
+  "short_name": "619 ERP",
+  "description": "Train heavy. Run light. The classy operating system for serious gyms.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FF9E00",
+  "theme_color": "#F57C00",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["fitness", "health", "business"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/619-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Check-in",
+      "short_name": "Check-in",
+      "description": "Open face recognition check-in",
+      "url": "/checkin",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Clients",
+      "short_name": "Clients",
+      "description": "Browse PT clients",
+      "url": "/pt-os/clients",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": []
+}
