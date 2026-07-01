@@ -20,7 +20,7 @@ const ROLE_CARDS = [
   { key: 'manager',     label: 'Manager',         icon: '🏆', color: '#2563eb', bg: '#eff6ff', desc: 'Manage teams & ops', level: 'High' },
   { key: 'trainer',     label: 'Trainer',         icon: '💪', color: '#059669', bg: '#f0fdf4', desc: 'Client & PT sessions', level: 'Medium' },
   { key: 'receptionist',label: 'Front Desk',      icon: '🖥️', color: '#d97706', bg: '#fffbeb', desc: 'Check-ins & bookings', level: 'Low' },
-  { key: 'accountant',  label: 'Accountant',      icon: '📊', color: '#dc2626', bg: '#fff1f2', desc: 'Payroll & reports', level: 'Medium' },
+  { key: 'accountant',  label: 'Accountant',      icon: '📊', color: '#F59E0B', bg: '#fffbeb', desc: 'Payroll & reports', level: 'Medium' },
   { key: 'support',     label: 'Support Staff',   icon: '🛎️', color: '#0891b2', bg: '#f0f9ff', desc: 'Facility & floor ops', level: 'Basic' },
 ];
 

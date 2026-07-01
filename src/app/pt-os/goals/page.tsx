@@ -9,7 +9,7 @@ import { useAsync } from '@/lib/use-async';
 import { Button } from '@/components/ui';
 
 const GOAL_TYPES = [
-  { value: 'fat_loss', label: 'Fat Loss', icon: <Flame size={18} />, color: '#dc2626' },
+  { value: 'fat_loss', label: 'Fat Loss', icon: <Flame size={18} />, color: '#F59E0B' },
   { value: 'muscle_gain', label: 'Muscle Gain', icon: <Dumbbell size={18} />, color: '#7c3aed' },
   { value: 'strength', label: 'Strength', icon: <Zap size={18} />, color: '#f59e0b' },
   { value: 'powerlifting', label: 'Powerlifting', icon: <Activity size={18} />, color: '#1e40af' },

@@ -286,12 +286,12 @@ function SchedulePageContent() {
             <div>
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                  <Calendar size={16} style={{ color: '#dc2626' }} />
+                  <Calendar size={16} style={{ color: '#F59E0B' }} />
                 </div>
                 <div>
                   <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>Schedule Session</h1>
                   <p className="text-[11px] font-[600] uppercase tracking-[0.08em]" style={{ color: 'rgb(148,163,184)' }}>
-                    Personal Training / <span style={{ color: '#dc2626' }}>Schedule Session</span>
+                    Personal Training / <span style={{ color: '#F59E0B' }}>Schedule Session</span>
                   </p>
                 </div>
               </div>
@@ -316,7 +316,7 @@ function SchedulePageContent() {
                   onClick={() => setView(v.id)}
                   className="flex items-center gap-1.5 rounded-[9px] px-3 py-1.5 text-[11px] font-[660] transition-all"
                   style={{
-                    background: view === v.id ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'transparent',
+                    background: view === v.id ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'transparent',
                     color: view === v.id ? '#fff' : 'rgb(148,163,184)',
                     boxShadow: view === v.id ? '0 2px 8px rgba(220,38,38,0.2)' : 'none',
                   }}
@@ -371,7 +371,7 @@ function SchedulePageContent() {
             style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
             <div className="flex justify-center mb-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-[16px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                <RefreshCw size={22} style={{ color: '#dc2626' }} />
+                <RefreshCw size={22} style={{ color: '#F59E0B' }} />
               </div>
             </div>
             <h3 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Failed to load sessions</h3>
@@ -410,7 +410,7 @@ function SchedulePageContent() {
                             'relative rounded-[12px] p-1 text-left transition-all',
                           )}
                           style={{
-                            background: isSelected ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : isToday ? 'rgba(220,38,38,0.06)' : 'transparent',
+                            background: isSelected ? 'linear-gradient(135deg,#F59E0B,#D97706)' : isToday ? 'rgba(220,38,38,0.06)' : 'transparent',
                             border: isToday && !isSelected ? '1.5px solid rgba(220,38,38,0.20)' : '1.5px solid transparent',
                             minHeight: 54,
                           }}
@@ -427,7 +427,7 @@ function SchedulePageContent() {
                               {daySessions.slice(0, 3).map((s) => (
                                 <div key={s.id}
                                   className="h-1 w-1.5 rounded-full"
-                                  style={{ background: s.status === 'scheduled' ? '#dc2626' : s.status === 'completed' ? '#10b981' : '#9ca3af' }}
+                                  style={{ background: s.status === 'scheduled' ? '#F59E0B' : s.status === 'completed' ? '#10b981' : '#9ca3af' }}
                                 />
                               ))}
                               {daySessions.length > 3 && (
@@ -450,7 +450,7 @@ function SchedulePageContent() {
                     {sessionsForDate.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-10 text-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
-                          <Calendar size={20} style={{ color: '#dc2626' }} />
+                          <Calendar size={20} style={{ color: '#F59E0B' }} />
                         </div>
                         <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>No sessions scheduled</p>
                         <p className="text-[11px] mt-1" style={{ color: 'rgb(203,213,225)' }}>Book a session to get started</p>
@@ -503,7 +503,7 @@ function SchedulePageContent() {
                     {sessionsForDate.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 text-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
-                          <Clock size={20} style={{ color: '#dc2626' }} />
+                          <Clock size={20} style={{ color: '#F59E0B' }} />
                         </div>
                         <p className="text-[13px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>No sessions on this day</p>
                       </div>
@@ -522,9 +522,9 @@ function SchedulePageContent() {
                               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 z-10"
                                 style={{
                                   background: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#fff',
-                                  borderColor: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#dc2626',
+                                  borderColor: session.status === 'completed' ? '#10b981' : session.status === 'cancelled' ? '#9ca3af' : '#F59E0B',
                                 }}>
-                                {session.status === 'completed' ? <CheckCircle2 size={12} color="white" /> : <span className="text-[10px] font-[800]" style={{ color: '#dc2626' }}>{session.time.split(':')[0]}</span>}
+                                {session.status === 'completed' ? <CheckCircle2 size={12} color="white" /> : <span className="text-[10px] font-[800]" style={{ color: '#F59E0B' }}>{session.time.split(':')[0]}</span>}
                               </div>
                               <span className="mt-1 text-[10px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>{session.time}</span>
                             </div>
@@ -564,8 +564,8 @@ function SchedulePageContent() {
                         <div key={day} className={cn('p-3 text-center border-r', i === 6 && 'border-r-0')}
                           style={{ borderColor: 'var(--border)', background: isToday ? 'rgba(220,38,38,0.04)' : 'transparent' }}>
                           <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{day}</p>
-                          <p className={cn('text-[16px] font-[800] mt-0.5', isToday && 'text-[#dc2626]')}
-                            style={{ color: isToday ? '#dc2626' : 'rgb(15,23,42)' }}>
+                          <p className={cn('text-[16px] font-[800] mt-0.5', isToday && 'text-[#F59E0B]')}
+                            style={{ color: isToday ? '#F59E0B' : 'rgb(15,23,42)' }}>
                             {dateStr.split('-')[2]}
                           </p>
                         </div>
@@ -797,7 +797,7 @@ function CreateSessionModal({
                     style={{
                       background: form.client === c.name ? 'rgba(220,38,38,0.10)' : 'var(--bg-subtle)',
                       border: form.client === c.name ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                      color: form.client === c.name ? '#dc2626' : 'rgb(100,116,139)',
+                      color: form.client === c.name ? '#F59E0B' : 'rgb(100,116,139)',
                     }}
                   >
                     {c.name}
@@ -817,7 +817,7 @@ function CreateSessionModal({
                   style={{
                     background: form.trainer === t ? 'rgba(220,38,38,0.10)' : 'var(--bg-subtle)',
                     border: form.trainer === t ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                    color: form.trainer === t ? '#dc2626' : 'rgb(100,116,139)',
+                    color: form.trainer === t ? '#F59E0B' : 'rgb(100,116,139)',
                   }}
                 >
                   {t}
@@ -860,7 +860,7 @@ function CreateSessionModal({
                   style={{
                     background: form.type === t ? 'rgba(220,38,38,0.10)' : 'var(--bg-subtle)',
                     border: form.type === t ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                    color: form.type === t ? '#dc2626' : 'rgb(100,116,139)',
+                    color: form.type === t ? '#F59E0B' : 'rgb(100,116,139)',
                   }}
                 >
                   {t}
@@ -885,7 +885,7 @@ function CreateSessionModal({
             style={{
               background: form.recurring ? 'rgba(220,38,38,0.08)' : 'var(--bg-subtle)',
               border: form.recurring ? '1.5px solid rgba(220,38,38,0.25)' : '1.5px solid rgba(15,23,42,0.09)',
-              color: form.recurring ? '#dc2626' : 'rgb(100,116,139)',
+              color: form.recurring ? '#F59E0B' : 'rgb(100,116,139)',
             }}>
             <Repeat size={13} />
             {form.recurring ? 'Recurring weekly' : 'Make this a recurring session'}
@@ -991,7 +991,7 @@ function SessionDetailPanel({
                 )}
                 style={{
                   background: status === 'completed' ? 'rgba(16,185,129,0.10)' : status === 'cancelled' ? 'rgba(239,68,68,0.10)' : 'rgba(99,102,241,0.10)',
-                  color: status === 'completed' ? '#059669' : status === 'cancelled' ? '#dc2626' : '#6366f1',
+                  color: status === 'completed' ? '#059669' : status === 'cancelled' ? '#ef4444' : '#6366f1',
                   borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#6366f1',
                   border: '1.5px solid transparent',
                   ...(session.status === status ? { borderColor: status === 'completed' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#6366f1' } : {}),

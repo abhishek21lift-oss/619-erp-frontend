@@ -32,14 +32,14 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 // ── Single unified brand theme (replaces per-group rainbow colours) ──────────
 // All groups share this palette. Only active/hover states use the brand red.
-const BRAND_COLOR = '#DC2626';
+const BRAND_COLOR = '#F59E0B';
 
 const THEME = {
   brand:       BRAND_COLOR,
-  iconBg:      'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
-  activeBg:    'rgba(220,38,38,0.09)',
+  iconBg:      'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
+  activeBg:    'rgba(245,158,11,0.10)',
   subBorder:   'rgba(255,255,255,0.07)',
-  subActiveBg: 'rgba(220,38,38,0.08)',
+  subActiveBg: 'rgba(245,158,11,0.08)',
   // Neutral inactive colours — no colour tint
   inactiveText:  'rgba(255,255,255,0.52)',
   inactiveIcon:  'rgba(255,255,255,0.38)',
@@ -345,7 +345,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
         <div className="relative shrink-0">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-white select-none"
-            style={{ background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)' }}
           >
             {initials}
           </div>
@@ -438,7 +438,7 @@ export default function Sidebar({
       {/* ── Brand header ── */}
       <div className={cn('relative shrink-0', collapsed ? 'px-3 pb-2 pt-3' : 'px-4 pb-2.5 pt-3.5')}>
         {!collapsed && (
-          <div className="absolute top-0 left-3 right-3 h-[1.5px] rounded-full bg-gradient-to-r from-transparent via-[#DC2626] to-transparent opacity-40" />
+          <div className="absolute top-0 left-3 right-3 h-[1.5px] rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent opacity-40" />
         )}
         <div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between')}>
           <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}>
@@ -449,8 +449,8 @@ export default function Sidebar({
                   collapsed ? 'h-9 w-9' : 'h-9 w-9',
                 )}
                 style={{
-                  background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #7C3AED 100%)',
-                  boxShadow: '0 2px 12px rgba(220,38,38,0.25)',
+                  background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #7C3AED 100%)',
+                  boxShadow: '0 2px 12px rgba(245,158,11,0.30)',
                 }}
               >
                 <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
@@ -469,7 +469,7 @@ export default function Sidebar({
                 <h2 className="text-[15px] font-extrabold tracking-tight leading-none whitespace-nowrap">
                   <span
                     className="bg-clip-text text-transparent"
-                    style={{ backgroundImage: 'linear-gradient(135deg, #EF4444, #DC2626, #B91C1C)' }}
+                    style={{ backgroundImage: 'linear-gradient(135deg, #FCD34D, #F59E0B, #D97706)' }}
                   >619</span>
                   {' '}
                   <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">FITNESS</span>

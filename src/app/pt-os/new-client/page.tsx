@@ -137,7 +137,7 @@ function PremiumSelect<T extends string>({ label, value, onChange, options, plac
                 style={{ color: 'rgb(30,30,40)' }}
               >
                 {opt}
-                {value === opt && <Check size={12} style={{ color: '#dc2626' }} />}
+                {value === opt && <Check size={12} style={{ color: '#F59E0B' }} />}
               </button>
             ))}
           </motion.div>
@@ -160,7 +160,7 @@ function StepIndicator({ current, onStep }: { current: StepId; onStep: (s: StepI
         return (
           <React.Fragment key={s.id}>
             {i > 0 && (
-              <div className="h-px flex-1 mx-1" style={{ background: done ? '#dc2626' : 'var(--border-2)', transition: 'background 0.3s' }} />
+              <div className="h-px flex-1 mx-1" style={{ background: done ? '#F59E0B' : 'var(--border-2)', transition: 'background 0.3s' }} />
             )}
             <button
               type="button"
@@ -169,13 +169,13 @@ function StepIndicator({ current, onStep }: { current: StepId; onStep: (s: StepI
                 'relative flex items-center gap-2 rounded-[12px] px-3.5 py-2.5 text-[12px] font-[680] transition-all',
               )}
               style={{
-                background: active ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : done ? 'rgba(220,38,38,0.08)' : 'transparent',
-                color: active ? '#fff' : done ? '#dc2626' : 'rgb(148,163,184)',
+                background: active ? 'linear-gradient(135deg,#F59E0B,#D97706)' : done ? 'rgba(220,38,38,0.08)' : 'transparent',
+                color: active ? '#fff' : done ? '#F59E0B' : 'rgb(148,163,184)',
                 boxShadow: active ? '0 4px 16px rgba(220,38,38,0.25)' : 'none',
               }}
             >
               <span className={cn('flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-[800]',
-                active ? 'bg-white/20 text-white' : done ? 'bg-[#dc2626] text-white' : 'bg-zinc-100 text-zinc-400'
+                active ? 'bg-white/20 text-white' : done ? 'bg-[#F59E0B] text-white' : 'bg-zinc-100 text-zinc-400'
               )}>
                 {done ? <Check size={10} strokeWidth={3} /> : s.id}
               </span>
@@ -226,7 +226,7 @@ function DataErrorState({ message, onRetry }: { message: string; onRetry: () => 
       style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
       <div className="flex justify-center mb-4">
         <div className="flex h-14 w-14 items-center justify-center rounded-[16px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-          <RefreshCw size={22} style={{ color: '#dc2626' }} />
+          <RefreshCw size={22} style={{ color: '#F59E0B' }} />
         </div>
       </div>
       <h3 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Failed to load data</h3>
@@ -491,7 +491,7 @@ function NewClientWizard() {
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
             className="flex h-24 w-24 items-center justify-center rounded-[28px] mb-6"
-            style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 20px 60px rgba(220,38,38,0.3)' }}
+            style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', boxShadow: '0 20px 60px rgba(220,38,38,0.3)' }}
           >
             <CheckCircle2 size={44} color="white" />
           </motion.div>
@@ -519,12 +519,12 @@ function NewClientWizard() {
             <div>
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                  <Award size={16} style={{ color: '#dc2626' }} />
+                  <Award size={16} style={{ color: '#F59E0B' }} />
                 </div>
                 <div>
                   <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>New PT Client</h1>
                   <p className="text-[11px] font-[600] uppercase tracking-[0.08em]" style={{ color: 'rgb(148,163,184)' }}>
-                    Personal Training / <span style={{ color: '#dc2626' }}>New Client</span>
+                    Personal Training / <span style={{ color: '#F59E0B' }}>New Client</span>
                   </p>
                 </div>
               </div>
@@ -534,7 +534,7 @@ function NewClientWizard() {
               <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-2)' }}>
                 <motion.div
                   className="h-full rounded-full"
-                  style={{ background: 'linear-gradient(90deg,#dc2626,#b91c1c)' }}
+                  style={{ background: 'linear-gradient(90deg,#F59E0B,#D97706)' }}
                   animate={{ width: `${(step / 4) * 100}%` }}
                   transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 />
@@ -585,7 +585,7 @@ function NewClientWizard() {
                     <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <div className="flex items-center gap-3 mb-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                          <User size={18} style={{ color: '#dc2626' }} />
+                          <User size={18} style={{ color: '#F59E0B' }} />
                         </div>
                         <div>
                           <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Personal Information</h2>
@@ -625,7 +625,7 @@ function NewClientWizard() {
                                       : 'text-zinc-500 hover:text-zinc-800'
                                   )}
                                   style={{
-                                    background: form.gender === g ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'var(--bg-subtle)',
+                                    background: form.gender === g ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'var(--bg-subtle)',
                                     border: form.gender === g ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
                                   }}
                                 >
@@ -645,7 +645,7 @@ function NewClientWizard() {
                     <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <div className="flex items-center gap-3 mb-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                          <Activity size={18} style={{ color: '#dc2626' }} />
+                          <Activity size={18} style={{ color: '#F59E0B' }} />
                         </div>
                         <div>
                           <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Fitness Profile</h2>
@@ -655,7 +655,7 @@ function NewClientWizard() {
                       <div className="space-y-5">
                         {/* Goals */}
                         <div>
-                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Primary Fitness Goal <span style={{ color: '#dc2626' }}>*</span></p>
+                          <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Primary Fitness Goal <span style={{ color: '#F59E0B' }}>*</span></p>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                             {GOALS.map((g) => (
                               <button
@@ -666,7 +666,7 @@ function NewClientWizard() {
                                   'rounded-[14px] p-3.5 text-center transition-all',
                                 )}
                                 style={{
-                                  background: form.goal === g ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'var(--bg-subtle)',
+                                  background: form.goal === g ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'var(--bg-subtle)',
                                   border: form.goal === g ? '1.5px solid transparent' : '1.5px solid rgba(15,23,42,0.09)',
                                   boxShadow: form.goal === g ? '0 4px 16px rgba(220,38,38,0.2)' : 'none',
                                   color: form.goal === g ? '#fff' : 'rgb(15,23,42)',
@@ -704,7 +704,7 @@ function NewClientWizard() {
                                 style={{
                                   background: form.healthConditions.includes(cond) ? 'rgba(220,38,38,0.10)' : 'var(--bg-subtle)',
                                   border: form.healthConditions.includes(cond) ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                                  color: form.healthConditions.includes(cond) ? '#dc2626' : 'rgb(100,116,139)',
+                                  color: form.healthConditions.includes(cond) ? '#F59E0B' : 'rgb(100,116,139)',
                                 }}
                               >
                                 {form.healthConditions.includes(cond) && <Check size={11} className="inline mr-1" />}
@@ -729,7 +729,7 @@ function NewClientWizard() {
                     <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <div className="flex items-center gap-3 mb-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                          <Dumbbell size={18} style={{ color: '#dc2626' }} />
+                          <Dumbbell size={18} style={{ color: '#F59E0B' }} />
                         </div>
                         <div>
                           <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>PT Assignment</h2>
@@ -752,7 +752,7 @@ function NewClientWizard() {
                             <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Subscription Plan</p>
                             <a href="/pt-os/plans" target="_blank" rel="noopener noreferrer"
                               className="text-[11px] font-[660] transition-all hover:underline"
-                              style={{ color: '#dc2626' }}>
+                              style={{ color: '#F59E0B' }}>
                               + Manage Plans
                             </a>
                           </div>
@@ -890,7 +890,7 @@ function NewClientWizard() {
                             className="rounded-[14px] p-4"
                             style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.15)' }}
                           >
-                            <p className="text-[12px] font-[700] tracking-wider uppercase" style={{ color: '#dc2626' }}>Assignment Summary</p>
+                            <p className="text-[12px] font-[700] tracking-wider uppercase" style={{ color: '#F59E0B' }}>Assignment Summary</p>
                             <div className="mt-2 space-y-1 text-[13px]" style={{ color: 'rgb(100,116,139)' }}>
                               <p>Trainer: <strong style={{ color: 'rgb(15,23,42)' }}>{form.trainer}</strong></p>
                               {form.plan && <p>Plan: <strong style={{ color: 'rgb(15,23,42)' }}>{form.plan}</strong></p>}
@@ -912,7 +912,7 @@ function NewClientWizard() {
                     <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <div className="flex items-center gap-3 mb-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                          <FileText size={18} style={{ color: '#dc2626' }} />
+                          <FileText size={18} style={{ color: '#F59E0B' }} />
                         </div>
                         <div>
                           <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Review & Confirm</h2>
@@ -969,7 +969,7 @@ function NewClientWizard() {
 
                       {/* Transformation Goals */}
                       <div className="mb-6">
-                        <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Transformation Goals <span style={{ color: '#dc2626' }}>*</span></p>
+                        <p className="mb-2.5 text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Transformation Goals <span style={{ color: '#F59E0B' }}>*</span></p>
                         <FloatInput
                           label="Describe what the client wants to achieve..."
                           value={form.transformationGoals}

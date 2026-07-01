@@ -90,8 +90,8 @@ function MergeContent() {
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-[14px]"
-              style={{ background: 'rgba(220,38,38,0.1)' }}>
-              <Merge size={22} style={{ color: '#dc2626' }} />
+              style={{ background: 'rgba(245,158,11,0.1)' }}>
+              <Merge size={22} style={{ color: '#F59E0B' }} />
             </div>
             <div>
               <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>
@@ -174,7 +174,7 @@ function MergeContent() {
             {/* ── Summary Cards ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               {[
-                { label: 'Duplicate Groups', value: summary.total_groups, color: '#dc2626', icon: <Users size={15} /> },
+                { label: 'Duplicate Groups', value: summary.total_groups, color: '#F59E0B', icon: <Users size={15} /> },
                 { label: 'Total Records', value: summary.total_records, color: '#f59e0b', icon: <AlertTriangle size={15} /> },
                 { label: 'Will Be Removed', value: summary.total_duplicates, color: '#7c3aed', icon: <Trash2 size={15} /> },
                 { label: 'Total Value', value: fmtINR(summary.total_financial_value), color: '#10b981', icon: <IndianRupee size={15} />, isText: true },
@@ -232,7 +232,7 @@ function MergeContent() {
                       <div className="flex items-center gap-4 min-w-0">
                         {/* Duplicate count badge */}
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-[800]"
-                          style={{ background: grp.record_count >= 5 ? 'rgba(220,38,38,0.1)' : 'rgba(245,158,11,0.1)', color: grp.record_count >= 5 ? '#dc2626' : '#f59e0b' }}>
+                          style={{ background: grp.record_count >= 5 ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.1)', color: grp.record_count >= 5 ? '#D97706' : '#f59e0b' }}>
                           ×{grp.record_count}
                         </div>
                         <div className="min-w-0">
@@ -279,7 +279,7 @@ function MergeContent() {
                             <div className="grid grid-cols-3 gap-3 text-center">
                               {[
                                 { label: 'Master ID (kept)', value: grp.master_id.slice(0, 8) + '…', color: '#10b981' },
-                                { label: 'Records to Remove', value: `${grp.record_count - 1} duplicates`, color: '#dc2626' },
+                                { label: 'Records to Remove', value: `${grp.record_count - 1} duplicates`, color: '#F59E0B' },
                                 { label: 'First Seen', value: fmtDate(grp.first_seen), color: 'rgb(100,116,139)' },
                               ].map(f => (
                                 <div key={f.label} className="rounded-[12px] p-3"
@@ -375,8 +375,8 @@ function MergeContent() {
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-[12px]"
-                    style={{ background: 'rgba(220,38,38,0.1)' }}>
-                    <Merge size={20} style={{ color: '#dc2626' }} />
+                    style={{ background: 'rgba(245,158,11,0.1)' }}>
+                    <Merge size={20} style={{ color: '#F59E0B' }} />
                   </div>
                   <div>
                     <h3 className="text-[17px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Confirm Merge</h3>

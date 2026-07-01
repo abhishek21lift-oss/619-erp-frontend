@@ -236,14 +236,14 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="relative overflow-hidden rounded-[22px] sm:rounded-[28px]"
       style={{
-        background: `linear-gradient(135deg, ${C.maroon} 0%, #9A0E1F 28%, ${C.crimson} 60%, #7C1D6F 100%)`,
-        boxShadow: `0 16px 50px ${C.maroon}50, 0 4px 16px ${C.crimson}30, inset 0 1px 0 rgba(255,255,255,0.14)`,
+        background: 'linear-gradient(135deg, #0C0A1E 0%, #1A1040 35%, #0F0825 65%, #140C30 100%)',
+        boxShadow: '0 16px 50px rgba(12,10,30,0.55), 0 4px 16px rgba(245,158,11,0.15), inset 0 1px 0 rgba(255,255,255,0.10)',
       }}
     >
       {/* Decorative orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-16 -right-12 h-56 w-56 rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #fb7185 0%, transparent 70%)', filter: 'blur(40px)' }} />
+        <div className="absolute -top-16 -right-12 h-56 w-56 rounded-full opacity-30"
+          style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(40px)' }} />
         <div className="absolute -bottom-16 -left-12 h-56 w-56 rounded-full opacity-20"
           style={{ background: 'radial-gradient(circle, #c084fc 0%, transparent 70%)', filter: 'blur(50px)' }} />
         <svg className="absolute inset-0 w-full h-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
@@ -258,18 +258,18 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
         <h1
           className="text-[34px] sm:text-[46px] font-[900] tracking-[0.18em] leading-none uppercase"
           style={{
-            background: 'linear-gradient(90deg, #ffffff 0%, #fca5a5 35%, #e879f9 65%, #ffffff 100%)',
+            background: 'linear-gradient(90deg, #ffffff 0%, #FCD34D 35%, #F59E0B 65%, #ffffff 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            filter: 'drop-shadow(0 2px 12px rgba(251,113,133,0.45))',
+            filter: 'drop-shadow(0 2px 16px rgba(245,158,11,0.50))',
           }}
         >
           619 PERSONAL TRAINING
         </h1>
 
         <div className="mt-3 h-px w-24 sm:w-32"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(251,113,133,0.7), rgba(192,132,252,0.7), transparent)' }} />
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.8), rgba(192,132,252,0.6), transparent)' }} />
 
         <p className="mt-3 text-[11px] sm:text-[12px] font-[600] tracking-[0.18em] uppercase"
           style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -278,7 +278,7 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
       </div>
 
       <div className="absolute bottom-0 inset-x-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,113,133,0.7), rgba(192,132,252,0.7), transparent)' }} />
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(192,132,252,0.5), transparent)' }} />
     </motion.div>
   );
 }

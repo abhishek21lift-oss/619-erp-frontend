@@ -56,7 +56,7 @@ export default function BrandingPage() {
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const [err, setErr] = React.useState('');
-  const [primary, setPrimary] = React.useState('#dc2626');
+  const [primary, setPrimary] = React.useState('#F59E0B');
   const [accent, setAccent] = React.useState('#7c3aed');
   const [mode, setMode] = React.useState<ThemeMode>('dark');
   const [typeface, setTypeface] = React.useState<Typeface>('Inter');
@@ -71,7 +71,7 @@ export default function BrandingPage() {
     (async () => {
       try {
         const data = await api.settings.getBranding();
-        setPrimary(data.primary_color || '#dc2626');
+        setPrimary(data.primary_color || '#F59E0B');
         setAccent(data.accent_color || '#7c3aed');
         setMode((data.theme_mode as ThemeMode) || 'dark');
         setTypeface((data.typeface as Typeface) || 'Inter');
@@ -83,7 +83,7 @@ export default function BrandingPage() {
           cover_image: data.cover_image || '',
           social_share_banner: data.social_share_banner || '',
         });
-        saved.current = { primary: data.primary_color || '#dc2626', accent: data.accent_color || '#7c3aed', mode: (data.theme_mode as ThemeMode) || 'dark', typeface: (data.typeface as Typeface) || 'Inter', buttonStyle: (data.button_style as ButtonStyle) || 'soft', radiusStyle: (data.radius_style as RadiusStyle) || 'rounded' };
+        saved.current = { primary: data.primary_color || '#F59E0B', accent: data.accent_color || '#7c3aed', mode: (data.theme_mode as ThemeMode) || 'dark', typeface: (data.typeface as Typeface) || 'Inter', buttonStyle: (data.button_style as ButtonStyle) || 'soft', radiusStyle: (data.radius_style as RadiusStyle) || 'rounded' };
       } catch (e) {
         setErr(e instanceof Error ? e.message : 'Failed to load branding');
         toast.error('Failed to load branding settings');
@@ -158,11 +158,11 @@ export default function BrandingPage() {
               boxShadow: '0 25px 60px -12px rgba(76,5,25,0.6)',
             }}
           >
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 20% 40%, rgba(220,38,38,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 60%, rgba(225,29,72,0.08) 0%, transparent 50%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', top: -80, right: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(220,38,38,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: -60, left: -20, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(225,29,72,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 20% 40%, rgba(245,158,11,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 60%, rgba(217,119,6,0.08) 0%, transparent 50%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: -80, right: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: -60, left: -20, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,6,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.015) 1px, rgba(255,255,255,0.015) 2px), repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.015) 1px, rgba(255,255,255,0.015) 2px)', pointerEvents: 'none' }} />
-            <div style={{ position: 'relative', zIndex: 1, width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #dc2626, #e11d48)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(220,38,38,0.3)' }}>
+            <div style={{ position: 'relative', zIndex: 1, width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #F59E0B, #D97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}>
               <Palette size={24} color="#fff" />
             </div>
             <div style={{ position: 'relative', zIndex: 1 }}>
@@ -210,7 +210,7 @@ export default function BrandingPage() {
                               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', border: 'none', padding: 0 }} />
                           </div>
                         </div>
-                        <input style={inp} value={cfg.val} onChange={(e) => cfg.set(e.target.value)} placeholder={cfg.name === 'Primary' ? '#dc2626' : '#7c3aed'} />
+                        <input style={inp} value={cfg.val} onChange={(e) => cfg.set(e.target.value)} placeholder={cfg.name === 'Primary' ? '#F59E0B' : '#7c3aed'} />
                       </div>
                       {cfg.val && !hexOk(cfg.val) && <p style={{ fontSize: 12, color: '#f87171', margin: '4px 0 0' }}>Invalid hex — use format #RRGGBB</p>}
                     </div>
@@ -343,10 +343,10 @@ export default function BrandingPage() {
                   <label style={{
                     display: 'inline-flex', alignItems: 'center', gap: 8,
                     padding: '12px 24px', borderRadius: 10,
-                    background: uploading ? 'rgba(220,38,38,0.3)' : 'linear-gradient(135deg, #dc2626, #e11d48)',
+                    background: uploading ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg, #F59E0B, #D97706)',
                     color: '#fff', fontSize: 14, fontWeight: 600,
                     cursor: uploading ? 'not-allowed' : 'pointer', border: 'none',
-                    boxShadow: uploading ? 'none' : '0 4px 16px rgba(220,38,38,0.3)',
+                    boxShadow: uploading ? 'none' : '0 4px 16px rgba(245,158,11,0.3)',
                     transition: 'all 0.15s',
                   }}>
                     {uploading ? <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Upload size={16} />}
@@ -379,11 +379,11 @@ export default function BrandingPage() {
             <button onClick={handleSave} disabled={!dirty || saving}
               style={{
                 padding: '8px 24px', borderRadius: 10, border: 'none',
-                background: !dirty || saving ? 'rgba(220,38,38,0.3)' : 'linear-gradient(135deg, #dc2626, #e11d48)',
+                background: !dirty || saving ? 'rgba(245,158,11,0.3)' : 'linear-gradient(135deg, #F59E0B, #D97706)',
                 color: '#fff', fontSize: 14, fontWeight: 600,
                 cursor: !dirty || saving ? 'not-allowed' : 'pointer',
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                boxShadow: !dirty || saving ? 'none' : '0 4px 16px rgba(220,38,38,0.3)',
+                boxShadow: !dirty || saving ? 'none' : '0 4px 16px rgba(245,158,11,0.3)',
               }}>
               {saving ? <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={15} />}
               {saving ? 'Saving…' : 'Save'}
