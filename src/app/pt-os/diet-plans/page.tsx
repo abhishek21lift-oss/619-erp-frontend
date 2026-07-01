@@ -36,7 +36,7 @@ const MEAL_TYPES: { id: MealType; icon: React.ReactNode; label: string; time: st
   { id: 'Breakfast', icon: <Coffee size={14} />, label: 'Breakfast', time: '6:00 – 9:00', color: '#f59e0b' },
   { id: 'Lunch', icon: <UtensilsCrossed size={14} />, label: 'Lunch', time: '12:00 – 14:00', color: '#6366f1' },
   { id: 'Snacks', icon: <Apple size={14} />, label: 'Snacks', time: '16:00 – 17:00', color: '#ec4899' },
-  { id: 'Dinner', icon: <Moon size={14} />, label: 'Dinner', time: '19:00 – 21:00', color: '#dc2626' },
+  { id: 'Dinner', icon: <Moon size={14} />, label: 'Dinner', time: '19:00 – 21:00', color: '#D97706' },
 ];
 
 const DIET_GOALS = ['Muscle Gain', 'Weight Loss', 'Maintenance', 'Endurance', 'General Health'];

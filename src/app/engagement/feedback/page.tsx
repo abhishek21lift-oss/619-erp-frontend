@@ -15,7 +15,7 @@ const KPIS = [
   { label: 'Avg Rating', key: 'rating', color: '#d97706', bg: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05))' },
   { label: 'Total', key: 'total', color: '#8b5cf6', bg: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(109,40,217,0.05))' },
   { label: 'Positive', key: 'positive', color: '#16a34a', bg: 'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(22,163,74,0.05))' },
-  { label: 'Open', key: 'open', color: '#dc2626', bg: 'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(220,38,38,0.05))' },
+  { label: 'Open', key: 'open', color: '#F59E0B', bg: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05))' },
   { label: 'NPS Score', key: 'nps', color: '#7c3aed', bg: 'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(88,28,135,0.05))' },
 ];
 
@@ -71,10 +71,10 @@ function FeedbackContent() {
   const nps = items.length ? Math.round(((positive - items.filter(f => f.sentiment === 'negative').length) / items.length) * 100) : 0;
 
   function stars(n: number) { return Array.from({ length: 5 }, (_, i) => i < n ? '★' : '☆').join(''); }
-  function statusColor(s: string) { return s === 'resolved' ? '#16a34a' : s === 'in_progress' ? '#d97706' : '#dc2626'; }
-  function statusBg(s: string) { return s === 'resolved' ? 'rgba(22,163,74,0.1)' : s === 'in_progress' ? 'rgba(217,119,6,0.1)' : 'rgba(220,38,38,0.08)'; }
+  function statusColor(s: string) { return s === 'resolved' ? '#16a34a' : s === 'in_progress' ? '#d97706' : '#F59E0B'; }
+  function statusBg(s: string) { return s === 'resolved' ? 'rgba(22,163,74,0.1)' : s === 'in_progress' ? 'rgba(217,119,6,0.1)' : 'rgba(245,158,11,0.08)'; }
   function sentimentIcon(s: string) {
-    return s === 'positive' ? <ThumbsUp size={13} color="#16a34a" /> : s === 'negative' ? <ThumbsDown size={13} color="#dc2626" /> : <span style={{ fontSize: 14, lineHeight: 1 }}>😐</span>;
+    return s === 'positive' ? <ThumbsUp size={13} color="#16a34a" /> : s === 'negative' ? <ThumbsDown size={13} color="#F59E0B" /> : <span style={{ fontSize: 14, lineHeight: 1 }}>😐</span>;
   }
 
   return (

@@ -34,7 +34,7 @@ function addMonths(dateStr: string, months: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function SectionCard({ title, icon, children, accent = '#dc2626' }: {
+function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
   title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string;
 }) {
   return (

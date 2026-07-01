@@ -283,7 +283,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
 
               {/* ── Summary Cards ── */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <GradientCard from="#dc2626" to="#991b1b">
+                <GradientCard from="#F59E0B" to="#D97706">
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,0.15)' }}>

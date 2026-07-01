@@ -101,7 +101,7 @@ export default function ReportsPage() {
                           <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(r.revenue)}</span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#dc2626' }}>{fmtINR(r.incentives)}</span>
+                          <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#F59E0B' }}>{fmtINR(r.incentives)}</span>
                         </td>
                         <td className="py-3 px-4">
                           <span className="text-[12px] font-[600]" style={{ color: '#7c3aed' }}>{pct.toFixed(1)}%</span>
@@ -172,7 +172,7 @@ export default function ReportsPage() {
                         <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(t.monthly_pt_revenue)}</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#dc2626' }}>{fmtINR(t.monthly_commission)}</span>
+                        <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#F59E0B' }}>{fmtINR(t.monthly_commission)}</span>
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-[12px]" style={{ color: 'rgb(71,85,105)' }}>{fmtINR(t.total_payment_revenue)}</span>
