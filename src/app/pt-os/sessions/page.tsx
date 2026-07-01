@@ -141,26 +141,25 @@ export default function PTSessionsPage() {
           {/* Tab Bar */}
 
           {/* Filters */}
-          <div className="mb-5 flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px] max-w-[360px]">
+          <div className="mb-5 flex flex-col gap-3">
+            <div className="relative w-full">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-disabled)]" strokeWidth={1.5} />
               <input
                 type="text" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by client name or mobile..."
-                className="w-full h-10 rounded-xl border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-4 text-[13px] text-[var(--text-primary)] placeholder-[#9CA3AF] outline-none transition-all duration-200 focus:border-[#3B82F6]/30 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
+                className="w-full h-11 rounded-xl border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-4 text-[13px] text-[var(--text-primary)] placeholder-[#9CA3AF] outline-none transition-all duration-200 focus:border-[#3B82F6]/30 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {['all', 'scheduled', 'completed', 'cancelled', 'no-show'].map(st => {
                 const cfg = STATUS_STYLES[st] || { label: st, color: '#6B7280', bg: 'rgba(107,114,128,0.08)', dot: '#6B7280' };
                 return (
                   <button key={st} onClick={() => setStatusFilter(st)}
-                    className={
-                      'rounded-lg px-3 py-1.5 text-[12px] font-medium transition-all duration-150 ' +
-                      (statusFilter === st ? 'text-white shadow-sm' : 'text-[#6B7280] hover:bg-[rgba(0,0,0,0.04)]')
-                    }
+                    className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold transition-all duration-150"
                     style={{
-                      background: statusFilter === st ? cfg.color : undefined,
+                      background: statusFilter === st ? cfg.color : 'rgba(0,0,0,0.04)',
+                      color: statusFilter === st ? '#fff' : '#6B7280',
+                      minHeight: 36,
                     }}
                   >
                     {st === 'all' ? 'All' : cfg.label}
@@ -204,7 +203,8 @@ export default function PTSessionsPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03, duration: 0.2 }}
-                    className="group flex items-center gap-4 rounded-[14px] border border-[rgba(0,0,0,0.04)] bg-white p-4 transition-all duration-200 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-0.5"
+                    className="group flex items-center gap-3 rounded-[16px] border border-[rgba(0,0,0,0.04)] bg-white px-4 py-3.5 transition-all duration-200 active:scale-[0.985] hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:-translate-y-0.5"
+                    style={{ minHeight: 72 }}
                   >
                     {/* Status icon */}
                     <div

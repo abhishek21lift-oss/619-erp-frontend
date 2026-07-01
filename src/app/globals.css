@@ -373,12 +373,18 @@ body {
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
+  /* Mobile: add bottom padding for bottom nav (60px) + safe area + buffer */
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px);
+}
+@media (min-width: 1024px) {
+  /* Desktop: no bottom nav */
+  .shell-main { padding-bottom: 32px; }
 }
 @media (max-width: 767px) {
   .shell-sidebar { transform: translateX(-100%); width: var(--sidebar-w) !important; }
   .shell-sidebar.drawer-open { transform: translateX(0); box-shadow: var(--shadow-xl); }
   .shell-body { margin-left: 0 !important; }
-  .shell-main { padding: 16px; }
+  .shell-main { padding: 16px; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px); }
   .shell-topbar { padding: 0 16px; }
 }
 .sidebar-backdrop {
