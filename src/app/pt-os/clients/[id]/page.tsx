@@ -113,7 +113,7 @@ function DarkCard({ title, icon, from, children, className = '' }:
 
 const QUICK_ACTIONS = [
   { label: 'Payments', icon: <Wallet size={16} />, href: (id: string) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
-  { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id: string) => `/pt-os/workout-plans?client_id=${id}`, from: '#ef4444', to: '#dc2626' },
+  { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id: string) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
   { label: 'Assessment', icon: <Activity size={16} />, href: (id: string) => `/pt-os/assessment?client_id=${id}`, from: '#10b981', to: '#059669' },
   { label: 'Goals', icon: <Target size={16} />, href: (id: string) => `/pt-os/goals?client_id=${id}`, from: '#3b82f6', to: '#2563eb' },
   { label: 'Measurements', icon: <Ruler size={16} />, href: (id: string) => `/pt-os/measurements?client_id=${id}`, from: '#f59e0b', to: '#d97706' },

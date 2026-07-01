@@ -392,7 +392,7 @@ function AttendanceContent() {
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`rounded-[16px] px-4 py-2.5 text-sm font-medium capitalize transition ${
                   activeTab === tab
-                    ? 'bg-[linear-gradient(135deg,#dc2626,#991b1b)] text-white shadow-[0_6px_20px_rgba(220,38,38,0.3)]'
+                    ? 'bg-[linear-gradient(135deg,#F59E0B,#D97706)] text-white shadow-[0_6px_20px_rgba(245,158,11,0.3)]'
                     : 'text-zinc-600 hover:bg-zinc-100 dark:bg-white/10 hover:text-zinc-900 dark:text-white/55 dark:hover:bg-white/10 dark:hover:text-white'
                 }`}>
                 {tab === 'members' ? 'Member Attendance' : tab === 'insights' ? 'Insights & Trends' : 'Smart Alerts'}
@@ -443,8 +443,8 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
   onMarkAll?: () => void;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(9,9,11,0.97),rgba(38,7,12,0.93),rgba(24,24,27,0.94))] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)] sm:p-8 lg:p-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_25%,rgba(220,38,38,0.26),transparent_28%),radial-gradient(circle_at_75%_12%,rgba(16,185,129,0.14),transparent_20%),radial-gradient(circle_at_60%_85%,rgba(255,255,255,0.04),transparent_14%)]" />
+    <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(9,9,11,0.97),rgba(12,10,30,0.95),rgba(15,10,35,0.94))] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)] sm:p-8 lg:p-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_25%,rgba(245,158,11,0.20),transparent_28%),radial-gradient(circle_at_75%_12%,rgba(16,185,129,0.14),transparent_20%),radial-gradient(circle_at_60%_85%,rgba(255,255,255,0.04),transparent_14%)]" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:22px_22px]" />
 
       <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
@@ -554,8 +554,8 @@ function BiometricPanel({ bioCode, setBioCode, bioSaving, onSubmit, bioRef, bioF
 
         {/* pulse icon */}
         <div className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full transition ${
-          bioSaving ? 'animate-pulse bg-[linear-gradient(135deg,#dc2626,#991b1b)] shadow-[0_0_40px_rgba(220,38,38,0.55)]' :
-          bioFocus  ? 'bg-[linear-gradient(135deg,#dc2626,#7c3aed)] shadow-[0_0_32px_rgba(220,38,38,0.42)]' :
+          bioSaving ? 'animate-pulse bg-[linear-gradient(135deg,#F59E0B,#D97706)] shadow-[0_0_40px_rgba(245,158,11,0.55)]' :
+          bioFocus  ? 'bg-[linear-gradient(135deg,#F59E0B,#7c3aed)] shadow-[0_0_32px_rgba(245,158,11,0.42)]' :
           'bg-zinc-100 dark:bg-white/8'
         }`}>
           {bioSaving
@@ -580,12 +580,12 @@ function BiometricPanel({ bioCode, setBioCode, bioSaving, onSubmit, bioRef, bioF
               onBlur={() => setBioFocus(false)}
               placeholder="Scan card / enter member code"
               autoComplete="off"
-              className="flex-1 min-w-0 sm:min-w-[220px] rounded-[16px] border border-zinc-200 bg-white/80 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30 dark:focus:ring-rose-900/20"
+              className="flex-1 min-w-0 sm:min-w-[220px] rounded-[16px] border border-zinc-200 bg-white/80 px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30 dark:focus:ring-amber-900/20"
             />
             <button
               type="submit"
               disabled={bioSaving || !bioCode.trim()}
-              className="inline-flex items-center gap-2 rounded-[16px] border-transparent bg-[linear-gradient(135deg,#dc2626,#991b1b)] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(220,38,38,0.28)] transition disabled:opacity-50 hover:shadow-[0_12px_30px_rgba(220,38,38,0.38)] hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-[16px] border-transparent bg-[linear-gradient(135deg,#F59E0B,#D97706)] px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(245,158,11,0.28)] transition disabled:opacity-50 hover:shadow-[0_12px_30px_rgba(245,158,11,0.38)] hover:-translate-y-0.5"
             >
               {bioSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
               {bioSaving ? 'Checking in…' : 'Check In'}
@@ -654,7 +654,7 @@ function MembersPanel({ filtered, loading, search, setSearch, statusFilter, setS
         <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-white/40" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search member…"
-            className="w-full rounded-[14px] border border-zinc-200 bg-white/80 py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-zinc-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30" />
+            className="w-full rounded-[14px] border border-zinc-200 bg-white/80 py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-zinc-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30" />
         </div>
         <div className="flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1 dark:border-white/10 dark:bg-white/5">
           {STATUS_FILTERS.map(f => (
@@ -803,13 +803,13 @@ function InsightsPanel({ summary, weeklyBars }: { summary: { present: number; ab
           {bars.map((b, i) => (
             <div key={i} className="flex flex-1 flex-col items-center gap-2">
               <p className="text-xs font-semibold text-zinc-600 dark:text-white/55">{b.pct}%</p>
-              <div className="w-full rounded-t-[10px] transition-all" style={{ height: `${(b.pct / max) * 140}px`, background: b.pct >= 85 ? 'linear-gradient(180deg,#10b981,#059669)' : b.pct >= 70 ? 'linear-gradient(180deg,#dc2626,#991b1b)' : 'linear-gradient(180deg,#f59e0b,#d97706)' }} />
+              <div className="w-full rounded-t-[10px] transition-all" style={{ height: `${(b.pct / max) * 140}px`, background: b.pct >= 85 ? 'linear-gradient(180deg,#10b981,#059669)' : b.pct >= 70 ? 'linear-gradient(180deg,#F59E0B,#D97706)' : 'linear-gradient(180deg,#ef4444,#dc2626)' }} />
               <p className="text-xs text-zinc-400 dark:text-white/30">{b.day}</p>
             </div>
           ))}
         </div>
         <div className="mt-4 flex flex-wrap gap-4 text-xs">
-          {[['#10b981', '≥ 85% great'], ['#dc2626', '70–84% normal'], ['#f59e0b', '< 70% low']].map(([c, l]) => (
+          {[['#10b981', '≥ 85% great'], ['#F59E0B', '70–84% average'], ['#ef4444', '< 70% low']].map(([c, l]) => (
             <span key={l} className="flex items-center gap-1.5 text-zinc-500 dark:text-white/40"><span className="h-2.5 w-2.5 rounded-full" style={{ background: c }} />{l}</span>
           ))}
         </div>
@@ -843,7 +843,7 @@ function InsightsPanel({ summary, weeklyBars }: { summary: { present: number; ab
               <div key={String(t)} className="flex items-center gap-3">
                 <p className="w-20 shrink-0 text-xs text-zinc-500 dark:text-white/40">{t}</p>
                 <div className="flex-1 h-2 rounded-full bg-zinc-100 dark:bg-white/10">
-                  <div className="h-2 rounded-full bg-[linear-gradient(90deg,#dc2626,#fb7185)]" style={{ width: `${v}%` }} />
+                  <div className="h-2 rounded-full bg-[linear-gradient(90deg,#F59E0B,#FBBF24)]" style={{ width: `${v}%` }} />
                 </div>
                 <p className="w-8 text-right text-xs font-medium text-zinc-600 dark:text-white/55">{v}%</p>
               </div>
@@ -1015,7 +1015,7 @@ function KpiCard({ label, value, hint, accent, icon, onClick, active }: {
   return (
     <button onClick={onClick}
       className={`group rounded-[22px] border bg-gradient-to-br ${accents[accent] ?? accents.zinc} bg-white/80 p-4 shadow-sm text-left transition hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(15,23,42,0.10)] dark:bg-white/5 ${
-        active ? 'border-rose-400/40 ring-2 ring-rose-200/30 dark:border-rose-400/30 dark:ring-rose-900/20' : 'border-zinc-200/70 dark:border-white/10'
+        active ? 'border-amber-400/40 ring-2 ring-amber-200/30 dark:border-amber-400/30 dark:ring-amber-900/20' : 'border-zinc-200/70 dark:border-white/10'
       }`}>
       <div className="mb-3 flex items-center justify-between">
         <div className="h-9 w-9 rounded-[12px] border border-zinc-200/70 bg-white/90 flex items-center justify-center text-zinc-600 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-white/70">{icon}</div>
@@ -1052,7 +1052,7 @@ function MemberAvatar({ client, large }: { client: Client; large?: boolean }) {
     return <Image src={client.photo_url} alt={client.name} width={48} height={48} className={`${sz} rounded-full object-cover`} />;
   }
   return (
-    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#dc2626,#7c3aed)] flex items-center justify-center font-semibold text-white shadow-sm`}>
+    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#7c3aed)] flex items-center justify-center font-semibold text-white shadow-sm`}>
       {initials}
     </div>
   );
@@ -1062,7 +1062,7 @@ function FeedAvatar({ initials, status, size = 'sm' }: { initials: string; statu
   const sz = size === 'lg' ? 'h-10 w-10 text-sm' : 'h-7 w-7 text-xs';
   const ringColor = status === 'present' ? 'ring-emerald-400' : status === 'late' ? 'ring-amber-400' : status === 'error' ? 'ring-rose-400' : status === 'warn' ? 'ring-amber-400' : 'ring-zinc-300';
   return (
-    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#dc2626,#7c3aed)] flex items-center justify-center font-semibold text-white ring-2 ${ringColor}`}>
+    <div className={`${sz} shrink-0 rounded-full bg-[linear-gradient(135deg,#F59E0B,#7c3aed)] flex items-center justify-center font-semibold text-white ring-2 ${ringColor}`}>
       {initials}
     </div>
   );
@@ -1075,7 +1075,7 @@ function HeroBtn({ label, icon, primary, compact, onClick }: { label: string; ic
         compact ? 'px-3.5 py-2 text-sm' : 'px-4 py-2.5 text-sm'
       } ${
         primary
-          ? 'border-transparent bg-[linear-gradient(135deg,#dc2626,#991b1b)] text-white shadow-[0_10px_28px_rgba(220,38,38,0.32)] hover:shadow-[0_14px_36px_rgba(220,38,38,0.42)]'
+          ? 'border-transparent bg-[linear-gradient(135deg,#F59E0B,#D97706)] text-white shadow-[0_10px_28px_rgba(245,158,11,0.32)] hover:shadow-[0_14px_36px_rgba(245,158,11,0.42)]'
           : 'border-white/15 bg-white/10 text-white/85 hover:bg-white/18 backdrop-blur-md'
       }`}>
       {icon}{label}

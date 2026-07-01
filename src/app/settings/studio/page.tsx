@@ -257,7 +257,7 @@ export default function StudioSettingsPage() {
     { href: '/settings/branding',        label: 'Branding',         subtitle: 'Colors, logo & theme customization',icon: <Palette size={16} />,      accent: '#f59e0b', badge: 'Custom' },
     { href: '/settings/integrations',    label: 'Integrations',     subtitle: 'AI, payment gateways & APIs',       icon: <Zap size={16} />,          accent: '#8b5cf6', badge: 'New' },
     { href: '/settings/profile',         label: 'My Profile',       subtitle: 'Account info & password',           icon: <Users size={16} />,        accent: '#14b8a6' },
-    { href: '/settings/import-database', label: 'Import Database',  subtitle: 'Bulk CSV import of client data',    icon: <DatabaseBackup size={16} />,accent: '#dc2626' },
+    { href: '/settings/import-database', label: 'Import Database',  subtitle: 'Bulk CSV import of client data',    icon: <DatabaseBackup size={16} />,accent: '#F59E0B' },
     { href: '/settings/merge-duplicates',label: 'Merge Duplicates', subtitle: 'Find & consolidate duplicate clients',icon: <GitMerge size={16} />,   accent: '#f97316', badge: 'New' },
   ];
 
@@ -268,7 +268,7 @@ export default function StudioSettingsPage() {
           <div className="flex min-h-screen items-center justify-center"
             style={{ background: 'linear-gradient(145deg,#f8fafc,#f1f5f9,#fafafe)' }}>
             <div className="flex flex-col items-center gap-3">
-              <Loader size={22} className="animate-spin" style={{ color: '#dc2626' }} />
+              <Loader size={22} className="animate-spin" style={{ color: '#F59E0B' }} />
               <p className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Loading settings…</p>
             </div>
           </div>
@@ -294,7 +294,7 @@ export default function StudioSettingsPage() {
               <div className="absolute -top-20 right-1/4 h-64 w-64 rounded-full opacity-20"
                 style={{ background: 'radial-gradient(circle,#818cf8,transparent 70%)', filter: 'blur(40px)' }} />
               <div className="absolute -bottom-16 left-1/3 h-48 w-48 rounded-full opacity-15"
-                style={{ background: 'radial-gradient(circle,#dc2626,transparent 70%)', filter: 'blur(40px)' }} />
+                style={{ background: 'radial-gradient(circle,#F59E0B,transparent 70%)', filter: 'blur(40px)' }} />
             </div>
             <div className="relative z-10 mx-auto max-w-screen-xl px-5 py-8 sm:px-8">
               {/* breadcrumb */}
@@ -359,8 +359,8 @@ export default function StudioSettingsPage() {
               className="rounded-[22px] p-5 sm:p-6"
               style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
               <div className="flex items-center gap-2.5 mb-5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
-                  <Building2 size={14} style={{ color: '#dc2626' }} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(245,158,11,0.10)' }}>
+                  <Building2 size={14} style={{ color: '#F59E0B' }} />
                 </div>
                 <div>
                   <h2 className="text-[14px] font-[720]" style={{ color: 'rgb(15,23,42)' }}>Studio Information</h2>
@@ -573,7 +573,7 @@ export default function StudioSettingsPage() {
                   </button>
                   <button onClick={save} disabled={saving}
                     className="flex items-center gap-1.5 rounded-[10px] px-4 py-1.5 text-[11.5px] font-[700] transition-all hover:opacity-90 disabled:opacity-60"
-                    style={{ background: '#dc2626', color: '#fff', boxShadow: '0 2px 10px rgba(220,38,38,0.4)' }}>
+                    style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff', boxShadow: '0 2px 10px rgba(245,158,11,0.4)' }}>
                     {saving ? <Loader size={11} className="animate-spin" /> : <Save size={11} />}
                     {saving ? 'Saving…' : 'Save Changes'}
                   </button>
