@@ -463,7 +463,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                 onClick={toggleDark}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={cn('hidden sm:flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
+                className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
                 style={{ background: 'transparent', color: darkMode ? '#94A3B8' : '#64748B' }}
               >
                 <AnimatePresence mode="wait" initial={false}>
