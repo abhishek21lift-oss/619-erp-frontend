@@ -415,6 +415,7 @@ function NewClientWizard() {
       try {
         const disc = form.basePrice && form.sellingPrice ? (form.basePrice - form.sellingPrice) : 0;
         const selling = form.sellingPrice ?? 0;
+        const selectedPlan = form.planId ? plans.find(p => p.id === form.planId) : undefined;
         const res = await api.pt.create({
           name: form.name.trim(),
           email: form.email.trim() || undefined,
@@ -422,8 +423,10 @@ function NewClientWizard() {
           dob: form.dob || undefined,
           gender: form.gender,
           trainer_id: trainerIdMap[form.trainer] || undefined,
+          trainer_name: form.trainer || undefined,
+          package_type: form.plan || undefined,
+          duration_months: selectedPlan?.duration_months || undefined,
 
-          // fitness profile — collected by wizard but previously not sent (ISSUE-002)
           goal: form.goal || undefined,
           height: form.height ? Number(form.height) : undefined,
           weight: form.weight ? Number(form.weight) : undefined,
