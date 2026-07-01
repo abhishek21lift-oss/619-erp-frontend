@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Guard from '@/components/Guard';
@@ -19,7 +19,10 @@ import {
   Bell,
   Calendar,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
+  ChevronsUpDown,
   Clock,
   Download,
   Eye,
@@ -684,49 +687,175 @@ function MembersPanel({ filtered, loading, search, setSearch, statusFilter, setS
   );
 }
 
+type SortCol = 'Member' | 'Plan' | 'Trainer' | 'Status' | 'Check-in';
+
+function SortIcon({ col, sortCol, sortDir }: { col: string; sortCol: SortCol | null; sortDir: 'asc' | 'desc' }) {
+  if (sortCol !== col) return <ChevronsUpDown className="w-3 h-3 opacity-30 group-hover:opacity-60 transition-opacity" />;
+  return sortDir === 'asc'
+    ? <ChevronUp className="w-3 h-3 text-amber-500" />
+    : <ChevronDown className="w-3 h-3 text-amber-500" />;
+}
+
 function TableView({ filtered, saving, getRecord, mark }: {
   filtered: Client[]; saving: string | null;
   getRecord: (id: string) => Attendance | undefined;
   mark: (c: Client, s: string) => Promise<void>;
 }) {
+  const [sortCol, setSortCol] = useState<SortCol | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  const handleSort = (col: SortCol) => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+  };
+
+  const sorted = useMemo(() => {
+    if (!sortCol) return filtered;
+    return [...filtered].sort((a, b) => {
+      let av = '', bv = '';
+      if (sortCol === 'Member') { av = a.name ?? ''; bv = b.name ?? ''; }
+      else if (sortCol === 'Plan') { av = a.package_type ?? ''; bv = b.package_type ?? ''; }
+      else if (sortCol === 'Trainer') { av = a.trainer_name ?? ''; bv = b.trainer_name ?? ''; }
+      else if (sortCol === 'Status') { av = getRecord(a.id)?.status ?? 'unmarked'; bv = getRecord(b.id)?.status ?? 'unmarked'; }
+      else if (sortCol === 'Check-in') { av = getRecord(a.id)?.check_in ?? ''; bv = getRecord(b.id)?.check_in ?? ''; }
+      const cmp = av.localeCompare(bv);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [filtered, sortCol, sortDir, getRecord]);
+
+  const allSelected = filtered.length > 0 && filtered.every(c => selected.has(c.id));
+  const someSelected = !allSelected && filtered.some(c => selected.has(c.id));
+
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(filtered.map(c => c.id)));
+  };
+
+  const toggleRow = (id: string) => {
+    setSelected(s => {
+      const next = new Set(s);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const bulkMark = async (status: string) => {
+    const clients = filtered.filter(c => selected.has(c.id));
+    setBulkSaving(true);
+    await Promise.allSettled(clients.map(c => mark(c, status)));
+    setBulkSaving(false);
+    setSelected(new Set());
+  };
+
+  const SORTABLE: SortCol[] = ['Member', 'Plan', 'Trainer', 'Status', 'Check-in'];
+
   return (
-    <div className="overflow-x-auto rounded-[20px] border border-zinc-200/70 dark:border-white/10">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-zinc-50/80 text-xs uppercase tracking-wider text-zinc-500 dark:bg-white/5 dark:text-white/40">
-          <tr>
-            {['Member', 'Plan', 'Trainer', 'Status', 'Check-in', 'Actions'].map(h => (
-              <th key={h} className="px-5 py-4 font-medium">{h}</th>
+    <div className="space-y-2">
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 rounded-[14px] border border-amber-200/60 bg-amber-50/80 px-4 py-2.5 dark:border-amber-400/20 dark:bg-amber-400/5">
+          <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+            {selected.size} selected
+          </span>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="text-xs text-zinc-500 dark:text-white/40 mr-1">Mark as:</span>
+            {[
+              { status: 'present', label: 'Present', cls: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
+              { status: 'absent',  label: 'Absent',  cls: 'bg-rose-500 hover:bg-rose-600 text-white' },
+              { status: 'late',    label: 'Late',    cls: 'bg-amber-500 hover:bg-amber-600 text-white' },
+            ].map(({ status, label, cls }) => (
+              <button
+                key={status}
+                onClick={() => bulkMark(status)}
+                disabled={bulkSaving}
+                className={`px-3 py-1 rounded-[8px] text-xs font-bold transition disabled:opacity-50 ${cls}`}
+              >
+                {bulkSaving ? '…' : label}
+              </button>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map(c => {
-            const rec = getRecord(c.id);
-            return (
-              <tr key={c.id} className="border-t border-zinc-100 transition hover:bg-zinc-50 dark:bg-white/5/70 dark:border-white/5 dark:hover:bg-white/5">
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <MemberAvatar client={c} />
-                    <div>
-                      <p className="font-semibold text-zinc-900 dark:text-white">{c.name}</p>
-                      <p className="text-xs text-zinc-400 dark:text-white/30">{c.client_id || ''}</p>
+            <button
+              onClick={() => setSelected(new Set())}
+              className="ml-1 px-2.5 py-1 rounded-[8px] text-xs font-medium text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 dark:text-white/40 dark:hover:text-white/70 dark:hover:bg-white/5 transition"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-[20px] border border-zinc-200/70 dark:border-white/10">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-zinc-50/80 text-xs uppercase tracking-wider text-zinc-500 dark:bg-white/5 dark:text-white/40">
+            <tr>
+              {/* Bulk select all */}
+              <th className="px-4 py-4 w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={el => { if (el) el.indeterminate = someSelected; }}
+                  onChange={toggleAll}
+                  className="h-4 w-4 rounded border-zinc-300 accent-amber-500 cursor-pointer dark:border-white/20"
+                  aria-label="Select all"
+                />
+              </th>
+              {SORTABLE.map(h => (
+                <th key={h} className="px-5 py-4 font-medium">
+                  <button
+                    onClick={() => handleSort(h)}
+                    className="group inline-flex items-center gap-1 font-medium uppercase tracking-wider hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                  >
+                    {h}
+                    <SortIcon col={h} sortCol={sortCol} sortDir={sortDir} />
+                  </button>
+                </th>
+              ))}
+              <th className="px-5 py-4 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map(c => {
+              const rec = getRecord(c.id);
+              const isSelected = selected.has(c.id);
+              return (
+                <tr
+                  key={c.id}
+                  className={`border-t border-zinc-100 transition hover:bg-zinc-50 dark:border-white/5 dark:hover:bg-white/5 ${isSelected ? 'bg-amber-50/60 dark:bg-amber-400/5' : ''}`}
+                >
+                  <td className="px-4 py-4">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleRow(c.id)}
+                      className="h-4 w-4 rounded border-zinc-300 accent-amber-500 cursor-pointer dark:border-white/20"
+                      aria-label={`Select ${c.name}`}
+                    />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <MemberAvatar client={c} />
+                      <div>
+                        <p className="font-semibold text-zinc-900 dark:text-white">{c.name}</p>
+                        <p className="text-xs text-zinc-400 dark:text-white/30">{c.client_id || ''}</p>
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-5 py-4">
-                  <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-white/10 dark:text-white/65">{c.package_type || '—'}</span>
-                </td>
-                <td className="px-5 py-4 text-sm text-zinc-500 dark:text-white/40">{c.trainer_name || '—'}</td>
-                <td className="px-5 py-4">{rec ? <StatusBadge status={rec.status} /> : <StatusBadge status="unmarked" />}</td>
-                <td className="px-5 py-4 text-xs tabular-nums text-zinc-500 dark:text-white/40">{rec?.check_in || '—'}</td>
-                <td className="px-5 py-4">
-                  <AttendanceBtns client={c} rec={rec} saving={saving} mark={mark} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-white/10 dark:text-white/65">{c.package_type || '—'}</span>
+                  </td>
+                  <td className="px-5 py-4 text-sm text-zinc-500 dark:text-white/40">{c.trainer_name || '—'}</td>
+                  <td className="px-5 py-4">{rec ? <StatusBadge status={rec.status} /> : <StatusBadge status="unmarked" />}</td>
+                  <td className="px-5 py-4 text-xs tabular-nums text-zinc-500 dark:text-white/40">{rec?.check_in || '—'}</td>
+                  <td className="px-5 py-4">
+                    <AttendanceBtns client={c} rec={rec} saving={saving} mark={mark} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
