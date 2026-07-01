@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
   Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint,
   Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown,
-  Menu, X, CheckCheck, ExternalLink, ChevronRight, KeyRound,
+  Menu, X, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -112,6 +112,25 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Persist dark mode preference
+  useEffect(() => {
+    const saved = localStorage.getItem('619-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved ? saved === 'dark' : prefersDark;
+    setDarkMode(isDark);
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', isDark);
+  }, []);
+
+  const toggleDark = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    localStorage.setItem('619-theme', next ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', next);
+  };
 
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -314,19 +333,19 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64 xl:left-72',
             )}
             style={{
-              background: 'rgba(255,255,255,0.88)',
-              borderBottom: '1px solid rgba(0,0,0,0.06)',
+              background: darkMode ? 'rgba(15,23,42,0.90)' : 'rgba(255,255,255,0.88)',
+              borderBottom: darkMode ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)',
               backdropFilter: 'blur(24px) saturate(200%)',
               WebkitBackdropFilter: 'blur(24px) saturate(200%)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
-              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1)',
+              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1), background 200ms ease, border-color 200ms ease',
               willChange: 'transform',
             }}
             animate={{
               y: topBar === 'hidden' ? '-100%' : 0,
               boxShadow: topBar === 'compact'
-                ? '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)'
-                : '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+                ? darkMode ? '0 1px 4px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)'
+                : darkMode ? '0 2px 8px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)'  : '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
             }}
             transition={transConfig}
             initial={false}
@@ -339,7 +358,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             >
               {/* Mobile menu toggle */}
               <button type="button" aria-label="Open navigation menu" onClick={() => setMobileMenuOpen(true)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-all duration-200 hover:text-slate-700 hover:bg-slate-100 lg:hidden">
+                className={cn(
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 lg:hidden',
+                  darkMode ? 'text-slate-300 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100',
+                )}>
                 <Menu size={17} strokeWidth={1.5} />
               </button>
 
@@ -348,7 +370,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                 <div className="group relative">
                   <div className="relative flex items-center">
                     <Search size={14} strokeWidth={2}
-                      className="absolute left-3 z-10 text-slate-400 transition-colors duration-200 group-focus-within:text-slate-600" />
+                      className={cn('absolute left-3 z-10 transition-colors duration-200', darkMode ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600')} />
                     <input
                       ref={searchInputRef}
                       type="text"
@@ -357,7 +379,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       onFocus={() => { if (searchQuery.trim()) setSearchOpen(searchResults.length > 0); }}
                       onKeyDown={handleSearchKeyDown}
                       placeholder="Search pages… (Ctrl K)"
-                      className="relative w-full rounded-2xl border border-slate-200 bg-slate-50 py-[7px] pl-9 pr-8 text-[13px] text-slate-800 outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]"
+                      className={cn(
+                        'relative w-full rounded-2xl py-[7px] pl-9 pr-8 text-[13px] outline-none transition-all duration-300',
+                        darkMode
+                          ? 'border border-white/10 bg-white/8 text-slate-100 placeholder:text-slate-500 focus:border-white/25 focus:bg-white/12 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]'
+                          : 'border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]',
+                      )}
                     />
                     {searchQuery && (
                       <button onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchOpen(false); }}
@@ -429,6 +456,28 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               {/* Spacer */}
               <div className="hidden lg:block flex-1" />
 
+              {/* ── Dark / Light toggle ── */}
+              <motion.button
+                type="button"
+                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                onClick={toggleDark}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={cn('hidden sm:flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
+                style={{ background: 'transparent', color: darkMode ? '#94A3B8' : '#64748B' }}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div key={darkMode ? 'moon' : 'sun'}
+                    initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                  >
+                    {darkMode ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
+                  </motion.div>
+                </AnimatePresence>
+              </motion.button>
+
               {/* ── Settings dropdown ── */}
               <div ref={settingsRef} className="relative">
                 <motion.button
@@ -437,15 +486,15 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                   onClick={() => setSettingsOpen(s => !s)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200 hover:bg-slate-100"
+                  className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl overflow-hidden transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
                   style={{
-                    background: settingsOpen ? 'rgba(0,0,0,0.08)' : 'transparent',
+                    background: settingsOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
                   }}
                 >
                   <motion.div
                     animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    style={{ color: settingsOpen ? '#0F172A' : '#64748B' }}
+                    style={{ color: settingsOpen ? (darkMode ? '#F8FAFC' : '#0F172A') : (darkMode ? '#94A3B8' : '#64748B') }}
                   >
                     <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} />
                   </motion.div>
@@ -485,12 +534,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                   onClick={() => setNotifOpen(s => !s)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200 hover:bg-slate-100"
+                  className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200', darkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100')}
                   style={{
-                    background: notifOpen ? 'rgba(0,0,0,0.08)' : 'transparent',
+                    background: notifOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
                   }}
                 >
-                  <Bell size={16} strokeWidth={1.5} style={{ color: notifOpen ? '#0F172A' : '#64748B' }} />
+                  <Bell size={16} strokeWidth={1.5} style={{ color: notifOpen ? (darkMode ? '#F8FAFC' : '#0F172A') : (darkMode ? '#94A3B8' : '#64748B') }} />
                   {unreadCount > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
@@ -591,7 +640,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               <div ref={profileRef} className="relative">
                 <button onClick={() => setProfileOpen(s => !s)}
                   className="flex items-center gap-2.5 pl-3 transition-all duration-200 hover:opacity-80"
-                  style={{ borderLeft: '1px solid rgba(0,0,0,0.08)' }}>
+                  style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg overflow-hidden"
                     style={{
                       background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
@@ -600,10 +649,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                     <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
                   </div>
                   <div className="hidden sm:block text-left">
-                    <p className="text-[12px] font-semibold leading-tight text-slate-800">619 FITNESS STUDIO</p>
-                    <p className="text-[10px] leading-tight capitalize text-slate-500">{user?.role || '—'}</p>
+                    <p className={cn('text-[12px] font-semibold leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>619 FITNESS STUDIO</p>
+                    <p className={cn('text-[10px] leading-tight capitalize', darkMode ? 'text-slate-400' : 'text-slate-500')}>{user?.role || '—'}</p>
                   </div>
-                  <ChevronDown size={12} strokeWidth={1.5} className="shrink-0 text-slate-400" />
+                  <ChevronDown size={12} strokeWidth={1.5} className={cn('shrink-0', darkMode ? 'text-slate-500' : 'text-slate-400')} />
                 </button>
                 <AnimatePresence>
                   {profileOpen && (
