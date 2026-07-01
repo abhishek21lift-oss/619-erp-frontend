@@ -4,8 +4,8 @@ import { use, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, Save, User, Dumbbell, Wallet, RefreshCw,
-  CheckCircle, Info,
+  ArrowLeft, Save, User, Dumbbell, Wallet,
+  CheckCircle, Info, Activity,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -19,6 +19,11 @@ interface Plan {
   name: string;
   base_amount: number;
   duration_months: number;
+}
+
+interface Trainer {
+  id: string;
+  name: string;
 }
 
 function addMonths(dateStr: string, months: number): string {
@@ -73,17 +78,20 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState('');
 
   const [form, setForm] = useState({
     // Personal
     name: '', mobile: '', email: '', gender: '', dob: '', address: '', weight: '', emergency_contact: '',
     // PT Assignment
-    trainer_name: '', package_type: '', pt_start_date: '', pt_end_date: '', duration_months: '',
+    trainer_id: '', trainer_name: '', package_type: '', pt_start_date: '', pt_end_date: '', duration_months: '',
     // Financial
     base_amount: '', final_amount: '', paid_amount: '', monthly_pt_amount: '',
     // Status
     status: 'active',
+    // Fitness profile
+    goal: '', height: '', body_fat: '', health_conditions: '', injuries: '', frequency: '',
   });
 
   // Derived (read-only)
@@ -130,21 +138,24 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     });
   };
 
-  // Load client data
+  // Load client data, plans, and trainers
   useEffect(() => {
     (async () => {
       try {
-        const [clientRes, plansRes] = await Promise.all([
+        const [clientRes, plansRes, trainersRes] = await Promise.all([
           api.pt.client(id),
           api.pt.plans.list(),
+          api.pt.trainers(),
         ]);
         const c = (clientRes as any)?.data;
         const plansArr = Array.isArray((plansRes as any)?.data) ? (plansRes as any).data : [];
+        const trainersArr = Array.isArray((trainersRes as any)?.data) ? (trainersRes as any).data : [];
         setPlans(plansArr.map((p: any) => ({
           id: p.id, name: p.name,
           base_amount: Number(p.base_amount ?? 0),
           duration_months: Number(p.duration_months ?? 0),
         })));
+        setTrainers(trainersArr.map((t: any) => ({ id: t.id, name: t.name })));
         if (c) {
           setForm({
             name: c.name ?? '',
@@ -155,6 +166,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             address: c.address ?? '',
             weight: c.weight != null ? String(c.weight) : '',
             emergency_contact: c.emergency_contact ?? '',
+            trainer_id: c.trainer_id ?? '',
             trainer_name: c.trainer_name ?? '',
             package_type: c.package_type ?? '',
             pt_start_date: c.pt_start_date ? String(c.pt_start_date).slice(0, 10) : '',
@@ -165,6 +177,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             final_amount: c.final_amount != null ? String(c.final_amount) : '',
             paid_amount: c.paid_amount != null ? String(c.paid_amount) : '',
             status: c.status ?? 'active',
+            goal: c.goal ?? '',
+            height: c.height != null ? String(c.height) : '',
+            body_fat: c.body_fat != null ? String(c.body_fat) : '',
+            health_conditions: c.health_conditions ?? '',
+            injuries: c.injuries ?? '',
+            frequency: c.frequency ?? '',
           });
         }
       } catch (err: any) {
@@ -190,6 +208,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         address: str(form.address),
         weight: num(form.weight),
         emergency_contact: str(form.emergency_contact),
+        trainer_id: str(form.trainer_id),
         trainer_name: str(form.trainer_name),
         package_type: str(form.package_type),
         pt_start_date: str(form.pt_start_date),
@@ -201,6 +220,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         final_amount: num(form.final_amount),
         paid_amount: num(form.paid_amount),
         status: form.status,
+        goal: str(form.goal),
+        height: num(form.height),
+        body_fat: num(form.body_fat),
+        health_conditions: str(form.health_conditions),
+        injuries: str(form.injuries),
+        frequency: str(form.frequency),
       });
       toast.success('Client updated successfully');
       router.push(`/pt-os/clients/${id}`);
@@ -303,6 +328,29 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             <SectionCard title="PT Assignment" icon={<Dumbbell size={16} />} accent="#6366f1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
+                {/* Trainer dropdown */}
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-[600] mb-2" style={{ color: 'rgb(100,116,139)' }}>
+                    Trainer
+                  </label>
+                  <select
+                    value={form.trainer_id}
+                    onChange={e => {
+                      const tid = e.target.value;
+                      const t = trainers.find(tr => tr.id === tid);
+                      setForm(p => ({ ...p, trainer_id: tid, trainer_name: t?.name ?? p.trainer_name }));
+                    }}
+                    className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
+                    style={{ background: 'var(--bg-subtle)', color: form.trainer_id ? 'rgb(15,23,42)' : 'rgb(148,163,184)', border: '1.5px solid rgba(15,23,42,0.09)' }}>
+                    <option value="">Select trainer…</option>
+                    {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                  {/* Editable fallback if trainer not in list */}
+                  {!form.trainer_id && (
+                    <FloatInput label="Trainer Name (manual)" value={form.trainer_name} onChange={set('trainer_name')} />
+                  )}
+                </div>
+
                 {/* Plan selector — drives base_amount, duration_months, end_date, monthly fee */}
                 <div className="sm:col-span-2">
                   <label className="block text-[11px] font-[600] mb-2" style={{ color: 'rgb(100,116,139)' }}>
@@ -324,8 +372,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 <div className="sm:col-span-2">
                   <FloatInput label="Plan Name (editable)" value={form.package_type} onChange={set('package_type')} />
                 </div>
-
-                <FloatInput label="Trainer Name" value={form.trainer_name} onChange={set('trainer_name')} />
 
                 <FloatInput
                   label="Duration (months)"
@@ -428,6 +474,26 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 <p className="text-[11.5px] leading-relaxed" style={{ color: 'rgb(100,116,139)' }}>
                   Discount = Base − Final. Balance = Final − Paid. Monthly Fee = Final ÷ Duration. These recalculate automatically as you type.
                 </p>
+              </div>
+            </SectionCard>
+
+            {/* ── Fitness Profile ── */}
+            <SectionCard title="Fitness Profile" icon={<Activity size={16} />} accent="#0891b2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <FloatInput label="Primary Goal" value={form.goal} onChange={set('goal')} placeholder="e.g. Weight Loss, Muscle Gain" />
+                </div>
+                <FloatInput label="Height (cm)" type="number" value={form.height} onChange={set('height')} />
+                <FloatInput label="Body Fat %" type="number" value={form.body_fat} onChange={set('body_fat')} />
+                <div className="sm:col-span-2">
+                  <FloatInput label="Frequency (e.g. 3x/week)" value={form.frequency} onChange={set('frequency')} />
+                </div>
+                <div className="sm:col-span-2">
+                  <FloatInput label="Health Conditions" value={form.health_conditions} onChange={set('health_conditions')} placeholder="e.g. Diabetes, Hypertension" />
+                </div>
+                <div className="sm:col-span-2">
+                  <FloatInput label="Injuries / Medical Notes" value={form.injuries} onChange={set('injuries')} />
+                </div>
               </div>
             </SectionCard>
 
