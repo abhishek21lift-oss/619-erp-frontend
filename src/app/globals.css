@@ -1886,3 +1886,14 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   animation: skeleton-shimmer 1.8s ease infinite;
   border-radius: var(--radius-sm);
 }
+
+/* ── Sticky element above mobile bottom nav ── */
+.sticky-above-mobile-nav {
+  position: sticky;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) {
+  .sticky-above-mobile-nav {
+    bottom: 0;
+  }
+}
