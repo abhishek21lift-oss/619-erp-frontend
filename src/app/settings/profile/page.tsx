@@ -737,20 +737,20 @@ export default function ProfilePage() {
                       <h2 className="text-[26px] font-[880] tracking-[-0.03em] text-white">{displayName}</h2>
                       <span
                         className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-[760]"
-                        style={{ background: 'rgba(255,255,255,0.18)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}
+                        style={{ background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}
                       >
                         <ShieldCheck size={10} /> {profile.role}
                       </span>
                     </div>
-                    <p className="mt-1 text-[13.5px] font-[500]" style={{ color: 'var(--text-primary)' }}>{profile.jobTitle} · 619 Fitness Studio</p>
+                    <p className="mt-1 text-[13.5px] font-[500]" style={{ color: 'rgba(255,255,255,0.85)' }}>{profile.jobTitle} · 619 Fitness Studio</p>
                     <div className="mt-3 flex flex-wrap items-center justify-center gap-4 sm:justify-start">
-                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--text-primary)' }}>
+                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
                         <Mail size={11} /> {profile.email}
                       </span>
-                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--text-primary)' }}>
+                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
                         <MapPin size={11} /> {profile.location}
                       </span>
-                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--text-primary)' }}>
+                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
                         <Calendar size={11} /> Since {profile.memberSince}
                       </span>
                     </div>
