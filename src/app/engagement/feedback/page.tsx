@@ -82,16 +82,16 @@ function FeedbackContent() {
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         {/* ── HERO — DO NOT CHANGE ── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e)', boxShadow: '0 20px 60px rgba(26,10,46,0.5)' }}>
+          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           <div style={{ position: 'relative', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(139,92,246,0.25), rgba(109,40,217,0.1))', backdropFilter: 'blur(8px)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(109,40,217,0.08))' }}>
                 <Star size={22} color="#a855f7" />
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Feedback</span>
             </div>
-            <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#ffffff', margin: '0 0 8px' }}>Member Feedback</h1>
-            <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>Track, respond &amp; act on member reviews and complaints.</p>
+            <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#111827', margin: '0 0 8px' }}>Member Feedback</h1>
+            <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: '#6b7280' }}>Track, respond &amp; act on member reviews and complaints.</p>
           </div>
         </motion.div>
 
