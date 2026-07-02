@@ -498,18 +498,18 @@ export default function ImportDatabasePage() {
                             <motion.div
                               initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-                              style={{ overflow: 'hidden', background: 'rgba(0,0,0,0.15)' }}
+                              style={{ overflow: 'hidden', background: 'rgba(0,0,0,0.02)' }}
                             >
                               <div style={{ padding: '8px 24px 14px 48px' }}>
-                                <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+                                <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
                                   PT History ({g.subscriptions.length} subscription{g.subscriptions.length > 1 ? 's' : ''})
                                 </p>
                                 {g.subscriptions.map((sub, si) => (
-                                  <div key={si} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 0.8fr 0.8fr 0.8fr 80px', gap: 12, padding: '7px 0', borderBottom: si < g.subscriptions.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', alignItems: 'center' }}>
-                                    <div style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1' }}>{sub.plan_name || '—'}</div>
-                                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{fmtDate(sub.start_date)}</div>
-                                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{sub.end_date ? fmtDate(sub.end_date) : `${sub.duration_months}m`}</div>
-                                    <div style={{ fontSize: 12, color: '#5eead4' }}>{fmt(sub.selling_price)}</div>
+                                  <div key={si} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 0.8fr 0.8fr 0.8fr 80px', gap: 12, padding: '7px 0', borderBottom: si < g.subscriptions.length - 1 ? '1px solid rgba(0,0,0,0.07)' : 'none', alignItems: 'center' }}>
+                                    <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{sub.plan_name || '—'}</div>
+                                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{fmtDate(sub.start_date)}</div>
+                                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{sub.end_date ? fmtDate(sub.end_date) : `${sub.duration_months}m`}</div>
+                                    <div style={{ fontSize: 12, color: '#0d9488' }}>{fmt(sub.selling_price)}</div>
                                     <div style={{ fontSize: 12, color: '#34d399' }}>{fmt(sub.amount_paid)}</div>
                                     <div style={{ fontSize: 12, color: sub.balance_amount > 0 ? '#f87171' : '#94a3b8' }}>
                                       {sub.balance_amount > 0 ? `${fmt(sub.balance_amount)} due` : 'Paid'}
@@ -545,7 +545,7 @@ export default function ImportDatabasePage() {
                     {loading ? 'Importing...' : `Confirm & Import ${groups.length} Clients`}
                   </button>
                   <button onClick={resetAll} disabled={loading}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '13px 20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '13px 20px', background: '#f9fafb', border: '1px solid rgba(0,0,0,0.1)', fontSize: 13, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
                     <X size={14} /> Cancel
                   </button>
                 </div>
