@@ -78,30 +78,26 @@ function WAContent() {
   return (
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        {/* ── HERO — DO NOT CHANGE ── */}
+        {/* ── HERO ── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e)', boxShadow:'0 20px 60px rgba(26,10,46,0.5)' }}>
-          <div style={{ position:'absolute', inset:0, background:'radial-gradient(600px circle at 30% 40%, rgba(139,92,246,0.15), transparent 70%)' }}/>
-          <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(139,92,246,0.08) 1px, transparent 1px)', backgroundSize:'24px 24px' }}/>
-          <div style={{ position:'absolute', top:-30, right:40, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle, rgba(168,85,247,0.1), transparent)' }}/>
-          <div style={{ position:'absolute', bottom:-20, left:60, width:140, height:140, borderRadius:'50%', background:'radial-gradient(circle, rgba(109,40,217,0.08), transparent)' }}/>
-          <div style={{ position:'relative', zIndex:10 }}>
+          style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'#f8fafc', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div style={{ position:'relative' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
-              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg, rgba(139,92,246,0.25), rgba(109,40,217,0.1))', backdropFilter:'blur(8px)' }}>
+              <div style={{ width:44, height:44, borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.2)' }}>
                 <MessageCircle size={22} color="#a855f7" />
               </div>
               <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', background:'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Communication</span>
             </div>
-            <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#ffffff', margin:'0 0 8px' }}>WhatsApp / SMS</h1>
-            <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.55)' }}>Send personalised WhatsApp messages to members using templates or custom messages.</p>
+            <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#111827', margin:'0 0 8px' }}>WhatsApp / SMS</h1>
+            <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#6b7280' }}>Send personalised WhatsApp messages to members using templates or custom messages.</p>
           </div>
         </motion.div>
 
         {/* ── ERROR BANNER ── */}
         {loadError && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            style={{ marginBottom: 20, borderRadius: 14, padding: '14px 18px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', fontSize: 13, color: '#fca5a5', lineHeight: 1.5 }}>
-            <strong style={{ color: '#f87171' }}>Unable to load members:</strong> {loadError}. WhatsApp integration is not configured — contact your administrator if this problem persists.
+            style={{ marginBottom: 20, borderRadius: 14, padding: '14px 18px', background: '#fef2f2', border: '1px solid #fecaca', fontSize: 13, color: '#dc2626', lineHeight: 1.5 }}>
+            <strong style={{ color: '#b91c1c' }}>Unable to load members:</strong> {loadError}. WhatsApp integration is not configured — contact your administrator if this problem persists.
           </motion.div>
         )}
 

@@ -71,22 +71,20 @@ function CampaignContent() {
   return (
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
-        {/* ── HERO — DO NOT CHANGE ── */}
+        {/* ── HERO ── */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e)', boxShadow: '0 20px 60px rgba(26,10,46,0.5)' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(600px circle at 40% 60%, rgba(139,92,246,0.12), transparent 70%)' }} />
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(139,92,246,0.08) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-          <div style={{ position: 'relative', zIndex: 10 }}>
+          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div style={{ position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(139,92,246,0.25), rgba(109,40,217,0.1))', backdropFilter: 'blur(8px)' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
                 <Send size={22} color="#a855f7" />
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Marketing</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#ffffff', margin: '0 0 8px' }}>Campaigns</h1>
-                <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>Plan, launch &amp; track multi-channel marketing campaigns.</p>
+                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#111827', margin: '0 0 8px' }}>Campaigns</h1>
+                <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: '#6b7280' }}>Plan, launch &amp; track multi-channel marketing campaigns.</p>
               </div>
               <button onClick={() => setShowForm(v => !v)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
