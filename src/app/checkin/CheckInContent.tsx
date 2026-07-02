@@ -288,12 +288,14 @@ export default function CheckInContent() {
         }
       `}</style>
 
-      {/* ── Premium Dark Hero ── */}
+      {/* ── Hero ── */}
       <div style={{
         position: 'relative',
         overflow: 'hidden',
         borderRadius: 16,
-        background: 'linear-gradient(135deg, #0f0c29 0%, #1a1440 40%, #1e1b4b 70%, #1e40af 100%)',
+        background: '#f8fafc',
+        border: '1px solid rgba(0,0,0,0.07)',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
         marginBottom: 20,
       }}>
         {/* Top accent bar */}
@@ -302,30 +304,6 @@ export default function CheckInContent() {
           background: 'linear-gradient(90deg, #6366f1, #a78bfa, #22d3ee, #6366f1)',
           backgroundSize: '200% 100%',
         }} />
-
-        {/* Animated orbs */}
-        <div style={{
-          position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none',
-        }}>
-          <div style={{
-            position: 'absolute', width: 320, height: 320, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
-            top: -120, right: -60,
-            animation: 'ck-float1 8s ease-in-out infinite',
-          }} />
-          <div style={{
-            position: 'absolute', width: 240, height: 240, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(167,139,250,0.12) 0%, transparent 70%)',
-            bottom: -80, left: -40,
-            animation: 'ck-float2 10s ease-in-out infinite',
-          }} />
-          <div style={{
-            position: 'absolute', width: 180, height: 180, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 70%)',
-            top: 10, left: '40%',
-            animation: 'ck-float3 7s ease-in-out infinite',
-          }} />
-        </div>
 
         {/* Content row */}
         <div className="ck-hero-padding" style={{
@@ -340,10 +318,7 @@ export default function CheckInContent() {
               className="ck-hero-title"
               style={{
                 fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em',
-                background: 'linear-gradient(135deg, #e0e7ff 0%, #a78bfa 40%, #22d3ee 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                color: '#111827',
                 margin: 0,
               }}
             >
@@ -354,13 +329,13 @@ export default function CheckInContent() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.1 }}
               style={{
-                margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.5)',
+                margin: '4px 0 0', fontSize: 12, color: '#6b7280',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
               <span style={{
                 display: 'inline-block', width: 5, height: 5, borderRadius: '50%',
-                background: '#22d3ee',
+                background: '#6366f1',
               }} />
               Live recognition · {fmtDate(new Date())}
             </motion.p>
@@ -401,9 +376,9 @@ export default function CheckInContent() {
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 30, height: 30, borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.1)',
-                background: voiceOn ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',
-                color: voiceOn ? '#a78bfa' : 'rgba(255,255,255,0.4)',
+                border: '1px solid rgba(0,0,0,0.07)',
+                background: voiceOn ? 'rgba(99,102,241,0.1)' : '#f1f5f9',
+                color: voiceOn ? '#6366f1' : '#9ca3af',
                 cursor: 'pointer', transition: 'all 0.2s',
                 outline: 'none',
               }}
@@ -419,9 +394,9 @@ export default function CheckInContent() {
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 padding: '4px 10px', borderRadius: 100,
                 fontSize: 10, fontWeight: 700,
-                background: 'rgba(99,102,241,0.15)',
-                border: '1px solid rgba(99,102,241,0.25)',
-                color: '#a78bfa',
+                background: 'rgba(99,102,241,0.08)',
+                border: '1px solid rgba(99,102,241,0.2)',
+                color: '#6366f1',
               }}
             >
               <Clock size={10} />
