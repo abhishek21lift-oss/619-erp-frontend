@@ -440,17 +440,17 @@ export default function ImportDatabasePage() {
 
                 {/* Client list */}
                 <div style={{ borderRadius: 24, overflow: 'hidden', ...glass }}>
-                  <div style={{ padding: '18px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#e2e8f0' }}>
+                  <div style={{ padding: '18px 24px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#111827' }}>
                       {groups.length} unique clients · {totalSubs} subscriptions · {fmt(totalRevenue)} total revenue
                     </p>
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>
                       Click a client row to expand subscription history
                     </p>
                   </div>
                   <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                     {groups.map((g, idx) => (
-                      <div key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
                         <div
                           onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
                           style={{
@@ -463,20 +463,20 @@ export default function ImportDatabasePage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             {g.needs_review && <AlertTriangle size={13} color="#fbbf24" style={{ flexShrink: 0 }} />}
                             <div>
-                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>{g.name}</p>
-                              <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#111827' }}>{g.name}</p>
+                              <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>
                                 {g.mobile || <span style={{ color: '#fbbf24' }}>No phone</span>}
                                 {g.needs_review && <span style={{ marginLeft: 6, color: '#fbbf24', fontSize: 10 }}>· {g.review_reason}</span>}
                               </p>
                             </div>
                           </div>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{g.trainer_name || '—'}</div>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                          <div style={{ fontSize: 12, color: '#6b7280' }}>{g.trainer_name || '—'}</div>
+                          <div style={{ fontSize: 12, color: '#6b7280' }}>
                             {fmt(g.subscriptions.reduce((s, sub) => s + sub.selling_price, 0))}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 12, fontWeight: 700, color: '#60a5fa' }}>{g.subscriptions.length}</span>
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>plans</span>
+                            <span style={{ fontSize: 11, color: '#9ca3af' }}>plans</span>
                           </div>
                           <div>
                             <span style={{
@@ -487,7 +487,7 @@ export default function ImportDatabasePage() {
                               {g.subscriptions.some(s => s.status === 'active') ? 'Active' : 'Expired'}
                             </span>
                           </div>
-                          <div style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          <div style={{ color: '#9ca3af' }}>
                             {expandedIdx === idx ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </div>
                         </div>
