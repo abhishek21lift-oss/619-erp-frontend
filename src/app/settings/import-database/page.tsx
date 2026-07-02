@@ -558,13 +558,13 @@ export default function ImportDatabasePage() {
                 style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
                 {/* Success banner */}
-                <div style={{ borderRadius: 24, padding: '32px 36px', background: 'linear-gradient(135deg, rgba(4,47,46,0.8), rgba(13,148,136,0.15))', border: '1px solid rgba(13,148,136,0.3)', display: 'flex', alignItems: 'center', gap: 20 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(52,211,153,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ borderRadius: 24, padding: '32px 36px', background: '#f0fdf9', border: '1px solid rgba(13,148,136,0.2)', display: 'flex', alignItems: 'center', gap: 20 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(52,211,153,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <CheckCircle2 size={28} color="#34d399" />
                   </div>
                   <div>
-                    <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Import complete!</h2>
-                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>
+                    <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0 }}>Import complete!</h2>
+                    <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
                       All client data has been saved to the database.
                     </p>
                   </div>
@@ -580,7 +580,7 @@ export default function ImportDatabasePage() {
                   ].map(({ label, value, color }) => (
                     <div key={label} style={{ borderRadius: 20, padding: '24px', ...glass, textAlign: 'center' }}>
                       <div style={{ fontSize: 36, fontWeight: 800, color, letterSpacing: '-0.02em' }}>{value}</div>
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>{label}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>{label}</div>
                     </div>
                   ))}
                 </div>
@@ -592,9 +592,9 @@ export default function ImportDatabasePage() {
                       <AlertTriangle size={15} /> Clients flagged for manual review
                     </p>
                     {importResult.review.map((r: any, i: number) => (
-                      <div key={i} style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '6px 0', borderBottom: i < importResult.review.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                        <strong style={{ color: '#e2e8f0' }}>{r.name}</strong>
-                        {r.mobile && <span style={{ color: 'rgba(255,255,255,0.4)', marginLeft: 8 }}>{r.mobile}</span>}
+                      <div key={i} style={{ fontSize: 12, color: '#374151', padding: '6px 0', borderBottom: i < importResult.review.length - 1 ? '1px solid rgba(0,0,0,0.07)' : 'none' }}>
+                        <strong style={{ color: '#111827' }}>{r.name}</strong>
+                        {r.mobile && <span style={{ color: '#9ca3af', marginLeft: 8 }}>{r.mobile}</span>}
                         <span style={{ marginLeft: 8, color: '#fbbf24' }}>· {r.reason}</span>
                       </div>
                     ))}
@@ -619,7 +619,7 @@ export default function ImportDatabasePage() {
                     <Users size={15} /> View All Clients
                   </Link>
                   <button onClick={resetAll}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '12px 20px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '12px 20px', background: '#f9fafb', border: '1px solid rgba(0,0,0,0.1)', fontSize: 13, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
                     <UploadCloud size={14} /> Import Another File
                   </button>
                 </div>
