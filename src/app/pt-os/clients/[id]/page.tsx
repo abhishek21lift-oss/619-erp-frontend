@@ -82,9 +82,9 @@ function getStatusConfig(status: string, days_left: number | null, pt_end_date?:
 
 function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
-    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid #f3f4f6' }}>
       <span className="text-[12px] font-[500] text-slate-500">{label}</span>
-      <span className="text-[12.5px] font-[650] text-right" style={{ color: valueColor ?? 'rgba(255,255,255,0.85)' }}>{value}</span>
+      <span className="text-[12.5px] font-[650] text-right" style={{ color: valueColor ?? '#111827' }}>{value}</span>
     </div>
   );
 }
@@ -93,18 +93,13 @@ function DarkCard({ title, icon, from, children, className = '' }:
   { title: string; icon: React.ReactNode; from: string; children: React.ReactNode; className?: string }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className={`overflow-hidden rounded-[20px] ${className}`}
-      style={{
-        background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
-        border: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-      }}>
-      <div className="flex items-center gap-3 px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      className={`overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm ${className}`}>
+      <div className="flex items-center gap-3 px-5 pt-5 pb-4" style={{ borderBottom: '1px solid #f3f4f6' }}>
         <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
           style={{ background: `${from}20`, border: `1px solid ${from}30` }}>
           <span style={{ color: from }}>{icon}</span>
         </div>
-        <h3 className="text-[13.5px] font-[740] text-white">{title}</h3>
+        <h3 className="text-[13.5px] font-[740] text-gray-900">{title}</h3>
       </div>
       <div className="p-5">{children}</div>
     </motion.div>
@@ -249,17 +244,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   return (
     <Guard>
       <AppShell>
-        <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #060b17 0%, #0d1525 40%, #0a0e1a 100%)' }}>
+        <div className="min-h-screen">
 
-          {/* Ambient orbs */}
-          <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
-            <div className="absolute -top-40 right-0 h-[500px] w-[500px] rounded-full opacity-[0.12]"
-              style={{ background: `radial-gradient(circle, ${palette.from}, transparent 70%)`, filter: 'blur(60px)' }} />
-            <div className="absolute bottom-0 left-0 h-[350px] w-[350px] rounded-full opacity-[0.08]"
-              style={{ background: 'radial-gradient(circle, rgba(6,182,212,1), transparent 70%)', filter: 'blur(70px)' }} />
-          </div>
-
-          <div className="relative mx-auto max-w-screen-lg px-4 py-6 sm:px-6" style={{ zIndex: 1 }}>
+          <div className="relative mx-auto max-w-screen-lg px-4 py-6 sm:px-6">
 
             {/* ── LOADING ── */}
             {loading && (
@@ -295,21 +282,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   className="relative mb-6 overflow-hidden rounded-[28px] p-7"
                   style={{
-                    background: `linear-gradient(145deg, ${palette.from}28 0%, rgba(15,23,42,0.96) 45%, rgba(30,41,59,0.90) 100%)`,
-                    border: `1px solid ${palette.from}25`,
-                    boxShadow: `0 16px 60px rgba(0,0,0,0.45), 0 0 0 1px ${palette.from}15`,
+                    background: '#fff',
+                    border: '1px solid rgba(0,0,0,0.07)',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                   }}>
-                  {/* Decorative rings */}
-                  <div className="pointer-events-none absolute -top-24 -right-24 h-[280px] w-[280px] rounded-full opacity-20"
-                    style={{ background: `radial-gradient(circle, ${palette.from}, transparent 70%)`, filter: 'blur(40px)' }} />
-                  <div className="pointer-events-none absolute -bottom-16 left-[30%] h-[200px] w-[200px] rounded-full opacity-10"
-                    style={{ background: 'radial-gradient(circle, rgba(6,182,212,1), transparent 70%)', filter: 'blur(40px)' }} />
 
                   {/* Back nav */}
                   <button onClick={() => router.back()}
-                    className="relative mb-6 flex items-center gap-2 text-[12px] font-[600] text-slate-400 transition-colors hover:text-slate-300">
+                    className="relative mb-6 flex items-center gap-2 text-[12px] font-[600] text-slate-500 transition-colors hover:text-slate-700">
                     <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.08)' }}>
                       <ArrowLeft size={13} />
                     </div>
                     PT Clients
@@ -339,7 +321,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* Identity */}
                     <div className="flex-1 min-w-0">
-                      <h1 className="text-[30px] font-[880] tracking-[-0.04em] text-white leading-tight">{client.name}</h1>
+                      <h1 className="text-[30px] font-[880] tracking-[-0.04em] text-gray-900 leading-tight">{client.name}</h1>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color={palette.from} />
                         {client.trainer_name && (
@@ -349,8 +331,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           </span>
                         )}
                         {client.package_type && (
-                          <span className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 text-[11px] font-[600] text-slate-400"
-                            style={{ background: 'rgba(255,255,255,0.06)' }}>
+                          <span className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 text-[11px] font-[600] text-slate-500"
+                            style={{ background: '#F3F4F6' }}>
                             <Dumbbell size={10} />{client.package_type}
                           </span>
                         )}
@@ -378,8 +360,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     {/* Hero actions */}
                     <div className="flex flex-wrap gap-2 shrink-0">
                       <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
-                        className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-white transition-all hover:opacity-80"
-                        style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                        className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
+                        style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.08)' }}>
                         <Pencil size={13} /> Edit
                       </button>
                       <button onClick={() => router.push(`/pt-os/clients/${id}/renew`)}
@@ -421,19 +403,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       initial={{ opacity: 0, y: 14, scale: 0.97 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: 0.1 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                      className="relative overflow-hidden rounded-[20px] p-4"
+                      className="relative overflow-hidden rounded-[20px] p-4 bg-white"
                       style={{
-                        background: `linear-gradient(145deg, ${card.from}1e, ${card.from}09)`,
                         border: `1px solid ${card.from}28`,
-                        boxShadow: `0 4px 20px ${card.from}15`,
+                        boxShadow: `0 1px 4px rgba(0,0,0,0.05)`,
                       }}>
-                      <div className="pointer-events-none absolute -right-5 -top-5 h-20 w-20 rounded-full opacity-25"
-                        style={{ background: `radial-gradient(circle, ${card.from}, transparent 70%)`, filter: 'blur(12px)' }} />
                       <div className="flex h-9 w-9 items-center justify-center rounded-[10px] mb-3"
                         style={{ background: `linear-gradient(135deg, ${card.from}, ${card.to})`, boxShadow: `0 3px 12px ${card.from}45` }}>
                         <span className="text-white">{card.icon}</span>
                       </div>
-                      <p className="text-[20px] font-[860] tracking-[-0.02em] text-white">{card.value}</p>
+                      <p className="text-[20px] font-[860] tracking-[-0.02em] text-gray-900">{card.value}</p>
                       <p className="text-[9.5px] font-[700] uppercase tracking-wider text-slate-500 mt-0.5">{card.label}</p>
                       <p className="text-[10px] font-[600] mt-1" style={{ color: card.from }}>{card.sub}</p>
                     </motion.div>
@@ -444,59 +423,57 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Payment progress */}
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                    className="rounded-[20px] p-5"
+                    className="rounded-[20px] p-5 bg-white"
                     style={{
-                      background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
-                      border: '1px solid rgba(255,255,255,0.07)',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                      border: '1px solid rgba(0,0,0,0.07)',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                     }}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                          style={{ background: 'rgba(16,185,129,0.2)' }}>
-                          <Wallet size={13} className="text-emerald-400" />
+                          style={{ background: 'rgba(16,185,129,0.12)' }}>
+                          <Wallet size={13} className="text-emerald-500" />
                         </div>
-                        <span className="text-[12px] font-[700] text-white">Payment Progress</span>
+                        <span className="text-[12px] font-[700] text-gray-900">Payment Progress</span>
                       </div>
                       <span className="text-[13px] font-[800] tabular-nums"
-                        style={{ color: completionPct >= 100 ? '#34d399' : '#a78bfa' }}>
+                        style={{ color: completionPct >= 100 ? '#10b981' : '#7c3aed' }}>
                         {completionPct}%
                       </span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-2.5 w-full rounded-full" style={{ background: '#F3F4F6' }}>
                       <motion.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }}
                         transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
                         className="h-full rounded-full"
                         style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
                     </div>
                     <div className="mt-2.5 flex justify-between">
-                      <span className="text-[10.5px] font-[600] text-emerald-400">{fmtINR(client.paid_amount)} paid</span>
+                      <span className="text-[10.5px] font-[600] text-emerald-600">{fmtINR(client.paid_amount)} paid</span>
                       <span className="text-[10.5px] font-[600] text-slate-500">{fmtINR(client.final_amount)} total</span>
                     </div>
                   </motion.div>
 
                   {/* PT Duration */}
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                    className="rounded-[20px] p-5"
+                    className="rounded-[20px] p-5 bg-white"
                     style={{
-                      background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
-                      border: '1px solid rgba(255,255,255,0.07)',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                      border: '1px solid rgba(0,0,0,0.07)',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                     }}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                          style={{ background: 'rgba(99,102,241,0.2)' }}>
-                          <Clock size={13} className="text-indigo-400" />
+                          style={{ background: 'rgba(99,102,241,0.12)' }}>
+                          <Clock size={13} className="text-indigo-500" />
                         </div>
-                        <span className="text-[12px] font-[700] text-white">PT Duration</span>
+                        <span className="text-[12px] font-[700] text-gray-900">PT Duration</span>
                       </div>
                       <span className="text-[12px] font-[800] tabular-nums"
-                        style={{ color: (client.days_left <= 7 && client.days_left >= 0) ? '#f87171' : '#818cf8' }}>
+                        style={{ color: (client.days_left <= 7 && client.days_left >= 0) ? '#ef4444' : '#6366f1' }}>
                         {client.days_left !== null ? `${client.days_left}d left` : '—'}
                       </span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-2.5 w-full rounded-full" style={{ background: '#F3F4F6' }}>
                       {client.duration_months && client.pt_start_date && client.pt_end_date ? (() => {
                         const start = new Date(client.pt_start_date!).getTime();
                         const end = new Date(client.pt_end_date!).getTime();
@@ -519,18 +496,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 {/* ── QUICK ACTIONS GRID ── */}
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.35, duration: 0.4 }}
-                  className="mb-6 overflow-hidden rounded-[22px] p-5"
+                  className="mb-6 overflow-hidden rounded-[22px] p-5 bg-white"
                   style={{
-                    background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+                    border: '1px solid rgba(0,0,0,0.07)',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                   }}>
-                  <div className="flex items-center gap-2.5 mb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1rem' }}>
+                  <div className="flex items-center gap-2.5 mb-4" style={{ borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>
                     <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
-                      style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.3)' }}>
-                      <Zap size={14} className="text-violet-400" />
+                      style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }}>
+                      <Zap size={14} className="text-violet-600" />
                     </div>
-                    <h3 className="text-[13.5px] font-[740] text-white">Quick Actions</h3>
+                    <h3 className="text-[13.5px] font-[740] text-gray-900">Quick Actions</h3>
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-11 gap-2.5">
                     {QUICK_ACTIONS.map((action, i) => (
@@ -540,7 +516,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         transition={{ delay: 0.4 + i * 0.025 }}
                         onClick={() => action.href(client.id) === '#delete' ? setDeleteOpen(true) : router.push(action.href(client.id))}
                         className="group flex flex-col items-center gap-2 rounded-[14px] p-3 transition-all duration-200 hover:-translate-y-0.5"
-                        style={{ background: `${action.from}12`, border: `1px solid ${action.from}20` }}>
+                        style={{ background: `${action.from}0f`, border: `1px solid ${action.from}20` }}>
                         <div className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-all duration-200 group-hover:scale-110"
                           style={{ background: `linear-gradient(135deg, ${action.from}, ${action.to})`, boxShadow: `0 3px 10px ${action.from}40` }}>
                           <span className="text-white">{action.icon}</span>
@@ -572,7 +548,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               {/* Line */}
                               {i < timeline.length - 1 && (
                                 <div className="absolute left-3.5 top-5 bottom-0 w-px"
-                                  style={{ background: 'rgba(255,255,255,0.05)' }} />
+                                  style={{ background: '#f3f4f6' }} />
                               )}
                               {/* Dot */}
                               <div className="absolute left-0 top-0.5 flex h-7 w-7 items-center justify-center rounded-full"
@@ -581,8 +557,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
-                                  <p className="text-[12.5px] font-[660] text-white">{event.title}</p>
-                                  <span className="shrink-0 text-[10px] font-[600] text-slate-600">{fmtDate(event.date)}</span>
+                                  <p className="text-[12.5px] font-[660] text-gray-900">{event.title}</p>
+                                  <span className="shrink-0 text-[10px] font-[600] text-slate-400">{fmtDate(event.date)}</span>
                                 </div>
                                 <p className="text-[11px] mt-0.5 text-slate-500">{event.subtitle}</p>
                               </div>
@@ -605,8 +581,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                                   transition={{ duration: 0.5, delay: i * 0.06 }}
                                   className="w-full rounded-[5px]"
                                   style={{ background: 'linear-gradient(180deg, #10b981, #34d399)', minHeight: 4 }} />
-                                <span className="text-[9px] font-[700] text-emerald-400 tabular-nums">{a.weight}</span>
-                                <span className="text-[8px] text-slate-600">
+                                <span className="text-[9px] font-[700] text-emerald-600 tabular-nums">{a.weight}</span>
+                                <span className="text-[8px] text-slate-400">
                                   {fmtDate(a.created_at || a.assessment_date).slice(0, 5)}
                                 </span>
                               </div>
@@ -623,9 +599,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           {activeGoals.slice(0, 3).map((g: any) => (
                             <div key={g.id}
                               className="flex items-center justify-between rounded-[12px] p-3"
-                              style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                              style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
                               <div>
-                                <p className="text-[12.5px] font-[660] text-white">{g.goal_type || g.type || 'Goal'}</p>
+                                <p className="text-[12.5px] font-[660] text-gray-900">{g.goal_type || g.type || 'Goal'}</p>
                                 <p className="text-[10.5px] text-slate-500 mt-0.5">
                                   {g.target_weight ? `Target: ${g.target_weight} kg` : ''}
                                   {g.target_body_fat ? ` BF: ${g.target_body_fat}%` : ''}
@@ -633,7 +609,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               </div>
                               <button onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}
                                 className="rounded-[8px] px-2.5 py-1.5 text-[10.5px] font-[700] transition hover:opacity-80"
-                                style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa' }}>
+                                style={{ background: 'rgba(59,130,246,0.12)', color: '#2563eb' }}>
                                 View
                               </button>
                             </div>
@@ -665,24 +641,24 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
                       <InfoRow label="Monthly Fee" value={fmtINR(client.monthly_pt_amount)} />
                       <InfoRow label="Days Left" value={client.days_left !== null ? `${client.days_left} days` : '—'}
-                        valueColor={client.days_left <= 7 ? '#f87171' : undefined} />
+                        valueColor={client.days_left <= 7 ? '#ef4444' : undefined} />
                     </DarkCard>
 
                     {/* Financial Details */}
                     <DarkCard title="Financials" icon={<Wallet size={14} />} from="#10b981">
                       <InfoRow label="Base Amount" value={fmtINR(client.base_amount)} />
                       {client.discount > 0 && (
-                        <InfoRow label="Discount" value={`-${fmtINR(client.discount)}`} valueColor="#f87171" />
+                        <InfoRow label="Discount" value={`-${fmtINR(client.discount)}`} valueColor="#ef4444" />
                       )}
                       <InfoRow label="Final Amount" value={fmtINR(client.final_amount)} />
-                      <InfoRow label="Paid" value={fmtINR(client.paid_amount)} valueColor="#34d399" />
+                      <InfoRow label="Paid" value={fmtINR(client.paid_amount)} valueColor="#059669" />
                       <InfoRow label="Balance" value={fmtINR(client.balance_amount)}
-                        valueColor={client.balance_amount > 0 ? '#f87171' : '#34d399'} />
+                        valueColor={client.balance_amount > 0 ? '#ef4444' : '#059669'} />
                       {client.due_status && client.due_status !== 'CLEAR' && (
                         <div className="mt-2 flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5"
                           style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                          <AlertTriangle size={11} className="text-red-400" />
-                          <span className="text-[10px] font-[700] uppercase tracking-wider text-red-400">{client.due_status}</span>
+                          <AlertTriangle size={11} className="text-red-500" />
+                          <span className="text-[10px] font-[700] uppercase tracking-wider text-red-500">{client.due_status}</span>
                         </div>
                       )}
                     </DarkCard>
@@ -694,9 +670,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           <textarea value={notesDraft} onChange={e => setNotesDraft(e.target.value)} rows={4}
                             className="w-full resize-none rounded-[12px] px-3.5 py-2.5 text-[13px] outline-none transition-all"
                             style={{
-                              background: 'rgba(255,255,255,0.06)',
+                              background: '#fff',
                               border: '1.5px solid rgba(245,158,11,0.3)',
-                              color: 'rgba(255,255,255,0.85)',
+                              color: '#111827',
                             }}
                             onFocus={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; }}
                             onBlur={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'; }}
@@ -708,21 +684,21 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               <Save size={11} /> Save
                             </button>
                             <button onClick={() => { setEditNotes(false); setNotesDraft(client.notes || ''); }}
-                              className="rounded-[10px] px-3 py-2 text-[12px] font-[700] text-slate-400 transition hover:text-slate-300"
-                              style={{ background: 'rgba(255,255,255,0.06)' }}>
+                              className="rounded-[10px] px-3 py-2 text-[12px] font-[700] text-slate-500 transition hover:text-slate-700"
+                              style={{ background: '#F3F4F6' }}>
                               Cancel
                             </button>
                           </div>
                         </div>
                       ) : (
                         <div onClick={() => setEditNotes(true)} className="group cursor-pointer rounded-[12px] p-3 transition-all"
-                          style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.1)' }}>
+                          style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
                           {client.notes ? (
-                            <p className="text-[12.5px] leading-relaxed text-slate-300">{client.notes}</p>
+                            <p className="text-[12.5px] leading-relaxed text-gray-700">{client.notes}</p>
                           ) : (
                             <>
-                              <p className="text-[12.5px] italic text-slate-600 group-hover:hidden">No notes yet…</p>
-                              <p className="hidden text-[12.5px] text-amber-400 group-hover:block">Click to add notes…</p>
+                              <p className="text-[12.5px] italic text-slate-400 group-hover:hidden">No notes yet…</p>
+                              <p className="hidden text-[12.5px] text-amber-500 group-hover:block">Click to add notes…</p>
                             </>
                           )}
                         </div>
@@ -731,24 +707,23 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* Session Balance */}
                     <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
-                      className="group w-full rounded-[20px] p-5 text-left transition-all duration-200 hover:-translate-y-0.5"
+                      className="group w-full rounded-[20px] p-5 text-left transition-all duration-200 hover:-translate-y-0.5 bg-white"
                       style={{
-                        background: 'linear-gradient(145deg, rgba(6,182,212,0.10), rgba(14,116,144,0.06))',
                         border: '1px solid rgba(6,182,212,0.18)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                       }}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
-                            style={{ background: 'rgba(6,182,212,0.2)' }}>
-                            <Calendar size={16} className="text-cyan-400" />
+                            style={{ background: 'rgba(6,182,212,0.12)' }}>
+                            <Calendar size={16} className="text-cyan-500" />
                           </div>
                           <div>
-                            <p className="text-[13px] font-[700] text-white">Session Balance</p>
+                            <p className="text-[13px] font-[700] text-gray-900">Session Balance</p>
                             <p className="text-[10.5px] text-slate-500 mt-0.5">Packages &amp; remaining sessions</p>
                           </div>
                         </div>
-                        <ChevronRight size={16} className="text-cyan-400 transition-transform duration-200 group-hover:translate-x-0.5" />
+                        <ChevronRight size={16} className="text-cyan-500 transition-transform duration-200 group-hover:translate-x-0.5" />
                       </div>
                     </button>
                   </div>
@@ -761,31 +736,30 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   const totalTerms = useSubscriptions ? allTerms.length : 1;
                   const now = new Date();
                   const termStatus = (startDate?: string, endDate?: string) => {
-                    if (!endDate) return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#34d399' };
+                    if (!endDate) return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#059669' };
                     const end = new Date(endDate);
                     const start = startDate ? new Date(startDate) : null;
-                    if (end < now) return { label: 'Expired', from: '#64748b', to: '#475569', bg: 'rgba(100,116,139,0.12)', color: '#94a3b8' };
-                    if (start && start > now) return { label: 'Upcoming', from: '#3b82f6', to: '#2563eb', bg: 'rgba(59,130,246,0.12)', color: '#60a5fa' };
-                    return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#34d399' };
+                    if (end < now) return { label: 'Expired', from: '#64748b', to: '#475569', bg: 'rgba(100,116,139,0.10)', color: '#6b7280' };
+                    if (start && start > now) return { label: 'Upcoming', from: '#3b82f6', to: '#2563eb', bg: 'rgba(59,130,246,0.12)', color: '#2563eb' };
+                    return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#059669' };
                   };
                   return (
                     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.5 }}
-                      className="mt-5 overflow-hidden rounded-[24px] p-6"
+                      className="mt-5 overflow-hidden rounded-[24px] p-6 bg-white"
                       style={{
-                        background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                        boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
+                        border: '1px solid rgba(0,0,0,0.07)',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                       }}>
                       {/* Header */}
                       <div className="flex items-center justify-between mb-5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-9 w-9 items-center justify-center rounded-[11px]"
-                            style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                            <Repeat size={15} className="text-indigo-400" />
+                            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                            <Repeat size={15} className="text-indigo-500" />
                           </div>
                           <div>
-                            <h3 className="text-[14px] font-[740] text-white">PT Subscription History</h3>
+                            <h3 className="text-[14px] font-[740] text-gray-900">PT Subscription History</h3>
                             <p className="text-[10.5px] text-slate-500">{totalTerms} term{totalTerms !== 1 ? 's' : ''} total</p>
                           </div>
                         </div>
@@ -800,18 +774,18 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             <div key={s.id ?? idx}
                               className="overflow-hidden rounded-[16px] p-4"
                               style={isLast
-                                ? { background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.22)' }
-                                : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                ? { background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.18)' }
+                                : { background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.07)' }}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-2.5">
-                                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-400"
-                                    style={{ background: 'rgba(99,102,241,0.15)' }}>{idx + 1}</span>
+                                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
+                                    style={{ background: 'rgba(99,102,241,0.12)' }}>{idx + 1}</span>
                                   <div>
                                     <div className="flex items-center gap-2">
-                                      <p className="text-[13px] font-[700] text-white">{s.plan_name || '—'}</p>
+                                      <p className="text-[13px] font-[700] text-gray-900">{s.plan_name || '—'}</p>
                                       {isLast && (
-                                        <span className="rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-400"
-                                          style={{ background: 'rgba(99,102,241,0.15)' }}>Current</span>
+                                        <span className="rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
+                                          style={{ background: 'rgba(99,102,241,0.12)' }}>Current</span>
                                       )}
                                     </div>
                                     <p className="text-[10.5px] text-slate-500 mt-0.5">
@@ -825,12 +799,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               </div>
                               <div className={`grid gap-2 ${isLast ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
                                 {[
-                                  { label: 'Fee', value: fmtINR(s.selling_price), color: 'rgba(255,255,255,0.85)' },
-                                  { label: 'Paid', value: fmtINR(s.amount_paid), color: '#34d399' },
-                                  { label: 'Balance', value: fmtINR(s.balance_amount), color: Number(s.balance_amount) > 0 ? '#f87171' : '#34d399' },
-                                  ...(isLast ? [{ label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#818cf8' }] : []),
+                                  { label: 'Fee', value: fmtINR(s.selling_price), color: '#111827' },
+                                  { label: 'Paid', value: fmtINR(s.amount_paid), color: '#059669' },
+                                  { label: 'Balance', value: fmtINR(s.balance_amount), color: Number(s.balance_amount) > 0 ? '#ef4444' : '#059669' },
+                                  ...(isLast ? [{ label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' }] : []),
                                 ].map(f => (
-                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: '#F3F4F6' }}>
                                     <p className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-500 mb-0.5">{f.label}</p>
                                     <p className="text-[12.5px] font-[760] tabular-nums" style={{ color: f.color }}>{f.value}</p>
                                   </div>
@@ -842,16 +816,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           const st = termStatus(client.pt_start_date, client.pt_end_date);
                           return (
                             <div className="rounded-[16px] p-4"
-                              style={{ background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.22)' }}>
+                              style={{ background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.18)' }}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-2.5">
-                                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-400"
-                                    style={{ background: 'rgba(99,102,241,0.15)' }}>1</span>
+                                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
+                                    style={{ background: 'rgba(99,102,241,0.12)' }}>1</span>
                                   <div>
                                     <div className="flex items-center gap-2">
-                                      <p className="text-[13px] font-[700] text-white">{client.package_type || '—'}</p>
-                                      <span className="rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-400"
-                                        style={{ background: 'rgba(99,102,241,0.15)' }}>Current</span>
+                                      <p className="text-[13px] font-[700] text-gray-900">{client.package_type || '—'}</p>
+                                      <span className="rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
+                                        style={{ background: 'rgba(99,102,241,0.12)' }}>Current</span>
                                     </div>
                                     <p className="text-[10.5px] text-slate-500 mt-0.5">
                                       {client.duration_months ? `${client.duration_months}m · ` : ''}
@@ -864,12 +838,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               </div>
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 {[
-                                  { label: 'Fee', value: fmtINR(client.final_amount), color: 'rgba(255,255,255,0.85)' },
-                                  { label: 'Paid', value: fmtINR(client.paid_amount), color: '#34d399' },
-                                  { label: 'Balance', value: fmtINR(client.balance_amount), color: client.balance_amount > 0 ? '#f87171' : '#34d399' },
-                                  { label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#818cf8' },
+                                  { label: 'Fee', value: fmtINR(client.final_amount), color: '#111827' },
+                                  { label: 'Paid', value: fmtINR(client.paid_amount), color: '#059669' },
+                                  { label: 'Balance', value: fmtINR(client.balance_amount), color: client.balance_amount > 0 ? '#ef4444' : '#059669' },
+                                  { label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' },
                                 ].map(f => (
-                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: '#F3F4F6' }}>
                                     <p className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-500 mb-0.5">{f.label}</p>
                                     <p className="text-[12.5px] font-[760] tabular-nums" style={{ color: f.color }}>{f.value}</p>
                                   </div>
@@ -887,30 +861,29 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <AnimatePresence>
                   {deleteOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
                       onClick={() => setDeleteOpen(false)}>
                       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                        className="w-full max-w-sm overflow-hidden rounded-[24px] p-7 text-center"
+                        className="w-full max-w-sm overflow-hidden rounded-[24px] p-7 text-center bg-white"
                         style={{
-                          background: 'linear-gradient(145deg, rgba(15,23,42,0.98), rgba(30,41,59,0.96))',
                           border: '1px solid rgba(239,68,68,0.2)',
-                          boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+                          boxShadow: '0 24px 80px rgba(0,0,0,0.15)',
                         }}
                         onClick={e => e.stopPropagation()}>
                         <div className="mb-4 flex justify-center">
                           <div className="flex h-16 w-16 items-center justify-center rounded-full"
-                            style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                            <AlertTriangle size={28} className="text-red-400" />
+                            style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                            <AlertTriangle size={28} className="text-red-500" />
                           </div>
                         </div>
-                        <h3 className="text-[18px] font-[800] tracking-[-0.02em] text-white mb-2">Delete Client</h3>
-                        <p className="text-[13px] text-slate-400 mb-6">
-                          Are you sure you want to delete <strong className="text-white">{client?.name}</strong>? This cannot be undone.
+                        <h3 className="text-[18px] font-[800] tracking-[-0.02em] text-gray-900 mb-2">Delete Client</h3>
+                        <p className="text-[13px] text-slate-500 mb-6">
+                          Are you sure you want to delete <strong className="text-gray-900">{client?.name}</strong>? This cannot be undone.
                         </p>
                         <div className="flex gap-3 justify-center">
                           <button onClick={() => setDeleteOpen(false)}
-                            className="rounded-[13px] px-5 py-2.5 text-[13px] font-[700] text-slate-400 transition hover:text-slate-300"
-                            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            className="rounded-[13px] px-5 py-2.5 text-[13px] font-[700] text-slate-500 transition hover:text-slate-700"
+                            style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.08)' }}>
                             Cancel
                           </button>
                           <button onClick={handleDelete} disabled={deleting}

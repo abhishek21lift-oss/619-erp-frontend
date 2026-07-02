@@ -30,7 +30,7 @@ interface Client {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+      <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: '#6b7280' }}>{label}</p>
       {children}
     </div>
   );
@@ -38,9 +38,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function ReadOnly({ label, value, highlight }: { label: string; value: string; highlight?: string }) {
   return (
-    <div className="rounded-[13px] px-4 py-3.5" style={{ background: 'rgba(15,23,42,0.03)', border: '1.5px solid rgba(15,23,42,0.06)' }}>
-      <p className="text-[10px] font-[700] uppercase tracking-wider mb-1" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
-      <p className="text-[15px] font-[700]" style={{ color: highlight || 'rgb(15,23,42)' }}>{value}</p>
+    <div className="rounded-[13px] px-4 py-3.5" style={{ background: '#F9FAFB', border: '1.5px solid rgba(0,0,0,0.07)' }}>
+      <p className="text-[10px] font-[700] uppercase tracking-wider mb-1" style={{ color: '#6b7280' }}>{label}</p>
+      <p className="text-[15px] font-[700]" style={{ color: highlight || '#111827' }}>{value}</p>
     </div>
   );
 }
@@ -147,140 +147,138 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
   return (
     <Guard>
       <AppShell>
-        <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
-          <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+        <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
 
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <button onClick={() => router.back()}
-                className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-black/5"
-                style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(15,23,42,0.08)' }}>
-                <ArrowLeft size={15} style={{ color: 'rgb(71,85,105)' }} />
-              </button>
-              <div>
-                <h1 className="text-[20px] font-[800] tracking-tight" style={{ color: 'rgb(15,23,42)' }}>Renew PT</h1>
-                {client && <p className="text-[12px]" style={{ color: 'rgb(148,163,184)' }}>{client.name}</p>}
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <button onClick={() => router.back()}
+              className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-zinc-100"
+              style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)' }}>
+              <ArrowLeft size={15} style={{ color: '#374151' }} />
+            </button>
+            <div>
+              <h1 className="text-[20px] font-[800] tracking-tight" style={{ color: '#111827' }}>Renew PT</h1>
+              {client && <p className="text-[12px]" style={{ color: '#6b7280' }}>{client.name}</p>}
+            </div>
+          </div>
+
+          {/* Current subscription summary */}
+          {client && (
+            <div className="rounded-[18px] p-5 mb-6"
+              style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+              <p className="text-[10px] font-[700] uppercase tracking-wider mb-3" style={{ color: '#6b7280' }}>Current Subscription</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Plan', value: client.package_type || '—' },
+                  { label: 'Expires', value: fmtDate(client.pt_end_date) },
+                  { label: 'Total Paid', value: fmtINR(client.paid_amount) },
+                  { label: 'Balance Due', value: fmtINR(client.balance_amount), red: client.balance_amount > 0 },
+                ].map(item => (
+                  <div key={item.label}>
+                    <p className="text-[10px]" style={{ color: '#6b7280' }}>{item.label}</p>
+                    <p className="text-[14px] font-[700]" style={{ color: item.red ? '#ef4444' : '#111827' }}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Form card */}
+          <div className="rounded-[20px] p-6 space-y-6"
+            style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+
+            {/* Section: Plan */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(139,92,246,0.12)' }}>
+                  <Dumbbell size={13} style={{ color: '#8b5cf6' }} />
+                </div>
+                <h2 className="text-[13px] font-[700]" style={{ color: '#111827' }}>Subscription Plan</h2>
+              </div>
+              <div className="space-y-4">
+                <Field label="Select from plans (optional)">
+                  <select value={form.planId} onChange={e => onPlanSelect(e.target.value)}
+                    className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500] outline-none appearance-none cursor-pointer"
+                    style={{ background: '#fff', border: '1.5px solid #d1d5db', color: form.planId ? '#111827' : '#9ca3af' }}>
+                    <option value="">— Custom / No plan —</option>
+                    {plans.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo</option>
+                    ))}
+                  </select>
+                </Field>
+                <FloatInput label="Plan name / Package type" value={form.packageType} onChange={v => setForm(f => ({ ...f, packageType: v }))} />
+                <div className="grid grid-cols-2 gap-3">
+                  <FloatInput label="Start Date *" type="date" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} />
+                  <FloatInput label="Duration (months) *" type="number" value={form.durationMonths} onChange={v => setForm(f => ({ ...f, durationMonths: v }))} />
+                </div>
+                {endDate && (
+                  <div className="rounded-[10px] px-4 py-2.5 flex items-center gap-2"
+                    style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <Calendar size={13} style={{ color: '#10b981' }} />
+                    <span className="text-[12px] font-[600]" style={{ color: '#10b981' }}>
+                      New end date: <strong>{fmtDate(endDate)}</strong>
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Current subscription summary */}
-            {client && (
-              <div className="rounded-[18px] p-5 mb-6"
-                style={{ background: 'linear-gradient(135deg,#0f172a,#1e293b)', boxShadow: '0 8px 32px rgba(15,23,42,0.25)' }}>
-                <p className="text-[10px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>Current Subscription</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Plan', value: client.package_type || '—' },
-                    { label: 'Expires', value: fmtDate(client.pt_end_date) },
-                    { label: 'Total Paid', value: fmtINR(client.paid_amount) },
-                    { label: 'Balance Due', value: fmtINR(client.balance_amount), red: client.balance_amount > 0 },
-                  ].map(item => (
-                    <div key={item.label}>
-                      <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{item.label}</p>
-                      <p className="text-[14px] font-[700]" style={{ color: item.red ? '#f87171' : '#ffffff' }}>{item.value}</p>
-                    </div>
-                  ))}
+            <div style={{ height: 1, background: '#f3f4f6' }} />
+
+            {/* Section: Financials */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                  <IndianRupee size={13} style={{ color: '#10b981' }} />
+                </div>
+                <h2 className="text-[13px] font-[700]" style={{ color: '#111827' }}>Financial Details</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <FloatInput label="Base Amount (₹)" type="number" value={form.baseAmount}
+                    onChange={v => setForm(f => ({ ...f, baseAmount: v, finalAmount: String(Math.max(Number(v) - disc, 0)) }))} />
+                  <FloatInput label="Discount (₹)" type="number" value={form.discount}
+                    onChange={v => setForm(f => ({ ...f, discount: v, finalAmount: String(Math.max(base - Number(v), 0)) }))} />
+                </div>
+                <FloatInput label="Final Amount (₹) *" type="number" value={form.finalAmount}
+                  onChange={v => setForm(f => ({ ...f, finalAmount: v }))} />
+                <FloatInput label="Amount Paid Now (₹)" type="number" value={form.paidNow}
+                  onChange={v => setForm(f => ({ ...f, paidNow: v }))} />
+
+                {/* Computed summary */}
+                <div className="grid grid-cols-3 gap-3 pt-1">
+                  <ReadOnly label="Final Amount" value={fmtINR(final)} highlight="#111827" />
+                  <ReadOnly label="Paid Now" value={fmtINR(paidNow)} highlight="#10b981" />
+                  <ReadOnly label="Balance Due" value={fmtINR(balance)} highlight={balance > 0 ? '#dc2626' : '#10b981'} />
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Form card */}
-            <div className="rounded-[20px] p-6 space-y-6"
-              style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 4px 24px rgba(15,23,42,0.07)' }}>
+            <div style={{ height: 1, background: '#f3f4f6' }} />
 
-              {/* Section: Plan */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(139,92,246,0.12)' }}>
-                    <Dumbbell size={13} style={{ color: '#8b5cf6' }} />
-                  </div>
-                  <h2 className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Subscription Plan</h2>
+            {/* Notes */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(245,158,11,0.12)' }}>
+                  <FileText size={13} style={{ color: '#f59e0b' }} />
                 </div>
-                <div className="space-y-4">
-                  <Field label="Select from plans (optional)">
-                    <select value={form.planId} onChange={e => onPlanSelect(e.target.value)}
-                      className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500] outline-none appearance-none cursor-pointer"
-                      style={{ background: 'rgba(15,23,42,0.03)', border: '1.5px solid rgba(15,23,42,0.09)', color: form.planId ? 'rgb(15,23,42)' : 'rgb(148,163,184)' }}>
-                      <option value="">— Custom / No plan —</option>
-                      {plans.map(p => (
-                        <option key={p.id} value={p.id}>{p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <FloatInput label="Plan name / Package type" value={form.packageType} onChange={v => setForm(f => ({ ...f, packageType: v }))} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <FloatInput label="Start Date *" type="date" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} />
-                    <FloatInput label="Duration (months) *" type="number" value={form.durationMonths} onChange={v => setForm(f => ({ ...f, durationMonths: v }))} />
-                  </div>
-                  {endDate && (
-                    <div className="rounded-[10px] px-4 py-2.5 flex items-center gap-2"
-                      style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <Calendar size={13} style={{ color: '#10b981' }} />
-                      <span className="text-[12px] font-[600]" style={{ color: '#10b981' }}>
-                        New end date: <strong>{fmtDate(endDate)}</strong>
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <h2 className="text-[13px] font-[700]" style={{ color: '#111827' }}>Notes (optional)</h2>
               </div>
+              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                rows={3} placeholder="Any notes about this renewal…"
+                className="w-full rounded-[13px] px-4 py-3 text-[13px] outline-none resize-none"
+                style={{ background: '#fff', border: '1.5px solid #d1d5db', color: '#111827' }} />
+            </div>
 
-              <div style={{ height: 1, background: 'rgba(15,23,42,0.06)' }} />
-
-              {/* Section: Financials */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(16,185,129,0.12)' }}>
-                    <IndianRupee size={13} style={{ color: '#10b981' }} />
-                  </div>
-                  <h2 className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Financial Details</h2>
-                </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <FloatInput label="Base Amount (₹)" type="number" value={form.baseAmount}
-                      onChange={v => setForm(f => ({ ...f, baseAmount: v, finalAmount: String(Math.max(Number(v) - disc, 0)) }))} />
-                    <FloatInput label="Discount (₹)" type="number" value={form.discount}
-                      onChange={v => setForm(f => ({ ...f, discount: v, finalAmount: String(Math.max(base - Number(v), 0)) }))} />
-                  </div>
-                  <FloatInput label="Final Amount (₹) *" type="number" value={form.finalAmount}
-                    onChange={v => setForm(f => ({ ...f, finalAmount: v }))} />
-                  <FloatInput label="Amount Paid Now (₹)" type="number" value={form.paidNow}
-                    onChange={v => setForm(f => ({ ...f, paidNow: v }))} />
-
-                  {/* Computed summary */}
-                  <div className="grid grid-cols-3 gap-3 pt-1">
-                    <ReadOnly label="Final Amount" value={fmtINR(final)} highlight="#0f172a" />
-                    <ReadOnly label="Paid Now" value={fmtINR(paidNow)} highlight="#10b981" />
-                    <ReadOnly label="Balance Due" value={fmtINR(balance)} highlight={balance > 0 ? '#dc2626' : '#10b981'} />
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ height: 1, background: 'rgba(15,23,42,0.06)' }} />
-
-              {/* Notes */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(245,158,11,0.12)' }}>
-                    <FileText size={13} style={{ color: '#f59e0b' }} />
-                  </div>
-                  <h2 className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>Notes (optional)</h2>
-                </div>
-                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  rows={3} placeholder="Any notes about this renewal…"
-                  className="w-full rounded-[13px] px-4 py-3 text-[13px] outline-none resize-none"
-                  style={{ background: 'rgba(15,23,42,0.03)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <PremiumButton tone="secondary" onClick={() => router.back()}>Cancel</PremiumButton>
-                <PremiumButton tone="success" glow loading={saving}
-                  disabled={!form.startDate || !form.durationMonths || !form.finalAmount}
-                  onClick={handleSubmit}
-                  icon={<CheckCircle size={14} />}>
-                  Confirm Renewal
-                </PremiumButton>
-              </div>
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <PremiumButton tone="secondary" onClick={() => router.back()}>Cancel</PremiumButton>
+              <PremiumButton tone="success" glow loading={saving}
+                disabled={!form.startDate || !form.durationMonths || !form.finalAmount}
+                onClick={handleSubmit}
+                icon={<CheckCircle size={14} />}>
+                Confirm Renewal
+              </PremiumButton>
             </div>
           </div>
         </div>
