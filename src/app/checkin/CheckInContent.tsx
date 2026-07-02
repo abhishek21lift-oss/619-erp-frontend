@@ -262,7 +262,7 @@ export default function CheckInContent() {
     state === 'checking_in' ? '#6366f1' :
     state === 'success'     ? '#22c55e' :
     isError                 ? '#ef4444' :
-    'rgba(255,255,255,0.35)';
+    '#9ca3af';
 
   const showScanLine = state === 'ready' || state === 'recognizing';
   const showGuide = state === 'ready' || state === 'liveness' || state === 'recognizing';

@@ -65,36 +65,36 @@ export default function AttendanceReportsPage() {
                 borderRadius: 24,
                 padding: '36px 40px',
                 marginBottom: 24,
-                background: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 50%, #38bdf8 100%)',
-                boxShadow: '0 24px 80px rgba(2,132,199,0.35)',
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
+                border: '1px solid rgba(2,132,199,0.15)',
+                boxShadow: '0 4px 20px rgba(2,132,199,0.08)',
               }}>
 
               {/* Grid overlay */}
               <div style={{
-                position: 'absolute', inset: 0, opacity: 0.035, pointerEvents: 'none',
-                backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                position: 'absolute', inset: 0, opacity: 0.5, pointerEvents: 'none',
+                backgroundImage: 'linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)',
                 backgroundSize: '40px 40px',
               }} />
 
 
               {/* Top accent glow bar */}
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)', opacity: 0.5 }} />
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, transparent, rgba(2,132,199,0.5), transparent)' }} />
 
               <div style={{ position: 'relative', zIndex: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#06b6d4,#3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(6,182,212,0.35)' }}>
                     <BarChart3 size={17} color="white" />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#bae6fd' }}>Reports</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0284c7' }}>Reports</span>
                 </div>
                 <h1 style={{
                   fontSize: 32, fontWeight: 860, letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0,
-                  background: 'linear-gradient(135deg, #ffffff, #bae6fd, #7dd3fc)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                  color: '#0c4a6e',
                 }}>
                   Reports & Dashboard
                 </h1>
-                <p style={{ marginTop: 8, fontSize: 14, color: 'rgba(255,255,255,0.6)', maxWidth: 520 }}>
+                <p style={{ marginTop: 8, fontSize: 14, color: '#6b7280', maxWidth: 520 }}>
                   Unified footfall trends across all check-in methods — QR, face, passkey, manual, and biometric.
                 </p>
               </div>
@@ -305,7 +305,7 @@ export default function AttendanceReportsPage() {
                     <thead>
                       <tr>
                         {['Month', 'Check-Ins', 'Members', 'Avg Daily', 'Peak Day'].map((h, i) => (
-                          <th key={i} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.8px', background: 'linear-gradient(135deg,#0c4a6e,#0284c7,#38bdf8)', whiteSpace: 'nowrap' }}>{h}</th>
+                          <th key={i} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.8px', background: '#f8fafc', borderBottom: '1px solid rgba(0,0,0,0.07)', whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
                     </thead>

@@ -351,7 +351,7 @@ export default function ImportDatabasePage() {
                   )}
 
                   {parseError && (
-                    <div style={{ marginTop: 14, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', fontSize: 13, color: '#fca5a5' }}>
+                    <div style={{ marginTop: 14, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', fontSize: 13, color: '#dc2626' }}>
                       <AlertCircle size={15} /> {parseError}
                     </div>
                   )}
@@ -433,7 +433,7 @@ export default function ImportDatabasePage() {
 
                 {/* Error notice */}
                 {parseError && (
-                  <div style={{ borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', fontSize: 13, color: '#fca5a5' }}>
+                  <div style={{ borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', fontSize: 13, color: '#dc2626' }}>
                     <AlertCircle size={15} /> {parseError}
                   </div>
                 )}
@@ -606,7 +606,7 @@ export default function ImportDatabasePage() {
                   <div style={{ borderRadius: 20, padding: '20px 24px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
                     <p style={{ fontSize: 13, fontWeight: 700, color: '#f87171', margin: '0 0 10px' }}>Import errors ({importResult.errors.length})</p>
                     {importResult.errors.map((e: any, i: number) => (
-                      <div key={i} style={{ fontSize: 12, color: '#fca5a5', padding: '4px 0' }}>
+                      <div key={i} style={{ fontSize: 12, color: '#dc2626', padding: '4px 0' }}>
                         <strong>{e.name}</strong>: {e.issue}
                       </div>
                     ))}
