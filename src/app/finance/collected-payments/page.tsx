@@ -117,98 +117,36 @@ function Inner() {
 
   return (
     <AppShell>
-      <div style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)', minHeight: '100vh' }}>
-        {/* Premium Dark Hero */}
+      <div style={{ minHeight: '100vh' }}>
+        {/* Page Header */}
         <div style={{
-          position: 'relative',
-          overflow: 'hidden',
-          padding: '28px 20px',
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          boxShadow: '0 24px 80px rgba(15,23,42,0.35)',
+          padding: '24px 20px',
+          borderBottom: '1px solid #f3f4f6',
+          background: '#fff',
         }}>
-          {/* Grid overlay */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            opacity: 0.04,
-            pointerEvents: 'none',
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }} />
-
-          {/* Animated orbs */}
-          <motion.div style={{
-            position: 'absolute',
-            right: -120,
-            top: -120,
-            width: 400,
-            height: 400,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.4, 0.3] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{
-            position: 'absolute',
-            left: -80,
-            bottom: -120,
-            width: 350,
-            height: 350,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-            animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{
-            position: 'absolute',
-            left: '45%',
-            top: -60,
-            width: 200,
-            height: 200,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-            animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.3, 0.2] }}
-            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-
-          {/* Top accent glow bar */}
-          <div style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0,
-            height: 3,
-            background: 'linear-gradient(90deg, transparent, #06b6d4, #3b82f6, transparent)',
-            opacity: 0.6,
-          }} />
-
-          {/* Hero content */}
-          <div style={{ position: 'relative', zIndex: 10, maxWidth: 1280, margin: '0 auto' }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{
                   width: 48, height: 48, borderRadius: 14,
                   background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 8px 24px rgba(6,182,212,0.3)',
+                  boxShadow: '0 4px 12px rgba(6,182,212,0.2)',
                 }}>
                   <Banknote size={22} color="white" />
                 </div>
                 <div>
                   <h1 style={{
                     fontSize: 28,
-                    fontWeight: 860,
+                    fontWeight: 700,
                     letterSpacing: '-0.03em',
                     margin: 0,
                     lineHeight: 1.2,
-                    background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
+                    color: '#111827',
                   }}>
                     Collected Payments
                   </h1>
-                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>
+                  <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
                     Track and manage all incoming payments
                   </p>
                 </div>
@@ -245,12 +183,12 @@ function Inner() {
           {/* Search & Filters */}
           <div className="mb-5 flex flex-col gap-3">
             <div className="relative w-full">
-              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
               <input
                 placeholder="Search by client, receipt, notes..."
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full h-11 rounded-xl outline-none transition-all focus:border-[#06b6d4]/40 focus:shadow-[0_0_0_3px_rgba(6,182,212,0.06)]"
-                style={{ padding: '10px 14px 10px 36px', border: '1.5px solid #e2e8f0', fontSize: 14, background: 'white', color: 'var(--text-primary)' }}
+                className="w-full h-11 rounded-xl outline-none transition-all focus:border-blue-300 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
+                style={{ padding: '10px 14px 10px 36px', border: '1.5px solid #e5e7eb', fontSize: 14, background: 'white', color: '#111827' }}
               />
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -261,7 +199,7 @@ function Inner() {
                   <button key={m} onClick={() => { setMethodFilter(m); setPage(0); }}
                     className="shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold whitespace-nowrap transition-all duration-150"
                     style={{
-                      background: isActive ? color : 'rgba(0,0,0,0.04)',
+                      background: isActive ? color : '#F3F4F6',
                       color: isActive ? '#fff' : '#6B7280',
                       minHeight: 36,
                     }}>
@@ -269,7 +207,7 @@ function Inner() {
                   </button>
                 );
               })}
-              <span className="ml-auto shrink-0 text-[12px] text-[var(--text-disabled)]">
+              <span className="ml-auto shrink-0 text-[12px] text-[#9ca3af]">
                 {filtered.length > 0 && `${filtered.length} record${filtered.length !== 1 ? 's' : ''}`}
               </span>
             </div>
@@ -280,16 +218,16 @@ function Inner() {
             {loading ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-[88px] rounded-[16px] bg-white border border-slate-100 animate-pulse" />
+                  <div key={i} className="h-[88px] rounded-[16px] bg-white border border-zinc-100 animate-pulse" />
                 ))}
               </div>
             ) : paged.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
-                  <Inbox size={24} color="#94a3b8" />
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-100">
+                  <Inbox size={24} color="#9ca3af" />
                 </div>
-                <p className="text-[14px] font-semibold text-[var(--text-primary)] mb-1">No payments found</p>
-                <p className="text-[13px] text-[var(--text-muted)]">{search ? 'Try a different search term.' : 'Record your first payment to get started.'}</p>
+                <p className="text-[14px] font-semibold text-[#111827] mb-1">No payments found</p>
+                <p className="text-[13px] text-[#6b7280]">{search ? 'Try a different search term.' : 'Record your first payment to get started.'}</p>
                 {!search && (
                   <button onClick={() => router.push('/finance/record-payment')}
                     className="mt-4 flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[13px] font-semibold text-white"
@@ -303,31 +241,31 @@ function Inner() {
                 {paged.map((p) => (
                   <motion.div key={p.id}
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                    className="rounded-[16px] bg-white border border-slate-100 p-4 shadow-sm active:scale-[0.985] transition-all"
-                    style={{ boxShadow: '0 1px 8px rgba(15,23,42,0.06)' }}>
+                    className="rounded-[16px] bg-white border border-zinc-100 p-4 shadow-sm active:scale-[0.985] transition-all"
+                    style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                     <div className="flex items-center justify-between mb-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
                           style={{ background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' }}>
                           <User size={14} color="white" />
                         </div>
-                        <span className="font-semibold text-[14px] text-[var(--text-primary)] truncate">{p.client_name || '—'}</span>
+                        <span className="font-semibold text-[14px] text-[#111827] truncate">{p.client_name || '—'}</span>
                       </div>
                       <span className="shrink-0 text-[18px] font-[800] tabular-nums ml-2" style={{ color: '#06b6d4', letterSpacing: '-0.02em' }}>{fmtINR(p.amount)}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="flex items-center gap-1 rounded-[8px] px-2.5 py-1 text-[11px] font-[600]"
-                        style={{ background: `${METHOD_COLORS[p.method] || '#94a3b8'}15`, color: METHOD_COLORS[p.method] || '#94a3b8' }}>
+                        style={{ background: `${METHOD_COLORS[p.method] || '#9ca3af'}15`, color: METHOD_COLORS[p.method] || '#9ca3af' }}>
                         {METHOD_ICONS[p.method] || null}
                         {p.method || 'Other'}
                       </span>
-                      {p.receipt_no && <span className="text-[10px] text-slate-400 font-mono">{p.receipt_no}</span>}
-                      <div className="ml-auto flex items-center gap-1 text-[11px] text-slate-400">
-                        <CalendarDays size={11} color="#94a3b8" />
+                      {p.receipt_no && <span className="text-[10px] text-zinc-400 font-mono">{p.receipt_no}</span>}
+                      <div className="ml-auto flex items-center gap-1 text-[11px] text-zinc-400">
+                        <CalendarDays size={11} color="#9ca3af" />
                         {p.date || '—'}
                       </div>
                     </div>
-                    {p.notes && <p className="mt-1.5 text-[11px] text-slate-400 truncate">{p.notes}</p>}
+                    {p.notes && <p className="mt-1.5 text-[11px] text-zinc-400 truncate">{p.notes}</p>}
                   </motion.div>
                 ))}
               </div>
@@ -337,13 +275,13 @@ function Inner() {
               <div className="mt-4 flex items-center justify-center gap-2">
                 <button disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}
                   className="rounded-[10px] px-4 py-2 text-[13px] font-[600] transition-all disabled:opacity-40"
-                  style={{ border: '1px solid #e2e8f0', background: 'white', color: 'var(--text-primary)' }}>
+                  style={{ border: '1px solid #e5e7eb', background: 'white', color: '#111827' }}>
                   Previous
                 </button>
-                <span className="text-[12px] text-[var(--text-muted)]">{page + 1} / {pageCount}</span>
+                <span className="text-[12px] text-[#6b7280]">{page + 1} / {pageCount}</span>
                 <button disabled={page >= pageCount - 1} onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
                   className="rounded-[10px] px-4 py-2 text-[13px] font-[600] transition-all disabled:opacity-40"
-                  style={{ border: '1px solid #e2e8f0', background: 'white', color: 'var(--text-primary)' }}>
+                  style={{ border: '1px solid #e5e7eb', background: 'white', color: '#111827' }}>
                   Next
                 </button>
               </div>
@@ -351,18 +289,18 @@ function Inner() {
           </div>
 
           {/* Desktop Table (hidden on mobile) */}
-          <div className="hidden md:block" style={{ background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+          <div className="hidden md:block" style={{ background: 'white', borderRadius: 20, border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }}>
+                  <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #f3f4f6' }}>
                     {['Client', 'Amount', 'Method', 'Receipt', 'Date', 'Notes'].map((h) => (
                       <th key={h} style={{
                         padding: '14px 20px',
                         textAlign: 'left',
                         fontSize: 11,
                         fontWeight: 700,
-                        color: 'rgba(255,255,255,0.9)',
+                        color: '#6b7280',
                         textTransform: 'uppercase',
                         letterSpacing: '0.8px',
                         whiteSpace: 'nowrap',
@@ -372,7 +310,7 @@ function Inner() {
                         onClick={h === 'Amount' ? () => toggleSort('amount') : h === 'Date' ? () => toggleSort('date') : undefined}>
                         {h}
                         {(h === 'Amount' || h === 'Date') && (
-                          <ArrowUpDown size={12} style={{ marginLeft: 4, display: 'inline', opacity: sortField === (h === 'Amount' ? 'amount' : 'date') ? 1 : 0.4, color: 'rgba(255,255,255,0.7)' }} />
+                          <ArrowUpDown size={12} style={{ marginLeft: 4, display: 'inline', opacity: sortField === (h === 'Amount' ? 'amount' : 'date') ? 1 : 0.4, color: '#9ca3af' }} />
                         )}
                       </th>
                     ))}
@@ -390,7 +328,7 @@ function Inner() {
                               height: 13,
                               width: ['40%', '15%', '12%', '18%', '15%'][i % 5],
                               borderRadius: 6,
-                              background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)',
+                              background: 'linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%)',
                               backgroundSize: '200% 100%',
                             }} />
                         </td>
@@ -400,12 +338,12 @@ function Inner() {
                     <tr>
                       <td colSpan={6} style={{ padding: 64, textAlign: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Inbox size={24} color="#94a3b8" />
+                          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Inbox size={24} color="#9ca3af" />
                           </div>
                           <div>
-                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Fresh Start</div>
-                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{search ? 'Try a different search term.' : 'No payments yet. Record your first PT payment to get started.'}</div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Fresh Start</div>
+                            <div style={{ fontSize: 13, color: '#6b7280' }}>{search ? 'Try a different search term.' : 'No payments yet. Record your first PT payment to get started.'}</div>
                           </div>
                           {!search && (
                             <PremiumButton tone="primary" glow size="sm" icon={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
@@ -417,36 +355,36 @@ function Inner() {
                     </tr>
                   ) : (
                     paged.map((p) => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 150ms' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f9ff')}
+                      <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6', transition: 'background 150ms' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
                         <td style={{ padding: '14px 20px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <User size={14} color="white" />
                             </div>
-                            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>{p.client_name || '—'}</span>
+                            <span style={{ fontWeight: 600, color: '#111827', fontSize: 14 }}>{p.client_name || '—'}</span>
                           </div>
                         </td>
                         <td style={{ padding: '14px 20px', fontWeight: 800, fontSize: 15, color: '#06b6d4', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
                           {fmtINR(p.amount)}
                         </td>
                         <td style={{ padding: '14px 20px' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: `${METHOD_COLORS[p.method] || '#94a3b8'}15`, color: METHOD_COLORS[p.method] || '#94a3b8' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: `${METHOD_COLORS[p.method] || '#9ca3af'}15`, color: METHOD_COLORS[p.method] || '#9ca3af' }}>
                             {METHOD_ICONS[p.method] || null}
                             {p.method || 'Other'}
                           </span>
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: '#6b7280', fontFamily: 'monospace' }}>
                           {p.receipt_no || '—'}
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                            <CalendarDays size={13} color="#94a3b8" />
+                            <CalendarDays size={13} color="#9ca3af" />
                             {p.date || '—'}
                           </span>
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-disabled)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: '#9ca3af', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.notes || '—'}
                         </td>
                       </tr>
@@ -457,9 +395,9 @@ function Inner() {
             </div>
             {/* Pagination */}
             {pageCount > 1 && (
-              <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'center', gap: 6, background: '#fafbff' }}>
+              <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'center', gap: 6, background: '#F9FAFB' }}>
                 <button disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: page === 0 ? '#f8fafc' : 'white', color: page === 0 ? '#cbd5e1' : 'var(--text-primary)', cursor: page === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: page === 0 ? '#F9FAFB' : 'white', color: page === 0 ? '#d1d5db' : '#111827', cursor: page === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
                   Previous
                 </button>
                 {Array.from({ length: Math.min(pageCount, 7) }).map((_, i) => {
@@ -468,13 +406,13 @@ function Inner() {
                   if (pIdx >= pageCount) return null;
                   return (
                     <button key={pIdx} onClick={() => setPage(pIdx)}
-                      style={{ width: 34, height: 34, borderRadius: 8, border: pIdx === page ? 'none' : '1px solid #e2e8f0', background: pIdx === page ? 'linear-gradient(135deg,#06b6d4,#3b82f6)' : 'white', color: pIdx === page ? 'white' : 'var(--text-primary)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                      style={{ width: 34, height: 34, borderRadius: 8, border: pIdx === page ? 'none' : '1px solid #e5e7eb', background: pIdx === page ? 'linear-gradient(135deg,#06b6d4,#3b82f6)' : 'white', color: pIdx === page ? 'white' : '#111827', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                       {pIdx + 1}
                     </button>
                   );
                 })}
                 <button disabled={page >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: page >= pageCount - 1 ? '#f8fafc' : 'white', color: page >= pageCount - 1 ? '#cbd5e1' : 'var(--text-primary)', cursor: page >= pageCount - 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: page >= pageCount - 1 ? '#F9FAFB' : 'white', color: page >= pageCount - 1 ? '#d1d5db' : '#111827', cursor: page >= pageCount - 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
                   Next
                 </button>
               </div>
@@ -497,7 +435,7 @@ function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label:
         background: 'white',
         borderRadius: 20,
         padding: '22px 24px',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+        boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
         border: '1px solid rgba(0,0,0,0.06)',
         display: 'flex',
         flexDirection: 'column',
@@ -507,15 +445,15 @@ function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label:
         transition: 'all 200ms ease',
         cursor: 'default',
       }}
-      onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
-      onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}>
+      onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.09)'; el.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 1px 8px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}>
       <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: `linear-gradient(90deg,${accent},${accent}88)`, borderRadius: '0 0 3px 3px', opacity: 0.8 }} />
       <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent }}>
         {icon}
       </div>
       <div>
-        <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500 }}>{label}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4, fontWeight: 500 }}>{label}</div>
       </div>
     </motion.div>
   );
