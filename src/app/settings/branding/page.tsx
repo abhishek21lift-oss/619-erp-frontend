@@ -26,14 +26,14 @@ const ASSET_KEYS = [
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
-const glass = { background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' };
+const glass = { background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' };
 const glassCard: React.CSSProperties = { ...glass, padding: 24, marginBottom: 20 };
-const l: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' };
-const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(15,23,42,0.6)', color: '#f1f5f9', fontSize: 14, outline: 'none' };
+const l: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' };
+const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 14, outline: 'none' };
 const sel: React.CSSProperties = { ...inp, cursor: 'pointer' };
 
 function Skeleton() {
-  const p = { background: 'rgba(255,255,255,0.05)', borderRadius: 8 };
+  const p = { background: 'rgba(0,0,0,0.06)', borderRadius: 8 };
   return (
     <div style={{ padding: 40 }}>
       {[1, 2, 3].map((i) => (
@@ -152,30 +152,26 @@ export default function BrandingPage() {
               position: 'relative', overflow: 'hidden',
               display: 'flex', alignItems: 'center', gap: 16,
               padding: '36px 40px', borderRadius: 20,
-              background: 'linear-gradient(135deg, #0a0f1a 0%, #4c0519 25%, #7f1d1d 50%, #4c0519 75%, #0a0f1a 100%)',
-              color: '#fff', marginBottom: 28,
-              border: '1px solid rgba(220,38,38,0.15)',
-              boxShadow: '0 25px 60px -12px rgba(76,5,25,0.6)',
+              background: 'linear-gradient(135deg, #fffbf0 0%, #fef3c7 50%, #fffbf0 100%)',
+              color: '#111827', marginBottom: 28,
+              border: '1px solid rgba(245,158,11,0.15)',
+              boxShadow: '0 4px 20px rgba(245,158,11,0.06)',
             }}
           >
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 20% 40%, rgba(245,158,11,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 60%, rgba(217,119,6,0.08) 0%, transparent 50%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', top: -80, right: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: -60, left: -20, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,119,6,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.015) 1px, rgba(255,255,255,0.015) 2px), repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.015) 1px, rgba(255,255,255,0.015) 2px)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1, width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #F59E0B, #D97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}>
               <Palette size={24} color="#fff" />
             </div>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', margin: 0 }}>Branding</h1>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: '2px 0 0' }}>Customize your studio&apos;s look and feel</p>
+              <p style={{ fontSize: 14, color: '#6b7280', margin: '2px 0 0' }}>Customize your studio&apos;s look and feel</p>
             </div>
           </motion.div>
 
           {err && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)', color: '#fca5a5', marginBottom: 20, fontSize: 14 }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)', color: '#b91c1c', marginBottom: 20, fontSize: 14 }}>
               <AlertCircle size={18} />
               <span style={{ flex: 1 }}>{err}</span>
-              <button onClick={() => setErr('')} style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer', fontSize: 16 }}>&times;</button>
+              <button onClick={() => setErr('')} style={{ background: 'none', border: 'none', color: '#b91c1c', cursor: 'pointer', fontSize: 16 }}>&times;</button>
             </motion.div>
           )}
 
@@ -185,8 +181,8 @@ export default function BrandingPage() {
               <div>
                 {/* ── Color Settings ── */}
                 <motion.div variants={itemVariants} style={glassCard}>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', margin: '0 0 4px' }}>Colors</h2>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: '0 0 20px' }}>Pick a preset or enter a custom hex value</p>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Colors</h2>
+                  <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 20px' }}>Pick a preset or enter a custom hex value</p>
 
                   {/* Preset palettes */}
                   {([
@@ -199,27 +195,27 @@ export default function BrandingPage() {
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                         {cfg.presets.map((c) => (
                           <button key={c} onClick={() => cfg.set(c)} title={c}
-                            style={{ width: 26, height: 26, borderRadius: 7, background: c, border: cfg.val === c ? '2.5px solid #fff' : '2px solid transparent', cursor: 'pointer', transition: 'all 0.15s', boxShadow: cfg.val === c ? `0 0 0 2px ${c}` : 'none', transform: cfg.val === c ? 'scale(1.15)' : 'scale(1)' }} />
+                            style={{ width: 26, height: 26, borderRadius: 7, background: c, border: cfg.val === c ? '2.5px solid rgba(0,0,0,0.4)' : '2px solid transparent', cursor: 'pointer', transition: 'all 0.15s', boxShadow: cfg.val === c ? `0 0 0 2px ${c}` : 'none', transform: cfg.val === c ? 'scale(1.15)' : 'scale(1)' }} />
                         ))}
                       </div>
                       {/* Native picker + hex input */}
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                         <div style={{ position: 'relative', flexShrink: 0 }}>
-                          <div style={{ width: 42, height: 42, borderRadius: 10, background: cfg.val, border: '2px solid rgba(255,255,255,0.15)', boxShadow: `0 0 20px ${cfg.val}40`, cursor: 'pointer', overflow: 'hidden' }}>
+                          <div style={{ width: 42, height: 42, borderRadius: 10, background: cfg.val, border: '2px solid rgba(0,0,0,0.1)', boxShadow: `0 0 20px ${cfg.val}40`, cursor: 'pointer', overflow: 'hidden' }}>
                             <input type="color" value={hexOk(cfg.val) ? cfg.val : '#000000'} onChange={e => cfg.set(e.target.value)}
                               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', border: 'none', padding: 0 }} />
                           </div>
                         </div>
                         <input style={inp} value={cfg.val} onChange={(e) => cfg.set(e.target.value)} placeholder={cfg.name === 'Primary' ? '#F59E0B' : '#7c3aed'} />
                       </div>
-                      {cfg.val && !hexOk(cfg.val) && <p style={{ fontSize: 12, color: '#f87171', margin: '4px 0 0' }}>Invalid hex — use format #RRGGBB</p>}
+                      {cfg.val && !hexOk(cfg.val) && <p style={{ fontSize: 12, color: '#dc2626', margin: '4px 0 0' }}>Invalid hex — use format #RRGGBB</p>}
                     </div>
                   ))}
                 </motion.div>
 
                 {/* ── Theme Settings ── */}
                 <motion.div variants={itemVariants} style={glassCard}>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', margin: '0 0 20px' }}>Theme &amp; Typography</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 20px' }}>Theme &amp; Typography</h2>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                     <div>
                       <label style={l}>Theme Mode</label>
@@ -228,9 +224,9 @@ export default function BrandingPage() {
                           <button key={m} onClick={() => setMode(m)}
                             style={{
                               flex: 1, padding: '10px 0', borderRadius: 10,
-                              border: `1px solid ${mode === m ? primary : 'rgba(255,255,255,0.1)'}`,
-                              background: mode === m ? `${primary}20` : 'rgba(15,23,42,0.6)',
-                              color: mode === m ? '#fff' : 'rgba(255,255,255,0.5)',
+                              border: `1px solid ${mode === m ? primary : 'rgba(0,0,0,0.08)'}`,
+                              background: mode === m ? `${primary}20` : '#fff',
+                              color: mode === m ? primary : '#6b7280',
                               fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
                               transition: 'all 0.15s',
                             }}>
@@ -255,7 +251,7 @@ export default function BrandingPage() {
                           const borderR = b === 'soft' ? 8 : b === 'solid' ? 6 : 20;
                           return (
                             <button key={b} onClick={() => setButtonStyle(b)}
-                              style={{ flex: 1, padding: '8px 0', borderRadius: borderR, border: `1.5px solid ${active ? primary : 'rgba(255,255,255,0.1)'}`, background: active ? `${primary}20` : 'rgba(15,23,42,0.6)', color: active ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.15s' }}>
+                              style={{ flex: 1, padding: '8px 0', borderRadius: borderR, border: `1.5px solid ${active ? primary : 'rgba(0,0,0,0.08)'}`, background: active ? `${primary}20` : '#fff', color: active ? primary : '#6b7280', fontSize: 11, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.15s' }}>
                               {b}
                             </button>
                           );
@@ -270,7 +266,7 @@ export default function BrandingPage() {
                           const borderR = r === 'rounded' ? 8 : r === 'smooth' ? 16 : 30;
                           return (
                             <button key={r} onClick={() => setRadiusStyle(r)}
-                              style={{ flex: 1, padding: '8px 0', borderRadius: borderR, border: `1.5px solid ${active ? accent : 'rgba(255,255,255,0.1)'}`, background: active ? `${accent}20` : 'rgba(15,23,42,0.6)', color: active ? '#fff' : 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.15s' }}>
+                              style={{ flex: 1, padding: '8px 0', borderRadius: borderR, border: `1.5px solid ${active ? accent : 'rgba(0,0,0,0.08)'}`, background: active ? `${accent}20` : '#fff', color: active ? accent : '#6b7280', fontSize: 11, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.15s' }}>
                               {r}
                             </button>
                           );
@@ -283,9 +279,9 @@ export default function BrandingPage() {
 
               {/* ── Live Preview Panel ── */}
               <motion.div variants={itemVariants} style={{ ...glassCard, position: 'sticky', top: 80 }}>
-                <h2 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.5)', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live Preview</h2>
+                <h2 style={{ fontSize: 13, fontWeight: 700, color: '#6b7280', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live Preview</h2>
                 {/* Simulated app card */}
-                <div style={{ borderRadius: radiusStyle === 'pill' ? 24 : radiusStyle === 'smooth' ? 16 : 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 16 }}>
+                <div style={{ borderRadius: radiusStyle === 'pill' ? 24 : radiusStyle === 'smooth' ? 16 : 10, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', marginBottom: 16 }}>
                   <div style={{ padding: '14px 16px', background: primary }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -315,7 +311,7 @@ export default function BrandingPage() {
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textAlign: 'center', fontFamily: typeface }}>
+                <div style={{ fontSize: 10, color: '#9ca3af', textAlign: 'center', fontFamily: typeface }}>
                   {typeface} · {mode} · {buttonStyle} · {radiusStyle}
                 </div>
               </motion.div>
@@ -323,15 +319,14 @@ export default function BrandingPage() {
 
             {/* ── Logo & Assets ── */}
             <motion.div variants={itemVariants} style={glassCard}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#ffffff', margin: '0 0 16px' }}>Logo &amp; Assets</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Logo &amp; Assets</h2>
               <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div style={{
                   width: 120, height: 120, borderRadius: 16,
-                  border: '2px dashed rgba(220,38,38,0.3)',
+                  border: '2px dashed rgba(0,0,0,0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                  background: 'rgba(15,23,42,0.4)', flexShrink: 0,
+                  background: '#f9fafb', flexShrink: 0,
                   transition: 'border-color 0.2s',
-                  boxShadow: '0 0 30px rgba(220,38,38,0.05)',
                 }}>
                   <Image src={uploadedAssets[assetKey] || '/619-logo.png'} alt="" width={120} height={120} style={{ objectFit: 'contain', opacity: uploadedAssets[assetKey] ? 1 : 0.5 }} />
                 </div>
@@ -353,7 +348,7 @@ export default function BrandingPage() {
                     {uploading ? 'Uploading…' : 'Choose File'}
                     <input type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} disabled={uploading} />
                   </label>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '8px 0 0' }}>Supports PNG, JPG, SVG &middot; Recommended size: 512x512px</p>
+                  <p style={{ fontSize: 11, color: '#9ca3af', margin: '8px 0 0' }}>Supports PNG, JPG, SVG &middot; Recommended size: 512x512px</p>
                 </div>
               </div>
             </motion.div>
@@ -363,14 +358,14 @@ export default function BrandingPage() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             style={{ ...glass, display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderRadius: 14, marginTop: 4 }}>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-              {dirty && <CheckCircle2 size={16} color="#fbbf24" />}
-              <span style={{ fontSize: 13, color: dirty ? '#fbbf24' : 'rgba(255,255,255,0.35)' }}>{dirty ? 'Unsaved changes' : 'All changes saved'}</span>
+              {dirty && <CheckCircle2 size={16} color="#d97706" />}
+              <span style={{ fontSize: 13, color: dirty ? '#d97706' : '#6b7280' }}>{dirty ? 'Unsaved changes' : 'All changes saved'}</span>
             </div>
             <button onClick={handleReset} disabled={!dirty || saving}
               style={{
                 padding: '8px 20px', borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.12)', background: 'transparent',
-                color: dirty ? '#f1f5f9' : 'rgba(255,255,255,0.3)',
+                border: '1px solid rgba(0,0,0,0.08)', background: 'transparent',
+                color: dirty ? '#111827' : '#9ca3af',
                 fontSize: 14, fontWeight: 600, cursor: dirty && !saving ? 'pointer' : 'not-allowed',
                 display: 'inline-flex', alignItems: 'center', gap: 6,
               }}>

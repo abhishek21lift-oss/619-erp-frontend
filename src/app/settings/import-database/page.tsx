@@ -189,9 +189,9 @@ const sz = (b: number) => b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 104
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
 const glass = {
-  background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+  background: '#fff',
+  border: '1px solid rgba(0,0,0,0.07)',
+  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
 };
 
 // ── Main page ───────────────────────────────────────────────────────────
@@ -269,33 +269,32 @@ export default function ImportDatabasePage() {
               position: 'relative', overflow: 'hidden',
               borderRadius: 24, padding: '28px 32px',
               display: 'flex', alignItems: 'center', gap: 20,
-              background: 'linear-gradient(135deg, #0a0f1a 0%, #042f2e 25%, #0d9488 50%, #042f2e 75%, #0a0f1a 100%)',
-              border: '1px solid rgba(13,148,136,0.15)',
-              boxShadow: '0 25px 60px -12px rgba(4,47,46,0.6)',
+              background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 40%, #99f6e4 100%)',
+              border: '1px solid rgba(13,148,136,0.2)',
+              boxShadow: '0 4px 24px rgba(13,148,136,0.12)',
             }}
           >
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 20% 40%, rgba(13,148,136,0.12) 0%, transparent 60%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'relative', zIndex: 1, width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, #0d9488, #14b8a6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(13,148,136,0.3)' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, #0d9488, #14b8a6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(13,148,136,0.3)', flexShrink: 0 }}>
               <DatabaseBackup size={24} color="#fff" />
             </div>
-            <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
-              <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', margin: 0 }}>Smart Import — PT Clients</h1>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 3 }}>
+            <div style={{ flex: 1 }}>
+              <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', color: '#134e4a', margin: 0 }}>Smart Import — PT Clients</h1>
+              <p style={{ fontSize: 13, color: '#4b5563', marginTop: 3 }}>
                 Detects duplicates · merges subscriptions · creates one profile per person
               </p>
             </div>
             {/* Step indicator */}
-            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {(['upload','preview','done'] as Step[]).map((s, i) => (
                 <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 12, fontWeight: 700,
-                    background: step === s ? '#14b8a6' : ((['upload','preview','done'].indexOf(step) > i) ? 'rgba(20,184,166,0.4)' : 'rgba(255,255,255,0.1)'),
-                    color: step === s ? '#fff' : 'rgba(255,255,255,0.5)',
-                    border: step === s ? '2px solid rgba(255,255,255,0.3)' : '2px solid transparent',
+                    background: step === s ? '#14b8a6' : ((['upload','preview','done'].indexOf(step) > i) ? 'rgba(20,184,166,0.4)' : 'rgba(0,0,0,0.08)'),
+                    color: step === s ? '#fff' : '#6b7280',
+                    border: step === s ? '2px solid rgba(255,255,255,0.5)' : '2px solid transparent',
                   }}>{i + 1}</div>
-                  {i < 2 && <div style={{ width: 24, height: 1, background: 'rgba(255,255,255,0.15)' }} />}
+                  {i < 2 && <div style={{ width: 24, height: 1, background: 'rgba(0,0,0,0.15)' }} />}
                 </div>
               ))}
             </div>
@@ -309,7 +308,7 @@ export default function ImportDatabasePage() {
                 style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, alignItems: 'start' }}>
 
                 <div style={{ borderRadius: 24, padding: 28, ...glass }}>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', margin: '0 0 20px' }}>Upload your CSV file</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 20px' }}>Upload your CSV file</h2>
 
                   {/* Drop zone */}
                   <div
@@ -319,16 +318,16 @@ export default function ImportDatabasePage() {
                     onClick={() => fileRef.current?.click()}
                     style={{
                       borderRadius: 20, padding: '44px 24px', textAlign: 'center',
-                      border: `2px dashed ${dragOver ? 'rgba(13,148,136,0.6)' : 'rgba(255,255,255,0.12)'}`,
-                      background: dragOver ? 'rgba(13,148,136,0.08)' : 'rgba(255,255,255,0.02)',
+                      border: `2px dashed ${dragOver ? 'rgba(13,148,136,0.6)' : 'rgba(0,0,0,0.12)'}`,
+                      background: dragOver ? 'rgba(13,148,136,0.05)' : 'rgba(0,0,0,0.02)',
                       cursor: 'pointer', transition: 'all 0.25s ease',
                     }}
                   >
-                    <UploadCloud size={36} color={dragOver ? '#14b8a6' : 'rgba(255,255,255,0.35)'} />
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#e2e8f0', margin: '12px 0 2px' }}>
+                    <UploadCloud size={36} color={dragOver ? '#14b8a6' : '#9ca3af'} />
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#374151', margin: '12px 0 2px' }}>
                       {dragOver ? 'Drop here' : 'Click or drag your CSV file here'}
                     </p>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>.csv only</p>
+                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>.csv only</p>
                   </div>
                   <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }}
                     onChange={(e) => { setFile(e.target.files?.[0] || null); setParseError(''); }} />
@@ -340,12 +339,12 @@ export default function ImportDatabasePage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <FileSpreadsheet size={18} color="#14b8a6" />
                         <div>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', margin: 0 }}>{file.name}</p>
-                          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>{sz(file.size)}</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>{file.name}</p>
+                          <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>{sz(file.size)}</p>
                         </div>
                       </div>
                       <button onClick={(e) => { e.stopPropagation(); setFile(null); if (fileRef.current) fileRef.current.value = ''; }}
-                        style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, padding: 5, cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex' }}>
+                        style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 8, padding: 5, cursor: 'pointer', color: '#6b7280', display: 'flex' }}>
                         <X size={14} />
                       </button>
                     </motion.div>
@@ -375,10 +374,10 @@ export default function ImportDatabasePage() {
 
                 {/* Info panel */}
                 <div style={{ borderRadius: 24, padding: 28, ...glass }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(13,148,136,0.12)' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(13,148,136,0.10)' }}>
                     <Sparkles size={20} color="#14b8a6" />
                   </div>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', margin: '16px 0 6px' }}>How smart import works</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '16px 0 6px' }}>How smart import works</h2>
                   {[
                     ['1. Scan', 'Reads every row in your CSV'],
                     ['2. Group', 'Groups rows by phone number (primary) or full name (fallback)'],
@@ -388,12 +387,12 @@ export default function ImportDatabasePage() {
                   ].map(([t, d]) => (
                     <div key={t} style={{ marginTop: 14, display: 'flex', gap: 10 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#14b8a6', minWidth: 60, paddingTop: 2 }}>{t}</div>
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{d}</div>
+                      <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.6 }}>{d}</div>
                     </div>
                   ))}
                   <div style={{ marginTop: 18, borderRadius: 10, padding: '10px 13px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <AlertTriangle size={13} color="#fbbf24" style={{ marginTop: 1, flexShrink: 0 }} />
-                    <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, margin: 0 }}>
+                    <p style={{ fontSize: 11.5, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>
                       Required columns: <strong style={{ color: '#fbbf24' }}>Full Name, Phone Number, Trainer, Subscription Plan, Start Date, Duration Months, Selling Price, Amount Paid, Gender</strong>
                     </p>
                   </div>
@@ -419,7 +418,7 @@ export default function ImportDatabasePage() {
                         {icon}
                       </div>
                       <div style={{ fontSize: 28, fontWeight: 800, color, letterSpacing: '-0.02em' }}>{value}</div>
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{label}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{label}</div>
                     </div>
                   ))}
                 </div>

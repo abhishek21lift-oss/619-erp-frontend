@@ -160,34 +160,28 @@ function Inner() {
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
         {/* ── Hero Section ── */}
-        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'linear-gradient(135deg,#0f172a,#1e293b)', padding: '32px 36px', marginBottom: 20, boxShadow: '0 8px 32px rgba(15,23,42,0.4)' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', padding: '32px 36px', marginBottom: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.07)' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg,#6366f1,#8b5cf6,#a855f7)', borderRadius: '24px 24px 0 0' }} />
-          <motion.div style={{ position: 'absolute', top: -80, right: -40, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(99,102,241,0.2),transparent 70%)', pointerEvents: 'none' }}
-            animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{ position: 'absolute', bottom: -60, left: '30%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(139,92,246,0.15),transparent 70%)', pointerEvents: 'none' }}
-            animate={{ x: [0, -30, 40, 0], y: [0, 30, -20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{ position: 'absolute', top: '40%', left: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,85,247,0.12),transparent 70%)', pointerEvents: 'none' }}
-            animate={{ x: [0, 40, -10, 0], y: [0, -20, 30, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(99,102,241,0.35)' }}>
                   <Users size={18} color="white" />
                 </div>
-                <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(135deg,#818cf8,#a78bfa,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Staff Attendance</h1>
+                <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#111827' }}>Staff Attendance</h1>
               </div>
-              <h2 style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 4px' }}>Total Staff</h2>
-              <div style={{ fontSize: 44, fontWeight: 900, color: 'white', letterSpacing: '-0.03em', lineHeight: 1, textShadow: '0 2px 20px rgba(255,255,255,0.1)' }}>{staff.length}</div>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '8px 0 0' }}>{filtered.length} staff · {records.length} marked today</p>
+              <h2 style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 4px' }}>Total Staff</h2>
+              <div style={{ fontSize: 44, fontWeight: 900, color: '#111827', letterSpacing: '-0.03em', lineHeight: 1 }}>{staff.length}</div>
+              <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0' }}>{filtered.length} staff · {records.length} marked today</p>
             </div>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderRadius: 14, padding: '12px 18px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Calendar size={16} color="rgba(255,255,255,0.5)" />
+              <div style={{ background: '#fff', borderRadius: 14, padding: '12px 18px', border: '1px solid rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Calendar size={16} color="#6b7280" />
                 <input
                   type="date" value={date}
                   onChange={e => setDate(e.target.value)}
                   max={today}
-                  style={{ background: 'transparent', border: 'none', color: 'white', fontSize: 13, fontWeight: 600, outline: 'none', padding: 0, fontFamily: 'inherit', colorScheme: 'dark' }}
+                  style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: 0, fontFamily: 'inherit', colorScheme: 'light' }}
                 />
               </div>
             </div>
