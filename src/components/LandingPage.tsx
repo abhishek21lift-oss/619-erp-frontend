@@ -71,7 +71,7 @@ export default function LandingPage() {
           --red:#d91f3c;
           --red-soft:rgba(217,31,60,0.12);
           --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Helvetica,Arial,sans-serif;
-          --px:clamp(20px,5vw,64px);
+          --px:clamp(24px,6vw,72px);
         }
         html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
         body{background:var(--black);color:var(--white);font-family:var(--font);overflow-x:hidden;line-height:1.5}
@@ -85,7 +85,17 @@ export default function LandingPage() {
         .reveal-delay-4{transition-delay:.4s}
         @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
         @keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(5px)}}
-        @media(max-width:640px){.nav-links{display:none!important}.hero-h1{font-size:2.4rem}.team-grid{grid-template-columns:1fr}.footer-inner{flex-direction:column;align-items:flex-start}}
+        @media(max-width:640px){
+          .nav-links{display:none!important}
+          .hero-h1{font-size:2.4rem}
+          .team-grid{grid-template-columns:1fr}
+          .footer-inner{flex-direction:column;align-items:flex-start}
+          .hero{padding-top:88px!important;padding-bottom:56px!important}
+          .hero-logo{margin-bottom:24px!important}
+          .hero-label{margin-bottom:10px!important}
+          .hero-sub-title{margin-bottom:16px!important}
+          .hero-desc{margin-bottom:28px!important}
+        }
         @media(max-width:900px){.numbers-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:900px){.number-item{border-right:none!important;border-bottom:1px solid var(--border)}}
         @media(max-width:900px){.plans-grid{grid-template-columns:1fr}.why-grid{grid-template-columns:1fr}.contact-inner{grid-template-columns:1fr}}
