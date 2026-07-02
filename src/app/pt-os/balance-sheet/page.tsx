@@ -110,39 +110,33 @@ export default function BalanceSheetPage() {
 
           {/* ── Hero ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28,
-              background: 'linear-gradient(135deg, #0a0f1a 0%, #0c1a2e 30%, #14213d 60%, #0a1628 100%)',
-              boxShadow: '0 20px 60px rgba(10,15,26,0.5)', border: '1px solid rgba(99,102,241,0.12)' }}>
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(600px circle at 30% 50%, rgba(99,102,241,0.10), transparent 70%)' }} />
-            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(99,102,241,0.06) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-            <div style={{ position: 'relative', zIndex: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(79,70,229,0.1))', backdropFilter: 'blur(8px)' }}>
-                  <Wallet size={22} color="#6366f1" />
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Finance · PT OS</span>
+            style={{ padding: '32px 40px', marginBottom: 28, borderBottom: '1px solid #f3f4f6' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.08)' }}>
+                <Wallet size={22} color="#6366f1" />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
-                <div>
-                  <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#ffffff', margin: '0 0 8px' }}>Balance Sheet</h1>
-                  <p style={{ maxWidth: 500, fontSize: 14, lineHeight: 1.6, color: 'rgba(255,255,255,0.50)' }}>
-                    Track outstanding dues, collection rates, and payment status across all PT clients.
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                  {clearCount > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <CheckCircle size={12} color="#10b981" />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#10b981' }}>{clearCount} cleared</span>
-                    </div>
-                  )}
-                  {overdueCount > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.2)' }}>
-                      <AlertCircle size={12} color="#dc2626" />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#dc2626' }}>{overdueCount} overdue</span>
-                    </div>
-                  )}
-                </div>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6366f1' }}>Finance · PT OS</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap' }}>
+              <div>
+                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#111827', margin: '0 0 8px' }}>Balance Sheet</h1>
+                <p style={{ maxWidth: 500, fontSize: 14, lineHeight: 1.6, color: '#6b7280' }}>
+                  Track outstanding dues, collection rates, and payment status across all PT clients.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                {clearCount > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <CheckCircle size={12} color="#10b981" />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#10b981' }}>{clearCount} cleared</span>
+                  </div>
+                )}
+                {overdueCount > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 20, background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.2)' }}>
+                    <AlertCircle size={12} color="#dc2626" />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#dc2626' }}>{overdueCount} overdue</span>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -157,7 +151,6 @@ export default function BalanceSheetPage() {
                   style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '20px 22px', background: k.bg, border: `1px solid ${k.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', cursor: 'default', transition: 'all 0.3s ease' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 32px rgba(0,0,0,0.12)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)'; }}>
-                  <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${k.color}15, transparent)` }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${k.color}18` }}>
                       <Icon size={16} style={{ color: k.color }} />
