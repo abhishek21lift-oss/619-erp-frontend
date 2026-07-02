@@ -76,13 +76,6 @@ export default function AttendanceReportsPage() {
                 backgroundSize: '40px 40px',
               }} />
 
-              {/* Floating orbs */}
-              <motion.div style={{ position: 'absolute', right: -100, top: -100, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(56,189,248,0.35) 0%, transparent 70%)', pointerEvents: 'none' }}
-                animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.45, 0.3] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-              <motion.div style={{ position: 'absolute', left: -60, bottom: -100, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }}
-                animate={{ scale: [1, 1.18, 1], opacity: [0.2, 0.35, 0.2] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-              <motion.div style={{ position: 'absolute', left: '50%', top: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%)', pointerEvents: 'none' }}
-                animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
 
               {/* Top accent glow bar */}
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)', opacity: 0.5 }} />
@@ -272,7 +265,7 @@ export default function AttendanceReportsPage() {
                         return (
                           <motion.div key={status} initial={{ height: 0 }} animate={{ height: barHeight }}
                             transition={{ duration: 0.6, delay: i * 0.03, ease: 'easeOut' }}
-                            style={{ width: 40, borderRadius: '6px 6px 0 0', background: `linear-gradient(180deg, ${colors[status] || '#06b6d4'}, #1e293b)`, opacity: 0.6 + (i / Math.max(Object.keys(statusCounts).length, 1)) * 0.4 }}
+                            style={{ width: 40, borderRadius: '6px 6px 0 0', background: `linear-gradient(180deg, ${colors[status] || '#06b6d4'}, ${colors[status] || '#06b6d4'}44)`, opacity: 0.6 + (i / Math.max(Object.keys(statusCounts).length, 1)) * 0.4 }}
                             title={`${status}: ${count}`} />
                         );
                       });
