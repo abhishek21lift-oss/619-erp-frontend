@@ -55,7 +55,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div ref={revealRoot}>
+    <div ref={revealRoot} style={{ paddingTop: 52 }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root{
@@ -73,7 +73,7 @@ export default function LandingPage() {
           --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Helvetica,Arial,sans-serif;
           --px:clamp(24px,6vw,72px);
         }
-        html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+        html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;scroll-padding-top:52px}
         body{background:var(--black);color:var(--white);font-family:var(--font);overflow-x:hidden;line-height:1.5}
         nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 var(--px);height:52px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background 0.3s}
         .nav-logo-wrap{display:flex;align-items:center;gap:8px;text-decoration:none}
@@ -90,7 +90,7 @@ export default function LandingPage() {
           .hero-h1{font-size:2.4rem}
           .team-grid{grid-template-columns:1fr}
           .footer-inner{flex-direction:column;align-items:flex-start}
-          .hero{padding-top:88px!important;padding-bottom:56px!important}
+          .hero{padding-top:40px!important;padding-bottom:56px!important}
           .hero-logo{margin-bottom:24px!important}
           .hero-label{margin-bottom:10px!important}
           .hero-sub-title{margin-bottom:16px!important}
@@ -147,9 +147,9 @@ export default function LandingPage() {
 
       {/* ─── HERO ─── */}
       <section className="hero" style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column',
+        minHeight: 'calc(100vh - 52px)', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        padding: '120px 24px 80px', position: 'relative',
+        padding: '68px var(--px) 80px', position: 'relative',
         background: 'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(217,31,60,0.07) 0%, transparent 70%)',
       }}>
         <img src="/619-logo.png" alt="619 Fitness Studio" className="hero-logo"
