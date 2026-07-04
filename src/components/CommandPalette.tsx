@@ -250,12 +250,14 @@ export default function CommandPalette() {
               setAiTaskId(evt.plan.taskId || null);
               setAiMessages(m => [...m, { role: 'system', content: `I need your approval to proceed with: ${evt.plan.summary}` }]);
             } else if (evt.event === 'done') {
-              const summary = evt.summary || 'Done.';
-              setAiMessages(m => {
-                const last = m[m.length - 1];
-                if (last?.role === 'assistant') return [...m.slice(0, -1), { ...last, content: summary }];
-                return [...m, { role: 'assistant', content: summary }];
-              });
+              if (evt.status !== 'requires_confirmation') {
+                const summary = evt.summary || 'Done.';
+                setAiMessages(m => {
+                  const last = m[m.length - 1];
+                  if (last?.role === 'assistant') return [...m.slice(0, -1), { ...last, content: summary }];
+                  return [...m, { role: 'assistant', content: summary }];
+                });
+              }
             } else if (evt.event === 'error') {
               setAiMessages(m => [...m, { role: 'system', content: `Error: ${evt.message}` }]);
             }
