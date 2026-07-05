@@ -3,10 +3,10 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Users, TrendingUp, Wallet, Percent,
-  RefreshCw, UserPlus, User, Clock, Zap, Star,
-  ChevronRight, LayoutGrid, LayoutList, Filter,
-  Dumbbell, IndianRupee, Trophy, Flame,
+  Search, Users, TrendingUp, Wallet,
+  RefreshCw, UserPlus, User, Star,
+  ChevronRight, LayoutGrid, LayoutList,
+  Dumbbell, IndianRupee, AlertCircle, Flame,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
@@ -313,9 +313,9 @@ export default function PtClientsPage() {
       total: acc.total + 1,
       revenue: acc.revenue + Number(c.final_amount || 0),
       paid: acc.paid + Number(c.paid_amount || 0),
-      commission: acc.commission + Number(c.total_earned_commission || 0),
+      balance: acc.balance + Number(c.balance_amount || 0),
     }),
-    { total: 0, revenue: 0, paid: 0, commission: 0 },
+    { total: 0, revenue: 0, paid: 0, balance: 0 },
   ), [clients.data]);
 
   const activeCount = useMemo(() => (clients.data?.data ?? []).filter(c => c.status === 'active' && (c.days_left ?? 1) > 0).length, [clients.data]);
@@ -383,11 +383,11 @@ export default function PtClientsPage() {
                   subIcon: <Star size={11} />,
                 },
                 {
-                  label: 'Commission', value: summary?.commission ?? 0, prefix: '₹',
-                  icon: <Trophy size={20} className="text-white" />,
-                  from: '#db2777', to: '#9d174d', glow: 'rgba(219,39,119,0.4)',
-                  sub: 'Trainer payouts',
-                  subIcon: <Percent size={11} />,
+                  label: 'Total Balance', value: summary?.balance ?? 0, prefix: '₹',
+                  icon: <AlertCircle size={20} className="text-white" />,
+                  from: '#dc2626', to: '#b91c1c', glow: 'rgba(220,38,38,0.4)',
+                  sub: 'Pending dues',
+                  subIcon: <IndianRupee size={11} />,
                 },
               ].map((card, i) => (
                 <motion.div key={card.label}
