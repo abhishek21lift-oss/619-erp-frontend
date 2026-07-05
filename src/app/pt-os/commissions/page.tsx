@@ -42,7 +42,7 @@ export default function CommissionsPage() {
   const payoutsData = (payouts.data || []) as any[];
   const commissionsData = (commissions.data || []) as any[];
 
-  const totalCommission = commissionsData.reduce((s: number, c: any) => s + Number(c.commission_amount ?? 0), 0);
+  const totalCommission = commissionsData.reduce((s: number, c: any) => s + Number(c.commission_amt ?? 0), 0);
   const totalPayout = payoutsData.filter((p: any) => p.payout_status === 'paid').reduce((s: number, p: any) => s + Number(p.paid_amount ?? p.total_commission ?? 0), 0);
   const pendingPayouts = payoutsData.filter((p: any) => p.payout_status !== 'paid').reduce((s: number, p: any) => s + Number(p.total_commission ?? 0), 0);
   const activeTrainers = perfData.filter((t: any) => Number(t.active_clients ?? 0) > 0).length;

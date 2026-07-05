@@ -118,7 +118,7 @@ function Inner() {
         clients_count: tc.length,
         monthly_pt_revenue: monthlyRevenue,
         incentive_rate: Number(t.incentive_rate) || 0,
-        incentive_amount: monthlyRevenue * (Number(t.incentive_rate) || 0) / 100,
+        incentive_amount: monthlyRevenue * (Number(t.incentive_rate) || 0),
         revenue_percentage: 0,
       };
     });

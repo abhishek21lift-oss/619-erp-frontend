@@ -60,9 +60,7 @@ function Inner() {
 
   const totals = useMemo(() => {
     const revenue      = monthly.reduce((s: number, m: any) => s + Number(m.revenue || 0), 0);
-    // Uses incentive_rate (commission/incentive) from the trainers table — not a fixed base salary.
-    // incentive_rate is stored as a monthly amount (not a percentage), so we multiply by 12 for annualised cost.
-    const monthlySal   = trainers.reduce((s: number, t: any) => s + Number(t.incentive_rate || 0), 0);
+    const monthlySal   = trainers.reduce((s: number, t: any) => s + Number(t.salary || 0), 0);
     const annualSalary = monthlySal * 12;
     const overheads    = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
     const totalCost    = annualSalary + overheads;

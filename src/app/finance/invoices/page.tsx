@@ -80,7 +80,7 @@ function Avatar({ name }: { name: string }) {
 function normaliseInvoice(raw: Record<string, unknown>): Invoice {
   return {
     id: String(raw.id ?? ''),
-    memberName: String(raw.member_name ?? raw.memberName ?? ''),
+    memberName: String(raw.client_name ?? raw.member_name ?? raw.memberName ?? ''),
     memberAvatar: String(raw.member_avatar ?? raw.memberAvatar ?? ''),
     amount: Number(raw.amount ?? 0),
     date: String(raw.date ?? ''),
@@ -253,6 +253,14 @@ export default function InvoicesPage() {
   const handleSendReminder = React.useCallback(async (invoice: Invoice) => {
     try { await api.invoices.remind(invoice.id); } catch { /* silently ignore */ }
   }, []);
+
+  const handleMarkPaid = React.useCallback(async (invoice: Invoice) => {
+    try {
+      await api.invoices.markPaid(invoice.id);
+      setSelectedInvoice(null);
+      fetchInvoices();
+    } catch { /* silently ignore */ }
+  }, [fetchInvoices]);
 
   const statusTabs = React.useMemo(() => {
     const counts: Record<string, number> = { all: invoices.length, paid: 0, pending: 0, overdue: 0, draft: 0, cancelled: 0 };
@@ -690,7 +698,7 @@ export default function InvoicesPage() {
               </>
             }
           >
-            {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} onDownload={handleDownloadPDF} onRemind={handleSendReminder} />}
+            {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} onDownload={handleDownloadPDF} onRemind={handleSendReminder} onMarkPaid={handleMarkPaid} />}
           </PremiumModal>
 
           <PremiumModal
@@ -992,7 +1000,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
 
 /* ────────── Invoice Detail ────────── */
 
-function InvoiceDetail({ invoice, onDownload, onRemind }: { invoice: Invoice; onDownload: (i: Invoice) => void; onRemind: (i: Invoice) => void }) {
+function InvoiceDetail({ invoice, onDownload, onRemind, onMarkPaid }: { invoice: Invoice; onDownload: (i: Invoice) => void; onRemind: (i: Invoice) => void; onMarkPaid: (i: Invoice) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{
@@ -1104,8 +1112,8 @@ function InvoiceDetail({ invoice, onDownload, onRemind }: { invoice: Invoice; on
         {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
           <PremiumButton tone="secondary" icon={<Send size={16} />} size="sm" onClick={() => onRemind(invoice)}>Send Reminder</PremiumButton>
         )}
-        {invoice.status === 'pending' && (
-          <PremiumButton tone="success" icon={<CheckCircle2 size={16} />} size="sm">Mark as Paid</PremiumButton>
+        {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
+          <PremiumButton tone="success" icon={<CheckCircle2 size={16} />} size="sm" onClick={() => onMarkPaid(invoice)}>Mark as Paid</PremiumButton>
         )}
       </div>
     </div>
