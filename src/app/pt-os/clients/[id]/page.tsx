@@ -234,8 +234,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const initials = (name: string) =>
     name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
-  const completionPct = client
-    ? Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)
+  const currentSub = subscriptionHistory.length > 0 ? subscriptionHistory[subscriptionHistory.length - 1] : null;
+  const currentTermFee     = currentSub ? Number(currentSub.selling_price  ?? 0) : (client?.final_amount   ?? 0);
+  const currentTermPaid    = currentSub ? Number(currentSub.amount_paid    ?? 0) : (client?.paid_amount    ?? 0);
+  const currentTermBalance = currentSub ? Number(currentSub.balance_amount ?? 0) : (client?.balance_amount ?? 0);
+
+  const completionPct = currentTermFee > 0
+    ? Math.min(Math.round((currentTermPaid / currentTermFee) * 100), 100)
     : 0;
 
   const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date) : null;
@@ -377,21 +382,21 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     {
-                      label: 'Final Amount', value: fmtINR(client.final_amount),
+                      label: 'Total PT Fee', value: fmtINR(currentTermFee),
                       icon: <IndianRupee size={18} />, from: '#7c3aed', to: '#5b21b6',
-                      sub: 'Total PT fee',
+                      sub: 'Current term fee',
                     },
                     {
-                      label: 'Paid', value: fmtINR(client.paid_amount),
+                      label: 'Paid', value: fmtINR(currentTermPaid),
                       icon: <CheckCircle size={18} />, from: '#10b981', to: '#059669',
                       sub: `${completionPct}% complete`,
                     },
                     {
-                      label: 'Balance', value: fmtINR(client.balance_amount),
+                      label: 'Balance', value: fmtINR(currentTermBalance),
                       icon: <AlertTriangle size={18} />,
-                      from: client.balance_amount > 0 ? '#ef4444' : '#10b981',
-                      to: client.balance_amount > 0 ? '#dc2626' : '#059669',
-                      sub: client.balance_amount > 0 ? (client.due_status === 'OVERDUE' ? 'OVERDUE' : 'Due') : 'Cleared',
+                      from: currentTermBalance > 0 ? '#ef4444' : '#10b981',
+                      to: currentTermBalance > 0 ? '#dc2626' : '#059669',
+                      sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'OVERDUE' : 'Due') : 'Cleared',
                     },
                     {
                       label: 'Commission', value: fmtINR(client.trainer_commission),
@@ -448,8 +453,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
                     </div>
                     <div className="mt-2.5 flex justify-between">
-                      <span className="text-[10.5px] font-[600] text-emerald-600">{fmtINR(client.paid_amount)} paid</span>
-                      <span className="text-[10.5px] font-[600] text-slate-500">{fmtINR(client.final_amount)} total</span>
+                      <span className="text-[10.5px] font-[600] text-emerald-600">{fmtINR(currentTermPaid)} paid</span>
+                      <span className="text-[10.5px] font-[600] text-slate-500">{fmtINR(currentTermFee)} total</span>
                     </div>
                   </motion.div>
 
@@ -650,10 +655,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       {client.discount > 0 && (
                         <InfoRow label="Discount" value={`-${fmtINR(client.discount)}`} valueColor="#ef4444" />
                       )}
-                      <InfoRow label="Final Amount" value={fmtINR(client.final_amount)} />
-                      <InfoRow label="Paid" value={fmtINR(client.paid_amount)} valueColor="#059669" />
-                      <InfoRow label="Balance" value={fmtINR(client.balance_amount)}
-                        valueColor={client.balance_amount > 0 ? '#ef4444' : '#059669'} />
+                      <InfoRow label="Total PT Fee" value={fmtINR(currentTermFee)} />
+                      <InfoRow label="Paid" value={fmtINR(currentTermPaid)} valueColor="#059669" />
+                      <InfoRow label="Balance" value={fmtINR(currentTermBalance)}
+                        valueColor={currentTermBalance > 0 ? '#ef4444' : '#059669'} />
                       {client.due_status && client.due_status !== 'CLEAR' && (
                         <div className="mt-2 flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5"
                           style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
