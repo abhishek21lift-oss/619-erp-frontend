@@ -77,7 +77,7 @@ function MiniSparkline({ values, color }: { values: number[]; color: string }) {
 
 function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
-  const isActive = trainer.is_active !== false;
+  const isActive = trainer.status === 'active';
   const specialty = trainer.specialization || trainer.specialty || trainer.role || 'Personal Trainer';
   const retention = trainer.total_clients && trainer.active_clients
     ? Math.round((trainer.active_clients / trainer.total_clients) * 100) : null;
@@ -344,7 +344,7 @@ export default function TrainersPage() {
   );
 
   const stats = useMemo(() => ({
-    active: trainers.filter(t => t.is_active !== false).length,
+    active: trainers.filter(t => t.status === 'active').length,
     clients: trainers.reduce((s, t) => s + Number(t.active_clients || 0), 0),
     revenue: trainers.reduce((s, t) => s + Number(t.month_revenue || 0), 0),
     satisfaction: trainers.length

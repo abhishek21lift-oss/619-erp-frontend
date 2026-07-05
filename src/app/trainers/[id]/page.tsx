@@ -10,161 +10,242 @@ import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth-context';
 import {
   ArrowLeft, User, Phone, Mail, Edit2, Trash2, Users,
-  MessageCircle, Award, Calendar, Dumbbell, CheckCircle, XCircle,
-  Star, Clock, MapPin, AlertTriangle, Sparkles,
+  MessageCircle, Award, Calendar, Dumbbell, CheckCircle,
+  TrendingUp, DollarSign, AlertTriangle, Receipt,
+  Sparkles, Activity, CreditCard,
 } from 'lucide-react';
 import { CopyId } from '@/components/ui/CopyId';
+import { cn } from '@/components/ui/cn';
+import { initialsAvatar } from '@/lib/avatar';
 
-interface TrainerDetail {
+/* ── Types ───────────────────────────────────────────────────────────────── */
+interface TrainerStats {
+  total_clients: number;
+  active_clients: number;
+  expired_clients: number;
+  total_dues: number;
+  lifetime_revenue: number;
+  month_revenue: number;
+  month_incentive: number;
+}
+
+interface TrainerClient {
   id: number;
+  client_id?: string;
   name: string;
+  mobile?: string;
+  package_type?: string;
+  pt_end_date?: string;
+  status: string;
+  balance_amount?: number;
+}
+
+interface TrainerPayment {
+  id: string;
+  client_name: string;
+  amount: number;
+  method: string;
+  date: string;
+  receipt_no?: string;
+  incentive_amt?: number;
+}
+
+interface MonthlyData { month: string; revenue: number; }
+
+interface TrainerProfile {
+  id: string;
+  name: string;
+  mobile?: string;
   email?: string;
-  phone?: string;
-  specialization?: string;
-  bio?: string;
   status: 'active' | 'inactive';
-  join_date?: string;
+  joining_date?: string;
+  specialization?: string;
   certifications?: string[];
+  bio?: string;
   schedule?: string;
+  role?: string;
+  salary?: number;
+  incentive_rate?: number;
+  notes?: string;
+  unique_id?: string;
+  stats: TrainerStats;
+  clients: TrainerClient[];
+  payments: TrainerPayment[];
+  monthly: MonthlyData[];
 }
 
-interface AssignedMember {
-  id: number;
-  name: string;
-  status: 'active' | 'expired' | 'frozen' | 'pending';
-  membership_plan?: string;
-  expiry_date?: string;
-  phone?: string;
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
+const GRADIENTS = [
+  'linear-gradient(135deg, #2563EB, #7C3AED)',
+  'linear-gradient(135deg, #10B981, #06B6D4)',
+  'linear-gradient(135deg, #F97316, #EC4899)',
+  'linear-gradient(135deg, #7C3AED, #06B6D4)',
+  'linear-gradient(135deg, #2563EB, #10B981)',
+  'linear-gradient(135deg, #EC4899, #F97316)',
+  'linear-gradient(135deg, #06B6D4, #7C3AED)',
+  'linear-gradient(135deg, #F97316, #2563EB)',
+];
+
+function nameHash(name: string) {
+  return [...(name || '?')].reduce((h, c) => ((h * 31 + c.charCodeAt(0)) | 0), 0);
 }
 
-function fmtDate(d?: string) {
+function fmtINR(n: number | string | null | undefined) {
+  const v = typeof n === 'string' ? parseFloat(n) : (n ?? 0);
+  if (!Number.isFinite(v)) return '₹0';
+  return '₹' + v.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
+
+function fmtDate(d?: string | null) {
   if (!d) return '—';
   const dt = new Date(d);
   return isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  active: { bg: 'rgba(16,185,129,0.12)', color: '#059669' },
-  expired: { bg: 'rgba(239,68,68,0.12)', color: '#dc2626' },
-  frozen: { bg: 'rgba(59,130,246,0.12)', color: '#2563eb' },
-  pending: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
-  inactive: { bg: 'rgba(148,163,184,0.12)', color: '#6b7280' },
-};
-
-import { avatarGradient, initialsAvatar } from '@/lib/avatar';
-
-const initials = initialsAvatar;
-
-function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_STYLES[status] || STATUS_STYLES.inactive;
+/* ── Sub-components ──────────────────────────────────────────────────────── */
+function GlassPanel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: s.bg, color: s.color, padding: '3px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, textTransform: 'capitalize' }}>
-      {status === 'active' ? <CheckCircle size={11} /> : <XCircle size={11} />}
-      {status}
-    </span>
+    <div className={cn(
+      'rounded-[24px] border border-white/60 bg-white/70 backdrop-blur-xl',
+      'shadow-[0_4px_24px_rgba(15,23,42,0.06)]',
+      className,
+    )}>
+      {children}
+    </div>
   );
 }
 
 function InfoRow({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <span style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
-      <span style={{ fontSize: 14, color: '#111827', fontWeight: 500 }}>{value ?? '—'}</span>
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]">{label}</span>
+      <span className="text-[14px] font-medium text-[var(--text-primary)]">{value ?? '—'}</span>
     </div>
   );
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06 } }
-};
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const } }
+const CLIENT_STATUS_STYLES: Record<string, { bg: string; color: string }> = {
+  active:   { bg: 'rgba(16,185,129,0.10)', color: '#10B981' },
+  expired:  { bg: 'rgba(239,68,68,0.10)',  color: '#EF4444' },
+  frozen:   { bg: 'rgba(59,130,246,0.10)', color: '#3B82F6' },
+  pending:  { bg: 'rgba(245,158,11,0.10)', color: '#F59E0B' },
+  inactive: { bg: 'rgba(100,116,139,0.08)', color: '#64748B' },
 };
 
+function ClientStatusBadge({ status }: { status: string }) {
+  const s = CLIENT_STATUS_STYLES[status?.toLowerCase()] || CLIENT_STATUS_STYLES.inactive;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize"
+      style={{ background: s.bg, color: s.color }}
+    >
+      {status}
+    </span>
+  );
+}
+
+const METHOD_STYLES: Record<string, { bg: string; color: string }> = {
+  CASH: { bg: 'rgba(16,185,129,0.08)',  color: '#10B981' },
+  UPI:  { bg: 'rgba(37,99,235,0.08)',   color: '#2563EB' },
+  CARD: { bg: 'rgba(139,92,246,0.08)',  color: '#8B5CF6' },
+  NEFT: { bg: 'rgba(6,182,212,0.08)',   color: '#06B6D4' },
+  BANK: { bg: 'rgba(6,182,212,0.08)',   color: '#06B6D4' },
+};
+
+/* ── Main Page ───────────────────────────────────────────────────────────── */
 export default function TrainerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [trainer, setTrainer] = useState<TrainerDetail | null>(null);
-  const [members, setMembers] = useState<AssignedMember[]>([]);
+  const [trainer, setTrainer] = useState<TrainerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'profile' | 'members'>('profile');
+  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'payments'>('overview');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const [tRes, mRes] = await Promise.allSettled([
-        api.trainers.get(id),
-        api.clients.list({ trainer_id: id }),
-      ]);
-      if (tRes.status === 'fulfilled') {
-        setTrainer(tRes.value as any);
-      } else throw new Error('Trainer not found');
-      if (mRes.status === 'fulfilled') {
-        const d = mRes.value as any;
-        const raw = Array.isArray(d) ? d : (d.members ?? []);
-        setMembers(raw.map((c: any) => ({
-          id: c.id, name: c.name, status: c.status,
-          membership_plan: c.membership_plan || c.package_type,
-          expiry_date: c.expiry_date || c.pt_end_date,
-          phone: c.phone || c.mobile,
-        })));
-      }
-    } catch (e: any) { setError(e.message || 'Failed to load trainer.'); }
-    finally { setLoading(false); }
+      const raw = await api.trainers.get(id) as any;
+      setTrainer({
+        ...raw,
+        stats: raw.stats ?? {
+          total_clients: 0, active_clients: 0, expired_clients: 0,
+          total_dues: 0, lifetime_revenue: 0, month_revenue: 0, month_incentive: 0,
+        },
+        clients: Array.isArray(raw.clients) ? raw.clients : [],
+        payments: Array.isArray(raw.payments) ? raw.payments : [],
+        monthly: Array.isArray(raw.monthly) ? raw.monthly : [],
+      });
+    } catch (e: any) {
+      setError(e.message || 'Failed to load trainer.');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   async function handleDelete() {
     setDeleting(true);
-    try { await api.trainers.delete(id); }
-    catch (e: any) { toast.error(`Failed: ${e.message}`); setDeleting(false); }
+    try {
+      await api.trainers.delete(id);
+      toast.success('Trainer removed');
+      router.push('/trainers');
+    } catch (e: any) {
+      toast.error(`Failed: ${e.message}`);
+      setDeleting(false);
+    }
   }
 
+  const isAdmin = user?.role === 'admin';
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+
   const whatsappHref = () => {
-    if (!trainer?.phone) return '#';
-    const n = trainer.phone.replace(/\D/g, '');
+    if (!trainer?.mobile) return '#';
+    const n = trainer.mobile.replace(/\D/g, '');
     const num = n.startsWith('91') ? n : `91${n}`;
     return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${trainer.name}, this is a message from 619 Fitness Studio.`)}`;
   };
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
-
+  /* Loading skeleton */
   if (loading) {
     return (
-      <Guard roles={['admin', 'manager']}>
+      <Guard roles={['admin', 'manager', 'trainer']}>
         <AppShell>
-          <div style={{ padding: '32px', maxWidth: 1000, margin: '0 auto' }}>
-            <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-              style={{ height: 200, borderRadius: 20, background: '#f3f4f6', marginBottom: 16, border: '1px solid rgba(0,0,0,0.07)' }} />
-            <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-              style={{ height: 350, borderRadius: 20, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)' }} />
+          <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+            <div className="h-10 w-32 rounded-[10px] bg-white/70 border border-white/60 animate-pulse mb-5" />
+            <div className="h-52 rounded-[32px] bg-white/70 border border-white/60 animate-pulse mb-6" />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-24 rounded-[20px] bg-white/70 border border-white/60 animate-pulse" />
+              ))}
+            </div>
+            <div className="h-80 rounded-[24px] bg-white/70 border border-white/60 animate-pulse" />
           </div>
         </AppShell>
       </Guard>
     );
   }
 
+  /* Error state */
   if (error || !trainer) {
     return (
-      <Guard roles={['admin', 'manager']}>
+      <Guard roles={['admin', 'manager', 'trainer']}>
         <AppShell>
-          <div style={{ padding: '60px 32px', textAlign: 'center' }}>
-            <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '1px solid rgba(239,68,68,0.2)' }}>
-              <User size={28} color="#dc2626" />
+          <div className="flex flex-col items-center justify-center py-20 px-4">
+            <div className="h-16 w-16 rounded-[20px] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] flex items-center justify-center mb-4">
+              <User size={28} className="text-[#EF4444]" />
             </div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: '#6b7280', marginBottom: 8 }}>{error || 'Trainer not found'}</div>
-            <button onClick={() => router.back()}
-              style={{ padding: '8px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: '#f9fafb', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Go back
+            <h2 className="text-[18px] font-bold text-[var(--text-primary)] mb-2">{error || 'Trainer not found'}</h2>
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-1.5 rounded-[12px] bg-[rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.08)] px-4 py-2 text-[12px] font-semibold text-[var(--text-muted)] hover:bg-[rgba(0,0,0,0.08)] transition-all"
+            >
+              <ArrowLeft size={13} /> Go back
             </button>
           </div>
         </AppShell>
@@ -172,232 +253,519 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
     );
   }
 
-  const mg = avatarGradient(trainer.name);
+  const gradient = GRADIENTS[Math.abs(nameHash(trainer.name)) % GRADIENTS.length];
+  const isActive = trainer.status === 'active';
+  const incentivePct = Math.round(Number(trainer.incentive_rate ?? 0) * 100);
+
+  const TABS = [
+    { key: 'overview' as const, label: 'Overview' },
+    { key: 'members' as const, label: `Members (${trainer.clients.length})` },
+    { key: 'payments' as const, label: `Payments (${trainer.payments.length})` },
+  ];
 
   return (
-    <Guard roles={['admin', 'manager']}>
+    <Guard roles={['admin', 'manager', 'trainer']}>
       <AppShell>
-        <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
-          {/* ── Hero ── */}
-          <div style={{ position: 'relative', overflow: 'hidden', background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '28px 32px 36px', borderRadius: '0 0 40px 40px' }}>
-            <button onClick={() => router.back()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#6b7280', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20, transition: 'background 0.2s', position: 'relative', zIndex: 1 }}>
-              <ArrowLeft size={13} /> Back to Trainers
-            </button>
+        <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
 
-            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
-              <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
-                style={{ width: 76, height: 76, borderRadius: 20, flexShrink: 0, background: mg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 800, color: '#fff', boxShadow: '0 8px 32px rgba(99,102,241,0.3)' }}>
-                {initials(trainer.name)}
-              </motion.div>
-              <div style={{ flex: 1, minWidth: 220 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>{trainer.name}</h2>
-                  <StatusBadge status={trainer.status} />
-                </div>
-                {trainer.specialization && (
-                  <div style={{ fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
-                    <Dumbbell size={13} color="#9ca3af" /> {trainer.specialization}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 4 }}>
-                  {trainer.phone && (
-                    <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Phone size={12} color="#9ca3af" /> {trainer.phone}
-                    </span>
-                  )}
-                  {trainer.email && (
-                    <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Mail size={12} color="#9ca3af" /> {trainer.email}
-                    </span>
-                  )}
-                  <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Users size={12} color="#9ca3af" /> {members.length} member{members.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
+          {/* ── Back ── */}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+            <Link href="/trainers">
+              <div className="inline-flex items-center gap-1.5 rounded-[10px] bg-white/70 border border-white/60 backdrop-blur-sm px-3 py-1.5 text-[11px] font-semibold text-[var(--text-muted)] hover:bg-white/90 transition-all mb-5 shadow-sm cursor-pointer">
+                <ArrowLeft size={12} /> Back to Trainers
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {trainer.phone && (
-                  <a href={whatsappHref()} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', color: '#059669', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s' }}>
-                    <MessageCircle size={13} /> WhatsApp
-                  </a>
-                )}
-                {isAdmin && (
-                  <Link href={`/trainers/${id}/edit`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#4f46e5', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s' }}>
-                    <Edit2 size={13} /> Edit
-                  </Link>
-                )}
-                {user?.role === 'admin' && (
-                  <button onClick={() => setDeleteConfirm(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
-                    <Trash2 size={13} /> Remove
-                  </button>
-                )}
+            </Link>
+          </motion.div>
+
+          {/* ── Hero ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="relative overflow-hidden rounded-[32px] mb-6 p-[1px]"
+            style={{ background: gradient.replace(')', ', 0.4)').replace('gradient(', 'gradient(') }}
+          >
+            <div className="relative rounded-[31px] p-6 sm:p-8 overflow-hidden" style={{ background: gradient }}>
+              <div className="absolute top-[-20%] right-[-5%] w-64 h-64 rounded-full bg-white/[0.06] blur-[60px]" />
+              <div className="absolute bottom-[-30%] left-[-10%] w-72 h-72 rounded-full bg-white/[0.04] blur-[80px]" />
+
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-start gap-5">
+                {/* Avatar */}
+                <motion.div
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative flex h-[72px] w-[72px] sm:h-[80px] sm:w-[80px] shrink-0 items-center justify-center rounded-[20px] bg-white/20 text-[28px] font-extrabold text-white shadow-lg backdrop-blur-sm"
+                >
+                  {initialsAvatar(trainer.name)}
+                  <span className={cn(
+                    'absolute -top-1 -right-1 flex h-4 w-4',
+                    isActive ? 'visible' : 'hidden'
+                  )}>
+                    <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-50" />
+                    <span className="relative inline-flex h-4 w-4 rounded-full bg-emerald-500 border-2 border-white" />
+                  </span>
+                </motion.div>
+
+                {/* Name + info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2.5 flex-wrap mb-1.5">
+                    <h1 className="text-[22px] sm:text-[26px] font-extrabold text-white tracking-[-0.02em] leading-tight">
+                      {trainer.name}
+                    </h1>
+                    <span className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold',
+                      isActive
+                        ? 'bg-white/20 text-white ring-1 ring-white/30'
+                        : 'bg-white/10 text-white/60 ring-1 ring-white/15',
+                    )}>
+                      <span className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-white' : 'bg-white/50')} />
+                      {isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+
+                  {(trainer.specialization || trainer.role) && (
+                    <div className="flex items-center gap-1.5 text-[12px] text-white/70 mb-2">
+                      <Dumbbell size={12} />
+                      {trainer.specialization || trainer.role}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-4">
+                    {trainer.mobile && (
+                      <span className="flex items-center gap-1.5 text-[12px] text-white/65">
+                        <Phone size={11} /> {trainer.mobile}
+                      </span>
+                    )}
+                    {trainer.email && (
+                      <span className="flex items-center gap-1.5 text-[12px] text-white/65">
+                        <Mail size={11} /> {trainer.email}
+                      </span>
+                    )}
+                    {trainer.joining_date && (
+                      <span className="flex items-center gap-1.5 text-[12px] text-white/65">
+                        <Calendar size={11} /> Joined {fmtDate(trainer.joining_date)}
+                      </span>
+                    )}
+                  </div>
+
+                  {trainer.unique_id && (
+                    <div className="mt-2">
+                      <CopyId id={trainer.unique_id} color="rgba(255,255,255,0.7)" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2 shrink-0">
+                  {trainer.mobile && (
+                    <a
+                      href={whatsappHref()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-[12px] bg-white/15 backdrop-blur-sm px-3 py-2 text-[11px] font-bold text-white hover:bg-white/25 transition-all border border-white/20"
+                    >
+                      <MessageCircle size={13} /> WhatsApp
+                    </a>
+                  )}
+                  {isAdminOrManager && (
+                    <Link
+                      href={`/trainers/${id}/edit`}
+                      className="inline-flex items-center gap-1.5 rounded-[12px] bg-white/15 backdrop-blur-sm px-3 py-2 text-[11px] font-bold text-white hover:bg-white/25 transition-all border border-white/20"
+                    >
+                      <Edit2 size={13} /> Edit
+                    </Link>
+                  )}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setDeleteConfirm(true)}
+                      className="inline-flex items-center gap-1.5 rounded-[12px] bg-[rgba(239,68,68,0.2)] backdrop-blur-sm px-3 py-2 text-[11px] font-bold text-white hover:bg-[rgba(239,68,68,0.35)] transition-all border border-[rgba(239,68,68,0.3)]"
+                    >
+                      <Trash2 size={13} /> Remove
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
-            {/* ── Quick Stats ── */}
-            <motion.div variants={containerVariants} initial="hidden" animate="visible"
-              className="rg-3" style={{ gap: 14, marginBottom: 24 }}>
-              {[
-                { label: 'Total Members', value: members.length, icon: <Users size={14} />, color: '#6366f1' },
-                { label: 'Active Members', value: members.filter(m => m.status === 'active').length, icon: <CheckCircle size={14} />, color: '#10b981' },
-                { label: 'Joined Date', value: fmtDate(trainer.join_date), icon: <Calendar size={14} />, color: '#f59e0b' },
-              ].map((s, i) => (
-                <motion.div key={s.label} variants={itemVariants}
-                  style={{ borderRadius: 16, padding: '16px 18px', background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
-                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>{s.label}</span>
+          {/* ── KPI Cards ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.1 }}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+          >
+            {[
+              { label: 'Total Clients', value: trainer.stats.total_clients, icon: <Users size={16} />, color: '#2563EB', accent: 'rgba(37,99,235,0.08)', ring: 'rgba(37,99,235,0.12)' },
+              { label: 'Active Clients', value: trainer.stats.active_clients, icon: <CheckCircle size={16} />, color: '#10B981', accent: 'rgba(16,185,129,0.08)', ring: 'rgba(16,185,129,0.12)' },
+              { label: 'Month Revenue', value: fmtINR(trainer.stats.month_revenue), icon: <DollarSign size={16} />, color: '#8B5CF6', accent: 'rgba(139,92,246,0.08)', ring: 'rgba(139,92,246,0.12)' },
+              { label: 'Month Incentive', value: fmtINR(trainer.stats.month_incentive), icon: <TrendingUp size={16} />, color: '#F97316', accent: 'rgba(249,115,22,0.08)', ring: 'rgba(249,115,22,0.12)' },
+            ].map((card, i) => (
+              <motion.div
+                key={card.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12 + i * 0.05 }}
+                className="rounded-[20px] p-4 border"
+                style={{ background: card.accent, borderColor: card.ring }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
+                    style={{ background: `${card.color}15`, color: card.color }}>
+                    {card.icon}
                   </div>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{s.value}</span>
-                </motion.div>
-              ))}
-            </motion.div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--text-muted)]">{card.label}</span>
+                </div>
+                <p className="text-[22px] font-extrabold text-[var(--text-primary)] tabular-nums" style={{ color: card.color }}>
+                  {card.value}
+                </p>
+              </motion.div>
+            ))}
+          </motion.div>
 
-            {/* ── Tabs ── */}
-            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 20, background: '#f3f4f6', borderRadius: 12, padding: 3 }}>
-              {(['profile', 'members'] as const).map((t) => (
-                <button key={t} onClick={() => setActiveTab(t)}
-                  style={{
-                    padding: '8px 20px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                    fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
-                    background: activeTab === t ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
-                    color: activeTab === t ? '#fff' : '#6b7280',
-                    boxShadow: activeTab === t ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
-                  }}>
-                  {t === 'members' ? `Members (${members.length})` : 'Profile'}
+          {/* ── Tabs ── */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+            <div className="inline-flex gap-1 mb-5 rounded-[14px] bg-white/70 border border-white/60 p-1 backdrop-blur-sm shadow-sm">
+              {TABS.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    'px-4 py-2 rounded-[10px] text-[12px] font-bold transition-all',
+                    activeTab === tab.key
+                      ? 'bg-gradient-to-r from-[#2563EB] to-[#7C3AED] text-white shadow-[0_2px_8px_rgba(37,99,235,0.3)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/50',
+                  )}
+                >
+                  {tab.label}
                 </button>
               ))}
             </div>
+          </motion.div>
 
-            {/* ── Profile Tab ── */}
-            {activeTab === 'profile' && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-                <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <User size={14} color="#9ca3af" /> Personal Details
-                  </h3>
-                  <div className="rg-2" style={{ gap: 16 }}>
-                    <InfoRow label="Full Name" value={trainer.name} />
-                    <InfoRow label="Trainer ID" value={(trainer as any).unique_id ? <CopyId id={(trainer as any).unique_id} color="#f97316" /> : '—'} />
-                    <InfoRow label="Status" value={<StatusBadge status={trainer.status} />} />
-                    <InfoRow label="Phone" value={trainer.phone} />
-                    <InfoRow label="Email" value={trainer.email} />
-                    <InfoRow label="Specialization" value={trainer.specialization} />
-                    <InfoRow label="Joined" value={fmtDate(trainer.join_date)} />
+          {/* ── Overview Tab ── */}
+          {activeTab === 'overview' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-5"
+            >
+              {/* Personal Details */}
+              <GlassPanel className="p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="h-7 w-7 rounded-[8px] bg-[rgba(37,99,235,0.1)] flex items-center justify-center">
+                    <User size={14} className="text-[#2563EB]" />
                   </div>
+                  <h3 className="text-[13px] font-bold text-[var(--text-primary)]">Personal Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <InfoRow label="Full Name" value={trainer.name} />
+                  <InfoRow
+                    label="Trainer ID"
+                    value={trainer.unique_id
+                      ? <CopyId id={trainer.unique_id} color="#f97316" />
+                      : '—'}
+                  />
+                  <InfoRow label="Status" value={
+                    <span className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold',
+                      isActive
+                        ? 'bg-[rgba(16,185,129,0.10)] text-[#10B981] ring-1 ring-[rgba(16,185,129,0.20)]'
+                        : 'bg-[rgba(100,116,139,0.08)] text-[#64748B] ring-1 ring-[rgba(100,116,139,0.15)]',
+                    )}>
+                      <span className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-[#10B981]' : 'bg-[#64748B]')} />
+                      {trainer.status}
+                    </span>
+                  } />
+                  <InfoRow label="Phone" value={trainer.mobile} />
+                  <InfoRow label="Email" value={trainer.email} />
+                  <InfoRow label="Specialization" value={trainer.specialization} />
+                  <InfoRow label="Role" value={trainer.role} />
+                  <InfoRow label="Joined" value={fmtDate(trainer.joining_date)} />
+                </div>
+              </GlassPanel>
+
+              {/* Revenue & Settings */}
+              <GlassPanel className="p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="h-7 w-7 rounded-[8px] bg-[rgba(139,92,246,0.1)] flex items-center justify-center">
+                    <TrendingUp size={14} className="text-[#8B5CF6]" />
+                  </div>
+                  <h3 className="text-[13px] font-bold text-[var(--text-primary)]">Revenue & Settings</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <InfoRow label="Lifetime Revenue" value={
+                    <span className="font-bold text-[#8B5CF6]">{fmtINR(trainer.stats.lifetime_revenue)}</span>
+                  } />
+                  <InfoRow label="Month Revenue" value={
+                    <span className="font-bold text-[#10B981]">{fmtINR(trainer.stats.month_revenue)}</span>
+                  } />
+                  <InfoRow label="Incentive Rate" value={`${incentivePct}%`} />
+                  <InfoRow label="Month Incentive" value={
+                    <span className="font-bold text-[#F97316]">{fmtINR(trainer.stats.month_incentive)}</span>
+                  } />
+                  <InfoRow label="Total Clients" value={trainer.stats.total_clients} />
+                  <InfoRow label="Active / Expired" value={`${trainer.stats.active_clients} / ${trainer.stats.expired_clients}`} />
                 </div>
 
-                <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Award size={14} color="#9ca3af" /> Certifications & Schedule
-                  </h3>
-                  {trainer.certifications && trainer.certifications.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-                      {trainer.certifications.map((c, i) => (
-                        <span key={i} style={{ padding: '4px 12px', borderRadius: 20, background: 'rgba(99,102,241,0.1)', color: '#4f46e5', fontSize: 11.5, fontWeight: 600, border: '1px solid rgba(99,102,241,0.15)' }}>{c}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>No certifications listed.</p>
-                  )}
-                  <InfoRow label="Schedule / Timing" value={trainer.schedule} />
-                </div>
-
-                {trainer.bio && (
-                  <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', gridColumn: '1/-1' }}>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Star size={14} color="#9ca3af" /> Bio
-                    </h3>
-                    <p style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{trainer.bio}</p>
+                {trainer.schedule && (
+                  <div className="mt-5 pt-4 border-t border-[rgba(0,0,0,0.05)]">
+                    <InfoRow label="Schedule / Timing" value={trainer.schedule} />
                   </div>
                 )}
-              </motion.div>
-            )}
+              </GlassPanel>
 
-            {/* ── Members Tab ── */}
-            {activeTab === 'members' && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', background: '#fff' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#f9fafb' }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Users size={14} color="#9ca3af" /> Assigned Members
-                    <span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: 'rgba(99,102,241,0.1)', color: '#4f46e5' }}>{members.length}</span>
-                  </h3>
-                </div>
-                {members.length === 0 ? (
-                  <div style={{ padding: '50px', textAlign: 'center' }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', border: '1px solid rgba(99,102,241,0.15)' }}>
-                      <Users size={24} color="#6366f1" />
+              {/* Certifications */}
+              {trainer.certifications && trainer.certifications.length > 0 && (
+                <GlassPanel className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-7 w-7 rounded-[8px] bg-[rgba(249,115,22,0.1)] flex items-center justify-center">
+                      <Award size={14} className="text-[#F97316]" />
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: '#374151', marginBottom: 4 }}>No members assigned</div>
-                    <div style={{ fontSize: 13, color: '#6b7280', maxWidth: 300, margin: '0 auto' }}>Assign members to this trainer from the Members page.</div>
+                    <h3 className="text-[13px] font-bold text-[var(--text-primary)]">Certifications</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {trainer.certifications.map((c, i) => (
+                      <span key={i} className="inline-flex items-center rounded-full bg-[rgba(99,102,241,0.08)] px-3 py-1 text-[11px] font-semibold text-[#4F46E5] ring-1 ring-[rgba(99,102,241,0.15)]">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </GlassPanel>
+              )}
+
+              {/* Bio */}
+              {trainer.bio && (
+                <GlassPanel className={cn('p-6', !trainer.certifications?.length && 'lg:col-span-2')}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-7 w-7 rounded-[8px] bg-[rgba(6,182,212,0.1)] flex items-center justify-center">
+                      <Sparkles size={14} className="text-[#06B6D4]" />
+                    </div>
+                    <h3 className="text-[13px] font-bold text-[var(--text-primary)]">Bio</h3>
+                  </div>
+                  <p className="text-[13.5px] text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
+                    {trainer.bio}
+                  </p>
+                </GlassPanel>
+              )}
+
+              {/* Monthly revenue mini-chart */}
+              {trainer.monthly.length > 0 && (
+                <GlassPanel className="p-6 lg:col-span-2">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-[8px] bg-[rgba(37,99,235,0.1)] flex items-center justify-center">
+                        <Activity size={14} className="text-[#2563EB]" />
+                      </div>
+                      <h3 className="text-[13px] font-bold text-[var(--text-primary)]">Revenue Trend (Last 6 Months)</h3>
+                    </div>
+                  </div>
+                  <div className="flex items-end gap-3 h-28">
+                    {(() => {
+                      const maxVal = Math.max(...trainer.monthly.map(m => m.revenue), 1);
+                      return trainer.monthly.map((m, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1.5 group/bar">
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: `${(m.revenue / maxVal) * 100}%` }}
+                            transition={{ duration: 0.5, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                            className="w-full rounded-[6px] cursor-pointer relative"
+                            style={{ background: 'linear-gradient(to top, #2563EB, #7C3AED)', minHeight: 4 }}
+                          >
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#0B0B0F] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-[5px] opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-10">
+                              {fmtINR(m.revenue)}
+                            </div>
+                          </motion.div>
+                          <span className="text-[9px] font-semibold text-[var(--text-muted)]">{m.month}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </GlassPanel>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── Members Tab ── */}
+          {activeTab === 'members' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+              <GlassPanel className="overflow-hidden">
+                <div className="flex items-center justify-between p-5 pb-4 border-b border-[rgba(0,0,0,0.04)]">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-[8px] bg-[rgba(37,99,235,0.1)] flex items-center justify-center">
+                      <Users size={14} className="text-[#2563EB]" />
+                    </div>
+                    <h3 className="text-[14px] font-bold text-[var(--text-primary)]">Assigned Clients</h3>
+                    <span className="inline-flex items-center rounded-full bg-[rgba(37,99,235,0.08)] px-2 py-0.5 text-[10px] font-bold text-[#2563EB]">
+                      {trainer.clients.length}
+                    </span>
+                  </div>
+                </div>
+
+                {trainer.clients.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 px-4">
+                    <div className="h-14 w-14 rounded-[18px] bg-[rgba(37,99,235,0.08)] border border-[rgba(37,99,235,0.12)] flex items-center justify-center mb-3">
+                      <Users size={24} className="text-[#2563EB]/40" strokeWidth={1.5} />
+                    </div>
+                    <p className="text-[14px] font-bold text-[var(--text-primary)] mb-1">No clients assigned</p>
+                    <p className="text-[12px] text-[var(--text-muted)] text-center max-w-xs">
+                      Assign clients to this trainer from the Members page.
+                    </p>
                   </div>
                 ) : (
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
                       <thead>
-                        <tr style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))' }}>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Name</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Status</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Plan</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Expiry</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Phone</th>
+                        <tr className="border-b border-[rgba(0,0,0,0.04)]">
+                          {['Name', 'Status', 'Plan', 'Expiry', 'Balance', 'Contact'].map(h => (
+                            <th key={h} className="py-2.5 px-4 text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--text-muted)]">{h}</th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {(members ?? []).map((m, i) => (
-                          <motion.tr key={m.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                            style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
-                            onClick={() => router.push(`/clients/${m.id}`)}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.04)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                            <td style={{ padding: '12px 16px', fontWeight: 600, color: '#111827' }}>{m.name}</td>
-                            <td style={{ padding: '12px 16px' }}><StatusBadge status={m.status} /></td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{m.membership_plan ?? '—'}</td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{fmtDate(m.expiry_date)}</td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{m.phone ?? '—'}</td>
+                        {trainer.clients.map((c, i) => (
+                          <motion.tr
+                            key={c.id}
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            className="group border-b border-[rgba(0,0,0,0.03)] last:border-0 hover:bg-[rgba(37,99,235,0.02)] transition-colors cursor-pointer"
+                            onClick={() => router.push(`/clients/${c.id}`)}
+                          >
+                            <td className="py-3 px-4 text-[13px] font-semibold text-[var(--text-primary)]">{c.name}</td>
+                            <td className="py-3 px-4"><ClientStatusBadge status={c.status} /></td>
+                            <td className="py-3 px-4 text-[12px] text-[var(--text-muted)]">{c.package_type ?? '—'}</td>
+                            <td className="py-3 px-4 text-[12px] text-[var(--text-muted)]">{fmtDate(c.pt_end_date)}</td>
+                            <td className="py-3 px-4 text-[12px] text-[var(--text-muted)]">
+                              {c.balance_amount != null && Number(c.balance_amount) > 0
+                                ? <span className="text-[#EF4444] font-semibold">{fmtINR(c.balance_amount)}</span>
+                                : '—'}
+                            </td>
+                            <td className="py-3 px-4 text-[12px] text-[var(--text-muted)]">{c.mobile ?? '—'}</td>
                           </motion.tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 )}
-              </motion.div>
-            )}
-          </div>
+              </GlassPanel>
+            </motion.div>
+          )}
+
+          {/* ── Payments Tab ── */}
+          {activeTab === 'payments' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+              <GlassPanel className="overflow-hidden">
+                <div className="flex items-center justify-between p-5 pb-4 border-b border-[rgba(0,0,0,0.04)]">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-[8px] bg-[rgba(16,185,129,0.1)] flex items-center justify-center">
+                      <Receipt size={14} className="text-[#10B981]" />
+                    </div>
+                    <h3 className="text-[14px] font-bold text-[var(--text-primary)]">Recent Payments</h3>
+                    <span className="inline-flex items-center rounded-full bg-[rgba(16,185,129,0.08)] px-2 py-0.5 text-[10px] font-bold text-[#10B981]">
+                      {trainer.payments.length}
+                    </span>
+                  </div>
+                </div>
+
+                {trainer.payments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 px-4">
+                    <div className="h-14 w-14 rounded-[18px] bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.12)] flex items-center justify-center mb-3">
+                      <CreditCard size={24} className="text-[#10B981]/40" strokeWidth={1.5} />
+                    </div>
+                    <p className="text-[14px] font-bold text-[var(--text-primary)] mb-1">No payments yet</p>
+                    <p className="text-[12px] text-[var(--text-muted)] text-center max-w-xs">
+                      Payments collected by this trainer will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-[rgba(0,0,0,0.04)]">
+                          {['Client', 'Amount', 'Method', 'Incentive', 'Date', 'Receipt'].map(h => (
+                            <th key={h} className="py-2.5 px-4 text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--text-muted)]">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {trainer.payments.map((p, i) => {
+                          const ms = METHOD_STYLES[p.method] || { bg: 'rgba(100,116,139,0.08)', color: '#64748B' };
+                          return (
+                            <motion.tr
+                              key={p.id}
+                              initial={{ opacity: 0, x: -8 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.025 }}
+                              className="border-b border-[rgba(0,0,0,0.03)] last:border-0 hover:bg-[rgba(16,185,129,0.02)] transition-colors"
+                            >
+                              <td className="py-3 px-4 text-[13px] font-semibold text-[var(--text-primary)]">{p.client_name}</td>
+                              <td className="py-3 px-4 text-[13px] font-bold text-[#10B981]">{fmtINR(p.amount)}</td>
+                              <td className="py-3 px-4">
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
+                                  style={{ background: ms.bg, color: ms.color }}>
+                                  {p.method}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-[12px] text-[#F97316] font-semibold">
+                                {p.incentive_amt ? fmtINR(p.incentive_amt) : '—'}
+                              </td>
+                              <td className="py-3 px-4 text-[12px] text-[var(--text-muted)]">{fmtDate(p.date)}</td>
+                              <td className="py-3 px-4 text-[11px] text-[var(--text-muted)] font-mono">{p.receipt_no ?? '—'}</td>
+                            </motion.tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </GlassPanel>
+            </motion.div>
+          )}
 
           {/* ── Delete Modal ── */}
           <AnimatePresence>
             {deleteConfirm && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-                onClick={() => setDeleteConfirm(false)}>
-                <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
-                  style={{ background: '#fff', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)' }}
-                  onClick={(e) => e.stopPropagation()}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <AlertTriangle size={18} color="#dc2626" />
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+                style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+                onClick={() => setDeleteConfirm(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  className="w-full max-w-[420px] rounded-[22px] bg-white border border-[rgba(0,0,0,0.07)] p-7 shadow-[0_24px_80px_rgba(0,0,0,0.15)]"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-10 w-10 rounded-[12px] bg-[rgba(239,68,68,0.1)] flex items-center justify-center">
+                      <AlertTriangle size={18} className="text-[#DC2626]" />
                     </div>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111827' }}>Remove Trainer</h3>
+                    <h3 className="text-[16px] font-bold text-[#111827]">Remove Trainer</h3>
                   </div>
-                  <p style={{ color: '#6b7280', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
-                    Remove <strong style={{ color: '#111827' }}>{trainer.name}</strong>? Their {members.length} assigned member{members.length !== 1 ? 's' : ''} will become unassigned.
+                  <p className="text-[13px] text-[#6B7280] leading-relaxed mb-6">
+                    Remove <strong className="text-[#111827]">{trainer.name}</strong>? Their{' '}
+                    {trainer.clients.length} assigned client{trainer.clients.length !== 1 ? 's' : ''} will become unassigned.
                   </p>
-                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                    <button onClick={() => setDeleteConfirm(false)}
-                      style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: '#f9fafb', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <div className="flex gap-2.5 justify-end">
+                    <button
+                      onClick={() => setDeleteConfirm(false)}
+                      className="px-4 py-2 rounded-[10px] border border-[#D1D5DB] bg-[#F9FAFB] text-[12px] font-600 text-[#374151] hover:bg-[#F3F4F6] transition-all cursor-pointer"
+                    >
                       Cancel
                     </button>
-                    <button onClick={handleDelete} disabled={deleting}
-                      style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: deleting ? 'default' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(239,68,68,0.25)' }}>
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="px-4 py-2 rounded-[10px] text-[12px] font-bold text-white transition-all cursor-pointer disabled:opacity-60"
+                      style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)', boxShadow: '0 4px 16px rgba(239,68,68,0.25)' }}
+                    >
                       {deleting ? 'Removing…' : 'Remove trainer'}
                     </button>
                   </div>
@@ -405,6 +773,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
               </motion.div>
             )}
           </AnimatePresence>
+
         </div>
       </AppShell>
     </Guard>
