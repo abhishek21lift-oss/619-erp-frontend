@@ -1,17 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
+import LandingPage from '@/components/LandingPage';
 import BrandLogo from '@/components/BrandLogo';
 
 const INIT_TIMEOUT_MS = 10_000;
 
 export default function Root() {
   const { user, loading } = useAuth();
-  const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
 
   // 10-second safety net: if auth never resolves, bail out with an error screen
@@ -83,8 +82,7 @@ export default function Root() {
   }
 
   if (!user) {
-    router.replace('/login');
-    return null;
+    return <LandingPage />;
   }
 
   return (

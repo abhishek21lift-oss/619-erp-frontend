@@ -152,19 +152,12 @@ export type Trainer = {
   specialty?: string;
   /** alias used by some API responses */
   specialization?: string;
-  status?: 'active' | 'inactive';
-  /** @deprecated backend returns status not is_active */
   is_active?: boolean;
-  joining_date?: string;
-  salary?: number;
-  incentive_rate?: number;
   created_at?: string;
   /** stats returned by /api/trainers list */
   active_clients?: number;
   total_clients?: number;
   month_revenue?: number | string;
-  all_time_revenue?: number | string;
-  month_incentive?: number | string;
   total_revenue?: number | string;
   experience_years?: number;
 };
