@@ -728,7 +728,9 @@ function NewClientWizard() {
                                   )}
                                   <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
                                     style={{ background: selected ? 'rgba(255,255,255,0.12)' : meta.bg }}>
-                                    <GoalIcon size={19} strokeWidth={1.75} style={{ color: selected ? '#F59E0B' : meta.color }} />
+                                    <span style={{ color: selected ? '#F59E0B' : meta.color, display: 'flex' }}>
+                                      <GoalIcon size={19} strokeWidth={1.75} />
+                                    </span>
                                   </div>
                                   <span className="text-[11.5px] font-[700] leading-tight" style={{ color: selected ? '#fff' : '#475569' }}>
                                     {g}
