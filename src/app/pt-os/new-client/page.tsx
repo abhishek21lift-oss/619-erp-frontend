@@ -279,6 +279,11 @@ function NewClientWizard() {
         const map: Record<string, string> = {};
         arr.forEach((t: any) => { if (t.name && t.id) map[t.name] = t.id; });
         setTrainerIdMap(map);
+        // auto-assign to the first (and only) trainer
+        if (arr.length > 0) {
+          const first = arr[0] as any;
+          if (first.name) setForm(f => ({ ...f, trainer: first.name }));
+        }
         setPlans(Array.isArray(plansRes?.data) ? plansRes.data.map((p: any) => ({ id: p.id, name: p.name, base_amount: p.base_amount, duration_months: p.duration_months })) : []);
       } catch (err: any) {
         setDataError(err?.message || 'Failed to load data');
@@ -363,7 +368,7 @@ function NewClientWizard() {
     return () => { if (autofillTimer.current) clearTimeout(autofillTimer.current); };
   }, [form.phone, trainers, plans]);
 
-  const trainerOptions = trainers;
+
 
   const set = useCallback(<K extends keyof FormData>(key: K, val: FormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -387,7 +392,6 @@ function NewClientWizard() {
       if (!form.goal) return 'Please select a fitness goal.';
     }
     if (s === 3) {
-      if (!form.trainer) return 'Please select a trainer.';
       if (!form.planId) return 'Please select a subscription plan.';
     }
     return null;
@@ -732,20 +736,11 @@ function NewClientWizard() {
                           <Dumbbell size={18} style={{ color: '#F59E0B' }} />
                         </div>
                         <div>
-                          <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>PT Assignment</h2>
-                          <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Assign trainer and set pricing.</p>
+                          <h2 className="text-[17px] font-[760] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Subscription & Pricing</h2>
+                          <p className="text-[12.5px]" style={{ color: 'rgb(148,163,184)' }}>Select a plan and set the price.</p>
                         </div>
                       </div>
                       <div className="space-y-5">
-                        {/* Trainer Selector */}
-                        <PremiumSelect
-                          label="Select Trainer *"
-                          value={form.trainer}
-                          onChange={(v) => set('trainer', v)}
-                          options={trainerOptions}
-                          placeholder="Choose a personal trainer"
-                        />
-
                         {/* Subscription Plan */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
