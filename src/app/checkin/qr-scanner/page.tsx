@@ -8,7 +8,7 @@
  * Flow: Camera → jsQR frame scan → POST /api/qr/scan → show result → auto-retry
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   QrCode, CheckCircle2, XCircle, Loader2, RefreshCw,
   Camera, AlertTriangle, Clock, Zap, User, ScanLine,
@@ -161,6 +161,10 @@ export default function QrScannerPage() {
   }, [startScanLoop]);
 
   useEffect(() => {
+    import('jsqr').then(mod => { jsQR = (mod.default || mod) as unknown as typeof jsQR; }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     startCamera();
     return () => {
       cancelAnimationFrame(rafRef.current);
@@ -230,7 +234,7 @@ export default function QrScannerPage() {
               {/* Result overlay */}
               <AnimatePresence>
                 {result && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
@@ -242,7 +246,7 @@ export default function QrScannerPage() {
                       <div style={{ fontSize: 14, opacity: 0.9 }}>{result.message}</div>
                       {result.user?.member_code && <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>#{result.user.member_code}</div>}
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 

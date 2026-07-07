@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Image from 'next/image';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -79,7 +79,7 @@ function WAContent() {
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         {/* ── HERO — DO NOT CHANGE ── */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e)', boxShadow:'0 20px 60px rgba(26,10,46,0.5)' }}>
           <div style={{ position:'absolute', inset:0, background:'radial-gradient(600px circle at 30% 40%, rgba(139,92,246,0.15), transparent 70%)' }}/>
           <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(139,92,246,0.08) 1px, transparent 1px)', backgroundSize:'24px 24px' }}/>
@@ -95,23 +95,23 @@ function WAContent() {
             <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#ffffff', margin:'0 0 8px' }}>WhatsApp / SMS</h1>
             <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.55)' }}>Send personalised WhatsApp messages to members using templates or custom messages.</p>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* ── ERROR BANNER ── */}
         {loadError && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             style={{ marginBottom: 20, borderRadius: 14, padding: '14px 18px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', fontSize: 13, color: '#fca5a5', lineHeight: 1.5 }}>
             <strong style={{ color: '#f87171' }}>Unable to load members:</strong> {loadError}. WhatsApp integration is not configured — contact your administrator if this problem persists.
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── KPI CARDS ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:28 }}>
           {KPIS.map((k,i)=>{
             const vals = [members.length, selected.length, sent];
             return (
-              <motion.div key={k.label} variants={itemVariants}
+              <m.div key={k.label} variants={itemVariants}
                 style={{ position:'relative', overflow:'hidden', borderRadius:20, padding:'22px 24px', background:k.bg, border:`1px solid ${k.color}22`, boxShadow:'0 2px 12px rgba(0,0,0,0.06)', cursor:'default', transition:'all 0.3s ease' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
                   <div style={{ width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:`${k.color}18` }}>
@@ -120,15 +120,15 @@ function WAContent() {
                   <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#6b7280' }}>{k.label}</span>
                 </div>
                 <div style={{ fontSize:30, fontWeight:800, color:k.color, lineHeight:1.2, letterSpacing:'-0.02em' }}>{vals[i]}</div>
-              </motion.div>
+              </m.div>
             );
           })}
-        </motion.div>
+        </m.div>
 
         {/* ── MAIN CONTENT ── */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 380px', gap:20 }}>
           {/* Member list */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', overflow:'hidden' }}>
             <div style={{ padding:'14px 20px', borderBottom:'1px solid #e5e7eb', display:'flex', gap:10, alignItems:'center', background:'#f9fafb' }}>
               <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:'#ffffff', borderRadius:10, padding:'8px 14px', border:'1px solid #d1d5db' }}>
@@ -179,11 +179,11 @@ function WAContent() {
                 </button>
               </div>
             )}
-          </motion.div>
+          </m.div>
 
           {/* Template panel */}
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.1 }}
+            <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.1 }}
               style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:22 }}>
               <h3 style={{ margin:'0 0 16px', fontSize:14, fontWeight:700, color:'#111827', display:'flex', alignItems:'center', gap:8 }}>
                 <MessageCircle size={15} color="#a855f7"/> Message Template
@@ -202,12 +202,12 @@ function WAContent() {
               ):(
                 <div style={{ background:'#f9fafb', borderRadius:10, padding:14, fontSize:13, color:'#374151', lineHeight:1.7, whiteSpace:'pre-wrap', border:'1px solid #e5e7eb' }}>{template.body}</div>
               )}
-            </motion.div>
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.15 }}
+            </m.div>
+            <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.15 }}
               style={{ borderRadius:20, background:'rgba(34,197,94,0.06)', border:'1px solid rgba(34,197,94,0.2)', padding:20 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, color:'#16a34a', fontWeight:700, fontSize:13 }}><ExternalLink size={14}/>Opens WhatsApp Web</div>
               <p style={{ margin:0, fontSize:12, color:'#374151', lineHeight:1.6 }}>Clicking Send opens WhatsApp Web or App with a pre-filled message. No API key needed — direct member communication.</p>
-            </motion.div>
+            </m.div>
           </div>
         </div>
       </div>

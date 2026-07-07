@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Search, Clock, CheckCircle2, XCircle,
   RefreshCw, Calendar, Dumbbell,
@@ -128,14 +128,14 @@ export default function PTSessionsPage() {
                 Track all PT sessions across trainers
               </p>
             </div>
-            <motion.button
+            <m.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
               onClick={loadSessions}
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(59,130,246,0.08)] text-[#3B82F6] transition-colors hover:bg-[rgba(59,130,246,0.14)]"
             >
               <RefreshCw size={15} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
-            </motion.button>
+            </m.button>
           </div>
 
           {/* Tab Bar */}
@@ -198,7 +198,7 @@ export default function PTSessionsPage() {
                 const cfg = STATUS_STYLES[s.status] || STATUS_STYLES.scheduled;
                 const Icon = STATUS_ICONS[s.status] || Clock;
                 return (
-                  <motion.div
+                  <m.div
                     key={s.id || i}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -244,7 +244,7 @@ export default function PTSessionsPage() {
                     >
                       {cfg.label}
                     </div>
-                  </motion.div>
+                  </m.div>
                 );
               })}
             </div>

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api, LeaveRequest, Trainer } from '@/lib/api';
@@ -156,17 +156,17 @@ function Inner() {
     <AppShell>
       {/* ── Hero ── */}
       <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0f0a1e 0%, #1a1040 30%, #0f172a 60%, #1e0a2e 100%)', padding: '48px 32px 40px', borderRadius: '0 0 40px 40px' }}>
-        <motion.div style={{ position: 'absolute', top: -80, right: -40, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', pointerEvents: 'none' }}
+        <m.div style={{ position: 'absolute', top: -80, right: -40, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', pointerEvents: 'none' }}
           animate={{ x: [0, 25, -15, 0], y: [0, -30, 15, 0] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }} />
-        <motion.div style={{ position: 'absolute', bottom: -60, left: -30, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%)', pointerEvents: 'none' }}
+        <m.div style={{ position: 'absolute', bottom: -60, left: -30, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%)', pointerEvents: 'none' }}
           animate={{ x: [0, -20, 25, 0], y: [0, 25, -10, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
         <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '22px 22px', pointerEvents: 'none' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 6, position: 'relative', zIndex: 1 }}>
-          <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
+          <m.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #f59e0b, #f97316)', boxShadow: '0 8px 32px rgba(245,158,11,0.3)' }}>
             <CalendarDays size={24} color="#fff" />
-          </motion.div>
+          </m.div>
           <div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fef3c7, #fcd34d, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Leave Requests</h1>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>Manage and review trainer leave applications</p>
@@ -176,27 +176,27 @@ function Inner() {
 
       <div style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
         {error && (
-          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+          <m.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
             style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06))', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 18px', fontSize: 13, color: '#fca5a5', marginBottom: 16 }}>
             {error}
-          </motion.div>
+          </m.div>
         )}
         {success && (
-          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+          <m.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
             style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(5,150,105,0.06))', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 12, padding: '12px 18px', fontSize: 13, color: '#6ee7b7', marginBottom: 16 }}>
             {success}
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── KPI Grid ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+        <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           {[
             { label: 'Pending', value: kpi.pending, icon: <Clock size={16} />, from: '#f59e0b', to: '#d97706', glow: 'rgba(245,158,11,0.25)', bg: 'rgba(245,158,11,0.2)' },
             { label: 'Approved', value: kpi.approved, icon: <CalendarCheck size={16} />, from: '#10b981', to: '#059669', glow: 'rgba(16,185,129,0.25)', bg: 'rgba(16,185,129,0.2)' },
             { label: 'Rejected', value: kpi.rejected, icon: <CalendarX size={16} />, from: '#ef4444', to: '#dc2626', glow: 'rgba(239,68,68,0.25)', bg: 'rgba(239,68,68,0.2)' },
             { label: 'Total', value: kpi.total, icon: <Activity size={16} />, from: '#8b5cf6', to: '#7c3aed', glow: 'rgba(139,92,246,0.25)', bg: 'rgba(139,92,246,0.2)' },
           ].map((k, i) => (
-            <motion.div key={k.label} variants={itemVariants}
+            <m.div key={k.label} variants={itemVariants}
               style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '20px 20px', background: `linear-gradient(135deg, ${k.bg}, rgba(30,27,75,0.6))`, border: '1px solid rgba(255,255,255,0.08)', boxShadow: `0 6px 24px ${k.glow}`, cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 12px 40px ${k.glow}`; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = `0 6px 24px ${k.glow}`; }}>
@@ -206,13 +206,13 @@ function Inner() {
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>{k.icon}</div>
               </div>
               <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{k.value}</div>
-            </motion.div>
+            </m.div>
           ))}
-        </motion.div>
+        </m.div>
 
         {/* ── Toolbar ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          <motion.div variants={itemVariants}
+        <m.div variants={containerVariants} initial="hidden" animate="visible">
+          <m.div variants={itemVariants}
             style={{ borderRadius: 18, padding: '14px 18px', marginBottom: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)' }}>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3 }}>
@@ -243,20 +243,20 @@ function Inner() {
                 <Plus size={14} /> Add Request
               </button>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* ── Table ── */}
-          <motion.div variants={itemVariants}
+          <m.div variants={itemVariants}
             style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.02)' }}>
             {loading ? (
               <div style={{ padding: '60px', textAlign: 'center' }}>
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                <m.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                   style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(139,92,246,0.15)', borderTopColor: '#8b5cf6', margin: '0 auto 12px' }} />
                 <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Loading leave requests…</div>
               </div>
             ) : filtered.length === 0 ? (
               <div style={{ padding: '60px', textAlign: 'center' }}>
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
                   <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(245,158,11,0.2)' }}>
                     <CalendarDays size={28} color="#fcd34d" />
@@ -267,7 +267,7 @@ function Inner() {
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', maxWidth: 360 }}>
                     {tab === 'pending' ? 'All caught up — nothing to review.' : 'Try changing the filter or adding a new request.'}
                   </div>
-                </motion.div>
+                </m.div>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -289,7 +289,7 @@ function Inner() {
                       const days = lv.days ?? daysBetween(lv.from_date ?? '', lv.to_date ?? '');
                       const busy = acting === lv.id;
                       return (
-                        <motion.tr key={lv.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                        <m.tr key={lv.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
                           style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.2s', background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}
                           onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(245,158,11,0.05)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'; }}>
@@ -349,24 +349,24 @@ function Inner() {
                               </div>
                             </td>
                           )}
-                        </motion.tr>
+                        </m.tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
             )}
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       </div>
 
       {/* ── Add Request Modal ── */}
       <AnimatePresence>
         {showModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
             onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}>
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
+            <m.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
               style={{ background: 'linear-gradient(145deg, #1e1b4b, #0f172a)', borderRadius: 22, padding: 32, width: '100%', maxWidth: 500, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -437,18 +437,18 @@ function Inner() {
                   </button>
                 </div>
               </form>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
       {/* ── Reject Note Modal ── */}
       <AnimatePresence>
         {rejectTarget && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
             onClick={(e) => { if (e.target === e.currentTarget) setRejectTarget(null); }}>
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
+            <m.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
               style={{ background: 'linear-gradient(145deg, #1e1b4b, #0f172a)', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -476,8 +476,8 @@ function Inner() {
                   {acting ? 'Rejecting…' : 'Confirm Reject'}
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
     </AppShell>

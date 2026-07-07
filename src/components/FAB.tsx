@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { Plus, X, UserPlus, Dumbbell, IndianRupee, ClipboardList, ScanFace } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
@@ -67,7 +67,7 @@ export default function FAB() {
       {/* Backdrop */}
       <AnimatePresence>
         {open && (
-          <motion.div
+          <m.div
             className="fixed inset-0 z-[49] lg:hidden"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
             initial={{ opacity: 0 }}
@@ -93,7 +93,7 @@ export default function FAB() {
               {FAB_ITEMS.map((item, i) => {
                 const Icon = item.icon;
                 return (
-                  <motion.button
+                  <m.button
                     key={item.href + item.label}
                     initial={{ opacity: 0, y: 20, scale: 0.7 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -127,7 +127,7 @@ export default function FAB() {
                     >
                       <Icon size={18} className="text-white" />
                     </div>
-                  </motion.button>
+                  </m.button>
                 );
               })}
             </div>
@@ -136,7 +136,7 @@ export default function FAB() {
       </AnimatePresence>
 
       {/* Main FAB button */}
-      <motion.button
+      <m.button
         className="fixed z-50 flex h-[56px] w-[56px] items-center justify-center rounded-full lg:hidden"
         style={{
           bottom: navVisible
@@ -157,7 +157,7 @@ export default function FAB() {
         aria-label={open ? 'Close quick actions' : 'Quick actions'}
         aria-expanded={open}
       >
-        <motion.div
+        <m.div
           animate={{ rotate: open ? 45 : 0 }}
           transition={{ type: 'spring', stiffness: 600, damping: 30 }}
         >
@@ -165,8 +165,8 @@ export default function FAB() {
             ? <X size={22} className="text-white" />
             : <Plus size={24} className="text-white" strokeWidth={2.5} />
           }
-        </motion.div>
-      </motion.button>
+        </m.div>
+      </m.button>
     </>
   );
 }

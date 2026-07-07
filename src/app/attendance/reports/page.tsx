@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { BarChart3, Loader2, Download, Calendar, Users, CheckCircle, Clock, AlertTriangle, TrendingUp, QrCode, ScanFace, Fingerprint, ClipboardList } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -58,7 +58,7 @@ export default function AttendanceReportsPage() {
           <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
 
             {/* ═══════ HERO SECTION ═══════ */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               style={{
                 position: 'relative',
                 overflow: 'hidden',
@@ -77,11 +77,11 @@ export default function AttendanceReportsPage() {
               }} />
 
               {/* Floating orbs */}
-              <motion.div style={{ position: 'absolute', right: -100, top: -100, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(56,189,248,0.35) 0%, transparent 70%)', pointerEvents: 'none' }}
+              <m.div style={{ position: 'absolute', right: -100, top: -100, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(56,189,248,0.35) 0%, transparent 70%)', pointerEvents: 'none' }}
                 animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.45, 0.3] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-              <motion.div style={{ position: 'absolute', left: -60, bottom: -100, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }}
+              <m.div style={{ position: 'absolute', left: -60, bottom: -100, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }}
                 animate={{ scale: [1, 1.18, 1], opacity: [0.2, 0.35, 0.2] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-              <motion.div style={{ position: 'absolute', left: '50%', top: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%)', pointerEvents: 'none' }}
+              <m.div style={{ position: 'absolute', left: '50%', top: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.2) 0%, transparent 70%)', pointerEvents: 'none' }}
                 animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
 
               {/* Top accent glow bar */}
@@ -105,7 +105,7 @@ export default function AttendanceReportsPage() {
                   Unified footfall trends across all check-in methods — QR, face, passkey, manual, and biometric.
                 </p>
               </div>
-            </motion.div>
+            </m.div>
 
             {/* ═══════ DATE RANGE PILLS ═══════ */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -144,12 +144,12 @@ export default function AttendanceReportsPage() {
             </div>
 
             {/* ═══════ KPI CARDS ROW ═══════ */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
               {KPIS.map((kpi) => {
                 const val = getKPIValue(traffic.data as Attendance[] | null, kpi.key);
                 return (
-                  <motion.div key={kpi.key} tabIndex={0} role="button"
+                  <m.div key={kpi.key} tabIndex={0} role="button"
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.style.transform = 'translateY(-2px)'; }}
                     style={{
                       background: 'white',
@@ -175,10 +175,10 @@ export default function AttendanceReportsPage() {
                       <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{val}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500 }}>{kpi.label}</div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 );
               })}
-            </motion.div>
+            </m.div>
 
             {/* ═══════ METHOD BREAKDOWN ═══════ */}
             {records.length > 0 && (() => {
@@ -193,13 +193,13 @@ export default function AttendanceReportsPage() {
                 manual:    { label: 'Manual',        icon: <ClipboardList size={14} />,color: '#94a3b8' },
               };
               const methodCounts = records.reduce((acc: Record<string, number>, r) => {
-                const m = (r as any).check_in_method || 'manual';
-                acc[m] = (acc[m] || 0) + 1;
+                const method = (r as any).check_in_method || 'manual';
+                acc[method] = (acc[method] || 0) + 1;
                 return acc;
               }, {});
               const total = records.length || 1;
               return (
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                   style={{ background: 'white', borderRadius: 20, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.06)', marginBottom: 24, position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: 'linear-gradient(90deg,#6366f1,#06b6d4)', borderRadius: '0 0 3px 3px', opacity: 0.5 }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
@@ -223,7 +223,7 @@ export default function AttendanceReportsPage() {
                           </div>
                           <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{count}</div>
                           <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: '#e2e8f0' }}>
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: 'easeOut' }}
+                            <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: 'easeOut' }}
                               style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${meta.color}, ${meta.color}99)` }} />
                           </div>
                           <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{pct}% of check-ins</div>
@@ -231,7 +231,7 @@ export default function AttendanceReportsPage() {
                       );
                     })}
                   </div>
-                </motion.div>
+                </m.div>
               );
             })()}
 
@@ -239,7 +239,7 @@ export default function AttendanceReportsPage() {
             <div className="rg-2" style={{ gap: 20, marginBottom: 24, alignItems: 'start' }}>
 
               {/* Footfall Trend Card */}
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+              <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
                 style={{
                   background: 'white',
                   borderRadius: 20,
@@ -270,7 +270,7 @@ export default function AttendanceReportsPage() {
                       return Object.entries(statusCounts).map(([status, count], i) => {
                         const barHeight = 20 + (count / maxCount) * 80;
                         return (
-                          <motion.div key={status} initial={{ height: 0 }} animate={{ height: barHeight }}
+                          <m.div key={status} initial={{ height: 0 }} animate={{ height: barHeight }}
                             transition={{ duration: 0.6, delay: i * 0.03, ease: 'easeOut' }}
                             style={{ width: 40, borderRadius: '6px 6px 0 0', background: `linear-gradient(180deg, ${colors[status] || '#06b6d4'}, #1e293b)`, opacity: 0.6 + (i / Math.max(Object.keys(statusCounts).length, 1)) * 0.4 }}
                             title={`${status}: ${count}`} />
@@ -286,10 +286,10 @@ export default function AttendanceReportsPage() {
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
                   {records.length} record{records.length !== 1 ? 's' : ''} · {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 </div>
-              </motion.div>
+              </m.div>
 
               {/* Monthly Summary Card */}
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
+              <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
                 style={{
                   background: 'white',
                   borderRadius: 20,
@@ -336,7 +336,7 @@ export default function AttendanceReportsPage() {
                               style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 150ms' }}>
                               <td style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <motion.div initial={{ width: 0 }} animate={{ width: Math.min(60, (data.present / Math.max(data.checkins, 1)) * 60) }}
+                                  <m.div initial={{ width: 0 }} animate={{ width: Math.min(60, (data.present / Math.max(data.checkins, 1)) * 60) }}
                                     transition={{ duration: 0.8, delay: i * 0.05, ease: 'easeOut' }}
                                     style={{ height: 6, borderRadius: 3, background: 'linear-gradient(90deg,#06b6d4,#3b82f6)' }} />
                                   {month}
@@ -357,7 +357,7 @@ export default function AttendanceReportsPage() {
                     </tbody>
                   </table>
                 </div>
-              </motion.div>
+              </m.div>
             </div>
           </div>
         </div>

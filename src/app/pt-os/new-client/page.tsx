@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, Check, User, Mail, Phone, Calendar, Hash,
   Target, Ruler, Heart, Activity, Dumbbell, Sparkles,
@@ -120,7 +120,7 @@ function PremiumSelect<T extends string>({ label, value, onChange, options, plac
       </button>
       <AnimatePresence>
         {open && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -140,7 +140,7 @@ function PremiumSelect<T extends string>({ label, value, onChange, options, plac
                 {value === opt && <Check size={12} style={{ color: '#F59E0B' }} />}
               </button>
             ))}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -479,14 +479,14 @@ function NewClientWizard() {
   /* ── SUCCESS MODAL ── */
   if (showSuccess) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[80vh] items-center justify-center">
-        <motion.div
+      <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[80vh] items-center justify-center">
+        <m.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
           className="flex flex-col items-center text-center max-w-md mx-auto"
         >
-          <motion.div
+          <m.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
@@ -494,7 +494,7 @@ function NewClientWizard() {
             style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', boxShadow: '0 20px 60px rgba(220,38,38,0.3)' }}
           >
             <CheckCircle2 size={44} color="white" />
-          </motion.div>
+          </m.div>
           <h2 className="text-[28px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>Client Onboarded!</h2>
           <p className="mt-2 text-[15px]" style={{ color: 'rgb(148,163,184)' }}>
             {form.name} has been registered with personal trainer {form.trainer}.
@@ -505,8 +505,8 @@ function NewClientWizard() {
             </PremiumButton>
             <PremiumButton tone="secondary" onClick={() => router.push(`/pt-os/clients/${createdId}`)}>View Client Profile</PremiumButton>
           </div>
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
     );
   }
 
@@ -532,7 +532,7 @@ function NewClientWizard() {
             <div className="flex items-center gap-2">
               <span className="text-[12px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>Step {step} of 4</span>
               <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-2)' }}>
-                <motion.div
+                <m.div
                   className="h-full rounded-full"
                   style={{ background: 'linear-gradient(90deg,#F59E0B,#D97706)' }}
                   animate={{ width: `${(step / 4) * 100}%` }}
@@ -569,19 +569,19 @@ function NewClientWizard() {
             <StepIndicator current={step} onStep={(s) => { if (s <= step + 1) { setStep(s); setError(''); } }} />
 
             {error && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+              <m.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                 className="mt-4 rounded-[13px] p-3.5 text-[13px] font-[500]"
                 style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239' }}
               >
                 {error}
-              </motion.div>
+              </m.div>
             )}
 
             {/* Step Content */}
             <div className="mt-6">
               <AnimatePresence mode="wait">
                 {step === 1 && (
-                  <motion.div key="step1" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                  <m.div key="step1" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
                     <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <div className="flex items-center gap-3 mb-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
@@ -601,12 +601,12 @@ function NewClientWizard() {
                           <div>
                             <FloatInput label="Phone Number" type="tel" required value={form.phone} onChange={(v) => set('phone', v)} />
                             {autofillNote && (
-                              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                              <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                                 className="mt-1.5 flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5"
                                 style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}>
                                 <CheckCircle2 size={11} style={{ color: '#0d9488', flexShrink: 0 }} />
                                 <span className="text-[11px] font-[600]" style={{ color: '#065f46' }}>{autofillNote}</span>
-                              </motion.div>
+                              </m.div>
                             )}
                           </div>
                           <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={(v) => set('dob', v)} />
@@ -637,11 +637,11 @@ function NewClientWizard() {
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 {step === 2 && (
-                  <motion.div key="step2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                  <m.div key="step2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
                     <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <div className="flex items-center gap-3 mb-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
@@ -721,11 +721,11 @@ function NewClientWizard() {
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 {step === 3 && (
-                  <motion.div key="step3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                  <m.div key="step3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
                     <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <div className="flex items-center gap-3 mb-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
@@ -884,7 +884,7 @@ function NewClientWizard() {
 
                         {/* Summary */}
                         {form.trainer && form.frequency && form.basePrice !== null && form.sellingPrice !== null && (
-                          <motion.div
+                          <m.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             className="rounded-[14px] p-4"
@@ -900,15 +900,15 @@ function NewClientWizard() {
                               <p>Start: <strong style={{ color: 'rgb(15,23,42)' }}>{new Date(form.startDate).toLocaleDateString('en-IN')}</strong></p>
                               {form.endDate && <p>End: <strong style={{ color: 'rgb(15,23,42)' }}>{new Date(form.endDate).toLocaleDateString('en-IN')}</strong></p>}
                             </div>
-                          </motion.div>
+                          </m.div>
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 {step === 4 && (
-                  <motion.div key="step4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                  <m.div key="step4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
                     <div className="rounded-[22px] p-6 sm:p-8" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <div className="flex items-center gap-3 mb-6">
                         <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
@@ -1002,7 +1002,7 @@ function NewClientWizard() {
                         </label>
                       </div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             </div>

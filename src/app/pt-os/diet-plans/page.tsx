@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Salad, Plus, Search, User, Clock, Flame, Droplets,
   Sun, Coffee, UtensilsCrossed, Moon, Apple, Banana,
@@ -106,20 +106,20 @@ function Inner() {
     <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0a0a1a 0%, #052e16 20%, #0f172a 60%, #1a0a2e 100%)' }}>
       {/* ── Hero ── */}
       <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0a0a1a 0%, #052e16 20%, #0f172a 45%, #1a1a2e 70%, #0a0a1a 100%)', padding: '48px 32px 40px', borderRadius: '0 0 40px 40px' }}>
-        <motion.div style={{ position: 'absolute', top: -60, right: -30, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.12), transparent 70%)', pointerEvents: 'none' }}
+        <m.div style={{ position: 'absolute', top: -60, right: -30, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.12), transparent 70%)', pointerEvents: 'none' }}
           animate={{ x: [0, 20, -15, 0], y: [0, -30, 10, 0] }} transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }} />
-        <motion.div style={{ position: 'absolute', bottom: -50, left: -40, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.08), transparent 70%)', pointerEvents: 'none' }}
+        <m.div style={{ position: 'absolute', bottom: -50, left: -40, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.08), transparent 70%)', pointerEvents: 'none' }}
           animate={{ x: [0, -20, 25, 0], y: [0, 20, -10, 0] }} transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut' }} />
-        <motion.div style={{ position: 'absolute', top: '20%', left: '60%', width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.06), transparent 70%)', pointerEvents: 'none' }}
+        <m.div style={{ position: 'absolute', top: '20%', left: '60%', width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.06), transparent 70%)', pointerEvents: 'none' }}
           animate={{ x: [0, 10, -8, 0], y: [0, -15, 8, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
         <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <motion.div variants={heroVariants} initial="hidden" animate="visible"
+            <m.div variants={heroVariants} initial="hidden" animate="visible"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #10b981, #34d399)', boxShadow: '0 8px 32px rgba(16,185,129,0.3)' }}>
               <Salad size={26} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #d1fae5, #a7f3d0, #6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Diet Plans</h1>
               <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'rgba(255,255,255,0.45)' }}>Nutrition planning & meal tracking for your clients</p>
@@ -134,36 +134,36 @@ function Inner() {
 
       <div style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
         {/* ── Macro Progress ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           {[
             { label: 'Calories', value: consumed, max: goalCalories, unit: 'kcal', color: '#ef4444', icon: <Flame size={15} /> },
             { label: 'Protein', value: totalProtein, max: 160, unit: 'g', color: '#6366f1', icon: <Activity size={15} /> },
             { label: 'Carbs', value: totalCarbs, max: 260, unit: 'g', color: '#f59e0b', icon: <Banana size={15} /> },
             { label: 'Fats', value: totalFats, max: 65, unit: 'g', color: '#ec4899', icon: <Droplets size={15} /> },
-          ].map((m, i) => {
-            const pct = Math.min((m.value / m.max) * 100, 100);
+          ].map((macro, i) => {
+            const pct = Math.min((macro.value / macro.max) * 100, 100);
             return (
-              <motion.div key={m.label} variants={itemVariants}
-                style={{ borderRadius: 16, padding: 18, background: `linear-gradient(135deg, ${m.color}15, rgba(30,27,75,0.5))`, border: '1px solid rgba(255,255,255,0.07)', cursor: 'default', transition: 'transform 0.3s' }}
+              <m.div key={macro.label} variants={itemVariants}
+                style={{ borderRadius: 16, padding: 18, background: `linear-gradient(135deg, ${macro.color}15, rgba(30,27,75,0.5))`, border: '1px solid rgba(255,255,255,0.07)', cursor: 'default', transition: 'transform 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'rgba(255,255,255,0.5)' }}>{m.label}</span>
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: `${m.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: m.color }}>{m.icon}</div>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'rgba(255,255,255,0.5)' }}>{macro.label}</span>
+                  <div style={{ width: 32, height: 32, borderRadius: 9, background: `${macro.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: macro.color }}>{macro.icon}</div>
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: 8 }}>{m.value}<span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>/{m.max}{m.unit}</span></div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: 8 }}>{macro.value}<span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>/{macro.max}{macro.unit}</span></div>
                 <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
-                    style={{ height: '100%', borderRadius: 2, background: m.color }} />
+                  <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
+                    style={{ height: '100%', borderRadius: 2, background: macro.color }} />
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
-        </motion.div>
+        </m.div>
 
         {/* ── Water Intake ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ borderRadius: 16, padding: 18, background: 'linear-gradient(135deg, rgba(6,182,212,0.08), rgba(16,185,129,0.04))', border: '1px solid rgba(6,182,212,0.12)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(16,185,129,0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <GlassWater size={18} color="#22d3ee" />
@@ -175,7 +175,7 @@ function Inner() {
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                <motion.div initial={{ width: 0 }} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
+                <m.div initial={{ width: 0 }} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
                   style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #06b6d4, #10b981)' }} />
               </div>
               <button onClick={() => setWater(Math.min(water + 1, 8))}
@@ -184,7 +184,7 @@ function Inner() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* ── Meal Schedule ── */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 3, flexWrap: 'wrap' }}>
@@ -205,12 +205,12 @@ function Inner() {
         </div>
 
         {/* ── Meals Grid ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 28 }}>
           {meals.filter((m) => !activeMealType || m.type === activeMealType).map((meal, i) => {
             const mt = MEAL_TYPES.find((t) => t.id === meal.type);
             return (
-              <motion.div key={meal.id} variants={itemVariants}
+              <m.div key={meal.id} variants={itemVariants}
                 style={{ borderRadius: 16, padding: 18, background: `linear-gradient(135deg, ${mt?.color || '#6366f1'}08, rgba(12,12,30,0.6))`, border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 30px ${mt?.color}15`; e.currentTarget.style.borderColor = `${mt?.color}30`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}>
@@ -228,10 +228,10 @@ function Inner() {
                   <span>🍚 {meal.carbs}g</span>
                   <span>🧈 {meal.fats}g</span>
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
-        </motion.div>
+        </m.div>
 
         {/* ── Diet Templates ── */}
         <div style={{ marginBottom: 28 }}>
@@ -260,14 +260,14 @@ function Inner() {
               </button>
             ))}
           </div>
-          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
             {filteredTemplates.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
                 No templates found. Create one to get started.
               </div>
             ) : filteredTemplates.map((t, i) => (
-              <motion.div key={t.id} variants={itemVariants}
+              <m.div key={t.id} variants={itemVariants}
                 style={{ position: 'relative', borderRadius: 16, padding: 20, background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(12,12,30,0.5))', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(16,185,129,0.1)'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.2)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}>
@@ -284,9 +284,9 @@ function Inner() {
                   <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(236,72,153,0.1)', color: '#f9a8d4' }}>🧈 {t.fats}g</span>
                 </div>
                 {t.meals > 0 && <div style={{ marginTop: 10, fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{t.meals} meals · Goal: {t.goal}</div>}
-              </motion.div>
+              </m.div>
             ))}
-          </motion.div>
+          </m.div>
         </div>
 
         {/* ── Supplements ── */}
@@ -304,7 +304,7 @@ function Inner() {
                 No supplements configured yet.
               </div>
             ) : supplements.map((s, i) => (
-              <motion.div key={s.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              <m.div key={s.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 style={{ borderRadius: 14, padding: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(236,72,153,0.1)', cursor: 'default', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(236,72,153,0.06)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -317,7 +317,7 @@ function Inner() {
                 </div>
                 <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '0 0 4px' }}>{s.benefit}</p>
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>⏰ {s.timing}</span>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Star, MessageSquare, ThumbsUp, ThumbsDown, Clock, CheckCircle2, User, Loader2 } from 'lucide-react';
@@ -81,7 +81,7 @@ function FeedbackContent() {
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         {/* ── HERO — DO NOT CHANGE ── */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e)', boxShadow: '0 20px 60px rgba(26,10,46,0.5)' }}>
           <div style={{ position: 'relative', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
@@ -93,28 +93,28 @@ function FeedbackContent() {
             <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#ffffff', margin: '0 0 8px' }}>Member Feedback</h1>
             <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'rgba(255,255,255,0.55)' }}>Track, respond &amp; act on member reviews and complaints.</p>
           </div>
-        </motion.div>
+        </m.div>
 
         {error && <div style={{ borderRadius: 14, padding: '14px 20px', marginBottom: 22, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontWeight: 600, fontSize: 13 }}>{error}</div>}
 
         {/* ── KPI CARDS ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 14, marginBottom: 28 }}>
           {KPIS.map((k, i) => {
             const vals = [avgRating, items.length, positive, open, nps];
             const suffixes = [' ⭐', '', '', '', '%'];
             return (
-              <motion.div key={k.label} variants={itemVariants}
+              <m.div key={k.label} variants={itemVariants}
                 style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '22px 24px', background: k.bg, border: `1px solid ${k.color}22`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                 <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280', display: 'block', marginBottom: 8 }}>{k.label}</span>
                 <div style={{ fontSize: 30, fontWeight: 800, color: k.color, lineHeight: 1.2, letterSpacing: '-0.02em' }}>{loading ? '—' : vals[i]}{suffixes[i]}</div>
-              </motion.div>
+              </m.div>
             );
           })}
-        </motion.div>
+        </m.div>
 
         {/* ── FILTERS ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {CATS.map(c => (
@@ -127,15 +127,15 @@ function FeedbackContent() {
             style={{ maxWidth: 160, width: '100%', border: '1px solid #d1d5db', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 500, color: '#111827', background: '#ffffff', outline: 'none', fontFamily: 'inherit' }}>
             <option value="all">All Status</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
           </select>
-        </motion.div>
+        </m.div>
 
         {/* ── FEEDBACK LIST ── */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}><Loader2 size={32} color="#d1d5db" style={{ animation: 'spin 1s linear infinite' }} /></div>
         ) : (
-          <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gap: 12 }}>
+          <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gap: 12 }}>
             {filtered.map(f => (
-              <motion.div key={f.id} variants={itemVariants}
+              <m.div key={f.id} variants={itemVariants}
                 style={{ borderRadius: 20, background: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                 <div style={{ padding: '18px 22px' }}>
                   <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -179,7 +179,7 @@ function FeedbackContent() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             ))}
             {filtered.length === 0 && (
               <div style={{ padding: '64px 20px', textAlign: 'center', background: '#ffffff', borderRadius: 20, border: '1px solid #e5e7eb' }}>
@@ -188,7 +188,7 @@ function FeedbackContent() {
                 <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Try adjusting your filters.</p>
               </div>
             )}
-          </motion.div>
+          </m.div>
         )}
       </div>
     </AppShell>

@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { ScanFace, QrCode, Fingerprint, ChevronRight, Monitor } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -82,30 +82,30 @@ function CheckInHub() {
       {/* Hero */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f0a1e 0%,#1a0a2e 30%,#0f172a 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px' }}>
         <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 90%)' }}>
-          <motion.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20"
+          <m.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20"
             style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
             animate={{ x: [0, 25, -15, 0], y: [0, -30, 10, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15"
+          <m.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15"
             style={{ background: 'radial-gradient(circle, #10b981, transparent 70%)' }}
             animate={{ x: [0, -20, 15, 0], y: [0, 20, -8, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
         </div>
         <div className="relative z-10 mx-auto" style={{ maxWidth: 900 }}>
           <div className="flex items-center gap-4">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px]"
               style={{ background: 'linear-gradient(135deg,#6366f1,#10b981)', boxShadow: '0 8px 28px rgba(99,102,241,0.3)' }}>
               <ScanFace size={20} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
-              <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
                 style={{ background: 'linear-gradient(135deg,#c7d2fe,#6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 Check In
-              </motion.h1>
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+              </m.h1>
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
                 className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 Choose a check-in method below
-              </motion.p>
+              </m.p>
             </div>
           </div>
         </div>
@@ -114,35 +114,35 @@ function CheckInHub() {
       <div className="mx-auto px-5 py-6 sm:px-8" style={{ maxWidth: 900 }}>
         {/* Method Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {METHODS.map((m, i) => {
-            const Icon = m.icon;
-            const isActive = active === m.id;
+          {METHODS.map((method, i) => {
+            const Icon = method.icon;
+            const isActive = active === method.id;
             return (
-              <motion.div
-                key={m.id}
+              <m.div
+                key={method.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.07 }}
               >
-                {m.inline ? (
+                {method.inline ? (
                   <button
-                    onClick={() => setActive(isActive ? null : m.id)}
+                    onClick={() => setActive(isActive ? null : method.id)}
                     className="w-full text-left rounded-[18px] p-5 transition-all"
                     style={{
-                      background: isActive ? `${m.color}10` : 'white',
-                      border: `1.5px solid ${isActive ? m.color : '#e2e8f0'}`,
-                      boxShadow: isActive ? `0 4px 20px ${m.color}20` : '0 1px 6px rgba(0,0,0,0.04)',
+                      background: isActive ? `${method.color}10` : 'white',
+                      border: `1.5px solid ${isActive ? method.color : '#e2e8f0'}`,
+                      boxShadow: isActive ? `0 4px 20px ${method.color}20` : '0 1px 6px rgba(0,0,0,0.04)',
                     }}
                   >
-                    <MethodCardInner m={m} isActive={isActive} />
+                    <MethodCardInner m={method} isActive={isActive} />
                   </button>
                 ) : (
-                  <Link href={m.href!} className="block rounded-[18px] p-5 transition-all"
+                  <Link href={method.href!} className="block rounded-[18px] p-5 transition-all"
                     style={{ background: 'white', border: '1.5px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.04)', textDecoration: 'none' }}>
-                    <MethodCardInner m={m} isActive={false} />
+                    <MethodCardInner m={method} isActive={false} />
                   </Link>
                 )}
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
@@ -150,7 +150,7 @@ function CheckInHub() {
         {/* Inline face recognition panel */}
         <AnimatePresence>
           {active === 'face' && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -158,12 +158,12 @@ function CheckInHub() {
               style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}
             >
               <FaceCheckIn />
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         {/* Admin shortcut row */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+        <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
           className="mt-6 flex flex-wrap gap-3">
           <Link href="/checkin/dashboard"
             className="flex items-center gap-2 rounded-[11px] px-4 py-2.5 text-[12px] font-[600] transition-all hover:bg-white"
@@ -179,7 +179,7 @@ function CheckInHub() {
             Enroll / Settings
             <ChevronRight size={12} style={{ color: 'rgb(148,163,184)' }} />
           </Link>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

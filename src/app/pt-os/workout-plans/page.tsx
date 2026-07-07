@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Dumbbell, Plus, Search, User, Clock, ChevronRight, Target,
   Activity, Heart, Zap, Brain, FileText, LayoutGrid, List,
@@ -118,20 +118,20 @@ function Inner() {
     <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f0a1e 0%, #0f172a 50%, #0a0a1a 100%)' }}>
       {/* ── Hero ── */}
       <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0f0a1e 0%, #1a1040 25%, #0f172a 55%, #1e0a2e 80%, #0f0a1e 100%)', padding: '48px 32px 40px', borderRadius: '0 0 40px 40px' }}>
-        <motion.div style={{ position: 'absolute', top: -100, right: -40, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', pointerEvents: 'none' }}
+        <m.div style={{ position: 'absolute', top: -100, right: -40, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', pointerEvents: 'none' }}
           animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' as const }} />
-        <motion.div style={{ position: 'absolute', bottom: -70, left: -30, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%)', pointerEvents: 'none' }}
+        <m.div style={{ position: 'absolute', bottom: -70, left: -30, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%)', pointerEvents: 'none' }}
           animate={{ x: [0, -25, 30, 0], y: [0, 25, -15, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' as const }} />
-        <motion.div style={{ position: 'absolute', top: '30%', left: '55%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.06), transparent 70%)', pointerEvents: 'none' }}
+        <m.div style={{ position: 'absolute', top: '30%', left: '55%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.06), transparent 70%)', pointerEvents: 'none' }}
           animate={{ x: [0, 15, -10, 0], y: [0, -20, 10, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' as const }} />
         <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '22px 22px', pointerEvents: 'none' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <motion.div variants={heroVariants} initial="hidden" animate="visible"
+            <m.div variants={heroVariants} initial="hidden" animate="visible"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #6366f1, #ec4899)', boxShadow: '0 8px 32px rgba(99,102,241,0.3)' }}>
               <Dumbbell size={26} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #e0e7ff, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Workout Plans</h1>
               <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'rgba(255,255,255,0.45)' }}>Build and manage personalized training programs</p>
@@ -154,7 +154,7 @@ function Inner() {
 
       <div style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
         {/* ── Quick Stats ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           {[
             { label: 'Total Plans', value: plans.length, icon: <FileText size={15} />, from: '#6366f1', to: '#4f46e5' },
@@ -162,7 +162,7 @@ function Inner() {
             { label: 'Active Clients', value: trainers.length, icon: <User size={15} />, from: '#f59e0b', to: '#d97706' },
             { label: 'Completion Rate', value: plans.length ? `${Math.round(plans.reduce((s, p) => s + p.progress, 0) / plans.length)}%` : '—', icon: <Trophy size={15} />, from: '#ec4899', to: '#db2777' },
           ].map((s, i) => (
-            <motion.div key={s.label} variants={itemVariants}
+            <m.div key={s.label} variants={itemVariants}
               style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '18px 18px', background: `linear-gradient(135deg, ${s.from}18, rgba(30,27,75,0.6))`, border: '1px solid rgba(255,255,255,0.08)', cursor: 'default', transition: 'transform 0.3s' }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -172,9 +172,9 @@ function Inner() {
                 <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>{s.icon}</div>
               </div>
               <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{s.value}</div>
-            </motion.div>
+            </m.div>
           ))}
-        </motion.div>
+        </m.div>
 
         {/* ── Section Tabs ── */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 3 }}>
@@ -198,10 +198,10 @@ function Inner() {
 
         {/* ── Plan Cards ── */}
         {activeTab === 'plans' && <div style={{ marginBottom: 28 }}>
-          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
             {plans.slice(0, 4).map((plan, i) => (
-              <motion.div key={plan.id} variants={itemVariants}
+              <m.div key={plan.id} variants={itemVariants}
                 style={{ borderRadius: 18, padding: view === 'grid' ? 20 : '14px 18px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', display: view === 'list' ? 'flex' : 'block', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(99,102,241,0.12)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}>
@@ -220,7 +220,7 @@ function Inner() {
                   {view === 'grid' && (
                     <div style={{ marginTop: 12 }}>
                       <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${plan.progress}%` }} transition={{ duration: 1, ease: 'easeOut' }}
+                        <m.div initial={{ width: 0 }} animate={{ width: `${plan.progress}%` }} transition={{ duration: 1, ease: 'easeOut' }}
                           style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${PLAN_COLORS[i % PLAN_COLORS.length]})` }} />
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
@@ -230,9 +230,9 @@ function Inner() {
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </m.div>
             ))}
-          </motion.div>
+          </m.div>
         </div>}
 
         {/* ── Exercise Library ── */}
@@ -255,10 +255,10 @@ function Inner() {
             </div>
           </div>
 
-          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
             {filteredExercises.slice(0, 12).map((ex, i) => (
-              <motion.div key={ex.id} variants={itemVariants}
+              <m.div key={ex.id} variants={itemVariants}
                 style={{ borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.02)', border: `1px solid ${GROUP_COLORS[ex.muscleGroup]}15`, cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = `${GROUP_COLORS[ex.muscleGroup]}08`; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}30`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}15`; }}>
@@ -272,9 +272,9 @@ function Inner() {
                   <span>·</span>
                   <span>{ex.reps}</span>
                 </div>
-              </motion.div>
+              </m.div>
             ))}
-          </motion.div>
+          </m.div>
         </div>}
 
         {/* ── Plan Builder ── */}
@@ -326,7 +326,7 @@ function Inner() {
               { title: 'Endurance Plus', description: 'Build stamina with mixed cardio & strength', goal: 'Endurance', intensity: 'Medium', color: '#06b6d4' },
               { title: 'Flexibility Flow', description: 'Yoga-inspired mobility and recovery routine', goal: 'Flexibility', intensity: 'Low', color: '#10b981' },
             ].map((s, i) => (
-              <motion.div key={s.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+              <m.div key={s.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
                 style={{ borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${s.color}15`, cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = `${s.color}08`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -339,7 +339,7 @@ function Inner() {
                 </div>
                 <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>{s.title}</h4>
                 <p style={{ margin: 0, fontSize: 11.5, color: 'rgba(255,255,255,0.35)' }}>{s.description}</p>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>}

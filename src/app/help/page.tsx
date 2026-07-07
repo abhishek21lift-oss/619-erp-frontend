@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { HelpCircle, Mail, MessageCircle, Phone, Search, ChevronDown } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -35,7 +35,7 @@ export default function HelpPage() {
       <AppShell>
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* ── Hero ── */}
-          <motion.div {...fadeUp}
+          <m.div {...fadeUp}
             style={{
               position: 'relative', overflow: 'hidden',
               borderRadius: 24, padding: '32px 36px',
@@ -56,10 +56,10 @@ export default function HelpPage() {
               <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', margin: 0 }}>Help &amp; Support</h1>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>Find answers to common questions</p>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* ── Search ── */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+          <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
             style={{ ...glass, borderRadius: 16, padding: '4px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <Search size={16} color="rgba(255,255,255,0.3)" />
             <input
@@ -69,12 +69,12 @@ export default function HelpPage() {
                 background: 'transparent', color: '#ffffff', fontSize: 13,
               }}
             />
-          </motion.div>
+          </m.div>
 
           {/* ── FAQ Accordion ── */}
-          <motion.div variants={containerVariants} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <m.div variants={containerVariants} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {filtered.map((faq, i) => (
-              <motion.div key={i} variants={itemVariants}
+              <m.div key={i} variants={itemVariants}
                 style={{
                   borderRadius: 16, overflow: 'hidden',
                   ...glass,
@@ -90,17 +90,17 @@ export default function HelpPage() {
                   }}
                 >
                   <span style={{ fontSize: 13.5, fontWeight: 600, color: '#e2e8f0' }}>{faq.q}</span>
-                  <motion.span
+                  <m.span
                     animate={{ rotate: openIdx === i ? 180 : 0 }}
                     transition={{ duration: 0.25 }}
                     style={{ display: 'flex', lineHeight: 0, flexShrink: 0, marginLeft: 12 }}
                   >
                     <ChevronDown size={15} color="rgba(255,255,255,0.3)" />
-                  </motion.span>
+                  </m.span>
                 </button>
                 <AnimatePresence initial={false}>
                   {openIdx === i && (
-                    <motion.div
+                    <m.div
                       key="answer"
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
@@ -115,21 +115,21 @@ export default function HelpPage() {
                       }}>
                         {faq.a}
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </m.div>
             ))}
             {filtered.length === 0 && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
                 No results found.
-              </motion.p>
+              </m.p>
             )}
-          </motion.div>
+          </m.div>
 
           {/* ── Support contacts ── */}
-          <motion.div {...fadeUp} transition={{ duration: 0.5, delay: 0.25 }}
+          <m.div {...fadeUp} transition={{ duration: 0.5, delay: 0.25 }}
             style={{ ...glass, borderRadius: 20, padding: 28, marginTop: 8 }}>
             <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))', marginBottom: 16 }}>
               <HelpCircle size={22} color="#818cf8" />
@@ -198,7 +198,7 @@ export default function HelpPage() {
                 </div>
               </a>
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </AppShell>
     </Guard>

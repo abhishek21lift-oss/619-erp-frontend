@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   IndianRupee, TrendingUp, ArrowUpRight, Smartphone, CreditCard,
   Banknote, Wallet, Plus, RefreshCw, Receipt, User, Clock,
@@ -47,8 +47,8 @@ function Inner() {
   const methodTotals = React.useMemo(() => {
     const map: Record<string, number> = {};
     for (const p of data?.recent_payments ?? []) {
-      const m = p.method || 'Other';
-      map[m] = (map[m] || 0) + p.amount;
+      const method = p.method || 'Other';
+      map[method] = (map[method] || 0) + p.amount;
     }
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [data]);
@@ -67,7 +67,7 @@ function Inner() {
     }>
       <div className="relative z-10 mt-4 space-y-6 max-w-[1600px] mx-auto pb-6">
         {/* Hero revenue card */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-pink-500/10 via-rose-500/10 to-orange-500/10 p-6 sm:p-8 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)]"
@@ -112,12 +112,12 @@ function Inner() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Payment method breakdown */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {methodTotals.length > 0 ? methodTotals.map(([method, amount], i) => (
-            <motion.div
+            <m.div
               key={method}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -133,9 +133,9 @@ function Inner() {
                   <p className="text-[18px] font-extrabold tabular-nums text-[var(--text-primary)]">{fmtINR(amount)}</p>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )) : (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg-card)] p-8 text-center backdrop-blur-xl"
@@ -150,12 +150,12 @@ function Inner() {
                 <Plus size={13} />
                 Record your first payment
               </button>
-            </motion.div>
+            </m.div>
           )}
         </div>
 
         {/* Today's payments table */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
@@ -184,7 +184,7 @@ function Inner() {
                 </thead>
                 <tbody>
                   {payments.map((p, i) => (
-                    <motion.tr
+                    <m.tr
                       key={p.id}
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -217,7 +217,7 @@ function Inner() {
                           {p.date || '—'}
                         </span>
                       </td>
-                    </motion.tr>
+                    </m.tr>
                   ))}
                 </tbody>
               </table>
@@ -229,7 +229,7 @@ function Inner() {
               <p className="text-[12px] text-[var(--text-muted)] mt-1">Payments will appear here once recorded</p>
             </div>
           )}
-        </motion.div>
+        </m.div>
       </div>
     </AppShell>
   );

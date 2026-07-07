@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { clsx } from 'clsx';
 
 interface GlassCardProps {
@@ -23,7 +23,7 @@ export function GlassCard({ children, className, hover, onClick, selected }: Gla
 
   if (onClick) {
     return (
-      <motion.div
+      <m.div
         layout
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -32,12 +32,12 @@ export function GlassCard({ children, className, hover, onClick, selected }: Gla
         onClick={onClick}
       >
         {children}
-      </motion.div>
+      </m.div>
     );
   }
 
   return (
-    <motion.div
+    <m.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -45,6 +45,6 @@ export function GlassCard({ children, className, hover, onClick, selected }: Gla
       className={clsx(base, selectedClass, className)}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

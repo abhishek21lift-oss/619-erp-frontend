@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Users, ScanFace, Dumbbell, IndianRupee } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { normaliseRole } from '@/lib/nav-config';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
@@ -40,7 +40,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   const dur       = reducedMotion ? 0 : 0.28;
 
   return (
-    <motion.nav
+    <m.nav
       className="fixed bottom-0 left-0 right-0 z-40 lg:hidden"
       style={{
         background: 'linear-gradient(135deg, #FF9E00 0%, #F57C00 55%, #E65100 100%)',
@@ -74,7 +74,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
             >
               {/* Active tab background pill */}
               {isActive && (
-                <motion.span
+                <m.span
                   layoutId="bottom-nav-active"
                   className="absolute inset-x-2 rounded-xl"
                   style={{
@@ -93,7 +93,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               )}
 
               {/* Icon */}
-              <motion.span
+              <m.span
                 className="relative z-10 flex h-[26px] w-[26px] items-center justify-center"
                 whileTap={reducedMotion ? {} : { scale: 0.80 }}
                 transition={{ type: 'spring', stiffness: 700, damping: 22 }}
@@ -106,7 +106,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   }}
                   aria-hidden="true"
                 />
-              </motion.span>
+              </m.span>
 
               {/* Label */}
               <span
@@ -122,6 +122,6 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
           );
         })}
       </div>
-    </motion.nav>
+    </m.nav>
   );
 }

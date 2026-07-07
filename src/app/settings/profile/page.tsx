@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useInView } from 'framer-motion';
+import { m, AnimatePresence, useInView } from 'framer-motion';
 import {
   User, Mail, Phone, MapPin, Clock, Activity, Shield,
   Bell, Smartphone, Laptop, Monitor, Moon, Sun, Globe,
@@ -92,13 +92,13 @@ function FadeUp({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-40px' });
   return (
-    <motion.div ref={ref}
+    <m.div ref={ref}
       initial={{ opacity: 0, y: 18 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -165,7 +165,7 @@ function FloatInput({
   const lifted = focused || value.length > 0;
   return (
     <div className="relative">
-      <motion.div
+      <m.div
         animate={{
           boxShadow: focused ? '0 0 0 3px rgba(99,102,241,0.12), 0 2px 8px rgba(99,102,241,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
         }}
@@ -203,7 +203,7 @@ function FloatInput({
         {suffix && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>
         )}
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -229,7 +229,7 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
         transition: 'background 250ms, box-shadow 250ms',
       }}
     >
-      <motion.span
+      <m.span
         animate={{ x: enabled ? 20 : 2 }}
         transition={{ type: 'spring', stiffness: 600, damping: 32 }}
         style={{
@@ -258,7 +258,7 @@ function SecurityRing({ score }: { score: number }) {
       <div className="relative" style={{ width: 100, height: 100 }}>
         <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
           <circle cx="50" cy="50" r={r} fill="none" stroke="rgba(15,23,42,0.07)" strokeWidth="8" />
-          <motion.circle
+          <m.circle
             cx="50" cy="50" r={r} fill="none"
             stroke={color} strokeWidth="8"
             strokeLinecap="round"
@@ -286,7 +286,7 @@ function StatChip({ icon, label, value, gradient }: {
   gradient: string;
 }) {
   return (
-    <motion.div
+    <m.div
       whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(99,102,241,0.14)' }}
       whileTap={{ scale: 0.97 }}
       className="flex-shrink-0 rounded-2xl p-4"
@@ -306,7 +306,7 @@ function StatChip({ icon, label, value, gradient }: {
       </div>
       <p className="text-[16px] font-[820] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>{value}</p>
       <p className="mt-0.5 text-[10.5px] font-[500]" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -374,7 +374,7 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
   return (
     <AnimatePresence>
       {dirty && (
-        <motion.div
+        <m.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
@@ -424,7 +424,7 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
               </button>
             </>
           )}
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );
@@ -712,7 +712,7 @@ export default function ProfilePage() {
 
                 <div className="relative flex flex-col items-center gap-5 sm:flex-row sm:items-start">
                   {/* Avatar */}
-                  <motion.div
+                  <m.div
                     whileHover={{ scale: 1.04 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                     className="relative shrink-0"
@@ -735,7 +735,7 @@ export default function ProfilePage() {
                       className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full"
                       style={{ background: '#10b981', border: '2.5px solid #7c3aed', boxShadow: '0 0 8px rgba(16,185,129,0.5)' }}
                     />
-                  </motion.div>
+                  </m.div>
 
                   {/* Identity */}
                   <div className="flex-1 text-center sm:text-left">
@@ -850,7 +850,7 @@ export default function ProfilePage() {
 
               {/* ═══ OVERVIEW ═══ */}
               {tab === 'overview' && (
-                <motion.div
+                <m.div
                   key="overview"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -891,7 +891,7 @@ export default function ProfilePage() {
                         />
                         <div className="flex flex-col gap-4">
                           {activityItems.map((item, i) => (
-                            <motion.div
+                            <m.div
                               key={item.id}
                               initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
@@ -912,7 +912,7 @@ export default function ProfilePage() {
                               <span className="shrink-0 whitespace-nowrap text-[10px] font-[500]" style={{ color: 'rgb(148,163,184)', paddingTop: 2 }}>
                                 {item.timestamp}
                               </span>
-                            </motion.div>
+                            </m.div>
                           ))}
                         </div>
                       </div>
@@ -929,7 +929,7 @@ export default function ProfilePage() {
                       />
                       <div className="flex flex-col gap-3">
                         {deviceItems.map(device => (
-                          <motion.div
+                          <m.div
                             key={device.id}
                             whileHover={{ x: 2 }}
                             transition={{ duration: 0.15 }}
@@ -988,7 +988,7 @@ export default function ProfilePage() {
                                 </button>
                               )}
                             </div>
-                          </motion.div>
+                          </m.div>
                         ))}
                       </div>
                     </GlassCard>
@@ -1060,12 +1060,12 @@ export default function ProfilePage() {
                     </GlassCard>
                   </FadeUp>
 
-                </motion.div>
+                </m.div>
               )}
 
               {/* ═══ SECURITY ═══ */}
               {tab === 'security' && (
-                <motion.div
+                <m.div
                   key="security"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1124,7 +1124,7 @@ export default function ProfilePage() {
                         </SettingRow>
                       </div>
                       {mfaEnabled && (
-                        <motion.div
+                        <m.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
@@ -1133,7 +1133,7 @@ export default function ProfilePage() {
                         >
                           <ShieldCheck size={14} style={{ color: '#059669' }} />
                           <span className="text-[12px] font-[640]" style={{ color: '#059669' }}>Two-factor authentication is active and protecting your account</span>
-                        </motion.div>
+                        </m.div>
                       )}
                     </GlassCard>
                   </FadeUp>
@@ -1166,7 +1166,7 @@ export default function ProfilePage() {
                             <div>
                               <div className="flex gap-1 mb-1.5">
                                 {[1, 2, 3, 4].map(i => (
-                                  <motion.div key={i}
+                                  <m.div key={i}
                                     initial={{ scaleX: 0 }}
                                     animate={{ scaleX: 1 }}
                                     className="h-1.5 flex-1 rounded-full origin-left"
@@ -1205,11 +1205,11 @@ export default function ProfilePage() {
                                 { label: 'Special character', ok: /[^A-Za-z0-9]/.test(newPw) },
                               ].map(r => (
                                 <div key={r.label} className="flex items-center gap-2.5">
-                                  <motion.div animate={{ scale: r.ok ? 1.1 : 1 }} transition={{ type: 'spring', stiffness: 500 }}>
+                                  <m.div animate={{ scale: r.ok ? 1.1 : 1 }} transition={{ type: 'spring', stiffness: 500 }}>
                                     {r.ok
                                       ? <CheckCircle2 size={13} style={{ color: '#10b981', flexShrink: 0 }} />
                                       : <AlertTriangle size={13} style={{ color: 'rgba(15,23,42,0.20)', flexShrink: 0 }} />}
-                                  </motion.div>
+                                  </m.div>
                                   <span className="text-[12px]" style={{ color: r.ok ? 'rgb(15,23,42)' : 'rgb(148,163,184)' }}>{r.label}</span>
                                 </div>
                               ))}
@@ -1247,12 +1247,12 @@ export default function ProfilePage() {
                       </div>
                     </GlassCard>
                   </FadeUp>
-                </motion.div>
+                </m.div>
               )}
 
               {/* ═══ PREFERENCES ═══ */}
               {tab === 'preferences' && (
-                <motion.div
+                <m.div
                   key="preferences"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1274,7 +1274,7 @@ export default function ProfilePage() {
                           { id: 'dark', label: 'Dark', icon: <Moon size={18} /> },
                           { id: 'system', label: 'System', icon: <Monitor size={18} /> },
                         ] as const).map(opt => (
-                          <motion.button
+                          <m.button
                             key={opt.id}
                             whileHover={{ y: -2 }}
                             whileTap={{ scale: 0.97 }}
@@ -1290,13 +1290,13 @@ export default function ProfilePage() {
                             {opt.icon}
                             <span className="text-[11px] font-[660]">{opt.label}</span>
                             {themePref === opt.id && (
-                              <motion.div
+                              <m.div
                                 layoutId="theme-dot"
                                 className="h-1.5 w-1.5 rounded-full"
                                 style={{ background: '#6366f1' }}
                               />
                             )}
-                          </motion.button>
+                          </m.button>
                         ))}
                       </div>
                     </GlassCard>
@@ -1408,7 +1408,7 @@ export default function ProfilePage() {
                     </GlassCard>
                   </FadeUp>
 
-                </motion.div>
+                </m.div>
               )}
 
             </AnimatePresence>

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Target, Plus, Check, Loader2, Dumbbell, Heart, Zap, Flame, Activity } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -49,7 +49,7 @@ export default function PtGoalsPage() {
     <Guard>
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
             style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #7c3aed 100%)', boxShadow: '0 20px 60px rgba(30,27,75,0.3)' }}>
             <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, rgba(167,139,250,0.6), transparent 70%)' }} />
@@ -67,10 +67,10 @@ export default function PtGoalsPage() {
                 Set and track client fitness goals — Fat Loss, Muscle Gain, Strength, Powerlifting, and more.
               </p>
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+            <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
               className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
               <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'rgb(15,23,42)' }}>New Goal</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -119,9 +119,9 @@ export default function PtGoalsPage() {
                   {saving ? 'Saving...' : 'Set Goal'}
                 </Button>
               </form>
-            </motion.div>
+            </m.div>
 
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+            <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
               className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
               <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'rgb(15,23,42)' }}>Active Goals</h2>
               {goals.loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" /></div>}
@@ -143,7 +143,7 @@ export default function PtGoalsPage() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </m.div>
           </div>
         </div>
       </AppShell>

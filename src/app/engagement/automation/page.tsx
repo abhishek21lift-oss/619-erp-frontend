@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Bot, Plus, Loader2, Power, PowerOff, Edit2, Trash2, Zap, MessageSquare, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -87,7 +87,7 @@ function AutoContent() {
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         {/* ── HERO — DO NOT CHANGE ── */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e)', boxShadow:'0 20px 60px rgba(26,10,46,0.5)' }}>
           <div style={{ position:'absolute', inset:0, background:'radial-gradient(600px circle at 70% 40%, rgba(139,92,246,0.12), transparent 70%)' }}/>
           <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(139,92,246,0.08) 1px, transparent 1px)', backgroundSize:'24px 24px' }}/>
@@ -102,26 +102,26 @@ function AutoContent() {
             <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#ffffff', margin:'0 0 8px' }}>Automation Rules</h1>
             <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.55)' }}>Automate WhatsApp, SMS, and email messages for welcome, follow-up, renewal, birthday, and promotions.</p>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* ── KPI STATS ── */}
         {(logStats.data || logStats.loading) && (
-          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:28 }}>
             {KPIS.map((k,i)=>{
               const keys = ['total','sent','delivered','read','failed'];
               const vals = keys.map(kk => (logStats.data as any)?.[kk] || 0);
               return (
-                <motion.div key={k.label} variants={itemVariants}
+                <m.div key={k.label} variants={itemVariants}
                   style={{ position:'relative', overflow:'hidden', borderRadius:20, padding:'20px 22px', background:k.bg, border:`1px solid ${k.color}22`, boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
                   <div style={{ fontSize:26, fontWeight:800, color:k.color, marginBottom:4 }}>
                     {logStats.loading ? '—' : vals[i]}
                   </div>
                   <div style={{ fontSize:10, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.06em' }}>{k.label}</div>
-                </motion.div>
+                </m.div>
               );
             })}
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── NEW RULE BUTTON ── */}
@@ -134,7 +134,7 @@ function AutoContent() {
 
         {/* ── CREATE/EDIT FORM ── */}
         {showForm && (
-          <motion.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
+          <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
             style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
             <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#111827', display:'flex', gap:8, alignItems:'center' }}>
               <Bot size={16} color="#a855f7"/> {editing?'Edit Rule':'Create Rule'}
@@ -167,20 +167,20 @@ function AutoContent() {
                 </button>
               </div>
             </form>
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── RULES + LOGS ── */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
           {/* Active Rules */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:20 }}>
             <h2 style={{ fontSize:16, fontWeight:700, color:'#111827', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
               <Zap size={16} color="#a855f7"/> Active Rules
             </h2>
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               {((rules.data as any[]) || []).map((r: any) => (
-                <motion.div key={r.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                <m.div key={r.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                   style={{ borderRadius:12, padding:'14px 16px', background:r.is_active?'rgba(139,92,246,0.05)':'#f9fafb', border:`1px solid ${r.is_active?'rgba(139,92,246,0.2)':'#e5e7eb'}`, opacity:r.is_active?1:0.65, transition:'all 0.2s' }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
                     <div style={{ flex:1, minWidth:0 }}>
@@ -212,7 +212,7 @@ function AutoContent() {
                       </button>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
               {(!rules.data || (rules.data as any[]).length === 0) && (
                 <div style={{ padding:'40px 16px', textAlign:'center' }}>
@@ -222,10 +222,10 @@ function AutoContent() {
                 </div>
               )}
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Recent Logs */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.1 }}
+          <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay:0.1 }}
             style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', padding:20 }}>
             <h2 style={{ fontSize:16, fontWeight:700, color:'#111827', margin:'0 0 16px', display:'flex', alignItems:'center', gap:8 }}>
               <MessageSquare size={16} color="#a855f7"/> Recent Logs
@@ -261,7 +261,7 @@ function AutoContent() {
                 </div>
               )}
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </div>
     </AppShell>

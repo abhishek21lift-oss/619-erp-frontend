@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Building2, MapPin, Clock, Globe, IndianRupee, Fingerprint, Palette,
   Zap, DatabaseBackup, GitMerge, Bell, Mail, MessageSquare, Smartphone,
@@ -65,7 +65,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
     <button onClick={() => onChange(!on)}
       className="relative h-[22px] w-9 rounded-full flex-shrink-0 transition-all"
       style={{ background: on ? '#dc2626' : 'rgba(15,23,42,0.15)', boxShadow: on ? '0 0 10px rgba(220,38,38,0.3)' : 'none' }}>
-      <motion.span animate={{ x: on ? 16 : 2 }} transition={{ type: 'spring', stiffness: 600, damping: 35 }}
+      <m.span animate={{ x: on ? 16 : 2 }} transition={{ type: 'spring', stiffness: 600, damping: 35 }}
         className="absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white"
         style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.18)' }} />
     </button>
@@ -81,7 +81,7 @@ function NavCard({
 }) {
   const router = useRouter();
   return (
-    <motion.button whileHover={{ y: -2, boxShadow: '0 8px 28px rgba(15,23,42,0.10)' }} whileTap={{ scale: 0.98 }}
+    <m.button whileHover={{ y: -2, boxShadow: '0 8px 28px rgba(15,23,42,0.10)' }} whileTap={{ scale: 0.98 }}
       onClick={() => router.push(href)}
       className="group flex flex-col items-start gap-3 rounded-[18px] p-4 text-left transition-all w-full"
       style={{ background: 'rgba(255,255,255,0.80)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 12px rgba(15,23,42,0.05)' }}>
@@ -101,7 +101,7 @@ function NavCard({
         <p className="text-[12.5px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{label}</p>
         <p className="text-[11px] mt-0.5" style={{ color: 'rgb(148,163,184)' }}>{subtitle}</p>
       </div>
-    </motion.button>
+    </m.button>
   );
 }
 
@@ -283,7 +283,7 @@ export default function StudioSettingsPage() {
         <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
 
           {/* ── HERO ── */}
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden"
             style={{
               background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 55%,#1e1b4b 100%)',
@@ -329,25 +329,25 @@ export default function StudioSettingsPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* ── ALERTS ── */}
           <div className="mx-auto max-w-screen-xl px-5 sm:px-8">
             {error && (
-              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+              <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                 className="mt-4 flex items-center gap-2.5 rounded-[13px] px-4 py-3 text-[12.5px] font-[500]"
                 style={{ background: 'rgba(239,68,68,0.09)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.18)' }}>
                 <AlertTriangle size={13} />{error}
                 <button onClick={() => setError(null)} className="ml-auto opacity-60 hover:opacity-100"><X size={13} /></button>
-              </motion.div>
+              </m.div>
             )}
             {success && (
-              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+              <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                 className="mt-4 flex items-center gap-2.5 rounded-[13px] px-4 py-3 text-[12.5px] font-[500]"
                 style={{ background: 'rgba(16,185,129,0.09)', color: '#059669', border: '1px solid rgba(16,185,129,0.18)' }}>
                 <CheckCircle2 size={13} />{success}
                 <button onClick={() => setSuccess(null)} className="ml-auto opacity-60 hover:opacity-100"><X size={13} /></button>
-              </motion.div>
+              </m.div>
             )}
           </div>
 
@@ -355,7 +355,7 @@ export default function StudioSettingsPage() {
           <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8 flex flex-col gap-6">
 
             {/* STUDIO INFO */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+            <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
               className="rounded-[22px] p-5 sm:p-6"
               style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
               <div className="flex items-center gap-2.5 mb-5">
@@ -377,10 +377,10 @@ export default function StudioSettingsPage() {
                 <Field label="Currency Code" value={currency} onChange={wrap(setCurrency)}
                   hint="e.g. INR, USD, AED" />
               </div>
-            </motion.div>
+            </m.div>
 
             {/* BILLING QUICK-EDIT */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.10 }}
+            <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.10 }}
               className="rounded-[22px] p-5 sm:p-6"
               style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
               <div className="flex items-center justify-between mb-5">
@@ -398,10 +398,10 @@ export default function StudioSettingsPage() {
                 <Field label="GST Rate (%)" value={gstRate} onChange={wrap(setGstRate)} type="number" hint="Leave blank if not applicable" />
                 <Field label="Invoice Prefix" value={invoicePrefix} onChange={wrap(setInvoicePrefix)} hint="e.g. INV, 619, GYM" />
               </div>
-            </motion.div>
+            </m.div>
 
             {/* NOTIFICATIONS */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+            <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
               className="rounded-[22px] p-5 sm:p-6"
               style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
               <div className="flex items-center gap-2.5 mb-4">
@@ -431,10 +431,10 @@ export default function StudioSettingsPage() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </m.div>
 
             {/* ROLE PERMISSIONS */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+            <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
               className="rounded-[22px] overflow-hidden"
               style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
 
@@ -530,10 +530,10 @@ export default function StudioSettingsPage() {
                   Admins &amp; Managers always have full access. Changes take effect on next login.
                 </p>
               </div>
-            </motion.div>
+            </m.div>
 
             {/* SUB-SETTINGS NAV CARDS */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }}>
+            <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }}>
               <div className="flex items-center gap-2 mb-3">
                 <Shield size={13} style={{ color: 'rgb(148,163,184)' }} />
                 <h2 className="text-[12px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
@@ -545,12 +545,12 @@ export default function StudioSettingsPage() {
                   <NavCard key={p.href} {...p} />
                 ))}
               </div>
-            </motion.div>
+            </m.div>
           </div>
 
           {/* ── STICKY SAVE BAR (only when dirty) ── */}
           {dirty && (
-            <motion.div
+            <m.div
               initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               className="fixed bottom-4 left-1/2 z-30 -translate-x-1/2"
@@ -579,7 +579,7 @@ export default function StudioSettingsPage() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </div>
       </AppShell>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -95,15 +95,15 @@ function Inner() {
 
   return (
     <AppShell>
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
+      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
         {/* ── Dark Hero ── */}
         <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'linear-gradient(135deg,#0f172a,#1e293b)', padding: '32px 36px', marginBottom: 20, boxShadow: '0 8px 32px rgba(15,23,42,0.4)' }}>
-          <motion.div style={{ position: 'absolute', top: -80, right: -40, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(245,158,11,0.2),transparent 70%)', pointerEvents: 'none' }}
+          <m.div style={{ position: 'absolute', top: -80, right: -40, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(245,158,11,0.2),transparent 70%)', pointerEvents: 'none' }}
             animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{ position: 'absolute', bottom: -60, left: '30%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(251,146,60,0.15),transparent 70%)', pointerEvents: 'none' }}
+          <m.div style={{ position: 'absolute', bottom: -60, left: '30%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(251,146,60,0.15),transparent 70%)', pointerEvents: 'none' }}
             animate={{ x: [0, -30, 40, 0], y: [0, 30, -20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{ position: 'absolute', top: '40%', left: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(244,63,94,0.12),transparent 70%)', pointerEvents: 'none' }}
+          <m.div style={{ position: 'absolute', top: '40%', left: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(244,63,94,0.12),transparent 70%)', pointerEvents: 'none' }}
             animate={{ x: [0, 40, -10, 0], y: [0, -20, 30, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
@@ -173,7 +173,7 @@ function Inner() {
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} style={{ display: 'flex', gap: 16, padding: '14px 0', borderBottom: '1px solid #f8fafc' }}>
                   {[40, 160, 100, 80, 100, 80].map((w, j) => (
-                    <motion.div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }}
+                    <m.div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }}
                       animate={{ backgroundPosition: ['0% 0%', '200% 0%'] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} />
                   ))}
                 </div>
@@ -251,7 +251,7 @@ function Inner() {
             </div>
           )}
         </div>
-      </motion.div>
+      </m.div>
     </AppShell>
   );
 }

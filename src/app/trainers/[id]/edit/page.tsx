@@ -3,7 +3,7 @@
 import { use, useState, useEffect, useCallback, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Save, User, Phone, Briefcase,
   CheckCircle, AlertCircle, Dumbbell, Calendar,
@@ -398,20 +398,20 @@ function EditContent({ id }: { id: string }) {
             {/* ── Banners ────────────────────────────────────────────── */}
             <AnimatePresence>
               {error && (
-                <motion.div key="error" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                <m.div key="error" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                   className="flex items-start gap-3 rounded-[16px] p-4"
                   style={{ background: 'rgba(244,63,94,0.07)', border: '1.5px solid rgba(244,63,94,0.22)' }}>
                   <AlertCircle size={15} style={{ color: '#f43f5e', flexShrink: 0, marginTop: 1 }} />
                   <p className="text-[13px] font-[600]" style={{ color: '#be123c' }}>{error}</p>
-                </motion.div>
+                </m.div>
               )}
               {success && (
-                <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                <m.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                   className="flex items-center gap-3 rounded-[16px] p-4"
                   style={{ background: 'rgba(0,229,168,0.09)', border: '1.5px solid rgba(0,229,168,0.28)' }}>
                   <CheckCircle size={15} style={{ color: '#00E5A8', flexShrink: 0 }} />
                   <p className="text-[13px] font-[600]" style={{ color: '#059669' }}>Trainer updated! Redirecting…</p>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 

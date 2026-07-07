@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -40,7 +40,7 @@ export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md'
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div
+          <m.div
             ref={overlayRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -48,7 +48,7 @@ export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md'
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
           />
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -80,7 +80,7 @@ export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md'
                 {footer}
               </div>
             )}
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>

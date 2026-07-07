@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -76,7 +76,7 @@ function Inner() {
 
   return (
     <AppShell>
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -92,7 +92,7 @@ function Inner() {
           marginBottom: 20,
         }}>
           {/* Animated Orbs */}
-          <motion.div
+          <m.div
             animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.05, 1] }}
             transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
             style={{
@@ -102,7 +102,7 @@ function Inner() {
               pointerEvents: 'none',
             }}
           />
-          <motion.div
+          <m.div
             animate={{ x: [0, -30, 0], y: [0, 40, 0], scale: [1, 1.08, 1] }}
             transition={{ repeat: Infinity, duration: 10, ease: 'easeInOut' }}
             style={{
@@ -112,7 +112,7 @@ function Inner() {
               pointerEvents: 'none',
             }}
           />
-          <motion.div
+          <m.div
             animate={{ x: [0, 25, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
             transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
             style={{
@@ -223,7 +223,7 @@ function Inner() {
 
         {/* ── Error Banner ── */}
         {error && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             style={{
@@ -233,7 +233,7 @@ function Inner() {
             }}
           >
             {error}
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── KPI Cards (solid white) ── */}
@@ -244,7 +244,7 @@ function Inner() {
             gap: 14, marginBottom: 24,
           }}>
             {kpis.map((k, idx) => (
-              <motion.div
+              <m.div
                 key={k.label}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -300,7 +300,7 @@ function Inner() {
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         )}
@@ -350,7 +350,7 @@ function Inner() {
                         position: 'relative', overflow: 'hidden',
                       }}
                     >
-                      <motion.div
+                      <m.div
                         animate={{ x: ['-100%', '200%'] }}
                         transition={{
                           repeat: Infinity, duration: 1.5, ease: 'linear',
@@ -390,51 +390,51 @@ function Inner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {fullYear.map((m, i) => (
-                    <motion.tr
+                  {fullYear.map((row, i) => (
+                    <m.tr
                       key={i}
                       whileHover={{ backgroundColor: '#f0fdf4' }}
                       transition={{ duration: 0.15 }}
                       style={{
                         borderBottom: '1px solid #f1f5f9',
                         backgroundColor: 'white',
-                        opacity: m.revenue === 0 ? 0.45 : 1,
+                        opacity: row.revenue === 0 ? 0.45 : 1,
                       }}
                     >
                       <td style={{
                         padding: '14px 20px', fontWeight: 600,
                         color: '#0f172a',
                       }}>
-                        {m.month} {year}
+                        {row.month} {year}
                       </td>
                       <td style={{
                         padding: '14px 20px',
                         color: '#64748b',
                         fontVariantNumeric: 'tabular-nums',
                       }}>
-                        {m.count || '\u2014'}
+                        {row.count || '\u2014'}
                       </td>
                       <td style={{
                         padding: '14px 20px', textAlign: 'right',
                         fontWeight: 800, fontSize: 15,
-                        color: m.revenue > 0 ? '#10b981' : '#cbd5e1',
+                        color: row.revenue > 0 ? '#10b981' : '#cbd5e1',
                         fontVariantNumeric: 'tabular-nums',
                         letterSpacing: '-0.02em',
                       }}>
-                        {m.revenue > 0 ? fmt(m.revenue) : '\u2014'}
+                        {row.revenue > 0 ? fmt(row.revenue) : '\u2014'}
                       </td>
                       <td style={{ padding: '14px 20px', minWidth: 140 }}>
                         <div style={{
                           height: 8, background: '#f1f5f9',
                           borderRadius: 4, overflow: 'hidden',
                         }}>
-                          <motion.div
+                          <m.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${(m.revenue / maxRevenue) * 100}%` }}
+                            animate={{ width: `${(row.revenue / maxRevenue) * 100}%` }}
                             transition={{ duration: 0.8, ease: 'easeOut', delay: i * 0.03 }}
                             style={{
                               height: '100%',
-                              background: m.revenue === best?.revenue && m.revenue > 0
+                              background: row.revenue === best?.revenue && row.revenue > 0
                                 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
                                 : 'linear-gradient(90deg,#10b981,#34d399)',
                               borderRadius: 4,
@@ -442,7 +442,7 @@ function Inner() {
                           />
                         </div>
                       </td>
-                    </motion.tr>
+                    </m.tr>
                   ))}
                 </tbody>
                 <tfoot>
@@ -478,7 +478,7 @@ function Inner() {
             </div>
           )}
         </div>
-      </motion.div>
+      </m.div>
     </AppShell>
   );
 }

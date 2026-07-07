@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Shield, Fingerprint, ScanFace, Smartphone, CheckCircle2,
   XCircle, AlertTriangle, Clock, Navigation, LocateFixed,
@@ -176,28 +176,28 @@ function MarkAttendanceContent() {
       {/* Hero */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f0a1e 0%,#1a2e0a 30%,#0f172a 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px' }}>
         <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 90%)' }}>
-          <motion.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #10b981, transparent 70%)' }}
+          <m.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #10b981, transparent 70%)' }}
             animate={{ x: [0, 25, -15, 0], y: [0, -30, 10, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
+          <m.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
             animate={{ x: [0, -20, 15, 0], y: [0, 20, -8, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
         </div>
         <div className="relative z-10 mx-auto" style={{ maxWidth: 600 }}>
           <div className="flex items-center gap-4">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px]"
               style={{ background: 'linear-gradient(135deg,#10b981,#6366f1)', boxShadow: '0 8px 28px rgba(16,185,129,0.3)' }}>
               <LogIn size={20} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
-              <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
                 style={{ background: 'linear-gradient(135deg,#6ee7b7,#c7d2fe)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 Mark Attendance
-              </motion.h1>
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+              </m.h1>
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
                 className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 GPS + Biometric verification required
-              </motion.p>
+              </m.p>
             </div>
           </div>
         </div>
@@ -238,26 +238,26 @@ function MarkAttendanceContent() {
         {/* Error */}
         <AnimatePresence>
           {errorMsg && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="rounded-[13px] p-3.5 mb-4 flex items-start gap-2.5 text-[13px] font-[500]"
               style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239' }}>
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
               <span>{errorMsg}</span>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         <AnimatePresence mode="wait">
           {/* Step: GPS */}
           {step === 'gps' && (
-            <motion.div key="gps" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
+            <m.div key="gps" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
               <div className="rounded-[22px] p-6 text-center" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                   className="flex justify-center mb-5">
                   <div className="flex h-20 w-20 items-center justify-center rounded-[20px]" style={{ background: gpsStatus === 'verified' ? 'rgba(16,185,129,0.10)' : gpsStatus === 'denied' ? 'rgba(239,68,68,0.10)' : 'rgba(99,102,241,0.10)' }}>
                     {gpsStatus === 'verified' ? <CheckCircle2 size={36} style={{ color: '#10b981' }} /> : gpsStatus === 'denied' ? <XCircle size={36} style={{ color: '#ef4444' }} /> : <LocateFixed size={36} style={{ color: '#6366f1' }} />}
                   </div>
-                </motion.div>
+                </m.div>
                 <h2 className="text-[18px] font-[760] mb-1" style={{ color: 'rgb(15,23,42)' }}>GPS Verification</h2>
                 <p className="text-[13px] mb-6" style={{ color: 'rgb(148,163,184)' }}>We need to verify you are at the gym location.</p>
                 {gpsStatus === 'verified' ? (
@@ -276,26 +276,26 @@ function MarkAttendanceContent() {
                   </p>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Step: Biometric */}
           {step === 'biometric' && (
-            <motion.div key="biometric" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
+            <m.div key="biometric" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
               <div className="rounded-[22px] p-6" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
                 <div className="text-center mb-6">
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+                  <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
                     className="flex justify-center mb-4">
                     <div className="flex h-20 w-20 items-center justify-center rounded-[20px]" style={{ background: 'rgba(16,185,129,0.10)' }}>
                       <Shield size={36} style={{ color: '#10b981' }} />
                     </div>
-                  </motion.div>
+                  </m.div>
                   <h2 className="text-[18px] font-[760] mb-1" style={{ color: 'rgb(15,23,42)' }}>Biometric Verification</h2>
                   <p className="text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Verify your identity using your enrolled passkey</p>
                 </div>
 
                 <div className="space-y-3">
-                  <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                  <m.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                     onClick={() => handleBiometricVerify('face_id')} disabled={loading}
                     className="flex w-full items-center gap-4 rounded-[14px] p-4 text-left transition-all"
                     style={{ background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.2)', color: 'rgb(15,23,42)', opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
@@ -307,9 +307,9 @@ function MarkAttendanceContent() {
                       <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>Use Face ID or Android Face Unlock</p>
                     </div>
                     <ChevronRight size={16} style={{ color: '#6366f1' }} />
-                  </motion.button>
+                  </m.button>
 
-                  <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                  <m.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                     onClick={() => handleBiometricVerify('touch_id')} disabled={loading}
                     className="flex w-full items-center gap-4 rounded-[14px] p-4 text-left transition-all"
                     style={{ background: 'rgba(16,185,129,0.06)', border: '1.5px solid rgba(16,185,129,0.2)', color: 'rgb(15,23,42)', opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
@@ -321,9 +321,9 @@ function MarkAttendanceContent() {
                       <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>Use Touch ID or fingerprint scanner</p>
                     </div>
                     <ChevronRight size={16} style={{ color: '#10b981' }} />
-                  </motion.button>
+                  </m.button>
 
-                  <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                  <m.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
                     onClick={() => handleBiometricVerify('passkey')} disabled={loading}
                     className="flex w-full items-center gap-4 rounded-[14px] p-4 text-left transition-all"
                     style={{ background: 'rgba(139,92,246,0.06)', border: '1.5px solid rgba(139,92,246,0.2)', color: 'rgb(15,23,42)', opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
@@ -335,7 +335,7 @@ function MarkAttendanceContent() {
                       <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>Use your device PIN, pattern, or password</p>
                     </div>
                     <ChevronRight size={16} style={{ color: '#8b5cf6' }} />
-                  </motion.button>
+                  </m.button>
                 </div>
 
                 <div className="mt-4">
@@ -344,20 +344,20 @@ function MarkAttendanceContent() {
                   </PremiumButton>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Step: Success */}
           {step === 'success' && (
-            <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <m.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
               <div className="rounded-[22px] p-8 text-center" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+                <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
                   className="flex justify-center mb-5">
                   <div className="flex h-24 w-24 items-center justify-center rounded-[24px]" style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 16px 48px rgba(16,185,129,0.3)' }}>
                     <CheckCircle2 size={44} color="#fff" />
                   </div>
-                </motion.div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                </m.div>
+                <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                   <h2 className="text-[22px] font-[800] mb-1" style={{ color: 'rgb(15,23,42)' }}>Attendance Marked!</h2>
                   <p className="text-[14px] mb-2" style={{ color: 'rgb(148,163,184)' }}>
                     {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
@@ -366,32 +366,32 @@ function MarkAttendanceContent() {
                     <Shield size={12} />
                     Verified via {verifyMethod === 'face_id' ? 'Face ID' : verifyMethod === 'touch_id' ? 'Touch ID' : verifyMethod === 'fingerprint' ? 'Fingerprint' : 'Passkey'}
                   </div>
-                </motion.div>
+                </m.div>
                 <div className="mt-6">
                   <PremiumButton tone="primary" glow icon={<RefreshCw size={14} />} onClick={handleReset}>
                     Mark Another
                   </PremiumButton>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Step: Error */}
           {step === 'error' && (
-            <motion.div key="error" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <m.div key="error" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
               <div className="rounded-[22px] p-6 text-center" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                   className="flex justify-center mb-4">
                   <div className="flex h-20 w-20 items-center justify-center rounded-[20px]" style={{ background: 'rgba(239,68,68,0.10)' }}>
                     <XCircle size={36} style={{ color: '#ef4444' }} />
                   </div>
-                </motion.div>
+                </m.div>
                 <h2 className="text-[18px] font-[760] mb-1" style={{ color: 'rgb(15,23,42)' }}>Attendance Not Marked</h2>
                 <PremiumButton tone="primary" glow icon={<RefreshCw size={14} />} onClick={handleReset} className="mt-5">
                   Try Again
                 </PremiumButton>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 

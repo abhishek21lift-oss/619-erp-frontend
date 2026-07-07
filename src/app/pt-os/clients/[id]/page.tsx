@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CopyId } from '@/components/ui/CopyId';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, User, Mail, Calendar, Target,
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
@@ -92,7 +92,7 @@ function InfoRow({ label, value, valueColor }: { label: string; value: string; v
 function DarkCard({ title, icon, from, children, className = '' }:
   { title: string; icon: React.ReactNode; from: string; children: React.ReactNode; className?: string }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+    <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className={`overflow-hidden rounded-[20px] ${className}`}
       style={{
         background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
@@ -107,7 +107,7 @@ function DarkCard({ title, icon, from, children, className = '' }:
         <h3 className="text-[13.5px] font-[740] text-white">{title}</h3>
       </div>
       <div className="p-5">{children}</div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -291,7 +291,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
             {!loading && !error && client && (
               <>
                 {/* ── HERO ── */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   className="relative mb-6 overflow-hidden rounded-[28px] p-7"
                   style={{
@@ -389,7 +389,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       </button>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
 
                 {/* ── KPI CARDS ── */}
                 <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -417,7 +417,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       sub: `${fmtINR(totalEarnedCommission)} earned`,
                     },
                   ].map((card, i) => (
-                    <motion.div key={card.label}
+                    <m.div key={card.label}
                       initial={{ opacity: 0, y: 14, scale: 0.97 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       transition={{ delay: 0.1 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -436,14 +436,14 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <p className="text-[20px] font-[860] tracking-[-0.02em] text-white">{card.value}</p>
                       <p className="text-[9.5px] font-[700] uppercase tracking-wider text-slate-500 mt-0.5">{card.label}</p>
                       <p className="text-[10px] font-[600] mt-1" style={{ color: card.from }}>{card.sub}</p>
-                    </motion.div>
+                    </m.div>
                   ))}
                 </div>
 
                 {/* ── PROGRESS BARS ── */}
                 <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Payment progress */}
-                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                  <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
                     className="rounded-[20px] p-5"
                     style={{
                       background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
@@ -464,7 +464,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       </span>
                     </div>
                     <div className="h-2.5 w-full rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                      <motion.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }}
+                      <m.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }}
                         transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
                         className="h-full rounded-full"
                         style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
@@ -473,10 +473,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <span className="text-[10.5px] font-[600] text-emerald-400">{fmtINR(client.paid_amount)} paid</span>
                       <span className="text-[10.5px] font-[600] text-slate-500">{fmtINR(client.final_amount)} total</span>
                     </div>
-                  </motion.div>
+                  </m.div>
 
                   {/* PT Duration */}
-                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                  <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                     className="rounded-[20px] p-5"
                     style={{
                       background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
@@ -502,7 +502,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         const end = new Date(client.pt_end_date!).getTime();
                         const progress = Math.min(Math.max(((Date.now() - start) / (end - start)) * 100, 0), 100);
                         return (
-                          <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                          <m.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
                             transition={{ duration: 1, ease: 'easeOut', delay: 0.35 }}
                             className="h-full rounded-full"
                             style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
@@ -513,11 +513,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <span className="text-[10.5px] font-[600] text-slate-500">Start: {fmtDate(client.pt_start_date)}</span>
                       <span className="text-[10.5px] font-[600] text-slate-500">End: {fmtDate(client.pt_end_date)}</span>
                     </div>
-                  </motion.div>
+                  </m.div>
                 </div>
 
                 {/* ── QUICK ACTIONS GRID ── */}
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.35, duration: 0.4 }}
                   className="mb-6 overflow-hidden rounded-[22px] p-5"
                   style={{
@@ -534,7 +534,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-11 gap-2.5">
                     {QUICK_ACTIONS.map((action, i) => (
-                      <motion.button key={action.label}
+                      <m.button key={action.label}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.4 + i * 0.025 }}
@@ -548,10 +548,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         <span className="text-[9px] font-[700] text-center leading-tight" style={{ color: action.from }}>
                           {action.label}
                         </span>
-                      </motion.button>
+                      </m.button>
                     ))}
                   </div>
-                </motion.div>
+                </m.div>
 
                 {/* ── MAIN CONTENT GRID ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -566,7 +566,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       ) : (
                         <div>
                           {timeline.map((event, i) => (
-                            <motion.div key={event.id}
+                            <m.div key={event.id}
                               initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
                               className="relative flex gap-3 pb-4 pl-8 last:pb-0">
                               {/* Line */}
@@ -586,7 +586,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                                 </div>
                                 <p className="text-[11px] mt-0.5 text-slate-500">{event.subtitle}</p>
                               </div>
-                            </motion.div>
+                            </m.div>
                           ))}
                         </div>
                       )}
@@ -601,7 +601,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             const barH = (Number(a.weight) / maxW) * 80;
                             return (
                               <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                <motion.div initial={{ height: 0 }} animate={{ height: barH }}
+                                <m.div initial={{ height: 0 }} animate={{ height: barH }}
                                   transition={{ duration: 0.5, delay: i * 0.06 }}
                                   className="w-full rounded-[5px]"
                                   style={{ background: 'linear-gradient(180deg, #10b981, #34d399)', minHeight: 4 }} />
@@ -715,7 +715,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           </div>
                         </div>
                       ) : (
-                        <div onClick={() => setEditNotes(true)} className="group cursor-pointer rounded-[12px] p-3 transition-all"
+                        <button type="button" onClick={() => setEditNotes(true)} className="group cursor-pointer rounded-[12px] p-3 transition-all w-full text-left"
                           style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.1)' }}>
                           {client.notes ? (
                             <p className="text-[12.5px] leading-relaxed text-slate-300">{client.notes}</p>
@@ -725,7 +725,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               <p className="hidden text-[12.5px] text-amber-400 group-hover:block">Click to add notes…</p>
                             </>
                           )}
-                        </div>
+                        </button>
                       )}
                     </DarkCard>
 
@@ -769,7 +769,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#34d399' };
                   };
                   return (
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                    <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.5 }}
                       className="mt-5 overflow-hidden rounded-[24px] p-6"
                       style={{
@@ -879,17 +879,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           );
                         })()}
                       </div>
-                    </motion.div>
+                    </m.div>
                   );
                 })()}
 
                 {/* ── DELETE MODAL ── */}
                 <AnimatePresence>
                   {deleteOpen && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
                       onClick={() => setDeleteOpen(false)}>
-                      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                      <m.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
                         className="w-full max-w-sm overflow-hidden rounded-[24px] p-7 text-center"
                         style={{
                           background: 'linear-gradient(145deg, rgba(15,23,42,0.98), rgba(30,41,59,0.96))',
@@ -920,8 +920,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             {deleting ? 'Deleting…' : 'Delete Client'}
                           </button>
                         </div>
-                      </motion.div>
-                    </motion.div>
+                      </m.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </>

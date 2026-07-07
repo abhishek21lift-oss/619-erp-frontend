@@ -16,7 +16,7 @@
  */
 
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Users, TrendingUp, Wallet, Percent, RefreshCw,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
@@ -208,7 +208,7 @@ function HealthRing({ score, color, size = 64 }: { score: number; color: string;
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="5.5" />
-        <motion.circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="5.5"
+        <m.circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="5.5"
           strokeLinecap="round" strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ - dash }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
@@ -231,7 +231,7 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
   const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="relative overflow-hidden rounded-[22px] sm:rounded-[28px]"
@@ -279,7 +279,7 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
 
       <div className="absolute bottom-0 inset-x-0 h-px"
         style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(192,132,252,0.5), transparent)' }} />
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -300,7 +300,7 @@ function MobileQuickActions() {
       <SectionLabel>Quick Actions</SectionLabel>
       <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         {actions.map((a, i) => (
-          <motion.button key={a.label}
+          <m.button key={a.label}
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.04, duration: 0.3 }}
             onClick={() => router.push(a.href)}
@@ -313,7 +313,7 @@ function MobileQuickActions() {
             <span className="text-[9.5px] font-[680] leading-tight text-center whitespace-nowrap" style={{ color: C.ink }}>
               {a.label}
             </span>
-          </motion.button>
+          </m.button>
         ))}
       </div>
     </div>
@@ -331,7 +331,7 @@ function StatCard({
   const router = useRouter();
   const max = trend && trend.length > 0 ? Math.max(...trend, 1) : 1;
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -4, scale: 1.015 }} whileTap={{ scale: 0.97 }}
@@ -367,7 +367,7 @@ function StatCard({
       {trend && trend.length > 0 && (
         <div className="relative z-10 flex items-end gap-[2px] h-7 sm:h-8 mt-2.5">
           {trend.map((v, i) => (
-            <motion.div key={i}
+            <m.div key={i}
               initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
               transition={{ delay: delay + 0.2 + i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 rounded-t-[3px] origin-bottom"
@@ -378,7 +378,7 @@ function StatCard({
           ))}
         </div>
       )}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -444,11 +444,11 @@ function RevenueChart({ data }: { data: DashData['revenueTrend'] }) {
             stroke="rgba(124,58,237,0.07)" strokeWidth="1" strokeDasharray="4 5" />
         ))}
         {bars.map((b, i) => (
-          <motion.rect key={i} x={b.x - barW/2} width={barW} rx={4} fill="url(#bar-r)"
+          <m.rect key={i} x={b.x - barW/2} width={barW} rx={4} fill="url(#bar-r)"
             initial={{ y: PT+cH, height: 0 }} animate={{ y: b.barTop, height: b.barH }}
             transition={{ delay: 0.08 + i*0.07, duration: 0.5, ease: [0.16,1,0.3,1] }} />
         ))}
-        <motion.path d={buildLine(bars)} fill="none" stroke={C.rose} strokeWidth="2" strokeLinecap="round" filter="url(#gl)"
+        <m.path d={buildLine(bars)} fill="none" stroke={C.rose} strokeWidth="2" strokeLinecap="round" filter="url(#gl)"
           initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8, ease: [0.16,1,0.3,1] }} />
         {bars.map((b,i) => (
@@ -496,7 +496,7 @@ function RevenueDonut({ net, commission, outstanding }: { net: number; commissio
             {segs.map((s, i) => {
               const len = (s.value / total) * CIRC;
               const el = (
-                <motion.circle key={i} cx={54} cy={54} r={R} fill="none" stroke={s.color} strokeWidth="13"
+                <m.circle key={i} cx={54} cy={54} r={R} fill="none" stroke={s.color} strokeWidth="13"
                   strokeDasharray={`${len} ${CIRC - len}`} strokeDashoffset={-offset} strokeLinecap="butt"
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 + i*0.1, duration: 0.4 }} />
               );
@@ -552,7 +552,7 @@ function ForecastPanel({ d }: { d: DashData }) {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {tiles.map((t, i) => (
-          <motion.div key={t.label}
+          <m.div key={t.label}
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06, duration: 0.35 }}
             className="rounded-[14px] p-3" style={{ background: `${t.color}0d`, border: `1px solid ${t.color}1f` }}>
@@ -562,7 +562,7 @@ function ForecastPanel({ d }: { d: DashData }) {
             </div>
             <p className="text-[8px] font-[700] uppercase tracking-[0.09em]" style={{ color: `${t.color}aa` }}>{t.label}</p>
             <p className="text-[15px] font-[850] tracking-[-0.02em] mt-0.5" style={{ color: t.color }}>{t.value}</p>
-          </motion.div>
+          </m.div>
         ))}
       </div>
     </Glass>
@@ -632,7 +632,7 @@ function AICopilot({ d }: { d: DashData }) {
           : insights.map((ins, i) => {
             const t = toneStyle[ins.tone];
             return (
-              <motion.button key={i}
+              <m.button key={i}
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.07, duration: 0.35 }}
                 onClick={() => router.push(ins.href)}
@@ -646,7 +646,7 @@ function AICopilot({ d }: { d: DashData }) {
                   </div>
                   <ChevronRight size={13} style={{ color: t.color, flexShrink: 0, marginTop: 2 }} />
                 </div>
-              </motion.button>
+              </m.button>
             );
           })}
       </div>
@@ -706,7 +706,7 @@ function TodayOps({ ops, loading }: { ops: OpsData | null | undefined; loading: 
             const meta = STATUS_META[s.status] ?? STATUS_META.scheduled;
             const timeStr = fmt12(s.start_time);
             return (
-              <motion.div key={s.id}
+              <m.div key={s.id}
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
                 className="flex items-center gap-2.5 rounded-[13px] p-2.5"
@@ -728,7 +728,7 @@ function TodayOps({ ops, loading }: { ops: OpsData | null | undefined; loading: 
                     {meta.icon}{meta.label}
                   </span>
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
@@ -775,7 +775,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
             const urgent = r.days_left <= 2;
             const color = urgent ? C.crimson : r.days_left <= 5 ? C.amber : C.blue;
             return (
-              <motion.div key={r.id}
+              <m.div key={r.id}
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => router.push(`/pt-os/clients/${r.id}`)}
@@ -799,7 +799,7 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
                     <span className="text-[9px] font-[640]" style={{ color: C.rose }}>{fmtCompact(r.balance_amount)} due</span>
                   )}
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
@@ -844,7 +844,7 @@ function TopDues({ ops, loading }: { ops: OpsData | null | undefined; loading: b
           {dues.map((due, i) => {
             const color = due.due_status === 'overdue' ? C.crimson : C.rose;
             return (
-              <motion.div key={due.id}
+              <m.div key={due.id}
                 initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
                 onClick={() => router.push(`/pt-os/clients/${due.id}`)}
@@ -866,7 +866,7 @@ function TopDues({ ops, loading }: { ops: OpsData | null | undefined; loading: b
                   )}
                   <span className="text-[12.5px] font-[820] tabular-nums" style={{ color }}>{fmtCompact(due.balance_amount)}</span>
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
@@ -925,7 +925,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
                 <span className="text-[9.5px] font-[750]" style={{ color: C.emerald }}>{completionRate.toFixed(0)}%</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.emerald}18` }}>
-                <motion.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${C.emerald}, #34d399)` }}
+                <m.div className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${C.emerald}, #34d399)` }}
                   initial={{ width: 0 }} animate={{ width: `${completionRate}%` }}
                   transition={{ duration: 0.8, ease: [0.16,1,0.3,1] }} />
               </div>
@@ -939,7 +939,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
                 const color = TRAINER_COLORS[i % TRAINER_COLORS.length];
                 const pct = (t.completed / maxCompleted) * 100;
                 return (
-                  <motion.div key={t.trainer_name}
+                  <m.div key={t.trainer_name}
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.06 }}>
                     <div className="flex items-center justify-between mb-1 min-w-0">
                       <span className="text-[11px] font-[640] truncate max-w-[130px] sm:max-w-[170px]" style={{ color: C.ink }}>{t.trainer_name}</span>
@@ -950,11 +950,11 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
                       </div>
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
-                      <motion.div className="h-full rounded-full" style={{ background: color }}
+                      <m.div className="h-full rounded-full" style={{ background: color }}
                         initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                         transition={{ delay: 0.2 + i*0.06, duration: 0.55, ease: [0.16,1,0.3,1] }} />
                     </div>
-                  </motion.div>
+                  </m.div>
                 );
               })}
             </div>
@@ -1001,7 +1001,7 @@ function TrainerLeaderboard({ trainers, onRefetch, loading }: {
             const revPct = (t.monthly_revenue / topRevenue) * 100;
             const isTop3 = i < 3;
             return (
-              <motion.div key={t.id}
+              <m.div key={t.id}
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.07, duration: 0.35 }}
                 className="rounded-[14px] p-3"
@@ -1026,13 +1026,13 @@ function TrainerLeaderboard({ trainers, onRefetch, loading }: {
                 </div>
                 <div className="flex items-center gap-2 ml-[28px]">
                   <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
-                    <motion.div className="h-full rounded-full" style={{ background: color }}
+                    <m.div className="h-full rounded-full" style={{ background: color }}
                       initial={{ width: 0 }} animate={{ width: `${revPct}%` }}
                       transition={{ delay: 0.3+i*0.07, duration: 0.55, ease: [0.16,1,0.3,1] }} />
                   </div>
                   <span className="text-[8.5px] font-[650] shrink-0" style={{ color: C.muted }}>{commPct.toFixed(0)}%</span>
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
@@ -1053,7 +1053,7 @@ function QuickDock() {
     { label: 'Workouts',    icon: <Activity size={17} />,     href: '/pt-os/workout-plans',    color: C.cyan },
   ];
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.6, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="hidden lg:flex fixed bottom-6 left-1/2 -translate-x-1/2 z-40 items-end gap-1 rounded-[22px] px-3 py-2.5"
@@ -1072,7 +1072,7 @@ function QuickDock() {
           <span className="text-[9px] font-[650] whitespace-nowrap" style={{ color: C.ink }}>{a.label}</span>
         </button>
       ))}
-    </motion.div>
+    </m.div>
   );
 }
 

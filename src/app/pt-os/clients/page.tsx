@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Search, Users, TrendingUp, Wallet, Percent,
   RefreshCw, UserPlus, User, Clock, Zap, Star,
@@ -85,7 +85,7 @@ function DaysArc({ days_left }: { days_left: number | null }) {
     <div className="flex flex-col items-center">
       <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`}>
         <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={sw} />
-        <motion.circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={info.color}
+        <m.circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={info.color}
           strokeWidth={sw} strokeLinecap="round" strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }}
           animate={{ strokeDashoffset: circ * (1 - pct) }}
@@ -114,7 +114,7 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
   const initials = client.name.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
   const statusInfo = getStatusInfo(client.status, client.days_left);
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 16, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: index * 0.04, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -191,7 +191,7 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
           </span>
         </div>
         <div className="h-1.5 w-full rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <motion.div
+          <m.div
             initial={{ width: 0 }}
             animate={{ width: `${Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)}%` }}
             transition={{ duration: 0.8, delay: index * 0.04 + 0.1, ease: 'easeOut' }}
@@ -210,7 +210,7 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
           <ChevronRight size={12} />
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -220,7 +220,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
   const initials = client.name.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase();
   const statusInfo = getStatusInfo(client.status, client.days_left);
   return (
-    <motion.tr
+    <m.tr
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.025, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
@@ -276,7 +276,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
       <td className="py-3.5 px-4 text-right">
         <DaysArc days_left={client.days_left} />
       </td>
-    </motion.tr>
+    </m.tr>
   );
 }
 
@@ -338,7 +338,7 @@ export default function PtClientsPage() {
           <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8" style={{ zIndex: 1 }}>
 
             {/* ── PAGE HEADER ── */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-4">
@@ -364,10 +364,10 @@ export default function PtClientsPage() {
                 <UserPlus size={16} />
                 New Client
               </button>
-            </motion.div>
+            </m.div>
 
             {/* ── KPI HERO ── */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
               className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {[
@@ -400,7 +400,7 @@ export default function PtClientsPage() {
                   subIcon: <Percent size={11} />,
                 },
               ].map((card, i) => (
-                <motion.div key={card.label}
+                <m.div key={card.label}
                   initial={{ opacity: 0, y: 16, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ delay: 0.12 + i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -429,12 +429,12 @@ export default function PtClientsPage() {
                     </p>
                     <p className="mt-1 text-[11px] font-[600] text-slate-400 uppercase tracking-wider">{card.label}</p>
                   </div>
-                </motion.div>
+                </m.div>
               ))}
-            </motion.div>
+            </m.div>
 
             {/* ── CLIENT LIST CARD ── */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="overflow-hidden rounded-[24px]"
               style={{
@@ -562,7 +562,7 @@ export default function PtClientsPage() {
                   <p className="text-[13px] font-[500] text-slate-500">Loading clients…</p>
                 </div>
               )}
-            </motion.div>
+            </m.div>
           </div>
         </div>
       </AppShell>

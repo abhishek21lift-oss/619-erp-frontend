@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Award, Users, TrendingUp, Star, Search, Plus, RefreshCw,
   Phone, ChevronRight, Edit3, UserCheck,
@@ -83,7 +83,7 @@ function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
     ? Math.round((trainer.active_clients / trainer.total_clients) * 100) : null;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
@@ -186,7 +186,7 @@ function TrainerCard({ trainer, index }: { trainer: Trainer; index: number }) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -199,7 +199,7 @@ function LeaderboardRow({ trainer, index }: { trainer: Trainer; index: number })
   ));
 
   return (
-    <motion.tr
+    <m.tr
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.04, duration: 0.25 }}
@@ -260,7 +260,7 @@ function LeaderboardRow({ trainer, index }: { trainer: Trainer; index: number })
           >{score}%</span>
         </div>
       </td>
-    </motion.tr>
+    </m.tr>
   );
 }
 
@@ -271,7 +271,7 @@ function RevenueChart({ data }: { data: { month: string; revenue: number }[] }) 
     <div className="flex items-end justify-between gap-2 h-32 mt-4">
       {data.map((d, i) => (
         <div key={d.month} className="flex-1 flex flex-col items-center gap-1.5">
-          <motion.div
+          <m.div
             initial={{ height: 0 }}
             animate={{ height: `${(d.revenue / max) * 100}%` }}
             transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
@@ -284,7 +284,7 @@ function RevenueChart({ data }: { data: { month: string; revenue: number }[] }) 
             <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#0B0B0F] text-white text-[10px] font-bold px-2 py-1 rounded-[6px] opacity-0 group-hover/chart:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
               {fmtINR(d.revenue)}
             </div>
-          </motion.div>
+          </m.div>
           <span className="text-[9px] font-semibold text-[var(--text-muted)]">{d.month}</span>
         </div>
       ))}
@@ -357,7 +357,7 @@ export default function TrainersPage() {
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           {/* ── Hero Section ── */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -393,10 +393,10 @@ export default function TrainersPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* ── Stats Cards ── */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
@@ -430,10 +430,10 @@ export default function TrainersPage() {
               accent="amber"
               hint="Average client load index"
             />
-          </motion.div>
+          </m.div>
 
           {/* ── Search + Filters ── */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.15 }}
@@ -455,14 +455,14 @@ export default function TrainersPage() {
                 </span>
               </div>
             </GlassPanel>
-          </motion.div>
+          </m.div>
 
           {/* ── Error State ── */}
           {error && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mb-6 rounded-[16px] bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.15)] px-5 py-4 text-[13px] font-medium text-[#EF4444]">
               {error}
-            </motion.div>
+            </m.div>
           )}
 
           {/* ── Loading State ── */}
@@ -586,7 +586,7 @@ export default function TrainersPage() {
 
           {/* ── Empty State ── */}
           {!loading && !error && filtered.length === 0 && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
@@ -615,7 +615,7 @@ export default function TrainersPage() {
                   </div>
                 </Link>
               )}
-            </motion.div>
+            </m.div>
           )}
         </div>
       </AppShell>

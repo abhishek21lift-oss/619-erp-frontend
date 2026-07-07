@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { Package, FileText, Plus, Pencil, Trash2, X, Check, Search } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -54,10 +54,10 @@ function DeleteModal({ open, onCancel, onConfirm }: { open: boolean; onCancel: (
   return (
     <AnimatePresence>
       {open && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={onCancel}>
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+          <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
             onClick={e => e.stopPropagation()}
             style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '32px 36px', maxWidth: 380, width: '90%', textAlign: 'center' }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
@@ -75,8 +75,8 @@ function DeleteModal({ open, onCancel, onConfirm }: { open: boolean; onCancel: (
                 Delete
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );
@@ -160,27 +160,27 @@ function PackagesTab() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search packages..."
             style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: 12, border: `1px solid ${a}33`, background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 13, outline: 'none', backdropFilter: 'blur(8px)' }} />
         </div>
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim }}>
+        <m.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim }}>
           <Plus size={15} /> Create Package
-        </motion.button>
+        </m.button>
       </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#a67c52', fontSize: 14 }}>Loading packages...</div>
       ) : filtered.length === 0 ? (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           style={{ textAlign: 'center', padding: '60px 24px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: `1px solid ${a}22` }}>
           <Package size={48} color={a} style={{ margin: '0 auto 12px', display: 'block' }} />
           <h3 style={{ fontSize: 17, fontWeight: 700, color: '#fff', margin: 0 }}>No Packages Yet</h3>
           <p style={{ fontSize: 13, color: '#a67c52', margin: '6px 0 20px' }}>Create your first PT package to get started.</p>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim, display: 'inline-flex' }}>
+          <m.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim, display: 'inline-flex' }}>
             <Plus size={15} /> Create Package
-          </motion.button>
-        </motion.div>
+          </m.button>
+        </m.div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           {filtered.map((pkg, i) => (
-            <motion.div key={pkg.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+            <m.div key={pkg.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
               whileHover={{ y: -4, boxShadow: `0 16px 48px ${a}22` }}
               style={{ borderRadius: 18, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', borderLeft: `3px solid ${a}`, borderTop: '1px solid rgba(255,255,255,0.08)', borderRight: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: 20, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 4 }}>
@@ -207,7 +207,7 @@ function PackagesTab() {
                 </button>
                 <span style={{ fontSize: 11, fontWeight: 600, color: pkg.is_active ? '#22c55e' : '#a67c52' }}>{pkg.is_active ? 'Active' : 'Inactive'}</span>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       )}
@@ -215,10 +215,10 @@ function PackagesTab() {
       {/* Package Form Modal */}
       <AnimatePresence>
         {showForm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', padding: 16 }}
             onClick={() => setShowForm(false)}>
-            <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+            <m.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
               style={{ width: '100%', maxWidth: 520, borderRadius: 22, background: '#151515', border: `1px solid ${a}33`, padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -260,15 +260,15 @@ function PackagesTab() {
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
                 <button onClick={() => setShowForm(false)} style={{ padding: '10px 18px', borderRadius: 10, border: `1px solid ${a}33`, background: 'transparent', color: '#a67c52', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave}
+                <m.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave}
                   disabled={saving || !form.name || !form.session_count || !form.duration_days || !form.price}
                   style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: saving ? 0.6 : 1, boxShadow: `0 4px 16px ${a}44` }}>
                   {saving ? <Spin /> : <Check size={15} />}
                   {editing ? 'Update' : 'Create'}
-                </motion.button>
+                </m.button>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -355,27 +355,27 @@ function PlansTab() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search plans..."
             style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: 12, border: `1px solid ${a}33`, background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 13, outline: 'none', backdropFilter: 'blur(8px)' }} />
         </div>
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim }}>
+        <m.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim }}>
           <Plus size={15} /> Create Plan
-        </motion.button>
+        </m.button>
       </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: '#a67c52', fontSize: 14 }}>Loading plans...</div>
       ) : filtered.length === 0 ? (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           style={{ textAlign: 'center', padding: '60px 24px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: `1px solid ${a}22` }}>
           <FileText size={48} color={a} style={{ margin: '0 auto 12px', display: 'block' }} />
           <h3 style={{ fontSize: 17, fontWeight: 700, color: '#fff', margin: 0 }}>No Plans Yet</h3>
           <p style={{ fontSize: 13, color: '#a67c52', margin: '6px 0 20px' }}>Create your first subscription plan to get started.</p>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim, display: 'inline-flex' }}>
+          <m.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={openCreate} style={{ ...btnPrim, display: 'inline-flex' }}>
             <Plus size={15} /> Create Plan
-          </motion.button>
-        </motion.div>
+          </m.button>
+        </m.div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
           {filtered.map((plan, i) => (
-            <motion.div key={plan.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+            <m.div key={plan.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
               whileHover={{ y: -4, boxShadow: `0 16px 48px ${a}22` }}
               style={{ borderRadius: 18, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', borderLeft: `3px solid ${a}`, borderTop: '1px solid rgba(255,255,255,0.08)', borderRight: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: 20, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 4 }}>
@@ -399,7 +399,7 @@ function PlansTab() {
                 </button>
                 <span style={{ fontSize: 11, fontWeight: 600, color: plan.is_active ? '#22c55e' : '#a67c52' }}>{plan.is_active ? 'Active' : 'Inactive'}</span>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       )}
@@ -407,10 +407,10 @@ function PlansTab() {
       {/* Plan Form Modal */}
       <AnimatePresence>
         {showForm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', padding: 16 }}
             onClick={() => setShowForm(false)}>
-            <motion.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+            <m.div initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
               style={{ width: '100%', maxWidth: 460, borderRadius: 22, background: '#151515', border: `1px solid ${a}33`, padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -441,15 +441,15 @@ function PlansTab() {
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
                 <button onClick={() => setShowForm(false)} style={{ padding: '10px 18px', borderRadius: 10, border: `1px solid ${a}33`, background: 'transparent', color: '#a67c52', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave}
+                <m.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave}
                   disabled={saving || !form.name || !form.duration_months || !form.base_amount}
                   style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: grad, color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: saving ? 0.6 : 1, boxShadow: `0 4px 16px ${a}44` }}>
                   {saving ? <Spin /> : <Check size={15} />}
                   {editing ? 'Update' : 'Create'}
-                </motion.button>
+                </m.button>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -486,7 +486,7 @@ function PageContent() {
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px', position: 'relative' }}>
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+        <m.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, borderRadius: 16, background: grad, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 32px ${a}44` }}>
             {tab === 'packages' ? <Package size={24} color="#fff" /> : <FileText size={24} color="#fff" />}
           </div>
@@ -496,10 +496,10 @@ function PageContent() {
               {tab === 'packages' ? 'Session-based PT packages with goal types' : 'Monthly subscription plans for PT clients'}
             </p>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Tabs */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
           style={{ display: 'flex', gap: 8, marginBottom: 28, background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 4, width: 'fit-content', border: `1px solid ${a}22` }}>
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
@@ -514,13 +514,13 @@ function PageContent() {
               {t.icon} {t.label}
             </button>
           ))}
-        </motion.div>
+        </m.div>
 
         {/* Tab Content */}
         <AnimatePresence mode="wait">
-          <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
+          <m.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
             {tab === 'packages' ? <PackagesTab /> : <PlansTab />}
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Wallet, CheckCircle, AlertTriangle, Clock,
   Award, Plus, X, Receipt, Calendar, User, Dumbbell,
@@ -96,7 +96,7 @@ const paymentMethods = [
 ];
 
 const GradientCard = ({ children, from, to, className = '' }: { children: React.ReactNode; from: string; to: string; className?: string }) => (
-  <motion.div
+  <m.div
     initial={{ opacity: 0, y: 12 }}
     animate={{ opacity: 1, y: 0 }}
     className={`rounded-[16px] p-5 relative overflow-hidden ${className}`}
@@ -106,7 +106,7 @@ const GradientCard = ({ children, from, to, className = '' }: { children: React.
       backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.8) 0%, transparent 60%)',
     }} />
     {children}
-  </motion.div>
+  </m.div>
 );
 
 function Skeleton() {
@@ -235,7 +235,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
           ) : client ? (
             <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-6">
               {/* ── Header ── */}
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-wrap items-center justify-between gap-4 mb-6"
@@ -279,7 +279,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                     Record Payment
                   </PremiumButton>
                 </div>
-              </motion.div>
+              </m.div>
 
               {/* ── Summary Cards ── */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -347,7 +347,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
               </div>
 
               {/* ── Payment Progress Bar ── */}
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
@@ -364,7 +364,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   </span>
                 </div>
                 <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <motion.div
+                  <m.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progressPct}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
@@ -388,10 +388,10 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                     {client.balance_amount > 0 ? `${fmtINR(client.balance_amount)} remaining` : 'No balance'}
                   </span>
                 </div>
-              </motion.div>
+              </m.div>
 
               {/* ── Payment History ── */}
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -476,7 +476,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                         const methodIcon = paymentMethods.find(m => m.value === p.payment_method);
                         const MethodIcon = methodIcon?.icon || Banknote;
                         return (
-                          <motion.tr
+                          <m.tr
                             key={p.id}
                             initial={{ opacity: 0, y: 4 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -523,7 +523,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                 {p.notes || '—'}
                               </span>
                             </td>
-                          </motion.tr>
+                          </m.tr>
                         );
                       }) : (
                         <tr>
@@ -583,13 +583,13 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                     </div>
                   </div>
                 )}
-              </motion.div>
+              </m.div>
 
               {/* ── Record Payment Slide-in Panel (Apple Style) ── */}
               <AnimatePresence>
                 {showPaymentPanel && (
                   <>
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -597,7 +597,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}
                       onClick={() => setShowPaymentPanel(false)}
                     />
-                    <motion.div
+                    <m.div
                       ref={formRef}
                       initial={{ x: '100%' }}
                       animate={{ x: 0 }}
@@ -712,7 +712,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                         </button>
                         <AnimatePresence>
                           {showOptional && (
-                            <motion.div
+                            <m.div
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
@@ -746,7 +746,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                 className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none resize-none"
                                 style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
                               />
-                            </motion.div>
+                            </m.div>
                           )}
                         </AnimatePresence>
 
@@ -794,7 +794,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                           {submitting ? 'Recording…' : 'Record Payment'}
                         </button>
                       </div>
-                    </motion.div>
+                    </m.div>
                   </>
                 )}
               </AnimatePresence>

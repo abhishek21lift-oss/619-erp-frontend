@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { MapPin, Plus, Edit3, Trash2, Loader2 } from 'lucide-react';
@@ -59,7 +59,7 @@ function BranchesContent() {
   return (
     <AppShell>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #1a0a2e, #2d1b69, #1a0a2e)', boxShadow: '0 20px 60px rgba(26,10,46,0.5)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
@@ -71,7 +71,7 @@ function BranchesContent() {
               <Plus size={14} /> {showForm ? 'Cancel' : 'Add Branch'}
             </button>
           </div>
-        </motion.div>
+        </m.div>
 
         {error && (
           <div style={{ borderRadius: 14, padding: '14px 20px', marginBottom: 22, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5', fontWeight: 600, fontSize: 13 }}>
@@ -80,7 +80,7 @@ function BranchesContent() {
         )}
 
         {showForm && (
-          <motion.form initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} onSubmit={addBranch}
+          <m.form initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} onSubmit={addBranch}
             style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, borderRadius: 20, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', padding: 20, marginBottom: 22, alignItems: 'end' }}>
             <div style={{ display: 'grid', gap: 5 }}>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>Branch Name *</span>
@@ -96,7 +96,7 @@ function BranchesContent() {
               style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '9px 22px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
               <Plus size={13} /> Create
             </button>
-          </motion.form>
+          </m.form>
         )}
 
         {loading ? (
@@ -104,7 +104,7 @@ function BranchesContent() {
         ) : (
           <div style={{ display: 'grid', gap: 12 }}>
             {items.map(b => (
-              <motion.div key={b.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              <m.div key={b.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 style={{ borderRadius: 20, background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.3s' }}>
                 <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(109,40,217,0.1))', flexShrink: 0 }}>
                   <MapPin size={22} color="#a855f7" />
@@ -121,7 +121,7 @@ function BranchesContent() {
                     <Trash2 size={14} />
                   </button>
                 </div>
-              </motion.div>
+              </m.div>
             ))}
             {items.length === 0 && (
               <div style={{ padding: '64px 20px', textAlign: 'center' }}>

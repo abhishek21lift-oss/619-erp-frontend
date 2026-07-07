@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   CalendarCheck, Flame, TrendingUp, Clock, QrCode,
   ScanFace, User, Loader2, ChevronLeft, ChevronRight,
@@ -284,7 +284,7 @@ export default function MemberAttendancePage() {
                     const checkOut  = r.check_out_time ? new Date(r.check_out_time as string) : null;
                     const color     = METHOD_COLORS[r.method ?? ''] || '#94a3b8';
                     return (
-                      <motion.div
+                      <m.div
                         key={i}
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.015 }}
                         style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: '1px solid var(--border)' }}
@@ -317,7 +317,7 @@ export default function MemberAttendancePage() {
                           {METHOD_ICONS[r.method ?? ''] || <User size={11} />}
                           {r.method ?? 'manual'}
                         </div>
-                      </motion.div>
+                      </m.div>
                     );
                   })}
                 </div>

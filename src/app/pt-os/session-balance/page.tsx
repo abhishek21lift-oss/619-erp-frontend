@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Gauge, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -37,7 +37,7 @@ export default function SessionBalancePage() {
     <Guard>
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
             style={{ background: 'linear-gradient(135deg, #1c1917 0%, #292524 50%, #44403c 100%)', boxShadow: '0 20px 60px rgba(28,25,23,0.3)' }}>
             <div className="relative z-10">
@@ -54,11 +54,11 @@ export default function SessionBalancePage() {
                 Track PT session usage, view low balance alerts, and manage package renewals.
               </p>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Low Balance Alert */}
           {(balances.data as any[] || []).length > 0 && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               className="rounded-[16px] p-4 mb-6 flex items-start gap-3"
               style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <AlertTriangle size={20} style={{ color: '#ef4444', flexShrink: 0 }} />
@@ -68,7 +68,7 @@ export default function SessionBalancePage() {
                   {(balances.data as any[]).length} client(s) have 3 or fewer sessions remaining.
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

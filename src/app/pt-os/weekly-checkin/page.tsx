@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ClipboardCheck, Plus, Loader2, Check } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -103,7 +103,7 @@ export default function WeeklyCheckinPage() {
     <Guard>
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
             style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%)', boxShadow: '0 20px 60px rgba(13,148,136,0.3)' }}>
             <div className="relative z-10">
@@ -120,10 +120,10 @@ export default function WeeklyCheckinPage() {
                 Log weekly progress — weight, mood, sleep, adherence, and trainer notes.
               </p>
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+            <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
               className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
               <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'rgb(15,23,42)' }}>Log Check-In</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -177,9 +177,9 @@ export default function WeeklyCheckinPage() {
                   {saving ? 'Saving...' : success ? 'Saved!' : 'Log Check-In'}
                 </Button>
               </form>
-            </motion.div>
+            </m.div>
 
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+            <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
               className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
               <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'rgb(15,23,42)' }}>Recent Check-Ins</h2>
               <div className="space-y-3 max-h-[500px] overflow-y-auto">
@@ -204,7 +204,7 @@ export default function WeeklyCheckinPage() {
                   <p className="text-center py-8 text-sm" style={{ color: 'rgb(148,163,184)' }}>No check-ins yet.</p>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </div>
         </div>
       </AppShell>

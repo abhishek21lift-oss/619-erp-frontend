@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CreditCard, Search, Users, RefreshCw, Calendar, DollarSign, TrendingUp, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -87,15 +87,15 @@ function PageContent() {
   return (
     <div style={{ position: 'relative', zIndex: 1, paddingBottom: 40 }}>
       <div style={{ pointerEvents: 'none', position: 'fixed', inset: 0, overflow: 'hidden', zIndex: 0 }}>
-        <motion.div animate={{ x: [0, -60, 0], y: [0, 40, 0] }} transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+        <m.div animate={{ x: [0, -60, 0], y: [0, 40, 0] }} transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
           style={{ position: 'absolute', top: -160, right: -160, width: 600, height: 600, borderRadius: '50%', opacity: 0.15, background: `radial-gradient(circle, ${A}88, transparent 70%)` }} />
-        <motion.div animate={{ x: [0, 80, 0], y: [0, -50, 0] }} transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
+        <m.div animate={{ x: [0, 80, 0], y: [0, -50, 0] }} transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
           style={{ position: 'absolute', bottom: -200, left: -160, width: 700, height: 700, borderRadius: '50%', opacity: 0.1, background: `radial-gradient(circle, ${B}66, transparent 70%)` }} />
       </div>
-      <motion.div variants={cv} initial="hidden" animate="visible" style={{ position: 'relative', zIndex: 2 }}>
-        <motion.div variants={iv} style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '40px 36px', marginBottom: 28, background: 'linear-gradient(135deg, #0a0f1a, #451a03, #0a0f1a)', boxShadow: `0 16px 48px ${C}66` }}>
+      <m.div variants={cv} initial="hidden" animate="visible" style={{ position: 'relative', zIndex: 2 }}>
+        <m.div variants={iv} style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '40px 36px', marginBottom: 28, background: 'linear-gradient(135deg, #0a0f1a, #451a03, #0a0f1a)', boxShadow: `0 16px 48px ${C}66` }}>
           <div style={{ pointerEvents: 'none', position: 'absolute', inset: 0, opacity: 0.04, backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.08) 1px,transparent 1px)', backgroundSize: '30px 30px' }} />
-          <motion.div animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          <m.div animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
             style={{ pointerEvents: 'none', position: 'absolute', right: -40, top: -40, width: 200, height: 200, borderRadius: '50%', opacity: 0.3, background: `radial-gradient(circle, ${A}88, transparent 70%)` }} />
           <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, borderRadius: 16, background: `linear-gradient(135deg, ${A}, ${B})`, color: '#fff', boxShadow: `0 8px 24px ${A}55` }}>
@@ -111,11 +111,11 @@ function PageContent() {
           </div>
           <div style={{ position: 'absolute', bottom: 20, right: 60, width: 40, height: 40, borderRadius: '50%', border: `1px solid ${A}44`, opacity: 0.4 }} />
           <div style={{ position: 'absolute', top: 30, right: 180, width: 20, height: 20, borderRadius: '50%', border: `1px solid ${B}44`, opacity: 0.3 }} />
-        </motion.div>
+        </m.div>
 
-        <motion.div variants={iv} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+        <m.div variants={iv} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
           {kpiCards.map((k, i) => (
-            <motion.div key={k.label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            <m.div key={k.label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '20px 18px', background: k.grad, color: '#fff', boxShadow: `0 4px 16px ${B}33`, cursor: 'default' }}>
               <div style={{ pointerEvents: 'none', position: 'absolute', right: -24, top: -24, width: 100, height: 100, borderRadius: '50%', opacity: 0.15, background: 'radial-gradient(circle,rgba(255,255,255,0.4),transparent 70%)' }} />
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -125,11 +125,11 @@ function PageContent() {
                 </div>
               </div>
               <p style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em' }}>{k.value}</p>
-            </motion.div>
+            </m.div>
           ))}
-        </motion.div>
+        </m.div>
 
-        <motion.div variants={iv} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 20, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 20px rgba(15,23,42,0.05)' }}>
+        <m.div variants={iv} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 20, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 20px rgba(15,23,42,0.05)' }}>
           <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 340 }}>
             <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgb(148,163,184)', pointerEvents: 'none' }} />
             <input type="text" placeholder="Search client or plan..." value={search} onChange={e => setSearch(e.target.value)}
@@ -151,31 +151,31 @@ function PageContent() {
           <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: 'rgb(148,163,184)' }}>
             {filtered.length} <span style={{ color: 'rgb(203,213,225)' }}>/</span> {subs.length}
           </span>
-        </motion.div>
+        </m.div>
 
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 34, height: 34, borderRadius: '50%', border: `3px solid ${A}22`, borderTopColor: A }} />
+              <m.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 34, height: 34, borderRadius: '50%', border: `3px solid ${A}22`, borderTopColor: A }} />
               <p style={{ fontSize: 12, fontWeight: 500, color: 'rgb(148,163,184)' }}>Loading subscriptions...</p>
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          <motion.div variants={iv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', borderRadius: 22, background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.8)' }}>
+          <m.div variants={iv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', borderRadius: 22, background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.8)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 80, borderRadius: 22, marginBottom: 16, background: `linear-gradient(135deg, ${A}18, ${B}18)` }}>
               <CreditCard size={34} style={{ color: A }} />
             </div>
             <p style={{ fontSize: 17, fontWeight: 760, letterSpacing: '-0.01em', color: 'rgb(15,23,42)', margin: 0 }}>No subscriptions yet</p>
             <p style={{ fontSize: 13, color: 'rgb(148,163,184)', margin: '6px 0 0 0' }}>{search || filter !== 'all' ? 'Try adjusting your filters' : 'Assign a PT plan to a client to get started'}</p>
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div variants={cv} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
+          <m.div variants={cv} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
             {filtered.map(sub => {
               const bc = sub.status === 'active' ? '#10b981' : sub.status === 'expiring' ? A : '#ef4444';
               const bb = sub.status === 'active' ? '#10b98118' : sub.status === 'expiring' ? `${A}18` : '#ef444418';
               const dc = sub.daysLeft <= 0 ? '#ef4444' : sub.daysLeft <= 30 ? A : '#10b981';
               return (
-                <motion.div key={sub.id} variants={iv} whileHover={{ y: -4, boxShadow: `0 8px 32px ${A}33` }}
+                <m.div key={sub.id} variants={iv} whileHover={{ y: -4, boxShadow: `0 8px 32px ${A}33` }}
                   style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: 20, background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 20px rgba(15,23,42,0.05)', cursor: 'default' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -205,12 +205,12 @@ function PageContent() {
                     <span>Start: <strong style={{ color: 'rgb(71,85,105)' }}>{sub.startDate}</strong></span>
                     <span>End: <strong style={{ color: 'rgb(71,85,105)' }}>{sub.endDate}</strong></span>
                   </div>
-                </motion.div>
+                </m.div>
               );
             })}
-          </motion.div>
+          </m.div>
         )}
-      </motion.div>
+      </m.div>
     </div>
   );
 }

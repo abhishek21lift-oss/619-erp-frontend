@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Calendar, Clock, List, LayoutGrid, ChevronLeft, ChevronRight,
   Plus, Search, Dumbbell, Users, ClipboardList, AlertTriangle,
@@ -384,7 +384,7 @@ function SchedulePageContent() {
           <AnimatePresence mode="wait">
             {/* ── CALENDAR VIEW ── */}
             {view === 'calendar' && (
-              <motion.div key="calendar" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
+              <m.div key="calendar" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
                 {/* Calendar Grid */}
                 <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                   <div className="grid grid-cols-7 gap-1 mb-2">
@@ -458,7 +458,7 @@ function SchedulePageContent() {
                     ) : (
                       <div className="space-y-2">
                         {sessionsForDate.map((session, idx) => (
-                          <motion.div
+                          <m.div
                             key={session.id}
                             initial={{ opacity: 0, x: -8 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -482,18 +482,18 @@ function SchedulePageContent() {
                               </span>
                               <StatusPill status={session.status} />
                             </div>
-                          </motion.div>
+                          </m.div>
                         ))}
                       </div>
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
 
             {/* ── TIMELINE VIEW ── */}
             {view === 'timeline' && (
-              <motion.div key="timeline" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <m.div key="timeline" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                   <p className="text-[12px] font-[700] uppercase tracking-wider mb-5" style={{ color: 'rgb(148,163,184)' }}>
                     Timeline · {selectedDate}
@@ -510,7 +510,7 @@ function SchedulePageContent() {
                     ) : (
                       <div className="space-y-4">
                         {sessionsForDate.map((session, idx) => (
-                          <motion.div
+                          <m.div
                             key={session.id}
                             initial={{ opacity: 0, x: -12 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -543,18 +543,18 @@ function SchedulePageContent() {
                                 <p className="mt-2 text-[11.5px] italic" style={{ color: 'rgb(148,163,184)' }}>{session.notes}</p>
                               )}
                             </div>
-                          </motion.div>
+                          </m.div>
                         ))}
                       </div>
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
 
             {/* ── WEEKLY VIEW ── */}
             {view === 'weekly' && (
-              <motion.div key="weekly" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <m.div key="weekly" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="rounded-[20px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                   <div className="grid grid-cols-7 border-b" style={{ borderColor: 'var(--border)' }}>
                     {WEEKDAYS.map((day, i) => {
@@ -602,12 +602,12 @@ function SchedulePageContent() {
                     })}
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
 
             {/* ── DAILY VIEW ── */}
             {view === 'daily' && (
-              <motion.div key="daily" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <m.div key="daily" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
                   <PremiumTable
                     columns={[
@@ -676,7 +676,7 @@ function SchedulePageContent() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         )}
@@ -771,11 +771,11 @@ function CreateSessionModal({
       }
     >
       {conflict && (
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
           className="mb-4 flex items-center gap-2.5 rounded-[12px] p-3.5 text-[12.5px] font-[600]"
           style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)', color: '#d97706' }}>
           <AlertTriangle size={14} /> Booking conflict detected! This time slot overlaps with an existing session.
-        </motion.div>
+        </m.div>
       )}
 
       {step === 1 ? (

@@ -11,7 +11,7 @@
  * Fallback: Manual name/mobile search → mark attendance via API
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import AppShell from '@/components/AppShell';
 import { useCamera } from '@/hooks/useCamera';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
@@ -269,25 +269,6 @@ export default function CheckInContent() {
 
   return (
     <AppShell>
-      <style>{`
-        @keyframes ck-spin { to { transform: rotate(360deg); } }
-        @keyframes ck-scan { 0% { top: 16px; } 100% { top: calc(100% - 16px); } }
-        @keyframes ck-float1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-40px,-20px) scale(1.08); } }
-        @keyframes ck-float2 { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-40px) scale(1.12); } 66% { transform: translate(-20px,10px) scale(0.95); } }
-        @keyframes ck-float3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px,30px) scale(1.06); } }
-        @keyframes ck-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); } 100% { box-shadow: 0 0 0 20px rgba(99,102,241,0); } }
-        @keyframes ck-guide-pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
-        button, [role=button] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-        * { -webkit-font-smoothing: antialiased; }
-        @media (max-width: 640px) {
-          .ck-hero-padding { padding: 12px 16px !important; }
-          .ck-hero-title { font-size: 18px !important; }
-          .ck-hero-orbs { display: none !important; }
-          .ck-cam-aspect { aspect-ratio: 3/4 !important; }
-          .ck-action-btn { padding: 12px 16px !important; font-size: 13px !important; min-height: 44px; }
-        }
-      `}</style>
-
       {/* ── Premium Dark Hero ── */}
       <div style={{
         position: 'relative',
@@ -333,7 +314,7 @@ export default function CheckInContent() {
           justifyContent: 'space-between', padding: '20px 24px',
         }}>
           <div>
-            <motion.h1
+            <m.h1
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -348,8 +329,8 @@ export default function CheckInContent() {
               }}
             >
               Face Check-In
-            </motion.h1>
-            <motion.p
+            </m.h1>
+            <m.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.1 }}
@@ -363,12 +344,12 @@ export default function CheckInContent() {
                 background: '#22d3ee',
               }} />
               Live recognition · {fmtDate(new Date())}
-            </motion.p>
+            </m.p>
           </div>
 
           {/* Right actions */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <motion.span
+            <m.span
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.15 }}
@@ -388,9 +369,9 @@ export default function CheckInContent() {
               }} />
               {isOnline ? <Wifi size={10} /> : <WifiOff size={10} />}
               {isOnline ? 'Online' : 'Offline'}
-            </motion.span>
+            </m.span>
 
-            <motion.button
+            <m.button
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.2 }}
@@ -409,9 +390,9 @@ export default function CheckInContent() {
               }}
             >
               {voiceOn ? <Volume2 size={13} /> : <VolumeX size={13} />}
-            </motion.button>
+            </m.button>
 
-            <motion.span
+            <m.span
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.25 }}
@@ -426,7 +407,7 @@ export default function CheckInContent() {
             >
               <Clock size={10} />
               {recents.length} today
-            </motion.span>
+            </m.span>
           </div>
         </div>
       </div>
@@ -434,7 +415,7 @@ export default function CheckInContent() {
       {/* ── Main Layout: Two Columns ── */}
       <div className="grid grid-cols-1 gap-5 items-start lg:grid-cols-[1fr_360px]">
         {/* ═══ Left: Camera Card ═══ */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -481,7 +462,7 @@ export default function CheckInContent() {
 
             {/* Face guide ring */}
             {showGuide && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
@@ -561,7 +542,7 @@ export default function CheckInContent() {
           {/* Result display */}
           <AnimatePresence>
             {result && (
-              <motion.div
+              <m.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
@@ -593,14 +574,14 @@ export default function CheckInContent() {
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
           {/* Action buttons */}
           <div style={{ padding: '12px 20px', display: 'flex', gap: 10 }}>
             {showRetry && (
-              <motion.button
+              <m.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={retry}
@@ -619,10 +600,10 @@ export default function CheckInContent() {
                 }}
               >
                 <RefreshCw size={13} /> Retry scan
-              </motion.button>
+              </m.button>
             )}
             {state === 'no_permission' && (
-              <motion.button
+              <m.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => camera.start()}
@@ -641,7 +622,7 @@ export default function CheckInContent() {
                 }}
               >
                 <Camera size={13} /> Enable camera
-              </motion.button>
+              </m.button>
             )}
           </div>
 
@@ -654,13 +635,13 @@ export default function CheckInContent() {
             <AlertTriangle size={10} />
             Only face descriptors are transmitted — no images or video.
           </div>
-        </motion.div>
+        </m.div>
 
         {/* ═══ Right Panel Column ═══ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* ── Manual Check-In Card ── */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
@@ -691,6 +672,7 @@ export default function CheckInContent() {
               }}>
                 <Search size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
                 <input
+                  aria-label="Search members"
                   placeholder="Name, ID, or mobile…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -706,7 +688,7 @@ export default function CheckInContent() {
               {/* Search results */}
               <AnimatePresence>
                 {searchResults.length > 0 && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -716,7 +698,7 @@ export default function CheckInContent() {
                     }}
                   >
                     {searchResults.map((c, idx) => (
-                      <motion.button
+                      <m.button
                         key={c.id}
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -775,16 +757,16 @@ export default function CheckInContent() {
                         }}>
                           {c.status}
                         </span>
-                      </motion.button>
+                      </m.button>
                     ))}
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
               {/* Loading state */}
               <AnimatePresence>
                 {manualBusy && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -796,7 +778,7 @@ export default function CheckInContent() {
                   >
                     <Loader2 size={12} style={{ animation: 'ck-spin 0.9s linear infinite' }} />
                     Checking in…
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
@@ -811,10 +793,10 @@ export default function CheckInContent() {
                 </div>
               )}
             </div>
-          </motion.div>
+          </m.div>
 
           {/* ── Recent Check-ins Card ── */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -873,7 +855,7 @@ export default function CheckInContent() {
               ) : (
                 <AnimatePresence initial={false}>
                   {recents.map((r) => (
-                    <motion.div
+                    <m.div
                       key={r.id}
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -929,12 +911,12 @@ export default function CheckInContent() {
                       }}>
                         {r.status}
                       </span>
-                    </motion.div>
+                    </m.div>
                   ))}
                 </AnimatePresence>
               )}
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </div>
     </AppShell>

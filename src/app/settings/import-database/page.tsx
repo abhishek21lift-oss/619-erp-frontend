@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -64,9 +64,9 @@ function normPhone(v: string): string {
 function parseDate(v: string): string {
   if (!v) return '';
   const s = v.trim();
-  const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-  if (m) {
-    const [, dd, mm, rawY] = m;
+  const match = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (match) {
+    const [, dd, mm, rawY] = match;
     const yyyy = rawY.length === 2 ? (parseInt(rawY) > 50 ? '19' : '20') + rawY : rawY;
     return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
   }
@@ -262,7 +262,7 @@ export default function ImportDatabasePage() {
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 40px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {/* ── Hero ── */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
             style={{
@@ -299,13 +299,13 @@ export default function ImportDatabasePage() {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </m.div>
 
           <AnimatePresence mode="wait">
 
             {/* ═══════════════ STEP 1: UPLOAD ═══════════════ */}
             {step === 'upload' && (
-              <motion.div key="upload" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
+              <m.div key="upload" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
                 style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, alignItems: 'start' }}>
 
                 <div style={{ borderRadius: 24, padding: 28, ...glass }}>
@@ -335,7 +335,7 @@ export default function ImportDatabasePage() {
 
                   {/* File chip */}
                   {file && (
-                    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    <m.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       style={{ marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, padding: '12px 16px', background: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.25)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <FileSpreadsheet size={18} color="#14b8a6" />
@@ -348,7 +348,7 @@ export default function ImportDatabasePage() {
                         style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, padding: 5, cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex' }}>
                         <X size={14} />
                       </button>
-                    </motion.div>
+                    </m.div>
                   )}
 
                   {parseError && (
@@ -398,12 +398,12 @@ export default function ImportDatabasePage() {
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
 
             {/* ═══════════════ STEP 2: PREVIEW ═══════════════ */}
             {step === 'preview' && (
-              <motion.div key="preview" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
+              <m.div key="preview" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
                 {/* Stats bar */}
@@ -496,7 +496,7 @@ export default function ImportDatabasePage() {
                         {/* Expanded subscriptions */}
                         <AnimatePresence>
                           {expandedIdx === idx && (
-                            <motion.div
+                            <m.div
                               initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
                               style={{ overflow: 'hidden', background: 'rgba(0,0,0,0.15)' }}
@@ -523,7 +523,7 @@ export default function ImportDatabasePage() {
                                   </div>
                                 ))}
                               </div>
-                            </motion.div>
+                            </m.div>
                           )}
                         </AnimatePresence>
                       </div>
@@ -550,12 +550,12 @@ export default function ImportDatabasePage() {
                     <X size={14} /> Cancel
                   </button>
                 </div>
-              </motion.div>
+              </m.div>
             )}
 
             {/* ═══════════════ STEP 3: DONE ═══════════════ */}
             {step === 'done' && importResult && (
-              <motion.div key="done" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+              <m.div key="done" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
                 {/* Success banner */}
@@ -624,7 +624,7 @@ export default function ImportDatabasePage() {
                     <UploadCloud size={14} /> Import Another File
                   </button>
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </div>

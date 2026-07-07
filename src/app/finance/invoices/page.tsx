@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -117,7 +117,7 @@ function SkeletonCard() {
   const pulseTrans = { duration: 1.5, repeat: Infinity, ease: 'easeInOut' as const };
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       style={{
@@ -133,24 +133,24 @@ function SkeletonCard() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-        <motion.div animate={pulse} transition={pulseTrans} style={{ height: '36px', width: '36px', flexShrink: 0, borderRadius: '10px', background: '#f1f5f9' }} />
+        <m.div animate={pulse} transition={pulseTrans} style={{ height: '36px', width: '36px', flexShrink: 0, borderRadius: '10px', background: '#f1f5f9' }} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '176px', borderRadius: '9999px', background: '#f1f5f9' }} />
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '256px', borderRadius: '9999px', background: '#f1f5f9' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '176px', borderRadius: '9999px', background: '#f1f5f9' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '256px', borderRadius: '9999px', background: '#f1f5f9' }} />
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'right' }}>
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '80px', borderRadius: '9999px', background: '#f1f5f9', marginLeft: 'auto' }} />
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '64px', borderRadius: '9999px', background: '#f1f5f9', marginLeft: 'auto' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '80px', borderRadius: '9999px', background: '#f1f5f9', marginLeft: 'auto' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '64px', borderRadius: '9999px', background: '#f1f5f9', marginLeft: 'auto' }} />
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
-          <motion.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -279,7 +279,7 @@ export default function InvoicesPage() {
             borderBottom: '1px solid rgba(255,255,255,0.06)',
           }}>
             {/* Floating Orbs */}
-            <motion.div
+            <m.div
               animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }}
               transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
               style={{
@@ -293,7 +293,7 @@ export default function InvoicesPage() {
                 pointerEvents: 'none',
               }}
             />
-            <motion.div
+            <m.div
               animate={{ x: [0, -40, 30, 0], y: [0, 50, -30, 0] }}
               transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
               style={{
@@ -307,7 +307,7 @@ export default function InvoicesPage() {
                 pointerEvents: 'none',
               }}
             />
-            <motion.div
+            <m.div
               animate={{ x: [0, 20, -40, 0], y: [0, -30, 40, 0] }}
               transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
               style={{
@@ -541,7 +541,7 @@ export default function InvoicesPage() {
             }}>
               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                 {statusTabs.map((tab) => (
-                  <motion.button
+                  <m.button
                     key={tab.id}
                     onClick={() => setStatusTab(tab.id)}
                     whileHover={{ scale: 1.02 }}
@@ -573,7 +573,7 @@ export default function InvoicesPage() {
                       background: statusTab === tab.id ? 'rgba(99,102,241,0.12)' : 'rgba(148,163,184,0.15)',
                       color: statusTab === tab.id ? '#6366f1' : 'rgba(100,116,139,0.6)',
                     }}>{tab.count}</span>
-                  </motion.button>
+                  </m.button>
                 ))}
               </div>
 
@@ -621,7 +621,7 @@ export default function InvoicesPage() {
                 ))}
               </div>
             ) : error ? (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 style={{
@@ -661,11 +661,11 @@ export default function InvoicesPage() {
                 <div style={{ marginTop: '24px' }}>
                   <PremiumButton tone="primary" icon={<RefreshCw size={16} />} onClick={fetchInvoices}>Retry</PremiumButton>
                 </div>
-              </motion.div>
+              </m.div>
             ) : (
               <AnimatePresence mode="wait">
                 {invoices.length === 0 ? (
-                  <motion.div
+                  <m.div
                     key="empty"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -709,9 +709,9 @@ export default function InvoicesPage() {
                     <div style={{ marginTop: '24px' }}>
                       <PremiumButton tone="primary" icon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</PremiumButton>
                     </div>
-                  </motion.div>
+                  </m.div>
                 ) : (
-                  <motion.div
+                  <m.div
                     key="list"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -721,7 +721,7 @@ export default function InvoicesPage() {
                     {invoices.map((invoice, i) => (
                       <InvoiceCard key={invoice.id} invoice={invoice} index={i} onView={() => setSelectedInvoice(invoice)} onDownload={handleDownloadPDF} onRemind={handleSendReminder} />
                     ))}
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             )}
@@ -815,7 +815,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
   const cfg = statusCfg[invoice.status];
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.04, ease: [0.16, 1, 0.3, 1] }}
@@ -918,7 +918,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <motion.button
+          <m.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onView}
@@ -936,8 +936,8 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
             title="View Invoice"
           >
             <Eye size={14} style={{ color: 'rgba(100,116,139,0.7)' }} />
-          </motion.button>
-          <motion.button
+          </m.button>
+          <m.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onDownload(invoice)}
@@ -955,9 +955,9 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
             title="Download PDF"
           >
             <Download size={14} style={{ color: 'rgba(100,116,139,0.7)' }} />
-          </motion.button>
+          </m.button>
           <div style={{ position: 'relative' }}>
-            <motion.button
+            <m.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setMenuOpen((o) => !o)}
@@ -974,10 +974,10 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
               }}
             >
               <MoreHorizontal size={14} style={{ color: 'rgba(100,116,139,0.7)' }} />
-            </motion.button>
+            </m.button>
             <AnimatePresence>
               {menuOpen && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, scale: 0.95, y: -4 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -4 }}
@@ -1033,13 +1033,13 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
                       {item.icon} {item.label}
                     </button>
                   ))}
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -1093,7 +1093,7 @@ function InvoiceDetail({ invoice, onDownload, onRemind }: { invoice: Invoice; on
         }}>Invoice Timeline</p>
         <div style={{ position: 'relative' }}>
           {invoice.timeline.map((item, i) => (
-            <motion.div
+            <m.div
               key={item.action}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
@@ -1147,7 +1147,7 @@ function InvoiceDetail({ invoice, onDownload, onRemind }: { invoice: Invoice; on
                   color: 'rgba(148,163,184,0.8)',
                 }}>{item.date}</p>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       </div>

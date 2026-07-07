@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -137,7 +137,7 @@ function Inner() {
           }} />
 
           {/* Animated orbs */}
-          <motion.div style={{
+          <m.div style={{
             position: 'absolute',
             right: -120,
             top: -120,
@@ -149,7 +149,7 @@ function Inner() {
           }}
             animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.4, 0.3] }}
             transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{
+          <m.div style={{
             position: 'absolute',
             left: -80,
             bottom: -120,
@@ -161,7 +161,7 @@ function Inner() {
           }}
             animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{
+          <m.div style={{
             position: 'absolute',
             left: '45%',
             top: -60,
@@ -301,7 +301,7 @@ function Inner() {
             ) : (
               <div className="space-y-2.5">
                 {paged.map((p) => (
-                  <motion.div key={p.id}
+                  <m.div key={p.id}
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                     className="rounded-[16px] bg-white border border-slate-100 p-4 shadow-sm active:scale-[0.985] transition-all"
                     style={{ boxShadow: '0 1px 8px rgba(15,23,42,0.06)' }}>
@@ -328,7 +328,7 @@ function Inner() {
                       </div>
                     </div>
                     {p.notes && <p className="mt-1.5 text-[11px] text-slate-400 truncate">{p.notes}</p>}
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             )}
@@ -383,7 +383,7 @@ function Inner() {
                     Array.from({ length: 6 }).map((_, i) => (
                       <tr key={i}>
                         <td colSpan={6} style={{ padding: '14px 20px' }}>
-                          <motion.div
+                          <m.div
                             animate={{ backgroundPosition: ['200% 0', '-200% 0'] }}
                             transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                             style={{
@@ -488,7 +488,7 @@ function Inner() {
 
 function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       tabIndex={0} role="button"
@@ -517,6 +517,6 @@ function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label:
         <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500 }}>{label}</div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

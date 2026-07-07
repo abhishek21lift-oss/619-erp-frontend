@@ -1,6 +1,6 @@
 'use client';
 import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -45,7 +45,7 @@ export function WorkflowHero({
   ) : undefined);
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
@@ -82,6 +82,6 @@ export function WorkflowHero({
 
         {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
       </div>
-    </motion.div>
+    </m.div>
   );
 }

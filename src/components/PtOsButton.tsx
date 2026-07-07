@@ -1,5 +1,5 @@
 'use client';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 const BTN_STYLE: React.CSSProperties = {
@@ -68,7 +68,7 @@ export default function PtOsButton() {
   const router = useRouter();
 
   return (
-    <motion.button
+    <m.button
       type="button"
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
@@ -98,6 +98,6 @@ export default function PtOsButton() {
 
       {/* OS text */}
       <span className="leading-none" style={OS_TEXT_STYLE}>OS</span>
-    </motion.button>
+    </m.button>
   );
 }

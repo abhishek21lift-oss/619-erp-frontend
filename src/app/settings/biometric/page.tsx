@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Fingerprint, Shield, MapPin, Navigation, Clock, ToggleLeft,
   ToggleRight, Save, RefreshCw, AlertTriangle, CheckCircle2,
@@ -93,28 +93,28 @@ function BiometricSettingsContent() {
       {/* Hero */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f0a1e 0%,#1a0f2e 30%,#0f172a 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px' }}>
         <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 90%)' }}>
-          <motion.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
+          <m.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
             animate={{ x: [0, 25, -15, 0], y: [0, -30, 10, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #8b5cf6, transparent 70%)' }}
+          <m.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #8b5cf6, transparent 70%)' }}
             animate={{ x: [0, -20, 15, 0], y: [0, 20, -8, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
         </div>
         <div className="relative z-10 mx-auto" style={{ maxWidth: 800 }}>
           <div className="flex items-center gap-4">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px]"
               style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 8px 28px rgba(99,102,241,0.3)' }}>
               <Shield size={20} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
-              <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
                 style={{ background: 'linear-gradient(135deg,#c7d2fe,#e9d5ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 Biometric & Passkey Settings
-              </motion.h1>
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+              </m.h1>
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
                 className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 Configure WebAuthn passkey and GPS geofence settings
-              </motion.p>
+              </m.p>
             </div>
           </div>
         </div>
@@ -124,17 +124,17 @@ function BiometricSettingsContent() {
         {/* Status */}
         <AnimatePresence>
           {status && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="rounded-[13px] p-3.5 mb-5 flex items-center gap-2.5 text-[13px] font-[500]"
               style={{ background: status.type === 'success' ? '#f0fdf4' : '#fff1f2', border: `1px solid ${status.type === 'success' ? '#bbf7d0' : '#fecdd3'}`, color: status.type === 'success' ? '#166534' : '#9f1239' }}>
               {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
               {status.msg}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         {/* Biometric Methods */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
@@ -167,10 +167,10 @@ function BiometricSettingsContent() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </m.div>
 
         {/* GPS Geofence */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(245,158,11,0.10)' }}>
@@ -217,10 +217,10 @@ function BiometricSettingsContent() {
                 style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Duplicate & Auto Checkout */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.10)' }}>
@@ -264,10 +264,10 @@ function BiometricSettingsContent() {
               </div>
             )}
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Quick Links: Enroll & Kiosk */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
           className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
@@ -301,14 +301,14 @@ function BiometricSettingsContent() {
               <ChevronRight size={15} style={{ color: 'rgb(203,213,225)', flexShrink: 0 }} />
             </Link>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Save */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+        <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
           <PremiumButton tone="primary" glow icon={<Save size={14} />} onClick={handleSave} loading={saving} disabled={saving} className="w-full">
             Save Settings
           </PremiumButton>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

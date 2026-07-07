@@ -9,7 +9,7 @@
  * State machine: idle → [face|qr]_scan → processing → result → (7s) → idle
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   ScanFace, QrCode, CheckCircle2, XCircle, AlertTriangle,
   Loader2, RefreshCw, Clock,
@@ -88,6 +88,10 @@ export default function KioskContent() {
       router.replace('/login');
     }, IDLE_TIMEOUT_MS);
   }, [logout, router]);
+
+  useEffect(() => {
+    import('jsqr').then(mod => { jsQR = (mod.default || mod) as unknown as typeof jsQR; }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const events = ['mousemove', 'keydown', 'touchstart', 'click'] as const;
@@ -332,7 +336,7 @@ export default function KioskContent() {
           {/* Result overlay */}
           <AnimatePresence>
             {result && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: isSuccess ? 'rgba(16,185,129,0.88)' : isDup ? 'rgba(6,182,212,0.88)' : 'rgba(239,68,68,0.88)', backdropFilter: 'blur(6px)', padding: 24 }}
               >
@@ -341,13 +345,13 @@ export default function KioskContent() {
                 <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.9)', textAlign: 'center' }}>{result.message}</div>
                 {result.memberCode && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>#{result.memberCode}</div>}
                 <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>Returning in a moment…</div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Status message */}
-        <motion.div
+        <m.div
           key={msg}
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           style={{ textAlign: 'center', maxWidth: 400 }}
@@ -359,7 +363,7 @@ export default function KioskContent() {
           {kstate === 'scanning' && mode === 'face' && (
             <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>Blink once when prompted</div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Mode toggle tabs */}
         <div style={{ display: 'flex', gap: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: 6, border: '1px solid rgba(255,255,255,0.1)' }}>

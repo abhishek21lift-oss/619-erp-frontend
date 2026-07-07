@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api, http, Trainer, Attendance } from '@/lib/api';
@@ -125,16 +125,40 @@ function Inner() {
     );
   }, [staff, search]);
 
-  const summary = {
-    present: records.filter((r) => r.status === 'present').length,
-    absent: records.filter((r) => r.status === 'absent').length,
-    late: records.filter((r) => r.status === 'late').length,
-    unmarked: staff.length - records.length,
-  };
+  const summary = useMemo(() => {
+    let present = 0, absent = 0, late = 0;
+    for (const r of records) {
+      if (r.status === 'present') present++;
+      else if (r.status === 'absent') absent++;
+      else if (r.status === 'late') late++;
+    }
+    return { present, absent, late, unmarked: staff.length - records.length };
+  }, [records, staff.length]);
 
   async function markAllPresent() {
-    for (const t of filtered) {
-      if (!getRecord(t.id)) await mark(t, 'present');
+    const toMark = filtered.filter(t => !getRecord(t.id));
+    if (!toMark.length) return;
+    const checkIn = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    try {
+      await Promise.all(
+        toMark.map(t =>
+          api.attendance.mark({
+            type: 'trainer',
+            ref_id: t.id,
+            ref_name: t.name,
+            trainer_id: t.id,
+            trainer_name: t.name,
+            date,
+            status: 'present',
+            check_in: checkIn,
+          })
+        )
+      );
+      const updated = await api.attendance.list({ date, type: 'trainer' });
+      setRecords(Array.isArray(updated) ? updated : []);
+      showSuccess(`Marked ${toMark.length} staff present`);
+    } catch (e: unknown) {
+      showError((e instanceof Error ? e.message : null) || 'Could not mark all present.');
     }
   }
 
@@ -157,16 +181,16 @@ function Inner() {
 
   return (
     <AppShell>
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
+      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
         {/* ── Hero Section ── */}
         <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'linear-gradient(135deg,#0f172a,#1e293b)', padding: '32px 36px', marginBottom: 20, boxShadow: '0 8px 32px rgba(15,23,42,0.4)' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg,#6366f1,#8b5cf6,#a855f7)', borderRadius: '24px 24px 0 0' }} />
-          <motion.div style={{ position: 'absolute', top: -80, right: -40, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(99,102,241,0.2),transparent 70%)', pointerEvents: 'none' }}
+          <m.div style={{ position: 'absolute', top: -80, right: -40, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(99,102,241,0.2),transparent 70%)', pointerEvents: 'none' }}
             animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{ position: 'absolute', bottom: -60, left: '30%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(139,92,246,0.15),transparent 70%)', pointerEvents: 'none' }}
+          <m.div style={{ position: 'absolute', bottom: -60, left: '30%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(139,92,246,0.15),transparent 70%)', pointerEvents: 'none' }}
             animate={{ x: [0, -30, 40, 0], y: [0, 30, -20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div style={{ position: 'absolute', top: '40%', left: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,85,247,0.12),transparent 70%)', pointerEvents: 'none' }}
+          <m.div style={{ position: 'absolute', top: '40%', left: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,85,247,0.12),transparent 70%)', pointerEvents: 'none' }}
             animate={{ x: [0, 40, -10, 0], y: [0, -20, 30, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
@@ -184,6 +208,7 @@ function Inner() {
               <div style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderRadius: 14, padding: '12px 18px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Calendar size={16} color="rgba(255,255,255,0.5)" />
                 <input
+                  aria-label="Attendance date"
                   type="date" value={date}
                   onChange={e => setDate(e.target.value)}
                   max={today}
@@ -316,7 +341,7 @@ function Inner() {
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} style={{ display: 'flex', gap: 16, padding: '14px 0', borderBottom: '1px solid #f8fafc' }}>
                     {[40, 160, 100, 80].map((w, j) => (
-                      <motion.div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }}
+                      <m.div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }}
                         animate={{ backgroundPosition: ['0% 0%', '200% 0%'] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} />
                     ))}
                   </div>
@@ -423,7 +448,7 @@ function Inner() {
           <span><span style={{ color: '#f59e0b', fontWeight: 800 }}>●</span> L · Late</span>
         </div>
 
-      </motion.div>
+      </m.div>
     </AppShell>
   );
 }

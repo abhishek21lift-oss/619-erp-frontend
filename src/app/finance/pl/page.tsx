@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
@@ -115,11 +115,11 @@ function Inner() {
               backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
               backgroundSize: '40px 40px',
             }} />
-          <motion.div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full opacity-30"
+          <m.div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full opacity-30"
             style={{ background: 'radial-gradient(circle, rgba(167,139,250,0.5) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.4, 0.3] }}
             transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full opacity-25"
+          <m.div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full opacity-25"
             style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
@@ -198,16 +198,16 @@ function Inner() {
 
         {/* Error */}
         {error && (
-          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
             className="mx-5 sm:mx-8 mb-4 rounded-[13px] p-3.5 text-[13px] font-[500]"
             style={{ background: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239' }}>
             {error}
-          </motion.div>
+          </m.div>
         )}
 
         {/* P&L Table */}
         <div className="px-5 sm:px-8 pb-8">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="rounded-[22px] overflow-hidden"
             style={{ background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
             {loading ? (
@@ -311,7 +311,7 @@ function Inner() {
                 </table>
               </div>
             )}
-          </motion.div>
+          </m.div>
         </div>
       </div>
     </AppShell>
@@ -320,7 +320,7 @@ function Inner() {
 
 function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+    <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       tabIndex={0} role="button"
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; }}
       style={{
@@ -343,6 +343,6 @@ function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label:
         <div style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</div>
         <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{label}</div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

@@ -58,7 +58,7 @@ const BODY_PART_COLORS: Record<string, string> = {
 
 const PAGE_SIZE = 40;
 
-function ExerciseCard({
+const ExerciseCard = React.memo(function ExerciseCard({
   exercise, onClick, onDelete,
 }: { exercise: Exercise; onClick: () => void; onDelete: (e: React.MouseEvent) => void }) {
   const [imgError, setImgError] = useState(false);
@@ -80,6 +80,8 @@ function ExerciseCard({
           <img
             src={exercise.gif_url}
             alt={exercise.name}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
             onError={() => setImgError(true)}
           />
@@ -133,7 +135,7 @@ function ExerciseCard({
       </div>
     </div>
   );
-}
+});
 
 function ExerciseModal({ exercise, onClose, onSave }: {
   exercise: Exercise | null;
@@ -329,7 +331,7 @@ function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreat
       <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: 'var(--border)' }}>
           <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Add Exercise</h2>
-          <button onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}><X size={16} /></button>
+          <button aria-label="Close" onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}><X size={16} /></button>
         </div>
         <div className="p-5 space-y-4">
           {field('Exercise Name *', 'name')}

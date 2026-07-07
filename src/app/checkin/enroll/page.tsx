@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Smartphone, Shield, Fingerprint, ScanFace, CheckCircle2, XCircle,
   Plus, Trash2, AlertTriangle, RefreshCw, Search, User,
@@ -216,28 +216,28 @@ function EnrollContent() {
       {/* Hero */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f0a1e 0%,#1a0a2e 30%,#0f172a 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px' }}>
         <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 90%)' }}>
-          <motion.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
+          <m.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
             animate={{ x: [0, 25, -15, 0], y: [0, -30, 10, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #10b981, transparent 70%)' }}
+          <m.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #10b981, transparent 70%)' }}
             animate={{ x: [0, -20, 15, 0], y: [0, 20, -8, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
         </div>
         <div className="relative z-10 mx-auto" style={{ maxWidth: 900 }}>
           <div className="flex items-center gap-4">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px]"
               style={{ background: 'linear-gradient(135deg,#6366f1,#10b981)', boxShadow: '0 8px 28px rgba(99,102,241,0.3)' }}>
               <Shield size={20} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
-              <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
                 style={{ background: 'linear-gradient(135deg,#c7d2fe,#6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 Member Enrollment
-              </motion.h1>
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+              </m.h1>
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
                 className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 Register face biometrics or device passkeys for attendance
-              </motion.p>
+              </m.p>
             </div>
           </div>
         </div>
@@ -245,7 +245,7 @@ function EnrollContent() {
 
       <div className="mx-auto px-5 py-6 sm:px-8" style={{ maxWidth: 900 }}>
         {/* Member Context */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-[18px] p-5 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
           <p className="text-[13px] font-[600] mb-3" style={{ color: 'rgb(15,23,42)' }}>Member Information</p>
           <div ref={searchRef} className="relative mb-3">
@@ -267,7 +267,7 @@ function EnrollContent() {
             </div>
             <AnimatePresence>
               {showDropdown && searchResults.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                   className="absolute z-50 left-0 right-0 mt-1 rounded-[13px] overflow-hidden"
                   style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
                   {searchResults.map((m) => (
@@ -285,7 +285,7 @@ function EnrollContent() {
                       </div>
                     </button>
                   ))}
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>
@@ -309,22 +309,22 @@ function EnrollContent() {
                 className="rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
             </div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Status */}
         <AnimatePresence>
           {status && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="rounded-[13px] p-3.5 mb-5 flex items-center gap-2.5 text-[13px] font-[500]"
               style={{ background: status.type === 'success' ? '#f0fdf4' : '#fff1f2', border: `1px solid ${status.type === 'success' ? '#bbf7d0' : '#fecdd3'}`, color: status.type === 'success' ? '#166534' : '#9f1239' }}>
               {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
               {status.msg}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         {/* Face Enrollment Card */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
           <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,#10b981,#6366f1)' }} />
           <div className="flex items-center justify-between mb-4">
@@ -346,10 +346,10 @@ function EnrollContent() {
               Open Face Enrollment <ArrowRight size={13} style={{ marginLeft: 4 }} />
             </PremiumButton>
           </Link>
-        </motion.div>
+        </m.div>
 
         {/* Enroll Card */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
           <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,#6366f1,#10b981)' }} />
           <div className="flex items-center justify-between mb-5">
@@ -377,7 +377,7 @@ function EnrollContent() {
               Enroll New Passkey
             </PremiumButton>
           ) : (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+            <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
               <div className="space-y-3 mb-4">
                 <input value={deviceName} onChange={(e) => setDeviceName(e.target.value)} placeholder="Device name (e.g. My iPhone)"
                   className="w-full rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
@@ -393,12 +393,12 @@ function EnrollContent() {
                   Cancel
                 </PremiumButton>
               </div>
-            </motion.div>
+            </m.div>
           )}
-        </motion.div>
+        </m.div>
 
         {/* Registered Credentials */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="rounded-[22px] p-6" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.10)' }}>
@@ -434,7 +434,7 @@ function EnrollContent() {
           ) : (
             <div className="space-y-2.5">
               {credentials.map((cred) => (
-                <motion.div key={cred.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                <m.div key={cred.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 rounded-[14px] p-3.5 transition-all hover:bg-slate-50"
                   style={{ border: '1px solid #f1f5f9' }}>
                   <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.10)', color: '#6366f1' }}>
@@ -455,11 +455,11 @@ function EnrollContent() {
                     onMouseLeave={(e) => e.currentTarget.style.color = 'rgb(203,213,225)'}>
                     <Trash2 size={13} />
                   </button>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           )}
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

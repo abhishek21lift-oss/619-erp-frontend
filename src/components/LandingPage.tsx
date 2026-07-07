@@ -95,7 +95,7 @@ export default function LandingPage() {
       {/* ─── NAV ─── */}
       <nav style={{ background: navSolid ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.72)' }}>
         <a href="#" className="nav-logo-wrap" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-          <img src="/619-logo.png" alt="619" className="nav-logo" style={{ width: 28, height: 28, objectFit: 'contain' }} />
+          <Image src="/619-logo.png" alt="619" width={28} height={28} className="nav-logo" style={{ objectFit: 'contain' }} />
           <span className="nav-brand-text" style={{ fontSize: '0.88rem', fontWeight: 600, letterSpacing: '-.01em', color: 'var(--white)' }}>
             <span style={{ color: 'var(--red)' }}>619</span> Fitness Studio
           </span>
@@ -140,8 +140,8 @@ export default function LandingPage() {
         padding: '120px 24px 80px', position: 'relative',
         background: 'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(217,31,60,0.07) 0%, transparent 70%)',
       }}>
-        <img src="/619-logo.png" alt="619 Fitness Studio" className="hero-logo"
-          style={{ width: 'clamp(120px,18vw,180px)', height: 'clamp(120px,18vw,180px)', objectFit: 'contain', marginBottom: 48, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.2s forwards' }}
+        <Image src="/619-logo.png" alt="619 Fitness Studio" width={180} height={180} className="hero-logo"
+          style={{ objectFit: 'contain', marginBottom: 48, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.2s forwards' }}
         />
         <span className="hero-label" style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 20, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.4s forwards' }}>
           Lucknow&apos;s Premier Fitness Studio
@@ -562,7 +562,7 @@ export default function LandingPage() {
       <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '48px 24px' }}>
         <div className="footer-inner" style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
           <a href="#" className="footer-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-            <img src="/619-logo.png" alt="619" className="footer-logo" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+            <Image src="/619-logo.png" alt="619" width={32} height={32} className="footer-logo" style={{ objectFit: 'contain' }} />
             <span className="footer-name" style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--white)' }}><span style={{ color: 'var(--red)' }}>619</span> Fitness Studio</span>
           </a>
           <ul className="footer-nav" style={{ display: 'flex', gap: 24, listStyle: 'none', flexWrap: 'wrap' }}>

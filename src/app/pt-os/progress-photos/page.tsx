@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Camera, Plus, Loader2, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Guard from '@/components/Guard';
@@ -89,7 +89,7 @@ export default function ProgressPhotosPage() {
     <Guard>
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
             style={{ background: 'linear-gradient(135deg, #374151 0%, #4b5563 50%, #6b7280 100%)', boxShadow: '0 20px 60px rgba(55,65,81,0.3)' }}>
             <div className="relative z-10">
@@ -106,7 +106,7 @@ export default function ProgressPhotosPage() {
                 Upload before/after progress photos to visually track client transformations.
               </p>
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CreditCard, RefreshCw, Save, AlertCircle, Check } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -121,7 +121,7 @@ export default function BillingSettingsPage() {
           </div>
 
           {error && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               style={{
@@ -134,7 +134,7 @@ export default function BillingSettingsPage() {
               <AlertCircle size={16} />
               <span style={{ flex: 1 }}>{error}</span>
               <button onClick={() => setError('')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>&times;</button>
-            </motion.div>
+            </m.div>
           )}
 
           <div className="card" style={{ padding: 24 }}>

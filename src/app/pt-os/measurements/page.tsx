@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Ruler, Plus, Loader2, Search, Users } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -107,7 +107,7 @@ export default function MeasurementsPage() {
     <Guard>
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
             style={{ background: 'linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #8b5cf6 100%)', boxShadow: '0 20px 60px rgba(76,29,149,0.3)' }}>
             <div className="relative z-10">
@@ -124,7 +124,7 @@ export default function MeasurementsPage() {
                 Track progress with detailed body measurements over time.
               </p>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Client Selector */}
           <div className="rounded-[20px] p-5 mb-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
@@ -164,7 +164,7 @@ export default function MeasurementsPage() {
 
           {/* Measurements Form */}
           {selectedClient && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               className="rounded-[20px] p-6 max-w-lg" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)' }}>
               <h2 className="text-[18px] font-[760] mb-1" style={{ color: 'rgb(15,23,42)' }}>Log Measurements</h2>
               <p className="text-[11px] mb-5" style={{ color: 'rgb(148,163,184)' }}>
@@ -184,7 +184,7 @@ export default function MeasurementsPage() {
                   {saving ? 'Saving...' : 'Save Measurements'}
                 </PremiumButton>
               </form>
-            </motion.div>
+            </m.div>
           )}
         </div>
       </AppShell>

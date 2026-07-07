@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -84,9 +84,9 @@ function Inner() {
           marginBottom: 24,
         }}>
           {/* Animated Orbs */}
-          <motion.div animate={{ x: [0, 60, 0, -60, 0], y: [0, -40, 0, 40, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '10%', left: '5%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <motion.div animate={{ x: [0, -50, 0, 50, 0], y: [0, 60, 0, -60, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, delay: 2, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '50%', right: '10%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <motion.div animate={{ x: [0, 70, 0, -70, 0], y: [0, -30, 0, 30, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, delay: 4, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: '5%', left: '40%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <m.div animate={{ x: [0, 60, 0, -60, 0], y: [0, -40, 0, 40, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '10%', left: '5%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <m.div animate={{ x: [0, -50, 0, 50, 0], y: [0, 60, 0, -60, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, delay: 2, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '50%', right: '10%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <m.div animate={{ x: [0, 70, 0, -70, 0], y: [0, -30, 0, 30, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, delay: 4, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: '5%', left: '40%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
           <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div>
@@ -135,7 +135,7 @@ function Inner() {
         {/* KPI Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
           {kpis.map((k, idx) => (
-            <motion.div
+            <m.div
               key={k.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -162,7 +162,7 @@ function Inner() {
                 <div style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>{k.value}</div>
                 <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{k.label}</div>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
 
@@ -179,7 +179,7 @@ function Inner() {
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} style={{ display: 'flex', gap: 16, padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
                   {[80, 100, 120].map((w, j) => (
-                    <motion.div
+                    <m.div
                       key={j}
                       animate={{ backgroundPosition: ['-200% 0%', '200% 0%'] }}
                       transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}

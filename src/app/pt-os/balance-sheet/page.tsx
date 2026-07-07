@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Wallet, TrendingUp, AlertCircle, CheckCircle, Search, Download, IndianRupee, Users, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -109,7 +109,7 @@ export default function BalanceSheetPage() {
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
 
           {/* ── Hero ── */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28,
               background: 'linear-gradient(135deg, #0a0f1a 0%, #0c1a2e 30%, #14213d 60%, #0a1628 100%)',
               boxShadow: '0 20px 60px rgba(10,15,26,0.5)', border: '1px solid rgba(99,102,241,0.12)' }}>
@@ -145,15 +145,15 @@ export default function BalanceSheetPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* ── KPI Cards ── */}
-          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
             {KPIS.map(k => {
               const Icon = k.icon;
               return (
-                <motion.div key={k.label} variants={itemVariants}
+                <m.div key={k.label} variants={itemVariants}
                   style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '20px 22px', background: k.bg, border: `1px solid ${k.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', cursor: 'default', transition: 'all 0.3s ease' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 32px rgba(0,0,0,0.12)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)'; }}>
@@ -167,10 +167,10 @@ export default function BalanceSheetPage() {
                   <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                     {bs.loading ? '—' : k.value}
                   </div>
-                </motion.div>
+                </m.div>
               );
             })}
-          </motion.div>
+          </m.div>
 
           {/* ── Search + Filter bar ── */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -203,7 +203,7 @@ export default function BalanceSheetPage() {
           </div>
 
           {/* ── Table ── */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(0,0,0,0.05)', background: 'var(--bg-card)' }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -216,7 +216,7 @@ export default function BalanceSheetPage() {
                 </thead>
                 <tbody>
                   {filtered.map((item, i) => (
-                    <motion.tr key={item.id}
+                    <m.tr key={item.id}
                       initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.015 }}
                       style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
@@ -249,7 +249,7 @@ export default function BalanceSheetPage() {
                           {item.days_left !== null ? (item.days_left <= 0 ? `${Math.abs(item.days_left)}d overdue` : `${item.days_left}d`) : '—'}
                         </span>
                       </td>
-                    </motion.tr>
+                    </m.tr>
                   ))}
                 </tbody>
               </table>
@@ -281,7 +281,7 @@ export default function BalanceSheetPage() {
                 </span>
               </div>
             )}
-          </motion.div>
+          </m.div>
         </div>
       </AppShell>
     </Guard>

@@ -18,7 +18,7 @@ import {
   SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import {
   Area,
   AreaChart,
@@ -443,7 +443,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                       <tbody>
                         <AnimatePresence initial={false}>
                           {pageRecords.map((record) => (
-                            <motion.tr key={record.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                            <m.tr key={record.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                               <td>
                                 <div className="font-semibold text-slate-900 dark:text-white">{record.title}</div>
                                 <div className="max-w-sm truncate text-xs text-slate-500 dark:text-white/50">{record.notes || 'No notes'}</div>
@@ -462,7 +462,7 @@ export default function ModuleWorkspace({ config }: { config: ModuleConfig }) {
                                   </Button>
                                 </div>
                               </td>
-                            </motion.tr>
+                            </m.tr>
                           ))}
                         </AnimatePresence>
                       </tbody>
