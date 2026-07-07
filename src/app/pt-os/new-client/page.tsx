@@ -1116,48 +1116,44 @@ function NewClientWizard() {
               )}
 
             </AnimatePresence>
+
+            {/* ── INLINE STEP NAVIGATION ── */}
+            <div className="mt-6 pb-24 lg:pb-10">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  {step > 1 ? (
+                    <PremiumButton tone="secondary" icon={<ChevronLeft size={14} />} onClick={handlePrev}>
+                      Back
+                    </PremiumButton>
+                  ) : (
+                    <div />
+                  )}
+                  <div className="flex items-center gap-2">
+                    {STEPS.map(s => (
+                      <div key={s.id} className="h-1.5 w-8 rounded-full transition-all duration-300"
+                        style={{ background: s.id < step ? '#F59E0B' : s.id === step ? '#0f172a' : '#e2e8f0' }} />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[12px] font-[640] text-slate-400 hidden sm:inline">
+                    {STEPS[step - 1].sub}
+                  </span>
+                  {step < 4 ? (
+                    <PremiumButton tone="primary" icon={<ChevronRight size={14} />} onClick={handleNext}>
+                      Continue
+                    </PremiumButton>
+                  ) : (
+                    <PremiumButton tone="success" glow icon={saving ? undefined : <Check size={14} />} onClick={handleSubmit} loading={saving} disabled={saving || done}>
+                      {done ? 'Onboarded!' : 'Confirm & Onboard'}
+                    </PremiumButton>
+                  )}
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
-
-      {/* ── STICKY BOTTOM NAV ── */}
-      {!dataLoading && !dataError && (
-        <div className="fixed bottom-0 left-0 right-0 z-50" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(24px)', borderTop: '1px solid rgba(15,23,42,0.07)', boxShadow: '0 -8px 32px rgba(15,23,42,0.08)' }}>
-          <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                {step > 1 ? (
-                  <PremiumButton tone="secondary" icon={<ChevronLeft size={14} />} onClick={handlePrev}>
-                    Back
-                  </PremiumButton>
-                ) : (
-                  <div />
-                )}
-                <div className="hidden sm:flex items-center gap-2">
-                  {STEPS.map(s => (
-                    <div key={s.id} className="h-1.5 w-8 rounded-full transition-all duration-300"
-                      style={{ background: s.id < step ? '#F59E0B' : s.id === step ? '#0f172a' : '#e2e8f0' }} />
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[12px] font-[640] text-slate-400 hidden sm:inline">
-                  {STEPS[step - 1].sub}
-                </span>
-                {step < 4 ? (
-                  <PremiumButton tone="primary" icon={<ChevronRight size={14} />} onClick={handleNext}>
-                    Continue
-                  </PremiumButton>
-                ) : (
-                  <PremiumButton tone="success" glow icon={saving ? undefined : <Check size={14} />} onClick={handleSubmit} loading={saving} disabled={saving || done}>
-                    {done ? 'Onboarded!' : 'Confirm & Onboard'}
-                  </PremiumButton>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
