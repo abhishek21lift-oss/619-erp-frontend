@@ -67,7 +67,6 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               key={href}
               href={href}
               className="relative flex flex-1 flex-col items-center justify-center gap-1 overflow-hidden"
-              aria-label={label}
               aria-current={isActive ? 'page' : undefined}
               style={{ minHeight: 44 }}
             >
@@ -113,7 +112,6 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                 style={{
                   color: isActive ? '#7A3900' : 'rgba(255,255,255,0.80)',
                 }}
-                aria-hidden="true"
               >
                 {label}
               </span>

@@ -52,9 +52,9 @@ const DialogContent = React.forwardRef<
     >
       {children}
       <DialogPrimitive.Close className={cn(
-        'absolute right-4 top-4 rounded-md p-1 text-slate-400 opacity-70 ring-offset-white transition-opacity',
-        'hover:opacity-100 hover:bg-slate-100 dark:hover:bg-white/10',
-        'focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2',
+        'absolute right-4 top-4 rounded-md p-1 text-[var(--text-muted)] opacity-70 ring-offset-[var(--bg-card)] transition-opacity',
+        'hover:opacity-100 hover:bg-[var(--bg-hover)]',
+        'focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:ring-offset-2',
         'disabled:pointer-events-none',
       )}>
         <X size={16} />
@@ -83,7 +83,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('text-[17px] font-semibold leading-none tracking-tight text-slate-900 dark:text-white', className)}
+    className={cn('text-[17px] font-semibold leading-none tracking-tight text-[var(--text-primary)]', className)}
     {...props}
   />
 ));
@@ -95,7 +95,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-[13px] text-slate-500 dark:text-slate-400', className)}
+    className={cn('text-[13px] text-[var(--text-muted)]', className)}
     {...props}
   />
 ));

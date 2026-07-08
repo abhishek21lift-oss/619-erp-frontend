@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useId } from 'react';
+import { cn } from './cn';
 
 interface FloatInputProps {
   label: string;
@@ -9,39 +10,90 @@ interface FloatInputProps {
   onChange: (v: string) => void;
   placeholder?: string;
   suffix?: React.ReactNode;
+  prefix?: React.ReactNode;
   required?: boolean;
   multiline?: boolean;
+  rows?: number;
+  error?: string;
+  disabled?: boolean;
+  className?: string;
 }
 
-export default function FloatInput({
-  label, type = 'text', value, onChange, placeholder = ' ', suffix, required, multiline,
+export function FloatInput({
+  label,
+  type = 'text',
+  value,
+  onChange,
+  placeholder = ' ',
+  suffix,
+  prefix,
+  required,
+  multiline,
+  rows = 3,
+  error,
+  disabled,
+  className,
 }: FloatInputProps) {
   const id = useId();
   const [focused, setFocused] = useState(false);
   const lifted = focused || value.length > 0;
+
+  const baseInputClass = cn(
+    'w-full bg-transparent pb-3 pt-7 text-[13.5px] font-medium outline-none',
+    'text-[var(--text-primary)] caret-[var(--gold,#F59E0B)]',
+    prefix ? 'pl-10 pr-4' : 'px-4',
+    suffix ? 'pr-10' : '',
+    'disabled:cursor-not-allowed',
+  );
+
   return (
-    <div className="relative">
+    <div className={cn('relative', className)}>
       <div
-        className="relative overflow-hidden rounded-[13px] transition-all"
-        style={{
-          background: focused ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: focused ? '1.5px solid rgba(245,158,11,0.45)' : '1.5px solid rgba(15,23,42,0.09)',
-          boxShadow: focused ? '0 0 0 3px rgba(245,158,11,0.10)' : '0 1px 2px rgba(15,23,42,0.04)',
-          transition: 'all 180ms cubic-bezier(0.16,1,0.3,1)',
-        }}
+        className={cn(
+          'relative overflow-hidden rounded-[var(--radius,14px)]',
+          'transition-all duration-[180ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
+          focused
+            ? 'bg-[var(--bg-card)] border-[var(--gold,#F59E0B)]/50 shadow-[0_0_0_3px_color-mix(in_srgb,var(--gold,#F59E0B)_10%,transparent)]'
+            : error
+            ? 'bg-[var(--bg-subtle)] border-[var(--danger)]/60 shadow-[0_0_0_3px_color-mix(in_srgb,var(--danger)_8%,transparent)]'
+            : 'bg-[var(--bg-subtle)] border-[var(--border-2)] shadow-none',
+          'border',
+          disabled && 'opacity-50',
+        )}
       >
+        {/* Floating label */}
         <label
           htmlFor={id}
-          className="pointer-events-none absolute left-4 font-[500] transition-all"
-          style={{
-            top: lifted ? 8 : 18,
-            fontSize: lifted ? 10 : 13,
-            color: lifted ? (focused ? '#D97706' : 'rgb(148,163,184)') : 'rgb(148,163,184)',
-            transition: 'all 150ms cubic-bezier(0.16,1,0.3,1)',
-          }}
+          className={cn(
+            'pointer-events-none absolute font-medium transition-all',
+            'duration-[150ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
+            prefix ? 'left-10' : 'left-4',
+            lifted
+              ? 'top-2 text-[10px]'
+              : 'top-[18px] text-[13px]',
+            lifted
+              ? focused
+                ? 'text-[var(--gold,#F59E0B)]'
+                : error
+                ? 'text-[var(--danger)]'
+                : 'text-[var(--text-muted)]'
+              : 'text-[var(--text-muted)]',
+          )}
         >
-          {label}{required && <span style={{ color: '#D97706', marginLeft: 2 }}>*</span>}
+          {label}
+          {required && (
+            <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>
+          )}
         </label>
+
+        {/* Prefix icon */}
+        {prefix && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+            {prefix}
+          </div>
+        )}
+
+        {/* Input or Textarea */}
         {multiline ? (
           <textarea
             id={id}
@@ -50,8 +102,10 @@ export default function FloatInput({
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            className="w-full bg-transparent px-4 pb-3 pt-7 text-[13.5px] font-[500] outline-none resize-none"
-            style={{ color: 'rgb(15,23,42)', caretColor: '#F59E0B', minHeight: 80 }}
+            disabled={disabled}
+            rows={rows}
+            className={cn(baseInputClass, 'resize-none')}
+            style={{ minHeight: `${rows * 24 + 28}px` }}
           />
         ) : (
           <input
@@ -62,12 +116,27 @@ export default function FloatInput({
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            className="w-full bg-transparent px-4 pb-3 pt-7 text-[13.5px] font-[500] outline-none"
-            style={{ color: 'rgb(15,23,42)', caretColor: '#F59E0B' }}
+            disabled={disabled}
+            className={baseInputClass}
           />
         )}
-        {suffix && <div className="absolute right-4 top-1/2 -translate-y-1/2">{suffix}</div>}
+
+        {/* Suffix icon */}
+        {suffix && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+            {suffix}
+          </div>
+        )}
       </div>
+
+      {/* Error message */}
+      {error && (
+        <p className="mt-1.5 text-[11px] font-medium text-[var(--danger)]">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
+
+export default FloatInput;

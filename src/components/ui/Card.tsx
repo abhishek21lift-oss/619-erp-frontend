@@ -1,18 +1,72 @@
+'use client';
+
 import * as React from 'react';
+import { useMotionTemplate, useMotionValue, m } from 'framer-motion';
 import { cn } from './cn';
+
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Enable mouse-tracking spotlight effect on hover */
+  spotlight?: boolean;
+  /** Size of the spotlight gradient in px */
+  spotlightSize?: number;
+  /** Show a border-beam glow on the card border */
+  glow?: boolean;
+}
 
 export function Card({
   className,
+  spotlight = false,
+  spotlightSize = 300,
+  glow = false,
+  children,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: CardProps) {
+  const mouseX = useMotionValue(-spotlightSize);
+  const mouseY = useMotionValue(-spotlightSize);
+
+  const handleMouseMove = React.useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!spotlight) return;
+      const { left, top } = e.currentTarget.getBoundingClientRect();
+      mouseX.set(e.clientX - left);
+      mouseY.set(e.clientY - top);
+    },
+    [mouseX, mouseY, spotlight],
+  );
+
+  const handleMouseLeave = React.useCallback(() => {
+    if (!spotlight) return;
+    mouseX.set(-spotlightSize);
+    mouseY.set(-spotlightSize);
+  }, [mouseX, mouseY, spotlight, spotlightSize]);
+
+  const spotlightBg = useMotionTemplate`radial-gradient(${spotlightSize}px circle at ${mouseX}px ${mouseY}px, rgba(var(--brand-rgb, 59 130 246) / 0.07), transparent 70%)`;
+
   return (
     <div
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       className={cn(
-        'overflow-hidden rounded-[24px] bg-white/75 dark:bg-[rgba(23,24,28,0.85)] backdrop-blur-[20px] saturate-[160%] border border-white/25 dark:border-[rgba(255,255,255,0.05)] shadow-[0_8px_32px_rgba(11,11,15,0.06),0_1px_2px_rgba(11,11,15,0.03)] transition-all duration-200 hover:shadow-[0_12px_40px_rgba(11,11,15,0.08),0_2px_4px_rgba(11,11,15,0.04)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.25),0_1px_2px_rgba(0,0,0,0.15)] hover:-translate-y-0.5',
+        'group relative overflow-hidden rounded-[var(--radius-xl,24px)]',
+        'bg-[var(--bg-card)] backdrop-blur-[20px] saturate-[160%]',
+        'border border-[var(--border)]',
+        'shadow-[var(--shadow-card)]',
+        'transition-all duration-250',
+        'hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5',
+        glow && 'ring-1 ring-[var(--brand)]/20',
         className,
       )}
       {...props}
-    />
+    >
+      {spotlight && (
+        <m.div
+          className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: spotlightBg }}
+          aria-hidden
+        />
+      )}
+      <div className="relative z-10">{children}</div>
+    </div>
   );
 }
 
@@ -23,7 +77,8 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 border-b border-[rgba(11,11,15,0.04)] dark:border-[rgba(255,255,255,0.04)] px-6 py-4',
+        'flex items-center justify-between gap-4',
+        'border-b border-[var(--border)] px-6 py-4',
         className,
       )}
       {...props}
@@ -51,7 +106,10 @@ export function CardDescription({
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn('text-[13px] text-[var(--text-muted)]', className)} {...props} />
+    <p
+      className={cn('text-[13px] text-[var(--text-muted)]', className)}
+      {...props}
+    />
   );
 }
 
@@ -69,7 +127,8 @@ export function CardFooter({
   return (
     <div
       className={cn(
-        'flex items-center justify-end gap-3 border-t border-[rgba(11,11,15,0.04)] dark:border-[rgba(255,255,255,0.04)] px-6 py-3',
+        'flex items-center justify-end gap-3',
+        'border-t border-[var(--border)] px-6 py-3',
         className,
       )}
       {...props}
