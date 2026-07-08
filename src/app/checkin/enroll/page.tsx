@@ -214,7 +214,7 @@ function EnrollContent() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       {/* Hero */}
-      <div className="relative overflow-hidden" style={{ background: '#f8fafc', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+      <div className="relative overflow-hidden" style={{ background: 'var(--bg-subtle)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid var(--border)' }}>
         <div className="relative z-10 mx-auto" style={{ maxWidth: 900 }}>
           <div className="flex items-center gap-4">
             <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -225,11 +225,11 @@ function EnrollContent() {
             <div>
               <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
-                style={{ color: '#111827' }}>
+                style={{ color: 'var(--text-primary)' }}>
                 Member Enrollment
               </m.h1>
               <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
-                className="text-[12px]" style={{ color: '#6b7280' }}>
+                className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                 Register face biometrics or device passkeys for attendance
               </m.p>
             </div>
@@ -240,7 +240,7 @@ function EnrollContent() {
       <div className="mx-auto px-5 py-6 sm:px-8" style={{ maxWidth: 900 }}>
         {/* Member Context */}
         <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-[18px] p-5 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+          className="rounded-[18px] p-5 mb-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
           <p className="text-[13px] font-[600] mb-3" style={{ color: 'rgb(15,23,42)' }}>Member Information</p>
           <div ref={searchRef} className="relative mb-3">
             <div className="relative">
@@ -251,7 +251,7 @@ function EnrollContent() {
                 onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                 placeholder="Search by member name, email or ID…"
                 className="w-full rounded-[11px] pl-9 pr-3.5 py-2.5 text-[13px] outline-none"
-                style={{ background: '#f8fafc', border: `1.5px solid ${memberConfirmed ? '#10b981' : '#e2e8f0'}`, color: 'rgb(15,23,42)', fontFamily: 'inherit' }}
+                style={{ background: 'var(--bg-subtle)', border: `1.5px solid ${memberConfirmed ? '#10b981' : '#e2e8f0'}`, color: 'rgb(15,23,42)', fontFamily: 'inherit' }}
               />
               {searchLoading && (
                 <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
@@ -263,7 +263,7 @@ function EnrollContent() {
               {showDropdown && searchResults.length > 0 && (
                 <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                   className="absolute z-50 left-0 right-0 mt-1 rounded-[13px] overflow-hidden"
-                  style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
                   {searchResults.map((m) => (
                     <button key={m.id} onMouseDown={() => selectMember(m)}
                       className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-slate-50">
@@ -298,9 +298,9 @@ function EnrollContent() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input value={memberId} onChange={(e) => { setMemberId(e.target.value); setMemberConfirmed(false); }} placeholder="Member ID (manual)"
-                className="rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
+                className="rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: 'var(--bg-subtle)', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
               <input value={memberName} onChange={(e) => setMemberName(e.target.value)} placeholder="Member Name (manual)"
-                className="rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
+                className="rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: 'var(--bg-subtle)', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
             </div>
           )}
         </m.div>
@@ -319,7 +319,7 @@ function EnrollContent() {
 
         {/* Face Enrollment Card */}
         <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
           <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,#10b981,#6366f1)' }} />
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -344,7 +344,7 @@ function EnrollContent() {
 
         {/* Enroll Card */}
         <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
           <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,#6366f1,#10b981)' }} />
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
@@ -374,7 +374,7 @@ function EnrollContent() {
             <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
               <div className="space-y-3 mb-4">
                 <input value={deviceName} onChange={(e) => setDeviceName(e.target.value)} placeholder="Device name (e.g. My iPhone)"
-                  className="w-full rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
+                  className="w-full rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none" style={{ background: 'var(--bg-subtle)', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
               </div>
               <div className="rounded-[13px] p-3.5 mb-4 text-[12px] leading-relaxed" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', color: 'rgb(71,85,105)' }}>
                 <strong style={{ color: '#6366f1' }}>How it works:</strong> Your browser will prompt you to use Face ID, Touch ID, or your device passkey. No face images or biometric data are stored on our servers.
@@ -393,7 +393,7 @@ function EnrollContent() {
 
         {/* Registered Credentials */}
         <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="rounded-[22px] p-6" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          className="rounded-[22px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.10)' }}>
               <Smartphone size={18} style={{ color: '#10b981' }} />
@@ -412,7 +412,7 @@ function EnrollContent() {
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 rounded-[13px] animate-pulse" style={{ background: '#f1f5f9' }} />
+                <div key={i} className="h-16 rounded-[13px] animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
               ))}
             </div>
           ) : credentials.length === 0 ? (
@@ -430,7 +430,7 @@ function EnrollContent() {
               {credentials.map((cred) => (
                 <m.div key={cred.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 rounded-[14px] p-3.5 transition-all hover:bg-slate-50"
-                  style={{ border: '1px solid #f1f5f9' }}>
+                  style={{ border: '1px solid var(--border)' }}>
                   <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.10)', color: '#6366f1' }}>
                     {deviceIcon(cred.deviceName)}
                   </div>

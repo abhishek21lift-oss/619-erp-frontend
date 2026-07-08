@@ -174,7 +174,7 @@ function MarkAttendanceContent() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       {/* Hero */}
-      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#f0fdf4 0%,#f5f3ff 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#f0fdf4 0%,#f5f3ff 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid var(--border)' }}>
         <div className="mx-auto" style={{ maxWidth: 600 }}>
           <div className="flex items-center gap-4">
             <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -185,11 +185,11 @@ function MarkAttendanceContent() {
             <div>
               <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
-                style={{ color: '#111827' }}>
+                style={{ color: 'var(--text-primary)' }}>
                 Mark Attendance
               </m.h1>
               <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
-                className="text-[12px]" style={{ color: '#6b7280' }}>
+                className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                 GPS + Biometric verification required
               </m.p>
             </div>
@@ -207,10 +207,10 @@ function MarkAttendanceContent() {
             const failed = step === 'error' && i <= ['gps', 'biometric', 'success'].indexOf(step === 'error' ? (step === 'error' ? (gpsStatus === 'denied' ? 'gps' : 'biometric') : 'success') : s);
             return (
               <React.Fragment key={s}>
-                {i > 0 && <div className="h-px w-8" style={{ background: done || (step === 'success' && i <= 2) ? '#10b981' : '#e2e8f0' }} />}
+                {i > 0 && <div className="h-px w-8" style={{ background: done || (step === 'success' && i <= 2) ? '#10b981' : 'var(--border)' }} />}
                 <div className="flex items-center gap-1.5">
                   <div className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-[700]"
-                    style={{ background: active ? cfg.color : done ? '#10b981' : '#f1f5f9', color: active || done ? '#fff' : '#94a3b8' }}>
+                    style={{ background: active ? cfg.color : done ? '#10b981' : 'var(--bg-subtle)', color: active || done ? '#fff' : '#94a3b8' }}>
                     {done ? <CheckCircle2 size={12} /> : i + 1}
                   </div>
                   <span className="text-[10px] font-[600] hidden sm:inline" style={{ color: active ? cfg.color : '#94a3b8' }}>{cfg.label}</span>
@@ -222,8 +222,8 @@ function MarkAttendanceContent() {
 
         {/* Member ID */}
         {!memberId && step !== 'success' && (
-          <div className="rounded-[16px] p-4 mb-4 flex items-center gap-3" style={{ background: 'white', border: '1px solid #e2e8f0' }}>
-            <User size={16} style={{ color: '#94a3b8' }} />
+          <div className="rounded-[16px] p-4 mb-4 flex items-center gap-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <User size={16} style={{ color: 'var(--text-disabled)' }} />
             <input value={memberId} onChange={(e) => setMemberId(e.target.value)} placeholder="Enter Member ID (optional if passkey identifies you)"
               className="flex-1 bg-transparent text-[13px] outline-none" style={{ color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
           </div>
@@ -245,7 +245,7 @@ function MarkAttendanceContent() {
           {/* Step: GPS */}
           {step === 'gps' && (
             <m.div key="gps" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
-              <div className="rounded-[22px] p-6 text-center" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+              <div className="rounded-[22px] p-6 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
                 <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                   className="flex justify-center mb-5">
                   <div className="flex h-20 w-20 items-center justify-center rounded-[20px]" style={{ background: gpsStatus === 'verified' ? 'rgba(16,185,129,0.10)' : gpsStatus === 'denied' ? 'rgba(239,68,68,0.10)' : 'rgba(99,102,241,0.10)' }}>
@@ -276,7 +276,7 @@ function MarkAttendanceContent() {
           {/* Step: Biometric */}
           {step === 'biometric' && (
             <m.div key="biometric" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
-              <div className="rounded-[22px] p-6" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+              <div className="rounded-[22px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
                 <div className="text-center mb-6">
                   <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
                     className="flex justify-center mb-4">
@@ -344,7 +344,7 @@ function MarkAttendanceContent() {
           {/* Step: Success */}
           {step === 'success' && (
             <m.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-              <div className="rounded-[22px] p-8 text-center" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+              <div className="rounded-[22px] p-8 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
                 <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
                   className="flex justify-center mb-5">
                   <div className="flex h-24 w-24 items-center justify-center rounded-[24px]" style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 16px 48px rgba(16,185,129,0.3)' }}>
@@ -373,7 +373,7 @@ function MarkAttendanceContent() {
           {/* Step: Error */}
           {step === 'error' && (
             <m.div key="error" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-              <div className="rounded-[22px] p-6 text-center" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+              <div className="rounded-[22px] p-6 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
                 <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                   className="flex justify-center mb-4">
                   <div className="flex h-20 w-20 items-center justify-center rounded-[20px]" style={{ background: 'rgba(239,68,68,0.10)' }}>

@@ -48,7 +48,7 @@ const ROLES: Record<Role, { label: string; icon: React.ReactNode; color: string;
 const STATUS_CFG: Record<Status, { label: string; color: string; bg: string; dot: string }> = {
   active:    { label: 'Active',    color: '#059669', bg: 'rgba(5,150,105,0.08)',  dot: '#10b981' },
   pending:   { label: 'Pending',   color: '#d97706', bg: 'rgba(217,119,6,0.08)',  dot: '#f59e0b' },
-  suspended: { label: 'Suspended', color: '#6b7280', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
+  suspended: { label: 'Suspended', color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
 };
 
 /* ────────────────────────────────────────────────────────────────────

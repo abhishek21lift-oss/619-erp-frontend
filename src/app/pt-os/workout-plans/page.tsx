@@ -117,7 +117,7 @@ function Inner() {
   return (
     <div>
       {/* ── Hero ── */}
-      <div style={{ padding: '32px 32px 28px', borderBottom: '1px solid #f3f4f6' }}>
+      <div style={{ padding: '32px 32px 28px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <m.div variants={heroVariants} initial="hidden" animate="visible"
@@ -125,12 +125,12 @@ function Inner() {
               <Dumbbell size={22} color="#fff" />
             </m.div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Workout Plans</h1>
-              <p style={{ margin: '4px 0 0', fontSize: 13.5, color: '#6b7280' }}>Build and manage personalized training programs</p>
+              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Workout Plans</h1>
+              <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'var(--text-muted)' }}>Build and manage personalized training programs</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 8, padding: 2 }}>
+            <div style={{ display: 'flex', background: 'var(--bg-subtle)', borderRadius: 8, padding: 2 }}>
               <button onClick={() => setView('grid')}
                 style={{ padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'grid' ? '#fff' : 'transparent', color: view === 'grid' ? '#6366f1' : '#9ca3af', boxShadow: view === 'grid' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
                 <LayoutGrid size={15} />
@@ -155,21 +155,21 @@ function Inner() {
             { label: 'Completion Rate', value: plans.length ? `${Math.round(plans.reduce((s, p) => s + p.progress, 0) / plans.length)}%` : '—', icon: <Trophy size={15} />, from: '#ec4899', to: '#db2777' },
           ].map((s, i) => (
             <m.div key={s.label} variants={itemVariants}
-              style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '18px 18px', background: '#fff', border: '1px solid #e5e7eb', cursor: 'default', transition: 'transform 0.3s' }}
+              style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '18px 18px', background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'default', transition: 'transform 0.3s' }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
               <div style={{ position: 'absolute', top: -15, right: -15, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${s.from}15, transparent 70%)`, pointerEvents: 'none' }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, position: 'relative', zIndex: 1 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#9ca3af' }}>{s.label}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-disabled)' }}>{s.label}</span>
                 <div style={{ width: 32, height: 32, borderRadius: 9, background: `${s.from}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.from }}>{s.icon}</div>
               </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{s.value}</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{s.value}</div>
             </m.div>
           ))}
         </m.div>
 
         {/* ── Section Tabs ── */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#F3F4F6', borderRadius: 12, padding: 3 }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'var(--bg-subtle)', borderRadius: 12, padding: 3 }}>
           {[
             { key: 'plans', label: 'Active Plans', count: plans.length, color: '#6366f1' },
             { key: 'library', label: 'Exercise Library', count: filteredExercises.length, color: '#10b981' },
@@ -195,30 +195,30 @@ function Inner() {
             style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
             {plans.slice(0, 4).map((plan, i) => (
               <m.div key={plan.id} variants={itemVariants}
-                style={{ borderRadius: 18, padding: view === 'grid' ? 20 : '14px 18px', background: '#fff', border: '1px solid #e5e7eb', display: view === 'list' ? 'flex' : 'block', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'all 0.3s' }}
+                style={{ borderRadius: 18, padding: view === 'grid' ? 20 : '14px 18px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: view === 'list' ? 'flex' : 'block', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = '#d1d5db'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
                 <div style={{ width: view === 'grid' ? '100%' : 44, height: view === 'grid' ? 4 : 44, borderRadius: view === 'grid' ? 20 : 12, background: PLAN_COLORS[i % PLAN_COLORS.length], marginBottom: view === 'grid' ? 14 : 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>{plan.name}</h3>
+                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{plan.name}</h3>
                     <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700, background: DIFFICULTY_COLORS[plan.difficulty]?.bg || 'rgba(148,163,184,0.12)', color: DIFFICULTY_COLORS[plan.difficulty]?.color || '#6b7280' }}>{plan.difficulty}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{plan.description}</p>
-                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#9ca3af' }}>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{plan.description}</p>
+                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--text-disabled)' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Target size={12} /> {plan.goal}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {plan.duration}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Activity size={12} /> {plan.exercises} exercises</span>
                   </div>
                   {view === 'grid' && (
                     <div style={{ marginTop: 12 }}>
-                      <div style={{ height: 4, borderRadius: 2, background: '#F3F4F6', overflow: 'hidden' }}>
+                      <div style={{ height: 4, borderRadius: 2, background: 'var(--bg-subtle)', overflow: 'hidden' }}>
                         <m.div initial={{ width: 0 }} animate={{ width: `${plan.progress}%` }} transition={{ duration: 1, ease: 'easeOut' }}
                           style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${PLAN_COLORS[i % PLAN_COLORS.length]})` }} />
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: '#9ca3af' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: 'var(--text-disabled)' }}>
                         <span>Progress</span>
-                        <span style={{ fontWeight: 700, color: '#6b7280' }}>{plan.progress}%</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{plan.progress}%</span>
                       </div>
                     </div>
                   )}
@@ -241,10 +241,10 @@ function Inner() {
                 {mg}
               </button>
             ))}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', background: '#F9FAFB', borderRadius: 8, padding: '4px 12px', border: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', background: 'var(--bg-subtle)', borderRadius: 8, padding: '4px 12px', border: '1px solid var(--border)' }}>
               <Search size={13} color="#9ca3af" />
               <input placeholder="Search exercises…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 12, fontWeight: 500, outline: 'none', width: 180 }} />
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, outline: 'none', width: 180 }} />
             </div>
           </div>
 
@@ -252,15 +252,15 @@ function Inner() {
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
             {filteredExercises.slice(0, 12).map((ex, i) => (
               <m.div key={ex.id} variants={itemVariants}
-                style={{ borderRadius: 14, padding: 16, background: '#fff', border: `1px solid ${GROUP_COLORS[ex.muscleGroup]}20`, cursor: 'pointer', transition: 'all 0.3s' }}
+                style={{ borderRadius: 14, padding: 16, background: 'var(--bg-card)', border: `1px solid ${GROUP_COLORS[ex.muscleGroup]}20`, cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = `${GROUP_COLORS[ex.muscleGroup]}08`; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}40`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}20`; }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: `${GROUP_COLORS[ex.muscleGroup]}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, color: GROUP_COLORS[ex.muscleGroup] }}>
                   <Dumbbell size={14} />
                 </div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#111827' }}>{ex.name}</h4>
-                <p style={{ fontSize: 11, color: '#6b7280', margin: '0 0 8px' }}>{ex.muscleGroup} · {ex.difficulty}</p>
-                <div style={{ display: 'flex', gap: 6, fontSize: 10.5, color: '#9ca3af' }}>
+                <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{ex.name}</h4>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 8px' }}>{ex.muscleGroup} · {ex.difficulty}</p>
+                <div style={{ display: 'flex', gap: 6, fontSize: 10.5, color: 'var(--text-disabled)' }}>
                   <span>{ex.sets} sets</span>
                   <span>·</span>
                   <span>{ex.reps}</span>
@@ -276,7 +276,7 @@ function Inner() {
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Dumbbell size={17} color="#d97706" />
             </div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>Plan Builder</h3>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Plan Builder</h3>
           </div>
           {[
             { step: 0, label: 'Choose Client', icon: <User size={16} />, desc: 'Select the client this plan is for' },
@@ -291,7 +291,7 @@ function Inner() {
               </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: builderStep === s.step ? '#111827' : '#374151' }}>Step {s.step + 1}: {s.label}</div>
-                <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 2 }}>{s.desc}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-disabled)', marginTop: 2 }}>{s.desc}</div>
               </div>
               {builderStep === s.step && <ChevronRight size={16} color="#d97706" style={{ marginLeft: 'auto' }} />}
             </div>
@@ -309,7 +309,7 @@ function Inner() {
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(236,72,153,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Sparkles size={17} color="#6366f1" />
             </div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>AI-Powered Suggestions</h3>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>AI-Powered Suggestions</h3>
             <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 9.5, fontWeight: 700, background: 'rgba(99,102,241,0.1)', color: '#6366f1', letterSpacing: '0.05em' }}>BETA</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
@@ -320,18 +320,18 @@ function Inner() {
               { title: 'Flexibility Flow', description: 'Yoga-inspired mobility and recovery routine', goal: 'Flexibility', intensity: 'Low', color: '#10b981' },
             ].map((s, i) => (
               <m.div key={s.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                style={{ borderRadius: 14, padding: 16, background: '#fff', border: `1px solid ${s.color}20`, cursor: 'pointer', transition: 'all 0.3s' }}
+                style={{ borderRadius: 14, padding: 16, background: 'var(--bg-card)', border: `1px solid ${s.color}20`, cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = `${s.color}06`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(0)'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 7, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>
                     <Zap size={13} />
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>{s.goal}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>{s.goal}</span>
                   <span style={{ marginLeft: 'auto', padding: '2px 8px', borderRadius: 10, fontSize: 9.5, fontWeight: 700, background: `${s.color}15`, color: s.color }}>{s.intensity}</span>
                 </div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#111827' }}>{s.title}</h4>
-                <p style={{ margin: 0, fontSize: 11.5, color: '#6b7280' }}>{s.description}</p>
+                <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{s.title}</h4>
+                <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-muted)' }}>{s.description}</p>
               </m.div>
             ))}
           </div>

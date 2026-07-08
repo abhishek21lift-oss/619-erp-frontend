@@ -84,7 +84,7 @@ function DaysArc({ days_left }: { days_left: number | null }) {
   return (
     <div className="flex flex-col items-center">
       <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`}>
-        <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth={sw} />
+        <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke="var(--border)" strokeWidth={sw} />
         <m.circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={info.color}
           strokeWidth={sw} strokeLinecap="round" strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }}
@@ -121,9 +121,9 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
       onClick={() => router.push(`/pt-os/clients/${client.id}`)}
       className="group cursor-pointer rounded-[20px] p-5 transition-all duration-300 hover:-translate-y-1.5"
       style={{
-        background: '#fff',
-        border: '1px solid rgba(0,0,0,0.07)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-xs)',
       }}
     >
       {/* Top row */}
@@ -160,7 +160,7 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
         )}
         {client.package_type && (
           <div className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1"
-            style={{ background: 'rgba(0,0,0,0.05)' }}>
+            style={{ background: 'var(--bg-subtle)' }}>
             <Dumbbell size={10} className="text-slate-400" />
             <span className="text-[11px] font-[600] text-slate-500">{client.package_type}</span>
           </div>
@@ -170,12 +170,12 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
       {/* Financial row */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {[
-          { label: 'Amount', value: fmtShortINR(client.final_amount), color: '#111827' },
+          { label: 'Amount', value: fmtShortINR(client.final_amount), color: 'var(--text-primary)' },
           { label: 'Paid', value: fmtShortINR(client.paid_amount), color: '#34d399' },
           { label: 'Balance', value: fmtShortINR(client.balance_amount), color: client.balance_amount > 0 ? '#f87171' : '#34d399' },
         ].map(f => (
           <div key={f.label} className="rounded-[10px] p-2.5 text-center"
-            style={{ background: '#f9fafb', border: '1px solid rgba(0,0,0,0.06)' }}>
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
             <p className="text-[11px] font-[700] tabular-nums" style={{ color: f.color }}>{f.value}</p>
             <p className="text-[9px] font-[600] text-slate-400 mt-0.5 uppercase tracking-wide">{f.label}</p>
           </div>
@@ -190,7 +190,7 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
             {Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)}%
           </span>
         </div>
-        <div className="h-1.5 w-full rounded-full" style={{ background: 'rgba(0,0,0,0.07)' }}>
+        <div className="h-1.5 w-full rounded-full" style={{ background: 'var(--bg-subtle)' }}>
           <m.div
             initial={{ width: 0 }}
             animate={{ width: `${Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)}%` }}
@@ -226,7 +226,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
       transition={{ delay: index * 0.025, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       onClick={() => router.push(`/pt-os/clients/${client.id}`)}
       className="group cursor-pointer transition-all duration-200 hover:bg-gray-50"
-      style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+      style={{ borderBottom: '1px solid var(--border)' }}
     >
       <td className="py-3.5 px-5">
         <div className="flex items-center gap-3">
@@ -323,7 +323,7 @@ export default function PtClientsPage() {
   return (
     <Guard>
       <AppShell>
-        <div className="min-h-screen" style={{ background: '#f9fafb' }}>
+        <div className="min-h-screen" style={{ background: 'var(--bg-subtle)' }}>
 
           <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
 
@@ -396,9 +396,9 @@ export default function PtClientsPage() {
                   transition={{ delay: 0.12 + i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                   className="relative overflow-hidden rounded-[22px] p-5"
                   style={{
-                    background: '#fff',
+                    background: 'var(--bg-card)',
                     border: `1px solid ${card.from}20`,
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                    boxShadow: 'var(--shadow-xs)',
                   }}>
                   <div className="relative">
                     <div className="mb-3 flex items-center justify-between">
@@ -425,14 +425,14 @@ export default function PtClientsPage() {
               transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="overflow-hidden rounded-[24px]"
               style={{
-                background: '#fff',
-                border: '1px solid rgba(0,0,0,0.07)',
-                boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--shadow-sm)',
               }}>
 
               {/* ── TOOLBAR ── */}
               <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5 sm:py-4"
-                style={{ borderColor: 'rgba(0,0,0,0.07)' }}>
+                style={{ borderColor: 'var(--border)' }}>
 
                 {/* Search */}
                 <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-sm">
@@ -441,7 +441,7 @@ export default function PtClientsPage() {
                     type="text" placeholder="Search clients or trainers…"
                     value={search} onChange={e => setSearch(e.target.value)}
                     className="w-full rounded-[12px] py-2.5 pl-9 pr-4 text-[12.5px] font-[500] text-gray-900 outline-none transition-all duration-200 placeholder:text-slate-400"
-                    style={{ background: '#fff', border: '1.5px solid #d1d5db' }}
+                    style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border)' }}
                     onFocus={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.08)'; }}
                     onBlur={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = ''; }}
                   />
@@ -451,7 +451,7 @@ export default function PtClientsPage() {
                 <div className="flex w-full items-center gap-2 overflow-x-auto pb-0.5 sm:w-auto sm:overflow-visible">
                   {/* Status filter pills */}
                   <div className="flex shrink-0 gap-1 rounded-[12px] p-1"
-                    style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)' }}>
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                     {STATUS_FILTERS.map(f => (
                       <button key={f.value} onClick={() => setStatusFilter(f.value)}
                         className="rounded-[8px] px-3.5 py-2 text-[11px] font-[700] transition-all duration-200"
@@ -465,7 +465,7 @@ export default function PtClientsPage() {
 
                   {/* View mode */}
                   <div className="flex shrink-0 gap-1 rounded-[10px] p-1"
-                    style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)' }}>
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                     {([['table', LayoutList], ['grid', LayoutGrid]] as const).map(([mode, Icon]) => (
                       <button key={mode} onClick={() => setViewMode(mode)}
                         className="rounded-[7px] p-2 transition-all duration-200"
@@ -479,7 +479,7 @@ export default function PtClientsPage() {
 
                   <button onClick={() => clients.refetch()}
                     className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[11px] font-[600] text-slate-500 transition-all duration-200 hover:text-slate-700"
-                    style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)' }}>
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                     <RefreshCw size={11} />Refresh
                   </button>
 
@@ -509,7 +509,7 @@ export default function PtClientsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#fafafa' }}>
+                      <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
                         {[
                           { label: 'Client', cls: '' },
                           { label: 'Trainer', cls: 'hidden sm:table-cell' },
