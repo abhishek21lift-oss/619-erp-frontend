@@ -30,20 +30,18 @@ const ICON_MAP: Record<string, React.ElementType> = {
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen,
 };
 
-// ── Single unified brand theme (replaces per-group rainbow colours) ──────────
-// All groups share this palette. Only active/hover states use the brand red.
-const BRAND_COLOR = '#F59E0B';
+// ── Sidebar brand theme — matches --sidebar-icon-active CSS variable ──────────
+const BRAND_COLOR = '#a78bfa'; // --sidebar-icon-active
 
 const THEME = {
-  brand:       BRAND_COLOR,
-  iconBg:      'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
-  activeBg:    'rgba(245,158,11,0.10)',
+  brand:       '#a78bfa',
+  iconBg:      'linear-gradient(135deg, #c084fc 0%, #a78bfa 100%)',
+  activeBg:    'rgba(167,139,250,0.15)',  // --sidebar-item-active
   subBorder:   'rgba(255,255,255,0.07)',
-  subActiveBg: 'rgba(245,158,11,0.08)',
-  // Neutral inactive colours — no colour tint
+  subActiveBg: 'rgba(167,139,250,0.08)', // --sidebar-item-hover
   inactiveText:  'rgba(255,255,255,0.52)',
   inactiveIcon:  'rgba(255,255,255,0.38)',
-  hoverBg:       'rgba(255,255,255,0.05)',
+  hoverBg:       'rgba(167,139,250,0.08)', // --sidebar-item-hover
 };
 
 // Maps nav group/href patterns to permission feature keys
@@ -464,21 +462,29 @@ export default function Sidebar({
                 </div>
               </div>
             </div>
-            {!collapsed && (
-              <div className="overflow-hidden">
-                <h2 className="text-[15px] font-extrabold tracking-tight leading-none whitespace-nowrap">
-                  <span
-                    className="bg-clip-text text-transparent"
-                    style={{ backgroundImage: 'linear-gradient(135deg, #FCD34D, #F59E0B, #D97706)' }}
-                  >619</span>
-                  {' '}
-                  <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">FITNESS</span>
-                </h2>
-                <p className="mt-[2px] text-[9px] font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase whitespace-nowrap">
-                  Studio Suite
-                </p>
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {!collapsed && (
+                <m.div
+                  key="brand-text"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.18 } }}
+                  exit={{ opacity: 0, transition: { duration: 0.08 } }}
+                  className="overflow-hidden"
+                >
+                  <h2 className="text-[15px] font-extrabold tracking-tight leading-none whitespace-nowrap">
+                    <span
+                      className="bg-clip-text text-transparent"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #FCD34D, #F59E0B, #D97706)' }}
+                    >619</span>
+                    {' '}
+                    <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">FITNESS</span>
+                  </h2>
+                  <p className="mt-[2px] text-[9px] font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase whitespace-nowrap">
+                    Studio Suite
+                  </p>
+                </m.div>
+              )}
+            </AnimatePresence>
           </Link>
 
           {isMobile && (

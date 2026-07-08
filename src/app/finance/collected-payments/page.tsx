@@ -7,7 +7,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button, KpiCard } from '@/components/ui';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
   Smartphone, CreditCard, Receipt, CalendarDays, RefreshCw, Inbox,
@@ -121,8 +121,8 @@ function Inner() {
         {/* Page Header */}
         <div style={{
           padding: '24px 20px',
-          borderBottom: '1px solid #f3f4f6',
-          background: '#fff',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-card)',
         }}>
           <div style={{ maxWidth: 1280, margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
@@ -137,27 +137,27 @@ function Inner() {
                 </div>
                 <div>
                   <h1 style={{
-                    fontSize: 28,
+                    fontSize: 'clamp(20px, 4vw, 28px)',
                     fontWeight: 700,
                     letterSpacing: '-0.03em',
                     margin: 0,
                     lineHeight: 1.2,
-                    color: '#111827',
+                    color: 'var(--text-primary)',
                   }}>
                     Collected Payments
                   </h1>
-                  <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 0' }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>
                     Track and manage all incoming payments
                   </p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <PremiumButton tone="secondary" size="sm" icon={<RefreshCw size={13} />} onClick={fetchPayments}>
+                <Button variant="outline" size="sm" iconLeft={<RefreshCw size={13} />} onClick={fetchPayments}>
                   Refresh
-                </PremiumButton>
-                <PremiumButton tone="primary" glow size="sm" icon={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
+                </Button>
+                <Button variant="primary" size="sm" iconLeft={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
                   + Record Payment
-                </PremiumButton>
+                </Button>
               </div>
             </div>
 
@@ -169,10 +169,10 @@ function Inner() {
                 gap: 12,
                 marginTop: 24,
               }}>
-                <KPICard icon={<Layers size={18} />} label="Total Payments" value={filtered.length.toString()} accent="#06b6d4" />
-                <KPICard icon={<IndianRupee size={18} />} label="Total Collected" value={fmtINR(totalCollected)} accent="#10b981" />
-                <KPICard icon={<List size={18} />} label="Unique Methods" value={methods.length.toString()} accent="#8b5cf6" />
-                <KPICard icon={<TrendingUp size={18} />} label="Largest Payment" value={fmtINR(largestPayment)} accent="#f59e0b" />
+                <KpiCard icon={<Layers size={16} />} label="Total Payments" value={filtered.length.toString()} accent="sky" />
+                <KpiCard icon={<IndianRupee size={16} />} label="Total Collected" value={fmtINR(totalCollected)} accent="emerald" />
+                <KpiCard icon={<List size={16} />} label="Unique Methods" value={methods.length.toString()} accent="violet" />
+                <KpiCard icon={<TrendingUp size={16} />} label="Largest Payment" value={fmtINR(largestPayment)} accent="amber" />
               </div>
             )}
           </div>
@@ -183,12 +183,12 @@ function Inner() {
           {/* Search & Filters */}
           <div className="mb-5 flex flex-col gap-3">
             <div className="relative w-full">
-              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)', pointerEvents: 'none' }} />
               <input
                 placeholder="Search by client, receipt, notes..."
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full h-11 rounded-xl outline-none transition-all focus:border-blue-300 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
-                style={{ padding: '10px 14px 10px 36px', border: '1.5px solid #e5e7eb', fontSize: 14, background: 'white', color: '#111827' }}
+                style={{ padding: '10px 14px 10px 36px', border: '1.5px solid var(--border)', fontSize: 14, background: 'var(--bg-card)', color: 'var(--text-primary)' }}
               />
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -242,7 +242,7 @@ function Inner() {
                   <m.div key={p.id}
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                     className="rounded-[16px] bg-white border border-zinc-100 p-4 shadow-sm active:scale-[0.985] transition-all"
-                    style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                    style={{ boxShadow: 'var(--shadow-xs)' }}>
                     <div className="flex items-center justify-between mb-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center"
@@ -275,13 +275,13 @@ function Inner() {
               <div className="mt-4 flex items-center justify-center gap-2">
                 <button disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}
                   className="rounded-[10px] px-4 py-2 text-[13px] font-[600] transition-all disabled:opacity-40"
-                  style={{ border: '1px solid #e5e7eb', background: 'white', color: '#111827' }}>
+                  style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                   Previous
                 </button>
                 <span className="text-[12px] text-[#6b7280]">{page + 1} / {pageCount}</span>
                 <button disabled={page >= pageCount - 1} onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
                   className="rounded-[10px] px-4 py-2 text-[13px] font-[600] transition-all disabled:opacity-40"
-                  style={{ border: '1px solid #e5e7eb', background: 'white', color: '#111827' }}>
+                  style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                   Next
                 </button>
               </div>
@@ -289,18 +289,18 @@ function Inner() {
           </div>
 
           {/* Desktop Table (hidden on mobile) */}
-          <div className="hidden md:block" style={{ background: 'white', borderRadius: 20, border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
+          <div className="hidden md:block" style={{ background: 'var(--bg-card)', borderRadius: 20, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-xs)' }}>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #f3f4f6' }}>
+                  <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}>
                     {['Client', 'Amount', 'Method', 'Receipt', 'Date', 'Notes'].map((h) => (
                       <th key={h} style={{
                         padding: '14px 20px',
                         textAlign: 'left',
                         fontSize: 11,
                         fontWeight: 700,
-                        color: '#6b7280',
+                        color: 'var(--text-muted)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.8px',
                         whiteSpace: 'nowrap',
@@ -310,7 +310,7 @@ function Inner() {
                         onClick={h === 'Amount' ? () => toggleSort('amount') : h === 'Date' ? () => toggleSort('date') : undefined}>
                         {h}
                         {(h === 'Amount' || h === 'Date') && (
-                          <ArrowUpDown size={12} style={{ marginLeft: 4, display: 'inline', opacity: sortField === (h === 'Amount' ? 'amount' : 'date') ? 1 : 0.4, color: '#9ca3af' }} />
+                          <ArrowUpDown size={12} style={{ marginLeft: 4, display: 'inline', opacity: sortField === (h === 'Amount' ? 'amount' : 'date') ? 1 : 0.4, color: 'var(--text-disabled)' }} />
                         )}
                       </th>
                     ))}
@@ -328,7 +328,7 @@ function Inner() {
                               height: 13,
                               width: ['40%', '15%', '12%', '18%', '15%'][i % 5],
                               borderRadius: 6,
-                              background: 'linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%)',
+                              background: 'linear-gradient(90deg,var(--bg-subtle) 25%,var(--bg-hover) 50%,var(--bg-subtle) 75%)',
                               backgroundSize: '200% 100%',
                             }} />
                         </td>
@@ -338,32 +338,32 @@ function Inner() {
                     <tr>
                       <td colSpan={6} style={{ padding: 64, textAlign: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Inbox size={24} color="#9ca3af" />
                           </div>
                           <div>
-                            <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Fresh Start</div>
-                            <div style={{ fontSize: 13, color: '#6b7280' }}>{search ? 'Try a different search term.' : 'No payments yet. Record your first PT payment to get started.'}</div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Fresh Start</div>
+                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{search ? 'Try a different search term.' : 'No payments yet. Record your first PT payment to get started.'}</div>
                           </div>
                           {!search && (
-                            <PremiumButton tone="primary" glow size="sm" icon={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
+                            <Button variant="primary" size="sm" iconLeft={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
                               + Record Payment
-                            </PremiumButton>
+                            </Button>
                           )}
                         </div>
                       </td>
                     </tr>
                   ) : (
                     paged.map((p) => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #f3f4f6', transition: 'background 150ms' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#F9FAFB')}
+                      <tr key={p.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 150ms' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
                         <td style={{ padding: '14px 20px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <User size={14} color="white" />
                             </div>
-                            <span style={{ fontWeight: 600, color: '#111827', fontSize: 14 }}>{p.client_name || '—'}</span>
+                            <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>{p.client_name || '—'}</span>
                           </div>
                         </td>
                         <td style={{ padding: '14px 20px', fontWeight: 800, fontSize: 15, color: '#06b6d4', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
@@ -375,16 +375,16 @@ function Inner() {
                             {p.method || 'Other'}
                           </span>
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: '#6b7280', fontFamily: 'monospace' }}>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                           {p.receipt_no || '—'}
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                             <CalendarDays size={13} color="#9ca3af" />
                             {p.date || '—'}
                           </span>
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: '#9ca3af', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-disabled)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.notes || '—'}
                         </td>
                       </tr>
@@ -395,9 +395,9 @@ function Inner() {
             </div>
             {/* Pagination */}
             {pageCount > 1 && (
-              <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6', display: 'flex', justifyContent: 'center', gap: 6, background: '#F9FAFB' }}>
+              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center', gap: 6, background: 'var(--bg-subtle)' }}>
                 <button disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: page === 0 ? '#F9FAFB' : 'white', color: page === 0 ? '#d1d5db' : '#111827', cursor: page === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: page === 0 ? '#F9FAFB' : 'white', color: page === 0 ? '#d1d5db' : '#111827', cursor: page === 0 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
                   Previous
                 </button>
                 {Array.from({ length: Math.min(pageCount, 7) }).map((_, i) => {
@@ -412,7 +412,7 @@ function Inner() {
                   );
                 })}
                 <button disabled={page >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: page >= pageCount - 1 ? '#F9FAFB' : 'white', color: page >= pageCount - 1 ? '#d1d5db' : '#111827', cursor: page >= pageCount - 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: page >= pageCount - 1 ? '#F9FAFB' : 'white', color: page >= pageCount - 1 ? '#d1d5db' : '#111827', cursor: page >= pageCount - 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600 }}>
                   Next
                 </button>
               </div>
@@ -421,40 +421,5 @@ function Inner() {
         </div>
       </div>
     </AppShell>
-  );
-}
-
-function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
-  return (
-    <m.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      tabIndex={0} role="button"
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.style.transform = 'translateY(-2px)'; }}
-      style={{
-        background: 'white',
-        borderRadius: 20,
-        padding: '22px 24px',
-        boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
-        border: '1px solid rgba(0,0,0,0.06)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'all 200ms ease',
-        cursor: 'default',
-      }}
-      onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 4px 20px rgba(0,0,0,0.09)'; el.style.transform = 'translateY(-2px)'; }}
-      onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 1px 8px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}>
-      <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: `linear-gradient(90deg,${accent},${accent}88)`, borderRadius: '0 0 3px 3px', opacity: 0.8 }} />
-      <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent }}>
-        {icon}
-      </div>
-      <div>
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em', lineHeight: 1 }}>{value}</div>
-        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4, fontWeight: 500 }}>{label}</div>
-      </div>
-    </m.div>
   );
 }

@@ -69,12 +69,12 @@ function ExerciseCard({
     <div
       onClick={onClick}
       className="relative group cursor-pointer rounded-xl border overflow-hidden transition-all hover:scale-[1.01]"
-      style={{ background: '#fff', borderColor: '#e5e7eb' }}
+      style={{ background: 'var(--bg-card)', borderColor: '#e5e7eb' }}
     >
       {/* GIF / placeholder */}
       <div
         className="w-full h-36 flex items-center justify-center overflow-hidden"
-        style={{ background: '#F9FAFB', borderBottom: '1px solid #f3f4f6' }}
+        style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}
       >
         {exercise.gif_url && !imgError ? (
           <img
@@ -109,12 +109,12 @@ function ExerciseCard({
       </button>
 
       <div className="p-3">
-        <p className="font-semibold text-sm leading-snug line-clamp-2 mb-2" style={{ color: '#111827' }}>
+        <p className="font-semibold text-sm leading-snug line-clamp-2 mb-2" style={{ color: 'var(--text-primary)' }}>
           {exercise.name}
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
           {exercise.equipment && (
-            <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#6b7280' }}>
+            <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
               {exercise.equipment}
             </span>
           )}
@@ -125,7 +125,7 @@ function ExerciseCard({
             {exercise.difficulty}
           </span>
           {exercise.exercise_type && (
-            <span className="text-xs px-1.5 py-0.5 rounded capitalize" style={{ background: '#F3F4F6', color: '#6b7280' }}>
+            <span className="text-xs px-1.5 py-0.5 rounded capitalize" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
               {exercise.exercise_type}
             </span>
           )}
@@ -166,7 +166,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
       <div
         className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
-        style={{ background: '#fff', border: '1px solid #e5e7eb' }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
         {/* Header */}
         <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: '#e5e7eb' }}>
@@ -174,12 +174,12 @@ function ExerciseModal({ exercise, onClose, onSave }: {
             {editing ? (
               <input
                 className="w-full text-xl font-bold rounded-lg px-2 py-1"
-                style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db' }}
+                style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
                 value={form.name ?? ''}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               />
             ) : (
-              <h2 className="text-xl font-bold" style={{ color: '#111827' }}>{exercise.name}</h2>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{exercise.name}</h2>
             )}
             <div className="flex gap-2 mt-2 flex-wrap">
               <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: bodyColor + '18', color: bodyColor }}>
@@ -189,12 +189,12 @@ function ExerciseModal({ exercise, onClose, onSave }: {
                 {exercise.difficulty}
               </span>
               {exercise.equipment && (
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#F3F4F6', color: '#6b7280' }}>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
                   {exercise.equipment}
                 </span>
               )}
               {exercise.exercise_type && (
-                <span className="text-xs px-2 py-0.5 rounded-full capitalize" style={{ background: '#F3F4F6', color: '#6b7280' }}>
+                <span className="text-xs px-2 py-0.5 rounded-full capitalize" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
                   {exercise.exercise_type}
                 </span>
               )}
@@ -202,11 +202,11 @@ function ExerciseModal({ exercise, onClose, onSave }: {
           </div>
           <div className="flex gap-2">
             {!editing && (
-              <button onClick={() => setEditing(true)} className="p-2 rounded-lg transition-colors" style={{ background: '#F3F4F6', color: '#6b7280' }}>
+              <button onClick={() => setEditing(true)} className="p-2 rounded-lg transition-colors" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
                 <Edit3 size={16} />
               </button>
             )}
-            <button onClick={onClose} className="p-2 rounded-lg" style={{ background: '#F3F4F6', color: '#6b7280' }}>
+            <button onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
               <X size={16} />
             </button>
           </div>
@@ -214,7 +214,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
 
         {/* GIF */}
         {exercise.gif_url && !imgError && (
-          <div className="w-full h-56 overflow-hidden" style={{ background: '#F9FAFB' }}>
+          <div className="w-full h-56 overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- external user-provided GIF URL, domain unknown */}
             <img src={exercise.gif_url} alt={exercise.name} className="w-full h-full object-contain" onError={() => setImgError(true)} />
           </div>
@@ -224,24 +224,24 @@ function ExerciseModal({ exercise, onClose, onSave }: {
         <div className="p-5 space-y-4">
           {/* Muscle info */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg p-3" style={{ background: '#F9FAFB' }}>
-              <p className="text-xs mb-1" style={{ color: '#6b7280' }}>Primary Muscle</p>
-              <p className="font-semibold capitalize text-sm" style={{ color: '#111827' }}>{exercise.target_muscle || '—'}</p>
+            <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)' }}>
+              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Primary Muscle</p>
+              <p className="font-semibold capitalize text-sm" style={{ color: 'var(--text-primary)' }}>{exercise.target_muscle || '—'}</p>
             </div>
-            <div className="rounded-lg p-3" style={{ background: '#F9FAFB' }}>
-              <p className="text-xs mb-1" style={{ color: '#6b7280' }}>Secondary Muscles</p>
-              <p className="text-sm capitalize" style={{ color: '#111827' }}>{exercise.secondary_muscles || '—'}</p>
+            <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)' }}>
+              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Secondary Muscles</p>
+              <p className="text-sm capitalize" style={{ color: 'var(--text-primary)' }}>{exercise.secondary_muscles || '—'}</p>
             </div>
             {exercise.force && (
-              <div className="rounded-lg p-3" style={{ background: '#F9FAFB' }}>
-                <p className="text-xs mb-1" style={{ color: '#6b7280' }}>Force</p>
-                <p className="font-semibold capitalize text-sm" style={{ color: '#111827' }}>{exercise.force}</p>
+              <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)' }}>
+                <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Force</p>
+                <p className="font-semibold capitalize text-sm" style={{ color: 'var(--text-primary)' }}>{exercise.force}</p>
               </div>
             )}
             {exercise.mechanic && (
-              <div className="rounded-lg p-3" style={{ background: '#F9FAFB' }}>
-                <p className="text-xs mb-1" style={{ color: '#6b7280' }}>Mechanic</p>
-                <p className="font-semibold capitalize text-sm" style={{ color: '#111827' }}>{exercise.mechanic}</p>
+              <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)' }}>
+                <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Mechanic</p>
+                <p className="font-semibold capitalize text-sm" style={{ color: 'var(--text-primary)' }}>{exercise.mechanic}</p>
               </div>
             )}
           </div>
@@ -249,18 +249,18 @@ function ExerciseModal({ exercise, onClose, onSave }: {
           {/* Instructions */}
           {exercise.instructions && (
             <div>
-              <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: '#6b7280' }}>Instructions</p>
+              <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Instructions</p>
               {editing ? (
                 <textarea
                   className="w-full rounded-lg p-3 text-sm resize-none"
-                  style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db', minHeight: 120 }}
+                  style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db', minHeight: 120 }}
                   value={form.instructions ?? ''}
                   onChange={e => setForm(f => ({ ...f, instructions: e.target.value }))}
                 />
               ) : (
                 <ol className="space-y-2">
                   {exercise.instructions.split('\n').filter(Boolean).map((step, i) => (
-                    <li key={i} className="flex gap-3 text-sm" style={{ color: '#111827' }}>
+                    <li key={i} className="flex gap-3 text-sm" style={{ color: 'var(--text-primary)' }}>
                       <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: '#6366f1', color: 'white' }}>
                         {i + 1}
                       </span>
@@ -275,7 +275,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
           {/* Edit actions */}
           {editing && (
             <div className="flex gap-3 pt-2">
-              <button onClick={() => { setEditing(false); setForm(exercise); }} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: '#F3F4F6', color: '#6b7280' }}>
+              <button onClick={() => { setEditing(false); setForm(exercise); }} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
                 Cancel
               </button>
               <button onClick={handleSave} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: '#6366f1', color: 'white', opacity: saving ? 0.6 : 1 }}>
@@ -308,17 +308,17 @@ function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreat
 
   const field = (label: string, key: keyof typeof form, type: 'text' | 'select' | 'textarea' = 'text', options?: string[]) => (
     <div>
-      <label className="block text-xs font-medium mb-1" style={{ color: '#6b7280' }}>{label}</label>
+      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{label}</label>
       {type === 'select' ? (
-        <select className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db' }}
+        <select className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
           value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}>
           {options!.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
       ) : type === 'textarea' ? (
-        <textarea rows={4} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db' }}
+        <textarea rows={4} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
           value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
       ) : (
-        <input className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db' }}
+        <input className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
           value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
       )}
     </div>
@@ -326,10 +326,10 @@ function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #e5e7eb' }}>
+      <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#e5e7eb' }}>
-          <h2 className="text-lg font-bold" style={{ color: '#111827' }}>Add Exercise</h2>
-          <button onClick={onClose} className="p-2 rounded-lg" style={{ background: '#F3F4F6', color: '#6b7280' }}><X size={16} /></button>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Add Exercise</h2>
+          <button onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}><X size={16} /></button>
         </div>
         <div className="p-5 space-y-4">
           {field('Exercise Name *', 'name')}
@@ -339,7 +339,7 @@ function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreat
           {field('Type', 'exercise_type', 'select', ['strength', 'cardio', 'stretching', 'plyometrics', 'powerlifting', 'strongman', 'olympic weightlifting'])}
           {field('Instructions', 'instructions', 'textarea')}
           <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: '#F3F4F6', color: '#6b7280' }}>Cancel</button>
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>Cancel</button>
             <button onClick={handleCreate} disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: '#6366f1', color: 'white', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Creating…' : 'Create Exercise'}
             </button>
@@ -429,8 +429,8 @@ export default function ExerciseLibraryPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>Exercise Library</h1>
-              <p className="text-sm mt-0.5" style={{ color: '#6b7280' }}>
+              <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Exercise Library</h1>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {meta?.total ?? total} exercises · {meta?.body_parts.length ?? 7} body parts · {meta?.equipment_types.length ?? 12} equipment types
               </p>
             </div>
@@ -446,10 +446,10 @@ export default function ExerciseLibraryPage() {
           {/* Search + Filters */}
           <div className="mb-5 space-y-3">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#6b7280' }} />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
               <input
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
-                style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db' }}
+                style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
                 placeholder="Search exercises…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -475,7 +475,7 @@ export default function ExerciseLibraryPage() {
                     onChange={e => setter(e.target.value)}
                   >
                     <option value="">{label}</option>
-                    {options.map(o => <option key={o} value={o} style={{ background: '#fff', color: '#111827' }}>{o}</option>)}
+                    {options.map(o => <option key={o} value={o} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{o}</option>)}
                   </select>
                   <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: value ? 'white' : '#6b7280' }} />
                 </div>
@@ -497,13 +497,13 @@ export default function ExerciseLibraryPage() {
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
               {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                <div key={i} className="rounded-xl h-52 animate-pulse" style={{ background: '#F3F4F6' }} />
+                <div key={i} className="rounded-xl h-52 animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
               ))}
             </div>
           ) : exercises.length === 0 ? (
             <div className="text-center py-20">
               <Dumbbell size={40} className="mx-auto mb-3 opacity-20" />
-              <p style={{ color: '#6b7280' }}>No exercises found</p>
+              <p style={{ color: 'var(--text-muted)' }}>No exercises found</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -525,18 +525,18 @@ export default function ExerciseLibraryPage() {
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
                 className="p-2 rounded-xl disabled:opacity-30"
-                style={{ background: '#fff', border: '1px solid #e5e7eb', color: '#374151' }}
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
               >
                 <ChevronLeft size={18} />
               </button>
-              <span className="text-sm" style={{ color: '#6b7280' }}>
+              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 Page {page + 1} of {totalPages} · {total} exercises
               </span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 className="p-2 rounded-xl disabled:opacity-30"
-                style={{ background: '#fff', border: '1px solid #e5e7eb', color: '#374151' }}
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
               >
                 <ChevronRight size={18} />
               </button>

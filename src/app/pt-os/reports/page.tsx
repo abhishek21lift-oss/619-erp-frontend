@@ -54,8 +54,8 @@ export default function ReportsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="rounded-[20px] overflow-hidden mb-5"
             style={{
-              background: '#fff',
-              border: '1px solid #e5e7eb',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
               boxShadow: '0 2px 16px rgba(15,23,42,0.05)',
             }}
           >
@@ -66,8 +66,8 @@ export default function ReportsPage() {
                   <TrendingUp size={18} />
                 </div>
                 <div>
-                  <h2 className="text-[16px] font-[760]" style={{ color: '#111827' }}>Monthly Revenue Report</h2>
-                  <p className="text-[11px]" style={{ color: '#6b7280' }}>Year-to-date revenue with incentives</p>
+                  <h2 className="text-[16px] font-[760]" style={{ color: 'var(--text-primary)' }}>Monthly Revenue Report</h2>
+                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Year-to-date revenue with incentives</p>
                 </div>
               </div>
             </div>
@@ -75,10 +75,10 @@ export default function ReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['Month', 'Transactions', 'Revenue', 'Incentives', 'Incentive %', 'Bar'].map((h) => (
                       <th key={h} className="py-3 px-4 text-[10px] font-bold uppercase tracking-[0.06em]"
-                        style={{ color: '#6b7280' }}>{h}</th>
+                        style={{ color: 'var(--text-muted)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -89,12 +89,12 @@ export default function ReportsPage() {
                       <m.tr key={r.month}
                         initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.03 }}
-                        style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        style={{ borderBottom: '1px solid var(--border)' }}>
                         <td className="py-3 px-4">
-                          <span className="text-[13px] font-[600]" style={{ color: '#111827' }}>{r.month}</span>
+                          <span className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>{r.month}</span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="text-[12px]" style={{ color: '#9ca3af' }}>{r.transactions}</span>
+                          <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{r.transactions}</span>
                         </td>
                         <td className="py-3 px-4">
                           <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(r.revenue)}</span>
@@ -123,8 +123,8 @@ export default function ReportsPage() {
             transition={{ delay: 0.1 }}
             className="rounded-[20px] overflow-hidden"
             style={{
-              background: '#fff',
-              border: '1px solid #e5e7eb',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
               boxShadow: '0 2px 16px rgba(15,23,42,0.05)',
             }}
           >
@@ -135,8 +135,8 @@ export default function ReportsPage() {
                   <Users size={18} />
                 </div>
                 <div>
-                  <h2 className="text-[16px] font-[760]" style={{ color: '#111827' }}>Trainer Performance</h2>
-                  <p className="text-[11px]" style={{ color: '#6b7280' }}>Revenue, commissions, and client counts by trainer</p>
+                  <h2 className="text-[16px] font-[760]" style={{ color: 'var(--text-primary)' }}>Trainer Performance</h2>
+                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Revenue, commissions, and client counts by trainer</p>
                 </div>
               </div>
             </div>
@@ -144,10 +144,10 @@ export default function ReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['Trainer', 'Rate', 'Active Clients', 'PT Revenue', 'Commission', 'Payment Rev', 'Total Incentives'].map((h) => (
                       <th key={h} className="py-3 px-4 text-[10px] font-bold uppercase tracking-[0.06em]"
-                        style={{ color: '#6b7280' }}>{h}</th>
+                        style={{ color: 'var(--text-muted)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -156,15 +156,15 @@ export default function ReportsPage() {
                     <m.tr key={t.id}
                       initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
-                      style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      style={{ borderBottom: '1px solid var(--border)' }}>
                       <td className="py-3 px-4">
-                        <span className="text-[13px] font-[600]" style={{ color: '#111827' }}>{t.name}</span>
+                        <span className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>{t.name}</span>
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-[12px] font-[600]" style={{ color: '#7c3aed' }}>{(Number(t.incentive_rate) * 100).toFixed(0)}%</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-[12px]" style={{ color: '#9ca3af' }}>{t.active_clients}</span>
+                        <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{t.active_clients}</span>
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(t.monthly_pt_revenue)}</span>
@@ -173,10 +173,10 @@ export default function ReportsPage() {
                         <span className="text-[13px] font-[700] tabular-nums" style={{ color: '#F59E0B' }}>{fmtINR(t.monthly_commission)}</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-[12px]" style={{ color: '#9ca3af' }}>{fmtINR(t.total_payment_revenue)}</span>
+                        <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{fmtINR(t.total_payment_revenue)}</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-[12px]" style={{ color: '#9ca3af' }}>{fmtINR(t.total_incentives)}</span>
+                        <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{fmtINR(t.total_incentives)}</span>
                       </td>
                     </m.tr>
                   ))}
@@ -185,7 +185,7 @@ export default function ReportsPage() {
             </div>
 
             {(!perf.data?.data || perf.data.data.length === 0) && (
-              <div className="flex items-center justify-center py-12 text-[12px]" style={{ color: '#6b7280' }}>
+              <div className="flex items-center justify-center py-12 text-[12px]" style={{ color: 'var(--text-muted)' }}>
                 No trainer performance data yet
               </div>
             )}

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { api, type DuplicateGroup, type MergeResult } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -103,13 +103,13 @@ function MergeContent() {
             </div>
           </div>
           <div className="flex gap-2">
-            <PremiumButton tone="ghost" icon={<RefreshCw size={13} />} onClick={load} loading={loading}>
+            <Button variant="ghost" iconLeft={<RefreshCw size={13} />} onClick={load} loading={loading}>
               Refresh
-            </PremiumButton>
+            </Button>
             {groups.length > 0 && !doneReport && (
-              <PremiumButton tone="danger" glow icon={<Merge size={13} />} onClick={() => setConfirmOpen(true)}>
+              <Button variant="danger" iconLeft={<Merge size={13} />} onClick={() => setConfirmOpen(true)}>
                 Execute Merge
-              </PremiumButton>
+              </Button>
             )}
           </div>
         </m.div>
@@ -352,9 +352,9 @@ function MergeContent() {
             {!doneReport && (
               <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="mt-6 flex justify-end">
-                <PremiumButton tone="danger" glow icon={<Merge size={14} />} onClick={() => setConfirmOpen(true)}>
+                <Button variant="danger" iconLeft={<Merge size={14} />} onClick={() => setConfirmOpen(true)}>
                   Execute Merge — Remove {summary.total_duplicates} Duplicate Records
-                </PremiumButton>
+                </Button>
               </m.div>
             )}
           </>
@@ -417,12 +417,12 @@ function MergeContent() {
               </div>
 
               <div className="flex gap-3 justify-end">
-                <PremiumButton tone="secondary" onClick={() => setConfirmOpen(false)} disabled={merging}>
+                <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={merging}>
                   Cancel
-                </PremiumButton>
-                <PremiumButton tone="danger" glow onClick={handleMerge} loading={merging} icon={<Merge size={13} />}>
+                </Button>
+                <Button variant="danger" onClick={handleMerge} loading={merging} iconLeft={<Merge size={13} />}>
                   {merging ? 'Merging…' : `Merge ${summary.total_duplicates} Records`}
-                </PremiumButton>
+                </Button>
               </div>
             </m.div>
           </m.div>

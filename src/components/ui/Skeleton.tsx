@@ -1,17 +1,9 @@
-// frontend/src/components/ui/Skeleton.tsx
-//
-// Content placeholder while data loads. Use real heights/widths so layout
-// doesn't jump when the data arrives. Animated via Tailwind's pulse.
-// The legacy `Skeleton` in components/Skeleton.tsx still works — this is the
-// new design-system entry point.
-
 import * as React from 'react';
 import { cn } from './cn';
 
 export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   width?: number | string;
   height?: number | string;
-  /** Shape — defaults to small rounded corners. */
   variant?: 'rect' | 'circle' | 'pill';
 }
 
@@ -27,10 +19,13 @@ export function Skeleton({
     <div
       aria-hidden
       className={cn(
-        'animate-pulse bg-slate-200/70 dark:bg-[rgba(255,255,255,0.06)]',
+        'relative overflow-hidden bg-[var(--bg-subtle)]',
         variant === 'rect' && 'rounded-md',
         variant === 'circle' && 'rounded-full',
         variant === 'pill' && 'rounded-full',
+        'after:absolute after:inset-0',
+        'after:bg-gradient-to-r after:from-transparent after:via-[var(--bg-hover)] after:to-transparent',
+        'after:animate-[shimmer-slide_1.6s_ease-in-out_infinite]',
         className,
       )}
       style={{
@@ -67,7 +62,7 @@ export function SkeletonText({
 
 export function SkeletonKpi() {
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[rgba(23,24,28,0.85)] p-5 shadow-sm">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-xs)]">
       <Skeleton width="50%" height={12} />
       <div className="mt-3 flex items-center justify-between">
         <Skeleton width="55%" height={28} />

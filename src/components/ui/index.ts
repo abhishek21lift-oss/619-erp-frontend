@@ -36,6 +36,7 @@ export type { DonutChartProps, DonutDatum } from './DonutChart';
 export { PageHeader } from './PageHeader';
 export type { PageHeaderProps } from './PageHeader';
 
+export { FloatInput } from './FloatInput';
 export { SearchInput } from './SearchInput';
 export type { SearchInputProps } from './SearchInput';
 
@@ -46,8 +47,52 @@ export { StatCard } from './StatCard';
 export type { StatCardProps } from './StatCard';
 
 export {
-  GlassTable, GlassThead, GlassTh, GlassTr, GlassTd,
+  GlassTable, GlassThead, GlassTh, GlassTr, GlassTd, GlassTbody,
 } from './GlassTable';
 export type { GlassTableProps } from './GlassTable';
 
 export { default as ComingSoon } from './ComingSoon';
+
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './dialog';
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from './table';
+
+export {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  CHART_COLORS,
+  useChartConfig,
+  PremiumBarChart,
+  PremiumAreaChart,
+} from './chart';
+export type {
+  ChartConfig,
+  ChartColor,
+  PremiumBarChartProps,
+  PremiumAreaChartProps,
+  PremiumBarEntry,
+  PremiumAreaEntry,
+} from './chart';

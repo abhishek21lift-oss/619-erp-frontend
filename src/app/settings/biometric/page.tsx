@@ -10,7 +10,7 @@ import {
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 
 interface GymSettings {
@@ -91,7 +91,7 @@ function BiometricSettingsContent() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       {/* Hero */}
-      <div className="relative overflow-hidden" style={{ background: '#f8fafc', padding: '36px 32px 32px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+      <div className="relative overflow-hidden" style={{ background: 'var(--bg-subtle)', padding: '36px 32px 32px', borderBottom: '1px solid var(--border)' }}>
         <div className="relative z-10 mx-auto" style={{ maxWidth: 800 }}>
           <div className="flex items-center gap-4">
             <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -102,11 +102,11 @@ function BiometricSettingsContent() {
             <div>
               <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
-                style={{ color: '#111827' }}>
+                style={{ color: 'var(--text-primary)' }}>
                 Biometric & Passkey Settings
               </m.h1>
               <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
-                className="text-[12px]" style={{ color: '#6b7280' }}>
+                className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                 Configure WebAuthn passkey and GPS geofence settings
               </m.p>
             </div>
@@ -129,7 +129,7 @@ function BiometricSettingsContent() {
 
         {/* Biometric Methods */}
         <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          className="rounded-[22px] p-6 mb-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
               <Fingerprint size={18} style={{ color: '#6366f1' }} />
@@ -142,7 +142,7 @@ function BiometricSettingsContent() {
               { key: 'enable_face_id' as const, label: 'Face ID / Face Unlock', icon: <ScanFace size={18} />, desc: 'Allow members to use Face ID (iPhone) or Face Unlock (Android)', color: '#6366f1' },
               { key: 'enable_touch_id' as const, label: 'Touch ID / Fingerprint', icon: <Fingerprint size={18} />, desc: 'Allow members to use Touch ID or fingerprint scanner', color: '#10b981' },
             ].map((item) => (
-              <div key={item.key} className="flex items-center justify-between rounded-[14px] p-4" style={{ background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+              <div key={item.key} className="flex items-center justify-between rounded-[14px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ background: `${item.color}12`, color: item.color }}>
                     {item.icon}
@@ -165,7 +165,7 @@ function BiometricSettingsContent() {
 
         {/* GPS Geofence */}
         <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          className="rounded-[22px] p-6 mb-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(245,158,11,0.10)' }}>
               <MapPin size={18} style={{ color: '#f59e0b' }} />
@@ -173,7 +173,7 @@ function BiometricSettingsContent() {
             <h2 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>GPS Geofence</h2>
           </div>
 
-          <div className="flex items-center justify-between rounded-[14px] p-4 mb-4" style={{ background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+          <div className="flex items-center justify-between rounded-[14px] p-4 mb-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ background: 'rgba(245,158,11,0.10)', color: '#f59e0b' }}>
                 <Navigation size={18} />
@@ -196,26 +196,26 @@ function BiometricSettingsContent() {
               <p className="mb-1.5 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Latitude</p>
               <input type="number" step="any" value={settings.geofence_lat} onChange={(e) => update('geofence_lat', parseFloat(e.target.value) || 0)}
                 className="w-full rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none"
-                style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
             </div>
             <div>
               <p className="mb-1.5 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Longitude</p>
               <input type="number" step="any" value={settings.geofence_lng} onChange={(e) => update('geofence_lng', parseFloat(e.target.value) || 0)}
                 className="w-full rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none"
-                style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
             </div>
             <div>
               <p className="mb-1.5 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Radius (meters)</p>
               <input type="number" value={settings.geofence_radius} onChange={(e) => update('geofence_radius', parseInt(e.target.value) || 100)}
                 className="w-full rounded-[11px] px-3.5 py-2.5 text-[13px] outline-none"
-                style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
             </div>
           </div>
         </m.div>
 
         {/* Duplicate & Auto Checkout */}
         <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          className="rounded-[22px] p-6 mb-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-3 mb-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.10)' }}>
               <Clock size={18} style={{ color: '#10b981' }} />
@@ -224,17 +224,17 @@ function BiometricSettingsContent() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-[14px] p-4" style={{ background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+            <div className="flex items-center justify-between rounded-[14px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
               <div>
                 <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>Duplicate Attendance Window</p>
                 <p className="text-[11.5px]" style={{ color: 'rgb(148,163,184)' }}>Prevent multiple check-ins within this time (minutes)</p>
               </div>
               <input type="number" value={settings.duplicate_window_minutes} onChange={(e) => update('duplicate_window_minutes', parseInt(e.target.value) || 60)}
                 className="w-20 rounded-[9px] px-3 py-2 text-[13px] font-[600] text-center outline-none"
-                style={{ background: 'white', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
+                style={{ background: 'var(--bg-card)', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
             </div>
 
-            <div className="flex items-center justify-between rounded-[14px] p-4" style={{ background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+            <div className="flex items-center justify-between rounded-[14px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-3">
                 <div>
                   <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>Auto Check-Out</p>
@@ -250,11 +250,11 @@ function BiometricSettingsContent() {
             </div>
 
             {settings.auto_checkout && (
-              <div className="flex items-center justify-between rounded-[14px] p-4" style={{ background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+              <div className="flex items-center justify-between rounded-[14px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                 <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>Auto Check-Out After (minutes)</p>
                 <input type="number" value={settings.auto_checkout_minutes} onChange={(e) => update('auto_checkout_minutes', parseInt(e.target.value) || 120)}
                   className="w-20 rounded-[9px] px-3 py-2 text-[13px] font-[600] text-center outline-none"
-                  style={{ background: 'white', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
+                  style={{ background: 'var(--bg-card)', border: '1.5px solid #e2e8f0', color: 'rgb(15,23,42)', fontFamily: 'inherit' }} />
               </div>
             )}
           </div>
@@ -262,7 +262,7 @@ function BiometricSettingsContent() {
 
         {/* Quick Links: Enroll & Kiosk */}
         <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-          className="rounded-[22px] p-6 mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+          className="rounded-[22px] p-6 mb-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
               <Shield size={18} style={{ color: '#6366f1' }} />
@@ -272,7 +272,7 @@ function BiometricSettingsContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link href="/checkin/enroll"
               className="flex items-center gap-3 rounded-[14px] p-4 transition-all hover:bg-slate-50"
-              style={{ background: '#f8fafc', border: '1px solid #f1f5f9', textDecoration: 'none' }}>
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', textDecoration: 'none' }}>
               <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.10)', color: '#6366f1', flexShrink: 0 }}>
                 <UserPlus size={18} />
               </div>
@@ -284,7 +284,7 @@ function BiometricSettingsContent() {
             </Link>
             <Link href="/checkin/kiosk"
               className="flex items-center gap-3 rounded-[14px] p-4 transition-all hover:bg-slate-50"
-              style={{ background: '#f8fafc', border: '1px solid #f1f5f9', textDecoration: 'none' }}>
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', textDecoration: 'none' }}>
               <div className="flex h-10 w-10 items-center justify-center rounded-[10px]" style={{ background: 'rgba(16,185,129,0.10)', color: '#10b981', flexShrink: 0 }}>
                 <Monitor size={18} />
               </div>
@@ -299,9 +299,9 @@ function BiometricSettingsContent() {
 
         {/* Save */}
         <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-          <PremiumButton tone="primary" glow icon={<Save size={14} />} onClick={handleSave} loading={saving} disabled={saving} className="w-full">
+          <Button variant="primary" iconLeft={<Save size={14} />} onClick={handleSave} loading={saving} disabled={saving} className="w-full">
             Save Settings
-          </PremiumButton>
+          </Button>
         </m.div>
       </div>
     </div>

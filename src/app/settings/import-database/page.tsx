@@ -189,9 +189,9 @@ const sz = (b: number) => b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 104
 const fmt = (n: number) => '₹' + n.toLocaleString('en-IN');
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
 const glass = {
-  background: '#fff',
-  border: '1px solid rgba(0,0,0,0.07)',
-  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  boxShadow: 'var(--shadow-xs)',
 };
 
 // ── Main page ───────────────────────────────────────────────────────────
@@ -279,7 +279,7 @@ export default function ImportDatabasePage() {
             </div>
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', color: '#134e4a', margin: 0 }}>Smart Import — PT Clients</h1>
-              <p style={{ fontSize: 13, color: '#4b5563', marginTop: 3 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 3 }}>
                 Detects duplicates · merges subscriptions · creates one profile per person
               </p>
             </div>
@@ -308,7 +308,7 @@ export default function ImportDatabasePage() {
                 style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, alignItems: 'start' }}>
 
                 <div style={{ borderRadius: 24, padding: 28, ...glass }}>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 20px' }}>Upload your CSV file</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 20px' }}>Upload your CSV file</h2>
 
                   {/* Drop zone */}
                   <div
@@ -324,10 +324,10 @@ export default function ImportDatabasePage() {
                     }}
                   >
                     <UploadCloud size={36} color={dragOver ? '#14b8a6' : '#9ca3af'} />
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#374151', margin: '12px 0 2px' }}>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', margin: '12px 0 2px' }}>
                       {dragOver ? 'Drop here' : 'Click or drag your CSV file here'}
                     </p>
-                    <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>.csv only</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-disabled)', margin: 0 }}>.csv only</p>
                   </div>
                   <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }}
                     onChange={(e) => { setFile(e.target.files?.[0] || null); setParseError(''); }} />
@@ -339,12 +339,12 @@ export default function ImportDatabasePage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <FileSpreadsheet size={18} color="#14b8a6" />
                         <div>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>{file.name}</p>
-                          <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>{sz(file.size)}</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{file.name}</p>
+                          <p style={{ fontSize: 11, color: 'var(--text-disabled)', margin: 0 }}>{sz(file.size)}</p>
                         </div>
                       </div>
                       <button onClick={(e) => { e.stopPropagation(); setFile(null); if (fileRef.current) fileRef.current.value = ''; }}
-                        style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 8, padding: 5, cursor: 'pointer', color: '#6b7280', display: 'flex' }}>
+                        style={{ background: 'var(--bg-subtle)', border: 'none', borderRadius: 8, padding: 5, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
                         <X size={14} />
                       </button>
                     </m.div>
@@ -377,7 +377,7 @@ export default function ImportDatabasePage() {
                   <div style={{ width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(13,148,136,0.10)' }}>
                     <Sparkles size={20} color="#14b8a6" />
                   </div>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '16px 0 6px' }}>How smart import works</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '16px 0 6px' }}>How smart import works</h2>
                   {[
                     ['1. Scan', 'Reads every row in your CSV'],
                     ['2. Group', 'Groups rows by phone number (primary) or full name (fallback)'],
@@ -387,12 +387,12 @@ export default function ImportDatabasePage() {
                   ].map(([t, d]) => (
                     <div key={t} style={{ marginTop: 14, display: 'flex', gap: 10 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#14b8a6', minWidth: 60, paddingTop: 2 }}>{t}</div>
-                      <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.6 }}>{d}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{d}</div>
                     </div>
                   ))}
                   <div style={{ marginTop: 18, borderRadius: 10, padding: '10px 13px', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <AlertTriangle size={13} color="#fbbf24" style={{ marginTop: 1, flexShrink: 0 }} />
-                    <p style={{ fontSize: 11.5, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>
+                    <p style={{ fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
                       Required columns: <strong style={{ color: '#fbbf24' }}>Full Name, Phone Number, Trainer, Subscription Plan, Start Date, Duration Months, Selling Price, Amount Paid, Gender</strong>
                     </p>
                   </div>
@@ -418,7 +418,7 @@ export default function ImportDatabasePage() {
                         {icon}
                       </div>
                       <div style={{ fontSize: 28, fontWeight: 800, color, letterSpacing: '-0.02em' }}>{value}</div>
-                      <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{label}</div>
                     </div>
                   ))}
                 </div>
@@ -440,17 +440,17 @@ export default function ImportDatabasePage() {
 
                 {/* Client list */}
                 <div style={{ borderRadius: 24, overflow: 'hidden', ...glass }}>
-                  <div style={{ padding: '18px 24px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#111827' }}>
+                  <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)' }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
                       {groups.length} unique clients · {totalSubs} subscriptions · {fmt(totalRevenue)} total revenue
                     </p>
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
                       Click a client row to expand subscription history
                     </p>
                   </div>
                   <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                     {groups.map((g, idx) => (
-                      <div key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+                      <div key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                         <div
                           onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
                           style={{
@@ -463,20 +463,20 @@ export default function ImportDatabasePage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             {g.needs_review && <AlertTriangle size={13} color="#fbbf24" style={{ flexShrink: 0 }} />}
                             <div>
-                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#111827' }}>{g.name}</p>
-                              <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>
+                              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{g.name}</p>
+                              <p style={{ margin: 0, fontSize: 11, color: 'var(--text-disabled)' }}>
                                 {g.mobile || <span style={{ color: '#fbbf24' }}>No phone</span>}
                                 {g.needs_review && <span style={{ marginLeft: 6, color: '#fbbf24', fontSize: 10 }}>· {g.review_reason}</span>}
                               </p>
                             </div>
                           </div>
-                          <div style={{ fontSize: 12, color: '#6b7280' }}>{g.trainer_name || '—'}</div>
-                          <div style={{ fontSize: 12, color: '#6b7280' }}>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{g.trainer_name || '—'}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                             {fmt(g.subscriptions.reduce((s, sub) => s + sub.selling_price, 0))}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 12, fontWeight: 700, color: '#60a5fa' }}>{g.subscriptions.length}</span>
-                            <span style={{ fontSize: 11, color: '#9ca3af' }}>plans</span>
+                            <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>plans</span>
                           </div>
                           <div>
                             <span style={{
@@ -487,7 +487,7 @@ export default function ImportDatabasePage() {
                               {g.subscriptions.some(s => s.status === 'active') ? 'Active' : 'Expired'}
                             </span>
                           </div>
-                          <div style={{ color: '#9ca3af' }}>
+                          <div style={{ color: 'var(--text-disabled)' }}>
                             {expandedIdx === idx ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </div>
                         </div>
@@ -501,14 +501,14 @@ export default function ImportDatabasePage() {
                               style={{ overflow: 'hidden', background: 'rgba(0,0,0,0.02)' }}
                             >
                               <div style={{ padding: '8px 24px 14px 48px' }}>
-                                <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+                                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
                                   PT History ({g.subscriptions.length} subscription{g.subscriptions.length > 1 ? 's' : ''})
                                 </p>
                                 {g.subscriptions.map((sub, si) => (
                                   <div key={si} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 0.8fr 0.8fr 0.8fr 80px', gap: 12, padding: '7px 0', borderBottom: si < g.subscriptions.length - 1 ? '1px solid rgba(0,0,0,0.07)' : 'none', alignItems: 'center' }}>
-                                    <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{sub.plan_name || '—'}</div>
-                                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{fmtDate(sub.start_date)}</div>
-                                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{sub.end_date ? fmtDate(sub.end_date) : `${sub.duration_months}m`}</div>
+                                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{sub.plan_name || '—'}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--text-disabled)' }}>{fmtDate(sub.start_date)}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--text-disabled)' }}>{sub.end_date ? fmtDate(sub.end_date) : `${sub.duration_months}m`}</div>
                                     <div style={{ fontSize: 12, color: '#0d9488' }}>{fmt(sub.selling_price)}</div>
                                     <div style={{ fontSize: 12, color: '#34d399' }}>{fmt(sub.amount_paid)}</div>
                                     <div style={{ fontSize: 12, color: sub.balance_amount > 0 ? '#f87171' : '#94a3b8' }}>
@@ -545,7 +545,7 @@ export default function ImportDatabasePage() {
                     {loading ? 'Importing...' : `Confirm & Import ${groups.length} Clients`}
                   </button>
                   <button onClick={resetAll} disabled={loading}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '13px 20px', background: '#f9fafb', border: '1px solid rgba(0,0,0,0.1)', fontSize: 13, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '13px 20px', background: 'var(--bg-subtle)', border: '1px solid rgba(0,0,0,0.1)', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                     <X size={14} /> Cancel
                   </button>
                 </div>
@@ -563,8 +563,8 @@ export default function ImportDatabasePage() {
                     <CheckCircle2 size={28} color="#34d399" />
                   </div>
                   <div>
-                    <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0 }}>Import complete!</h2>
-                    <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+                    <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Import complete!</h2>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
                       All client data has been saved to the database.
                     </p>
                   </div>
@@ -580,7 +580,7 @@ export default function ImportDatabasePage() {
                   ].map(({ label, value, color }) => (
                     <div key={label} style={{ borderRadius: 20, padding: '24px', ...glass, textAlign: 'center' }}>
                       <div style={{ fontSize: 36, fontWeight: 800, color, letterSpacing: '-0.02em' }}>{value}</div>
-                      <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>{label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{label}</div>
                     </div>
                   ))}
                 </div>
@@ -592,9 +592,9 @@ export default function ImportDatabasePage() {
                       <AlertTriangle size={15} /> Clients flagged for manual review
                     </p>
                     {importResult.review.map((r: any, i: number) => (
-                      <div key={i} style={{ fontSize: 12, color: '#374151', padding: '6px 0', borderBottom: i < importResult.review.length - 1 ? '1px solid rgba(0,0,0,0.07)' : 'none' }}>
-                        <strong style={{ color: '#111827' }}>{r.name}</strong>
-                        {r.mobile && <span style={{ color: '#9ca3af', marginLeft: 8 }}>{r.mobile}</span>}
+                      <div key={i} style={{ fontSize: 12, color: 'var(--text-secondary)', padding: '6px 0', borderBottom: i < importResult.review.length - 1 ? '1px solid rgba(0,0,0,0.07)' : 'none' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>{r.name}</strong>
+                        {r.mobile && <span style={{ color: 'var(--text-disabled)', marginLeft: 8 }}>{r.mobile}</span>}
                         <span style={{ marginLeft: 8, color: '#fbbf24' }}>· {r.reason}</span>
                       </div>
                     ))}
@@ -619,7 +619,7 @@ export default function ImportDatabasePage() {
                     <Users size={15} /> View All Clients
                   </Link>
                   <button onClick={resetAll}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '12px 20px', background: '#f9fafb', border: '1px solid rgba(0,0,0,0.1)', fontSize: 13, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 14, padding: '12px 20px', background: 'var(--bg-subtle)', border: '1px solid rgba(0,0,0,0.1)', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                     <UploadCloud size={14} /> Import Another File
                   </button>
                 </div>

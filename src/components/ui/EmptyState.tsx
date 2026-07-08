@@ -30,7 +30,7 @@ export function EmptyState({
       )}
     >
       {icon && (
-        <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-slate-100 dark:bg-[rgba(255,255,255,0.06)] text-slate-500 dark:text-slate-400">
+        <div className="mb-2 grid h-12 w-12 place-items-center rounded-full bg-[var(--bg-subtle)] text-[var(--text-muted)]">
           {icon}
         </div>
       )}

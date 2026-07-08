@@ -15,6 +15,7 @@ import Guard from '@/components/Guard';
 import { KpiCard } from '@/components/ui/KpiCard';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/components/ui/cn';
+import { PremiumBarChart } from '@/components/ui';
 import { api, type Trainer } from '@/lib/api';
 
 function initials(name: string) {
@@ -264,33 +265,6 @@ function LeaderboardRow({ trainer, index }: { trainer: Trainer; index: number })
   );
 }
 
-function RevenueChart({ data }: { data: { month: string; revenue: number }[] }) {
-  if (!data?.length) return null;
-  const max = Math.max(...data.map(d => d.revenue), 1);
-  return (
-    <div className="flex items-end justify-between gap-2 h-32 mt-4">
-      {data.map((d, i) => (
-        <div key={d.month} className="flex-1 flex flex-col items-center gap-1.5">
-          <m.div
-            initial={{ height: 0 }}
-            animate={{ height: `${(d.revenue / max) * 100}%` }}
-            transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full rounded-[6px] transition-all duration-300 hover:opacity-80 cursor-pointer relative group/chart"
-            style={{
-              background: 'linear-gradient(to top, #2563EB, #7C3AED)',
-              minHeight: 4,
-            }}
-          >
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#0B0B0F] text-white text-[10px] font-bold px-2 py-1 rounded-[6px] opacity-0 group-hover/chart:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
-              {fmtINR(d.revenue)}
-            </div>
-          </m.div>
-          <span className="text-[9px] font-semibold text-[var(--text-muted)]">{d.month}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function TrainersPage() {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
@@ -510,12 +484,21 @@ export default function TrainersPage() {
                     </div>
                   </div>
                   {monthlyRevenue.length > 0
-                    ? <RevenueChart data={monthlyRevenue} />
+                    ? (
+                      <PremiumBarChart
+                        data={monthlyRevenue as Record<string, unknown>[]}
+                        xKey="month"
+                        bars={[{ key: 'revenue', label: 'Revenue', color: '#6366f1' }]}
+                        height={128}
+                        formatValue={fmtINR}
+                        className="mt-4"
+                      />
+                    )
                     : <div className="flex items-center justify-center h-32 text-[12px] text-[var(--text-muted)]">No historical data available</div>
                   }
                   <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[rgba(0,0,0,0.04)]">
                     <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-                      <div className="h-2.5 w-2.5 rounded-[4px] bg-[#2563EB]" />
+                      <div className="h-2.5 w-2.5 rounded-[4px] bg-[#6366f1]" />
                       Monthly Revenue
                     </div>
                     <span className="text-[11px] font-bold text-[var(--text-primary)] ml-auto">

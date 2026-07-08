@@ -14,9 +14,10 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { Button, PremiumAreaChart } from '@/components/ui';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -82,7 +83,7 @@ function getStatusConfig(status: string, days_left: number | null, pt_end_date?:
 
 function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
-    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid #f3f4f6' }}>
+    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
       <span className="text-[12px] font-[500] text-slate-500">{label}</span>
       <span className="text-[12.5px] font-[650] text-right" style={{ color: valueColor ?? '#111827' }}>{value}</span>
     </div>
@@ -94,7 +95,7 @@ function DarkCard({ title, icon, from, children, className = '' }:
   return (
     <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className={`overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-sm ${className}`}>
-      <div className="flex items-center gap-3 px-5 pt-5 pb-4" style={{ borderBottom: '1px solid #f3f4f6' }}>
+      <div className="flex items-center gap-3 px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
           style={{ background: `${from}20`, border: `1px solid ${from}30` }}>
           <span style={{ color: from }}>{icon}</span>
@@ -287,8 +288,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   className="relative mb-6 overflow-hidden rounded-[28px] p-7"
                   style={{
-                    background: '#fff',
-                    border: '1px solid rgba(0,0,0,0.07)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                   }}>
 
@@ -296,7 +297,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <button onClick={() => router.back()}
                     className="relative mb-6 flex items-center gap-2 text-[12px] font-[600] text-slate-500 transition-colors hover:text-slate-700">
                     <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                      style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.08)' }}>
+                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                       <ArrowLeft size={13} />
                     </div>
                     PT Clients
@@ -337,7 +338,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         )}
                         {client.package_type && (
                           <span className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 text-[11px] font-[600] text-slate-500"
-                            style={{ background: '#F3F4F6' }}>
+                            style={{ background: 'var(--bg-subtle)' }}>
                             <Dumbbell size={10} />{client.package_type}
                           </span>
                         )}
@@ -366,7 +367,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <div className="flex flex-wrap gap-2 shrink-0">
                       <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
                         className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
-                        style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.08)' }}>
+                        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                         <Pencil size={13} /> Edit
                       </button>
                       <button onClick={() => router.push(`/pt-os/clients/${id}/renew`)}
@@ -430,7 +431,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
                     className="rounded-[20px] p-5 bg-white"
                     style={{
-                      border: '1px solid rgba(0,0,0,0.07)',
+                      border: '1px solid var(--border)',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                     }}>
                     <div className="flex items-center justify-between mb-3">
@@ -446,7 +447,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         {completionPct}%
                       </span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full" style={{ background: '#F3F4F6' }}>
+                    <div className="h-2.5 w-full rounded-full" style={{ background: 'var(--bg-subtle)' }}>
                       <m.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }}
                         transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
                         className="h-full rounded-full"
@@ -462,7 +463,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                     className="rounded-[20px] p-5 bg-white"
                     style={{
-                      border: '1px solid rgba(0,0,0,0.07)',
+                      border: '1px solid var(--border)',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                     }}>
                     <div className="flex items-center justify-between mb-3">
@@ -478,7 +479,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         {client.days_left !== null ? `${client.days_left}d left` : '—'}
                       </span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full" style={{ background: '#F3F4F6' }}>
+                    <div className="h-2.5 w-full rounded-full" style={{ background: 'var(--bg-subtle)' }}>
                       {client.duration_months && client.pt_start_date && client.pt_end_date ? (() => {
                         const start = new Date(client.pt_start_date!).getTime();
                         const end = new Date(client.pt_end_date!).getTime();
@@ -503,10 +504,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   transition={{ delay: 0.35, duration: 0.4 }}
                   className="mb-6 overflow-hidden rounded-[22px] p-5 bg-white"
                   style={{
-                    border: '1px solid rgba(0,0,0,0.07)',
+                    border: '1px solid var(--border)',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                   }}>
-                  <div className="flex items-center gap-2.5 mb-4" style={{ borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>
+                  <div className="flex items-center gap-2.5 mb-4" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
                     <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
                       style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }}>
                       <Zap size={14} className="text-violet-600" />
@@ -553,7 +554,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               {/* Line */}
                               {i < timeline.length - 1 && (
                                 <div className="absolute left-3.5 top-5 bottom-0 w-px"
-                                  style={{ background: '#f3f4f6' }} />
+                                  style={{ background: 'var(--bg-subtle)' }} />
                               )}
                               {/* Dot */}
                               <div className="absolute left-0 top-0.5 flex h-7 w-7 items-center justify-center rounded-full"
@@ -576,24 +577,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     {/* Weight Trend */}
                     {recentWeights.length >= 2 && (
                       <DarkCard title="Weight Trend" icon={<TrendingUp size={14} />} from="#10b981">
-                        <div className="flex items-end gap-2 h-24">
-                          {recentWeights.map((a: any, i: number) => {
-                            const maxW = Math.max(...recentWeights.map((w: any) => Number(w.weight)));
-                            const barH = (Number(a.weight) / maxW) * 80;
-                            return (
-                              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                <m.div initial={{ height: 0 }} animate={{ height: barH }}
-                                  transition={{ duration: 0.5, delay: i * 0.06 }}
-                                  className="w-full rounded-[5px]"
-                                  style={{ background: 'linear-gradient(180deg, #10b981, #34d399)', minHeight: 4 }} />
-                                <span className="text-[9px] font-[700] text-emerald-600 tabular-nums">{a.weight}</span>
-                                <span className="text-[8px] text-slate-400">
-                                  {fmtDate(a.created_at || a.assessment_date).slice(0, 5)}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <PremiumAreaChart
+                          data={recentWeights.map((a: any) => ({
+                            date: fmtDate(a.created_at || a.assessment_date).slice(0, 5),
+                            weight: Number(a.weight),
+                          })) as Record<string, unknown>[]}
+                          xKey="date"
+                          areas={[{ key: 'weight', label: 'Weight (kg)', color: '#10b981' }]}
+                          height={100}
+                          formatValue={(v) => `${v} kg`}
+                        />
                       </DarkCard>
                     )}
 
@@ -675,9 +668,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           <textarea value={notesDraft} onChange={e => setNotesDraft(e.target.value)} rows={4}
                             className="w-full resize-none rounded-[12px] px-3.5 py-2.5 text-[13px] outline-none transition-all"
                             style={{
-                              background: '#fff',
+                              background: 'var(--bg-card)',
                               border: '1.5px solid rgba(245,158,11,0.3)',
-                              color: '#111827',
+                              color: 'var(--text-primary)',
                             }}
                             onFocus={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; }}
                             onBlur={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'; }}
@@ -690,7 +683,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             </button>
                             <button onClick={() => { setEditNotes(false); setNotesDraft(client.notes || ''); }}
                               className="rounded-[10px] px-3 py-2 text-[12px] font-[700] text-slate-500 transition hover:text-slate-700"
-                              style={{ background: '#F3F4F6' }}>
+                              style={{ background: 'var(--bg-subtle)' }}>
                               Cancel
                             </button>
                           </div>
@@ -744,7 +737,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     if (!endDate) return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#059669' };
                     const end = new Date(endDate);
                     const start = startDate ? new Date(startDate) : null;
-                    if (end < now) return { label: 'Expired', from: '#64748b', to: '#475569', bg: 'rgba(100,116,139,0.10)', color: '#6b7280' };
+                    if (end < now) return { label: 'Expired', from: '#64748b', to: '#475569', bg: 'rgba(100,116,139,0.10)', color: 'var(--text-muted)' };
                     if (start && start > now) return { label: 'Upcoming', from: '#3b82f6', to: '#2563eb', bg: 'rgba(59,130,246,0.12)', color: '#2563eb' };
                     return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#059669' };
                   };
@@ -753,7 +746,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       transition={{ delay: 0.5 }}
                       className="mt-5 overflow-hidden rounded-[24px] p-6 bg-white"
                       style={{
-                        border: '1px solid rgba(0,0,0,0.07)',
+                        border: '1px solid var(--border)',
                         boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                       }}>
                       {/* Header */}
@@ -780,7 +773,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               className="overflow-hidden rounded-[16px] p-4"
                               style={isLast
                                 ? { background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.18)' }
-                                : { background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.07)' }}>
+                                : { background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-2.5">
                                   <span className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
@@ -804,12 +797,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               </div>
                               <div className={`grid gap-2 ${isLast ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
                                 {[
-                                  { label: 'Fee', value: fmtINR(s.selling_price), color: '#111827' },
+                                  { label: 'Fee', value: fmtINR(s.selling_price), color: 'var(--text-primary)' },
                                   { label: 'Paid', value: fmtINR(s.amount_paid), color: '#059669' },
                                   { label: 'Balance', value: fmtINR(s.balance_amount), color: Number(s.balance_amount) > 0 ? '#ef4444' : '#059669' },
                                   ...(isLast ? [{ label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' }] : []),
                                 ].map(f => (
-                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: '#F3F4F6' }}>
+                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: 'var(--bg-subtle)' }}>
                                     <p className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-500 mb-0.5">{f.label}</p>
                                     <p className="text-[12.5px] font-[760] tabular-nums" style={{ color: f.color }}>{f.value}</p>
                                   </div>
@@ -843,12 +836,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               </div>
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 {[
-                                  { label: 'Fee', value: fmtINR(client.final_amount), color: '#111827' },
+                                  { label: 'Fee', value: fmtINR(client.final_amount), color: 'var(--text-primary)' },
                                   { label: 'Paid', value: fmtINR(client.paid_amount), color: '#059669' },
                                   { label: 'Balance', value: fmtINR(client.balance_amount), color: client.balance_amount > 0 ? '#ef4444' : '#059669' },
                                   { label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' },
                                 ].map(f => (
-                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: '#F3F4F6' }}>
+                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: 'var(--bg-subtle)' }}>
                                     <p className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-500 mb-0.5">{f.label}</p>
                                     <p className="text-[12.5px] font-[760] tabular-nums" style={{ color: f.color }}>{f.value}</p>
                                   </div>
@@ -888,7 +881,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         <div className="flex gap-3 justify-center">
                           <button onClick={() => setDeleteOpen(false)}
                             className="rounded-[13px] px-5 py-2.5 text-[13px] font-[700] text-slate-500 transition hover:text-slate-700"
-                            style={{ background: '#F3F4F6', border: '1px solid rgba(0,0,0,0.08)' }}>
+                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                             Cancel
                           </button>
                           <button onClick={handleDelete} disabled={deleting}

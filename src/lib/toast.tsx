@@ -18,6 +18,7 @@
 'use client';
 
 import * as React from 'react';
+import { m, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
 import { cn } from '@/components/ui/cn';
 
@@ -43,7 +44,6 @@ interface InternalToast {
   id: string;
   message: string;
   type: ToastType;
-  leaving: boolean;
   description?: string;
   action?: ToastAction;
   duration: number;
@@ -68,7 +68,6 @@ const Ctx = React.createContext<ToastCtx | null>(null);
 
 const MAX_VISIBLE = 5;
 const DEFAULT_DURATION = 4500;
-const EXIT_ANIM_MS = 220;
 
 import { uuid as generateUuid } from '@/lib/uuid';
 
@@ -92,13 +91,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const removeToast = React.useCallback(
     (id: string) => {
       clearTimer(id);
-      setToasts((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)),
-      );
-      // Drop after the exit animation runs.
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, EXIT_ANIM_MS);
+      setToasts((prev) => prev.filter((t) => t.id !== id));
     },
     [clearTimer],
   );
@@ -118,7 +111,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             id,
             message,
             type,
-            leaving: false,
             description: options?.description,
             action: options?.action,
             duration,
@@ -275,19 +267,19 @@ function ToastViewport({
   toasts: InternalToast[];
   onClose: (id: string) => void;
 }) {
-  if (toasts.length === 0) return null;
   return (
     <div
-      // Full-width column on mobile, anchored bottom-right on desktop.
       className={cn(
         'pointer-events-none fixed inset-x-3 bottom-4 z-[9999] flex flex-col items-stretch gap-2',
         'sm:inset-auto sm:right-6 sm:bottom-6 sm:max-w-sm sm:items-end',
       )}
       aria-label="Notifications"
     >
-      {toasts.map((t) => (
-        <ToastItem key={t.id} toast={t} onClose={() => onClose(t.id)} />
-      ))}
+      <AnimatePresence initial={false}>
+        {toasts.map((t) => (
+          <ToastItem key={t.id} toast={t} onClose={() => onClose(t.id)} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
@@ -302,16 +294,17 @@ function ToastItem({
   const style = STYLES[toast.type];
   const { Icon } = style;
   return (
-    <div
+    <m.div
+      layout
+      initial={{ opacity: 0, y: 20, scale: 0.94 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.92, y: 8, transition: { duration: 0.15, ease: 'easeIn' } }}
+      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       role={toast.type === 'error' ? 'alert' : 'status'}
       aria-live={style.live}
       className={cn(
         'pointer-events-auto w-full overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-inset dark:bg-[#1E1F24] dark:ring-white/10',
-        'transition-all duration-200',
         style.ring,
-        toast.leaving
-          ? 'translate-y-2 opacity-0'
-          : 'translate-y-0 opacity-100',
       )}
     >
       <div className="flex items-start gap-3 p-3 sm:p-4">
@@ -322,11 +315,11 @@ function ToastItem({
           <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="break-words text-sm font-medium text-slate-900 dark:text-white">
+          <p className="break-words text-sm font-medium text-[var(--text-primary)]">
             {toast.message}
           </p>
           {toast.description && (
-            <p className="mt-0.5 break-words text-xs text-slate-500 dark:text-white/50">
+            <p className="mt-0.5 break-words text-xs text-[var(--text-muted)]">
               {toast.description}
             </p>
           )}
@@ -337,7 +330,7 @@ function ToastItem({
                 toast.action?.onClick();
                 onClose();
               }}
-              className="mt-2 inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+              className="mt-2 inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
             >
               {toast.action.label}
             </button>
@@ -347,11 +340,11 @@ function ToastItem({
           type="button"
           onClick={onClose}
           aria-label="Dismiss notification"
-          className="ml-2 -m-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:text-white/40 dark:hover:bg-white/10 dark:hover:text-white/70 dark:focus-visible:ring-white/20"
+          className="ml-2 -m-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
         >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-    </div>
+    </m.div>
   );
 }

@@ -49,7 +49,7 @@ const STATUS_CFG: Record<CheckInState, { color: string; label: string; Icon: any
 const CARD = {
   background: '#ffffff',
   borderRadius: 16,
-  border: '1px solid #e2e8f0',
+  border: '1px solid var(--border)',
   boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.04)',
 } as const;
 
@@ -293,9 +293,9 @@ export default function CheckInContent() {
         position: 'relative',
         overflow: 'hidden',
         borderRadius: 16,
-        background: '#f8fafc',
-        border: '1px solid rgba(0,0,0,0.07)',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        background: 'var(--bg-subtle)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-xs)',
         marginBottom: 20,
       }}>
         {/* Top accent bar */}
@@ -318,7 +318,7 @@ export default function CheckInContent() {
               className="ck-hero-title"
               style={{
                 fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em',
-                color: '#111827',
+                color: 'var(--text-primary)',
                 margin: 0,
               }}
             >
@@ -329,7 +329,7 @@ export default function CheckInContent() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.1 }}
               style={{
-                margin: '4px 0 0', fontSize: 12, color: '#6b7280',
+                margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
@@ -376,7 +376,7 @@ export default function CheckInContent() {
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 30, height: 30, borderRadius: 8,
-                border: '1px solid rgba(0,0,0,0.07)',
+                border: '1px solid var(--border)',
                 background: voiceOn ? 'rgba(99,102,241,0.1)' : '#f1f5f9',
                 color: voiceOn ? '#6366f1' : '#9ca3af',
                 cursor: 'pointer', transition: 'all 0.2s',
@@ -559,7 +559,7 @@ export default function CheckInContent() {
                   {isSuccess ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>
                     {result.clientName || result.message}
                   </div>
                   {result.clientName && (
@@ -644,10 +644,10 @@ export default function CheckInContent() {
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '12px 16px',
-              borderBottom: '1px solid #e2e8f0',
+              borderBottom: '1px solid var(--border)',
             }}>
               <span style={{
-                fontSize: 13, fontWeight: 600, color: '#0f172a',
+                fontSize: 13, fontWeight: 600, color: 'var(--text-primary)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 <Search size={13} color="#6366f1" /> Manual Check-In
@@ -659,8 +659,8 @@ export default function CheckInContent() {
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '7px 12px',
                 borderRadius: 10,
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border)',
                 transition: 'border-color 0.2s, box-shadow 0.2s',
                 minWidth: 0,
               }}>
@@ -672,7 +672,7 @@ export default function CheckInContent() {
                   style={{
                     flex: 1, border: 'none', outline: 'none',
                     background: 'transparent',
-                    fontSize: 12, color: '#0f172a',
+                    fontSize: 12, color: 'var(--text-primary)',
                     fontFamily: 'inherit',
                   }}
                 />
@@ -698,13 +698,13 @@ export default function CheckInContent() {
                         transition={{ duration: 0.2, delay: idx * 0.03 }}
                         onClick={() => manualCheckIn(c)}
                         disabled={manualBusy}
-                        whileHover={{ scale: 1.01, background: '#f8fafc' }}
+                        whileHover={{ scale: 1.01, background: 'var(--bg-subtle)' }}
                         whileTap={{ scale: 0.99 }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10,
                           padding: '8px 10px', borderRadius: 10,
                           width: '100%',
-                          border: '1px solid #e2e8f0',
+                          border: '1px solid var(--border)',
                           background: '#ffffff',
                           cursor: 'pointer', textAlign: 'left', fontSize: 13,
                           transition: 'all 0.15s',
@@ -722,7 +722,7 @@ export default function CheckInContent() {
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{
-                            fontWeight: 500, color: '#0f172a',
+                            fontWeight: 500, color: 'var(--text-primary)',
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                             fontSize: 12,
                           }}>
@@ -745,7 +745,7 @@ export default function CheckInContent() {
                               ? { background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }
                               : (c.status || '') === 'frozen'
                               ? { background: '#fffbeb', color: '#f59e0b', border: '1px solid #fde68a' }
-                              : { background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' }
+                              : { background: 'var(--bg-subtle)', color: '#64748b', border: '1px solid var(--border)' }
                           ),
                         }}>
                           {c.status}
@@ -798,10 +798,10 @@ export default function CheckInContent() {
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '12px 16px',
-              borderBottom: '1px solid #e2e8f0',
+              borderBottom: '1px solid var(--border)',
             }}>
               <span style={{
-                fontSize: 13, fontWeight: 600, color: '#0f172a',
+                fontSize: 13, fontWeight: 600, color: 'var(--text-primary)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 <Clock size={13} color="#6366f1" /> Recent Check-ins
@@ -812,7 +812,7 @@ export default function CheckInContent() {
                   style={{
                     display: 'inline-flex', alignItems: 'center',
                     padding: '3px 10px', borderRadius: 6,
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid var(--border)',
                     background: '#ffffff',
                     fontSize: 10, fontWeight: 600, color: '#64748b',
                     cursor: 'pointer',
@@ -857,7 +857,7 @@ export default function CheckInContent() {
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10,
                         padding: '9px 16px',
-                        borderBottom: '1px solid #e2e8f0',
+                        borderBottom: '1px solid var(--border)',
                       }}
                     >
                       <div style={{
@@ -879,7 +879,7 @@ export default function CheckInContent() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          fontWeight: 500, fontSize: 12, color: '#0f172a',
+                          fontWeight: 500, fontSize: 12, color: 'var(--text-primary)',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         }}>
                           {r.name}

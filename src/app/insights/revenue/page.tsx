@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell';
 import { TrendingUp, DollarSign, Users, Clock, BarChart3, Percent, Search, ArrowUpRight, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
 import { fmtMoney } from '@/lib/format';
+import { PremiumBarChart } from '@/components/ui';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -34,19 +35,19 @@ function KpiCard({ label, value, icon, gradient, sub }: {
 }) {
   return (
     <m.div variants={itemVariants}
-      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
+      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
       onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative', zIndex: 1 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#6b7280' }}>{label}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
         {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.07)', color: '#374151' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(0,0,0,0.06)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
             {icon}
           </div>
         )}
       </div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, position: 'relative', zIndex: 1 }}>{sub}</div>}
+      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 2, position: 'relative', zIndex: 1 }}>{sub}</div>}
     </m.div>
   );
 }
@@ -103,31 +104,29 @@ function Inner() {
   const maxRevenue = Math.max(...fullYear.map((m) => m.revenue), 1);
   const totalRevenueAll = revenueByTrainer.reduce((s, t) => s + Number(t.total_revenue || 0), 0);
 
-  const [chartHovered, setChartHovered] = useState<number | null>(null);
-
   return (
     <AppShell>
-      <div style={{ background: '#f8fafc', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px' }}>
+      <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: '#eff6ff', border: '1px solid rgba(37,99,235,0.15)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: '#eff6ff', border: '1px solid rgba(37,99,235,0.15)', boxShadow: 'var(--shadow-xs)' }}>
             <TrendingUp size={24} color="#2563eb" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Revenue Analytics</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>Track revenue performance across trainers and time periods</p>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Revenue Analytics</h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Track revenue performance across trainers and time periods</p>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
             <Calendar size={14} color="#9ca3af" />
-            <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>From</span>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>From</span>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
             <Calendar size={14} color="#9ca3af" />
-            <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>To</span>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>To</span>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
           </div>
         </div>
       </div>
@@ -143,11 +142,11 @@ function Inner() {
         </m.div>
 
         <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20, marginBottom: 24 }}>
-          <m.div variants={itemVariants} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <m.div variants={itemVariants} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: 'var(--shadow-xs)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)' }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Monthly Revenue — {new Date().getFullYear()}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Monthly Revenue — {new Date().getFullYear()}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, background: '#eff6ff', border: '1px solid rgba(37,99,235,0.15)' }}>
                 <ArrowUpRight size={12} color="#2563eb" />
@@ -155,53 +154,31 @@ function Inner() {
               </div>
             </div>
             {loading ? (
-              <div style={{ height: 160, background: '#f3f4f6', borderRadius: 10 }} />
+              <div style={{ height: 200, background: 'var(--bg-subtle)', borderRadius: 10 }} />
             ) : (
-              <>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, padding: '0 4px' }}>
-                  {fullYear.map((m, i) => {
-                    const pct = maxRevenue > 0 ? Math.max((m.revenue / maxRevenue) * 100, m.revenue > 0 ? 4 : 0) : 0;
-                    const hovered = chartHovered; const setHovered = setChartHovered;
-                    return (
-                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}
-                        onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-                        {hovered === i && m.revenue > 0 && (
-                          <div style={{ fontSize: 10, color: '#fff', fontWeight: 700, background: '#2563eb', borderRadius: 6, padding: '3px 7px', marginBottom: 3, whiteSpace: 'nowrap' }}>
-                            {fmtAmt(m.revenue)} ({m.count})
-                          </div>
-                        )}
-                        {hovered !== i && (
-                          <div style={{ marginTop: 'auto', fontSize: 9, color: '#9ca3af', fontWeight: 600 }}>
-                            {m.revenue > 0 ? (m.revenue >= 1000 ? `₹${(m.revenue/1000).toFixed(0)}K` : '') : ''}
-                          </div>
-                        )}
-                        <div style={{ width: '100%', height: `${pct}%`, background: m.revenue > 0 ? 'linear-gradient(180deg, #6366f1 0%, #2563eb 50%, rgba(37,99,235,0.3) 100%)' : '#e5e7eb', borderRadius: '4px 4px 0 0', minHeight: m.revenue > 0 ? 6 : 2, transition: 'height 0.4s, opacity 0.15s', opacity: hovered !== null && hovered !== i ? 0.5 : 1, boxShadow: m.revenue > 0 ? '0 2px 8px rgba(99,102,241,0.3)' : 'none' }} />
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 10, padding: '0 4px' }}>
-                  {fullYear.map((m, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 9, color: '#9ca3af', fontWeight: 600 }}>{m.month}</div>
-                  ))}
-                </div>
-              </>
+              <PremiumBarChart
+                data={fullYear as Record<string, unknown>[]}
+                xKey="month"
+                bars={[{ key: 'revenue', label: 'Revenue', color: '#6366f1' }]}
+                height={200}
+                formatValue={fmtAmt}
+              />
             )}
           </m.div>
 
-          <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', background: '#fff' }}>
-            <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: '#f9fafb' }}>
+          <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', background: 'var(--bg-card)' }}>
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)', display: 'inline-block' }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Revenue by Trainer</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Revenue by Trainer</span>
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: '#f9fafb' }}>
+                  <tr style={{ background: 'var(--bg-subtle)' }}>
                     {['Trainer', 'Clients', 'This Month', 'Total Rev', '%'].map((h) => (
-                      <th key={h} style={{ ...th, color: '#6b7280' }}>{h}</th>
+                      <th key={h} style={{ ...th, color: 'var(--text-muted)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -212,7 +189,7 @@ function Inner() {
                         <div style={{ width: 48, height: 48, borderRadius: 14, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.15)' }}>
                           <Users size={20} color="#6366f1" />
                         </div>
-                        <div style={{ fontSize: 14, color: '#9ca3af', fontWeight: 600 }}>Start tracking revenue to see insights here</div>
+                        <div style={{ fontSize: 14, color: 'var(--text-disabled)', fontWeight: 600 }}>Start tracking revenue to see insights here</div>
                       </div>
                     </td></tr>
                   ) : (
@@ -222,16 +199,16 @@ function Inner() {
                         <tr key={t.id || i} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
                           onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                          <td style={{ ...td, fontWeight: 600, color: '#111827' }}>{t.name}</td>
-                          <td style={{ ...td, color: '#6b7280' }}>{t.active_clients || 0}</td>
+                          <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</td>
+                          <td style={{ ...td, color: 'var(--text-muted)' }}>{t.active_clients || 0}</td>
                           <td style={{ ...td, fontWeight: 700, color: '#2563eb' }}>{fmtAmt(t.month_revenue)}</td>
-                          <td style={{ ...td, fontWeight: 600, color: '#374151' }}>{fmtAmt(t.total_revenue)}</td>
+                          <td style={{ ...td, fontWeight: 600, color: 'var(--text-secondary)' }}>{fmtAmt(t.total_revenue)}</td>
                           <td style={{ ...td }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <div style={{ flex: 1, background: '#e5e7eb', borderRadius: 4, height: 5, overflow: 'hidden' }}>
                                 <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #2563eb)', borderRadius: 4 }} />
                               </div>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#6b7280' }}>{pct}%</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)' }}>{pct}%</span>
                             </div>
                           </td>
                         </tr>
@@ -245,20 +222,20 @@ function Inner() {
         </m.div>
 
         <m.div variants={containerVariants} initial="hidden" animate="visible">
-          <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', background: '#fff' }}>
-            <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb' }}>
+          <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', background: 'var(--bg-card)' }}>
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)', display: 'inline-block' }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Revenue Breakdown — {new Date().getFullYear()}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Revenue Breakdown — {new Date().getFullYear()}</span>
               </div>
-              <span style={{ fontSize: 11, color: '#9ca3af' }}>Total: {fmtAmt(totalRevenue)}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Total: {fmtAmt(totalRevenue)}</span>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: '#f9fafb' }}>
+                  <tr style={{ background: 'var(--bg-subtle)' }}>
                     {['Month', 'Payments', 'Revenue', 'Progress'].map((h) => (
-                      <th key={h} style={{ ...th, color: '#6b7280' }}>{h}</th>
+                      <th key={h} style={{ ...th, color: 'var(--text-muted)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -267,8 +244,8 @@ function Inner() {
                     <tr key={i} style={{ opacity: m.revenue === 0 ? 0.35 : 1, borderBottom: '1px solid rgba(0,0,0,0.04)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                      <td style={{ ...td, fontWeight: 600, color: '#111827' }}>{m.month}</td>
-                      <td style={{ ...td, color: '#6b7280' }}>{m.count || '—'}</td>
+                      <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>{m.month}</td>
+                      <td style={{ ...td, color: 'var(--text-muted)' }}>{m.count || '—'}</td>
                       <td style={{ ...td, fontWeight: 700, color: m.revenue > 0 ? '#16a34a' : '#9ca3af' }}>{m.revenue > 0 ? fmtAmt(m.revenue) : '—'}</td>
                       <td style={td}>
                         {m.revenue > 0 && (
@@ -282,8 +259,8 @@ function Inner() {
                 </tbody>
                 <tfoot>
                   <tr style={{ background: '#eff6ff', borderTop: '1px solid rgba(37,99,235,0.15)', fontWeight: 700 }}>
-                    <td style={{ ...td, color: '#111827' }}>Total</td>
-                    <td style={{ ...td, color: '#6b7280' }}>{fullYear.reduce((s, m) => s + m.count, 0)}</td>
+                    <td style={{ ...td, color: 'var(--text-primary)' }}>Total</td>
+                    <td style={{ ...td, color: 'var(--text-muted)' }}>{fullYear.reduce((s, m) => s + m.count, 0)}</td>
                     <td style={{ ...td, color: '#2563eb', fontSize: 13 }}>{fmtAmt(totalRevenue)}</td>
                     <td style={td} />
                   </tr>

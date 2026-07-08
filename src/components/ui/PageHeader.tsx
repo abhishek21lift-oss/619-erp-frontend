@@ -11,11 +11,11 @@ export interface PageHeaderProps {
 }
 
 const ACCENT_COLORS: Record<string, string> = {
-  brand:   'linear-gradient(135deg, #3B82F6, #2563EB)',
-  gold:    'linear-gradient(135deg, #F59E0B, #D97706)',
-  success: 'linear-gradient(135deg, #22C55E, #16A34A)',
-  danger:  'linear-gradient(135deg, #EF4444, #DC2626)',
-  accent:  'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+  brand:   'var(--gradient-brand)',
+  gold:    'var(--gradient-gold)',
+  success: 'linear-gradient(135deg, var(--success), var(--success-lo))',
+  danger:  'linear-gradient(135deg, var(--danger), var(--danger-lo))',
+  accent:  'linear-gradient(135deg, var(--accent), var(--accent-hi))',
   none:    'none',
 };
 

@@ -48,7 +48,7 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   expired: { bg: 'rgba(239,68,68,0.12)', color: '#dc2626' },
   frozen: { bg: 'rgba(59,130,246,0.12)', color: '#2563eb' },
   pending: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
-  inactive: { bg: 'rgba(148,163,184,0.12)', color: '#6b7280' },
+  inactive: { bg: 'rgba(148,163,184,0.12)', color: 'var(--text-muted)' },
 };
 
 import { avatarGradient, initialsAvatar } from '@/lib/avatar';
@@ -68,8 +68,8 @@ function StatusBadge({ status }: { status: string }) {
 function InfoRow({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <span style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
-      <span style={{ fontSize: 14, color: '#111827', fontWeight: 500 }}>{value ?? '—'}</span>
+      <span style={{ fontSize: 10, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>{value ?? '—'}</span>
     </div>
   );
 }
@@ -144,9 +144,9 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
         <AppShell>
           <div style={{ padding: '32px', maxWidth: 1000, margin: '0 auto' }}>
             <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-              style={{ height: 200, borderRadius: 20, background: '#f3f4f6', marginBottom: 16, border: '1px solid rgba(0,0,0,0.07)' }} />
+              style={{ height: 200, borderRadius: 20, background: 'var(--bg-subtle)', marginBottom: 16, border: '1px solid var(--border)' }} />
             <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-              style={{ height: 350, borderRadius: 20, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)' }} />
+              style={{ height: 350, borderRadius: 20, background: 'var(--bg-subtle)', border: '1px solid var(--border)' }} />
           </div>
         </AppShell>
       </Guard>
@@ -161,9 +161,9 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
             <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '1px solid rgba(239,68,68,0.2)' }}>
               <User size={28} color="#dc2626" />
             </div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: '#6b7280', marginBottom: 8 }}>{error || 'Trainer not found'}</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-muted)', marginBottom: 8 }}>{error || 'Trainer not found'}</div>
             <button onClick={() => router.back()}
-              style={{ padding: '8px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: '#f9fafb', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ padding: '8px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               Go back
             </button>
           </div>
@@ -177,11 +177,11 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   return (
     <Guard roles={['admin', 'manager']}>
       <AppShell>
-        <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--bg-subtle)' }}>
           {/* ── Hero ── */}
-          <div style={{ position: 'relative', overflow: 'hidden', background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '28px 32px 36px', borderRadius: '0 0 40px 40px' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '28px 32px 36px', borderRadius: '0 0 40px 40px' }}>
             <button onClick={() => router.back()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#6b7280', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20, transition: 'background 0.2s', position: 'relative', zIndex: 1 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20, transition: 'background 0.2s', position: 'relative', zIndex: 1 }}>
               <ArrowLeft size={13} /> Back to Trainers
             </button>
 
@@ -192,26 +192,26 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
               </m.div>
               <div style={{ flex: 1, minWidth: 220 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>{trainer.name}</h2>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>{trainer.name}</h2>
                   <StatusBadge status={trainer.status} />
                 </div>
                 {trainer.specialization && (
-                  <div style={{ fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
                     <Dumbbell size={13} color="#9ca3af" /> {trainer.specialization}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 4 }}>
                   {trainer.phone && (
-                    <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ fontSize: 12.5, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <Phone size={12} color="#9ca3af" /> {trainer.phone}
                     </span>
                   )}
                   {trainer.email && (
-                    <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ fontSize: 12.5, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
                       <Mail size={12} color="#9ca3af" /> {trainer.email}
                     </span>
                   )}
-                  <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ fontSize: 12.5, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
                     <Users size={12} color="#9ca3af" /> {members.length} member{members.length !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -249,18 +249,18 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                 { label: 'Joined Date', value: fmtDate(trainer.join_date), icon: <Calendar size={14} />, color: '#f59e0b' },
               ].map((s, i) => (
                 <m.div key={s.label} variants={itemVariants}
-                  style={{ borderRadius: 16, padding: '16px 18px', background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
+                  style={{ borderRadius: 16, padding: '16px 18px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
-                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>{s.label}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{s.label}</span>
                   </div>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{s.value}</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{s.value}</span>
                 </m.div>
               ))}
             </m.div>
 
             {/* ── Tabs ── */}
-            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 20, background: '#f3f4f6', borderRadius: 12, padding: 3 }}>
+            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 20, background: 'var(--bg-subtle)', borderRadius: 12, padding: 3 }}>
               {(['profile', 'members'] as const).map((t) => (
                 <button key={t} onClick={() => setActiveTab(t)}
                   style={{
@@ -279,8 +279,8 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
             {activeTab === 'profile' && (
               <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-                <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ borderRadius: 20, padding: 22, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <User size={14} color="#9ca3af" /> Personal Details
                   </h3>
                   <div className="rg-2" style={{ gap: 16 }}>
@@ -294,8 +294,8 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                   </div>
                 </div>
 
-                <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ borderRadius: 20, padding: 22, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Award size={14} color="#9ca3af" /> Certifications & Schedule
                   </h3>
                   {trainer.certifications && trainer.certifications.length > 0 ? (
@@ -305,17 +305,17 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                       ))}
                     </div>
                   ) : (
-                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>No certifications listed.</p>
+                    <p style={{ fontSize: 13, color: 'var(--text-disabled)', marginBottom: 16 }}>No certifications listed.</p>
                   )}
                   <InfoRow label="Schedule / Timing" value={trainer.schedule} />
                 </div>
 
                 {trainer.bio && (
-                  <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', gridColumn: '1/-1' }}>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ borderRadius: 20, padding: 22, background: 'var(--bg-card)', border: '1px solid var(--border)', gridColumn: '1/-1' }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Star size={14} color="#9ca3af" /> Bio
                     </h3>
-                    <p style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{trainer.bio}</p>
+                    <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{trainer.bio}</p>
                   </div>
                 )}
               </m.div>
@@ -324,9 +324,9 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
             {/* ── Members Tab ── */}
             {activeTab === 'members' && (
               <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', background: '#fff' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#f9fafb' }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', background: 'var(--bg-card)' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Users size={14} color="#9ca3af" /> Assigned Members
                     <span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: 'rgba(99,102,241,0.1)', color: '#4f46e5' }}>{members.length}</span>
                   </h3>
@@ -336,8 +336,8 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                     <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', border: '1px solid rgba(99,102,241,0.15)' }}>
                       <Users size={24} color="#6366f1" />
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: '#374151', marginBottom: 4 }}>No members assigned</div>
-                    <div style={{ fontSize: 13, color: '#6b7280', maxWidth: 300, margin: '0 auto' }}>Assign members to this trainer from the Members page.</div>
+                    <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-secondary)', marginBottom: 4 }}>No members assigned</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300, margin: '0 auto' }}>Assign members to this trainer from the Members page.</div>
                   </div>
                 ) : (
                   <div style={{ overflowX: 'auto' }}>
@@ -358,11 +358,11 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                             onClick={() => router.push(`/clients/${member.id}`)}
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.04)'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                            <td style={{ padding: '12px 16px', fontWeight: 600, color: '#111827' }}>{member.name}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-primary)' }}>{member.name}</td>
                             <td style={{ padding: '12px 16px' }}><StatusBadge status={member.status} /></td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{member.membership_plan ?? '—'}</td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{fmtDate(member.expiry_date)}</td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{member.phone ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{member.membership_plan ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{fmtDate(member.expiry_date)}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{member.phone ?? '—'}</td>
                           </m.tr>
                         ))}
                       </tbody>
@@ -380,20 +380,20 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                 style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
                 onClick={() => setDeleteConfirm(false)}>
                 <m.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
-                  style={{ background: '#fff', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)' }}
+                  style={{ background: 'var(--bg-card)', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid var(--border)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)' }}
                   onClick={(e) => e.stopPropagation()}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <AlertTriangle size={18} color="#dc2626" />
                     </div>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111827' }}>Remove Trainer</h3>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Remove Trainer</h3>
                   </div>
-                  <p style={{ color: '#6b7280', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
-                    Remove <strong style={{ color: '#111827' }}>{trainer.name}</strong>? Their {members.length} assigned member{members.length !== 1 ? 's' : ''} will become unassigned.
+                  <p style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
+                    Remove <strong style={{ color: 'var(--text-primary)' }}>{trainer.name}</strong>? Their {members.length} assigned member{members.length !== 1 ? 's' : ''} will become unassigned.
                   </p>
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                     <button onClick={() => setDeleteConfirm(false)}
-                      style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: '#f9fafb', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                       Cancel
                     </button>
                     <button onClick={handleDelete} disabled={deleting}

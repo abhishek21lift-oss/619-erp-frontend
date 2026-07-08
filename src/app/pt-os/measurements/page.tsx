@@ -6,7 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 
 const MEASUREMENT_FIELDS = [
   { key: 'weight', label: 'Weight (kg)' },
@@ -67,8 +67,8 @@ export default function MeasurementsPage() {
           <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, padding: 40 }}>
               <div style={{
-                background: '#fff',
-                border: '1px solid #e5e7eb',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
                 borderRadius: 20,
                 padding: '40px 32px',
                 textAlign: 'center',
@@ -76,10 +76,10 @@ export default function MeasurementsPage() {
                 boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
               }}>
                 <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>
                   Unable to Load Data
                 </h2>
-                <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 20px' }}>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px' }}>
                   This feature is not available yet or there was a problem loading the page. Please try again later.
                 </p>
                 <button
@@ -108,35 +108,35 @@ export default function MeasurementsPage() {
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-            style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
             <div className="relative z-10">
               <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: '#f3f4f6' }}>
-                  <Ruler size={16} style={{ color: '#6b7280' }} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
+                  <Ruler size={16} style={{ color: 'var(--text-muted)' }} />
                 </div>
-                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#9ca3af' }}>Measurements</span>
+                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Measurements</span>
               </div>
-              <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#111827' }}>
+              <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
                 Body Measurements
               </h1>
-              <p className="mt-3 max-w-xl text-[14px]" style={{ color: '#6b7280' }}>
+              <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'var(--text-muted)' }}>
                 Track progress with detailed body measurements over time.
               </p>
             </div>
           </m.div>
 
           {/* Client Selector */}
-          <div className="rounded-[20px] p-5 mb-6" style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <h2 className="text-[14px] font-[700] mb-3" style={{ color: '#111827' }}>Select Client</h2>
+          <div className="rounded-[20px] p-5 mb-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+            <h2 className="text-[14px] font-[700] mb-3" style={{ color: 'var(--text-primary)' }}>Select Client</h2>
             <div className="relative mb-3">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#9ca3af' }} />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
               <input
                 type="text"
                 placeholder="Search clients..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 rounded-[10px] text-[12px] outline-none transition-all"
-                style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }}
+                style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
               />
             </div>
             <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto">
@@ -156,7 +156,7 @@ export default function MeasurementsPage() {
                 </button>
               ))}
               {filteredClients.length === 0 && (
-                <p className="text-[12px]" style={{ color: '#9ca3af' }}>No clients found</p>
+                <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>No clients found</p>
               )}
             </div>
           </div>
@@ -164,9 +164,9 @@ export default function MeasurementsPage() {
           {/* Measurements Form */}
           {selectedClient && (
             <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              className="rounded-[20px] p-6 max-w-lg" style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              <h2 className="text-[18px] font-[760] mb-1" style={{ color: '#111827' }}>Log Measurements</h2>
-              <p className="text-[11px] mb-5" style={{ color: '#9ca3af' }}>
+              className="rounded-[20px] p-6 max-w-lg" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+              <h2 className="text-[18px] font-[760] mb-1" style={{ color: 'var(--text-primary)' }}>Log Measurements</h2>
+              <p className="text-[11px] mb-5" style={{ color: 'var(--text-disabled)' }}>
                 For: {clients.find(c => c.id === selectedClient)?.name}
               </p>
               <form onSubmit={handleSubmit} className="space-y-3">
@@ -175,13 +175,13 @@ export default function MeasurementsPage() {
                     <input key={f.key} type="number" step="0.1" placeholder={f.label} value={form[f.key] || ''}
                       onChange={e => update(f.key, e.target.value)}
                       className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                      style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }} />
+                      style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
                   ))}
                 </div>
-                <PremiumButton tone="primary" glow icon={saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                <Button variant="primary" iconLeft={saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                   disabled={saving} className="!w-full justify-center">
                   {saving ? 'Saving...' : 'Save Measurements'}
-                </PremiumButton>
+                </Button>
               </form>
             </m.div>
           )}

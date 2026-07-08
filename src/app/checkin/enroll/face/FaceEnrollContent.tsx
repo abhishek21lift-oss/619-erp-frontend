@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useCamera } from '@/hooks/useCamera';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
@@ -194,7 +194,7 @@ function FaceEnrollContent() {
         }
       `}</style>
       {/* Header */}
-      <div className="relative overflow-hidden" style={{ background: '#f8fafc', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+      <div className="relative overflow-hidden" style={{ background: 'var(--bg-subtle)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid var(--border)' }}>
         <div className="fe-header-pad relative z-10 mx-auto" style={{ maxWidth: 860 }}>
           <div className="flex items-center gap-4">
             <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -204,10 +204,10 @@ function FaceEnrollContent() {
             </m.div>
             <div>
               <h1 className="text-[24px] font-[860] tracking-[-0.03em]"
-                style={{ color: '#111827' }}>
+                style={{ color: 'var(--text-primary)' }}>
                 Face Enrollment
               </h1>
-              <p className="text-[12px]" style={{ color: '#6b7280' }}>
+              <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                 Register a member's face for biometric check-in
               </p>
             </div>
@@ -221,7 +221,7 @@ function FaceEnrollContent() {
         <AnimatePresence mode="wait">
           {step === 'search' && (
             <m.div key="search" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <div className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+              <div className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
                 <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,#6366f1,#10b981)' }} />
                 <p className="text-[14px] font-[700] mb-4" style={{ color: 'rgb(15,23,42)' }}>Find Member</p>
 
@@ -234,7 +234,7 @@ function FaceEnrollContent() {
                       onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                       placeholder="Search by member name, email or ID…"
                       className="w-full rounded-[11px] pl-9 pr-3.5 py-2.5 text-[13px] outline-none"
-                      style={{ background: '#f8fafc', border: `1.5px solid ${member ? '#10b981' : '#e2e8f0'}`, color: 'rgb(15,23,42)', fontFamily: 'inherit' }}
+                      style={{ background: 'var(--bg-subtle)', border: `1.5px solid ${member ? '#10b981' : '#e2e8f0'}`, color: 'rgb(15,23,42)', fontFamily: 'inherit' }}
                     />
                     {searchLoading && (
                       <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
@@ -247,7 +247,7 @@ function FaceEnrollContent() {
                     {showDropdown && searchResults.length > 0 && (
                       <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                         className="absolute z-50 left-0 right-0 mt-1 rounded-[13px] overflow-hidden"
-                        style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
+                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
                         {searchResults.map((m) => (
                           <button key={m.id} onMouseDown={() => selectMember(m)}
                             className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-slate-50">
@@ -287,9 +287,9 @@ function FaceEnrollContent() {
                   <strong style={{ color: '#6366f1' }}>How it works:</strong> The camera will capture a 128-dimensional face descriptor. A blink confirmation is required to prevent photo spoofing. No images are stored — only the mathematical descriptor.
                 </div>
 
-                <PremiumButton tone="primary" glow icon={<Camera size={14} />} onClick={startCamera} disabled={!member}>
+                <Button variant="primary" iconLeft={<Camera size={14} />} onClick={startCamera} disabled={!member}>
                   Start Face Enrollment
-                </PremiumButton>
+                </Button>
               </div>
             </m.div>
           )}
@@ -297,9 +297,9 @@ function FaceEnrollContent() {
           {/* ── Camera Step ── */}
           {step === 'camera' && (
             <m.div key="camera" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <div className="rounded-[22px] overflow-hidden mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+              <div className="rounded-[22px] overflow-hidden mb-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
                 {/* Member banner */}
-                <div className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <div className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
                   <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: 'rgba(99,102,241,0.10)' }}>
                     <User size={14} style={{ color: '#6366f1' }} />
                   </div>
@@ -424,14 +424,14 @@ function FaceEnrollContent() {
                       </div>
                       Camera active
                     </div>
-                    <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
+                    <div style={{ flex: 1, height: 1, background: 'var(--bg-subtle)' }} />
                     <div className="flex items-center gap-1.5">
                       <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: faceDetect.modelStatus === 'ready' ? 'rgba(16,185,129,0.15)' : faceDetect.modelStatus === 'loading' ? 'rgba(99,102,241,0.15)' : 'rgba(148,163,184,0.1)' }}>
                         <ScanFace size={10} style={{ color: faceDetect.modelStatus === 'ready' ? '#10b981' : faceDetect.modelStatus === 'loading' ? '#6366f1' : 'rgb(148,163,184)' }} />
                       </div>
                       {faceDetect.modelStatus === 'loading' ? 'Loading models…' : faceDetect.modelStatus === 'ready' ? 'Models ready' : 'Face detected'}
                     </div>
-                    <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
+                    <div style={{ flex: 1, height: 1, background: 'var(--bg-subtle)' }} />
                     <div className="flex items-center gap-1.5">
                       <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: blinkReady ? 'rgba(16,185,129,0.15)' : 'rgba(148,163,184,0.1)' }}>
                         <Eye size={10} style={{ color: blinkReady ? '#10b981' : 'rgb(148,163,184)' }} />
@@ -440,15 +440,15 @@ function FaceEnrollContent() {
                     </div>
                   </div>
 
-                  <PremiumButton
-                    tone="primary" glow
-                    icon={capturing ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                  <Button
+                    variant="primary"
+                    iconLeft={capturing ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                     onClick={captureAndEnroll}
                     disabled={!blinkReady || capturing}
                     loading={capturing}
                   >
                     {capturing ? 'Enrolling…' : blinkReady ? 'Confirm & Enroll Face' : 'Waiting for blink…'}
-                  </PremiumButton>
+                  </Button>
                 </div>
               </div>
             </m.div>
@@ -457,7 +457,7 @@ function FaceEnrollContent() {
           {/* ── Success Step ── */}
           {step === 'success' && (
             <m.div key="success" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-              <div className="rounded-[22px] p-8 text-center" style={{ background: 'white', border: '1px solid #bbf7d0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+              <div className="rounded-[22px] p-8 text-center" style={{ background: 'var(--bg-card)', border: '1px solid #bbf7d0', boxShadow: 'var(--shadow-card)' }}>
                 <m.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                   className="flex justify-center mb-5">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: 'rgba(16,185,129,0.12)', border: '2px solid rgba(16,185,129,0.3)' }}>
@@ -471,17 +471,17 @@ function FaceEnrollContent() {
                 <p className="text-[11px] font-mono mb-6" style={{ color: 'rgb(148,163,184)' }}>client: {enrolledId}</p>
 
                 <div className="flex flex-wrap justify-center gap-3">
-                  <PremiumButton tone="primary" glow icon={<ScanFace size={13} />} onClick={reset}>
+                  <Button variant="primary" iconLeft={<ScanFace size={13} />} onClick={reset}>
                     Enroll Another Member
-                  </PremiumButton>
-                  <PremiumButton tone="secondary" icon={<Trash2 size={13} />}
+                  </Button>
+                  <Button variant="outline" iconLeft={<Trash2 size={13} />}
                     onClick={async () => {
                       try { await api.checkin.revokeEnrollment(enrolledId); }
                       catch {}
                       reset();
                     }}>
                     Undo Enrollment
-                  </PremiumButton>
+                  </Button>
                 </div>
               </div>
             </m.div>
@@ -490,7 +490,7 @@ function FaceEnrollContent() {
           {/* ── Error Step ── */}
           {step === 'error' && (
             <m.div key="error" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-              <div className="rounded-[22px] p-8 text-center" style={{ background: 'white', border: '1px solid #fecdd3', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
+              <div className="rounded-[22px] p-8 text-center" style={{ background: 'var(--bg-card)', border: '1px solid #fecdd3', boxShadow: 'var(--shadow-card)' }}>
                 <div className="flex justify-center mb-5">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: 'rgba(239,68,68,0.10)', border: '2px solid rgba(239,68,68,0.25)' }}>
                     <AlertTriangle size={38} style={{ color: '#ef4444' }} />
@@ -498,9 +498,9 @@ function FaceEnrollContent() {
                 </div>
                 <h2 className="text-[18px] font-[800] mb-2" style={{ color: 'rgb(15,23,42)' }}>Enrollment Failed</h2>
                 <p className="text-[13px] mb-6" style={{ color: 'rgb(100,116,139)' }}>{errorMsg}</p>
-                <PremiumButton tone="primary" glow icon={<RefreshCw size={13} />} onClick={reset}>
+                <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={reset}>
                   Try Again
-                </PremiumButton>
+                </Button>
               </div>
             </m.div>
           )}

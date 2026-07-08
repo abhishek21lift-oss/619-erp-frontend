@@ -30,29 +30,29 @@ function KpiCard({ label, value, icon, gradient, colorIndex }: {
   const c = KPI_COLORS[colorIndex % KPI_COLORS.length];
   return (
     <m.div variants={itemVariants}
-      style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '24px 22px', background: gradient, border: '1px solid rgba(0,0,0,0.07)', boxShadow: `0 2px 8px ${c.glow}`, cursor: 'default', transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease' }}
+      style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '24px 22px', background: gradient, border: '1px solid var(--border)', boxShadow: `0 2px 8px ${c.glow}`, cursor: 'default', transition: 'transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease' }}
       onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)'; e.currentTarget.style.boxShadow = `0 12px 32px ${c.glow}`; }}
       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = `0 2px 8px ${c.glow}`; }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, position: 'relative', zIndex: 1 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#6b7280' }}>{label}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
         {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.07)', color: c.from }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border)', color: c.from }}>
             {icon}
           </div>
         )}
       </div>
-      <div style={{ fontSize: 30, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
+      <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
     </m.div>
   );
 }
 
-const th = { padding: '12px 16px', textAlign: 'left' as const, fontWeight: 700, fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: '#6b7280' };
+const th = { padding: '12px 16px', textAlign: 'left' as const, fontWeight: 700, fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: 'var(--text-muted)' };
 const td = { padding: '12px 16px', fontSize: 13 };
 
 function WeightChange({ start, current }: { start?: number | null; current?: number | null }) {
   const s = Number(start || 0);
   const c = Number(current || 0);
-  if (!s || !c) return <span style={{ color: '#9ca3af' }}>—</span>;
+  if (!s || !c) return <span style={{ color: 'var(--text-disabled)' }}>—</span>;
   const diff = c - s;
   const isUp = diff > 0;
   const isDown = diff < 0;
@@ -109,15 +109,15 @@ function Inner() {
   return (
     <AppShell>
       {/* ── Hero ── */}
-      <div style={{ background: '#f8fafc', padding: '52px 32px 44px', borderRadius: '0 0 40px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+      <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 44px', borderRadius: '0 0 40px 40px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
           <m.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', boxShadow: '0 8px 32px rgba(139,92,246,0.3)', border: '1px solid rgba(0,0,0,0.06)' }}>
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', boxShadow: '0 8px 32px rgba(139,92,246,0.3)', border: '1px solid var(--border)' }}>
             <Sparkles size={26} color="#fff" />
           </m.div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Transformations</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13.5, color: '#6b7280' }}>Track member progress and body transformation journeys</p>
+            <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Transformations</h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'var(--text-muted)' }}>Track member progress and body transformation journeys</p>
           </div>
         </div>
       </div>
@@ -168,12 +168,12 @@ function Inner() {
             })() : '—', icon: <Trophy size={14} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
           ].map((stat, i) => (
             <m.div key={stat.label} variants={itemVariants}
-              style={{ borderRadius: 16, padding: '16px 18px', background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
+              style={{ borderRadius: 16, padding: '16px 18px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: stat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: stat.color }}>{stat.icon}</div>
-                <span style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>{stat.label}</span>
+                <span style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{stat.label}</span>
               </div>
-              <span style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{stat.value}</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{stat.value}</span>
             </m.div>
           ))}
         </m.div>
@@ -181,25 +181,25 @@ function Inner() {
         {/* ── Members Table ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible">
           <m.div variants={itemVariants}
-            style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', background: '#fff' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, background: '#f9fafb' }}>
+            style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', background: 'var(--bg-card)' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, background: 'var(--bg-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 4, height: 18, borderRadius: 3, background: 'linear-gradient(180deg, #8b5cf6, #ec4899)', display: 'inline-block' }} />
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Active Members</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Active Members</span>
                 <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: 'rgba(139,92,246,0.1)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.2)' }}>{filtered.length}</span>
               </div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '6px 14px', border: '1px solid #d1d5db' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid #d1d5db' }}>
                   <Search size={13} color="#9ca3af" />
                   <input placeholder="Search member or coach…" value={search} onChange={(e) => setSearch(e.target.value)}
-                    style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 12.5, fontWeight: 500, outline: 'none', width: 200 }} />
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, outline: 'none', width: 200 }} />
                 </div>
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: '#f9fafb' }}>
+                  <tr style={{ background: 'var(--bg-subtle)' }}>
                     {['ID', 'Member Name', 'Coach', 'Start Weight', 'Current Weight', 'Joined Date', 'Action'].map((h) => (
                       <th key={h} style={th}>{h}</th>
                     ))}
@@ -210,7 +210,7 @@ function Inner() {
                     Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}><td colSpan={7} style={{ padding: '14px 16px' }}>
                         <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-                          style={{ height: 14, background: '#f3f4f6', borderRadius: 6 }} />
+                          style={{ height: 14, background: 'var(--bg-subtle)', borderRadius: 6 }} />
                       </td></tr>
                     ))
                   ) : filtered.length === 0 ? (
@@ -220,8 +220,8 @@ function Inner() {
                         <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(236,72,153,0.06))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(139,92,246,0.15)' }}>
                           <Sparkles size={28} color="#8b5cf6" />
                         </div>
-                        <div style={{ fontWeight: 700, fontSize: 18, color: '#374151' }}>Ready to start tracking?</div>
-                        <div style={{ fontSize: 13, color: '#9ca3af', maxWidth: 360, lineHeight: 1.5 }}>Add members and begin logging their transformation journey. Every rep, every kg counts!</div>
+                        <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-secondary)' }}>Ready to start tracking?</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-disabled)', maxWidth: 360, lineHeight: 1.5 }}>Add members and begin logging their transformation journey. Every rep, every kg counts!</div>
                       </m.div>
                     </td></tr>
                   ) : (
@@ -233,7 +233,7 @@ function Inner() {
                         <td style={td}>
                           <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: 'rgba(99,102,241,0.08)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.15)' }}>{c.client_id || '—'}</span>
                         </td>
-                        <td style={{ ...td, fontWeight: 600, color: '#111827' }}>
+                        <td style={{ ...td, fontWeight: 600, color: 'var(--text-primary)' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${['#6366f1','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6'][Math.abs(c.name.split('').reduce((a,ch) => ((a<<5)-a)+ch.charCodeAt(0),0)) % 6]}, #818cf8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#fff' }}>
                               {c.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
@@ -241,10 +241,10 @@ function Inner() {
                             {c.name}
                           </span>
                         </td>
-                        <td style={{ ...td, color: '#6b7280' }}>{c.trainer_name || '—'}</td>
-                        <td style={{ ...td, color: '#6b7280' }}>{c.weight ? `${c.weight} kg` : '—'}</td>
+                        <td style={{ ...td, color: 'var(--text-muted)' }}>{c.trainer_name || '—'}</td>
+                        <td style={{ ...td, color: 'var(--text-muted)' }}>{c.weight ? `${c.weight} kg` : '—'}</td>
                         <td style={td}><WeightChange start={(c as any).initial_weight ?? (c as any).start_weight} current={c.weight} /></td>
-                        <td style={{ ...td, color: '#6b7280' }}>{fmtDate(c.joining_date || c.pt_start_date)}</td>
+                        <td style={{ ...td, color: 'var(--text-muted)' }}>{fmtDate(c.joining_date || c.pt_start_date)}</td>
                         <td style={td}>
                           <Link href={`/clients/${c.id}`}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', color: '#4f46e5', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(99,102,241,0.2)', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)' }}

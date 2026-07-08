@@ -10,12 +10,13 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { FloatingPanel } from '@/components/premium/FloatingPanel';
 import { StatusPill } from '@/components/premium/StatusPill';
 import { PremiumTable } from '@/components/premium/PremiumTable';
 import { cn } from '@/components/ui/cn';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -96,14 +97,14 @@ function todayStr() {
 function SessionsSkeleton() {
   return (
     <div className="rounded-[20px] p-5 animate-pulse"
-      style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
-      <div className="h-3 w-32 rounded mb-4" style={{ background: 'rgba(0,0,0,0.07)' }} />
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+      <div className="h-3 w-32 rounded mb-4" style={{ background: 'var(--bg-subtle)' }} />
       {[1, 2, 3].map((i) => (
         <div key={i} className="flex items-center gap-3 mb-3">
-          <div className="h-9 w-9 rounded-[10px]" style={{ background: 'rgba(0,0,0,0.07)' }} />
+          <div className="h-9 w-9 rounded-[10px]" style={{ background: 'var(--bg-subtle)' }} />
           <div className="flex-1">
-            <div className="h-3 w-28 rounded" style={{ background: 'rgba(0,0,0,0.07)' }} />
-            <div className="h-2.5 w-40 mt-1.5 rounded" style={{ background: 'rgba(0,0,0,0.07)' }} />
+            <div className="h-3 w-28 rounded" style={{ background: 'var(--bg-subtle)' }} />
+            <div className="h-2.5 w-40 mt-1.5 rounded" style={{ background: 'var(--bg-subtle)' }} />
           </div>
         </div>
       ))}
@@ -280,7 +281,7 @@ function SchedulePageContent() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       {/* ── HEADER ── */}
-      <div className="sticky top-0 z-40 border-b" style={{ background: '#fff', backdropFilter: 'blur(20px)', borderColor: 'rgba(0,0,0,0.07)' }}>
+      <div className="sticky top-0 z-40 border-b" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderColor: 'rgba(0,0,0,0.07)' }}>
         <div className="mx-auto max-w-screen-xl px-5 py-4 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -296,15 +297,15 @@ function SchedulePageContent() {
                 </div>
               </div>
             </div>
-            <PremiumButton tone="primary" glow icon={<Plus size={14} />} onClick={() => setShowCreateModal(true)}>
+            <Button variant="primary" iconLeft={<Plus size={14} />} onClick={() => setShowCreateModal(true)}>
               Book Session
-            </PremiumButton>
+            </Button>
           </div>
 
           {/* View Toggles */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <div className="inline-flex overflow-hidden rounded-[12px] p-0.5"
-              style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
+              style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
               {([
                 { id: 'calendar' as ViewMode, label: 'Calendar', icon: <Calendar size={12} /> },
                 { id: 'timeline' as ViewMode, label: 'Timeline', icon: <Clock size={12} /> },
@@ -328,7 +329,7 @@ function SchedulePageContent() {
 
             {/* Search */}
             <div className="relative flex flex-1 min-w-[180px] max-w-[260px] items-center gap-2 rounded-[12px] px-3 py-1.5"
-              style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
+              style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' }}>
               <Search size={12} style={{ color: 'rgb(148,163,184)' }} />
               <input value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search sessions…"
@@ -337,7 +338,7 @@ function SchedulePageContent() {
 
             {/* Trainer Filter */}
             <div className="flex items-center gap-1.5 rounded-[10px] px-2.5 py-1"
-              style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)' }}>
+              style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)' }}>
               <Train size={12} style={{ color: 'rgb(148,163,184)' }} />
               <select value={selectedTrainerFilter} onChange={(e) => setSelectedTrainerFilter(e.target.value)}
                 className="bg-transparent text-[11px] font-[500] outline-none" style={{ color: 'rgb(15,23,42)' }}>
@@ -368,7 +369,7 @@ function SchedulePageContent() {
           <SessionsSkeleton />
         ) : sessionsError ? (
           <div className="rounded-[20px] p-8 text-center"
-            style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
             <div className="flex justify-center mb-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-[16px]" style={{ background: 'rgba(220,38,38,0.10)' }}>
                 <RefreshCw size={22} style={{ color: '#F59E0B' }} />
@@ -376,9 +377,9 @@ function SchedulePageContent() {
             </div>
             <h3 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Failed to load sessions</h3>
             <p className="mt-1 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>{sessionsError}</p>
-            <PremiumButton tone="primary" glow icon={<RefreshCw size={13} />} onClick={fetchSessions} className="mt-4">
+            <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={fetchSessions} className="mt-4">
               Retry
-            </PremiumButton>
+            </Button>
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -386,7 +387,7 @@ function SchedulePageContent() {
             {view === 'calendar' && (
               <m.div key="calendar" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
                 {/* Calendar Grid */}
-                <div className="rounded-[20px] p-5" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                   <div className="grid grid-cols-7 gap-1 mb-2">
                     {WEEKDAYS.map((d) => (
                       <div key={d} className="text-center text-[11px] font-[700] uppercase tracking-wider py-2" style={{ color: 'rgb(148,163,184)' }}>{d}</div>
@@ -443,7 +444,7 @@ function SchedulePageContent() {
 
                 {/* Sessions for selected date */}
                 <div>
-                  <div className="rounded-[20px] p-5" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                  <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                     <p className="text-[12px] font-[700] uppercase tracking-wider mb-4" style={{ color: 'rgb(148,163,184)' }}>
                       Sessions · {selectedDate}
                     </p>
@@ -464,7 +465,7 @@ function SchedulePageContent() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: idx * 0.04 }}
                             className="flex items-center gap-3 rounded-[14px] p-3.5 transition-all cursor-pointer hover:bg-black/[0.02]"
-                            style={{ background: '#f9fafb', border: '1px solid rgba(15,23,42,0.06)' }}
+                            style={{ background: 'var(--bg-subtle)', border: '1px solid rgba(15,23,42,0.06)' }}
                             onClick={() => setShowSessionPanel(session.id)}
                           >
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[11px] font-[700] text-white"
@@ -494,12 +495,12 @@ function SchedulePageContent() {
             {/* ── TIMELINE VIEW ── */}
             {view === 'timeline' && (
               <m.div key="timeline" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <div className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                   <p className="text-[12px] font-[700] uppercase tracking-wider mb-5" style={{ color: 'rgb(148,163,184)' }}>
                     Timeline · {selectedDate}
                   </p>
                   <div className="relative">
-                    <div className="absolute left-[15px] top-0 bottom-0 w-0.5" style={{ background: 'rgba(0,0,0,0.07)' }} />
+                    <div className="absolute left-[15px] top-0 bottom-0 w-0.5" style={{ background: 'var(--bg-subtle)' }} />
                     {sessionsForDate.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 text-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-[14px] mb-3" style={{ background: 'rgba(220,38,38,0.08)' }}>
@@ -529,7 +530,7 @@ function SchedulePageContent() {
                               <span className="mt-1 text-[10px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>{session.time}</span>
                             </div>
                             <div className="flex-1 rounded-[14px] p-3.5 transition-all border"
-                              style={{ background: '#fff', borderColor: 'rgba(0,0,0,0.07)' }}>
+                              style={{ background: 'var(--bg-card)', borderColor: 'rgba(0,0,0,0.07)' }}>
                               <div className="flex items-center justify-between gap-3">
                                 <div>
                                   <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{session.client}</p>
@@ -555,7 +556,7 @@ function SchedulePageContent() {
             {/* ── WEEKLY VIEW ── */}
             {view === 'weekly' && (
               <m.div key="weekly" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <div className="rounded-[20px] overflow-hidden" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                <div className="rounded-[20px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                   <div className="grid grid-cols-7 border-b" style={{ borderColor: 'rgba(0,0,0,0.07)' }}>
                     {WEEKDAYS.map((day, i) => {
                       const dateStr = weekDates[i];
@@ -646,7 +647,7 @@ function SchedulePageContent() {
                     emptyMessage="No sessions found"
                   />
                   <div>
-                    <div className="rounded-[20px] p-5" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
+                    <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
                       <p className="text-[12px] font-[700] uppercase tracking-wider mb-3" style={{ color: 'rgb(148,163,184)' }}>Trainer Availability</p>
                       <div className="space-y-3">
                         {trainerList.map((trainer, i) => {
@@ -757,15 +758,15 @@ function CreateSessionModal({
       size="lg"
       footer={
         <div className="flex gap-3 w-full justify-end">
-          <PremiumButton tone="secondary" size="sm" onClick={handleClose}>Cancel</PremiumButton>
+          <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
           {(step === 1 || conflict) ? (
-            <PremiumButton tone="primary" size="sm" glow onClick={handleConfirm} disabled={!form.client || !form.trainer || !form.time}>
+            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={!form.client || !form.trainer || !form.time}>
               {step === 1 ? 'Continue' : 'Book Anyway'}
-            </PremiumButton>
+            </Button>
           ) : (
-            <PremiumButton tone="success" size="sm" glow icon={<CheckCircle2 size={13} />} onClick={handleConfirm}>
+            <Button variant="success" size="sm" iconLeft={<CheckCircle2 size={13} />} onClick={handleConfirm}>
               Confirm Booking
-            </PremiumButton>
+            </Button>
           )}
         </div>
       }
@@ -786,7 +787,7 @@ function CreateSessionModal({
             {clientOptionsLoading ? (
               <div className="grid grid-cols-2 gap-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-9 rounded-[10px] animate-pulse" style={{ background: 'rgba(0,0,0,0.07)' }} />
+                  <div key={i} className="h-9 rounded-[10px] animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
                 ))}
               </div>
             ) : (
@@ -832,19 +833,19 @@ function CreateSessionModal({
               <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Date</p>
               <input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: '#f9fafb', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
             </div>
             <div>
               <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Time</p>
               <input type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: '#f9fafb', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }} />
             </div>
             <div>
               <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Duration</p>
               <select value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: parseInt(e.target.value) }))}
                 className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none"
-                style={{ background: '#f9fafb', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }}>
+                style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }}>
                 {[30, 45, 60, 75, 90, 120].map((d) => <option key={d} value={d}>{d} min</option>)}
               </select>
             </div>
@@ -875,7 +876,7 @@ function CreateSessionModal({
             <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               placeholder="Session focus, client notes, or instructions…"
               className="w-full rounded-[10px] px-3 py-2.5 text-[12.5px] font-[500] outline-none resize-none"
-              style={{ background: '#f9fafb', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)', minHeight: 60 }}
+              style={{ background: 'var(--bg-subtle)', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)', minHeight: 60 }}
             />
           </div>
 
@@ -961,7 +962,7 @@ function SessionDetailPanel({
             { label: 'Trainer', value: session.trainer },
             { label: 'ID', value: `#${session.id}` },
           ].map((item) => (
-            <div key={item.label} className="rounded-[10px] p-3" style={{ background: '#f9fafb' }}>
+            <div key={item.label} className="rounded-[10px] p-3" style={{ background: 'var(--bg-subtle)' }}>
               <p className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{item.label}</p>
               <p className="mt-1 text-[13px] font-[650]" style={{ color: 'rgb(15,23,42)' }}>{item.value}</p>
             </div>
@@ -970,7 +971,7 @@ function SessionDetailPanel({
 
         {/* Notes */}
         {session.notes && (
-          <div className="rounded-[12px] p-3.5" style={{ background: '#f9fafb', border: '1px solid rgba(15,23,42,0.06)' }}>
+          <div className="rounded-[12px] p-3.5" style={{ background: 'var(--bg-subtle)', border: '1px solid rgba(15,23,42,0.06)' }}>
             <p className="text-[10px] font-[700] uppercase tracking-wider mb-1.5" style={{ color: 'rgb(148,163,184)' }}>Session Notes</p>
             <p className="text-[12.5px]" style={{ color: 'rgb(100,116,139)' }}>{session.notes}</p>
           </div>

@@ -155,15 +155,15 @@ function Inner() {
   return (
     <AppShell>
       {/* ── Hero ── */}
-      <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', padding: '48px 32px 40px', borderRadius: '0 0 40px 40px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+      <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', padding: '48px 32px 40px', borderRadius: '0 0 40px 40px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 6, position: 'relative', zIndex: 1 }}>
           <m.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #f59e0b, #f97316)', boxShadow: '0 8px 32px rgba(245,158,11,0.3)' }}>
             <CalendarDays size={24} color="#fff" />
           </m.div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Leave Requests</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>Manage and review trainer leave applications</p>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Leave Requests</h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Manage and review trainer leave applications</p>
           </div>
         </div>
       </div>
@@ -198,7 +198,7 @@ function Inner() {
                 <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: k.color }}>{k.label}</span>
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>{k.icon}</div>
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{k.value}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{k.value}</div>
             </m.div>
           ))}
         </m.div>
@@ -206,9 +206,9 @@ function Inner() {
         {/* ── Toolbar ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible">
           <m.div variants={itemVariants}
-            style={{ borderRadius: 18, padding: '14px 18px', marginBottom: 16, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
+            style={{ borderRadius: 18, padding: '14px 18px', marginBottom: 16, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: 4, background: '#f8fafc', borderRadius: 10, padding: 3 }}>
+              <div style={{ display: 'flex', gap: 4, background: 'var(--bg-subtle)', borderRadius: 10, padding: 3 }}>
                 {TABS.map((t) => (
                   <button key={t.key} onClick={() => setTab(t.key)}
                     style={{
@@ -224,10 +224,10 @@ function Inner() {
                   </button>
                 ))}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', background: '#f8fafc', borderRadius: 10, padding: '5px 12px', border: '1px solid #e5e7eb' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', background: 'var(--bg-subtle)', borderRadius: 10, padding: '5px 12px', border: '1px solid var(--border)' }}>
                 <Search size={13} color="#9ca3af" />
                 <input placeholder="Search trainer / type…" value={search} onChange={(e) => setSearch(e.target.value)}
-                  style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 12.5, fontWeight: 500, outline: 'none', width: 200 }} />
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, outline: 'none', width: 200 }} />
               </div>
               <button onClick={() => setShowModal(true)}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', boxShadow: '0 4px 16px rgba(245,158,11,0.25)', transition: 'transform 0.2s, box-shadow 0.2s' }}
@@ -240,12 +240,12 @@ function Inner() {
 
           {/* ── Table ── */}
           <m.div variants={itemVariants}
-            style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', background: '#fff' }}>
+            style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', background: 'var(--bg-card)' }}>
             {loading ? (
               <div style={{ padding: '60px', textAlign: 'center' }}>
                 <m.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                   style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: '#f59e0b', margin: '0 auto 12px' }} />
-                <div style={{ fontSize: 13, color: '#6b7280' }}>Loading leave requests…</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Loading leave requests…</div>
               </div>
             ) : filtered.length === 0 ? (
               <div style={{ padding: '60px', textAlign: 'center' }}>
@@ -254,10 +254,10 @@ function Inner() {
                   <div style={{ width: 64, height: 64, borderRadius: 18, background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fde68a' }}>
                     <CalendarDays size={28} color="#d97706" />
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: 17, color: '#374151' }}>
+                  <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--text-secondary)' }}>
                     {tab === 'pending' ? 'No pending requests' : 'No leave requests found'}
                   </div>
-                  <div style={{ fontSize: 13, color: '#6b7280', maxWidth: 360 }}>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 360 }}>
                     {tab === 'pending' ? 'All caught up — nothing to review.' : 'Try changing the filter or adding a new request.'}
                   </div>
                 </m.div>
@@ -266,13 +266,13 @@ function Inner() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: '#fafafa', borderBottom: '1px solid #f3f4f6' }}>
-                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>Trainer</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>Type</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>Duration</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>Reason</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>Status</th>
-                      {isAdmin && <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>Actions</th>}
+                    <tr style={{ background: '#fafafa', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Trainer</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Type</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Duration</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Reason</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Status</th>
+                      {isAdmin && <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -283,7 +283,7 @@ function Inner() {
                       const busy = acting === lv.id;
                       return (
                         <m.tr key={lv.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                          style={{ borderBottom: '1px solid #f3f4f6', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
+                          style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
                           onMouseEnter={(e) => { e.currentTarget.style.background = '#fffbeb'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
                           <td style={{ padding: '12px 16px' }}>
@@ -292,8 +292,8 @@ function Inner() {
                                 {initials(lv.trainer_name || '?')}
                               </div>
                               <div>
-                                <div style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>{lv.trainer_name || '—'}</div>
-                                <div style={{ fontSize: 10.5, color: '#9ca3af' }}>{lv.created_at ? fmt(lv.created_at) : 'Requested'}</div>
+                                <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{lv.trainer_name || '—'}</div>
+                                <div style={{ fontSize: 10.5, color: 'var(--text-disabled)' }}>{lv.created_at ? fmt(lv.created_at) : 'Requested'}</div>
                               </div>
                             </div>
                           </td>
@@ -303,17 +303,17 @@ function Inner() {
                             </span>
                           </td>
                           <td style={{ padding: '12px 16px' }}>
-                            <div style={{ fontSize: 12.5, fontWeight: 600, color: '#111827' }}>
+                            <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)' }}>
                               {fmt(lv.from_date ?? '')}
-                              {lv.from_date !== lv.to_date && <span style={{ color: '#9ca3af', fontWeight: 400 }}> → {fmt(lv.to_date ?? '')}</span>}
+                              {lv.from_date !== lv.to_date && <span style={{ color: 'var(--text-disabled)', fontWeight: 400 }}> → {fmt(lv.to_date ?? '')}</span>}
                             </div>
-                            <div style={{ fontSize: 10.5, color: '#9ca3af', marginTop: 2 }}>{days} day{days !== 1 ? 's' : ''}</div>
+                            <div style={{ fontSize: 10.5, color: 'var(--text-disabled)', marginTop: 2 }}>{days} day{days !== 1 ? 's' : ''}</div>
                           </td>
                           <td style={{ padding: '12px 16px' }}>
-                            <span style={{ fontSize: 12.5, color: '#374151' }}>
+                            <span style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>
                               {lv.reason || <span style={{ color: '#d1d5db' }}>—</span>}
                             </span>
-                            {lv.admin_note && <div style={{ fontSize: 10.5, color: '#6b7280', marginTop: 2 }}>Note: {lv.admin_note}</div>}
+                            {lv.admin_note && <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>Note: {lv.admin_note}</div>}
                           </td>
                           <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: sm.bg, color: sm.color, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
@@ -360,19 +360,19 @@ function Inner() {
             style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
             onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}>
             <m.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
-              style={{ background: '#fff', borderRadius: 22, padding: 32, width: '100%', maxWidth: 500, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}>
+              style={{ background: 'var(--bg-card)', borderRadius: 22, padding: 32, width: '100%', maxWidth: 500, border: '1px solid var(--border)', boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 42, height: 42, borderRadius: 12, background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fde68a' }}>
                     <CalendarDays size={20} color="#d97706" />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#111827' }}>Request Leave</h3>
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: '#6b7280' }}>Submit a new leave request for a trainer</p>
+                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Request Leave</h3>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>Submit a new leave request for a trainer</p>
                   </div>
                 </div>
                 <button onClick={() => setShowModal(false)}
-                  style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: '#f3f4f6', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}>
+                  style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'var(--bg-subtle)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}>
                   <X size={14} />
                 </button>
               </div>
@@ -383,30 +383,30 @@ function Inner() {
 
               <form onSubmit={submitRequest} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', marginBottom: 6, display: 'block' }}>Trainer *</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Trainer *</label>
                   <select value={form.trainer_id} onChange={(e) => setForm((f) => ({ ...f, trainer_id: e.target.value }))} required
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}>
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}>
                     <option value="">— Select trainer —</option>
                     {trainers.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', marginBottom: 6, display: 'block' }}>Leave Type *</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Leave Type *</label>
                   <select value={form.leave_type} onChange={(e) => setForm((f) => ({ ...f, leave_type: e.target.value }))}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}>
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}>
                     {LEAVE_TYPES.map((t) => (<option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>))}
                   </select>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', marginBottom: 6, display: 'block' }}>From *</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>From *</label>
                     <input type="date" value={form.from_date} onChange={(e) => setForm((f) => ({ ...f, from_date: e.target.value }))} required
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', marginBottom: 6, display: 'block' }}>To *</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>To *</label>
                     <input type="date" value={form.to_date} min={form.from_date} onChange={(e) => setForm((f) => ({ ...f, to_date: e.target.value }))} required
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }} />
                   </div>
                 </div>
                 {form.from_date && form.to_date && form.to_date >= form.from_date && (
@@ -415,13 +415,13 @@ function Inner() {
                   </div>
                 )}
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', marginBottom: 6, display: 'block' }}>Reason</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Reason</label>
                   <textarea rows={3} placeholder="Optional — e.g. personal emergency, medical appointment…" value={form.reason} onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} />
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
                   <button type="button" onClick={() => setShowModal(false)}
-                    style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: 'transparent', color: '#6b7280', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
+                    style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: 'transparent', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.2s' }}>
                     Cancel
                   </button>
                   <button type="submit" disabled={submitting}
@@ -442,26 +442,26 @@ function Inner() {
             style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
             onClick={(e) => { if (e.target === e.currentTarget) setRejectTarget(null); }}>
             <m.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
-              style={{ background: '#fff', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}>
+              style={{ background: 'var(--bg-card)', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid var(--border)', boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3' }}>
                   <AlertTriangle size={18} color="#b91c1c" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111827' }}>Reject Leave Request</h3>
-                  <p style={{ margin: '2px 0 0', fontSize: 12.5, color: '#6b7280' }}>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Reject Leave Request</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text-muted)' }}>
                     {rejectTarget.trainer_name} · {rejectTarget.leave_type} · {daysBetween(rejectTarget.from_date ?? '', rejectTarget.to_date ?? '')} day(s)
                   </p>
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', marginBottom: 6, display: 'block' }}>Rejection Reason (optional)</label>
+                <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6, display: 'block' }}>Rejection Reason (optional)</label>
                 <textarea rows={3} placeholder="e.g. Insufficient coverage during this period…" value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} autoFocus
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} />
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }} />
               </div>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
                 <button onClick={() => setRejectTarget(null)}
-                  style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: 'transparent', color: '#6b7280', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: 'transparent', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Cancel
                 </button>
                 <button onClick={rejectConfirm} disabled={!!acting}

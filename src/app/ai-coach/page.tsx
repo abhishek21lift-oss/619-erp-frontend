@@ -174,7 +174,7 @@ export default function AiCoachPage() {
               {/* Headline */}
               <h1
                 className="text-[42px] sm:text-[56px] font-black leading-[1.05] tracking-[-0.03em] mb-4"
-                style={{ color: '#111827' }}
+                style={{ color: 'var(--text-primary)' }}
               >
                 Train smarter.{' '}
                 <span
@@ -189,7 +189,7 @@ export default function AiCoachPage() {
                 </span>
               </h1>
 
-              <p className="mx-auto max-w-xl text-[16px] leading-relaxed mb-8" style={{ color: '#6b7280' }}>
+              <p className="mx-auto max-w-xl text-[16px] leading-relaxed mb-8" style={{ color: 'var(--text-muted)' }}>
                 Four AI tools built for serious fitness studios. Generate elite training plans,
                 personalised nutrition, client progress analysis, and business intelligence —
                 all from inside 619.
@@ -213,9 +213,9 @@ export default function AiCoachPage() {
                   href="/ai/progress-analysis"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-200 hover:bg-zinc-100"
                   style={{
-                    background: '#F3F4F6',
-                    border: '1px solid #e5e7eb',
-                    color: '#374151',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   Analyse a client
@@ -231,9 +231,9 @@ export default function AiCoachPage() {
                       key={uc}
                       className="text-[11px] px-3 py-1 rounded-full font-medium"
                       style={{
-                        background: '#F3F4F6',
-                        border: '1px solid #e5e7eb',
-                        color: '#6b7280',
+                        background: 'var(--bg-subtle)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-muted)',
                       }}
                     >
                       {uc}
@@ -248,7 +248,7 @@ export default function AiCoachPage() {
           <section className="px-4 pb-12">
             <div
               className="mx-auto max-w-3xl grid grid-cols-2 sm:grid-cols-4 gap-px rounded-2xl overflow-hidden"
-              style={{ background: '#e5e7eb', border: '1px solid #e5e7eb' }}
+              style={{ background: '#e5e7eb', border: '1px solid var(--border)' }}
             >
               {STATS.map(({ value, label, icon: Icon }, i) => (
                 <m.div
@@ -258,11 +258,11 @@ export default function AiCoachPage() {
                   animate="show"
                   variants={fadeUp}
                   className="flex flex-col items-center gap-1.5 py-5 px-4"
-                  style={{ background: '#fff' }}
+                  style={{ background: 'var(--bg-card)' }}
                 >
                   <Icon size={15} style={{ color: '#D4AF37' }} />
-                  <span className="text-[20px] font-black tracking-tight" style={{ color: '#111827' }}>{value}</span>
-                  <span className="text-[10px] font-semibold tracking-[0.07em] uppercase" style={{ color: '#9ca3af' }}>{label}</span>
+                  <span className="text-[20px] font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>{value}</span>
+                  <span className="text-[10px] font-semibold tracking-[0.07em] uppercase" style={{ color: 'var(--text-disabled)' }}>{label}</span>
                 </m.div>
               ))}
             </div>
@@ -281,10 +281,10 @@ export default function AiCoachPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#D4AF37' }}>
                   Four modules
                 </p>
-                <h2 className="text-[28px] sm:text-[34px] font-black tracking-[-0.025em]" style={{ color: '#111827' }}>
+                <h2 className="text-[28px] sm:text-[34px] font-black tracking-[-0.025em]" style={{ color: 'var(--text-primary)' }}>
                   Everything your studio needs
                 </h2>
-                <p className="mt-2 text-[14px]" style={{ color: '#6b7280' }}>
+                <p className="mt-2 text-[14px]" style={{ color: 'var(--text-muted)' }}>
                   Pick any tool below. Results in seconds.
                 </p>
               </m.div>
@@ -302,8 +302,8 @@ export default function AiCoachPage() {
                       href={href}
                       className="group relative flex flex-col rounded-3xl overflow-hidden transition-transform duration-300 hover:scale-[1.015] hover:-translate-y-0.5"
                       style={{
-                        background: '#fff',
-                        border: '1px solid #e5e7eb',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                       }}
                     >
@@ -312,14 +312,14 @@ export default function AiCoachPage() {
                         className="relative px-6 pt-7 pb-6"
                         style={{
                           background: `linear-gradient(160deg, ${gradientFrom} 0%, ${gradientTo} 100%)`,
-                          borderBottom: '1px solid #f3f4f6',
+                          borderBottom: '1px solid var(--border)',
                         }}
                       >
                         <div className="relative flex items-start justify-between">
                           <div
                             className="flex items-center justify-center w-11 h-11 rounded-2xl"
                             style={{
-                              background: '#F9FAFB',
+                              background: 'var(--bg-subtle)',
                               border: `1px solid ${border}`,
                             }}
                           >
@@ -329,7 +329,7 @@ export default function AiCoachPage() {
                             <span
                               className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-[0.08em]"
                               style={{
-                                background: '#F9FAFB',
+                                background: 'var(--bg-subtle)',
                                 border: `1px solid ${border}`,
                                 color,
                               }}
@@ -343,7 +343,7 @@ export default function AiCoachPage() {
                           <p className="text-[10px] font-bold uppercase tracking-[0.10em] mb-1" style={{ color: `${color}cc` }}>
                             {eyebrow}
                           </p>
-                          <h3 className="text-[20px] font-black tracking-[-0.02em]" style={{ color: '#111827' }}>
+                          <h3 className="text-[20px] font-black tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
                             {label}
                           </h3>
                         </div>
@@ -351,7 +351,7 @@ export default function AiCoachPage() {
 
                       {/* Card body */}
                       <div className="flex flex-col flex-1 px-6 py-5 gap-4">
-                        <p className="text-[13px] leading-[1.65]" style={{ color: '#6b7280' }}>
+                        <p className="text-[13px] leading-[1.65]" style={{ color: 'var(--text-muted)' }}>
                           {description}
                         </p>
 
@@ -359,7 +359,7 @@ export default function AiCoachPage() {
                           {capabilities.map((cap) => (
                             <li key={cap} className="flex items-start gap-2.5">
                               <CheckCircle2 size={13} className="flex-shrink-0 mt-0.5" style={{ color }} />
-                              <span className="text-[12px] leading-snug" style={{ color: '#6b7280' }}>
+                              <span className="text-[12px] leading-snug" style={{ color: 'var(--text-muted)' }}>
                                 {cap}
                               </span>
                             </li>
@@ -394,7 +394,7 @@ export default function AiCoachPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#D4AF37' }}>
                   Process
                 </p>
-                <h2 className="text-[28px] sm:text-[34px] font-black tracking-[-0.025em]" style={{ color: '#111827' }}>
+                <h2 className="text-[28px] sm:text-[34px] font-black tracking-[-0.025em]" style={{ color: 'var(--text-primary)' }}>
                   From idea to output in seconds
                 </h2>
               </div>
@@ -409,8 +409,8 @@ export default function AiCoachPage() {
                     variants={fadeUp}
                     className="relative flex flex-col gap-4 rounded-2xl p-6"
                     style={{
-                      background: '#fff',
-                      border: '1px solid #e5e7eb',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
                     }}
                   >
                     {/* Step number */}
@@ -432,8 +432,8 @@ export default function AiCoachPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-[16px] font-bold" style={{ color: '#111827' }}>{title}</h3>
-                    <p className="text-[13px] leading-relaxed" style={{ color: '#6b7280' }}>{body}</p>
+                    <h3 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+                    <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{body}</p>
 
                     {/* Connector line (not on last) */}
                     {i < 2 && (
@@ -454,8 +454,8 @@ export default function AiCoachPage() {
               <div
                 className="rounded-3xl overflow-hidden"
                 style={{
-                  background: '#F9FAFB',
-                  border: '1px solid #e5e7eb',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border)',
                 }}
               >
                 <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-200">
@@ -471,8 +471,8 @@ export default function AiCoachPage() {
                       >
                         <Icon size={16} style={{ color: '#D4AF37' }} />
                       </div>
-                      <h4 className="text-[15px] font-bold" style={{ color: '#111827' }}>{title}</h4>
-                      <p className="text-[12px] leading-relaxed" style={{ color: '#6b7280' }}>{body}</p>
+                      <h4 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h4>
+                      <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{body}</p>
                     </div>
                   ))}
                 </div>
@@ -484,10 +484,10 @@ export default function AiCoachPage() {
           <section className="px-4 pb-20">
             <div className="mx-auto max-w-4xl">
               <div className="text-center mb-8">
-                <h2 className="text-[22px] font-black tracking-[-0.02em]" style={{ color: '#111827' }}>
+                <h2 className="text-[22px] font-black tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
                   Jump straight in
                 </h2>
-                <p className="mt-1 text-[13px]" style={{ color: '#6b7280' }}>
+                <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                   Each tool is a one-screen flow. No setup required.
                 </p>
               </div>
@@ -499,8 +499,8 @@ export default function AiCoachPage() {
                     href={href}
                     className="group flex items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-200 hover:scale-[1.012]"
                     style={{
-                      background: '#fff',
-                      border: '1px solid #e5e7eb',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
                     }}
                   >
                     <div
@@ -511,12 +511,12 @@ export default function AiCoachPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.08em]" style={{ color: `${color}99` }}>{eyebrow}</p>
-                      <p className="text-[14px] font-semibold truncate" style={{ color: '#111827' }}>{label}</p>
+                      <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{label}</p>
                     </div>
                     <ArrowRight
                       size={15}
                       className="flex-shrink-0 transition-transform duration-200 group-hover:translate-x-1"
-                      style={{ color: '#9ca3af' }}
+                      style={{ color: 'var(--text-disabled)' }}
                     />
                   </Link>
                 ))}
@@ -526,7 +526,7 @@ export default function AiCoachPage() {
 
           {/* ── Footer disclaimer ────────────────────────────── */}
           <div className="px-4 pb-12 text-center">
-            <p className="text-[11px] leading-relaxed mx-auto max-w-md" style={{ color: '#9ca3af' }}>
+            <p className="text-[11px] leading-relaxed mx-auto max-w-md" style={{ color: 'var(--text-disabled)' }}>
               AI-generated plans are a professional starting point. Always apply your
               expertise and judgement before sharing any recommendation with a client.
               619 AI Suite is powered by OpenAI GPT-4o.

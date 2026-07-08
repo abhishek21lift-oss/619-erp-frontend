@@ -22,18 +22,18 @@ function KpiCard({ label, value, icon, gradient }: {
 }) {
   return (
     <m.div variants={itemVariants}
-      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
+      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
       onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(6,182,212,0.12)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative', zIndex: 1 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#6b7280' }}>{label}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
         {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.07)', color: '#0891b2' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border)', color: '#0891b2' }}>
             {icon}
           </div>
         )}
       </div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
+      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
     </m.div>
   );
 }
@@ -101,27 +101,27 @@ function Inner() {
 
   return (
     <AppShell>
-      <div style={{ background: '#f8fafc', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+      <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(37,99,235,0.1))', border: '1px solid rgba(6,182,212,0.2)', boxShadow: '0 4px 16px rgba(6,182,212,0.1)' }}>
             <Activity size={24} color="#0891b2" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Attendance Report</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>Track member check-in patterns and peak traffic hours</p>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Attendance Report</h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Track member check-in patterns and peak traffic hours</p>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
             <Calendar size={14} color="#9ca3af" />
-            <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>From</span>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>From</span>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '7px 14px', border: '1px solid #d1d5db' }}>
             <Calendar size={14} color="#9ca3af" />
-            <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>To</span>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>To</span>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '2px 0' }} />
           </div>
         </div>
       </div>
@@ -137,11 +137,11 @@ function Inner() {
         </m.div>
 
         <m.div variants={containerVariants} initial="hidden" animate="visible">
-          <m.div variants={itemVariants} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <m.div variants={itemVariants} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #06b6d4, #2563eb)' }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Check-ins by Hour</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Check-ins by Hour</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 8, background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)' }}>
                 <ArrowUpRight size={12} color="#0891b2" />
@@ -149,14 +149,14 @@ function Inner() {
               </div>
             </div>
             {loading ? (
-              <div style={{ height: 220, background: '#f3f4f6', borderRadius: 10 }} />
+              <div style={{ height: 220, background: 'var(--bg-subtle)', borderRadius: 10 }} />
             ) : totalCheckins === 0 ? (
               <div style={{ height: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                 <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(6,182,212,0.1), rgba(6,182,212,0.04))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(6,182,212,0.15)' }}>
                   <BarChart3 size={24} color="#0891b2" />
                 </div>
-                <div style={{ fontWeight: 600, fontSize: 15, color: '#6b7280' }}>No check-in data for this period</div>
-                <div style={{ fontSize: 12, color: '#9ca3af', maxWidth: 300, textAlign: 'center' }}>Select a different date range to see attendance patterns.</div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text-muted)' }}>No check-in data for this period</div>
+                <div style={{ fontSize: 12, color: 'var(--text-disabled)', maxWidth: 300, textAlign: 'center' }}>Select a different date range to see attendance patterns.</div>
               </div>
             ) : (
               <>
@@ -169,14 +169,14 @@ function Inner() {
                           {h.count} check-ins
                         </div>
                       )}
-                      <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 'auto', fontWeight: 600 }}>{hovered !== i ? (h.count > 0 ? h.count : '') : ''}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-disabled)', marginTop: 'auto', fontWeight: 600 }}>{hovered !== i ? (h.count > 0 ? h.count : '') : ''}</div>
                       <div style={{ width: '100%', height: `${Math.max((h.count / max) * 100, h.count > 0 ? 4 : 0)}%`, background: h.count > 0 ? 'linear-gradient(180deg, #06b6d4 0%, #2563eb 50%, rgba(37,99,235,0.3) 100%)' : '#f3f4f6', borderRadius: '6px 6px 0 0', minHeight: h.count > 0 ? 6 : 2, transition: 'height 0.4s, opacity 0.15s', opacity: hovered !== null && hovered !== i ? 0.5 : 1, boxShadow: h.count > 0 ? '0 2px 8px rgba(6,182,212,0.2)' : 'none' }} />
                     </div>
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
                   {byHour.map((h, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.5px' }}>{h.hour}</div>
+                    <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: 'var(--text-disabled)', fontWeight: 600, letterSpacing: '0.5px' }}>{h.hour}</div>
                   ))}
                 </div>
               </>

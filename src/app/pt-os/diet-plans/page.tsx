@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -105,7 +105,7 @@ function Inner() {
   return (
     <div>
       {/* ── Hero ── */}
-      <div style={{ padding: '32px', borderBottom: '1px solid #f3f4f6' }}>
+      <div style={{ padding: '32px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <m.div variants={heroVariants} initial="hidden" animate="visible"
@@ -113,13 +113,13 @@ function Inner() {
               <Salad size={26} color="#fff" />
             </m.div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Diet Plans</h1>
-              <p style={{ margin: '4px 0 0', fontSize: 13.5, color: '#6b7280' }}>Nutrition planning & meal tracking for your clients</p>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Diet Plans</h1>
+              <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'var(--text-muted)' }}>Nutrition planning & meal tracking for your clients</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 12, fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer' }} />
+              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 12, fontFamily: 'inherit', fontWeight: 600, cursor: 'pointer' }} />
           </div>
         </div>
       </div>
@@ -137,15 +137,15 @@ function Inner() {
             const pct = Math.min((macro.value / macro.max) * 100, 100);
             return (
               <m.div key={macro.label} variants={itemVariants}
-                style={{ borderRadius: 16, padding: 18, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', cursor: 'default', transition: 'transform 0.3s' }}
+                style={{ borderRadius: 16, padding: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'default', transition: 'transform 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#9ca3af' }}>{macro.label}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-disabled)' }}>{macro.label}</span>
                   <div style={{ width: 32, height: 32, borderRadius: 9, background: `${macro.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: macro.color }}>{macro.icon}</div>
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', marginBottom: 8 }}>{macro.value}<span style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af' }}>/{macro.max}{macro.unit}</span></div>
-                <div style={{ height: 4, borderRadius: 2, background: '#f3f4f6', overflow: 'hidden' }}>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', marginBottom: 8 }}>{macro.value}<span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-disabled)' }}>/{macro.max}{macro.unit}</span></div>
+                <div style={{ height: 4, borderRadius: 2, background: 'var(--bg-subtle)', overflow: 'hidden' }}>
                   <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
                     style={{ height: '100%', borderRadius: 2, background: macro.color }} />
                 </div>
@@ -156,17 +156,17 @@ function Inner() {
 
         {/* ── Water Intake ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ borderRadius: 16, padding: 18, background: '#fff', border: '1px solid #e5e7eb', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
+          style={{ borderRadius: 16, padding: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(16,185,129,0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <GlassWater size={18} color="#22d3ee" />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#9ca3af' }}>Water Intake</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-disabled)' }}>Water Intake</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#22d3ee' }}>{water}/8 glasses</span>
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#f3f4f6', overflow: 'hidden' }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--bg-subtle)', overflow: 'hidden' }}>
                 <m.div initial={{ width: 0 }} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
                   style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #06b6d4, #10b981)' }} />
               </div>
@@ -179,7 +179,7 @@ function Inner() {
         </m.div>
 
         {/* ── Meal Schedule ── */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: '#f3f4f6', borderRadius: 12, padding: 3, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: 'var(--bg-subtle)', borderRadius: 12, padding: 3, flexWrap: 'wrap' }}>
           {MEAL_TYPES.map((mt) => (
             <button key={mt.id} onClick={() => setActiveMealType(activeMealType === mt.id ? null : mt.id)}
               style={{
@@ -191,7 +191,7 @@ function Inner() {
               }}>
               {mt.icon}
               {mt.label}
-              <span style={{ fontSize: 10, color: '#9ca3af' }}>{mt.time}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>{mt.time}</span>
             </button>
           ))}
         </div>
@@ -203,7 +203,7 @@ function Inner() {
             const mt = MEAL_TYPES.find((t) => t.id === meal.type);
             return (
               <m.div key={meal.id} variants={itemVariants}
-                style={{ borderRadius: 16, padding: 18, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', cursor: 'pointer', transition: 'all 0.3s' }}
+                style={{ borderRadius: 16, padding: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 30px ${mt?.color}15`; e.currentTarget.style.borderColor = `${mt?.color}30`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -211,10 +211,10 @@ function Inner() {
                     <span style={{ fontSize: 20 }}>{meal.emoji}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: mt?.color || '#6366f1', background: `${mt?.color || '#6366f1'}18`, padding: '2px 8px', borderRadius: 6 }}>{meal.type}</span>
                   </div>
-                  <span style={{ fontSize: 10, color: '#9ca3af' }}>{meal.time}</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>{meal.time}</span>
                 </div>
-                <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: '#111827' }}>{meal.name}</h4>
-                <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: '#6b7280' }}>
+                <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{meal.name}</h4>
+                <div style={{ display: 'flex', gap: 10, fontSize: 11.5, color: 'var(--text-muted)' }}>
                   <span>🔥 {meal.calories} kcal</span>
                   <span>💪 {meal.protein}g</span>
                   <span>🍚 {meal.carbs}g</span>
@@ -231,12 +231,12 @@ function Inner() {
             <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(16,185,129,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Salad size={15} color="#34d399" />
             </div>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111827' }}>Diet Templates</h3>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Diet Templates</h3>
             <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f9fafb', borderRadius: 8, padding: '4px 12px', border: '1px solid #e5e7eb' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '4px 12px', border: '1px solid var(--border)' }}>
                 <Search size={13} color="#9ca3af" />
                 <input placeholder="Search templates…" value={search} onChange={(e) => setSearch(e.target.value)}
-                  style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 12, fontWeight: 500, outline: 'none', width: 150 }} />
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, outline: 'none', width: 150 }} />
               </div>
             </div>
           </div>
@@ -255,60 +255,60 @@ function Inner() {
           <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
             {filteredTemplates.length === 0 ? (
-              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: 'var(--text-disabled)', fontSize: 13 }}>
                 No templates found. Create one to get started.
               </div>
             ) : filteredTemplates.map((t, i) => (
               <m.div key={t.id} variants={itemVariants}
-                style={{ position: 'relative', borderRadius: 16, padding: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', cursor: 'pointer', transition: 'all 0.3s' }}
+                style={{ position: 'relative', borderRadius: 16, padding: 20, background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(16,185,129,0.1)'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.2)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${t.color}22, ${t.color}11)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, fontSize: 20 }}>🥗</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>{t.name}</h4>
+                  <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{t.name}</h4>
                   {t.popular && <span style={{ padding: '1px 7px', borderRadius: 8, fontSize: 9, fontWeight: 700, background: 'rgba(245,158,11,0.15)', color: '#D97706' }}>Popular</span>}
                 </div>
-                <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px' }}>{t.description}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>{t.description}</p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 11 }}>
                   <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(16,185,129,0.1)', color: '#059669' }}>🔥 {t.calories} kcal</span>
                   <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}>💪 {t.protein}g</span>
                   <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.1)', color: '#D97706' }}>🍚 {t.carbs}g</span>
                   <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(236,72,153,0.1)', color: '#ec4899' }}>🧈 {t.fats}g</span>
                 </div>
-                {t.meals > 0 && <div style={{ marginTop: 10, fontSize: 11, color: '#9ca3af' }}>{t.meals} meals · Goal: {t.goal}</div>}
+                {t.meals > 0 && <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-disabled)' }}>{t.meals} meals · Goal: {t.goal}</div>}
               </m.div>
             ))}
           </m.div>
         </div>
 
         {/* ── Supplements ── */}
-        <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid #e5e7eb' }}>
+        <div style={{ borderRadius: 20, padding: 22, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, rgba(236,72,153,0.15), rgba(245,158,11,0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Sparkles size={17} color="#ec4899" />
             </div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>Supplement Stack</h3>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Supplement Stack</h3>
             <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 9.5, fontWeight: 700, background: 'rgba(236,72,153,0.1)', color: '#ec4899', letterSpacing: '0.05em' }}>RECOMMENDED</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
             {supplements.length === 0 ? (
-              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 30, color: '#9ca3af', fontSize: 12 }}>
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 30, color: 'var(--text-disabled)', fontSize: 12 }}>
                 No supplements configured yet.
               </div>
             ) : supplements.map((s, i) => (
               <m.div key={s.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                style={{ borderRadius: 14, padding: 14, background: '#F9FAFB', border: '1px solid #e5e7eb', cursor: 'default', transition: 'all 0.3s' }}
+                style={{ borderRadius: 14, padding: 14, background: 'var(--bg-subtle)', border: '1px solid var(--border)', cursor: 'default', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = '#fdf2f8'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.transform = 'translateY(0)'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 22 }}>{s.emoji}</span>
                   <div>
-                    <h5 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#111827' }}>{s.name}</h5>
-                    <span style={{ fontSize: 10, color: '#6b7280' }}>{s.dosage}</span>
+                    <h5 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{s.name}</h5>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{s.dosage}</span>
                   </div>
                 </div>
-                <p style={{ fontSize: 11, color: '#6b7280', margin: '0 0 4px' }}>{s.benefit}</p>
-                <span style={{ fontSize: 10, color: '#9ca3af' }}>⏰ {s.timing}</span>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 4px' }}>{s.benefit}</p>
+                <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>⏰ {s.timing}</span>
               </m.div>
             ))}
           </div>

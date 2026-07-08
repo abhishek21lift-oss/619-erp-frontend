@@ -38,7 +38,7 @@ function TrendBadge({ direction }: { direction: string }) {
     </div>
   );
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#9ca3af' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-disabled)' }}>
       <Minus size={15} />
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stable</span>
     </div>
@@ -92,8 +92,8 @@ export default function ProgressAnalysisPage() {
                 <TrendingUp size={24} color={ACCENT} />
               </div>
               <div>
-                <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#111827' }}>AI Progress Analyzer</h1>
-                <p style={{ margin: '4px 0 0', fontSize: 14, color: '#6b7280' }}>
+                <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>AI Progress Analyzer</h1>
+                <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
                   Deep dive into a client&apos;s fitness journey with AI-powered insights and strategy
                 </p>
               </div>
@@ -111,7 +111,7 @@ export default function ProgressAnalysisPage() {
           {/* Client selector */}
           <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
             borderRadius: 24, padding: '28px',
-            background: '#fff', border: '1px solid #e5e7eb',
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
             boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
             marginBottom: 32,
           }}>
@@ -119,7 +119,7 @@ export default function ProgressAnalysisPage() {
               <div style={{ width: 32, height: 32, borderRadius: 10, background: ACCENT_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <User size={16} color={ACCENT} />
               </div>
-              <span style={{ fontWeight: 700, color: '#111827', fontSize: 15 }}>Select Client</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 15 }}>Select Client</span>
             </div>
 
             <div style={{ position: 'relative' }}>
@@ -129,8 +129,8 @@ export default function ProgressAnalysisPage() {
                   type="text"
                   style={{
                     width: '100%', padding: '12px 14px 12px 42px', borderRadius: 12, fontSize: 14,
-                    background: '#fff', border: '1px solid #d1d5db',
-                    color: '#111827', outline: 'none', boxSizing: 'border-box',
+                    background: 'var(--bg-card)', border: '1px solid #d1d5db',
+                    color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
                   }}
                   placeholder="Search clients by name…"
                   value={selectedClient ? selectedClient.name : clientSearch}
@@ -142,8 +142,8 @@ export default function ProgressAnalysisPage() {
               {showDropdown && filteredClients.length > 0 && (
                 <div style={{
                   position: 'absolute', zIndex: 20, width: '100%', marginTop: 4,
-                  background: '#fff', border: '1px solid #e5e7eb',
-                  borderRadius: 14, boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  borderRadius: 14, boxShadow: 'var(--shadow-card)',
                   maxHeight: 220, overflowY: 'auto',
                 }}>
                   {filteredClients.map((c, i) => (
@@ -160,8 +160,8 @@ export default function ProgressAnalysisPage() {
                       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                     >
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{c.name}</div>
-                        {c.email && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{c.email}</div>}
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</div>
+                        {c.email && <div style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 2 }}>{c.email}</div>}
                       </div>
                       <ChevronRight size={14} color="#9ca3af" />
                     </button>
@@ -182,7 +182,7 @@ export default function ProgressAnalysisPage() {
                   display: 'flex', alignItems: 'center', gap: 8, padding: '12px 28px',
                   borderRadius: 12, fontSize: 14, fontWeight: 700,
                   background: !selectedClient || loading ? 'rgba(251,191,36,0.3)' : `linear-gradient(135deg, ${ACCENT}, #F59E0B)`,
-                  color: '#111827', border: 'none',
+                  color: 'var(--text-primary)', border: 'none',
                   cursor: !selectedClient || loading ? 'not-allowed' : 'pointer',
                   boxShadow: selectedClient && !loading ? `0 4px 20px ${ACCENT_GLOW}` : 'none',
                 }}
@@ -205,8 +205,8 @@ export default function ProgressAnalysisPage() {
                 <Loader2 size={28} color={ACCENT} className="animate-spin" />
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Analysing progress data…</div>
-                <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>AI is reviewing workouts, nutrition, and attendance patterns</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Analysing progress data…</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>AI is reviewing workouts, nutrition, and attendance patterns</div>
               </div>
             </m.div>
           )}
@@ -233,10 +233,10 @@ export default function ProgressAnalysisPage() {
                 border: '1px solid rgba(251,191,36,0.25)',
               }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>AI Summary</div>
-                <p style={{ fontSize: 15, color: '#111827', lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
+                <p style={{ fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
                 {analysis.period_analysed && (
-                  <div style={{ marginTop: 12, fontSize: 12, color: '#9ca3af' }}>
-                    Period analysed: <strong style={{ color: '#374151' }}>{analysis.period_analysed}</strong>
+                  <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-disabled)' }}>
+                    Period analysed: <strong style={{ color: 'var(--text-secondary)' }}>{analysis.period_analysed}</strong>
                   </div>
                 )}
               </m.div>
@@ -246,47 +246,47 @@ export default function ProgressAnalysisPage() {
                 {analysis.weight_trend && (
                   <m.div variants={fadeUp} initial="hidden" animate="show" custom={2} style={{
                     borderRadius: 16, padding: '20px',
-                    background: '#fff', border: '1px solid #e5e7eb',
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Weight</span>
                       <TrendBadge direction={analysis.weight_trend.direction} />
                     </div>
                     {analysis.weight_trend.change_kg !== undefined && (
-                      <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
                         {analysis.weight_trend.change_kg > 0 ? '+' : ''}{analysis.weight_trend.change_kg}
-                        <span style={{ fontSize: 14, color: '#9ca3af', marginLeft: 4 }}>kg</span>
+                        <span style={{ fontSize: 14, color: 'var(--text-disabled)', marginLeft: 4 }}>kg</span>
                       </div>
                     )}
-                    <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>{analysis.weight_trend.insight}</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{analysis.weight_trend.insight}</p>
                   </m.div>
                 )}
                 {analysis.strength_trend && (
                   <m.div variants={fadeUp} initial="hidden" animate="show" custom={3} style={{
                     borderRadius: 16, padding: '20px',
-                    background: '#fff', border: '1px solid #e5e7eb',
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Strength</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Strength</span>
                       <TrendBadge direction={analysis.strength_trend.direction} />
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 6 }}>{analysis.strength_trend.highlight}</div>
-                    <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>{analysis.strength_trend.insight}</p>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{analysis.strength_trend.highlight}</div>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{analysis.strength_trend.insight}</p>
                   </m.div>
                 )}
                 {analysis.attendance_trend && (
                   <m.div variants={fadeUp} initial="hidden" animate="show" custom={4} style={{
                     borderRadius: 16, padding: '20px',
-                    background: '#fff', border: '1px solid #e5e7eb',
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
                   }}>
                     <div style={{ marginBottom: 12 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Attendance</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Attendance</span>
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>
                       {analysis.attendance_trend.rate_pct}
-                      <span style={{ fontSize: 14, color: '#9ca3af', marginLeft: 2 }}>%</span>
+                      <span style={{ fontSize: 14, color: 'var(--text-disabled)', marginLeft: 2 }}>%</span>
                     </div>
-                    <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>{analysis.attendance_trend.insight}</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{analysis.attendance_trend.insight}</p>
                   </m.div>
                 )}
               </div>
@@ -328,14 +328,14 @@ export default function ProgressAnalysisPage() {
                       borderBottom: i < analysis.risks!.length - 1 ? '1px solid rgba(251,191,36,0.1)' : 'none',
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{r.risk}</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{r.risk}</span>
                         <span style={{
                           fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.05em',
                           background: r.severity === 'high' ? 'rgba(239,68,68,0.1)' : r.severity === 'medium' ? 'rgba(251,191,36,0.15)' : '#F3F4F6',
                           color: r.severity === 'high' ? '#ef4444' : r.severity === 'medium' ? ACCENT : '#6b7280',
                         }}>{r.severity}</span>
                       </div>
-                      <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>{r.action}</p>
+                      <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>{r.action}</p>
                     </div>
                   ))}
                 </m.div>
@@ -345,11 +345,11 @@ export default function ProgressAnalysisPage() {
               {analysis.recommendations?.length ? (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={7} style={{
                   borderRadius: 20, overflow: 'hidden',
-                  background: '#fff', border: '1px solid #e5e7eb',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
                 }}>
-                  <div style={{ padding: '16px 24px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Target size={18} color={ACCENT} />
-                    <span style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>Recommendations</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>Recommendations</span>
                   </div>
                   {analysis.recommendations
                     .slice()
@@ -365,8 +365,8 @@ export default function ProgressAnalysisPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>{r.priority}</div>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{r.action}</div>
-                        {r.rationale && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4, lineHeight: 1.5 }}>{r.rationale}</div>}
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{r.action}</div>
+                        {r.rationale && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>{r.rationale}</div>}
                       </div>
                     </div>
                   ))}
@@ -377,7 +377,7 @@ export default function ProgressAnalysisPage() {
               {analysis.next_month_strategy && (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={8} style={{
                   borderRadius: 16, padding: '20px 24px',
-                  background: '#fff', border: '1px solid #e5e7eb',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
                   display: 'flex', gap: 14,
                 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: ACCENT_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -385,7 +385,7 @@ export default function ProgressAnalysisPage() {
                   </div>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Next Month Strategy</div>
-                    <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, margin: 0 }}>{analysis.next_month_strategy}</p>
+                    <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{analysis.next_month_strategy}</p>
                   </div>
                 </m.div>
               )}

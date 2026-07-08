@@ -33,12 +33,12 @@ const fadeUp: Variants = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 14,
-  background: '#fff', border: '1px solid #d1d5db',
-  color: '#111827', outline: 'none', boxSizing: 'border-box',
+  background: 'var(--bg-card)', border: '1px solid #d1d5db',
+  color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 600, color: '#6b7280',
+  fontSize: 12, fontWeight: 600, color: 'var(--text-muted)',
   letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6, display: 'block',
 };
 
@@ -46,7 +46,7 @@ function ExerciseRow({ ex, index }: { ex: AiWorkoutExercise; index: number }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px',
-      borderRadius: 10, background: '#F9FAFB', border: '1px solid #e5e7eb',
+      borderRadius: 10, background: 'var(--bg-subtle)', border: '1px solid var(--border)',
     }}>
       <span style={{
         width: 24, height: 24, borderRadius: '50%', flexShrink: 0, marginTop: 2,
@@ -54,13 +54,13 @@ function ExerciseRow({ ex, index }: { ex: AiWorkoutExercise; index: number }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>{index + 1}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, color: '#111827', fontSize: 14 }}>{ex.name}</div>
-        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3 }}>
+        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>{ex.name}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>
           {ex.sets} sets × {ex.reps} reps
           {ex.tempo ? ` · Tempo: ${ex.tempo}` : ''}
           {ex.rest_seconds ? ` · Rest: ${ex.rest_seconds}s` : ''}
         </div>
-        {ex.notes && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, fontStyle: 'italic' }}>{ex.notes}</div>}
+        {ex.notes && <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 4, fontStyle: 'italic' }}>{ex.notes}</div>}
       </div>
     </div>
   );
@@ -71,16 +71,16 @@ function DayCard({ dayKey, day, index }: { dayKey: string; day: AiWorkoutDay; in
   return (
     <m.div variants={fadeUp} initial="hidden" animate="show" custom={index} style={{
       borderRadius: 16, overflow: 'hidden',
-      border: '1px solid #e5e7eb',
-      background: '#fff',
+      border: '1px solid var(--border)',
+      background: 'var(--bg-card)',
     }}>
       <button onClick={() => setOpen(!open)} style={{
         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 20px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
       }}>
         <div>
-          <span style={{ fontWeight: 700, color: '#111827', fontSize: 14, textTransform: 'capitalize' }}>{dayKey}</span>
-          <span style={{ marginLeft: 10, fontSize: 13, color: '#6b7280' }}>— {day.focus}</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14, textTransform: 'capitalize' }}>{dayKey}</span>
+          <span style={{ marginLeft: 10, fontSize: 13, color: 'var(--text-muted)' }}>— {day.focus}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 12, color: ACCENT, background: ACCENT_DIM, padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
@@ -149,9 +149,9 @@ export default function WorkoutGeneratorPage() {
               <div>
                 <h1 style={{
                   fontSize: 28, fontWeight: 800, margin: 0,
-                  color: '#111827',
+                  color: 'var(--text-primary)',
                 }}>AI Workout Generator</h1>
-                <p style={{ margin: '4px 0 0', fontSize: 14, color: '#6b7280' }}>
+                <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
                   Personalised training plan built around your biology, goals, and equipment
                 </p>
               </div>
@@ -169,7 +169,7 @@ export default function WorkoutGeneratorPage() {
           {/* Form */}
           <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
             borderRadius: 24, padding: '28px',
-            background: '#fff', border: '1px solid #e5e7eb',
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             marginBottom: 32,
           }}>
@@ -177,7 +177,7 @@ export default function WorkoutGeneratorPage() {
               <div style={{ width: 32, height: 32, borderRadius: 10, background: ACCENT_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Target size={16} color={ACCENT} />
               </div>
-              <span style={{ fontWeight: 700, color: '#111827', fontSize: 15 }}>Your Profile</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 15 }}>Your Profile</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
@@ -248,8 +248,8 @@ export default function WorkoutGeneratorPage() {
                 <button onClick={() => { setPlan(null); setMeta(null); }} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px',
                   borderRadius: 12, fontSize: 14, fontWeight: 600,
-                  background: 'transparent', border: '1px solid #e5e7eb',
-                  color: '#6b7280', cursor: 'pointer',
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--text-muted)', cursor: 'pointer',
                 }}>
                   <RotateCcw size={14} /> Reset
                 </button>
@@ -269,8 +269,8 @@ export default function WorkoutGeneratorPage() {
                 <Loader2 size={28} color={ACCENT} className="animate-spin" />
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Crafting your plan…</div>
-                <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>AI is designing your personalised training programme</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Crafting your plan…</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>AI is designing your personalised training programme</div>
               </div>
             </m.div>
           )}
@@ -293,16 +293,16 @@ export default function WorkoutGeneratorPage() {
               {/* Plan overview */}
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
                 borderRadius: 20, overflow: 'hidden',
-                border: '1px solid #e5e7eb',
-                background: '#fff',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
               }}>
                 <div style={{
                   padding: '20px 24px',
-                  background: '#F9FAFB',
-                  borderBottom: '1px solid #f3f4f6',
+                  background: 'var(--bg-subtle)',
+                  borderBottom: '1px solid var(--border)',
                 }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, color: '#111827', margin: 0 }}>{plan.name}</h2>
-                  <p style={{ fontSize: 13, color: '#6b7280', margin: '6px 0 0' }}>{plan.description}</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{plan.name}</h2>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '6px 0 0' }}>{plan.description}</p>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
                   {[
@@ -315,8 +315,8 @@ export default function WorkoutGeneratorPage() {
                       borderRight: i < 2 ? '1px solid #f3f4f6' : 'none',
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>{s.icon}</div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: '#111827', textTransform: 'capitalize' }}>{s.value}</div>
-                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{s.label}</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{s.value}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 2 }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
@@ -328,12 +328,12 @@ export default function WorkoutGeneratorPage() {
                   background: '#EFF6FF', border: '1px solid #BFDBFE',
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Warm-Up Protocol</div>
-                  <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, margin: 0 }}>{plan.warm_up}</p>
+                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{plan.warm_up}</p>
                 </m.div>
               )}
 
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Weekly Schedule</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Weekly Schedule</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {scheduleEntries.map(([key, day], i) => (
                     <DayCard key={key} dayKey={key} day={day} index={i} />
@@ -347,7 +347,7 @@ export default function WorkoutGeneratorPage() {
                   background: '#EFF6FF', border: '1px solid #BFDBFE',
                 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Cool-Down Protocol</div>
-                  <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, margin: 0 }}>{plan.cool_down}</p>
+                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{plan.cool_down}</p>
                 </m.div>
               )}
 
@@ -356,19 +356,19 @@ export default function WorkoutGeneratorPage() {
                   {plan.progression_notes && (
                     <m.div variants={fadeUp} initial="hidden" animate="show" custom={4} style={{
                       borderRadius: 16, padding: '18px 20px',
-                      background: '#fff', border: '1px solid #e5e7eb',
+                      background: 'var(--bg-card)', border: '1px solid var(--border)',
                     }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Progression Notes</div>
-                      <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0 }}>{plan.progression_notes}</p>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Progression Notes</div>
+                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{plan.progression_notes}</p>
                     </m.div>
                   )}
                   {plan.nutrition_notes && (
                     <m.div variants={fadeUp} initial="hidden" animate="show" custom={5} style={{
                       borderRadius: 16, padding: '18px 20px',
-                      background: '#fff', border: '1px solid #e5e7eb',
+                      background: 'var(--bg-card)', border: '1px solid var(--border)',
                     }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Nutrition Notes</div>
-                      <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0 }}>{plan.nutrition_notes}</p>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Nutrition Notes</div>
+                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{plan.nutrition_notes}</p>
                     </m.div>
                   )}
                 </div>
