@@ -229,7 +229,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
               <div className="flex h-14 w-14 items-center justify-center rounded-[16px] mb-4" style={{ background: 'rgba(239,68,68,0.10)' }}>
                 <RefreshCw size={22} style={{ color: '#ef4444' }} />
               </div>
-              <p className="text-[14px]" style={{ color: '#6b7280' }}>{error}</p>
+              <p className="text-[14px]" style={{ color: 'var(--text-muted)' }}>{error}</p>
               <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={fetchAll} className="mt-4">Retry</Button>
             </div>
           ) : client ? (
@@ -243,25 +243,25 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 <div className="flex items-center gap-3">
                   <button onClick={() => router.push(`/pt-os/clients/${id}`)}
                     className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-all hover:bg-zinc-100"
-                    style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.08)' }}>
-                    <ArrowLeft size={16} style={{ color: '#6b7280' }} />
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                    <ArrowLeft size={16} style={{ color: 'var(--text-muted)' }} />
                   </button>
                   <div>
                     <div className="flex items-center gap-3">
-                      <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: '#111827' }}>{client.name}</h1>
+                      <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>{client.name}</h1>
                       <StatusBadge status={client.status} days_left={client.days_left} />
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <p className="text-[12px]" style={{ color: '#9ca3af' }}>
+                      <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>
                         {client.client_id || client.id.slice(0, 8)} · PT Payments
                       </p>
                       {client.trainer_name && (
-                        <span className="flex items-center gap-1 text-[11px]" style={{ color: '#9ca3af' }}>
+                        <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
                           <User size={11} /> {client.trainer_name}
                         </span>
                       )}
                       {client.package_type && (
-                        <span className="flex items-center gap-1 text-[11px]" style={{ color: '#9ca3af' }}>
+                        <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
                           <Dumbbell size={11} /> {client.package_type}
                         </span>
                       )}
@@ -352,18 +352,18 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
                 className="rounded-[14px] p-5 mb-6"
-                style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <TrendingUp size={14} style={{ color: '#10b981' }} />
-                    <span className="text-[13px] font-[600]" style={{ color: '#111827' }}>Payment Progress</span>
+                    <span className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>Payment Progress</span>
                   </div>
-                  <span className="text-[12px] font-[700] tabular-nums" style={{ color: '#6b7280' }}>
+                  <span className="text-[12px] font-[700] tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     {fmtINR(client.paid_amount)} / {fmtINR(client.final_amount)}
                   </span>
                 </div>
-                <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: '#F3F4F6' }}>
+                <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
                   <m.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progressPct}%` }}
@@ -379,7 +379,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   />
                 </div>
                 <div className="flex justify-between mt-1.5">
-                  <span className="text-[10px]" style={{ color: '#9ca3af' }}>
+                  <span className="text-[10px]" style={{ color: 'var(--text-disabled)' }}>
                     {progressPct < 100 ? `${progressPct.toFixed(0)}% paid` : 'Fully paid'}
                   </span>
                   <span className="text-[10px] font-[600]" style={{
@@ -397,16 +397,16 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 transition={{ delay: 0.2 }}
                 className="rounded-[18px] overflow-hidden"
                 style={{
-                  background: '#fff',
-                  border: '1px solid rgba(0,0,0,0.07)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                 }}
               >
                 {/* Header + filters */}
                 <div className="flex flex-wrap items-center gap-3 p-4 border-b" style={{ borderColor: '#f3f4f6' }}>
                   <div className="flex items-center gap-2.5">
-                    <Wallet size={14} style={{ color: '#6b7280' }} />
-                    <h3 className="text-[14px] font-[700]" style={{ color: '#111827' }}>Payment History</h3>
+                    <Wallet size={14} style={{ color: 'var(--text-muted)' }} />
+                    <h3 className="text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>Payment History</h3>
                     <span className="text-[11px] px-2 py-0.5 rounded-[6px] font-[600]" style={{
                       background: 'rgba(99,102,241,0.10)',
                       color: '#6366f1',
@@ -416,7 +416,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   </div>
                   <div className="flex-1" />
                   <div className="relative">
-                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: '#9ca3af' }} />
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
                     <input
                       type="text"
                       placeholder="Search payments..."
@@ -424,9 +424,9 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
                       className="w-48 pl-8 pr-3 py-1.5 rounded-[8px] text-[12px] outline-none transition-all"
                       style={{
-                        background: '#fff',
+                        background: 'var(--bg-card)',
                         border: '1px solid #d1d5db',
-                        color: '#111827',
+                        color: 'var(--text-primary)',
                       }}
                       onFocus={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(129,140,248,0.15)'; }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = ''; }}
@@ -437,9 +437,9 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                     onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
                     className="px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium outline-none cursor-pointer"
                     style={{
-                      background: '#fff',
+                      background: 'var(--bg-card)',
                       border: '1px solid #d1d5db',
-                      color: '#374151',
+                      color: 'var(--text-secondary)',
                     }}
                   >
                     <option value="all">All Status</option>
@@ -451,7 +451,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                   <button
                     onClick={fetchAll}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-medium transition-all hover:bg-zinc-50"
-                    style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#6b7280' }}
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
                   >
                     <RefreshCw size={12} />
                     Refresh
@@ -462,10 +462,10 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="bg-zinc-50" style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <tr className="bg-zinc-50" style={{ borderBottom: '1px solid var(--border)' }}>
                         {['Date', 'Method', 'Reference', 'Amount', 'Incentive', 'Status', 'Notes'].map(h => (
                           <th key={h} className="py-3 px-4 text-[10px] font-bold uppercase tracking-[0.06em]"
-                            style={{ color: '#6b7280' }}>
+                            style={{ color: 'var(--text-muted)' }}>
                             {h}
                           </th>
                         ))}
@@ -485,8 +485,8 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                           >
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-2">
-                                <Calendar size={12} style={{ color: '#9ca3af' }} />
-                                <span className="text-[12.5px] font-[500] tabular-nums" style={{ color: '#374151' }}>
+                                <Calendar size={12} style={{ color: 'var(--text-disabled)' }} />
+                                <span className="text-[12.5px] font-[500] tabular-nums" style={{ color: 'var(--text-secondary)' }}>
                                   {fmtDate(p.date)}
                                 </span>
                               </div>
@@ -494,18 +494,18 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-1.5">
                                 {MethodIcon && <MethodIcon size={12} style={{ color: methodIcon?.color || '#6b7280' }} />}
-                                <span className="text-[12px]" style={{ color: '#6b7280' }}>
+                                <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                                   {p.payment_method?.replace(/_/g, ' ') || '—'}
                                 </span>
                               </div>
                             </td>
                             <td className="py-3.5 px-4">
-                              <span className="text-[12px] font-mono" style={{ color: '#9ca3af' }}>
+                              <span className="text-[12px] font-mono" style={{ color: 'var(--text-disabled)' }}>
                                 {p.payment_ref || '—'}
                               </span>
                             </td>
                             <td className="py-3.5 px-4">
-                              <span className="text-[14px] font-[700] tabular-nums" style={{ color: '#111827' }}>
+                              <span className="text-[14px] font-[700] tabular-nums" style={{ color: 'var(--text-primary)' }}>
                                 {fmtINR(p.amount)}
                               </span>
                             </td>
@@ -518,7 +518,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                               <PaymentStatusBadge status={p.status} />
                             </td>
                             <td className="py-3.5 px-4 max-w-[160px]">
-                              <span className="text-[11.5px] truncate block" style={{ color: '#9ca3af' }}>
+                              <span className="text-[11.5px] truncate block" style={{ color: 'var(--text-disabled)' }}>
                                 {p.notes || '—'}
                               </span>
                             </td>
@@ -529,13 +529,13 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                           <td colSpan={7}>
                             <div className="flex flex-col items-center justify-center py-14">
                               <div className="flex h-12 w-12 items-center justify-center rounded-[12px] mb-3"
-                                style={{ background: '#F3F4F6' }}>
-                                <Banknote size={22} style={{ color: '#9ca3af' }} />
+                                style={{ background: 'var(--bg-subtle)' }}>
+                                <Banknote size={22} style={{ color: 'var(--text-disabled)' }} />
                               </div>
-                              <p className="text-[13px] font-[500]" style={{ color: '#6b7280' }}>
+                              <p className="text-[13px] font-[500]" style={{ color: 'var(--text-muted)' }}>
                                 No payments recorded yet
                               </p>
-                              <p className="text-[11px] mt-1" style={{ color: '#9ca3af' }}>
+                              <p className="text-[11px] mt-1" style={{ color: 'var(--text-disabled)' }}>
                                 {searchTerm || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Record the first payment for this client'}
                               </p>
                               {!searchTerm && statusFilter === 'all' && (
@@ -554,7 +554,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
 
                 {filteredPayments.length > 0 && (
                   <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t" style={{ borderColor: '#f3f4f6' }}>
-                    <span className="text-[11px]" style={{ color: '#9ca3af' }}>
+                    <span className="text-[11px]" style={{ color: 'var(--text-disabled)' }}>
                       Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredPayments.length)} of {filteredPayments.length} payments
                     </span>
                     {totalPages > 1 && (
@@ -563,16 +563,16 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                           onClick={() => setPage(p => Math.max(0, p - 1))}
                           disabled={page === 0}
                           className="px-2.5 py-1 rounded-[6px] text-[11px] font-[600] transition-all disabled:opacity-30"
-                          style={{ background: '#F3F4F6', color: '#6b7280', border: '1px solid #e5e7eb' }}
+                          style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
                         >← Prev</button>
-                        <span className="text-[11px] px-2" style={{ color: '#9ca3af' }}>
+                        <span className="text-[11px] px-2" style={{ color: 'var(--text-disabled)' }}>
                           {page + 1} / {totalPages}
                         </span>
                         <button
                           onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                           disabled={page >= totalPages - 1}
                           className="px-2.5 py-1 rounded-[6px] text-[11px] font-[600] transition-all disabled:opacity-30"
-                          style={{ background: '#F3F4F6', color: '#6b7280', border: '1px solid #e5e7eb' }}
+                          style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
                         >Next →</button>
                       </div>
                     )}
@@ -604,7 +604,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                       className="fixed right-0 top-0 bottom-0 w-full max-w-sm z-50 overflow-y-auto"
                       style={{
-                        background: '#fff',
+                        background: 'var(--bg-card)',
                         borderLeft: '1px solid #e5e7eb',
                         boxShadow: '-20px 0 60px rgba(0,0,0,0.10)',
                       }}
@@ -612,13 +612,13 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       {/* Header */}
                       <div className="flex items-center justify-between px-5 pt-6 pb-4">
                         <div>
-                          <p className="text-[10px] font-[700] uppercase tracking-[0.12em]" style={{ color: '#9ca3af' }}>Record Payment</p>
-                          <p className="text-[20px] font-[800] tracking-[-0.025em] mt-0.5" style={{ color: '#111827' }}>{client.name}</p>
+                          <p className="text-[10px] font-[700] uppercase tracking-[0.12em]" style={{ color: 'var(--text-disabled)' }}>Record Payment</p>
+                          <p className="text-[20px] font-[800] tracking-[-0.025em] mt-0.5" style={{ color: 'var(--text-primary)' }}>{client.name}</p>
                         </div>
                         <button
                           onClick={() => setShowPaymentPanel(false)}
                           className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-zinc-100"
-                          style={{ background: '#F3F4F6', color: '#6b7280' }}
+                          style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
                         >
                           <X size={16} />
                         </button>
@@ -637,7 +637,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       </div>
 
                       {/* Hero amount display */}
-                      <div className="text-center px-5 pt-6 pb-5" style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <div className="text-center px-5 pt-6 pb-5" style={{ borderBottom: '1px solid var(--border)' }}>
                         <p className="text-[60px] font-[800] tracking-[-0.04em] tabular-nums leading-none" style={{
                           color: form.amount && Number(form.amount) > 0 ? '#111827' : '#d1d5db',
                         }}>
@@ -704,7 +704,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                         <button
                           onClick={() => setShowOptional(v => !v)}
                           className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-[12px] text-[11px] font-[600] transition-colors hover:bg-zinc-50"
-                          style={{ color: '#6b7280', background: '#F9FAFB', border: '1px solid #e5e7eb' }}
+                          style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
                         >
                           <span>Reference / Date / Notes</span>
                           <span style={{ fontSize: '9px', display: 'inline-block', transition: 'transform 0.2s', transform: showOptional ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
@@ -721,20 +721,20 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                             >
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                  <label className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: '#6b7280' }}>Reference</label>
+                                  <label className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Reference</label>
                                   <input type="text" value={form.payment_ref}
                                     onChange={(e) => setForm(f => ({ ...f, payment_ref: e.target.value }))}
                                     placeholder="TXN / UTR"
                                     className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
-                                    style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }}
+                                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: '#6b7280' }}>Date</label>
+                                  <label className="block text-[10px] font-[600] uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Date</label>
                                   <input type="date" value={form.date}
                                     onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))}
                                     className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none"
-                                    style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827', colorScheme: 'light' }}
+                                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)', colorScheme: 'light' }}
                                   />
                                 </div>
                               </div>
@@ -743,27 +743,27 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                 placeholder="Notes (optional)"
                                 rows={2}
                                 className="w-full px-3 py-2 rounded-[9px] text-[12px] outline-none resize-none"
-                                style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }}
+                                style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
                               />
                             </m.div>
                           )}
                         </AnimatePresence>
 
                         {/* Summary */}
-                        <div className="rounded-[14px] p-4 space-y-2.5" style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.07)' }}>
+                        <div className="rounded-[14px] p-4 space-y-2.5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                           <div className="flex justify-between text-[12px]">
-                            <span style={{ color: '#6b7280' }}>Already paid</span>
+                            <span style={{ color: 'var(--text-muted)' }}>Already paid</span>
                             <span className="font-[600] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(client.paid_amount)}</span>
                           </div>
                           <div className="flex justify-between text-[12px]">
-                            <span style={{ color: '#6b7280' }}>This payment</span>
+                            <span style={{ color: 'var(--text-muted)' }}>This payment</span>
                             <span className="font-[700] tabular-nums" style={{ color: form.amount && Number(form.amount) > 0 ? '#111827' : '#d1d5db' }}>
                               {form.amount && Number(form.amount) > 0 ? fmtINR(form.amount) : '—'}
                             </span>
                           </div>
                           <div className="h-px" style={{ background: '#e5e7eb' }} />
                           <div className="flex justify-between">
-                            <span className="text-[13px] font-[700]" style={{ color: '#111827' }}>New balance</span>
+                            <span className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>New balance</span>
                             <span className="text-[15px] font-[800] tabular-nums" style={{
                               color: Math.max(0, client.final_amount - (client.paid_amount + (Number(form.amount) || 0))) > 0 ? '#f59e0b' : '#10b981',
                             }}>

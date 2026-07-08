@@ -33,12 +33,12 @@ const fadeUp: Variants = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 14,
-  background: '#fff', border: '1px solid #d1d5db',
-  color: '#111827', outline: 'none', boxSizing: 'border-box',
+  background: 'var(--bg-card)', border: '1px solid #d1d5db',
+  color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 600, color: '#6b7280',
+  fontSize: 12, fontWeight: 600, color: 'var(--text-muted)',
   letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6, display: 'block',
 };
 
@@ -47,16 +47,16 @@ function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
   return (
     <m.div variants={fadeUp} initial="hidden" animate="show" custom={index} style={{
       borderRadius: 16, overflow: 'hidden',
-      border: '1px solid #e5e7eb',
-      background: '#fff',
+      border: '1px solid var(--border)',
+      background: 'var(--bg-card)',
     }}>
       <button onClick={() => setOpen(!open)} style={{
         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 20px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
       }}>
         <div>
-          <span style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>{meal.name}</span>
-          <span style={{ marginLeft: 10, fontSize: 12, color: '#9ca3af' }}>{meal.time}</span>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>{meal.name}</span>
+          <span style={{ marginLeft: 10, fontSize: 12, color: 'var(--text-disabled)' }}>{meal.time}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 12, color: ACCENT, background: ACCENT_DIM, padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
@@ -82,12 +82,12 @@ function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
                 borderBottom: i < (meal.foods?.length ?? 0) - 1 ? '1px solid #f3f4f6' : 'none',
               }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{food.name}</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{food.quantity}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{food.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 2 }}>{food.quantity}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{food.calories} kcal</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>P:{food.protein_g}g C:{food.carbs_g}g F:{food.fat_g}g</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{food.calories} kcal</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 2 }}>P:{food.protein_g}g C:{food.carbs_g}g F:{food.fat_g}g</div>
                 </div>
               </div>
             ))}
@@ -148,9 +148,9 @@ export default function DietGeneratorPage() {
               <div>
                 <h1 style={{
                   fontSize: 28, fontWeight: 800, margin: 0,
-                  color: '#111827',
+                  color: 'var(--text-primary)',
                 }}>AI Diet Generator</h1>
-                <p style={{ margin: '4px 0 0', fontSize: 14, color: '#6b7280' }}>
+                <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
                   Precision nutrition tailored to your metabolism, goals, and lifestyle
                 </p>
               </div>
@@ -168,7 +168,7 @@ export default function DietGeneratorPage() {
           {/* Form */}
           <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
             borderRadius: 24, padding: '28px',
-            background: '#fff', border: '1px solid #e5e7eb',
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             marginBottom: 32,
           }}>
@@ -176,7 +176,7 @@ export default function DietGeneratorPage() {
               <div style={{ width: 32, height: 32, borderRadius: 10, background: ACCENT_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Utensils size={16} color={ACCENT} />
               </div>
-              <span style={{ fontWeight: 700, color: '#111827', fontSize: 15 }}>Your Profile & Preferences</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 15 }}>Your Profile & Preferences</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
@@ -251,8 +251,8 @@ export default function DietGeneratorPage() {
                 <button onClick={() => { setPlan(null); setMeta(null); }} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px',
                   borderRadius: 12, fontSize: 14, fontWeight: 600,
-                  background: 'transparent', border: '1px solid #e5e7eb',
-                  color: '#6b7280', cursor: 'pointer',
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--text-muted)', cursor: 'pointer',
                 }}>
                   <RotateCcw size={14} /> Reset
                 </button>
@@ -272,8 +272,8 @@ export default function DietGeneratorPage() {
                 <Loader2 size={28} color={ACCENT} className="animate-spin" />
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Building your nutrition plan…</div>
-                <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>Calibrating macros and crafting your personalised meal schedule</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Building your nutrition plan…</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Calibrating macros and crafting your personalised meal schedule</div>
               </div>
             </m.div>
           )}
@@ -296,16 +296,16 @@ export default function DietGeneratorPage() {
               {/* Overview */}
               <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
                 borderRadius: 20, overflow: 'hidden',
-                border: '1px solid #e5e7eb',
-                background: '#fff',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
               }}>
                 <div style={{
                   padding: '20px 24px',
                   background: '#F0FDF4',
-                  borderBottom: '1px solid #f3f4f6',
+                  borderBottom: '1px solid var(--border)',
                 }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, color: '#111827', margin: 0 }}>{plan.name}</h2>
-                  <p style={{ fontSize: 13, color: '#6b7280', margin: '6px 0 0' }}>{plan.description}</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{plan.name}</h2>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '6px 0 0' }}>{plan.description}</p>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
                   {[
@@ -320,7 +320,7 @@ export default function DietGeneratorPage() {
                     }}>
                       <div style={{ fontSize: 20, fontWeight: 800, color: ACCENT }}>{s.value}</div>
                       <div style={{ fontSize: 10, color: '#15803d', fontWeight: 600 }}>{s.unit}</div>
-                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{s.label}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
@@ -328,7 +328,7 @@ export default function DietGeneratorPage() {
 
               {/* Meals */}
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Daily Meal Plan</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Daily Meal Plan</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {plan.meals?.map((meal, i) => <MealCard key={i} meal={meal} index={i} />)}
                 </div>
@@ -345,7 +345,7 @@ export default function DietGeneratorPage() {
                   </div>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#60A5FA', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Daily Hydration Target</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: '#111827' }}>{plan.hydration_ml} <span style={{ fontSize: 12, color: '#9ca3af' }}>ml / day</span></div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>{plan.hydration_ml} <span style={{ fontSize: 12, color: 'var(--text-disabled)' }}>ml / day</span></div>
                   </div>
                 </m.div>
               ) : null}
@@ -354,12 +354,12 @@ export default function DietGeneratorPage() {
               {plan.supplements?.length ? (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={3} style={{
                   borderRadius: 20, overflow: 'hidden',
-                  border: '1px solid #e5e7eb',
-                  background: '#fff',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-card)',
                 }}>
-                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Pill size={16} color={ACCENT} />
-                    <span style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>Supplement Guide</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>Supplement Guide</span>
                   </div>
                   {plan.supplements.map((s, i) => (
                     <div key={i} style={{
@@ -367,10 +367,10 @@ export default function DietGeneratorPage() {
                       borderBottom: i < plan.supplements!.length - 1 ? '1px solid #f3f4f6' : 'none',
                     }}>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{s.name}</div>
-                        <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{s.dose} · {s.timing}</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 2 }}>{s.dose} · {s.timing}</div>
                       </div>
-                      <div style={{ fontSize: 12, color: '#9ca3af', textAlign: 'right', maxWidth: 160 }}>{s.reason}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-disabled)', textAlign: 'right', maxWidth: 160 }}>{s.reason}</div>
                     </div>
                   ))}
                 </m.div>
@@ -380,17 +380,17 @@ export default function DietGeneratorPage() {
               {plan.grocery_list?.length ? (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={4} style={{
                   borderRadius: 20, overflow: 'hidden',
-                  border: '1px solid #e5e7eb',
-                  background: '#fff',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-card)',
                 }}>
-                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <ShoppingCart size={16} color={ACCENT} />
-                    <span style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>Grocery List</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>Grocery List</span>
                   </div>
                   <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {plan.grocery_list.map((cat, i) => (
                       <div key={i}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{cat.category}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{cat.category}</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {cat.items.map((item) => (
                             <span key={item} style={{
@@ -408,10 +408,10 @@ export default function DietGeneratorPage() {
               {plan.notes && (
                 <m.div variants={fadeUp} initial="hidden" animate="show" custom={5} style={{
                   borderRadius: 16, padding: '18px 20px',
-                  background: '#fff', border: '1px solid #e5e7eb',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Notes</div>
-                  <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0 }}>{plan.notes}</p>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Notes</div>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{plan.notes}</p>
                 </m.div>
               )}
             </div>
