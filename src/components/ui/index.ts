@@ -36,6 +36,7 @@ export type { DonutChartProps, DonutDatum } from './DonutChart';
 export { PageHeader } from './PageHeader';
 export type { PageHeaderProps } from './PageHeader';
 
+export { FloatInput } from './FloatInput';
 export { SearchInput } from './SearchInput';
 export type { SearchInputProps } from './SearchInput';
 
@@ -46,7 +47,7 @@ export { StatCard } from './StatCard';
 export type { StatCardProps } from './StatCard';
 
 export {
-  GlassTable, GlassThead, GlassTh, GlassTr, GlassTd,
+  GlassTable, GlassThead, GlassTh, GlassTr, GlassTd, GlassTbody,
 } from './GlassTable';
 export type { GlassTableProps } from './GlassTable';
 

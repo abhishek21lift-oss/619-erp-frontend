@@ -711,12 +711,22 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
           <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 sm:px-6 lg:px-8 shell-main"
           >
-            {title && (
-              <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
-                {title}
-              </h1>
-            )}
-            {children}
+            <AnimatePresence mode="popLayout" initial={false}>
+              <m.div
+                key={pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
+              >
+                {title && (
+                  <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
+                    {title}
+                  </h1>
+                )}
+                {children}
+              </m.div>
+            </AnimatePresence>
           </main>
         </div>
       </div>

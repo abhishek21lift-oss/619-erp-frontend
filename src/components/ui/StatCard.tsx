@@ -1,4 +1,7 @@
+'use client';
+
 import * as React from 'react';
+import { m } from 'framer-motion';
 import { cn } from './cn';
 
 export interface StatCardProps {
@@ -12,10 +15,16 @@ export interface StatCardProps {
 export function StatCard({ label, value, icon, trend, className }: StatCardProps) {
   const positive = typeof trend === 'number' && trend >= 0;
   return (
-    <div className={cn(
-      'rounded-[18px] bg-[var(--bg-card)] border border-[var(--border)] p-4 transition hover:shadow-md',
-      className,
-    )}>
+    <m.div
+      whileHover={{ y: -3, scale: 1.01, transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] } }}
+      whileTap={{ scale: 0.98 }}
+      className={cn(
+        'rounded-[18px] bg-[var(--bg-card)] border border-[var(--border)] p-4',
+        'shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)]',
+        'transition-shadow duration-200',
+        className,
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]">
           {label}
@@ -32,11 +41,11 @@ export function StatCard({ label, value, icon, trend, className }: StatCardProps
       {typeof trend === 'number' && (
         <p className={cn(
           'mt-1 text-[12px] font-semibold',
-          trend === 0 ? 'text-[var(--text-muted)]' : positive ? 'text-emerald-600' : 'text-red-600',
+          trend === 0 ? 'text-[var(--text-muted)]' : positive ? 'text-[var(--success)]' : 'text-[var(--danger)]',
         )}>
           {positive ? '+' : ''}{trend}%
         </p>
       )}
-    </div>
+    </m.div>
   );
 }

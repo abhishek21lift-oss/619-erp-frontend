@@ -462,21 +462,29 @@ export default function Sidebar({
                 </div>
               </div>
             </div>
-            {!collapsed && (
-              <div className="overflow-hidden">
-                <h2 className="text-[15px] font-extrabold tracking-tight leading-none whitespace-nowrap">
-                  <span
-                    className="bg-clip-text text-transparent"
-                    style={{ backgroundImage: 'linear-gradient(135deg, #FCD34D, #F59E0B, #D97706)' }}
-                  >619</span>
-                  {' '}
-                  <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">FITNESS</span>
-                </h2>
-                <p className="mt-[2px] text-[9px] font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase whitespace-nowrap">
-                  Studio Suite
-                </p>
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {!collapsed && (
+                <m.div
+                  key="brand-text"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.18 } }}
+                  exit={{ opacity: 0, transition: { duration: 0.08 } }}
+                  className="overflow-hidden"
+                >
+                  <h2 className="text-[15px] font-extrabold tracking-tight leading-none whitespace-nowrap">
+                    <span
+                      className="bg-clip-text text-transparent"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #FCD34D, #F59E0B, #D97706)' }}
+                    >619</span>
+                    {' '}
+                    <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">FITNESS</span>
+                  </h2>
+                  <p className="mt-[2px] text-[9px] font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase whitespace-nowrap">
+                    Studio Suite
+                  </p>
+                </m.div>
+              )}
+            </AnimatePresence>
           </Link>
 
           {isMobile && (
