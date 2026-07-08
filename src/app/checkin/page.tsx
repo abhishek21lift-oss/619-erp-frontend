@@ -106,32 +106,32 @@ function CheckInHub() {
       <div className="mx-auto px-5 py-6 sm:px-8" style={{ maxWidth: 900 }}>
         {/* Method Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {METHODS.map((m, i) => {
-            const Icon = m.icon;
-            const isActive = active === m.id;
+          {METHODS.map((method, i) => {
+            const Icon = method.icon;
+            const isActive = active === method.id;
             return (
               <m.div
-                key={m.id}
+                key={method.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.07 }}
               >
-                {m.inline ? (
+                {method.inline ? (
                   <button
-                    onClick={() => setActive(isActive ? null : m.id)}
+                    onClick={() => setActive(isActive ? null : method.id)}
                     className="w-full text-left rounded-[18px] p-5 transition-all"
                     style={{
-                      background: isActive ? `${m.color}10` : 'white',
-                      border: `1.5px solid ${isActive ? m.color : '#e2e8f0'}`,
-                      boxShadow: isActive ? `0 4px 20px ${m.color}20` : '0 1px 6px rgba(0,0,0,0.04)',
+                      background: isActive ? `${method.color}10` : 'white',
+                      border: `1.5px solid ${isActive ? method.color : '#e2e8f0'}`,
+                      boxShadow: isActive ? `0 4px 20px ${method.color}20` : '0 1px 6px rgba(0,0,0,0.04)',
                     }}
                   >
-                    <MethodCardInner m={m} isActive={isActive} />
+                    <MethodCardInner m={method} isActive={isActive} />
                   </button>
                 ) : (
-                  <Link href={m.href!} className="block rounded-[18px] p-5 transition-all"
+                  <Link href={method.href!} className="block rounded-[18px] p-5 transition-all"
                     style={{ background: 'white', border: '1.5px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.04)', textDecoration: 'none' }}>
-                    <MethodCardInner m={m} isActive={false} />
+                    <MethodCardInner m={method} isActive={false} />
                   </Link>
                 )}
               </m.div>

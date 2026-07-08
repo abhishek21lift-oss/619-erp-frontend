@@ -352,17 +352,17 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                         </tr>
                       </thead>
                       <tbody>
-                        {(members ?? []).map((m, i) => (
-                          <m.tr key={m.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                        {(members ?? []).map((member, i) => (
+                          <m.tr key={member.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
                             style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
-                            onClick={() => router.push(`/clients/${m.id}`)}
+                            onClick={() => router.push(`/clients/${member.id}`)}
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.04)'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                            <td style={{ padding: '12px 16px', fontWeight: 600, color: '#111827' }}>{m.name}</td>
-                            <td style={{ padding: '12px 16px' }}><StatusBadge status={m.status} /></td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{m.membership_plan ?? '—'}</td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{fmtDate(m.expiry_date)}</td>
-                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{m.phone ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: 600, color: '#111827' }}>{member.name}</td>
+                            <td style={{ padding: '12px 16px' }}><StatusBadge status={member.status} /></td>
+                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{member.membership_plan ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{fmtDate(member.expiry_date)}</td>
+                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{member.phone ?? '—'}</td>
                           </m.tr>
                         ))}
                       </tbody>
