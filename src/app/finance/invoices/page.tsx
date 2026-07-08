@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PremiumModal } from '@/components/premium/PremiumModal';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button, KpiCard } from '@/components/ui';
 import {
   FileText, Download, Send, CheckCircle2, Search,
   ChevronDown, Eye, Clock, Filter,
@@ -154,12 +154,6 @@ function SkeletonCard() {
   );
 }
 
-const KPI_CONFIG = [
-  { label: 'Total Invoiced', key: 'total' as const, icon: <FileText size={18} />, accent: '#3b82f6' },
-  { label: 'Paid', key: 'paid' as const, icon: <CheckCircle2 size={18} />, accent: '#10b981' },
-  { label: 'Pending', key: 'pending' as const, icon: <Clock size={18} />, accent: '#f59e0b' },
-  { label: 'Overdue', key: 'overdue' as const, icon: <AlertTriangle size={18} />, accent: '#ef4444' },
-];
 
 interface CreateForm {
   memberName: string; amount: string; dueDate: string; description: string; paymentMethod: PaymentMethod;
@@ -388,8 +382,8 @@ export default function InvoicesPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <PremiumButton tone="secondary" icon={<Filter size={16} />}>Filter</PremiumButton>
-                    <PremiumButton tone="primary" icon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</PremiumButton>
+                    <Button variant="outline" iconLeft={<Filter size={16} />}>Filter</Button>
+                    <Button variant="primary" iconLeft={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</Button>
                   </div>
                 </div>
               </div>
@@ -404,83 +398,11 @@ export default function InvoicesPage() {
             padding: isSm ? '24px 32px 112px' : '24px 16px 112px',
           }}>
             {/* KPI Row */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: '14px',
-              marginBottom: '24px',
-            }}>
-              {KPI_CONFIG.map((kpi) => (
-                <div
-                  key={kpi.label}
-                  style={{
-                    background: 'white',
-                    borderRadius: 20,
-                    padding: '22px 24px',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                    border: '1px solid rgba(0,0,0,0.06)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                    position: 'relative',
-                    overflow: 'hidden',
-                    transition: 'all 200ms ease',
-                    cursor: 'default',
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLDivElement;
-                    el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)';
-                    el.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLDivElement;
-                    el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)';
-                    el.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 24,
-                    right: 24,
-                    height: 3,
-                    background: `linear-gradient(90deg,${kpi.accent},${kpi.accent}88)`,
-                    borderRadius: '0 0 3px 3px',
-                    opacity: 0.8,
-                  }} />
-                  <div style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    background: `${kpi.accent}18`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: kpi.accent,
-                  }}>
-                    {kpi.icon}
-                  </div>
-                  <div>
-                    <div style={{
-                      fontSize: 26,
-                      fontWeight: 800,
-                      color: '#0f172a',
-                      letterSpacing: '-0.02em',
-                      lineHeight: 1,
-                    }}>
-                      {fmtCurrency(stats[kpi.key])}
-                    </div>
-                    <div style={{
-                      fontSize: 12,
-                      color: '#64748b',
-                      marginTop: 4,
-                      fontWeight: 500,
-                    }}>
-                      {kpi.label}
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+              <KpiCard label="Total Invoiced" value={fmtCurrency(stats.total)} icon={<FileText size={16} />} accent="blue" />
+              <KpiCard label="Paid" value={fmtCurrency(stats.paid)} icon={<CheckCircle2 size={16} />} accent="emerald" />
+              <KpiCard label="Pending" value={fmtCurrency(stats.pending)} icon={<Clock size={16} />} accent="amber" />
+              <KpiCard label="Overdue" value={fmtCurrency(stats.overdue)} icon={<AlertTriangle size={16} />} accent="rose" />
             </div>
 
             {/* Tabs + Search + New Invoice */}
@@ -566,7 +488,7 @@ export default function InvoicesPage() {
                     </button>
                   )}
                 </div>
-                <PremiumButton tone="primary" icon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>New Invoice</PremiumButton>
+                <Button variant="primary" iconLeft={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>New Invoice</Button>
               </div>
             </div>
 
@@ -616,7 +538,7 @@ export default function InvoicesPage() {
                   color: 'rgba(148,163,184,0.8)',
                 }}>{error}</p>
                 <div style={{ marginTop: '24px' }}>
-                  <PremiumButton tone="primary" icon={<RefreshCw size={16} />} onClick={fetchInvoices}>Retry</PremiumButton>
+                  <Button variant="primary" iconLeft={<RefreshCw size={16} />} onClick={fetchInvoices}>Retry</Button>
                 </div>
               </m.div>
             ) : (
@@ -664,7 +586,7 @@ export default function InvoicesPage() {
                       {search ? 'Try adjusting your search terms.' : 'Create your first invoice to start tracking payments.'}
                     </p>
                     <div style={{ marginTop: '24px' }}>
-                      <PremiumButton tone="primary" icon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</PremiumButton>
+                      <Button variant="primary" iconLeft={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</Button>
                     </div>
                   </m.div>
                 ) : (
@@ -693,8 +615,8 @@ export default function InvoicesPage() {
             size="lg"
             footer={
               <>
-                <PremiumButton tone="ghost" onClick={() => setSelectedInvoice(null)}>Close</PremiumButton>
-                <PremiumButton tone="primary" icon={<Download size={16} />} onClick={() => selectedInvoice && handleDownloadPDF(selectedInvoice)}>Download PDF</PremiumButton>
+                <Button variant="ghost" onClick={() => setSelectedInvoice(null)}>Close</Button>
+                <Button variant="primary" iconLeft={<Download size={16} />} onClick={() => selectedInvoice && handleDownloadPDF(selectedInvoice)}>Download PDF</Button>
               </>
             }
           >
@@ -709,10 +631,10 @@ export default function InvoicesPage() {
             icon={<Plus size={16} />}
             footer={
               <>
-                <PremiumButton tone="ghost" onClick={() => setShowCreateModal(false)}>Cancel</PremiumButton>
-                <PremiumButton tone="primary" onClick={handleCreateInvoice} disabled={creating || !createForm.memberName || !createForm.amount || !createForm.dueDate}>
+                <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+                <Button variant="primary" onClick={handleCreateInvoice} disabled={creating || !createForm.memberName || !createForm.amount || !createForm.dueDate}>
                   {creating ? 'Creating…' : 'Create Invoice'}
-                </PremiumButton>
+                </Button>
               </>
             }
           >
@@ -1108,12 +1030,12 @@ function InvoiceDetail({ invoice, onDownload, onRemind, onMarkPaid }: { invoice:
       </div>
 
       <div style={{ display: 'flex', gap: '8px' }}>
-        <PremiumButton tone="primary" icon={<Download size={16} />} size="sm" onClick={() => onDownload(invoice)}>Download PDF</PremiumButton>
+        <Button variant="primary" iconLeft={<Download size={16} />} size="sm" onClick={() => onDownload(invoice)}>Download PDF</Button>
         {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-          <PremiumButton tone="secondary" icon={<Send size={16} />} size="sm" onClick={() => onRemind(invoice)}>Send Reminder</PremiumButton>
+          <Button variant="outline" iconLeft={<Send size={16} />} size="sm" onClick={() => onRemind(invoice)}>Send Reminder</Button>
         )}
         {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-          <PremiumButton tone="success" icon={<CheckCircle2 size={16} />} size="sm" onClick={() => onMarkPaid(invoice)}>Mark as Paid</PremiumButton>
+          <Button variant="success" iconLeft={<CheckCircle2 size={16} />} size="sm" onClick={() => onMarkPaid(invoice)}>Mark as Paid</Button>
         )}
       </div>
     </div>

@@ -6,7 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { Banknote, TrendingUp, CalendarCheck, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { KpiCard } from '@/components/ui';
 
 export default function CollectionPage() {
   return <Guard role="admin"><Inner /></Guard>;
@@ -67,12 +67,6 @@ function Inner() {
   const best = fullYear.reduce((a, b) => (b.revenue > a.revenue ? b : a), fullYear[0]);
   const maxRevenue = Math.max(...fullYear.map((m) => m.revenue), 1);
 
-  const kpis = [
-    { label: 'Total Collected',  value: fmtCompact(total),         sub: fmt(total),           icon: <Banknote size={18} />,     accent: '#10b981' },
-    { label: 'Monthly Average',  value: fmtCompact(avg),           sub: `${activeMonths} active months`, icon: <TrendingUp size={18} />, accent: '#0ea5e9' },
-    { label: 'Total Payments',   value: String(totalCount),        sub: 'transactions',       icon: <CreditCard size={18} />,   accent: '#8b5cf6' },
-    { label: 'Best Month',       value: best?.month ?? '—',        sub: fmtCompact(best?.revenue ?? 0), icon: <CalendarCheck size={18} />, accent: '#f59e0b' },
-  ];
 
   return (
     <AppShell>
@@ -83,7 +77,7 @@ function Inner() {
         style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}
       >
         {/* ── Hero ── */}
-        <div style={{ padding: '24px 0', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, borderBottom: '1px solid #f3f4f6' }}>
+        <div style={{ padding: '24px 0', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
               width: 52, height: 52, borderRadius: 16,
@@ -94,8 +88,8 @@ function Inner() {
               <Banknote size={24} color="white" />
             </div>
             <div>
-              <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#111827', letterSpacing: '-0.02em' }}>Collection</h1>
-              <p style={{ fontSize: 13, color: '#6b7280', margin: '2px 0 0' }}>Monthly revenue collected — Payment volume</p>
+              <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Collection</h1>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '2px 0 0' }}>Monthly revenue collected — Payment volume</p>
             </div>
           </div>
 
@@ -105,26 +99,26 @@ function Inner() {
               onClick={() => setYear(y => y - 1)}
               style={{
                 width: 36, height: 36, borderRadius: 12,
-                border: '1px solid #e5e7eb',
-                background: '#fff',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
                 cursor: 'pointer', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', color: '#374151',
+                justifyContent: 'center', color: 'var(--text-secondary)',
                 transition: 'all 0.2s',
               }}
             >
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontSize: 16, fontWeight: 700, minWidth: 48, textAlign: 'center', color: '#111827' }}>{year}</span>
+            <span style={{ fontSize: 16, fontWeight: 700, minWidth: 48, textAlign: 'center', color: 'var(--text-primary)' }}>{year}</span>
             <button
               onClick={() => setYear(y => y + 1)}
               disabled={year >= new Date().getFullYear()}
               style={{
                 width: 36, height: 36, borderRadius: 12,
-                border: '1px solid #e5e7eb',
-                background: '#fff',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
                 cursor: year >= new Date().getFullYear() ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: year >= new Date().getFullYear() ? '#d1d5db' : '#374151',
+                color: year >= new Date().getFullYear() ? 'var(--text-disabled)' : 'var(--text-secondary)',
                 transition: 'all 0.2s',
               }}
             >
@@ -136,10 +130,10 @@ function Inner() {
         {/* ── Finance Tabs ── */}
         <div style={{
           display: 'flex', gap: 4, marginBottom: 24,
-          background: '#fff',
+          background: 'var(--bg-card)',
           padding: '6px', borderRadius: 14,
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-xs)',
           overflowX: 'auto', flexWrap: 'nowrap',
         }}>
           {FINANCE_TABS.map((tab) => {
@@ -155,7 +149,7 @@ function Inner() {
                   background: active
                     ? 'linear-gradient(135deg,#10b981,#059669)'
                     : 'transparent',
-                  color: active ? 'white' : '#374151',
+                  color: active ? 'white' : 'var(--text-secondary)',
                   boxShadow: active ? '0 2px 8px rgba(16,185,129,0.35)' : 'none',
                 }}
               >
@@ -182,94 +176,21 @@ function Inner() {
 
         {/* ── KPI Cards ── */}
         {!loading && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 14, marginBottom: 24,
-          }}>
-            {kpis.map((k, idx) => (
-              <m.div
-                key={k.label}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.08, duration: 0.4 }}
-                tabIndex={0} role="button"
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; }}
-                style={{
-                  background: 'white',
-                  borderRadius: 20, padding: '22px 24px',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  display: 'flex', flexDirection: 'column', gap: 12,
-                  position: 'relative', overflow: 'hidden',
-                  transition: 'all 200ms ease', cursor: 'default',
-                }}
-                onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}
-              >
-                {/* Gradient accent bar */}
-                <div style={{
-                  position: 'absolute', top: 0, left: 24, right: 24, height: 3,
-                  background: `linear-gradient(90deg,${k.accent},${k.accent}88)`,
-                  borderRadius: '0 0 3px 3px', opacity: 0.8,
-                }} />
-                <div style={{
-                  width: 40, height: 40, borderRadius: 12,
-                  background: `${k.accent}1a`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: k.accent,
-                }}>
-                  {k.icon}
-                </div>
-                <div>
-                  <div style={{
-                    fontSize: 26, fontWeight: 800,
-                    color: '#111827',
-                    letterSpacing: '-0.02em', lineHeight: 1,
-                  }}>
-                    {k.value}
-                  </div>
-                  <div style={{
-                    fontSize: 12, color: '#9ca3af',
-                    marginTop: 4, fontWeight: 500,
-                  }}>
-                    {k.label}
-                  </div>
-                  {k.sub && (
-                    <div style={{
-                      fontSize: 11, color: '#6b7280',
-                      marginTop: 2,
-                    }}>
-                      {k.sub}
-                    </div>
-                  )}
-                </div>
-              </m.div>
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
+            <KpiCard label="Total Collected" value={fmtCompact(total)} hint={fmt(total)} icon={<Banknote size={16} />} accent="emerald" />
+            <KpiCard label="Monthly Average" value={fmtCompact(avg)} hint={`${activeMonths} active months`} icon={<TrendingUp size={16} />} accent="sky" />
+            <KpiCard label="Total Payments" value={String(totalCount)} hint="transactions" icon={<CreditCard size={16} />} accent="violet" />
+            <KpiCard label="Best Month" value={best?.month ?? '—'} hint={fmtCompact(best?.revenue ?? 0)} icon={<CalendarCheck size={16} />} accent="amber" />
           </div>
         )}
 
         {/* ── Monthly Breakdown Table ── */}
-        <div style={{
-          background: 'white',
-          borderRadius: 20,
-          border: '1px solid #f1f5f9',
-          overflow: 'hidden',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-        }}>
-          <div style={{
-            padding: '16px 24px',
-            borderBottom: '1px solid #f1f5f9',
-            display: 'flex', justifyContent: 'space-between',
-            alignItems: 'center',
-          }}>
-            <div style={{
-              fontWeight: 700, fontSize: 15,
-              color: '#111827',
-            }}>
+        <div style={{ background: 'var(--bg-card)', borderRadius: 20, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
               Monthly Breakdown — {year}
             </div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
               Avg: <strong style={{ color: '#10b981' }}>{fmtCompact(avg)}</strong> / month
             </div>
           </div>
@@ -278,32 +199,13 @@ function Inner() {
           {loading ? (
             <div style={{ padding: '32px 24px' }}>
               {Array.from({ length: 12 }).map((_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex', gap: 16, padding: '12px 0',
-                    borderBottom: '1px solid #f8fafc',
-                  }}
-                >
+                <div key={i} style={{ display: 'flex', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
                   {[80, 60, 120, 160].map((w, j) => (
-                    <div
-                      key={j}
-                      style={{
-                        height: 13, width: w, borderRadius: 6,
-                        background: '#f1f5f9',
-                        position: 'relative', overflow: 'hidden',
-                      }}
-                    >
+                    <div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'var(--bg-subtle)', position: 'relative', overflow: 'hidden' }}>
                       <m.div
                         animate={{ x: ['-100%', '200%'] }}
-                        transition={{
-                          repeat: Infinity, duration: 1.5, ease: 'linear',
-                          delay: i * 0.04,
-                        }}
-                        style={{
-                          position: 'absolute', inset: 0,
-                          background: 'linear-gradient(90deg,transparent 30%,rgba(255,255,255,0.5) 50%,transparent 70%)',
-                        }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: 'linear', delay: i * 0.04 }}
+                        style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg,transparent 30%,var(--bg-hover) 50%,transparent 70%)' }}
                       />
                     </div>
                   ))}
@@ -314,18 +216,9 @@ function Inner() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: '#F9FAFB' }}>
+                  <tr style={{ background: 'var(--bg-subtle)' }}>
                     {['Month', 'Payments', 'Collected', 'Bar'].map((h) => (
-                      <th
-                        key={h}
-                        style={{
-                          padding: '14px 20px',
-                          textAlign: h === 'Collected' ? 'right' : 'left',
-                          fontSize: 11, fontWeight: 700, color: '#6b7280',
-                          textTransform: 'uppercase', letterSpacing: '0.8px',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                      <th key={h} style={{ padding: '14px 20px', textAlign: h === 'Collected' ? 'right' : 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', whiteSpace: 'nowrap' }}>
                         {h}
                       </th>
                     ))}
@@ -335,52 +228,22 @@ function Inner() {
                   {fullYear.map((row, i) => (
                     <m.tr
                       key={i}
-                      whileHover={{ backgroundColor: '#f0fdf4' }}
+                      whileHover={{ backgroundColor: 'var(--bg-hover)' } as React.CSSProperties}
                       transition={{ duration: 0.15 }}
-                      style={{
-                        borderBottom: '1px solid #f1f5f9',
-                        backgroundColor: 'white',
-                        opacity: row.revenue === 0 ? 0.45 : 1,
-                      }}
+                      style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', opacity: row.revenue === 0 ? 0.45 : 1 }}
                     >
-                      <td style={{
-                        padding: '14px 20px', fontWeight: 600,
-                        color: '#111827',
-                      }}>
-                        {row.month} {year}
-                      </td>
-                      <td style={{
-                        padding: '14px 20px',
-                        color: '#9ca3af',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}>
-                        {row.count || '—'}
-                      </td>
-                      <td style={{
-                        padding: '14px 20px', textAlign: 'right',
-                        fontWeight: 800, fontSize: 15,
-                        color: row.revenue > 0 ? '#10b981' : '#d1d5db',
-                        fontVariantNumeric: 'tabular-nums',
-                        letterSpacing: '-0.02em',
-                      }}>
+                      <td style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>{row.month} {year}</td>
+                      <td style={{ padding: '14px 20px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{row.count || '—'}</td>
+                      <td style={{ padding: '14px 20px', textAlign: 'right', fontWeight: 800, fontSize: 15, color: row.revenue > 0 ? '#10b981' : 'var(--text-disabled)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
                         {row.revenue > 0 ? fmt(row.revenue) : '—'}
                       </td>
                       <td style={{ padding: '14px 20px', minWidth: 140 }}>
-                        <div style={{
-                          height: 8, background: '#f1f5f9',
-                          borderRadius: 4, overflow: 'hidden',
-                        }}>
+                        <div style={{ height: 8, background: 'var(--bg-subtle)', borderRadius: 4, overflow: 'hidden' }}>
                           <m.div
                             initial={{ width: 0 }}
                             animate={{ width: `${(row.revenue / maxRevenue) * 100}%` }}
                             transition={{ duration: 0.8, ease: 'easeOut', delay: i * 0.03 }}
-                            style={{
-                              height: '100%',
-                              background: row.revenue === best?.revenue && row.revenue > 0
-                                ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
-                                : 'linear-gradient(90deg,#10b981,#34d399)',
-                              borderRadius: 4,
-                            }}
+                            style={{ height: '100%', background: row.revenue === best?.revenue && row.revenue > 0 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' : 'linear-gradient(90deg,#10b981,#34d399)', borderRadius: 4 }}
                           />
                         </div>
                       </td>
@@ -388,31 +251,10 @@ function Inner() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{
-                    borderTop: '2px solid #e2e8f0',
-                    background: '#f8fafc',
-                  }}>
-                    <td style={{
-                      padding: '14px 20px', fontWeight: 800,
-                      color: '#111827',
-                    }}>
-                      Total
-                    </td>
-                    <td style={{
-                      padding: '14px 20px', fontWeight: 700,
-                      fontVariantNumeric: 'tabular-nums',
-                      color: '#111827',
-                    }}>
-                      {totalCount}
-                    </td>
-                    <td style={{
-                      padding: '14px 20px', textAlign: 'right',
-                      fontWeight: 900, fontSize: 16, color: '#10b981',
-                      fontVariantNumeric: 'tabular-nums',
-                      letterSpacing: '-0.02em',
-                    }}>
-                      {fmt(total)}
-                    </td>
+                  <tr style={{ borderTop: '2px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                    <td style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--text-primary)' }}>Total</td>
+                    <td style={{ padding: '14px 20px', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)' }}>{totalCount}</td>
+                    <td style={{ padding: '14px 20px', textAlign: 'right', fontWeight: 900, fontSize: 16, color: '#10b981', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>{fmt(total)}</td>
                     <td />
                   </tr>
                 </tfoot>
