@@ -10,7 +10,7 @@ import {
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { isWebAuthnSupported, isPlatformAuthenticatorAvailable, registerCredential, getWebAuthnError } from '@/lib/webauthn';
 
@@ -336,9 +336,9 @@ function EnrollContent() {
             Enroll a member's face so they can check in automatically at the kiosk. Requires a webcam. No images are stored — only a 128-D mathematical descriptor.
           </p>
           <Link href="/checkin/enroll/face">
-            <PremiumButton tone="primary" glow icon={<Camera size={14} />}>
+            <Button variant="primary" iconLeft={<Camera size={14} />}>
               Open Face Enrollment <ArrowRight size={13} style={{ marginLeft: 4 }} />
-            </PremiumButton>
+            </Button>
           </Link>
         </m.div>
 
@@ -367,9 +367,9 @@ function EnrollContent() {
           </div>
 
           {!showEnrollForm ? (
-            <PremiumButton tone="primary" glow icon={<Plus size={14} />} onClick={() => setShowEnrollForm(true)}>
+            <Button variant="primary" iconLeft={<Plus size={14} />} onClick={() => setShowEnrollForm(true)}>
               Enroll New Passkey
-            </PremiumButton>
+            </Button>
           ) : (
             <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
               <div className="space-y-3 mb-4">
@@ -380,12 +380,12 @@ function EnrollContent() {
                 <strong style={{ color: '#6366f1' }}>How it works:</strong> Your browser will prompt you to use Face ID, Touch ID, or your device passkey. No face images or biometric data are stored on our servers.
               </div>
               <div className="flex gap-2">
-                <PremiumButton tone="primary" glow icon={<Shield size={14} />} onClick={handleEnroll} loading={enrolling} disabled={enrolling || !memberId || !deviceName}>
+                <Button variant="primary" iconLeft={<Shield size={14} />} onClick={handleEnroll} loading={enrolling} disabled={enrolling || !memberId || !deviceName}>
                   Register Passkey
-                </PremiumButton>
-                <PremiumButton tone="secondary" onClick={() => setShowEnrollForm(false)}>
+                </Button>
+                <Button variant="outline" onClick={() => setShowEnrollForm(false)}>
                   Cancel
-                </PremiumButton>
+                </Button>
               </div>
             </m.div>
           )}

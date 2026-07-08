@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -297,9 +297,9 @@ function Inner() {
             </div>
           ))}
           <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-            <PremiumButton onClick={() => { toast.info('Select a client first to start building a plan.'); }} style={{ fontSize: 12, padding: '8px 20px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+            <Button variant="primary" size="sm" onClick={() => { toast.info('Select a client first to start building a plan.'); }}>
               Start Building
-            </PremiumButton>
+            </Button>
           </div>
         </div>}
 

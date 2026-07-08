@@ -10,12 +10,13 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+
 import { PremiumModal } from '@/components/premium/PremiumModal';
 import { FloatingPanel } from '@/components/premium/FloatingPanel';
 import { StatusPill } from '@/components/premium/StatusPill';
 import { PremiumTable } from '@/components/premium/PremiumTable';
 import { cn } from '@/components/ui/cn';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -296,9 +297,9 @@ function SchedulePageContent() {
                 </div>
               </div>
             </div>
-            <PremiumButton tone="primary" glow icon={<Plus size={14} />} onClick={() => setShowCreateModal(true)}>
+            <Button variant="primary" iconLeft={<Plus size={14} />} onClick={() => setShowCreateModal(true)}>
               Book Session
-            </PremiumButton>
+            </Button>
           </div>
 
           {/* View Toggles */}
@@ -376,9 +377,9 @@ function SchedulePageContent() {
             </div>
             <h3 className="text-[16px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>Failed to load sessions</h3>
             <p className="mt-1 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>{sessionsError}</p>
-            <PremiumButton tone="primary" glow icon={<RefreshCw size={13} />} onClick={fetchSessions} className="mt-4">
+            <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={fetchSessions} className="mt-4">
               Retry
-            </PremiumButton>
+            </Button>
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -757,15 +758,15 @@ function CreateSessionModal({
       size="lg"
       footer={
         <div className="flex gap-3 w-full justify-end">
-          <PremiumButton tone="secondary" size="sm" onClick={handleClose}>Cancel</PremiumButton>
+          <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
           {(step === 1 || conflict) ? (
-            <PremiumButton tone="primary" size="sm" glow onClick={handleConfirm} disabled={!form.client || !form.trainer || !form.time}>
+            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={!form.client || !form.trainer || !form.time}>
               {step === 1 ? 'Continue' : 'Book Anyway'}
-            </PremiumButton>
+            </Button>
           ) : (
-            <PremiumButton tone="success" size="sm" glow icon={<CheckCircle2 size={13} />} onClick={handleConfirm}>
+            <Button variant="success" size="sm" iconLeft={<CheckCircle2 size={13} />} onClick={handleConfirm}>
               Confirm Booking
-            </PremiumButton>
+            </Button>
           )}
         </div>
       }

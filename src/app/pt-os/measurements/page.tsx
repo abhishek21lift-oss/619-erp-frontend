@@ -6,7 +6,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 
 const MEASUREMENT_FIELDS = [
   { key: 'weight', label: 'Weight (kg)' },
@@ -178,10 +178,10 @@ export default function MeasurementsPage() {
                       style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }} />
                   ))}
                 </div>
-                <PremiumButton tone="primary" glow icon={saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                <Button variant="primary" iconLeft={saving ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
                   disabled={saving} className="!w-full justify-center">
                   {saving ? 'Saving...' : 'Save Measurements'}
-                </PremiumButton>
+                </Button>
               </form>
             </m.div>
           )}

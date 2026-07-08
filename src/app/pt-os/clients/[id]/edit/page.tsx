@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -273,9 +273,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   <p className="text-[12px]" style={{ color: '#6b7280' }}>All changes auto-save on submit</p>
                 </div>
               </div>
-              <PremiumButton tone="primary" glow icon={<Save size={14} />} onClick={handleSave} loading={saving}>
+              <Button variant="primary" iconLeft={<Save size={14} />} onClick={handleSave} loading={saving}>
                 Save Changes
-              </PremiumButton>
+              </Button>
             </m.div>
 
             {/* ── Personal Info ── */}
@@ -508,12 +508,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 </span>
               </div>
               <div className="flex gap-3">
-                <PremiumButton tone="secondary" onClick={() => router.push(`/pt-os/clients/${id}`)}>
+                <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${id}`)}>
                   Cancel
-                </PremiumButton>
-                <PremiumButton tone="primary" glow icon={<Save size={14} />} onClick={handleSave} loading={saving}>
+                </Button>
+                <Button variant="primary" iconLeft={<Save size={14} />} onClick={handleSave} loading={saving}>
                   Save Changes
-                </PremiumButton>
+                </Button>
               </div>
             </m.div>
 

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useCamera } from '@/hooks/useCamera';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
@@ -287,9 +287,9 @@ function FaceEnrollContent() {
                   <strong style={{ color: '#6366f1' }}>How it works:</strong> The camera will capture a 128-dimensional face descriptor. A blink confirmation is required to prevent photo spoofing. No images are stored — only the mathematical descriptor.
                 </div>
 
-                <PremiumButton tone="primary" glow icon={<Camera size={14} />} onClick={startCamera} disabled={!member}>
+                <Button variant="primary" iconLeft={<Camera size={14} />} onClick={startCamera} disabled={!member}>
                   Start Face Enrollment
-                </PremiumButton>
+                </Button>
               </div>
             </m.div>
           )}
@@ -440,15 +440,15 @@ function FaceEnrollContent() {
                     </div>
                   </div>
 
-                  <PremiumButton
-                    tone="primary" glow
-                    icon={capturing ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                  <Button
+                    variant="primary"
+                    iconLeft={capturing ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                     onClick={captureAndEnroll}
                     disabled={!blinkReady || capturing}
                     loading={capturing}
                   >
                     {capturing ? 'Enrolling…' : blinkReady ? 'Confirm & Enroll Face' : 'Waiting for blink…'}
-                  </PremiumButton>
+                  </Button>
                 </div>
               </div>
             </m.div>
@@ -471,17 +471,17 @@ function FaceEnrollContent() {
                 <p className="text-[11px] font-mono mb-6" style={{ color: 'rgb(148,163,184)' }}>client: {enrolledId}</p>
 
                 <div className="flex flex-wrap justify-center gap-3">
-                  <PremiumButton tone="primary" glow icon={<ScanFace size={13} />} onClick={reset}>
+                  <Button variant="primary" iconLeft={<ScanFace size={13} />} onClick={reset}>
                     Enroll Another Member
-                  </PremiumButton>
-                  <PremiumButton tone="secondary" icon={<Trash2 size={13} />}
+                  </Button>
+                  <Button variant="outline" iconLeft={<Trash2 size={13} />}
                     onClick={async () => {
                       try { await api.checkin.revokeEnrollment(enrolledId); }
                       catch {}
                       reset();
                     }}>
                     Undo Enrollment
-                  </PremiumButton>
+                  </Button>
                 </div>
               </div>
             </m.div>
@@ -498,9 +498,9 @@ function FaceEnrollContent() {
                 </div>
                 <h2 className="text-[18px] font-[800] mb-2" style={{ color: 'rgb(15,23,42)' }}>Enrollment Failed</h2>
                 <p className="text-[13px] mb-6" style={{ color: 'rgb(100,116,139)' }}>{errorMsg}</p>
-                <PremiumButton tone="primary" glow icon={<RefreshCw size={13} />} onClick={reset}>
+                <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={reset}>
                   Try Again
-                </PremiumButton>
+                </Button>
               </div>
             </m.div>
           )}

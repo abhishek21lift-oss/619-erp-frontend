@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Repeat, CheckCircle, IndianRupee, Calendar, User, Dumbbell, FileText } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -272,13 +272,13 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
 
             {/* Actions */}
             <div className="flex gap-3 pt-2">
-              <PremiumButton tone="secondary" onClick={() => router.back()}>Cancel</PremiumButton>
-              <PremiumButton tone="success" glow loading={saving}
+              <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+              <Button variant="success" loading={saving}
                 disabled={!form.startDate || !form.durationMonths || !form.finalAmount}
                 onClick={handleSubmit}
-                icon={<CheckCircle size={14} />}>
+                iconLeft={<CheckCircle size={14} />}>
                 Confirm Renewal
-              </PremiumButton>
+              </Button>
             </div>
           </div>
         </div>

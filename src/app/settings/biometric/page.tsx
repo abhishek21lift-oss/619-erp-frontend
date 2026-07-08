@@ -10,7 +10,7 @@ import {
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 
 interface GymSettings {
@@ -299,9 +299,9 @@ function BiometricSettingsContent() {
 
         {/* Save */}
         <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-          <PremiumButton tone="primary" glow icon={<Save size={14} />} onClick={handleSave} loading={saving} disabled={saving} className="w-full">
+          <Button variant="primary" iconLeft={<Save size={14} />} onClick={handleSave} loading={saving} disabled={saving} className="w-full">
             Save Settings
-          </PremiumButton>
+          </Button>
         </m.div>
       </div>
     </div>

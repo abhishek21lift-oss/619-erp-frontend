@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';

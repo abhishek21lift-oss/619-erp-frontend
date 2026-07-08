@@ -12,7 +12,7 @@ import { getSheetCacheSync, lookupByMobile, normalizeMobile } from '@/lib/sheet-
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
 import FloatInput from '@/components/ui/FloatInput';
@@ -220,7 +220,7 @@ function DataErrorState({ message, onRetry }: { message: string; onRetry: () => 
       <h3 className="text-[17px] font-[760] text-slate-900">Failed to load data</h3>
       <p className="mt-1.5 text-[13px] text-slate-500">{message}</p>
       <div className="mt-5">
-        <PremiumButton tone="primary" glow icon={<RefreshCw size={13} />} onClick={onRetry}>Retry</PremiumButton>
+        <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={onRetry}>Retry</Button>
       </div>
     </div>
   );
@@ -457,7 +457,7 @@ function NewClientWizard() {
         className="flex min-h-[80vh] items-center justify-center px-5"
       >
         <div className="w-full max-w-md text-center">
-          {/* confetti-style background glow */}
+          {/* confetti-style background */}
           <div className="relative inline-flex items-center justify-center mb-8">
             <div className="absolute inset-0 rounded-full blur-2xl opacity-30" style={{ background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)', transform: 'scale(2.5)' }} />
             <m.div
@@ -496,18 +496,18 @@ function NewClientWizard() {
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-3 justify-center mt-6"
           >
-            <PremiumButton
-              tone="primary" glow
+            <Button
+              variant="primary"
               onClick={() => { setShowSuccess(false); setDone(false); setForm(initForm()); setStep(1); setPhotoPreview(null); }}
             >
               Onboard Another
-            </PremiumButton>
-            <PremiumButton
-              tone="secondary"
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => router.push(`/pt-os/clients/${createdId}`)}
             >
               View Client Profile
-            </PremiumButton>
+            </Button>
           </m.div>
         </div>
       </m.div>
@@ -1122,9 +1122,9 @@ function NewClientWizard() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   {step > 1 ? (
-                    <PremiumButton tone="secondary" icon={<ChevronLeft size={14} />} onClick={handlePrev}>
+                    <Button variant="outline" iconLeft={<ChevronLeft size={14} />} onClick={handlePrev}>
                       Back
-                    </PremiumButton>
+                    </Button>
                   ) : (
                     <div />
                   )}
@@ -1140,13 +1140,13 @@ function NewClientWizard() {
                     {STEPS[step - 1].sub}
                   </span>
                   {step < 4 ? (
-                    <PremiumButton tone="primary" icon={<ChevronRight size={14} />} onClick={handleNext}>
+                    <Button variant="primary" iconLeft={<ChevronRight size={14} />} onClick={handleNext}>
                       Continue
-                    </PremiumButton>
+                    </Button>
                   ) : (
-                    <PremiumButton tone="success" glow icon={saving ? undefined : <Check size={14} />} onClick={handleSubmit} loading={saving} disabled={saving || done}>
+                    <Button variant="success" iconLeft={saving ? undefined : <Check size={14} />} onClick={handleSubmit} loading={saving} disabled={saving || done}>
                       {done ? 'Onboarded!' : 'Confirm & Onboard'}
-                    </PremiumButton>
+                    </Button>
                   )}
                 </div>
               </div>

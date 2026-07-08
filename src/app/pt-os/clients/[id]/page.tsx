@@ -14,10 +14,10 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { PremiumAreaChart } from '@/components/ui';
+import { Button, PremiumAreaChart } from '@/components/ui';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;

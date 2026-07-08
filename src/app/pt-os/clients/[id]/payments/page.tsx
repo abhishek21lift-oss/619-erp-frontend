@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -230,7 +230,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 <RefreshCw size={22} style={{ color: '#ef4444' }} />
               </div>
               <p className="text-[14px]" style={{ color: '#6b7280' }}>{error}</p>
-              <PremiumButton tone="primary" glow icon={<RefreshCw size={13} />} onClick={fetchAll} className="mt-4">Retry</PremiumButton>
+              <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={fetchAll} className="mt-4">Retry</Button>
             </div>
           ) : client ? (
             <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-6">
@@ -270,14 +270,14 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 </div>
 
                 <div className="flex gap-2">
-                  <PremiumButton tone="secondary" icon={<ArrowLeft size={14} />}
+                  <Button variant="outline" iconLeft={<ArrowLeft size={14} />}
                     onClick={() => router.push(`/pt-os/clients/${id}`)}>
                     Profile
-                  </PremiumButton>
-                  <PremiumButton tone="primary" glow icon={<Plus size={14} />}
+                  </Button>
+                  <Button variant="primary" iconLeft={<Plus size={14} />}
                     onClick={() => setShowPaymentPanel(true)}>
                     Record Payment
-                  </PremiumButton>
+                  </Button>
                 </div>
               </m.div>
 
@@ -539,10 +539,10 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                 {searchTerm || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Record the first payment for this client'}
                               </p>
                               {!searchTerm && statusFilter === 'all' && (
-                                <PremiumButton tone="primary" glow icon={<Plus size={12} />}
+                                <Button variant="primary" iconLeft={<Plus size={12} />}
                                   onClick={() => setShowPaymentPanel(true)} className="mt-4">
                                   Record Payment
-                                </PremiumButton>
+                                </Button>
                               )}
                             </div>
                           </td>

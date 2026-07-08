@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { isWebAuthnSupported, authenticateCredential, getWebAuthnError } from '@/lib/webauthn';
 
@@ -260,9 +260,9 @@ function MarkAttendanceContent() {
                     <span className="text-[13px] font-[500]" style={{ color: '#166534' }}>Location verified</span>
                   </div>
                 ) : (
-                  <PremiumButton tone="primary" glow icon={<Navigation size={14} />} onClick={handleGPSVerify} loading={loading} disabled={loading} className="w-full">
+                  <Button variant="primary" iconLeft={<Navigation size={14} />} onClick={handleGPSVerify} loading={loading} disabled={loading} className="w-full">
                     Verify My Location
-                  </PremiumButton>
+                  </Button>
                 )}
                 {location && (
                   <p className="mt-3 text-[11px]" style={{ color: 'rgb(148,163,184)' }}>
@@ -333,9 +333,9 @@ function MarkAttendanceContent() {
                 </div>
 
                 <div className="mt-4">
-                  <PremiumButton tone="secondary" icon={<RefreshCw size={13} />} onClick={() => setStep('gps')} className="w-full">
+                  <Button variant="outline" iconLeft={<RefreshCw size={13} />} onClick={() => setStep('gps')} className="w-full">
                     Back to GPS
-                  </PremiumButton>
+                  </Button>
                 </div>
               </div>
             </m.div>
@@ -362,9 +362,9 @@ function MarkAttendanceContent() {
                   </div>
                 </m.div>
                 <div className="mt-6">
-                  <PremiumButton tone="primary" glow icon={<RefreshCw size={14} />} onClick={handleReset}>
+                  <Button variant="primary" iconLeft={<RefreshCw size={14} />} onClick={handleReset}>
                     Mark Another
-                  </PremiumButton>
+                  </Button>
                 </div>
               </div>
             </m.div>
@@ -381,9 +381,9 @@ function MarkAttendanceContent() {
                   </div>
                 </m.div>
                 <h2 className="text-[18px] font-[760] mb-1" style={{ color: 'rgb(15,23,42)' }}>Attendance Not Marked</h2>
-                <PremiumButton tone="primary" glow icon={<RefreshCw size={14} />} onClick={handleReset} className="mt-5">
+                <Button variant="primary" iconLeft={<RefreshCw size={14} />} onClick={handleReset} className="mt-5">
                   Try Again
-                </PremiumButton>
+                </Button>
               </div>
             </m.div>
           )}
