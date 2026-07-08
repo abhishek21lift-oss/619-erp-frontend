@@ -332,7 +332,7 @@ function Inner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {fullYear.map((m, i) => (
+                  {fullYear.map((row, i) => (
                     <m.tr
                       key={i}
                       whileHover={{ backgroundColor: '#f0fdf4' }}
@@ -340,30 +340,30 @@ function Inner() {
                       style={{
                         borderBottom: '1px solid #f1f5f9',
                         backgroundColor: 'white',
-                        opacity: m.revenue === 0 ? 0.45 : 1,
+                        opacity: row.revenue === 0 ? 0.45 : 1,
                       }}
                     >
                       <td style={{
                         padding: '14px 20px', fontWeight: 600,
                         color: '#111827',
                       }}>
-                        {m.month} {year}
+                        {row.month} {year}
                       </td>
                       <td style={{
                         padding: '14px 20px',
                         color: '#9ca3af',
                         fontVariantNumeric: 'tabular-nums',
                       }}>
-                        {m.count || '—'}
+                        {row.count || '—'}
                       </td>
                       <td style={{
                         padding: '14px 20px', textAlign: 'right',
                         fontWeight: 800, fontSize: 15,
-                        color: m.revenue > 0 ? '#10b981' : '#d1d5db',
+                        color: row.revenue > 0 ? '#10b981' : '#d1d5db',
                         fontVariantNumeric: 'tabular-nums',
                         letterSpacing: '-0.02em',
                       }}>
-                        {m.revenue > 0 ? fmt(m.revenue) : '—'}
+                        {row.revenue > 0 ? fmt(row.revenue) : '—'}
                       </td>
                       <td style={{ padding: '14px 20px', minWidth: 140 }}>
                         <div style={{
@@ -372,11 +372,11 @@ function Inner() {
                         }}>
                           <m.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${(m.revenue / maxRevenue) * 100}%` }}
+                            animate={{ width: `${(row.revenue / maxRevenue) * 100}%` }}
                             transition={{ duration: 0.8, ease: 'easeOut', delay: i * 0.03 }}
                             style={{
                               height: '100%',
-                              background: m.revenue === best?.revenue && m.revenue > 0
+                              background: row.revenue === best?.revenue && row.revenue > 0
                                 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
                                 : 'linear-gradient(90deg,#10b981,#34d399)',
                               borderRadius: 4,

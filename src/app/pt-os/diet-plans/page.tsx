@@ -133,21 +133,21 @@ function Inner() {
             { label: 'Protein', value: totalProtein, max: 160, unit: 'g', color: '#6366f1', icon: <Activity size={15} /> },
             { label: 'Carbs', value: totalCarbs, max: 260, unit: 'g', color: '#f59e0b', icon: <Banana size={15} /> },
             { label: 'Fats', value: totalFats, max: 65, unit: 'g', color: '#ec4899', icon: <Droplets size={15} /> },
-          ].map((m, i) => {
-            const pct = Math.min((m.value / m.max) * 100, 100);
+          ].map((macro, i) => {
+            const pct = Math.min((macro.value / macro.max) * 100, 100);
             return (
-              <m.div key={m.label} variants={itemVariants}
+              <m.div key={macro.label} variants={itemVariants}
                 style={{ borderRadius: 16, padding: 18, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', cursor: 'default', transition: 'transform 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#9ca3af' }}>{m.label}</span>
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: `${m.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: m.color }}>{m.icon}</div>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#9ca3af' }}>{macro.label}</span>
+                  <div style={{ width: 32, height: 32, borderRadius: 9, background: `${macro.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: macro.color }}>{macro.icon}</div>
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', marginBottom: 8 }}>{m.value}<span style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af' }}>/{m.max}{m.unit}</span></div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', marginBottom: 8 }}>{macro.value}<span style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af' }}>/{macro.max}{macro.unit}</span></div>
                 <div style={{ height: 4, borderRadius: 2, background: '#f3f4f6', overflow: 'hidden' }}>
                   <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
-                    style={{ height: '100%', borderRadius: 2, background: m.color }} />
+                    style={{ height: '100%', borderRadius: 2, background: macro.color }} />
                 </div>
               </m.div>
             );

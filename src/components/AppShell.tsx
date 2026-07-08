@@ -694,7 +694,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
           </m.header>
 
           {/* Spacer — tracks fixed header height so content always starts below it */}
-          <motion.div
+          <m.div
             aria-hidden="true"
             className="flex-shrink-0 pointer-events-none"
             style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
