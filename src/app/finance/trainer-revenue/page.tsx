@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { KpiCard } from '@/components/ui';
 import { api } from '@/lib/api';
 import { Award, Users, Dumbbell, TrendingUp, BadgePercent, X } from 'lucide-react';
 
@@ -15,7 +16,7 @@ export default function TrainerRevenuePage() {
 }
 
 const fmt = (n: number) =>
-  '\u20B9' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
 const PKG_MONTHS: Record<string, number> = {
   'Monthly': 1, 'Quarterly': 3, 'Half Yearly': 6, 'Yearly': 12,
@@ -157,25 +158,16 @@ function Inner() {
     return { cur, prev };
   }, [selectedTrainer, clients, curYear, curMonth, prevYear, prevMonth]);
 
-  const kpis = [
-    { label: 'Total Trainers', value: summaryKpis.totalTrainers, accent: '#6366f1', icon: <Users size={18} /> },
-    { label: 'Active PT Clients', value: summaryKpis.totalClients, accent: '#8b5cf6', icon: <Dumbbell size={18} /> },
-    { label: 'Monthly PT Revenue', value: fmt(summaryKpis.totalMonthlyRevenue), accent: '#10b981', icon: <TrendingUp size={18} /> },
-    { label: 'Total Incentives', value: fmt(summaryKpis.totalIncentives), accent: '#f59e0b', icon: <BadgePercent size={18} /> },
-  ];
-
   return (
     <AppShell>
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
 
         {/* ── Hero ── */}
         <div style={{
           position: 'relative',
           overflow: 'hidden',
-          borderBottom: '1px solid rgba(0,0,0,0.07)',
+          borderBottom: '1px solid var(--border)',
         }}>
-
-          {/* Hero Content */}
           <div style={{
             position: 'relative', zIndex: 1,
             maxWidth: 1280, margin: '0 auto',
@@ -186,7 +178,6 @@ function Inner() {
               alignItems: 'flex-start', justifyContent: 'space-between',
               gap: 16,
             }}>
-              {/* Left: Icon + Title + Subtitle */}
               <div style={{ flex: 1, minWidth: isSm ? undefined : '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
@@ -201,25 +192,24 @@ function Inner() {
                   <h1 style={{
                     fontSize: 26, fontWeight: 860,
                     letterSpacing: '-0.03em', margin: 0,
-                    color: '#111827',
+                    color: 'var(--text-primary)',
                   }}>Trainer Payouts</h1>
                 </div>
-                <p style={{ marginTop: 6, fontSize: 13, color: '#6b7280' }}>
+                <p style={{ marginTop: 6, fontSize: 13, color: 'var(--text-muted)' }}>
                   PT revenue, incentives & payout summaries for all trainers.
                 </p>
               </div>
 
-              {/* Right: Date badge */}
               <div style={{
                 padding: '8px 14px',
                 borderRadius: 12,
-                background: '#fff',
-                border: '1px solid rgba(0,0,0,0.07)',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 <span style={{
                   fontSize: 12, fontWeight: 700,
-                  color: '#6b7280',
+                  color: 'var(--text-muted)',
                   letterSpacing: '0.5px', textTransform: 'uppercase',
                 }}>
                   {monthLabel(curYear, curMonth)}
@@ -234,7 +224,6 @@ function Inner() {
           maxWidth: 1280, margin: '0 auto',
           padding: isSm ? '24px 32px 112px' : '24px 16px 112px',
         }}>
-          {/* Error banner */}
           <AnimatePresence>
             {error && (
               <m.div
@@ -259,56 +248,10 @@ function Inner() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
             gap: 14, marginBottom: 24,
           }}>
-            {kpis.map((k, idx) => (
-              <m.div
-                key={k.label}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.08, duration: 0.4 }}
-                tabIndex={0} role="button"
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                onMouseEnter={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 8px 28px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={(e) => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; el.style.transform = 'translateY(0)'; }}
-                style={{
-                  background: 'white',
-                  borderRadius: 20, padding: '22px 24px',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                  border: '1px solid rgba(0,0,0,0.06)',
-                  position: 'relative', overflow: 'hidden',
-                  transition: 'all 200ms ease', cursor: 'default',
-                }}
-              >
-                <div style={{
-                  position: 'absolute', top: 0, left: 24, right: 24, height: 3,
-                  background: `linear-gradient(90deg,${k.accent},${k.accent}88)`,
-                  borderRadius: '0 0 3px 3px', opacity: 0.8,
-                }} />
-                <div style={{
-                  width: 40, height: 40, borderRadius: 12,
-                  background: `${k.accent}18`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: k.accent,
-                }}>
-                  {k.icon}
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  <div style={{
-                    fontSize: 26, fontWeight: 800,
-                    color: '#0f172a',
-                    letterSpacing: '-0.02em', lineHeight: 1,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>
-                    {k.value}
-                  </div>
-                  <div style={{
-                    fontSize: 12, color: 'rgba(15,23,42,0.5)',
-                    marginTop: 4, fontWeight: 500,
-                  }}>
-                    {k.label}
-                  </div>
-                </div>
-              </m.div>
-            ))}
+            <KpiCard label="Total Trainers" value={String(summaryKpis.totalTrainers)} icon={<Users size={16} />} accent="blue" />
+            <KpiCard label="Active PT Clients" value={String(summaryKpis.totalClients)} icon={<Dumbbell size={16} />} accent="violet" />
+            <KpiCard label="Monthly PT Revenue" value={fmt(summaryKpis.totalMonthlyRevenue)} icon={<TrendingUp size={16} />} accent="emerald" />
+            <KpiCard label="Total Incentives" value={fmt(summaryKpis.totalIncentives)} icon={<BadgePercent size={16} />} accent="amber" />
           </div>
 
           {/* ── Table + Detail Panel ── */}
@@ -321,24 +264,24 @@ function Inner() {
 
             {/* Trainer table */}
             <div style={{
-              background: 'white',
+              background: 'var(--bg-card)',
               borderRadius: 20,
-              border: '1px solid #f1f5f9',
+              border: '1px solid var(--border)',
               overflow: 'hidden',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+              boxShadow: 'var(--shadow-card)',
               flex: selectedTrainer ? '0 0 55%' : '1',
               minWidth: 0,
             }}>
               <div style={{
                 padding: '16px 24px',
-                borderBottom: '1px solid rgba(241,245,249,0.6)',
+                borderBottom: '1px solid var(--border)',
                 display: 'flex', justifyContent: 'space-between',
                 alignItems: 'center',
               }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: 'rgba(15,23,42,0.85)' }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
                   Trainer PT Revenue Breakdown
                 </div>
-                <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.4)' }}>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                   {monthLabel(curYear, curMonth)}
                 </div>
               </div>
@@ -348,12 +291,12 @@ function Inner() {
                   {Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} style={{
                       display: 'flex', gap: 16, padding: '14px 0',
-                      borderBottom: '1px solid #f1f5f9',
+                      borderBottom: '1px solid var(--border)',
                     }}>
                       {[160, 80, 100, 60, 100, 120].map((w, j) => (
                         <div key={j} style={{
                           height: 14, width: w, borderRadius: 6,
-                          background: '#f1f5f9', position: 'relative',
+                          background: 'var(--bg-subtle)', position: 'relative',
                           overflow: 'hidden',
                         }}>
                           <m.div
@@ -361,7 +304,7 @@ function Inner() {
                             transition={{ repeat: Infinity, duration: 1.5, ease: 'linear', delay: i * 0.04 }}
                             style={{
                               position: 'absolute', inset: 0,
-                              background: 'linear-gradient(90deg,transparent 30%,rgba(255,255,255,0.5) 50%,transparent 70%)',
+                              background: 'linear-gradient(90deg,transparent 30%,var(--bg-hover) 50%,transparent 70%)',
                             }}
                           />
                         </div>
@@ -381,21 +324,19 @@ function Inner() {
                   </div>
                   <p style={{
                     fontSize: 16, fontWeight: 700,
-                    color: 'rgba(15,23,42,0.7)',
+                    color: 'var(--text-secondary)',
                   }}>No PT clients assigned yet.</p>
                 </div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{
-                        background: '#f9fafb',
-                      }}>
+                      <tr style={{ background: 'var(--bg-subtle)' }}>
                         {['Trainer', 'PT Clients', 'Monthly Revenue', 'Incentive %', 'Incentive Amount', 'Revenue Share'].map((h) => (
                           <th key={h} style={{
                             padding: '14px 20px',
                             textAlign: h === 'Monthly Revenue' || h === 'Incentive Amount' || h === 'PT Clients' || h === 'Revenue Share' ? 'right' : 'left',
-                            fontSize: 11, fontWeight: 700, color: '#6b7280',
+                            fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
                             textTransform: 'uppercase', letterSpacing: '0.8px',
                             whiteSpace: 'nowrap',
                           }}>
@@ -409,11 +350,11 @@ function Inner() {
                         <m.tr
                           key={trainer.id}
                           onClick={() => setSelectedTrainer(selectedTrainer?.id === trainer.id ? null : trainer)}
-                          whileHover={{ backgroundColor: 'rgba(99,102,241,0.04)' }}
+                          whileHover={{ backgroundColor: 'var(--bg-hover)' } as React.CSSProperties}
                           style={{
                             cursor: 'pointer',
-                            borderBottom: '1px solid #f1f5f9',
-                            backgroundColor: selectedTrainer?.id === trainer.id ? 'rgba(99,102,241,0.06)' : 'white',
+                            borderBottom: '1px solid var(--border)',
+                            backgroundColor: selectedTrainer?.id === trainer.id ? 'var(--bg-hover)' : 'var(--bg-card)',
                             transition: 'background-color 0.15s',
                           }}
                         >
@@ -435,7 +376,7 @@ function Inner() {
                           </td>
                           <td style={{
                             padding: '14px 20px', textAlign: 'right',
-                            color: 'rgba(15,23,42,0.55)',
+                            color: 'var(--text-secondary)',
                             fontVariantNumeric: 'tabular-nums',
                           }}>
                             {trainer.clients_count}
@@ -475,7 +416,7 @@ function Inner() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <div style={{
                                 flex: 1, height: 8,
-                                background: '#f1f5f9',
+                                background: 'var(--bg-subtle)',
                                 borderRadius: 4, overflow: 'hidden',
                               }}>
                                 <m.div
@@ -491,7 +432,7 @@ function Inner() {
                               </div>
                               <span style={{
                                 fontSize: 12, fontWeight: 600,
-                                color: 'rgba(15,23,42,0.5)',
+                                color: 'var(--text-muted)',
                                 fontVariantNumeric: 'tabular-nums',
                                 minWidth: 40, textAlign: 'right',
                               }}>
@@ -508,8 +449,8 @@ function Inner() {
 
               <div style={{
                 padding: '12px 24px',
-                borderTop: '1px solid rgba(241,245,249,0.6)',
-                fontSize: 12, color: 'rgba(15,23,42,0.4)',
+                borderTop: '1px solid var(--border)',
+                fontSize: 12, color: 'var(--text-muted)',
               }}>
                 Click any trainer row to see their monthly client breakdown.
               </div>
@@ -525,18 +466,17 @@ function Inner() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.25 }}
                   style={{
-                    background: 'white',
+                    background: 'var(--bg-card)',
                     borderRadius: 20,
-                    border: '1px solid #f1f5f9',
+                    border: '1px solid var(--border)',
                     overflow: 'hidden',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                    boxShadow: 'var(--shadow-card)',
                     flex: '1', minWidth: 0,
                   }}
                 >
-                  {/* Panel header */}
                   <div style={{
                     padding: '14px 20px',
-                    borderBottom: '1px solid rgba(241,245,249,0.6)',
+                    borderBottom: '1px solid var(--border)',
                     display: 'flex', alignItems: 'center', gap: 10,
                   }}>
                     <div style={{
@@ -549,10 +489,10 @@ function Inner() {
                       {selectedTrainer.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: 'rgba(15,23,42,0.85)' }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
                         {selectedTrainer.name}
                       </div>
-                      <div style={{ fontSize: 12, color: 'rgba(15,23,42,0.4)' }}>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                         PT Client Breakdown
                       </div>
                     </div>
@@ -561,26 +501,24 @@ function Inner() {
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setSelectedTrainer(null)}
                       style={{
-                        background: 'rgba(241,245,249,0.7)',
+                        background: 'var(--bg-subtle)',
                         border: 'none', cursor: 'pointer',
                         display: 'flex', alignItems: 'center',
                         justifyContent: 'center',
                         width: 28, height: 28, borderRadius: 8,
-                        color: 'rgba(100,116,139,0.7)',
+                        color: 'var(--text-muted)',
                       }}
                     >
                       <X size={15} />
                     </m.button>
                   </div>
 
-                  {/* Current month */}
                   <ClientMonthSection
                     label={`${monthLabel(curYear, curMonth)} (Current)`}
                     clients={detailClients.cur}
                     accent="#10b981"
                   />
 
-                  {/* Previous month */}
                   <ClientMonthSection
                     label={`${monthLabel(prevYear, prevMonth)} (Previous)`}
                     clients={detailClients.prev}
@@ -598,11 +536,11 @@ function Inner() {
 
 function ClientMonthSection({ label, clients, accent }: { label: string; clients: any[]; accent: string }) {
   const fmtLocal = (n: number) =>
-    '\u20B9' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
   const total = clients.reduce((s, c) => s + (Number(c.final_amount) || 0), 0);
 
   return (
-    <div style={{ borderBottom: '1px solid rgba(241,245,249,0.6)' }}>
+    <div style={{ borderBottom: '1px solid var(--border)' }}>
       <div style={{
         padding: '12px 20px 10px',
         display: 'flex', justifyContent: 'space-between',
@@ -624,7 +562,7 @@ function ClientMonthSection({ label, clients, accent }: { label: string; clients
       {clients.length === 0 ? (
         <div style={{
           padding: '10px 20px 16px',
-          fontSize: 12, color: 'rgba(15,23,42,0.4)',
+          fontSize: 12, color: 'var(--text-muted)',
         }}>
           No clients this month.
         </div>
@@ -632,13 +570,13 @@ function ClientMonthSection({ label, clients, accent }: { label: string; clients
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'rgba(241,245,249,0.5)' }}>
+              <tr style={{ background: 'var(--bg-subtle)' }}>
                 {['Member', 'Package', 'Amount'].map((h) => (
                   <th key={h} style={{
                     padding: '8px 20px',
                     textAlign: h === 'Amount' ? 'right' : 'left',
                     fontWeight: 600,
-                    color: 'rgba(15,23,42,0.4)',
+                    color: 'var(--text-muted)',
                     fontSize: 10, letterSpacing: '0.6px',
                     textTransform: 'uppercase',
                   }}>
@@ -655,15 +593,15 @@ function ClientMonthSection({ label, clients, accent }: { label: string; clients
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
                   style={{
-                    borderTop: '1px solid rgba(241,245,249,0.4)',
-                    backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(248,250,252,0.5)',
+                    borderTop: '1px solid var(--border)',
+                    backgroundColor: i % 2 === 0 ? 'transparent' : 'var(--bg-subtle)',
                   }}
                 >
-                  <td style={{ padding: '8px 20px', fontWeight: 600, color: 'rgba(15,23,42,0.85)' }}>
+                  <td style={{ padding: '8px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {c.name || c.client_name || 'Unknown'}
                   </td>
-                  <td style={{ padding: '8px 20px', color: 'rgba(15,23,42,0.5)' }}>
-                    {c.package_type || '\u2014'}
+                  <td style={{ padding: '8px 20px', color: 'var(--text-muted)' }}>
+                    {c.package_type || '—'}
                   </td>
                   <td style={{
                     padding: '8px 20px', textAlign: 'right',
