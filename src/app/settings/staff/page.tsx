@@ -191,6 +191,7 @@ function Inner() {
             <svg className="sm-search-icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input
               ref={searchRef}
+              aria-label="Search staff"
               className="sm-search"
               placeholder="Search name, role, email, phone… (press / to focus)"
               value={search}

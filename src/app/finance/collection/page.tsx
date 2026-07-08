@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -76,7 +76,7 @@ function Inner() {
 
   return (
     <AppShell>
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -167,7 +167,7 @@ function Inner() {
 
         {/* ── Error Banner ── */}
         {error && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             style={{
@@ -177,7 +177,7 @@ function Inner() {
             }}
           >
             {error}
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── KPI Cards ── */}
@@ -188,7 +188,7 @@ function Inner() {
             gap: 14, marginBottom: 24,
           }}>
             {kpis.map((k, idx) => (
-              <motion.div
+              <m.div
                 key={k.label}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -244,7 +244,7 @@ function Inner() {
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         )}
@@ -294,7 +294,7 @@ function Inner() {
                         position: 'relative', overflow: 'hidden',
                       }}
                     >
-                      <motion.div
+                      <m.div
                         animate={{ x: ['-100%', '200%'] }}
                         transition={{
                           repeat: Infinity, duration: 1.5, ease: 'linear',
@@ -333,7 +333,7 @@ function Inner() {
                 </thead>
                 <tbody>
                   {fullYear.map((m, i) => (
-                    <motion.tr
+                    <m.tr
                       key={i}
                       whileHover={{ backgroundColor: '#f0fdf4' }}
                       transition={{ duration: 0.15 }}
@@ -370,7 +370,7 @@ function Inner() {
                           height: 8, background: '#f1f5f9',
                           borderRadius: 4, overflow: 'hidden',
                         }}>
-                          <motion.div
+                          <m.div
                             initial={{ width: 0 }}
                             animate={{ width: `${(m.revenue / maxRevenue) * 100}%` }}
                             transition={{ duration: 0.8, ease: 'easeOut', delay: i * 0.03 }}
@@ -384,7 +384,7 @@ function Inner() {
                           />
                         </div>
                       </td>
-                    </motion.tr>
+                    </m.tr>
                   ))}
                 </tbody>
                 <tfoot>
@@ -420,7 +420,7 @@ function Inner() {
             </div>
           )}
         </div>
-      </motion.div>
+      </m.div>
     </AppShell>
   );
 }

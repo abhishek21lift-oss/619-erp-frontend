@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -119,7 +119,7 @@ function Inner() {
         {/* ── KPI Cards ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
           {kpis.map((k, idx) => (
-            <motion.div
+            <m.div
               key={k.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -146,7 +146,7 @@ function Inner() {
                 <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em', lineHeight: 1 }}>{k.value}</div>
                 <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4, fontWeight: 500 }}>{k.label}</div>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
 
@@ -163,7 +163,7 @@ function Inner() {
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} style={{ display: 'flex', gap: 16, padding: '12px 0', borderBottom: '1px solid #f8fafc' }}>
                   {[80, 100, 120].map((w, j) => (
-                    <motion.div
+                    <m.div
                       key={j}
                       animate={{ backgroundPosition: ['-200% 0%', '200% 0%'] }}
                       transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}

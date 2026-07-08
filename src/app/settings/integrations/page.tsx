@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Zap, Search, X, CreditCard, Smartphone, MessageSquare, Send,
   Calendar, Camera, BarChart3, Loader2, Link2, Unlink,
@@ -98,7 +98,7 @@ function ConnectModal({ integration, isConnected, onClose, onConnect, onDisconne
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }} onClick={onClose}>
-      <motion.div initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.3, type: 'spring', damping: 25, stiffness: 300 }}
+      <m.div initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.3, type: 'spring', damping: 25, stiffness: 300 }}
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
         style={{ width: '90%', maxWidth: 440, ...glass, borderRadius: 20, padding: 28 }}
       >
@@ -124,7 +124,7 @@ function ConnectModal({ integration, isConnected, onClose, onConnect, onDisconne
           <button onClick={testConnection} disabled={testing || !apiKey}
             style={{ ...sBtn, cursor: (testing || !apiKey) ? 'not-allowed' : 'pointer', background: testResult === 'success' ? 'linear-gradient(135deg,#10b981,#059669)' : testResult === 'error' ? 'linear-gradient(135deg,#ef4444,#dc2626)' : 'linear-gradient(135deg,#f59e0b,#d97706)', opacity: !apiKey ? 0.6 : 1 }}
           >
-            {testing && <motion.span style={{ display: 'inline-flex' }} animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><Loader2 size={16} /></motion.span>}
+            {testing && <m.span style={{ display: 'inline-flex' }} animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><Loader2 size={16} /></m.span>}
             {testing ? 'Testing...' : testResult === 'success' ? 'Connected Successfully' : testResult === 'error' ? 'Connection Failed' : 'Test Connection'}
           </button>
         )}
@@ -141,7 +141,7 @@ function ConnectModal({ integration, isConnected, onClose, onConnect, onDisconne
             <button onClick={() => { onDisconnect(); onClose(); }} style={{ ...aBtn, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.1)', color: '#fca5a5' }}>Disconnect</button>
           )}
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -192,7 +192,7 @@ function OpenRouterCard() {
   const okCount = healthValues.filter((h) => h.status === 'ok').length;
 
   return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
+    <m.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
       whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
       style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.ai}` }}
     >
@@ -211,7 +211,7 @@ function OpenRouterCard() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         {loading ? (
           <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={11} /></motion.span>
+            <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={11} /></m.span>
             Checking…
           </span>
         ) : (
@@ -274,10 +274,10 @@ function OpenRouterCard() {
         disabled={checking || !settings?.configured}
         style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (checking || !settings?.configured) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: settings?.configured ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : 'var(--bg-subtle)', color: settings?.configured ? '#ffffff' : 'var(--text-disabled)', opacity: !settings?.configured ? 0.6 : 1, boxShadow: settings?.configured ? '0 4px 12px rgba(139,92,246,0.3)' : 'none' }}
       >
-        {checking ? <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> : <Activity size={13} />}
+        {checking ? <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span> : <Activity size={13} />}
         {checking ? 'Pinging models…' : 'Check Model Health'}
       </button>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -341,18 +341,18 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
   };
 
   return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
+    <m.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }}
       whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
       style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catColor.scheduling}`, position: 'relative', overflow: 'hidden' }}
     >
       {/* Success flash */}
       <AnimatePresence>
         {flash && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+          <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '8px 16px', background: 'linear-gradient(90deg,#10b981,#059669)', fontSize: 12, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 6, zIndex: 10 }}
           >
             <CheckCircle2 size={13} /> Google Calendar connected successfully!
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -371,7 +371,7 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         {loading ? (
           <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={11} /></motion.span>
+            <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={11} /></m.span>
             Checking…
           </span>
         ) : (
@@ -410,7 +410,7 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
               style={{ padding: '8px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', fontSize: 12, fontWeight: 600, cursor: disconnecting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
             >
               {disconnecting
-                ? <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span>
+                ? <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span>
                 : <Unlink size={13} />
               }
             </button>
@@ -422,13 +422,13 @@ function GoogleCalendarCard({ flashSuccess }: { flashSuccess: boolean }) {
             style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: (connecting || loading) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#4285f4,#1a73e8)', color: '#ffffff', boxShadow: '0 4px 12px rgba(66,133,244,0.3)', opacity: (connecting || loading) ? 0.7 : 1 }}
           >
             {connecting
-              ? <><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></motion.span> Redirecting…</>
+              ? <><m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'inline-flex' }}><Loader2 size={13} /></m.span> Redirecting…</>
               : <><Link2 size={13} /> Connect with Google</>
             }
           </button>
         )}
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -442,7 +442,7 @@ function StaticCard({ integration, isConnected, connectedAt, onConfigure, onTogg
   const catAccent = catColor[integration.category] || '#f59e0b';
 
   return (
-    <motion.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }} transition={{ duration: 0.25 }}
+    <m.div layout initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }} transition={{ duration: 0.25 }}
       whileHover={{ y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.2)' }}
       style={{ ...glass, borderRadius: 20, padding: 20, borderLeft: `3px solid ${catAccent}` }}
     >
@@ -489,7 +489,7 @@ function StaticCard({ integration, isConnected, connectedAt, onConfigure, onTogg
           </button>
         )}
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -565,7 +565,7 @@ export default function IntegrationsPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
           {/* ── Hero ── */}
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+          <m.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
             style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 36px', marginBottom: 32, background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%)', border: '1px solid rgba(245,158,11,0.25)', boxShadow: '0 4px 24px rgba(245,158,11,0.15)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 1 }}>
@@ -577,10 +577,10 @@ export default function IntegrationsPage() {
                 <p style={{ fontSize: 14, color: '#78716c', margin: '4px 0 0' }}>Connect your studio with powerful tools</p>
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* ── Search & Filters ── */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} style={{ marginBottom: 28 }}>
+          <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} style={{ marginBottom: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, ...glass, borderRadius: 14, padding: '4px 16px', marginBottom: 16 }}>
               <Search size={16} className="text-[var(--text-muted)]" />
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search integrations..."
@@ -597,7 +597,7 @@ export default function IntegrationsPage() {
                 </button>
               ))}
             </div>
-          </motion.div>
+          </m.div>
 
           {/* ── Grid ── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
@@ -622,14 +622,14 @@ export default function IntegrationsPage() {
           </div>
 
           {!filtered.staticFiltered.length && !filtered.showCalendar && !filtered.showOpenRouter && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               style={{ textAlign: 'center', padding: '60px 20px', ...glass, borderRadius: 20, marginTop: 16 }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <Search size={24} color="var(--text-muted)" />
               </div>
               <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>No integrations found</p>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Try a different category or search term.</p>
-            </motion.div>
+            </m.div>
           )}
 
           {modalIntegration && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   TrendingUp, Users,
 } from 'lucide-react';
@@ -49,7 +49,7 @@ export default function ReportsPage() {
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
 
           {/* Monthly Revenue */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             className="rounded-[20px] overflow-hidden mb-5"
@@ -86,7 +86,7 @@ export default function ReportsPage() {
                   {(revenue.data?.data ?? []).map((r, i) => {
                     const pct = r.revenue > 0 ? (r.incentives / r.revenue) * 100 : 0;
                     return (
-                      <motion.tr key={r.month}
+                      <m.tr key={r.month}
                         initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.03 }}
                         style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -108,16 +108,16 @@ export default function ReportsPage() {
                         <td className="py-3 px-4 min-w-[120px]">
                           <ChartBar pct={(Number(r.revenue) / maxRev) * 100} color="#10b981" />
                         </td>
-                      </motion.tr>
+                      </m.tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Trainer Performance */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -153,7 +153,7 @@ export default function ReportsPage() {
                 </thead>
                 <tbody>
                   {(perf.data?.data ?? []).map((t, i) => (
-                    <motion.tr key={t.id}
+                    <m.tr key={t.id}
                       initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
                       style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -178,7 +178,7 @@ export default function ReportsPage() {
                       <td className="py-3 px-4">
                         <span className="text-[12px]" style={{ color: '#9ca3af' }}>{fmtINR(t.total_incentives)}</span>
                       </td>
-                    </motion.tr>
+                    </m.tr>
                   ))}
                 </tbody>
               </table>
@@ -189,7 +189,7 @@ export default function ReportsPage() {
                 No trainer performance data yet
               </div>
             )}
-          </motion.div>
+          </m.div>
         </div>
       </AppShell>
     </Guard>

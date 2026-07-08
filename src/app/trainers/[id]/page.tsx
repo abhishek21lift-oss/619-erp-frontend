@@ -2,7 +2,7 @@
 import React, { use, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -143,9 +143,9 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
       <Guard roles={['admin', 'manager']}>
         <AppShell>
           <div style={{ padding: '32px', maxWidth: 1000, margin: '0 auto' }}>
-            <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
+            <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
               style={{ height: 200, borderRadius: 20, background: '#f3f4f6', marginBottom: 16, border: '1px solid rgba(0,0,0,0.07)' }} />
-            <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+            <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
               style={{ height: 350, borderRadius: 20, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)' }} />
           </div>
         </AppShell>
@@ -186,10 +186,10 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
             </button>
 
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
-              <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
+              <m.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
                 style={{ width: 76, height: 76, borderRadius: 20, flexShrink: 0, background: mg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 800, color: '#fff', boxShadow: '0 8px 32px rgba(99,102,241,0.3)' }}>
                 {initials(trainer.name)}
-              </motion.div>
+              </m.div>
               <div style={{ flex: 1, minWidth: 220 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
                   <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>{trainer.name}</h2>
@@ -241,23 +241,23 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
 
           <div style={{ padding: '24px 32px', maxWidth: 1100, margin: '0 auto' }}>
             {/* ── Quick Stats ── */}
-            <motion.div variants={containerVariants} initial="hidden" animate="visible"
+            <m.div variants={containerVariants} initial="hidden" animate="visible"
               className="rg-3" style={{ gap: 14, marginBottom: 24 }}>
               {[
                 { label: 'Total Members', value: members.length, icon: <Users size={14} />, color: '#6366f1' },
                 { label: 'Active Members', value: members.filter(m => m.status === 'active').length, icon: <CheckCircle size={14} />, color: '#10b981' },
                 { label: 'Joined Date', value: fmtDate(trainer.join_date), icon: <Calendar size={14} />, color: '#f59e0b' },
               ].map((s, i) => (
-                <motion.div key={s.label} variants={itemVariants}
+                <m.div key={s.label} variants={itemVariants}
                   style={{ borderRadius: 16, padding: '16px 18px', background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
                     <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>{s.label}</span>
                   </div>
                   <span style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{s.value}</span>
-                </motion.div>
+                </m.div>
               ))}
-            </motion.div>
+            </m.div>
 
             {/* ── Tabs ── */}
             <div style={{ display: 'inline-flex', gap: 4, marginBottom: 20, background: '#f3f4f6', borderRadius: 12, padding: 3 }}>
@@ -277,7 +277,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
 
             {/* ── Profile Tab ── */}
             {activeTab === 'profile' && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+              <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
                 <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
                   <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -318,12 +318,12 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                     <p style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{trainer.bio}</p>
                   </div>
                 )}
-              </motion.div>
+              </m.div>
             )}
 
             {/* ── Members Tab ── */}
             {activeTab === 'members' && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+              <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
                 style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', background: '#fff' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#f9fafb' }}>
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -353,7 +353,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                       </thead>
                       <tbody>
                         {(members ?? []).map((m, i) => (
-                          <motion.tr key={m.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                          <m.tr key={m.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
                             style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
                             onClick={() => router.push(`/clients/${m.id}`)}
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.04)'; }}
@@ -363,23 +363,23 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                             <td style={{ padding: '12px 16px', color: '#6b7280' }}>{m.membership_plan ?? '—'}</td>
                             <td style={{ padding: '12px 16px', color: '#6b7280' }}>{fmtDate(m.expiry_date)}</td>
                             <td style={{ padding: '12px 16px', color: '#6b7280' }}>{m.phone ?? '—'}</td>
-                          </motion.tr>
+                          </m.tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 )}
-              </motion.div>
+              </m.div>
             )}
           </div>
 
           {/* ── Delete Modal ── */}
           <AnimatePresence>
             {deleteConfirm && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
                 onClick={() => setDeleteConfirm(false)}>
-                <motion.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
+                <m.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
                   style={{ background: '#fff', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)' }}
                   onClick={(e) => e.stopPropagation()}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
@@ -401,8 +401,8 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                       {deleting ? 'Removing…' : 'Remove trainer'}
                     </button>
                   </div>
-                </motion.div>
-              </motion.div>
+                </m.div>
+              </m.div>
             )}
           </AnimatePresence>
         </div>

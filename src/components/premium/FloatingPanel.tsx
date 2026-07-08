@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -33,14 +33,14 @@ export function FloatingPanel({ open, onClose, title, subtitle, icon, size = 'md
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             onClick={onClose}
           />
-          <motion.div
+          <m.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -67,7 +67,7 @@ export function FloatingPanel({ open, onClose, title, subtitle, icon, size = 'md
               </button>
             </div>
             <div className="px-6 py-4">{children}</div>
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>

@@ -7,7 +7,7 @@ import {
   Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown,
   Menu, X, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
 } from 'lucide-react';
-import { LazyMotion, domAnimation, AnimatePresence, motion } from 'framer-motion';
+import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -92,12 +92,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 function AppShellContent({ children, title, headerLeft }: AppShellProps) {
@@ -112,6 +112,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
+  const notifLastFetchedRef = useRef<number>(0);
   const [darkMode, setDarkMode] = useState(false);
 
   // Persist dark mode preference
@@ -169,12 +170,14 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
     router.push('/login');
   };
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (force = false) => {
+    if (!force && Date.now() - notifLastFetchedRef.current < 30_000) return;
     setNotifLoading(true);
     try {
       const res = await api.notifications.list() as { data: Notification[] } | Notification[];
       const items: Notification[] = Array.isArray(res) ? res : (res as { data: Notification[] }).data || [];
       setNotifications(items.slice(0, 20));
+      notifLastFetchedRef.current = Date.now();
     } catch {
       // silently fail — notifications are non-critical
     } finally {
@@ -185,8 +188,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   // Fetch notifications on mount
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  // Re-fetch when opening panel
-  useEffect(() => { if (notifOpen) fetchNotifications(); }, [notifOpen, fetchNotifications]);
+  // Re-fetch when opening panel (force if cache is > 60 s stale)
+  useEffect(() => {
+    if (notifOpen) fetchNotifications(Date.now() - notifLastFetchedRef.current > 60_000);
+  }, [notifOpen, fetchNotifications]);
 
   const markAllRead = async () => {
     try {
@@ -318,7 +323,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* ── Top header bar ── */}
-          <motion.header
+          <m.header
             className={cn(
               'fixed top-0 right-0 z-40',
               sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64 xl:left-72',
@@ -342,7 +347,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             initial={false}
           >
 
-            <motion.div
+            <m.div
               className="flex items-center gap-3 px-3 sm:px-4 lg:px-6"
               animate={{ height: topBar === 'compact' ? 32 : 46 }}
               transition={transConfig}
@@ -388,7 +393,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
                 <AnimatePresence>
                   {searchOpen && searchResults.length > 0 && (
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0, y: -8, scale: 0.97 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.97 }}
@@ -439,7 +444,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                           <span className="ml-auto text-[10px] text-[var(--text-disabled)]">↑↓ navigate · ↵ open</span>
                         </div>
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -448,7 +453,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               <div className="hidden lg:block flex-1" />
 
               {/* ── Dark / Light toggle ── */}
-              <motion.button
+              <m.button
                 type="button"
                 aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
                 onClick={toggleDark}
@@ -458,20 +463,20 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                 style={{ background: 'transparent', color: darkMode ? '#94A3B8' : '#64748B' }}
               >
                 <AnimatePresence mode="wait" initial={false}>
-                  <motion.div key={darkMode ? 'moon' : 'sun'}
+                  <m.div key={darkMode ? 'moon' : 'sun'}
                     initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
                     animate={{ opacity: 1, rotate: 0, scale: 1 }}
                     exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                   >
                     {darkMode ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
-                  </motion.div>
+                  </m.div>
                 </AnimatePresence>
-              </motion.button>
+              </m.button>
 
               {/* ── Settings dropdown ── */}
               <div ref={settingsRef} className="relative">
-                <motion.button
+                <m.button
                   type="button"
                   aria-label="Settings"
                   onClick={() => setSettingsOpen(s => !s)}
@@ -482,17 +487,17 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                     background: settingsOpen ? (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)') : 'transparent',
                   }}
                 >
-                  <motion.div
+                  <m.div
                     animate={settingsOpen ? { rotate: 90 } : { rotate: 0 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     style={{ color: settingsOpen ? (darkMode ? '#F8FAFC' : '#0F172A') : (darkMode ? '#94A3B8' : '#64748B') }}
                   >
                     <Settings size={16} strokeWidth={settingsOpen ? 2 : 1.5} />
-                  </motion.div>
-                </motion.button>
+                  </m.div>
+                </m.button>
                 <AnimatePresence>
                   {settingsOpen && (
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0, y: -4, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
@@ -512,14 +517,14 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                           );
                         })}
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
 
               {/* ── Notification bell ── */}
               <div ref={notifRef} className="relative">
-                <motion.button
+                <m.button
                   type="button"
                   aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                   onClick={() => setNotifOpen(s => !s)}
@@ -532,19 +537,19 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                 >
                   <Bell size={16} strokeWidth={1.5} style={{ color: notifOpen ? (darkMode ? '#F8FAFC' : '#0F172A') : (darkMode ? '#94A3B8' : '#64748B') }} />
                   {unreadCount > 0 && (
-                    <motion.span
+                    <m.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-bold text-white shadow-[0_0_6px_rgba(239,68,68,0.6)]"
                     >
                       {unreadCount > 9 ? '9+' : unreadCount}
-                    </motion.span>
+                    </m.span>
                   )}
-                </motion.button>
+                </m.button>
 
                 <AnimatePresence>
                   {notifOpen && (
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0, y: -4, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
@@ -622,7 +627,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                           <ChevronRight size={11} />
                         </Link>
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -647,7 +652,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                 </button>
                 <AnimatePresence>
                   {profileOpen && (
-                    <motion.div
+                    <m.div
                       initial={{ opacity: 0, y: -4, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
@@ -681,12 +686,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                           <LogOut size={14} strokeWidth={1.5} /> Logout
                         </button>
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
-            </motion.div>
-          </motion.header>
+            </m.div>
+          </m.header>
 
           {/* Spacer — tracks fixed header height so content always starts below it */}
           <motion.div

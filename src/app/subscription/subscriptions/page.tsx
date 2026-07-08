@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CreditCard, Search, Users, RefreshCw, Calendar, DollarSign, TrendingUp, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -86,8 +86,8 @@ function PageContent() {
 
   return (
     <div style={{ position: 'relative', zIndex: 1, paddingBottom: 40 }}>
-      <motion.div variants={cv} initial="hidden" animate="visible" style={{ position: 'relative', zIndex: 2 }}>
-        <motion.div variants={iv} style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '40px 36px', marginBottom: 28, background: 'linear-gradient(135deg, #fffbeb, #fef3c7, #fff)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+      <m.div variants={cv} initial="hidden" animate="visible" style={{ position: 'relative', zIndex: 2 }}>
+        <m.div variants={iv} style={{ position: 'relative', overflow: 'hidden', borderRadius: 22, padding: '40px 36px', marginBottom: 28, background: 'linear-gradient(135deg, #fffbeb, #fef3c7, #fff)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
           <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, borderRadius: 16, background: `linear-gradient(135deg, ${A}, ${B})`, color: '#fff', boxShadow: `0 8px 24px ${A}55` }}>
               <CreditCard size={24} />
@@ -100,11 +100,11 @@ function PageContent() {
               </p>
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
-        <motion.div variants={iv} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+        <m.div variants={iv} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
           {kpiCards.map((k, i) => (
-            <motion.div key={k.label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            <m.div key={k.label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '20px 18px', background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'default' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
                 <p style={{ margin: 0, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#6b7280' }}>{k.label}</p>
@@ -113,11 +113,11 @@ function PageContent() {
                 </div>
               </div>
               <p style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: '#111827' }}>{k.value}</p>
-            </motion.div>
+            </m.div>
           ))}
-        </motion.div>
+        </m.div>
 
-        <motion.div variants={iv} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 20, padding: '14px 18px', borderRadius: 16, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        <m.div variants={iv} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 20, padding: '14px 18px', borderRadius: 16, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
           <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 340 }}>
             <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
             <input type="text" placeholder="Search client or plan..." value={search} onChange={e => setSearch(e.target.value)}
@@ -139,31 +139,31 @@ function PageContent() {
           <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: '#9ca3af' }}>
             {filtered.length} <span style={{ color: '#d1d5db' }}>/</span> {subs.length}
           </span>
-        </motion.div>
+        </m.div>
 
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 34, height: 34, borderRadius: '50%', border: `3px solid ${A}22`, borderTopColor: A }} />
+              <m.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 34, height: 34, borderRadius: '50%', border: `3px solid ${A}22`, borderTopColor: A }} />
               <p style={{ fontSize: 12, fontWeight: 500, color: '#9ca3af' }}>Loading subscriptions...</p>
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          <motion.div variants={iv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', borderRadius: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
+          <m.div variants={iv} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', borderRadius: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 80, borderRadius: 22, marginBottom: 16, background: `rgba(245,158,11,0.08)` }}>
               <CreditCard size={34} style={{ color: A }} />
             </div>
             <p style={{ fontSize: 17, fontWeight: 760, letterSpacing: '-0.01em', color: '#111827', margin: 0 }}>No subscriptions yet</p>
             <p style={{ fontSize: 13, color: '#9ca3af', margin: '6px 0 0 0' }}>{search || filter !== 'all' ? 'Try adjusting your filters' : 'Assign a PT plan to a client to get started'}</p>
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div variants={cv} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
+          <m.div variants={cv} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
             {filtered.map(sub => {
               const bc = sub.status === 'active' ? '#10b981' : sub.status === 'expiring' ? A : '#ef4444';
               const bb = sub.status === 'active' ? '#10b98118' : sub.status === 'expiring' ? `${A}18` : '#ef444418';
               const dc = sub.daysLeft <= 0 ? '#ef4444' : sub.daysLeft <= 30 ? A : '#10b981';
               return (
-                <motion.div key={sub.id} variants={iv} whileHover={{ y: -4, boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}
+                <m.div key={sub.id} variants={iv} whileHover={{ y: -4, boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}
                   style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'default' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -193,12 +193,12 @@ function PageContent() {
                     <span>Start: <strong style={{ color: '#374151' }}>{sub.startDate}</strong></span>
                     <span>End: <strong style={{ color: '#374151' }}>{sub.endDate}</strong></span>
                   </div>
-                </motion.div>
+                </m.div>
               );
             })}
-          </motion.div>
+          </m.div>
         )}
-      </motion.div>
+      </m.div>
     </div>
   );
 }

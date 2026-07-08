@@ -2,7 +2,8 @@
 
 import Guard from '@/components/Guard';
 
-import ModuleWorkspace from '@/components/modules/ModuleWorkspace';
+import dynamic from 'next/dynamic';
+const ModuleWorkspace = dynamic(() => import('@/components/modules/ModuleWorkspace'), { ssr: false });
 import { getModuleConfig } from '@/lib/module-config';
 
 export default function AppointmentsPage() {

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import Image from 'next/image';
@@ -147,7 +147,7 @@ export default function BrandingPage() {
       <AppShell title="Branding">
         <div style={{ padding: 28, maxWidth: 880, margin: '0 auto' }}>
           {/* ── Hero ── */}
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
             style={{
               position: 'relative', overflow: 'hidden',
               display: 'flex', alignItems: 'center', gap: 16,
@@ -165,22 +165,22 @@ export default function BrandingPage() {
               <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', margin: 0 }}>Branding</h1>
               <p style={{ fontSize: 14, color: '#6b7280', margin: '2px 0 0' }}>Customize your studio&apos;s look and feel</p>
             </div>
-          </motion.div>
+          </m.div>
 
           {err && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)', color: '#b91c1c', marginBottom: 20, fontSize: 14 }}>
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)', color: '#b91c1c', marginBottom: 20, fontSize: 14 }}>
               <AlertCircle size={18} />
               <span style={{ flex: 1 }}>{err}</span>
               <button onClick={() => setErr('')} style={{ background: 'none', border: 'none', color: '#b91c1c', cursor: 'pointer', fontSize: 16 }}>&times;</button>
-            </motion.div>
+            </m.div>
           )}
 
-          <motion.div variants={containerVariants} initial="hidden" animate="show">
+          <m.div variants={containerVariants} initial="hidden" animate="show">
             {/* ── Split layout: settings + live preview ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
               <div>
                 {/* ── Color Settings ── */}
-                <motion.div variants={itemVariants} style={glassCard}>
+                <m.div variants={itemVariants} style={glassCard}>
                   <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Colors</h2>
                   <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 20px' }}>Pick a preset or enter a custom hex value</p>
 
@@ -211,10 +211,10 @@ export default function BrandingPage() {
                       {cfg.val && !hexOk(cfg.val) && <p style={{ fontSize: 12, color: '#dc2626', margin: '4px 0 0' }}>Invalid hex — use format #RRGGBB</p>}
                     </div>
                   ))}
-                </motion.div>
+                </m.div>
 
                 {/* ── Theme Settings ── */}
-                <motion.div variants={itemVariants} style={glassCard}>
+                <m.div variants={itemVariants} style={glassCard}>
                   <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 20px' }}>Theme &amp; Typography</h2>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                     <div>
@@ -274,11 +274,11 @@ export default function BrandingPage() {
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               </div>
 
               {/* ── Live Preview Panel ── */}
-              <motion.div variants={itemVariants} style={{ ...glassCard, position: 'sticky', top: 80 }}>
+              <m.div variants={itemVariants} style={{ ...glassCard, position: 'sticky', top: 80 }}>
                 <h2 style={{ fontSize: 13, fontWeight: 700, color: '#6b7280', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live Preview</h2>
                 {/* Simulated app card */}
                 <div style={{ borderRadius: radiusStyle === 'pill' ? 24 : radiusStyle === 'smooth' ? 16 : 10, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', marginBottom: 16 }}>
@@ -314,11 +314,11 @@ export default function BrandingPage() {
                 <div style={{ fontSize: 10, color: '#9ca3af', textAlign: 'center', fontFamily: typeface }}>
                   {typeface} · {mode} · {buttonStyle} · {radiusStyle}
                 </div>
-              </motion.div>
+              </m.div>
             </div>
 
             {/* ── Logo & Assets ── */}
-            <motion.div variants={itemVariants} style={glassCard}>
+            <m.div variants={itemVariants} style={glassCard}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Logo &amp; Assets</h2>
               <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div style={{
@@ -351,11 +351,11 @@ export default function BrandingPage() {
                   <p style={{ fontSize: 11, color: '#9ca3af', margin: '8px 0 0' }}>Supports PNG, JPG, SVG &middot; Recommended size: 512x512px</p>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
 
           {/* ── Action bar ── */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+          <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             style={{ ...glass, display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderRadius: 14, marginTop: 4 }}>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
               {dirty && <CheckCircle2 size={16} color="#d97706" />}
@@ -383,7 +383,7 @@ export default function BrandingPage() {
               {saving ? <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={15} />}
               {saving ? 'Saving…' : 'Save'}
             </button>
-          </motion.div>
+          </m.div>
         </div>
       </AppShell>
     </Guard>

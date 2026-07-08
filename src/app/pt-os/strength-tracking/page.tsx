@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Zap, Plus, Loader2, TrendingUp } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -87,7 +87,7 @@ export default function StrengthTrackingPage() {
     <Guard>
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
             style={{ background: '#FFF7ED', border: '1px solid #FDBA74' }}>
             <div className="relative z-10">
@@ -104,7 +104,7 @@ export default function StrengthTrackingPage() {
                 Track 1RM estimates and monitor strength gains over time.
               </p>
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb' }}>

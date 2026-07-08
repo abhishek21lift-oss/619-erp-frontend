@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, Loader2, Sparkles, AlertTriangle, CheckCircle2, User, TrendingDown, Minus, Target, Brain, ChevronRight } from 'lucide-react';
-import { motion, type Variants } from 'framer-motion';
+import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
 import type { AiProgressAnalysis } from '@/lib/api';
 import Guard from '@/components/Guard';
@@ -81,7 +81,7 @@ export default function ProgressAnalysisPage() {
       <AppShell title="AI Progress Analyzer">
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 80px' }}>
           {/* Hero */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{ marginBottom: 40 }}>
+          <m.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{ marginBottom: 40 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 16, flexShrink: 0,
@@ -106,10 +106,10 @@ export default function ProgressAnalysisPage() {
                 }}>{p}</span>
               ))}
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Client selector */}
-          <motion.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
+          <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
             borderRadius: 24, padding: '28px',
             background: '#fff', border: '1px solid #e5e7eb',
             boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
@@ -191,11 +191,11 @@ export default function ProgressAnalysisPage() {
                 {loading ? 'Analysing…' : 'Analyse Progress'}
               </button>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Loading */}
           {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '60px 0',
             }}>
               <div style={{
@@ -208,14 +208,14 @@ export default function ProgressAnalysisPage() {
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Analysing progress data…</div>
                 <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>AI is reviewing workouts, nutrition, and attendance patterns</div>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* Results */}
           {analysis && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               {meta && (
-                <motion.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
                   borderRadius: 20, width: 'fit-content',
                   background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)',
@@ -223,11 +223,11 @@ export default function ProgressAnalysisPage() {
                   <Sparkles size={13} color="#D4AF37" />
                   <span style={{ fontSize: 12, color: '#D4AF37', fontWeight: 600 }}>Analysed by {meta.model}</span>
                   {meta.used_fallback && <span style={{ fontSize: 11, color: '#D97706', marginLeft: 4 }}>(fallback)</span>}
-                </motion.div>
+                </m.div>
               )}
 
               {/* Summary */}
-              <motion.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
                 borderRadius: 20, padding: '24px',
                 background: '#FFFBEB',
                 border: '1px solid rgba(251,191,36,0.25)',
@@ -239,12 +239,12 @@ export default function ProgressAnalysisPage() {
                     Period analysed: <strong style={{ color: '#374151' }}>{analysis.period_analysed}</strong>
                   </div>
                 )}
-              </motion.div>
+              </m.div>
 
               {/* Trend cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                 {analysis.weight_trend && (
-                  <motion.div variants={fadeUp} initial="hidden" animate="show" custom={2} style={{
+                  <m.div variants={fadeUp} initial="hidden" animate="show" custom={2} style={{
                     borderRadius: 16, padding: '20px',
                     background: '#fff', border: '1px solid #e5e7eb',
                   }}>
@@ -259,10 +259,10 @@ export default function ProgressAnalysisPage() {
                       </div>
                     )}
                     <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>{analysis.weight_trend.insight}</p>
-                  </motion.div>
+                  </m.div>
                 )}
                 {analysis.strength_trend && (
-                  <motion.div variants={fadeUp} initial="hidden" animate="show" custom={3} style={{
+                  <m.div variants={fadeUp} initial="hidden" animate="show" custom={3} style={{
                     borderRadius: 16, padding: '20px',
                     background: '#fff', border: '1px solid #e5e7eb',
                   }}>
@@ -272,10 +272,10 @@ export default function ProgressAnalysisPage() {
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 6 }}>{analysis.strength_trend.highlight}</div>
                     <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>{analysis.strength_trend.insight}</p>
-                  </motion.div>
+                  </m.div>
                 )}
                 {analysis.attendance_trend && (
-                  <motion.div variants={fadeUp} initial="hidden" animate="show" custom={4} style={{
+                  <m.div variants={fadeUp} initial="hidden" animate="show" custom={4} style={{
                     borderRadius: 16, padding: '20px',
                     background: '#fff', border: '1px solid #e5e7eb',
                   }}>
@@ -287,13 +287,13 @@ export default function ProgressAnalysisPage() {
                       <span style={{ fontSize: 14, color: '#9ca3af', marginLeft: 2 }}>%</span>
                     </div>
                     <p style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>{analysis.attendance_trend.insight}</p>
-                  </motion.div>
+                  </m.div>
                 )}
               </div>
 
               {/* Wins */}
               {analysis.wins?.length ? (
-                <motion.div variants={fadeUp} initial="hidden" animate="show" custom={5} style={{
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={5} style={{
                   borderRadius: 20, padding: '20px 24px',
                   background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)',
                 }}>
@@ -309,12 +309,12 @@ export default function ProgressAnalysisPage() {
                       </div>
                     ))}
                   </div>
-                </motion.div>
+                </m.div>
               ) : null}
 
               {/* Risks */}
               {analysis.risks?.length ? (
-                <motion.div variants={fadeUp} initial="hidden" animate="show" custom={6} style={{
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={6} style={{
                   borderRadius: 20, overflow: 'hidden',
                   background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)',
                 }}>
@@ -338,12 +338,12 @@ export default function ProgressAnalysisPage() {
                       <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>{r.action}</p>
                     </div>
                   ))}
-                </motion.div>
+                </m.div>
               ) : null}
 
               {/* Recommendations */}
               {analysis.recommendations?.length ? (
-                <motion.div variants={fadeUp} initial="hidden" animate="show" custom={7} style={{
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={7} style={{
                   borderRadius: 20, overflow: 'hidden',
                   background: '#fff', border: '1px solid #e5e7eb',
                 }}>
@@ -370,12 +370,12 @@ export default function ProgressAnalysisPage() {
                       </div>
                     </div>
                   ))}
-                </motion.div>
+                </m.div>
               ) : null}
 
               {/* Next month strategy */}
               {analysis.next_month_strategy && (
-                <motion.div variants={fadeUp} initial="hidden" animate="show" custom={8} style={{
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={8} style={{
                   borderRadius: 16, padding: '20px 24px',
                   background: '#fff', border: '1px solid #e5e7eb',
                   display: 'flex', gap: 14,
@@ -387,19 +387,19 @@ export default function ProgressAnalysisPage() {
                     <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Next Month Strategy</div>
                     <p style={{ fontSize: 14, color: '#374151', lineHeight: 1.6, margin: 0 }}>{analysis.next_month_strategy}</p>
                   </div>
-                </motion.div>
+                </m.div>
               )}
 
               {/* Motivation */}
               {analysis.motivation_message && (
-                <motion.div variants={fadeUp} initial="hidden" animate="show" custom={9} style={{
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={9} style={{
                   borderRadius: 16, padding: '20px 24px',
                   background: ACCENT_DIM, border: '1px solid rgba(251,191,36,0.2)', textAlign: 'center',
                 }}>
                   <p style={{ fontSize: 15, color: ACCENT, fontStyle: 'italic', lineHeight: 1.7, margin: 0, fontWeight: 500 }}>
                     &ldquo;{analysis.motivation_message}&rdquo;
                   </p>
-                </motion.div>
+                </m.div>
               )}
             </div>
           )}

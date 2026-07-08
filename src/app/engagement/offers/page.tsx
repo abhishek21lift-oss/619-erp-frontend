@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Tag, Gift, Plus, Edit2, Trash2, Copy, Clock, CheckCircle2, Users, Loader2 } from 'lucide-react';
@@ -79,7 +79,7 @@ function OffersContent() {
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         {/* ── HERO — DO NOT CHANGE ── */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           style={{ position:'relative', overflow:'hidden', borderRadius:24, padding:'40px 44px', marginBottom:28, background:'#f8fafc', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
           <div style={{ position:'relative' }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
@@ -99,31 +99,31 @@ function OffersContent() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
         {error && <div style={{ borderRadius:14, padding:'14px 20px', marginBottom:22, background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', fontWeight:600, fontSize:13 }}>{error}</div>}
 
         {/* ── KPI CARDS ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:28 }}>
           {KPIS.map((k,i)=>{
             const vals = [offers.length, active, totalUsed, offers.filter(o=>o.status==='expired').length];
             return (
-              <motion.div key={k.label} variants={itemVariants}
+              <m.div key={k.label} variants={itemVariants}
                 style={{ position:'relative', overflow:'hidden', borderRadius:20, padding:'22px 24px', background:k.bg, border:`1px solid ${k.color}22`, boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
                   <div style={{ width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:`${k.color}18` }}>{k.icon}</div>
                   <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#6b7280' }}>{k.label}</span>
                 </div>
                 <div style={{ fontSize:30, fontWeight:800, color:k.color, lineHeight:1.2, letterSpacing:'-0.02em' }}>{loading ? '—' : vals[i]}</div>
-              </motion.div>
+              </m.div>
             );
           })}
-        </motion.div>
+        </m.div>
 
         {/* ── CREATE FORM ── */}
         {showForm&&(
-          <motion.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
+          <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
             style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
             <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#111827', display:'flex', gap:8, alignItems:'center' }}><Gift size={16} color="#a855f7"/> Create New Offer</h3>
             <form onSubmit={addOffer} style={{ display:'grid', gap:16 }}>
@@ -175,12 +175,12 @@ function OffersContent() {
                 </button>
               </div>
             </form>
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── TABS ── */}
         {!loading && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             style={{ display:'flex', gap:6, marginBottom:20, flexWrap:'wrap' }}>
             {(['all','active','expired','draft'] as const).map(t=>{
               const isActive = tab===t;
@@ -193,21 +193,21 @@ function OffersContent() {
                 </button>
               );
             })}
-          </motion.div>
+          </m.div>
         )}
 
         {/* ── OFFERS GRID ── */}
         {loading ? (
           <div style={{ textAlign:'center', padding:'60px 20px' }}><Loader2 size={32} color="#d1d5db" style={{ animation:'spin 1s linear infinite' }} /></div>
         ) : (
-          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:14 }}>
             {visible.map(o=>{
               const pct=o.usageLimit>0?(o.used/o.usageLimit)*100:0;
               const sc=statusColor[o.status]||'#6b7280';
               const sb=statusBg[o.status]||'#f3f4f6';
               return (
-                <motion.div key={o.id} variants={itemVariants}
+                <m.div key={o.id} variants={itemVariants}
                   style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', overflow:'hidden', transition:'all 0.2s ease' }}
                   onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 6px 24px rgba(0,0,0,0.1)';e.currentTarget.style.transform='translateY(-2px)';}}
                   onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)';e.currentTarget.style.transform='translateY(0)';}}>
@@ -247,7 +247,7 @@ function OffersContent() {
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               );
             })}
             {visible.length === 0 && (
@@ -257,7 +257,7 @@ function OffersContent() {
                 <p style={{ fontSize:12, color:'#9ca3af', marginTop:4 }}>Click "New Offer" to create one.</p>
               </div>
             )}
-          </motion.div>
+          </m.div>
         )}
       </div>
     </AppShell>

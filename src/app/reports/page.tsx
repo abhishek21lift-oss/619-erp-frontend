@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
@@ -48,7 +48,7 @@ function KpiCard({ label, value, icon, gradient, sub }: {
   label: string; value: string; icon?: React.ReactNode; gradient: string; sub?: string
 }) {
   return (
-    <motion.div variants={itemVariants}
+    <m.div variants={itemVariants}
       style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
       onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}>
@@ -62,7 +62,7 @@ function KpiCard({ label, value, icon, gradient, sub }: {
       </div>
       <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, position: 'relative', zIndex: 1 }}>{sub}</div>}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -159,8 +159,8 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
   if (error) return <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 20 }}>{error} <button onClick={fetchMonthly} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button></div>;
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <motion.div variants={itemVariants} style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
+    <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <m.div variants={itemVariants} style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={() => setYear(year - 1)}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)', color: '#374151', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -168,7 +168,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
             onMouseLeave={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.transform = 'scale(1)'; }}>
             <ChevronLeft size={16} />
           </button>
-          <motion.span key={year} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 18, fontWeight: 700, color: '#111827', minWidth: 80, textAlign: 'center' }}>{year}</motion.span>
+          <m.span key={year} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 18, fontWeight: 700, color: '#111827', minWidth: 80, textAlign: 'center' }}>{year}</m.span>
           <button onClick={() => setYear(year + 1)} disabled={year >= new Date().getFullYear()}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)', color: year >= new Date().getFullYear() ? '#d1d5db' : '#374151', cursor: year >= new Date().getFullYear() ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
             onMouseEnter={(e) => { if (year < new Date().getFullYear()) { e.currentTarget.style.background = '#e5e7eb'; e.currentTarget.style.transform = 'scale(1.05)'; }}}
@@ -182,7 +182,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
           onMouseLeave={(e) => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.transform = 'translateY(0)'; }}>
           <Download size={14} /> Export CSV
         </button>
-      </motion.div>
+      </m.div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
         <KpiCard label={`Total ${year}`} value={fmtAmt(totalRevenue)} icon={<DollarSign size={16} />} gradient="linear-gradient(135deg, #eff6ff, #fff)" />
@@ -191,15 +191,15 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
         <KpiCard label={MONTHS[new Date().getMonth()]} value={fmtAmt(thisMonth?.revenue ?? 0)} icon={<Clock size={16} />} gradient="linear-gradient(135deg, #fffbeb, #fff)" sub={`${thisMonth?.count ?? 0} payments`} />
       </div>
 
-      <motion.div variants={itemVariants} style={lightBox({ padding: '20px 20px 16px' })}>
+      <m.div variants={itemVariants} style={lightBox({ padding: '20px 20px 16px' })}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)' }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Monthly Revenue — {year}</span>
         </div>
         {loading ? <div style={{ height: 160, background: '#f3f4f6', borderRadius: 10 }} /> : <RevenueBarChart data={fullYear} maxVal={maxRevenue} />}
-      </motion.div>
+      </m.div>
 
-      <motion.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -244,8 +244,8 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
             </tfoot>
           </table>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }
 
@@ -272,8 +272,8 @@ function DuesTab() {
   const totalDues = filtered.reduce((s, d) => s + Number(d.balance_amount || d.balance_due || 0), 0);
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <motion.div variants={itemVariants} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+    <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <m.div variants={itemVariants} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '6px 14px', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
           <Search size={14} color="#9ca3af" />
           <input type="search" placeholder="Search member or phone…" value={search} onChange={(e) => setSearch(e.target.value)}
@@ -283,9 +283,9 @@ function DuesTab() {
           <AlertCircle size={14} color="#dc2626" />
           <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626' }}>Total outstanding: {fmtAmt(totalDues)}</span>
         </div>
-      </motion.div>
+      </m.div>
       {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>{error} <button onClick={fetchDues} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button></div>}
-      <motion.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -330,8 +330,8 @@ function DuesTab() {
             </tbody>
           </table>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }
 
@@ -358,9 +358,9 @@ function TrainerSummaryTab() {
   }), { active: 0, total: 0, monthRev: 0, totalRev: 0 });
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+    <m.div variants={containerVariants} initial="hidden" animate="visible">
       {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 12 }}>{error} <button onClick={fetch_} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button></div>}
-      <motion.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -412,8 +412,8 @@ function TrainerSummaryTab() {
             )}
           </table>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }
 
@@ -463,8 +463,8 @@ function StaffTab() {
   }, [records, trainers]);
 
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <motion.div variants={itemVariants} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+    <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <m.div variants={itemVariants} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '6px 14px', border: '1px solid rgba(0,0,0,0.07)' }}>
           <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>From</span>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: '4px 0', width: 130 }} />
@@ -479,7 +479,7 @@ function StaffTab() {
           onMouseLeave={(e) => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.transform = 'translateY(0)'; }}>
           <CalendarCheck size={13} /> Mark Staff Attendance
         </Link>
-      </motion.div>
+      </m.div>
 
       {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>{error}</div>}
 
@@ -490,7 +490,7 @@ function StaffTab() {
         <KpiCard label="Total Marked" value={String(summary.total)} icon={<BarChart2 size={16} />} gradient="linear-gradient(135deg, #ecfeff, #fff)" />
       </div>
 
-      <motion.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)', fontWeight: 600, fontSize: 14, color: '#111827', background: '#f8fafc' }}>
           <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)', display: 'inline-block', marginRight: 10, verticalAlign: 'middle' }} />
           Per-Trainer Attendance
@@ -545,9 +545,9 @@ function StaffTab() {
             </tbody>
           </table>
         </div>
-      </motion.div>
+      </m.div>
 
-      <motion.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)', fontWeight: 600, fontSize: 14, color: '#111827', background: '#f8fafc' }}>
           <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)', display: 'inline-block', marginRight: 10, verticalAlign: 'middle' }} />
           Recent Staff Check-ins
@@ -579,8 +579,8 @@ function StaffTab() {
             </tbody>
           </table>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   );
 }
 

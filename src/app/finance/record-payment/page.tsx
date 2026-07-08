@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { ChevronLeft, Search, Check } from 'lucide-react';
@@ -132,27 +132,27 @@ export default function RecordPaymentPage() {
             <AnimatePresence mode="wait">
               {done ? (
                 /* ── Success state ── */
-                <motion.div key="done"
+                <m.div key="done"
                   initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, paddingTop: 40 }}>
-                  <motion.div
+                  <m.div
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 280, damping: 20, delay: 0.05 }}
                     style={{ width: 64, height: 64, borderRadius: '50%', background: '#34C759', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
-                  </motion.div>
+                  </m.div>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', letterSpacing: '-0.03em' }}>
                       ₹{done.amount.toLocaleString('en-IN')}
                     </div>
                     <div style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>Recorded for {done.name}</div>
                   </div>
-                </motion.div>
+                </m.div>
               ) : (
-                <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <m.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
                   {/* ── Amount display ── */}
                   <div style={{ paddingTop: 24, paddingBottom: 8, textAlign: 'center' }}>
@@ -201,7 +201,7 @@ export default function RecordPaymentPage() {
                     {/* Client dropdown */}
                     <AnimatePresence>
                       {pickerOpen && (
-                        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                        <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                           transition={{ duration: 0.15 }}
                           style={{ position: 'absolute', left: 20, right: 20, borderRadius: 16, background: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid #e5e7eb', zIndex: 40, overflow: 'hidden', marginTop: 4 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid #f3f4f6' }}>
@@ -231,7 +231,7 @@ export default function RecordPaymentPage() {
                               </button>
                             ))}
                           </div>
-                        </motion.div>
+                        </m.div>
                       )}
                     </AnimatePresence>
 
@@ -267,12 +267,12 @@ export default function RecordPaymentPage() {
                   </div>
 
                   {/* ── Submit ── */}
-                  <motion.button onClick={handleSubmit} whileTap={{ scale: 0.98 }} disabled={saving}
+                  <m.button onClick={handleSubmit} whileTap={{ scale: 0.98 }} disabled={saving}
                     style={{ width: '100%', height: 54, borderRadius: 16, border: 'none', cursor: saving ? 'wait' : 'pointer', background: amount && selected ? '#007AFF' : '#F3F4F6', color: amount && selected ? '#fff' : '#9ca3af', fontSize: 16, fontWeight: 600, fontFamily: 'inherit', transition: 'background 0.2s, color 0.2s', letterSpacing: '-0.01em' }}>
                     {saving ? 'Recording…' : amount ? `Record ₹${parseFloat(amount).toLocaleString('en-IN')}` : 'Record Payment'}
-                  </motion.button>
+                  </m.button>
 
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>

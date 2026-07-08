@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { ScanFace, QrCode, Fingerprint, ChevronRight, Monitor } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -83,21 +83,21 @@ function CheckInHub() {
       <div className="relative overflow-hidden" style={{ background: '#f8fafc', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
         <div className="relative z-10 mx-auto" style={{ maxWidth: 900 }}>
           <div className="flex items-center gap-4">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px]"
               style={{ background: 'linear-gradient(135deg,#6366f1,#10b981)', boxShadow: '0 8px 28px rgba(99,102,241,0.3)' }}>
               <ScanFace size={20} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
-              <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
                 style={{ color: '#111827' }}>
                 Check In
-              </motion.h1>
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+              </m.h1>
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
                 className="text-[12px]" style={{ color: '#6b7280' }}>
                 Choose a check-in method below
-              </motion.p>
+              </m.p>
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ function CheckInHub() {
             const Icon = m.icon;
             const isActive = active === m.id;
             return (
-              <motion.div
+              <m.div
                 key={m.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -134,7 +134,7 @@ function CheckInHub() {
                     <MethodCardInner m={m} isActive={false} />
                   </Link>
                 )}
-              </motion.div>
+              </m.div>
             );
           })}
         </div>
@@ -142,7 +142,7 @@ function CheckInHub() {
         {/* Inline face recognition panel */}
         <AnimatePresence>
           {active === 'face' && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -150,12 +150,12 @@ function CheckInHub() {
               style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}
             >
               <FaceCheckIn />
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 
         {/* Admin shortcut row */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+        <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
           className="mt-6 flex flex-wrap gap-3">
           <Link href="/checkin/dashboard"
             className="flex items-center gap-2 rounded-[11px] px-4 py-2.5 text-[12px] font-[600] transition-all hover:bg-white"
@@ -171,7 +171,7 @@ function CheckInHub() {
             Enroll / Settings
             <ChevronRight size={12} style={{ color: 'rgb(148,163,184)' }} />
           </Link>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

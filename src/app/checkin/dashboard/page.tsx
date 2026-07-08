@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Users, TrendingUp, Clock, Zap, QrCode, ScanFace,
   User, Loader2, RefreshCw, Activity, CheckCircle2,
@@ -36,7 +36,7 @@ function StatCard({ label, value, sub, icon: Icon, color }: {
   icon: React.ElementType; color: string;
 }) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       style={{ ...glass, borderRadius: 16, padding: 20, borderLeft: `3px solid ${color}` }}
     >
@@ -52,7 +52,7 @@ function StatCard({ label, value, sub, icon: Icon, color }: {
           <Icon size={20} />
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -182,22 +182,22 @@ export default function DashboardPage() {
                 </div>
                 {methods.length === 0 ? (
                   <div style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>No data yet</div>
-                ) : methods.map((m) => {
-                  const pct   = Math.round((m.count / totalMethods) * 100);
-                  const color = METHOD_COLORS[m.method] || '#94a3b8';
+                ) : methods.map((method) => {
+                  const pct   = Math.round((method.count / totalMethods) * 100);
+                  const color = METHOD_COLORS[method.method] || '#94a3b8';
                   return (
-                    <div key={m.method} style={{ marginBottom: 14 }}>
+                    <div key={method.method} style={{ marginBottom: 14 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', textTransform: 'capitalize' }}>
-                          <span style={{ color }}>{METHOD_ICONS[m.method] || <User size={14} />}</span>
-                          {m.method}
+                          <span style={{ color }}>{METHOD_ICONS[method.method] || <User size={14} />}</span>
+                          {method.method}
                         </span>
                         <span style={{ fontSize: 12, fontWeight: 700, color }}>
-                          {m.count} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({pct}%)</span>
+                          {method.count} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>({pct}%)</span>
                         </span>
                       </div>
                       <div style={{ height: 6, background: 'var(--bg-subtle)', borderRadius: 3, overflow: 'hidden' }}>
-                        <motion.div
+                        <m.div
                           initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                           transition={{ duration: 0.6, ease: 'easeOut' }}
                           style={{ height: '100%', background: color, borderRadius: 3 }}
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                     const timeStr = r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—';
                     const color   = METHOD_COLORS[r.method] || '#94a3b8';
                     return (
-                      <motion.div
+                      <m.div
                         key={i}
                         initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderBottom: '1px solid var(--border)' }}
@@ -268,7 +268,7 @@ export default function DashboardPage() {
                         <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 20, background: `${color}15`, color, border: `1px solid ${color}25` }}>
                           {r.ref_type}
                         </span>
-                      </motion.div>
+                      </m.div>
                     );
                   })}
                 </div>

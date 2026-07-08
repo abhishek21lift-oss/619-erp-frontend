@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useId, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -281,7 +281,7 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
 
       <AnimatePresence>
         {open && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -311,7 +311,7 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
                 {value === c && <Check size={12} className="ml-auto" style={{ color: '#6366f1' }} />}
               </button>
             ))}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -326,7 +326,7 @@ function AccountCard({ account, onAction }: { account: Account; onAction: (id: s
   const role = ROLES[account.role];
 
   return (
-    <motion.div
+    <m.div
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -382,7 +382,7 @@ function AccountCard({ account, onAction }: { account: Account; onAction: (id: s
         </button>
         <AnimatePresence>
           {menuOpen && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0.95, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -4 }}
@@ -405,11 +405,11 @@ function AccountCard({ account, onAction }: { account: Account; onAction: (id: s
                   {item.icon} {item.label}
                 </button>
               ))}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -418,7 +418,7 @@ function AccountCard({ account, onAction }: { account: Account; onAction: (id: s
 ──────────────────────────────────────────────────────────────────── */
 function EmptyAccounts({ onAdd }: { onAdd: () => void }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="flex flex-col items-center justify-center py-16 text-center">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[22px]"
         style={{ background: 'rgba(99,102,241,0.08)' }}>
@@ -431,7 +431,7 @@ function EmptyAccounts({ onAdd }: { onAdd: () => void }) {
         style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 16px rgba(99,102,241,0.30)' }}>
         <UserPlus size={14} /> Create Account
       </button>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -522,7 +522,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {/* Avatar preview */}
       <div className="flex items-center gap-3">
-        <motion.div
+        <m.div
           layout
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-[14px] font-[700] text-white"
           style={{
@@ -532,7 +532,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
           }}
         >
           {name ? initials(name) : <User size={16} style={{ color: 'rgb(148,163,184)' }} />}
-        </motion.div>
+        </m.div>
         <div>
           <p className="text-[13px] font-[660]" style={{ color: 'rgb(15,23,42)' }}>
             {name || 'New Account'}
@@ -564,7 +564,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
 
       {/* Strength meter */}
       {password.length > 0 && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+        <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
           <div className="flex gap-1 mb-1">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-1 flex-1 rounded-full transition-all duration-300"
@@ -575,7 +575,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
             <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>Password strength</p>
             <p className="text-[11px] font-[660]" style={{ color: strength.color }}>{strength.label}</p>
           </div>
-        </motion.div>
+        </m.div>
       )}
 
       {/* Role */}
@@ -597,7 +597,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
           {error}
         </p>
       )}
-      <motion.button
+      <m.button
         type="submit"
         disabled={saving || done}
         whileHover={{ scale: 1.01 }}
@@ -615,23 +615,23 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
       >
         <AnimatePresence mode="wait">
           {done ? (
-            <motion.span key="done" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
+            <m.span key="done" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
               <CheckCircle2 size={15} /> Account Created
-            </motion.span>
+            </m.span>
           ) : saving ? (
-            <motion.span key="saving" className="flex items-center gap-2">
-              <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>
+            <m.span key="saving" className="flex items-center gap-2">
+              <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>
                 <RefreshCw size={14} />
-              </motion.span>
+              </m.span>
               Creating…
-            </motion.span>
+            </m.span>
           ) : (
-            <motion.span key="idle" className="flex items-center gap-2">
+            <m.span key="idle" className="flex items-center gap-2">
               <UserPlus size={14} /> Create Account
-            </motion.span>
+            </m.span>
           )}
         </AnimatePresence>
-      </motion.button>
+      </m.button>
     </form>
   );
 }
@@ -764,7 +764,7 @@ function ChangePasswordPanel() {
         </p>
       )}
 
-      <motion.button
+      <m.button
         type="submit"
         disabled={saving || done || !cur || !next || !match}
         whileHover={{ scale: 1.01 }}
@@ -780,23 +780,23 @@ function ChangePasswordPanel() {
       >
         <AnimatePresence mode="wait">
           {done ? (
-            <motion.span key="done" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
+            <m.span key="done" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
               <CheckCircle2 size={15} /> Password Updated
-            </motion.span>
+            </m.span>
           ) : saving ? (
-            <motion.span key="saving" className="flex items-center gap-2">
-              <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>
+            <m.span key="saving" className="flex items-center gap-2">
+              <m.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}>
                 <RefreshCw size={14} />
-              </motion.span>
+              </m.span>
               Updating…
-            </motion.span>
+            </m.span>
           ) : (
-            <motion.span key="idle" className="flex items-center gap-2">
+            <m.span key="idle" className="flex items-center gap-2">
               <Lock size={14} /> Update Password
-            </motion.span>
+            </m.span>
           )}
         </AnimatePresence>
-      </motion.button>
+      </m.button>
     </form>
   );
 }
@@ -954,7 +954,7 @@ function AccountManagementPage() {
         {/* ── LOGIN ACCOUNTS TAB ── */}
         <AnimatePresence mode="wait">
           {tab === 'accounts' ? (
-            <motion.div key="accounts" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            <m.div key="accounts" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="grid grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
 
               {/* LEFT: Create Account */}
@@ -1011,7 +1011,7 @@ function AccountManagementPage() {
                     </button>
                     <AnimatePresence>
                       {filterOpen && (
-                        <motion.div
+                        <m.div
                           initial={{ opacity: 0, scale: 0.96, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: -4 }}
                           transition={{ duration: 0.12 }}
                           className="absolute right-0 top-12 z-50 min-w-[160px] overflow-hidden rounded-[14px] p-1"
@@ -1033,7 +1033,7 @@ function AccountManagementPage() {
                               {filterRole === key && <Check size={12} style={{ color: '#6366f1' }} />}
                             </button>
                           ))}
-                        </motion.div>
+                        </m.div>
                       )}
                     </AnimatePresence>
                   </div>
@@ -1059,7 +1059,7 @@ function AccountManagementPage() {
                   <AnimatePresence>
                     {accountsLoading ? (
                       <div className="flex items-center justify-center py-16">
-                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        <m.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                           className="h-8 w-8 rounded-full"
                           style={{ border: '2.5px solid rgba(99,102,241,0.15)', borderTopColor: '#6366f1' }} />
                       </div>
@@ -1083,10 +1083,10 @@ function AccountManagementPage() {
                   </AnimatePresence>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           ) : (
             /* ── CHANGE PASSWORD TAB ── */
-            <motion.div key="password" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            <m.div key="password" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="mx-auto max-w-[520px]">
               <div className="rounded-[22px] p-6"
                 style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.07)' }}>
@@ -1101,7 +1101,7 @@ function AccountManagementPage() {
                 </div>
                 <ChangePasswordPanel />
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

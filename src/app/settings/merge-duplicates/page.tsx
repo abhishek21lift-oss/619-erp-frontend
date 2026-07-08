@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Users, AlertTriangle, CheckCircle, Merge, RefreshCw,
   ChevronDown, ChevronUp, IndianRupee, Calendar, Phone,
@@ -86,7 +86,7 @@ function MergeContent() {
       <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-8">
 
         {/* ── Header ── */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+        <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-[14px]"
@@ -112,11 +112,11 @@ function MergeContent() {
               </PremiumButton>
             )}
           </div>
-        </motion.div>
+        </m.div>
 
         {/* ── Done Report ── */}
         {doneReport && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-[20px] p-6 mb-6 border"
             style={{ background: 'rgba(16,185,129,0.06)', borderColor: '#10b98133' }}>
             <div className="flex items-center gap-3 mb-4">
@@ -151,7 +151,7 @@ function MergeContent() {
                 </tbody>
               </table>
             </div>
-          </motion.div>
+          </m.div>
         )}
 
         {loading ? (
@@ -160,7 +160,7 @@ function MergeContent() {
             Scanning for duplicates...
           </div>
         ) : groups.length === 0 ? (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-[22px] p-16 text-center"
             style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.8)' }}>
             <CheckCircle size={48} style={{ color: '#10b981' }} className="mx-auto mb-4" />
@@ -168,7 +168,7 @@ function MergeContent() {
             <p className="text-[13px] mt-2" style={{ color: 'rgb(148,163,184)' }}>
               All PT client profiles are unique. No merge required.
             </p>
-          </motion.div>
+          </m.div>
         ) : (
           <>
             {/* ── Summary Cards ── */}
@@ -179,7 +179,7 @@ function MergeContent() {
                 { label: 'Will Be Removed', value: summary.total_duplicates, color: '#7c3aed', icon: <Trash2 size={15} /> },
                 { label: 'Total Value', value: fmtINR(summary.total_financial_value), color: '#10b981', icon: <IndianRupee size={15} />, isText: true },
               ].map((c, i) => (
-                <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                <m.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                   className="rounded-[16px] p-4"
                   style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
                   <div className="flex items-center gap-2 mb-1.5">
@@ -189,12 +189,12 @@ function MergeContent() {
                   <p className="text-[22px] font-[820]" style={{ color: c.color }}>
                     {(c as any).isText ? c.value : c.value}
                   </p>
-                </motion.div>
+                </m.div>
               ))}
             </div>
 
             {/* ── Warning Banner ── */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="rounded-[14px] px-5 py-4 mb-5 flex items-start gap-3"
               style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
               <Shield size={16} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 2 }} />
@@ -203,7 +203,7 @@ function MergeContent() {
                 The merge will <strong>keep the oldest record as master</strong>, sum all financials (total lifetime value),
                 set the <strong>latest subscription as the current PT assignment</strong>, and soft-delete duplicates (fully recoverable from backup).
               </div>
-            </motion.div>
+            </m.div>
 
             {/* ── Search ── */}
             <div className="relative mb-4" style={{ maxWidth: 340 }}>
@@ -220,7 +220,7 @@ function MergeContent() {
                 const isExpanded = expandedId === grp.master_id;
                 const subsCount = (grp.subscription_starts ?? []).length;
                 return (
-                  <motion.div key={grp.master_id}
+                  <m.div key={grp.master_id}
                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
                     className="rounded-[18px] overflow-hidden"
                     style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
@@ -269,7 +269,7 @@ function MergeContent() {
                     {/* Expanded detail */}
                     <AnimatePresence>
                       {isExpanded && (
-                        <motion.div
+                        <m.div
                           initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
                           style={{ overflow: 'hidden', borderTop: '1px solid rgba(15,23,42,0.05)' }}>
@@ -334,10 +334,10 @@ function MergeContent() {
                             </div>
 
                           </div>
-                        </motion.div>
+                        </m.div>
                       )}
                     </AnimatePresence>
-                  </motion.div>
+                  </m.div>
                 );
               })}
             </div>
@@ -350,12 +350,12 @@ function MergeContent() {
 
             {/* ── Bottom action ── */}
             {!doneReport && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="mt-6 flex justify-end">
                 <PremiumButton tone="danger" glow icon={<Merge size={14} />} onClick={() => setConfirmOpen(true)}>
                   Execute Merge — Remove {summary.total_duplicates} Duplicate Records
                 </PremiumButton>
-              </motion.div>
+              </m.div>
             )}
           </>
         )}
@@ -364,10 +364,10 @@ function MergeContent() {
       {/* ── Confirm Modal ── */}
       <AnimatePresence>
         {confirmOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             onClick={() => !merging && setConfirmOpen(false)}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+            <m.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="w-full max-w-lg rounded-[24px] p-7"
               style={{ background: 'white', boxShadow: '0 32px 96px rgba(0,0,0,0.25)' }}
               onClick={e => e.stopPropagation()}>
@@ -424,8 +424,8 @@ function MergeContent() {
                   {merging ? 'Merging…' : `Merge ${summary.total_duplicates} Records`}
                 </PremiumButton>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

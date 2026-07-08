@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Guard from '@/components/Guard';
@@ -100,9 +100,9 @@ function buildWeeklyBars(records: Attendance[]): { day: string; pct: number }[] 
   }));
 }
 
-function buildAlerts(records: Attendance[], clients: Client[]): { type: string; title: string; desc: string; icon: React.ReactNode }[] {
+function buildAlerts(recordMap: Map<string | number, Attendance>, records: Attendance[], clients: Client[]): { type: string; title: string; desc: string; icon: React.ReactNode }[] {
   const alerts: { type: string; title: string; desc: string; icon: React.ReactNode }[] = [];
-  const absent = clients.filter(c => !records.find(r => r.ref_id === c.id));
+  const absent = clients.filter(c => !recordMap.has(c.id));
   if (absent.length > 0) {
     alerts.push({ type: 'warn', title: `${absent.length} members absent today`, desc: 'No check-in recorded for these members.', icon: <AlertTriangle className="h-4 w-4" /> });
   }
@@ -111,10 +111,7 @@ function buildAlerts(records: Attendance[], clients: Client[]): { type: string; 
     const names = late.slice(0, 3).map(r => r.ref_name).filter(Boolean).join(', ');
     alerts.push({ type: 'amber', title: `${late.length} members arrived late`, desc: names ? `${names} checking in after 10 AM.` : 'Late check-ins detected.', icon: <ArrowDownLeft className="h-4 w-4" /> });
   }
-  const perfect = clients.filter(c => {
-    const rec = records.find(r => r.ref_id === c.id);
-    return rec?.status === 'present';
-  });
+  const perfect = clients.filter(c => recordMap.get(c.id)?.status === 'present');
   if (perfect.length > 0) {
     alerts.push({ type: 'green', title: `${perfect.length} members marked present`, desc: 'On-time attendance recorded.', icon: <Sparkles className="h-4 w-4" /> });
   }
@@ -197,7 +194,7 @@ function AttendanceContent() {
   }, [date]);
 
   /* ── mark function ── */
-  async function mark(client: Client, status: string) {
+  const mark = useCallback(async (client: Client, status: string) => {
     setSaving(client.id);
     try {
       await api.attendance.mark({
@@ -218,7 +215,8 @@ function AttendanceContent() {
     } finally {
       setSaving(null);
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date]);
 
   /* ── biometric availability ── */
   useEffect(() => { isBiometricAvailable().then(setPasskeyReady); }, []);
@@ -309,48 +307,81 @@ function AttendanceContent() {
     }
   }
 
-  /* ── original mark-all ── */
+  /* ── O(1) record lookup map ── */
+  const recordMap = useMemo(
+    () => new Map<string | number, Attendance>(records.map(r => [r.ref_id, r])),
+    [records]
+  );
+
+  /* ── bulk mark-all: parallel API calls + single re-fetch ── */
   async function markAllPresent() {
-    for (const c of filtered) {
-      if (!getRecord(c.id)) await mark(c, 'present');
+    const toMark = filtered.filter(c => !recordMap.has(c.id));
+    if (!toMark.length) return;
+    try {
+      await Promise.all(
+        toMark.map(c =>
+          api.attendance.mark({
+            type:         'client',
+            ref_id:       c.id,
+            ref_name:     c.name,
+            trainer_id:   c.trainer_id,
+            trainer_name: c.trainer_name,
+            date,
+            status:       'present',
+          })
+        )
+      );
+      const updated = await api.attendance.list({ date, type: 'client' });
+      setRecords(updated);
+      showSuccess(`Marked ${toMark.length} member${toMark.length > 1 ? 's' : ''} present`);
+      setDirty(true);
+    } catch (e: unknown) {
+      showError(e instanceof Error ? e.message : 'Failed to mark all present');
     }
   }
 
-  function getRecord(clientId: string) {
-    return records.find((r) => r.ref_id === clientId);
+  function getRecord(clientId: string | number) {
+    return recordMap.get(clientId);
   }
 
-  /* ── derived ── */
-  const summary = {
-    present:  records.filter((r) => r.status === 'present').length,
-    absent:   records.filter((r) => r.status === 'absent').length,
-    late:     records.filter((r) => r.status === 'late').length,
-    unmarked: clients.length - records.length,
-    total:    clients.length,
-  };
+  /* ── derived: single-pass summary + rate ── */
+  const summary = useMemo(() => {
+    let present = 0, absent = 0, late = 0;
+    for (const r of records) {
+      if (r.status === 'present') present++;
+      else if (r.status === 'absent') absent++;
+      else if (r.status === 'late') late++;
+    }
+    const total = clients.length;
+    const attendanceRate = total > 0
+      ? Math.round(((present + late) / total) * 100)
+      : 0;
+    return { present, absent, late, unmarked: total - records.length, total, attendanceRate };
+  }, [records, clients]);
 
-  const feedItems = buildFeedFromRecords(records, clients);
-  const weeklyBars = buildWeeklyBars(records);
-  const smartAlerts = buildAlerts(records, clients);
+  const feedItems   = useMemo(() => buildFeedFromRecords(records, clients), [records, clients]);
+  const weeklyBars  = useMemo(() => buildWeeklyBars(records), [records]);
+  const smartAlerts = useMemo(() => buildAlerts(recordMap, records, clients), [recordMap, records, clients]);
 
-  const filtered = clients.filter((c) => {
-    const rec  = getRecord(c.id);
-    const matchSearch = !search ||
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.mobile || '').includes(search) ||
-      (c.client_id || '').includes(search);
-    const matchStatus =
-      statusFilter === 'all'      ? true :
-      statusFilter === 'present'  ? rec?.status === 'present' :
-      statusFilter === 'absent'   ? rec?.status === 'absent' :
-      statusFilter === 'late'     ? rec?.status === 'late' :
-      statusFilter === 'unmarked' ? !rec : true;
-    return matchSearch && matchStatus;
-  });
+  const filtered = useMemo(() =>
+    clients.filter((c) => {
+      const rec = recordMap.get(c.id);
+      const matchSearch = !search ||
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        (c.mobile || '').includes(search) ||
+        (c.client_id || '').includes(search);
+      const matchStatus =
+        statusFilter === 'all'      ? true :
+        statusFilter === 'present'  ? rec?.status === 'present' :
+        statusFilter === 'absent'   ? rec?.status === 'absent' :
+        statusFilter === 'late'     ? rec?.status === 'late' :
+        statusFilter === 'unmarked' ? !rec : true;
+      return matchSearch && matchStatus;
+    }),
+    [clients, recordMap, search, statusFilter]
+  );
 
-  const attendanceRate = summary.total > 0
-    ? Math.round(((summary.present + summary.late) / summary.total) * 100)
-    : 0;
+  const { attendanceRate } = summary;
 
   return (
     <AppShell>
@@ -470,6 +501,7 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
 
           <div className="flex flex-wrap items-center gap-3">
             <input
+              aria-label="Attendance date"
               type="date" value={date}
               onChange={e => setDate(e.target.value)}
               max={today}
@@ -654,7 +686,7 @@ function MembersPanel({ filtered, loading, search, setSearch, statusFilter, setS
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[180px] max-w-xs">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-white/40" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search member…"
+          <input aria-label="Search members" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search member…"
             className="w-full rounded-[14px] border border-zinc-200 bg-white/80 py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-zinc-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/30" />
         </div>
         <div className="flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1 dark:border-white/10 dark:bg-white/5">
@@ -667,8 +699,8 @@ function MembersPanel({ filtered, loading, search, setSearch, statusFilter, setS
           ))}
         </div>
         <div className="ml-auto flex gap-1 rounded-[14px] border border-zinc-200 bg-zinc-50 p-1 dark:border-white/10 dark:bg-white/5">
-          <button onClick={() => setViewMode('table')} className={`rounded-[10px] p-2 transition ${ viewMode === 'table' ? 'bg-white shadow-sm dark:bg-white/12' : 'text-zinc-400 dark:text-white/30' }`}><LayoutList className="h-4 w-4" /></button>
-          <button onClick={() => setViewMode('grid')}  className={`rounded-[10px] p-2 transition ${ viewMode === 'grid'  ? 'bg-white shadow-sm dark:bg-white/12' : 'text-zinc-400 dark:text-white/30' }`}><Grid3x3  className="h-4 w-4" /></button>
+          <button aria-label="Table view" onClick={() => setViewMode('table')} className={`rounded-[10px] p-2 transition ${ viewMode === 'table' ? 'bg-white shadow-sm dark:bg-white/12' : 'text-zinc-400 dark:text-white/30' }`}><LayoutList className="h-4 w-4" /></button>
+          <button aria-label="Grid view"  onClick={() => setViewMode('grid')}  className={`rounded-[10px] p-2 transition ${ viewMode === 'grid'  ? 'bg-white shadow-sm dark:bg-white/12' : 'text-zinc-400 dark:text-white/30' }`}><Grid3x3  className="h-4 w-4" /></button>
         </div>
       </div>
 
@@ -892,7 +924,7 @@ function GridView({ filtered, saving, getRecord, mark }: {
   );
 }
 
-function AttendanceBtns({ client, rec, saving, mark }: {
+const AttendanceBtns = React.memo(function AttendanceBtns({ client, rec, saving, mark }: {
   client: Client; rec: Attendance | undefined; saving: string | null;
   mark: (c: Client, s: string) => Promise<void>;
 }) {
@@ -915,7 +947,7 @@ function AttendanceBtns({ client, rec, saving, mark }: {
       ))}
     </div>
   );
-}
+});
 
 /* ────────────────────────────────────────────────────────────────
    INSIGHTS PANEL

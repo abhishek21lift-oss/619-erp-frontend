@@ -3,7 +3,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Mail, ArrowRight, Fingerprint, Loader2 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
@@ -81,12 +81,12 @@ export default function LoginPage() {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: '#f8fafc' }}>
         <div className="flex flex-col items-center gap-5">
-          <motion.div
+          <m.div
             animate={{ scale: [1, 1.06, 1], opacity: [0.8, 1, 0.8] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           >
             <ShieldLogo size={72} />
-          </motion.div>
+          </m.div>
           <div
             className="animate-spin"
             style={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px solid rgba(220,38,38,0.3)', borderTopColor: '#DC2626' }}
@@ -162,7 +162,7 @@ export default function LoginPage() {
 
       {/* ── Main Content ── */}
       <div className="relative z-10 flex w-full items-center justify-center p-6">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -187,7 +187,7 @@ export default function LoginPage() {
 
               {/* ── Logo & Brand ── */}
               <div className="flex flex-col items-center" style={{ marginBottom: 36 }}>
-                <motion.div
+                <m.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -209,9 +209,9 @@ export default function LoginPage() {
                     border: '1px solid rgba(220,38,38,0.08)',
                   }} />
                   <ShieldLogo size={88} />
-                </motion.div>
+                </m.div>
 
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.15 }}
@@ -233,13 +233,13 @@ export default function LoginPage() {
                   }}>
                     Management Suite
                   </p>
-                </motion.div>
+                </m.div>
               </div>
 
               {/* ── Error Alert ── */}
               <AnimatePresence mode="wait">
                 {error && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: -8, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
@@ -258,7 +258,7 @@ export default function LoginPage() {
                       fontSize: 10, fontWeight: 800, color: '#FCA5A5', flexShrink: 0,
                     }}>!</span>
                     <span style={{ fontSize: 13, fontWeight: 500, color: '#FCA5A5', lineHeight: 1.4 }}>{error}</span>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
@@ -347,7 +347,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Sign In Button */}
-                <motion.button
+                <m.button
                   type="submit"
                   disabled={busy}
                   whileHover={!busy ? { scale: 1.015, y: -1 } : {}}
@@ -391,7 +391,7 @@ export default function LoginPage() {
                       </>
                     )}
                   </span>
-                </motion.button>
+                </m.button>
 
                 {/* ── Divider ── */}
                 {(GOOGLE_CLIENT_ID || passkeyReady) && (
@@ -420,7 +420,7 @@ export default function LoginPage() {
 
                 {/* ── Passkey / Biometric Sign-In ── */}
                 {passkeyReady && (
-                  <motion.button
+                  <m.button
                     type="button"
                     onClick={handlePasskeyLogin}
                     disabled={passkeyBusy || busy}
@@ -459,7 +459,7 @@ export default function LoginPage() {
                       background: 'radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.08) 0%, transparent 70%)',
                       pointerEvents: 'none',
                     }} />
-                  </motion.button>
+                  </m.button>
                 )}
               </form>
 
@@ -481,7 +481,7 @@ export default function LoginPage() {
           </div>
 
           {/* Footer */}
-          <motion.p
+          <m.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
@@ -491,8 +491,8 @@ export default function LoginPage() {
             }}
           >
             &copy; {new Date().getFullYear()} 619 FITNESS STUDIO. All rights reserved.
-          </motion.p>
-        </motion.div>
+          </m.p>
+        </m.div>
       </div>
     </div>
   );

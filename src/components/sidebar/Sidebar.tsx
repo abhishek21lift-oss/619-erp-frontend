@@ -6,7 +6,7 @@ import { ChevronDown, X, LogOut } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
 import { usePermissions } from '@/lib/permissions-context';
@@ -191,7 +191,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
             {!collapsed && (
               <AnimatePresence initial={false}>
                 {open && (
-                  <motion.div
+                  <m.div
                     key={`${group.id}-items`}
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
@@ -212,7 +212,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                         const sharedInner = (
                           <>
                             {active && !isDisabled && (
-                              <motion.div
+                              <m.div
                                 layoutId={`sidebar-active-${group.id}`}
                                 className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3.5 rounded-r-full"
                                 style={{
@@ -298,7 +298,7 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
                         );
                       })}
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             )}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   ScanFace, Search, RefreshCw, User, CheckCircle2, XCircle,
   AlertTriangle, Camera, Eye, ArrowLeft, Trash2,
@@ -197,11 +197,11 @@ function FaceEnrollContent() {
       <div className="relative overflow-hidden" style={{ background: '#f8fafc', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
         <div className="fe-header-pad relative z-10 mx-auto" style={{ maxWidth: 860 }}>
           <div className="flex items-center gap-4">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px]"
               style={{ background: 'linear-gradient(135deg,#6366f1,#10b981)', boxShadow: '0 8px 28px rgba(99,102,241,0.3)' }}>
               <ScanFace size={22} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
               <h1 className="text-[24px] font-[860] tracking-[-0.03em]"
                 style={{ color: '#111827' }}>
@@ -220,7 +220,7 @@ function FaceEnrollContent() {
         {/* ── Search Step ── */}
         <AnimatePresence mode="wait">
           {step === 'search' && (
-            <motion.div key="search" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <m.div key="search" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <div className="rounded-[22px] p-6 mb-5 relative overflow-hidden" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
                 <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg,#6366f1,#10b981)' }} />
                 <p className="text-[14px] font-[700] mb-4" style={{ color: 'rgb(15,23,42)' }}>Find Member</p>
@@ -245,7 +245,7 @@ function FaceEnrollContent() {
 
                   <AnimatePresence>
                     {showDropdown && searchResults.length > 0 && (
-                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                      <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                         className="absolute z-50 left-0 right-0 mt-1 rounded-[13px] overflow-hidden"
                         style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
                         {searchResults.map((m) => (
@@ -263,13 +263,13 @@ function FaceEnrollContent() {
                             </div>
                           </button>
                         ))}
-                      </motion.div>
+                      </m.div>
                     )}
                   </AnimatePresence>
                 </div>
 
                 {member && (
-                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                  <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                     className="flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 mb-4"
                     style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.20)' }}>
                     <CheckCircle2 size={14} style={{ color: '#10b981', flexShrink: 0 }} />
@@ -280,7 +280,7 @@ function FaceEnrollContent() {
                     <button onClick={() => { setMember(null); setSearchQuery(''); }}
                       className="text-[11px] px-2 py-0.5 rounded-[6px] hover:bg-red-50"
                       style={{ color: 'rgb(148,163,184)' }}>Change</button>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 <div className="rounded-[12px] p-3.5 mb-5 text-[12px] leading-relaxed" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', color: 'rgb(71,85,105)' }}>
@@ -291,12 +291,12 @@ function FaceEnrollContent() {
                   Start Face Enrollment
                 </PremiumButton>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* ── Camera Step ── */}
           {step === 'camera' && (
-            <motion.div key="camera" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <m.div key="camera" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <div className="rounded-[22px] overflow-hidden mb-5" style={{ background: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
                 {/* Member banner */}
                 <div className="flex items-center gap-3 px-5 py-3.5" style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -328,7 +328,7 @@ function FaceEnrollContent() {
                   {/* Model loading overlay — visible while AI models download */}
                   <AnimatePresence>
                     {faceDetect.modelStatus === 'loading' && (
-                      <motion.div
+                      <m.div
                         key="model-loading"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -383,18 +383,18 @@ function FaceEnrollContent() {
                             );
                           })}
                         </div>
-                      </motion.div>
+                      </m.div>
                     )}
                   </AnimatePresence>
 
                   {/* Blink indicator overlay */}
                   <AnimatePresence>
                     {blinkReady && (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         style={{ position: 'absolute', top: 12, right: 12, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(16,185,129,0.90)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '5px 12px' }}>
                         <Eye size={13} color="#fff" />
                         <span style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>Blink confirmed</span>
-                      </motion.div>
+                      </m.div>
                     )}
                   </AnimatePresence>
 
@@ -451,19 +451,19 @@ function FaceEnrollContent() {
                   </PremiumButton>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* ── Success Step ── */}
           {step === 'success' && (
-            <motion.div key="success" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <m.div key="success" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
               <div className="rounded-[22px] p-8 text-center" style={{ background: 'white', border: '1px solid #bbf7d0', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
-                <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                <m.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                   className="flex justify-center mb-5">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: 'rgba(16,185,129,0.12)', border: '2px solid rgba(16,185,129,0.3)' }}>
                     <CheckCircle2 size={40} style={{ color: '#10b981' }} />
                   </div>
-                </motion.div>
+                </m.div>
                 <h2 className="text-[20px] font-[800] mb-2" style={{ color: 'rgb(15,23,42)' }}>Face Enrolled Successfully</h2>
                 <p className="text-[13px] mb-1" style={{ color: 'rgb(100,116,139)' }}>
                   <strong style={{ color: 'rgb(15,23,42)' }}>{member?.name}</strong> can now check in using face recognition.
@@ -484,12 +484,12 @@ function FaceEnrollContent() {
                   </PremiumButton>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {/* ── Error Step ── */}
           {step === 'error' && (
-            <motion.div key="error" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <m.div key="error" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
               <div className="rounded-[22px] p-8 text-center" style={{ background: 'white', border: '1px solid #fecdd3', boxShadow: '0 2px 20px rgba(0,0,0,0.07)' }}>
                 <div className="flex justify-center mb-5">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full" style={{ background: 'rgba(239,68,68,0.10)', border: '2px solid rgba(239,68,68,0.25)' }}>
@@ -502,7 +502,7 @@ function FaceEnrollContent() {
                   Try Again
                 </PremiumButton>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

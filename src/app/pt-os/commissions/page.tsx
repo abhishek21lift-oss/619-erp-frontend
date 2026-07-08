@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Percent, DollarSign, Loader2, RefreshCw, CheckCircle, Wallet,
   ChevronDown, Save, Users, Clock, Pencil, X, UserCheck,
@@ -133,7 +133,7 @@ export default function CommissionsPage() {
       <AppShell>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 16px' }}>
           {/* ── Hero ── */}
-          <motion.div {...fadeUp}
+          <m.div {...fadeUp}
             style={{ padding: '32px 40px', marginBottom: 32, borderBottom: '1px solid #f3f4f6' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -148,7 +148,7 @@ export default function CommissionsPage() {
             <p style={{ marginTop: 10, maxWidth: 500, fontSize: 14, lineHeight: 1.6, color: '#6b7280', fontWeight: 400 }}>
               Calculate monthly commissions, manage payouts, and track trainer performance. Full admin control over all financial data.
             </p>
-          </motion.div>
+          </m.div>
 
           {/* ── Controls ── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
@@ -172,14 +172,14 @@ export default function CommissionsPage() {
           </div>
 
           {/* ── KPI Cards ── */}
-          <motion.div variants={containerVariants} initial="hidden" animate="show" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
+          <m.div variants={containerVariants} initial="hidden" animate="show" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
             {[
               { label: 'Total Commission', value: fmtINR(totalCommission), icon: <DollarSign size={18} />, accent: '#22c55e', glow: 'rgba(34,197,94,0.15)' },
               { label: 'Total Paid Out', value: fmtINR(totalPayout), icon: <CheckCircle size={18} />, accent: '#16a34a', glow: 'rgba(22,163,74,0.15)' },
               { label: 'Pending Payouts', value: fmtINR(pendingPayouts), icon: <Clock size={18} />, accent: '#f59e0b', glow: 'rgba(245,158,11,0.15)' },
               { label: 'Active Trainers', value: activeTrainers, icon: <Users size={18} />, accent: '#3b82f6', glow: 'rgba(59,130,246,0.15)' },
             ].map((kpi, i) => (
-              <motion.div key={i} variants={itemVariants}
+              <m.div key={i} variants={itemVariants}
                 style={{
                   position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 24px',
                   ...card,
@@ -193,14 +193,14 @@ export default function CommissionsPage() {
                   </div>
                   <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: '#111827', margin: 0, lineHeight: 1.2 }}>{kpi.value}</p>
                 </div>
-              </motion.div>
+              </m.div>
             ))}
-          </motion.div>
+          </m.div>
 
           {/* ── Main grid ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
             {/* ── Trainer Performance ── */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
               style={{
                 borderRadius: 20, padding: 24,
                 ...card,
@@ -218,7 +218,7 @@ export default function CommissionsPage() {
                   const draft = commissionDraft[t.id] || {};
                   const saving = savingCommission === t.id;
                   return (
-                    <motion.div key={t.id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                    <m.div key={t.id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                       style={{
                         borderRadius: 14, padding: '14px 16px',
                         background: isEditing ? 'rgba(34,197,94,0.04)' : '#F9FAFB',
@@ -304,7 +304,7 @@ export default function CommissionsPage() {
                           </div>
                         </div>
                       )}
-                    </motion.div>
+                    </m.div>
                   );
                 })}
                 {perfData.length === 0 && (
@@ -313,10 +313,10 @@ export default function CommissionsPage() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
 
             {/* ── Payouts ── */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+            <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
               style={{
                 borderRadius: 20, padding: 24,
                 ...card,
@@ -349,7 +349,7 @@ export default function CommissionsPage() {
                   const draft = payoutDraft[tid] || {};
                   const saving = savingPayout === tid;
                   return (
-                    <motion.div key={tid} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    <m.div key={tid} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                       style={{
                         borderRadius: 14, padding: '14px 16px',
                         background: isEditing ? 'rgba(34,197,94,0.04)' : '#F9FAFB',
@@ -428,7 +428,7 @@ export default function CommissionsPage() {
                           </div>
                         </div>
                       )}
-                    </motion.div>
+                    </m.div>
                   );
                 })}
                 {payoutsData.length === 0 && (
@@ -437,7 +437,7 @@ export default function CommissionsPage() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </div>
         </div>
       </AppShell>

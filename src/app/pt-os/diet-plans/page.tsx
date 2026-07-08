@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   Salad, Plus, Search, User, Clock, Flame, Droplets,
   Sun, Coffee, UtensilsCrossed, Moon, Apple, Banana,
@@ -108,10 +108,10 @@ function Inner() {
       <div style={{ padding: '32px', borderBottom: '1px solid #f3f4f6' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <motion.div variants={heroVariants} initial="hidden" animate="visible"
+            <m.div variants={heroVariants} initial="hidden" animate="visible"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #10b981, #34d399)', boxShadow: '0 8px 32px rgba(16,185,129,0.3)' }}>
               <Salad size={26} color="#fff" />
-            </motion.div>
+            </m.div>
             <div>
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Diet Plans</h1>
               <p style={{ margin: '4px 0 0', fontSize: 13.5, color: '#6b7280' }}>Nutrition planning & meal tracking for your clients</p>
@@ -126,7 +126,7 @@ function Inner() {
 
       <div style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
         {/* ── Macro Progress ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           {[
             { label: 'Calories', value: consumed, max: goalCalories, unit: 'kcal', color: '#ef4444', icon: <Flame size={15} /> },
@@ -136,7 +136,7 @@ function Inner() {
           ].map((m, i) => {
             const pct = Math.min((m.value / m.max) * 100, 100);
             return (
-              <motion.div key={m.label} variants={itemVariants}
+              <m.div key={m.label} variants={itemVariants}
                 style={{ borderRadius: 16, padding: 18, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', cursor: 'default', transition: 'transform 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -146,16 +146,16 @@ function Inner() {
                 </div>
                 <div style={{ fontSize: 24, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', marginBottom: 8 }}>{m.value}<span style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af' }}>/{m.max}{m.unit}</span></div>
                 <div style={{ height: 4, borderRadius: 2, background: '#f3f4f6', overflow: 'hidden' }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
+                  <m.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }}
                     style={{ height: '100%', borderRadius: 2, background: m.color }} />
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
-        </motion.div>
+        </m.div>
 
         {/* ── Water Intake ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ borderRadius: 16, padding: 18, background: '#fff', border: '1px solid #e5e7eb', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(16,185,129,0.12))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <GlassWater size={18} color="#22d3ee" />
@@ -167,7 +167,7 @@ function Inner() {
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#f3f4f6', overflow: 'hidden' }}>
-                <motion.div initial={{ width: 0 }} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
+                <m.div initial={{ width: 0 }} animate={{ width: `${waterPct}%` }} transition={{ duration: 0.8, ease: 'easeOut' }}
                   style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #06b6d4, #10b981)' }} />
               </div>
               <button onClick={() => setWater(Math.min(water + 1, 8))}
@@ -176,7 +176,7 @@ function Inner() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* ── Meal Schedule ── */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: '#f3f4f6', borderRadius: 12, padding: 3, flexWrap: 'wrap' }}>
@@ -197,12 +197,12 @@ function Inner() {
         </div>
 
         {/* ── Meals Grid ── */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible"
+        <m.div variants={containerVariants} initial="hidden" animate="visible"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 28 }}>
           {meals.filter((m) => !activeMealType || m.type === activeMealType).map((meal, i) => {
             const mt = MEAL_TYPES.find((t) => t.id === meal.type);
             return (
-              <motion.div key={meal.id} variants={itemVariants}
+              <m.div key={meal.id} variants={itemVariants}
                 style={{ borderRadius: 16, padding: 18, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 30px ${mt?.color}15`; e.currentTarget.style.borderColor = `${mt?.color}30`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
@@ -220,10 +220,10 @@ function Inner() {
                   <span>🍚 {meal.carbs}g</span>
                   <span>🧈 {meal.fats}g</span>
                 </div>
-              </motion.div>
+              </m.div>
             );
           })}
-        </motion.div>
+        </m.div>
 
         {/* ── Diet Templates ── */}
         <div style={{ marginBottom: 28 }}>
@@ -252,14 +252,14 @@ function Inner() {
               </button>
             ))}
           </div>
-          <motion.div variants={containerVariants} initial="hidden" animate="visible"
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
             {filteredTemplates.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: '#9ca3af', fontSize: 13 }}>
                 No templates found. Create one to get started.
               </div>
             ) : filteredTemplates.map((t, i) => (
-              <motion.div key={t.id} variants={itemVariants}
+              <m.div key={t.id} variants={itemVariants}
                 style={{ position: 'relative', borderRadius: 16, padding: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', cursor: 'pointer', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(16,185,129,0.1)'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.2)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
@@ -276,9 +276,9 @@ function Inner() {
                   <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(236,72,153,0.1)', color: '#ec4899' }}>🧈 {t.fats}g</span>
                 </div>
                 {t.meals > 0 && <div style={{ marginTop: 10, fontSize: 11, color: '#9ca3af' }}>{t.meals} meals · Goal: {t.goal}</div>}
-              </motion.div>
+              </m.div>
             ))}
-          </motion.div>
+          </m.div>
         </div>
 
         {/* ── Supplements ── */}
@@ -296,7 +296,7 @@ function Inner() {
                 No supplements configured yet.
               </div>
             ) : supplements.map((s, i) => (
-              <motion.div key={s.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              <m.div key={s.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 style={{ borderRadius: 14, padding: 14, background: '#F9FAFB', border: '1px solid #e5e7eb', cursor: 'default', transition: 'all 0.3s' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = '#fdf2f8'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.transform = 'translateY(0)'; }}>
@@ -309,7 +309,7 @@ function Inner() {
                 </div>
                 <p style={{ fontSize: 11, color: '#6b7280', margin: '0 0 4px' }}>{s.benefit}</p>
                 <span style={{ fontSize: 10, color: '#9ca3af' }}>⏰ {s.timing}</span>
-              </motion.div>
+              </m.div>
             ))}
           </div>
         </div>

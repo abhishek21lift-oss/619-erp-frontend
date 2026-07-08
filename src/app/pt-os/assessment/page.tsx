@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ClipboardCheck, Plus, Loader2, Ruler, Weight, Heart, Activity } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -68,7 +68,7 @@ export default function PtAssessmentPage() {
     <Guard>
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
             style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <div className="relative z-10">
@@ -85,10 +85,10 @@ export default function PtAssessmentPage() {
                 Record body measurements, fitness scores, and health notes for new PT clients.
               </p>
             </div>
-          </motion.div>
+          </m.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+            <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
               className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <h2 className="text-[18px] font-[760] mb-5" style={{ color: '#111827' }}>Record Assessment</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -121,9 +121,9 @@ export default function PtAssessmentPage() {
                   {saving ? 'Saving...' : 'Save Assessment'}
                 </Button>
               </form>
-            </motion.div>
+            </m.div>
 
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+            <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
               className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <h2 className="text-[18px] font-[760] mb-5" style={{ color: '#111827' }}>Assessment History</h2>
               {assessments.loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" /></div>}
@@ -145,7 +145,7 @@ export default function PtAssessmentPage() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </m.div>
           </div>
         </div>
       </AppShell>

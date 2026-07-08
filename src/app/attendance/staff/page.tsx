@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api, http, Trainer, Attendance } from '@/lib/api';
@@ -157,7 +157,7 @@ function Inner() {
 
   return (
     <AppShell>
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
+      <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
         {/* ── Hero Section ── */}
         <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', padding: '32px 36px', marginBottom: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.07)' }}>
@@ -310,7 +310,7 @@ function Inner() {
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} style={{ display: 'flex', gap: 16, padding: '14px 0', borderBottom: '1px solid #f8fafc' }}>
                     {[40, 160, 100, 80].map((w, j) => (
-                      <motion.div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }}
+                      <m.div key={j} style={{ height: 13, width: w, borderRadius: 6, background: 'linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%)', backgroundSize: '200% 100%' }}
                         animate={{ backgroundPosition: ['0% 0%', '200% 0%'] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} />
                     ))}
                   </div>
@@ -417,7 +417,7 @@ function Inner() {
           <span><span style={{ color: '#f59e0b', fontWeight: 800 }}>●</span> L · Late</span>
         </div>
 
-      </motion.div>
+      </m.div>
     </AppShell>
   );
 }

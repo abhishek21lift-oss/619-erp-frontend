@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Activity, Users, Clock, TrendingUp, Calendar, BarChart3, ArrowUpRight } from 'lucide-react';
@@ -21,7 +21,7 @@ function KpiCard({ label, value, icon, gradient }: {
   label: string; value: string | number; icon?: React.ReactNode; gradient: string
 }) {
   return (
-    <motion.div variants={itemVariants}
+    <m.div variants={itemVariants}
       style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
       onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(6,182,212,0.12)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; }}>
@@ -34,7 +34,7 @@ function KpiCard({ label, value, icon, gradient }: {
         )}
       </div>
       <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -129,15 +129,15 @@ function Inner() {
       <div style={{ padding: '24px 32px' }}>
         {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 20 }}>{error}</div>}
 
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+        <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           <KpiCard label="Total Check-ins" value={totalCheckins} icon={<Users size={16} />} gradient="linear-gradient(135deg, rgba(37,99,235,0.08), rgba(37,99,235,0.02))" />
           <KpiCard label="Peak Hour" value={peakHour.count > 0 ? `${peakHour.hour}:00` : '—'} icon={<Clock size={16} />} gradient="linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))" />
           <KpiCard label="Average Daily" value={avgDaily} icon={<TrendingUp size={16} />} gradient="linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02))" />
           <KpiCard label="Busiest Day" value={busiestDay[0] !== '—' ? `${busiestDay[0]} (${busiestDay[1]})` : '—'} icon={<Calendar size={16} />} gradient="linear-gradient(135deg, rgba(124,58,237,0.08), rgba(124,58,237,0.02))" />
-        </motion.div>
+        </m.div>
 
-        <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          <motion.div variants={itemVariants} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        <m.div variants={containerVariants} initial="hidden" animate="visible">
+          <m.div variants={itemVariants} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '22px 20px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #06b6d4, #2563eb)' }} />
@@ -181,8 +181,8 @@ function Inner() {
                 </div>
               </>
             )}
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       </div>
     </AppShell>
   );

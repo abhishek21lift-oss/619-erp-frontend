@@ -1,6 +1,6 @@
 'use client';
 import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 
 export interface StickyActionBarProps {
   total?: string | number;
@@ -49,7 +49,7 @@ export function StickyActionBar({
       : total;
 
   return (
-    <motion.div
+    <m.div
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.15, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
@@ -60,14 +60,14 @@ export function StickyActionBar({
           {resolvedTotal && (
             <div className="flex items-baseline gap-2">
               <span className="text-xs text-slate-500 font-medium dark:text-white/50">{totalLabel}</span>
-              <motion.span
+              <m.span
                 key={resolvedTotal}
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="text-2xl font-bold text-red-600"
               >
                 {resolvedTotal}
-              </motion.span>
+              </m.span>
             </div>
           )}
           {helperText && <p className="text-xs text-slate-500 mt-0.5 dark:text-white/50">{helperText}</p>}
@@ -106,6 +106,6 @@ export function StickyActionBar({
           </button>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

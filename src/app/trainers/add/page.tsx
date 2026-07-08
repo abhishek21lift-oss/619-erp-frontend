@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   User, Phone, Mail, MapPin, Award, DollarSign,
   Clock, Users, Target, FileText, Shield,
@@ -541,17 +541,17 @@ export default function AddCoachPage() {
                 <h1 className="truncate text-[16px] font-[800] tracking-[-0.02em]" style={{ color: 'rgb(15,23,42)' }}>Add New Coach</h1>
                 <p className="text-[12px] font-[600]" style={{ color: ac }}>Step {step} of {STEPS.length} — {current.title}</p>
               </div>
-              <motion.span
+              <m.span
                 key={step}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 className="rounded-full px-3.5 py-1.5 text-[12px] font-[800] text-white"
                 style={{ background: ag, boxShadow: `0 3px 12px ${ac}45` }}>
                 {Math.round(progress)}%
-              </motion.span>
+              </m.span>
             </div>
             <div className="h-[3px] w-full" style={{ background: 'rgba(15,23,42,0.06)' }}>
-              <motion.div className="h-full" style={{ background: ag }}
+              <m.div className="h-full" style={{ background: ag }}
                 animate={{ width: progress + '%' }}
                 transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} />
             </div>
@@ -581,17 +581,17 @@ export default function AddCoachPage() {
 
             <AnimatePresence>
               {error && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                   className="mb-5 flex items-start gap-3 rounded-[16px] p-4"
                   style={{ background: 'rgba(244,63,94,0.07)', border: '1.5px solid rgba(244,63,94,0.20)' }}>
                   <AlertCircle size={16} style={{ color: '#f43f5e', flexShrink: 0, marginTop: '1px' }} />
                   <p className="text-[13px] font-[600]" style={{ color: '#be123c' }}>{error}</p>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 
             <AnimatePresence mode="wait">
-              <motion.div key={step}
+              <m.div key={step}
                 initial={{ opacity: 0, y: 20, scale: 0.985 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -20, scale: 0.985 }}
@@ -620,7 +620,7 @@ export default function AddCoachPage() {
                   {stepContent[step]}
                 </div>
 
-              </motion.div>
+              </m.div>
             </AnimatePresence>
 
             <div className="mt-6 flex items-center justify-between gap-3">

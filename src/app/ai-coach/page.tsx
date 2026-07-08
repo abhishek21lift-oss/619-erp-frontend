@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, type Variants } from 'framer-motion';
+import { m, type Variants } from 'framer-motion';
 import {
   Dumbbell, Apple, TrendingUp, BarChart3, Sparkles, ArrowRight,
   Zap, Brain, Shield, CheckCircle2, ChevronRight, Users, Target,
@@ -154,7 +154,7 @@ export default function AiCoachPage() {
           {/* ── Hero ─────────────────────────────────────────── */}
           <section className="relative px-4 pt-12 pb-16 text-center overflow-hidden">
 
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -241,7 +241,7 @@ export default function AiCoachPage() {
                   ))}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </section>
 
           {/* ── Stats bar ────────────────────────────────────── */}
@@ -251,7 +251,7 @@ export default function AiCoachPage() {
               style={{ background: '#e5e7eb', border: '1px solid #e5e7eb' }}
             >
               {STATS.map(({ value, label, icon: Icon }, i) => (
-                <motion.div
+                <m.div
                   key={label}
                   custom={i}
                   initial="hidden"
@@ -263,7 +263,7 @@ export default function AiCoachPage() {
                   <Icon size={15} style={{ color: '#D4AF37' }} />
                   <span className="text-[20px] font-black tracking-tight" style={{ color: '#111827' }}>{value}</span>
                   <span className="text-[10px] font-semibold tracking-[0.07em] uppercase" style={{ color: '#9ca3af' }}>{label}</span>
-                </motion.div>
+                </m.div>
               ))}
             </div>
           </section>
@@ -272,7 +272,7 @@ export default function AiCoachPage() {
           <section className="px-4 pb-20">
             <div className="mx-auto max-w-5xl">
 
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.15 }}
@@ -287,11 +287,11 @@ export default function AiCoachPage() {
                 <p className="mt-2 text-[14px]" style={{ color: '#6b7280' }}>
                   Pick any tool below. Results in seconds.
                 </p>
-              </motion.div>
+              </m.div>
 
               <div className="grid gap-5 sm:grid-cols-2">
                 {TOOLS.map(({ href, icon: Icon, label, eyebrow, description, capabilities, color, glow, gradientFrom, gradientTo, border, badge }, i) => (
-                  <motion.div
+                  <m.div
                     key={href}
                     custom={i}
                     initial="hidden"
@@ -380,7 +380,7 @@ export default function AiCoachPage() {
                         style={{ boxShadow: `inset 0 0 60px ${glow}` }}
                       />
                     </Link>
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             </div>
@@ -401,7 +401,7 @@ export default function AiCoachPage() {
 
               <div className="grid gap-6 sm:grid-cols-3">
                 {STEPS.map(({ n, icon: Icon, title, body }, i) => (
-                  <motion.div
+                  <m.div
                     key={n}
                     custom={i}
                     initial="hidden"
@@ -442,7 +442,7 @@ export default function AiCoachPage() {
                         style={{ background: 'rgba(212,175,55,0.20)' }}
                       />
                     )}
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             </div>

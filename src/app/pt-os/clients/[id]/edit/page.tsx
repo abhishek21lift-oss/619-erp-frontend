@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   ArrowLeft, Save, User, Dumbbell, Wallet,
   CheckCircle, Info, Activity,
@@ -38,7 +38,7 @@ function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
   title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string;
 }) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-[20px] p-6"
@@ -56,7 +56,7 @@ function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
         <h2 className="text-[15px] font-[720]" style={{ color: '#111827' }}>{title}</h2>
       </div>
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -103,18 +103,18 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
   // When start date or duration changes → recalculate end date
   const recalcEndDate = useCallback((startDate: string, months: string) => {
-    const m = parseInt(months, 10);
-    if (startDate && m > 0) {
-      setForm(p => ({ ...p, pt_end_date: addMonths(startDate, m) }));
+    const monthsNum = parseInt(months, 10);
+    if (startDate && monthsNum > 0) {
+      setForm(p => ({ ...p, pt_end_date: addMonths(startDate, monthsNum) }));
     }
   }, []);
 
   // When final_amount or duration_months changes → recalculate monthly fee
   const recalcMonthly = useCallback((finalAmt: string, months: string) => {
     const f = parseFloat(finalAmt);
-    const m = parseInt(months, 10);
-    if (f > 0 && m > 0) {
-      setForm(p => ({ ...p, monthly_pt_amount: (f / m).toFixed(2) }));
+    const monthsNum = parseInt(months, 10);
+    if (f > 0 && monthsNum > 0) {
+      setForm(p => ({ ...p, monthly_pt_amount: (f / monthsNum).toFixed(2) }));
     }
   }, []);
 
@@ -258,7 +258,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
           <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 space-y-5">
 
             {/* ── Header ── */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button onClick={() => router.push(`/pt-os/clients/${id}`)}
@@ -276,7 +276,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <PremiumButton tone="primary" glow icon={<Save size={14} />} onClick={handleSave} loading={saving}>
                 Save Changes
               </PremiumButton>
-            </motion.div>
+            </m.div>
 
             {/* ── Personal Info ── */}
             <SectionCard title="Personal Information" icon={<User size={16} />}>
@@ -498,7 +498,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             </SectionCard>
 
             {/* ── Save footer ── */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="flex items-center justify-between rounded-[16px] px-5 py-4"
               style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(15,23,42,0.04)' }}>
               <div className="flex items-center gap-2">
@@ -515,7 +515,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   Save Changes
                 </PremiumButton>
               </div>
-            </motion.div>
+            </m.div>
 
           </div>
         </div>

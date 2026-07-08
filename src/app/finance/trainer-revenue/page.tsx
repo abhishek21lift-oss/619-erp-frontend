@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
@@ -237,7 +237,7 @@ function Inner() {
           {/* Error banner */}
           <AnimatePresence>
             {error && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
@@ -249,7 +249,7 @@ function Inner() {
                 }}
               >
                 {error}
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -260,7 +260,7 @@ function Inner() {
             gap: 14, marginBottom: 24,
           }}>
             {kpis.map((k, idx) => (
-              <motion.div
+              <m.div
                 key={k.label}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -307,7 +307,7 @@ function Inner() {
                     {k.label}
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             ))}
           </div>
 
@@ -356,7 +356,7 @@ function Inner() {
                           background: '#f1f5f9', position: 'relative',
                           overflow: 'hidden',
                         }}>
-                          <motion.div
+                          <m.div
                             animate={{ x: ['-100%', '200%'] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: 'linear', delay: i * 0.04 }}
                             style={{
@@ -406,7 +406,7 @@ function Inner() {
                     </thead>
                     <tbody>
                       {sortedTrainers.map((trainer) => (
-                        <motion.tr
+                        <m.tr
                           key={trainer.id}
                           onClick={() => setSelectedTrainer(selectedTrainer?.id === trainer.id ? null : trainer)}
                           whileHover={{ backgroundColor: 'rgba(99,102,241,0.04)' }}
@@ -478,7 +478,7 @@ function Inner() {
                                 background: '#f1f5f9',
                                 borderRadius: 4, overflow: 'hidden',
                               }}>
-                                <motion.div
+                                <m.div
                                   initial={{ width: 0 }}
                                   animate={{ width: `${Math.min(trainer.revenue_percentage, 100)}%` }}
                                   transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -499,7 +499,7 @@ function Inner() {
                               </span>
                             </div>
                           </td>
-                        </motion.tr>
+                        </m.tr>
                       ))}
                     </tbody>
                   </table>
@@ -518,7 +518,7 @@ function Inner() {
             {/* ── Detail Panel ── */}
             <AnimatePresence>
               {selectedTrainer && (
-                <motion.div
+                <m.div
                   key={selectedTrainer.id}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -556,7 +556,7 @@ function Inner() {
                         PT Client Breakdown
                       </div>
                     </div>
-                    <motion.button
+                    <m.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setSelectedTrainer(null)}
@@ -570,7 +570,7 @@ function Inner() {
                       }}
                     >
                       <X size={15} />
-                    </motion.button>
+                    </m.button>
                   </div>
 
                   {/* Current month */}
@@ -586,7 +586,7 @@ function Inner() {
                     clients={detailClients.prev}
                     accent="#6366f1"
                   />
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>
@@ -649,7 +649,7 @@ function ClientMonthSection({ label, clients, accent }: { label: string; clients
             </thead>
             <tbody>
               {(clients ?? []).map((c: any, i: number) => (
-                <motion.tr
+                <m.tr
                   key={c.id}
                   initial={{ opacity: 0, x: -4 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -672,7 +672,7 @@ function ClientMonthSection({ label, clients, accent }: { label: string; clients
                   }}>
                     {fmtLocal(Number(c.final_amount) || 0)}
                   </td>
-                </motion.tr>
+                </m.tr>
               ))}
             </tbody>
           </table>
