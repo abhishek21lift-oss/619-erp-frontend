@@ -228,9 +228,9 @@ function Inner() {
                   {fullYear.map((row, i) => (
                     <m.tr
                       key={i}
-                      whileHover={{ backgroundColor: 'var(--bg-hover)' } as React.CSSProperties}
-                      transition={{ duration: 0.15 }}
-                      style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', opacity: row.revenue === 0 ? 0.45 : 1 }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; }}
+                      style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', opacity: row.revenue === 0 ? 0.45 : 1, transition: 'background-color 0.15s' }}
                     >
                       <td style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-primary)' }}>{row.month} {year}</td>
                       <td style={{ padding: '14px 20px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{row.count || '—'}</td>

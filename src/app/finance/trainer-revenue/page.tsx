@@ -350,7 +350,8 @@ function Inner() {
                         <m.tr
                           key={trainer.id}
                           onClick={() => setSelectedTrainer(selectedTrainer?.id === trainer.id ? null : trainer)}
-                          whileHover={{ backgroundColor: 'var(--bg-hover)' } as React.CSSProperties}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = selectedTrainer?.id === trainer.id ? 'var(--bg-hover)' : 'var(--bg-card)'; }}
                           style={{
                             cursor: 'pointer',
                             borderBottom: '1px solid var(--border)',
