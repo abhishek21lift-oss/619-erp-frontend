@@ -51,3 +51,38 @@ export {
 export type { GlassTableProps } from './GlassTable';
 
 export { default as ComingSoon } from './ComingSoon';
+
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './dialog';
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from './table';
+
+export {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  CHART_COLORS,
+  useChartConfig,
+} from './chart';
+export type { ChartConfig, ChartColor } from './chart';
