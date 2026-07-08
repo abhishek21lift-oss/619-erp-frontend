@@ -60,11 +60,11 @@ function BranchesContent() {
     <AppShell>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px' }}>
         <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #faf5ff, #ede9fe)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'linear-gradient(135deg, #faf5ff, #ede9fe)', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', color: '#111827', margin: '0 0 8px' }}>Branches</h1>
-              <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: '#6b7280' }}>Manage gym locations and branches.</p>
+              <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: '0 0 8px' }}>Branches</h1>
+              <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>Manage gym locations and branches.</p>
             </div>
             <button onClick={() => setShowForm(v => !v)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
@@ -81,16 +81,16 @@ function BranchesContent() {
 
         {showForm && (
           <m.form initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} onSubmit={addBranch}
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, borderRadius: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', padding: 20, marginBottom: 22, alignItems: 'end', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)', padding: 20, marginBottom: 22, alignItems: 'end', boxShadow: 'var(--shadow-xs)' }}>
             <div style={{ display: 'grid', gap: 5 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280' }}>Branch Name *</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Branch Name *</span>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. 619 Fitness Gomti Nagar" required
-                style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: '#111827', background: '#fff', outline: 'none', fontFamily: 'inherit' }} />
+                style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }} />
             </div>
             <div style={{ display: 'grid', gap: 5 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280' }}>Location</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Location</span>
               <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Lucknow, UP"
-                style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: '#111827', background: '#fff', outline: 'none', fontFamily: 'inherit' }} />
+                style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }} />
             </div>
             <button type="submit"
               style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '9px 22px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
@@ -105,16 +105,16 @@ function BranchesContent() {
           <div style={{ display: 'grid', gap: 12 }}>
             {items.map(b => (
               <m.div key={b.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                style={{ borderRadius: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.3s' }}>
+                style={{ borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.3s' }}>
                 <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(109,40,217,0.1))', flexShrink: 0 }}>
                   <MapPin size={22} color="#a855f7" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#111827', marginBottom: 2 }}>{b.name}</div>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>{b.location || 'No location set'}</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', marginBottom: 2 }}>{b.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{b.location || 'No location set'}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, color: '#6b7280' }}>{b.member_count ?? 0} members</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{b.member_count ?? 0} members</span>
                   <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: b.status === 'active' ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)', color: b.status === 'active' ? '#059669' : '#6b7280', textTransform: 'capitalize' }}>{b.status || 'active'}</span>
                   <button onClick={() => deleteBranch(b.id)}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.12)', color: '#f87171', cursor: 'pointer', flexShrink: 0 }}>
@@ -126,8 +126,8 @@ function BranchesContent() {
             {items.length === 0 && (
               <div style={{ padding: '64px 20px', textAlign: 'center' }}>
                 <MapPin size={40} color="rgba(0,0,0,0.12)" style={{ marginBottom: 14 }} />
-                <p style={{ fontSize: 15, fontWeight: 700, color: '#6b7280', margin: 0 }}>No branches yet</p>
-                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Click "Add Branch" to create your first location.</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-muted)', margin: 0 }}>No branches yet</p>
+                <p style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 4 }}>Click "Add Branch" to create your first location.</p>
               </div>
             )}
           </div>

@@ -196,16 +196,16 @@ function StepIndicator({ current, onStep }: { current: StepId; onStep: (s: StepI
 /* ─────────────────────────────────────────────────────── SKELETONS */
 function FormSkeleton() {
   return (
-    <div className="rounded-[24px] p-8 animate-pulse" style={{ background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+    <div className="rounded-[24px] p-8 animate-pulse" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
       <div className="flex items-center gap-4 mb-8">
-        <div className="h-12 w-12 rounded-[16px]" style={{ background: '#f1f5f9' }} />
+        <div className="h-12 w-12 rounded-[16px]" style={{ background: 'var(--bg-subtle)' }} />
         <div className="space-y-2">
-          <div className="h-4 w-36 rounded-full" style={{ background: '#f1f5f9' }} />
-          <div className="h-3 w-52 rounded-full" style={{ background: '#f8fafc' }} />
+          <div className="h-4 w-36 rounded-full" style={{ background: 'var(--bg-subtle)' }} />
+          <div className="h-3 w-52 rounded-full" style={{ background: 'var(--bg-subtle)' }} />
         </div>
       </div>
       <div className="space-y-4">
-        {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-[14px]" style={{ background: '#f8fafc' }} />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-[14px]" style={{ background: 'var(--bg-subtle)' }} />)}
       </div>
     </div>
   );
@@ -213,7 +213,7 @@ function FormSkeleton() {
 
 function DataErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="rounded-[24px] p-12 text-center" style={{ background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+    <div className="rounded-[24px] p-12 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
       <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[20px]" style={{ background: 'rgba(239,68,68,0.08)' }}>
         <RefreshCw size={24} style={{ color: '#ef4444' }} />
       </div>
@@ -578,7 +578,7 @@ function NewClientWizard() {
             )}
 
             {/* ── STEP INDICATOR ── */}
-            <div className="mb-8 rounded-[20px] px-6 py-5" style={{ background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 2px 16px rgba(15,23,42,0.05)' }}>
+            <div className="mb-8 rounded-[20px] px-6 py-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 16px rgba(15,23,42,0.05)' }}>
               <StepIndicator
                 current={step}
                 onStep={(s) => { if (s <= step + 1) { setStep(s); setError(''); } }}
@@ -610,7 +610,7 @@ function NewClientWizard() {
                   initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
                   transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <div className="rounded-[24px] overflow-hidden" style={{ background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+                  <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
                     {/* card header stripe */}
                     <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
                     <div className="p-7 sm:p-10">
@@ -684,7 +684,7 @@ function NewClientWizard() {
                   initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
                   transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <div className="rounded-[24px] overflow-hidden" style={{ background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+                  <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
                     <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#F59E0B,#D97706)' }} />
                     <div className="p-7 sm:p-10">
                       <div className="flex items-start gap-4 mb-8">
@@ -795,7 +795,7 @@ function NewClientWizard() {
                   initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
                   transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <div className="rounded-[24px] overflow-hidden" style={{ background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+                  <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
                     <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#6366f1,#8b5cf6)' }} />
                     <div className="p-7 sm:p-10">
                       <div className="flex items-start gap-4 mb-8">
@@ -860,7 +860,7 @@ function NewClientWizard() {
                               })}
                             </div>
                           ) : (
-                            <div className="rounded-[14px] px-4 py-6 text-center" style={{ background: '#f8fafc', border: '1.5px dashed #e2e8f0' }}>
+                            <div className="rounded-[14px] px-4 py-6 text-center" style={{ background: 'var(--bg-subtle)', border: '1.5px dashed #e2e8f0' }}>
                               <p className="text-[13px] text-slate-400">No plans found. <a href="/pt-os/plans" target="_blank" className="text-amber-500 font-[660] hover:underline">Create one →</a></p>
                             </div>
                           )}
@@ -888,7 +888,7 @@ function NewClientWizard() {
                                 });
                               }}
                               className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[520] outline-none transition-all"
-                              style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#0f172a' }}
+                              style={{ background: 'var(--bg-subtle)', border: '1.5px solid #e2e8f0', color: 'var(--text-primary)' }}
                             />
                           </div>
                           <div>
@@ -959,7 +959,7 @@ function NewClientWizard() {
                             <m.div
                               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
                               className="rounded-[16px] p-5"
-                              style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0' }}
+                              style={{ background: 'var(--bg-subtle)', border: '1.5px solid #e2e8f0' }}
                             >
                               <p className="text-[11px] font-[750] uppercase tracking-widest text-slate-400 mb-3">Summary</p>
                               <div className="grid grid-cols-2 gap-y-2 gap-x-6">
@@ -992,12 +992,12 @@ function NewClientWizard() {
                   initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
                   transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  <div className="rounded-[24px] overflow-hidden" style={{ background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+                  <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
                     <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#10b981,#059669)' }} />
                     <div className="p-7 sm:p-10">
 
                       {/* Profile header */}
-                      <div className="flex items-center gap-5 mb-8 pb-8" style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <div className="flex items-center gap-5 mb-8 pb-8" style={{ borderBottom: '1px solid var(--border)' }}>
                         <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-[20px] text-[22px] font-[860] text-white"
                           style={{ background: 'linear-gradient(135deg,#0f172a 0%,#334155 100%)', boxShadow: '0 8px 24px rgba(15,23,42,0.25)' }}>
                           {form.name ? form.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?'}
@@ -1021,7 +1021,7 @@ function NewClientWizard() {
                       {/* Summary grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                         {/* Personal */}
-                        <div className="rounded-[16px] p-4 space-y-3" style={{ background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                        <div className="rounded-[16px] p-4 space-y-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                           <p className="text-[11px] font-[750] uppercase tracking-widest text-slate-400">Personal</p>
                           {[
                             { label: 'Email', val: form.email || '—' },
@@ -1035,7 +1035,7 @@ function NewClientWizard() {
                         </div>
 
                         {/* Fitness */}
-                        <div className="rounded-[16px] p-4 space-y-3" style={{ background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                        <div className="rounded-[16px] p-4 space-y-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                           <p className="text-[11px] font-[750] uppercase tracking-widest text-slate-400">Fitness</p>
                           {[
                             { label: 'Height', val: form.height ? `${form.height} cm` : '—' },
@@ -1090,7 +1090,7 @@ function NewClientWizard() {
                         <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Client Photo</p>
                         <label
                           className="relative flex cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed p-8 transition-all hover:bg-slate-50"
-                          style={{ borderColor: 'rgba(15,23,42,0.12)', background: '#fafafa' }}
+                          style={{ borderColor: 'rgba(15,23,42,0.12)', background: 'var(--bg-subtle)' }}
                         >
                           <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
                           {photoPreview ? (
@@ -1101,7 +1101,7 @@ function NewClientWizard() {
                             </div>
                           ) : (
                             <div className="text-center">
-                              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[14px]" style={{ background: '#f1f5f9' }}>
+                              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[14px]" style={{ background: 'var(--bg-subtle)' }}>
                                 <Camera size={22} style={{ color: '#94a3b8' }} />
                               </div>
                               <p className="text-[13px] font-[640] text-slate-500">Click to upload client photo</p>

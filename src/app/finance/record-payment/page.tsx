@@ -122,10 +122,10 @@ export default function RecordPaymentPage() {
           {/* ── Nav bar ── */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px 8px', maxWidth: 480, margin: '0 auto', width: '100%' }}>
             <button onClick={() => router.back()} aria-label="Back"
-              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280', flexShrink: 0 }}>
+              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)', flexShrink: 0 }}>
               <ChevronLeft size={17} />
             </button>
-            <span style={{ fontSize: 16, fontWeight: 600, color: '#111827', letterSpacing: '-0.01em' }}>Record Payment</span>
+            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Record Payment</span>
           </div>
 
           <div style={{ flex: 1, padding: '4px 20px 32px', maxWidth: 480, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -145,10 +145,10 @@ export default function RecordPaymentPage() {
                     </svg>
                   </m.div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', letterSpacing: '-0.03em' }}>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
                       ₹{done.amount.toLocaleString('en-IN')}
                     </div>
-                    <div style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>Recorded for {done.name}</div>
+                    <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Recorded for {done.name}</div>
                   </div>
                 </m.div>
               ) : (
@@ -172,11 +172,11 @@ export default function RecordPaymentPage() {
                   </div>
 
                   {/* ── Grouped card: client + method ── */}
-                  <div style={{ borderRadius: 18, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', overflow: 'visible' }} ref={pickerRef}>
+                  <div style={{ borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', overflow: 'visible' }} ref={pickerRef}>
 
                     {/* Client row */}
                     <button onClick={() => { setPickerOpen(v => !v); setClientError(false); setTimeout(() => searchRef.current?.focus(), 50); }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderBottom: '1px solid #f3f4f6' }}>
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderBottom: '1px solid var(--border)' }}>
                       {selected ? (
                         <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarColor(selected.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
                           {initials(selected.name)}
@@ -187,7 +187,7 @@ export default function RecordPaymentPage() {
                         </div>
                       )}
                       <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: '#6b7280', marginBottom: 1 }}>To</div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginBottom: 1 }}>To</div>
                         <div style={{ fontSize: 15, fontWeight: 600, color: selected ? '#111827' : (clientError ? '#FF3B30' : '#9ca3af'), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {selected ? selected.name : 'Select client'}
                         </div>
@@ -203,18 +203,18 @@ export default function RecordPaymentPage() {
                       {pickerOpen && (
                         <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                           transition={{ duration: 0.15 }}
-                          style={{ position: 'absolute', left: 20, right: 20, borderRadius: 16, background: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid #e5e7eb', zIndex: 40, overflow: 'hidden', marginTop: 4 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid #f3f4f6' }}>
+                          style={{ position: 'absolute', left: 20, right: 20, borderRadius: 16, background: 'var(--bg-card)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid var(--border)', zIndex: 40, overflow: 'hidden', marginTop: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
                             <Search size={13} color="#9ca3af" />
                             <input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)}
                               placeholder="Search name or phone"
-                              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: '#111827', fontFamily: 'inherit' }} />
+                              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'inherit' }} />
                           </div>
                           <div style={{ maxHeight: 240, overflowY: 'auto' }}>
                             {loadingClients ? (
-                              <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: '#6b7280' }}>Loading…</div>
+                              <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Loading…</div>
                             ) : filtered.length === 0 ? (
-                              <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: '#6b7280' }}>No clients found</div>
+                              <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>No clients found</div>
                             ) : filtered.slice(0, 50).map(c => (
                               <button key={c.id} onClick={() => { setSelected(c); setPickerOpen(false); setQuery(''); }}
                                 style={{ width: '100%', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
@@ -224,8 +224,8 @@ export default function RecordPaymentPage() {
                                   {initials(c.name)}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                  <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                                  {c.mobile && <div style={{ fontSize: 12, color: '#6b7280' }}>{c.mobile}</div>}
+                                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                                  {c.mobile && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.mobile}</div>}
                                 </div>
                                 {selected?.id === c.id && <Check size={14} color="#007AFF" />}
                               </button>
@@ -237,7 +237,7 @@ export default function RecordPaymentPage() {
 
                     {/* Method row */}
                     <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#6b7280', width: 28, flexShrink: 0 }}>Via</div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>Via</div>
                       <div style={{ flex: 1, display: 'flex', gap: 6 }}>
                         {METHODS.map(m => (
                           <button key={m} onClick={() => setMethod(m)}
@@ -250,7 +250,7 @@ export default function RecordPaymentPage() {
                   </div>
 
                   {/* ── Number pad ── */}
-                  <div style={{ borderRadius: 18, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', padding: '12px 16px 4px', overflow: 'hidden' }}>
+                  <div style={{ borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', padding: '12px 16px 4px', overflow: 'hidden' }}>
                     {[['1','2','3'],['4','5','6'],['7','8','9'],['.','0','⌫']].map((row, ri) => (
                       <div key={ri} style={{ display: 'flex', gap: 0 }}>
                         {row.map(d => (

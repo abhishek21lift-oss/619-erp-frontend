@@ -82,7 +82,7 @@ function FeedbackContent() {
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         {/* ── HERO — DO NOT CHANGE ── */}
         <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'var(--bg-subtle)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ position: 'relative', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(109,40,217,0.08))' }}>
@@ -90,8 +90,8 @@ function FeedbackContent() {
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'linear-gradient(135deg, #a855f7, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Feedback</span>
             </div>
-            <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#111827', margin: '0 0 8px' }}>Member Feedback</h1>
-            <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: '#6b7280' }}>Track, respond &amp; act on member reviews and complaints.</p>
+            <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: 'var(--text-primary)', margin: '0 0 8px' }}>Member Feedback</h1>
+            <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>Track, respond &amp; act on member reviews and complaints.</p>
           </div>
         </m.div>
 
@@ -105,8 +105,8 @@ function FeedbackContent() {
             const suffixes = [' ⭐', '', '', '', '%'];
             return (
               <m.div key={k.label} variants={itemVariants}
-                style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '22px 24px', background: k.bg, border: `1px solid ${k.color}22`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280', display: 'block', marginBottom: 8 }}>{k.label}</span>
+                style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '22px 24px', background: k.bg, border: `1px solid ${k.color}22`, boxShadow: 'var(--shadow-xs)' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>{k.label}</span>
                 <div style={{ fontSize: 30, fontWeight: 800, color: k.color, lineHeight: 1.2, letterSpacing: '-0.02em' }}>{loading ? '—' : vals[i]}{suffixes[i]}</div>
               </m.div>
             );
@@ -124,7 +124,7 @@ function FeedbackContent() {
             ))}
           </div>
           <select value={statusF} onChange={e => setStatusF(e.target.value as any)}
-            style={{ maxWidth: 160, width: '100%', border: '1px solid #d1d5db', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 500, color: '#111827', background: '#ffffff', outline: 'none', fontFamily: 'inherit' }}>
+            style={{ maxWidth: 160, width: '100%', border: '1px solid #d1d5db', borderRadius: 10, padding: '7px 12px', fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', background: '#ffffff', outline: 'none', fontFamily: 'inherit' }}>
             <option value="all">All Status</option><option value="open">Open</option><option value="in_progress">In Progress</option><option value="resolved">Resolved</option>
           </select>
         </m.div>
@@ -136,7 +136,7 @@ function FeedbackContent() {
           <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gap: 12 }}>
             {filtered.map(f => (
               <m.div key={f.id} variants={itemVariants}
-                style={{ borderRadius: 20, background: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                style={{ borderRadius: 20, background: '#ffffff', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', overflow: 'hidden' }}>
                 <div style={{ padding: '18px 22px' }}>
                   <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                     <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(109,40,217,0.06))', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(139,92,246,0.15)' }}>
@@ -144,19 +144,19 @@ function FeedbackContent() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>{f.member}</span>
-                        {f.trainer && <span style={{ fontSize: 12, color: '#6b7280' }}>→ {f.trainer}</span>}
+                        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{f.member}</span>
+                        {f.trainer && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>→ {f.trainer}</span>}
                         <span style={{ color: '#d97706', fontSize: 16, letterSpacing: '-1px' }}>{stars(f.rating)}</span>
                         <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: statusBg(f.status), color: statusColor(f.status), textTransform: 'capitalize' }}>{f.status.replace('_', ' ')}</span>
                         {sentimentIcon(f.sentiment)}
                       </div>
-                      <p style={{ margin: '0 0 10px', fontSize: 13, color: '#374151', lineHeight: 1.6, fontStyle: 'italic' }}>"{f.message}"</p>
+                      <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic' }}>"{f.message}"</p>
                       <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 11, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={11} />{f.date}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-disabled)', display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={11} />{f.date}</span>
                         {f.status !== 'resolved' && (
                           <>
                             <button onClick={() => setShowReply(showReply === f.id ? null : f.id)}
-                              style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, padding: '5px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#f9fafb', color: '#374151', cursor: 'pointer' }}>
+                              style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, padding: '5px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                               <MessageSquare size={12} /> Reply
                             </button>
                             <button onClick={() => handleResolve(f.id)} disabled={resolving === f.id}
@@ -169,7 +169,7 @@ function FeedbackContent() {
                       {showReply === f.id && (
                         <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
                           <input value={reply} onChange={e => setReply(e.target.value)} placeholder="Type your reply to the member…"
-                            style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: '#111827', background: '#f9fafb', outline: 'none', fontFamily: 'inherit' }} />
+                            style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', outline: 'none', fontFamily: 'inherit' }} />
                           <button onClick={() => handleReply(f.id)}
                             style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(139,92,246,0.3)' }}>
                             Send &amp; Resolve
@@ -182,10 +182,10 @@ function FeedbackContent() {
               </m.div>
             ))}
             {filtered.length === 0 && (
-              <div style={{ padding: '64px 20px', textAlign: 'center', background: '#ffffff', borderRadius: 20, border: '1px solid #e5e7eb' }}>
+              <div style={{ padding: '64px 20px', textAlign: 'center', background: '#ffffff', borderRadius: 20, border: '1px solid var(--border)' }}>
                 <Star size={40} color="#d1d5db" style={{ marginBottom: 14 }} />
-                <p style={{ fontSize: 15, fontWeight: 700, color: '#374151', margin: 0 }}>No feedback found</p>
-                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Try adjusting your filters.</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', margin: 0 }}>No feedback found</p>
+                <p style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 4 }}>Try adjusting your filters.</p>
               </div>
             )}
           </m.div>

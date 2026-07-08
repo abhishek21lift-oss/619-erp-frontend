@@ -160,7 +160,7 @@ function Inner() {
       <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
         {/* ── Hero Section ── */}
-        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', padding: '32px 36px', marginBottom: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.07)' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)', padding: '32px 36px', marginBottom: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid var(--border)' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg,#6366f1,#8b5cf6,#a855f7)', borderRadius: '24px 24px 0 0' }} />
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
@@ -168,20 +168,20 @@ function Inner() {
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(99,102,241,0.35)' }}>
                   <Users size={18} color="white" />
                 </div>
-                <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#111827' }}>Staff Attendance</h1>
+                <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Staff Attendance</h1>
               </div>
-              <h2 style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 4px' }}>Total Staff</h2>
-              <div style={{ fontSize: 44, fontWeight: 900, color: '#111827', letterSpacing: '-0.03em', lineHeight: 1 }}>{staff.length}</div>
-              <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0' }}>{filtered.length} staff · {records.length} marked today</p>
+              <h2 style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 4px' }}>Total Staff</h2>
+              <div style={{ fontSize: 44, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>{staff.length}</div>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '8px 0 0' }}>{filtered.length} staff · {records.length} marked today</p>
             </div>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ background: '#fff', borderRadius: 14, padding: '12px 18px', border: '1px solid rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ background: 'var(--bg-card)', borderRadius: 14, padding: '12px 18px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Calendar size={16} color="#6b7280" />
                 <input
                   type="date" value={date}
                   onChange={e => setDate(e.target.value)}
                   max={today}
-                  style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: 0, fontFamily: 'inherit', colorScheme: 'light' }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: 0, fontFamily: 'inherit', colorScheme: 'light' }}
                 />
               </div>
             </div>
@@ -204,7 +204,7 @@ function Inner() {
         <form
           onSubmit={(e) => { e.preventDefault(); biometricCheckIn(); }}
           style={{
-            background: 'white', borderRadius: 20, border: '1px solid #f1f5f9',
+            background: 'var(--bg-card)', borderRadius: 20, border: '1px solid var(--border)',
             padding: '20px 24px', marginBottom: 20,
             boxShadow: '0 2px 12px rgba(0,0,0,0.04)', position: 'relative', overflow: 'hidden',
             display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
@@ -221,7 +221,7 @@ function Inner() {
             onChange={(e) => setBioCode(e.target.value)}
             style={{
               flex: 1, minWidth: 200, padding: '9px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0',
-              fontSize: 13, color: '#1e293b', background: '#fafafa', outline: 'none', fontFamily: 'inherit',
+              fontSize: 13, color: '#1e293b', background: 'var(--bg-subtle)', outline: 'none', fontFamily: 'inherit',
               boxSizing: 'border-box',
             }}
             autoComplete="off"
@@ -253,8 +253,8 @@ function Inner() {
           ].map((k) => (
             <div key={k.label}
               style={{
-                background: 'white', borderRadius: 20, padding: '22px 24px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.06)',
+                background: 'var(--bg-card)', borderRadius: 20, padding: '22px 24px',
+                boxShadow: 'var(--shadow-xs)', border: '1px solid var(--border)',
                 display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', overflow: 'hidden',
                 transition: 'all 200ms ease', cursor: 'default',
               }}
@@ -263,7 +263,7 @@ function Inner() {
               <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: `linear-gradient(90deg,${k.accent},${k.accent}88)`, borderRadius: '0 0 3px 3px', opacity: 0.8 }} />
               <div style={{ width: 40, height: 40, borderRadius: 12, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.accent }}>{k.icon}</div>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>{k.value}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1 }}>{k.value}</div>
                 <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{k.label}</div>
               </div>
             </div>
@@ -271,9 +271,9 @@ function Inner() {
         </div>
 
         {/* ── Staff Table ── */}
-        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+        <div style={{ background: 'var(--bg-card)', borderRadius: 20, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
           {/* ── Search Bar ── */}
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 340 }}>
               <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input
@@ -282,7 +282,7 @@ function Inner() {
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
                   width: '100%', padding: '9px 12px 9px 34px', borderRadius: 12, border: '1.5px solid #e2e8f0',
-                  fontSize: 13, color: '#1e293b', background: '#fafafa', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+                  fontSize: 13, color: '#1e293b', background: 'var(--bg-subtle)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
                 }}
               />
             </div>
@@ -322,7 +322,7 @@ function Inner() {
                   <Users size={36} style={{ color: '#6366f1' }} />
                 </div>
                 <div>
-                  <p style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: '0 0 6px' }}>No staff found</p>
+                  <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>No staff found</p>
                   <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>{search ? 'No staff match your search.' : 'Add coaches in the Coaches section first.'}</p>
                 </div>
               </div>
@@ -353,7 +353,7 @@ function Inner() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ width: 36, height: 36, borderRadius: '50%', background: nameGradient(t.name || '?'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'white', flexShrink: 0 }}>{initials}</div>
                             <div>
-                              <div style={{ fontWeight: 600, color: '#0f172a', fontSize: 14 }}>{t.name}</div>
+                              <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 14 }}>{t.name}</div>
                               <div style={{ fontSize: 11, color: '#94a3b8' }}>{t.role || 'Coach'}{t.mobile ? ` · ${t.mobile}` : ''}</div>
                             </div>
                           </div>

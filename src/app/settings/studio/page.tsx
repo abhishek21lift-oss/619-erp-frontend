@@ -287,23 +287,23 @@ export default function StudioSettingsPage() {
             className="relative overflow-hidden"
             style={{
               background: 'linear-gradient(135deg,#f8fafc 0%,#f1f5f9 55%,#f8f8ff 100%)',
-              borderBottom: '1px solid rgba(0,0,0,0.07)',
+              borderBottom: '1px solid var(--border)',
             }}>
             <div className="relative z-10 mx-auto max-w-screen-xl px-5 py-8 sm:px-8">
               {/* breadcrumb */}
-              <div className="mb-4 flex items-center gap-1.5 text-[11px] font-[500]" style={{ color: '#9ca3af' }}>
+              <div className="mb-4 flex items-center gap-1.5 text-[11px] font-[500]" style={{ color: 'var(--text-disabled)' }}>
                 <Settings size={10} />
                 <span>Settings</span>
                 <ChevronRight size={9} />
-                <span style={{ color: '#374151' }}>Studio</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Studio</span>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-end gap-4 justify-between">
                 <div>
-                  <h1 className="text-[26px] font-[860] tracking-[-0.03em]" style={{ color: '#111827' }}>
+                  <h1 className="text-[26px] font-[860] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>
                     {studioName || 'Studio Settings'}
                   </h1>
-                  <p className="mt-1 text-[13px]" style={{ color: '#6b7280' }}>
+                  <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                     {location ? `📍 ${location}` : 'Configure your fitness studio'}
                   </p>
                 </div>
@@ -314,9 +314,9 @@ export default function StudioSettingsPage() {
                     { label: 'Members', value: memberCount },
                   ].map(s => (
                     <div key={s.label} className="rounded-[12px] px-4 py-2.5 text-center"
-                      style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                      <p className="text-[18px] font-[800]" style={{ color: '#111827' }}>{s.value}</p>
-                      <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: '#6b7280' }}>{s.label}</p>
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                      <p className="text-[18px] font-[800]" style={{ color: 'var(--text-primary)' }}>{s.value}</p>
+                      <p className="text-[10px] font-[600] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{s.label}</p>
                     </div>
                   ))}
                 </div>
@@ -550,19 +550,19 @@ export default function StudioSettingsPage() {
               style={{ width: 'min(480px, calc(100vw - 32px))' }}>
               <div className="rounded-[18px] px-5 py-3.5 flex items-center justify-between gap-4"
                 style={{
-                  background: '#fff',
+                  background: 'var(--bg-card)',
                   backdropFilter: 'blur(20px)',
                   boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
-                  border: '1px solid rgba(0,0,0,0.07)',
+                  border: '1px solid var(--border)',
                 }}>
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.7)]" />
-                  <p className="text-[12px] font-[640]" style={{ color: '#111827' }}>Unsaved changes</p>
+                  <p className="text-[12px] font-[640]" style={{ color: 'var(--text-primary)' }}>Unsaved changes</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => load()}
                     className="flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[11.5px] font-[660] transition-all hover:bg-black/5"
-                    style={{ color: '#6b7280' }}>
+                    style={{ color: 'var(--text-muted)' }}>
                     <RefreshCw size={11} /> Discard
                   </button>
                   <button onClick={save} disabled={saving}

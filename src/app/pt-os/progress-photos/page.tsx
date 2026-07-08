@@ -49,8 +49,8 @@ export default function ProgressPhotosPage() {
           <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, padding: 40 }}>
               <div style={{
-                background: '#fff',
-                border: '1px solid #e5e7eb',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
                 borderRadius: 20,
                 padding: '40px 32px',
                 textAlign: 'center',
@@ -58,10 +58,10 @@ export default function ProgressPhotosPage() {
                 boxShadow: '0 4px 24px rgba(15,23,42,0.06)',
               }}>
                 <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>
                   Unable to Load Data
                 </h2>
-                <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 20px' }}>
+                <p style={{ fontSize: 13, color: 'var(--text-disabled)', margin: '0 0 20px' }}>
                   This feature is not available yet or there was a problem loading the page. Please try again later.
                 </p>
                 <button
@@ -90,34 +90,34 @@ export default function ProgressPhotosPage() {
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="mb-6 pb-6"
-            style={{ borderBottom: '1px solid #f3f4f6' }}>
+            style={{ borderBottom: '1px solid var(--border)' }}>
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: '#F3F4F6' }}>
-                <Camera size={16} style={{ color: '#6b7280' }} />
+              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
+                <Camera size={16} style={{ color: 'var(--text-muted)' }} />
               </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#9ca3af' }}>Progress Photos</span>
+              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Progress Photos</span>
             </div>
-            <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#111827' }}>
+            <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
               Transformation Gallery
             </h1>
-            <p className="mt-3 max-w-xl text-[14px]" style={{ color: '#6b7280' }}>
+            <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'var(--text-muted)' }}>
               Upload before/after progress photos to visually track client transformations.
             </p>
           </m.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb' }}>
-              <h2 className="text-[18px] font-[760] mb-5" style={{ color: '#111827' }}>Upload Photo</h2>
+            <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Upload Photo</h2>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <select value={clientId} onChange={e => setClientId(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: '#F9FAFB', border: '1px solid #d1d5db', color: '#111827' }}>
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}>
                   <option value="">Select client...</option>
                   {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <input required placeholder="Photo URL (data:image/... or https://...)" value={photoUrl} onChange={e => setPhotoUrl(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: '#F9FAFB', border: '1px solid #d1d5db', color: '#111827' }} />
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
                 <div className="flex gap-2">
                   {PHOTO_TYPES.map(pt => (
                     <button key={pt} type="button" onClick={() => setPhotoType(pt)}
@@ -131,7 +131,7 @@ export default function ProgressPhotosPage() {
                 </div>
                 <textarea placeholder="Notes..." rows={2} value={notes} onChange={e => setNotes(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
-                  style={{ background: '#F9FAFB', border: '1px solid #d1d5db', color: '#111827' }} />
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
                 {photoUrl && photoUrl.startsWith('data:image/') && (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -146,8 +146,8 @@ export default function ProgressPhotosPage() {
               </form>
             </div>
 
-            <div className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb' }}>
-              <h2 className="text-[18px] font-[760] mb-5" style={{ color: '#111827' }}>Photo Gallery</h2>
+            <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Photo Gallery</h2>
               <div className="grid grid-cols-2 gap-3 max-h-[500px] overflow-y-auto">
                 {(photos.data as any[] || []).map((p: any) => (
                   <div key={p.id} className="relative rounded-[12px] overflow-hidden group" style={{ aspectRatio: '3/4' }}>
@@ -161,7 +161,7 @@ export default function ProgressPhotosPage() {
                   </div>
                 ))}
                 {(!photos.data || (photos.data as any[]).length === 0) && (
-                  <p className="col-span-2 text-center py-8 text-sm" style={{ color: '#9ca3af' }}>No photos yet.</p>
+                  <p className="col-span-2 text-center py-8 text-sm" style={{ color: 'var(--text-disabled)' }}>No photos yet.</p>
                 )}
               </div>
             </div>

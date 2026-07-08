@@ -26,14 +26,14 @@ const ASSET_KEYS = [
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
-const glass = { background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' };
+const glass = { background: 'var(--bg-card)', borderRadius: 16, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' };
 const glassCard: React.CSSProperties = { ...glass, padding: 24, marginBottom: 20 };
-const l: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' };
-const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#fff', color: '#111827', fontSize: 14, outline: 'none' };
+const l: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' };
+const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, outline: 'none' };
 const sel: React.CSSProperties = { ...inp, cursor: 'pointer' };
 
 function Skeleton() {
-  const p = { background: 'rgba(0,0,0,0.06)', borderRadius: 8 };
+  const p = { background: 'var(--bg-subtle)', borderRadius: 8 };
   return (
     <div style={{ padding: 40 }}>
       {[1, 2, 3].map((i) => (
@@ -153,7 +153,7 @@ export default function BrandingPage() {
               display: 'flex', alignItems: 'center', gap: 16,
               padding: '36px 40px', borderRadius: 20,
               background: 'linear-gradient(135deg, #fffbf0 0%, #fef3c7 50%, #fffbf0 100%)',
-              color: '#111827', marginBottom: 28,
+              color: 'var(--text-primary)', marginBottom: 28,
               border: '1px solid rgba(245,158,11,0.15)',
               boxShadow: '0 4px 20px rgba(245,158,11,0.06)',
             }}
@@ -163,7 +163,7 @@ export default function BrandingPage() {
             </div>
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.03em', margin: 0 }}>Branding</h1>
-              <p style={{ fontSize: 14, color: '#6b7280', margin: '2px 0 0' }}>Customize your studio&apos;s look and feel</p>
+              <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '2px 0 0' }}>Customize your studio&apos;s look and feel</p>
             </div>
           </m.div>
 
@@ -181,8 +181,8 @@ export default function BrandingPage() {
               <div>
                 {/* ── Color Settings ── */}
                 <m.div variants={itemVariants} style={glassCard}>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Colors</h2>
-                  <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 20px' }}>Pick a preset or enter a custom hex value</p>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>Colors</h2>
+                  <p style={{ fontSize: 12, color: 'var(--text-disabled)', margin: '0 0 20px' }}>Pick a preset or enter a custom hex value</p>
 
                   {/* Preset palettes */}
                   {([
@@ -215,7 +215,7 @@ export default function BrandingPage() {
 
                 {/* ── Theme Settings ── */}
                 <m.div variants={itemVariants} style={glassCard}>
-                  <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 20px' }}>Theme &amp; Typography</h2>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 20px' }}>Theme &amp; Typography</h2>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                     <div>
                       <label style={l}>Theme Mode</label>
@@ -279,9 +279,9 @@ export default function BrandingPage() {
 
               {/* ── Live Preview Panel ── */}
               <m.div variants={itemVariants} style={{ ...glassCard, position: 'sticky', top: 80 }}>
-                <h2 style={{ fontSize: 13, fontWeight: 700, color: '#6b7280', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live Preview</h2>
+                <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', margin: '0 0 16px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live Preview</h2>
                 {/* Simulated app card */}
-                <div style={{ borderRadius: radiusStyle === 'pill' ? 24 : radiusStyle === 'smooth' ? 16 : 10, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', marginBottom: 16 }}>
+                <div style={{ borderRadius: radiusStyle === 'pill' ? 24 : radiusStyle === 'smooth' ? 16 : 10, overflow: 'hidden', border: '1px solid var(--border)', marginBottom: 16 }}>
                   <div style={{ padding: '14px 16px', background: primary }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -311,7 +311,7 @@ export default function BrandingPage() {
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 10, color: '#9ca3af', textAlign: 'center', fontFamily: typeface }}>
+                <div style={{ fontSize: 10, color: 'var(--text-disabled)', textAlign: 'center', fontFamily: typeface }}>
                   {typeface} · {mode} · {buttonStyle} · {radiusStyle}
                 </div>
               </m.div>
@@ -319,13 +319,13 @@ export default function BrandingPage() {
 
             {/* ── Logo & Assets ── */}
             <m.div variants={itemVariants} style={glassCard}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Logo &amp; Assets</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>Logo &amp; Assets</h2>
               <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div style={{
                   width: 120, height: 120, borderRadius: 16,
                   border: '2px dashed rgba(0,0,0,0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                  background: '#f9fafb', flexShrink: 0,
+                  background: 'var(--bg-subtle)', flexShrink: 0,
                   transition: 'border-color 0.2s',
                 }}>
                   <Image src={uploadedAssets[assetKey] || '/619-logo.png'} alt="" width={120} height={120} style={{ objectFit: 'contain', opacity: uploadedAssets[assetKey] ? 1 : 0.5 }} />
@@ -348,7 +348,7 @@ export default function BrandingPage() {
                     {uploading ? 'Uploading…' : 'Choose File'}
                     <input type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} disabled={uploading} />
                   </label>
-                  <p style={{ fontSize: 11, color: '#9ca3af', margin: '8px 0 0' }}>Supports PNG, JPG, SVG &middot; Recommended size: 512x512px</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-disabled)', margin: '8px 0 0' }}>Supports PNG, JPG, SVG &middot; Recommended size: 512x512px</p>
                 </div>
               </div>
             </m.div>
@@ -364,7 +364,7 @@ export default function BrandingPage() {
             <button onClick={handleReset} disabled={!dirty || saving}
               style={{
                 padding: '8px 20px', borderRadius: 10,
-                border: '1px solid rgba(0,0,0,0.08)', background: 'transparent',
+                border: '1px solid var(--border)', background: 'transparent',
                 color: dirty ? '#111827' : '#9ca3af',
                 fontSize: 14, fontWeight: 600, cursor: dirty && !saving ? 'pointer' : 'not-allowed',
                 display: 'inline-flex', alignItems: 'center', gap: 6,

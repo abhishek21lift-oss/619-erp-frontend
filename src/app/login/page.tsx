@@ -79,7 +79,7 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: '#f8fafc' }}>
+      <div className="flex items-center justify-center h-screen" style={{ background: 'var(--bg-subtle)' }}>
         <div className="flex flex-col items-center gap-5">
           <m.div
             animate={{ scale: [1, 1.06, 1], opacity: [0.8, 1, 0.8] }}
@@ -107,10 +107,10 @@ export default function LoginPage() {
         style={{
           position: 'absolute', top: 20, left: 20, zIndex: 20,
           display: 'flex', alignItems: 'center', gap: 7,
-          background: '#fff',
-          border: '1px solid rgba(0,0,0,0.07)',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
           borderRadius: 980, padding: '7px 14px',
-          color: '#6b7280', fontSize: 12, fontWeight: 600,
+          color: 'var(--text-muted)', fontSize: 12, fontWeight: 600,
           textDecoration: 'none', transition: 'all 200ms',
           letterSpacing: '0.02em',
         }}
@@ -170,8 +170,8 @@ export default function LoginPage() {
         >
           {/* ── Login Card ── */}
           <div style={{
-            background: '#fff',
-            border: '1px solid rgba(0,0,0,0.07)',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
             borderRadius: 24,
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
             position: 'relative',
@@ -218,7 +218,7 @@ export default function LoginPage() {
                   style={{ textAlign: 'center' }}
                 >
                   <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', lineHeight: 1.1 }}>
-                    <span style={{ color: '#111827' }}>619 FITNESS </span>
+                    <span style={{ color: 'var(--text-primary)' }}>619 FITNESS </span>
                     <span style={{
                       background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #FF7070 100%)',
                       WebkitBackgroundClip: 'text',
@@ -228,7 +228,7 @@ export default function LoginPage() {
                   </h1>
                   <p style={{
                     marginTop: 6, fontSize: 10.5, fontWeight: 600,
-                    letterSpacing: '0.20em', color: '#6b7280',
+                    letterSpacing: '0.20em', color: 'var(--text-muted)',
                     textTransform: 'uppercase',
                   }}>
                     Management Suite
@@ -270,7 +270,7 @@ export default function LoginPage() {
                   <div>
                     <label style={{
                       display: 'block', fontSize: 11, fontWeight: 600,
-                      color: '#6b7280', marginBottom: 8,
+                      color: 'var(--text-muted)', marginBottom: 8,
                       letterSpacing: '0.09em', textTransform: 'uppercase',
                     }}>Email address</label>
                     <div className="relative">
@@ -287,10 +287,10 @@ export default function LoginPage() {
                           width: '100%', height: 50,
                           paddingLeft: 16, paddingRight: 44,
                           borderRadius: 12,
-                          background: '#fff',
+                          background: 'var(--bg-card)',
                           border: focused === 'email' ? '1px solid rgba(220,38,38,0.45)' : '1px solid #d1d5db',
                           boxShadow: focused === 'email' ? '0 0 0 3px rgba(220,38,38,0.09)' : 'none',
-                          color: '#111827', fontSize: 14, outline: 'none',
+                          color: 'var(--text-primary)', fontSize: 14, outline: 'none',
                           transition: 'all 200ms',
                         }}
                       />
@@ -307,7 +307,7 @@ export default function LoginPage() {
                   <div>
                     <label style={{
                       display: 'block', fontSize: 11, fontWeight: 600,
-                      color: '#6b7280', marginBottom: 8,
+                      color: 'var(--text-muted)', marginBottom: 8,
                       letterSpacing: '0.09em', textTransform: 'uppercase',
                     }}>Password</label>
                     <div className="relative">
@@ -324,10 +324,10 @@ export default function LoginPage() {
                           width: '100%', height: 50,
                           paddingLeft: 16, paddingRight: 44,
                           borderRadius: 12,
-                          background: '#fff',
+                          background: 'var(--bg-card)',
                           border: focused === 'password' ? '1px solid rgba(220,38,38,0.45)' : '1px solid #d1d5db',
                           boxShadow: focused === 'password' ? '0 0 0 3px rgba(220,38,38,0.09)' : 'none',
-                          color: '#111827', fontSize: 14, outline: 'none',
+                          color: 'var(--text-primary)', fontSize: 14, outline: 'none',
                           transition: 'all 200ms',
                         }}
                       />
@@ -465,7 +465,7 @@ export default function LoginPage() {
 
               {/* Support link */}
               <div style={{ marginTop: 24, textAlign: 'center' }}>
-                <p style={{ fontSize: 12, color: '#374151', lineHeight: 1.6 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   Having trouble?{' '}
                   <button
                     type="button"
@@ -487,7 +487,7 @@ export default function LoginPage() {
             transition={{ delay: 0.6 }}
             style={{
               marginTop: 28, textAlign: 'center', fontSize: 11,
-              color: '#6b7280', letterSpacing: '0.03em',
+              color: 'var(--text-muted)', letterSpacing: '0.03em',
             }}
           >
             &copy; {new Date().getFullYear()} 619 FITNESS STUDIO. All rights reserved.
