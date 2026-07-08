@@ -329,12 +329,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64 xl:left-72',
             )}
             style={{
-              background: darkMode ? 'rgba(15,23,42,0.90)' : 'rgba(255,255,255,0.88)',
-              borderBottom: darkMode ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)',
+              background: 'var(--topbar-bg)',
+              borderBottom: '1px solid var(--topbar-border)',
               backdropFilter: 'blur(24px) saturate(200%)',
               WebkitBackdropFilter: 'blur(24px) saturate(200%)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
-              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1), background 200ms ease, border-color 200ms ease',
+              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1)',
               willChange: 'transform',
             }}
             animate={{

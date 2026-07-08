@@ -6,6 +6,7 @@ import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import { api } from '@/lib/api';
 import AppShell from '@/components/AppShell';
+import { KpiCard } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import {
   BarChart2, AlertCircle, Users, CalendarCheck,
@@ -45,29 +46,6 @@ const itemVariants = {
 const tableHeadStyle: React.CSSProperties = { padding: '10px 14px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' };
 const tableCellStyle: React.CSSProperties = { padding: '10px 14px', fontSize: 12 };
 
-function KpiCard({ label, value, icon, gradient, sub }: {
-  label: string; value: string; icon?: React.ReactNode; gradient: string; sub?: string
-}) {
-  return (
-    <m.div variants={itemVariants}
-      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative', zIndex: 1 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
-        {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-            {icon}
-          </div>
-        )}
-      </div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, position: 'relative', zIndex: 1 }}>{sub}</div>}
-    </m.div>
-  );
-}
-
-
 function StatusBadge({ status, label }: { status: string; label?: string }) {
   const v = (label || status || '').toLowerCase();
   const config: Record<string, { bg: string; color: string }> = {
@@ -77,7 +55,7 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
     late: { bg: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.06))', color: '#d97706' },
     expired: { bg: 'linear-gradient(135deg, rgba(107,114,128,0.12), rgba(107,114,128,0.06))', color: '#6b7280' },
   };
-  const c = config[v] || { bg: '#f3f4f6', color: '#6b7280' };
+  const c = config[v] || { bg: 'var(--bg-subtle)', color: 'var(--text-muted)' };
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, background: c.bg, color: c.color, border: `1px solid ${c.color}20` }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.color, display: 'inline-block' }} />
@@ -87,7 +65,7 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
 }
 
 function lightBox(extra: React.CSSProperties = {}): React.CSSProperties {
-  return { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden', ...extra };
+  return { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, boxShadow: 'var(--shadow-card)', overflow: 'hidden', ...extra };
 }
 
 function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => void }) {
@@ -124,23 +102,28 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
     a.click();
   }
 
-  if (error) return <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 20 }}>{error} <button onClick={fetchMonthly} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button></div>;
+  if (error) return (
+    <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 20 }}>
+      {error}
+      <button onClick={fetchMonthly} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button>
+    </div>
+  );
 
   return (
     <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <m.div variants={itemVariants} style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={() => setYear(year - 1)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)', color: '#374151', cursor: 'pointer', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#e5e7eb'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.transform = 'scale(1)'; }}>
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)', cursor: 'pointer', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.transform = 'scale(1)'; }}>
             <ChevronLeft size={16} />
           </button>
-          <m.span key={year} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 18, fontWeight: 700, color: '#111827', minWidth: 80, textAlign: 'center' }}>{year}</m.span>
+          <m.span key={year} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', minWidth: 80, textAlign: 'center' }}>{year}</m.span>
           <button onClick={() => setYear(year + 1)} disabled={year >= new Date().getFullYear()}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)', color: year >= new Date().getFullYear() ? '#d1d5db' : '#374151', cursor: year >= new Date().getFullYear() ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
-            onMouseEnter={(e) => { if (year < new Date().getFullYear()) { e.currentTarget.style.background = '#e5e7eb'; e.currentTarget.style.transform = 'scale(1.05)'; }}}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.transform = 'scale(1)'; }}>
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: year >= new Date().getFullYear() ? 'var(--text-disabled)' : 'var(--text-primary)', cursor: year >= new Date().getFullYear() ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+            onMouseEnter={(e) => { if (year < new Date().getFullYear()) { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.transform = 'scale(1.05)'; }}}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.transform = 'scale(1)'; }}>
             <ChevronRight size={16} />
           </button>
         </div>
@@ -153,10 +136,10 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
       </m.div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
-        <KpiCard label={`Total ${year}`} value={fmtAmt(totalRevenue)} icon={<DollarSign size={16} />} gradient="linear-gradient(135deg, #eff6ff, #fff)" />
-        <KpiCard label="Avg / Month" value={fmtAmt(avgMonthly)} icon={<TrendingUp size={16} />} gradient="linear-gradient(135deg, #ecfeff, #fff)" />
-        <KpiCard label="Best Month" value={bestMonth?.month ?? '—'} icon={<BarChart2 size={16} />} gradient="linear-gradient(135deg, #f0fdf4, #fff)" sub={bestMonth ? fmtAmt(bestMonth.revenue) : ''} />
-        <KpiCard label={MONTHS[new Date().getMonth()]} value={fmtAmt(thisMonth?.revenue ?? 0)} icon={<Clock size={16} />} gradient="linear-gradient(135deg, #fffbeb, #fff)" sub={`${thisMonth?.count ?? 0} payments`} />
+        <KpiCard label={`Total ${year}`} value={fmtAmt(totalRevenue)} icon={<DollarSign size={16} />} accent="blue" />
+        <KpiCard label="Avg / Month" value={fmtAmt(avgMonthly)} icon={<TrendingUp size={16} />} accent="cyan" />
+        <KpiCard label="Best Month" value={bestMonth?.month ?? '—'} icon={<BarChart2 size={16} />} accent="emerald" hint={bestMonth ? fmtAmt(bestMonth.revenue) : ''} />
+        <KpiCard label={MONTHS[new Date().getMonth()]} value={fmtAmt(thisMonth?.revenue ?? 0)} icon={<Clock size={16} />} accent="amber" hint={`${thisMonth?.count ?? 0} payments`} />
       </div>
 
       <m.div variants={itemVariants} style={lightBox({ padding: '20px 20px 16px' })}>
@@ -195,7 +178,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
         )}
       </m.div>
 
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: 'var(--bg-card)' }}>
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--bg-card)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -270,22 +253,27 @@ function DuesTab() {
   return (
     <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <m.div variants={itemVariants} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '6px 14px', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-          <Search size={14} color="#9ca3af" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+          <Search size={14} color="var(--text-muted)" />
           <input type="search" placeholder="Search member or phone…" value={search} onChange={(e) => setSearch(e.target.value)}
-            style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 500, outline: 'none', width: 220, padding: '4px 0' }} />
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, outline: 'none', width: 220, padding: '4px 0' }} />
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
           <AlertCircle size={14} color="#dc2626" />
           <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626' }}>Total outstanding: {fmtAmt(totalDues)}</span>
         </div>
       </m.div>
-      {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>{error} <button onClick={fetchDues} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button></div>}
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
+      {error && (
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>
+          {error}
+          <button onClick={fetchDues} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button>
+        </div>
+      )}
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--bg-card)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: 'var(--bg-subtle)' }}>
                 {['Member', 'Phone', 'Trainer', 'Balance Due', 'Expiry', 'Status'].map((h) => (
                   <th key={h} style={{ ...tableHeadStyle }}>{h}</th>
                 ))}
@@ -294,7 +282,7 @@ function DuesTab() {
             <tbody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}><td colSpan={6} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: '#f3f4f6', borderRadius: 6 }} /></td></tr>
+                  <tr key={i}><td colSpan={6} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: 'var(--bg-subtle)', borderRadius: 6 }} /></td></tr>
                 ))
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={6} style={{ padding: 40, textAlign: 'center' }}>
@@ -303,21 +291,21 @@ function DuesTab() {
                       <AlertCircle size={24} color="#34d399" />
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 16, color: '#059669' }}>All Clear!</div>
-                    <div style={{ fontSize: 13, color: '#9ca3af', maxWidth: 300 }}>No pending dues — every member has settled their balances.</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300 }}>No pending dues — every member has settled their balances.</div>
                   </div>
                 </td></tr>
               ) : (
                 filtered.map((d, i) => {
                   const due = Number(d.balance_amount || d.balance_due || 0);
                   return (
-                    <tr key={d.id || i} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
+                    <tr key={d.id || i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                      <td style={{ ...tableCellStyle, fontWeight: 600, color: '#111827' }}>{d.name}</td>
-                      <td style={{ ...tableCellStyle, color: '#6b7280' }}>{d.mobile || d.phone || '—'}</td>
-                      <td style={{ ...tableCellStyle, color: '#6b7280' }}>{d.trainer_name || '—'}</td>
+                      onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
+                      <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{d.name}</td>
+                      <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{d.mobile || d.phone || '—'}</td>
+                      <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{d.trainer_name || '—'}</td>
                       <td style={{ ...tableCellStyle, fontWeight: 700, color: '#dc2626' }}>{fmtAmt(due)}</td>
-                      <td style={{ ...tableCellStyle, color: '#6b7280' }}>{fmtDate(d.pt_end_date || d.expiry_date)}</td>
+                      <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{fmtDate(d.pt_end_date || d.expiry_date)}</td>
                       <td style={tableCellStyle}><StatusBadge status={d.status} /></td>
                     </tr>
                   );
@@ -355,12 +343,17 @@ function TrainerSummaryTab() {
 
   return (
     <m.div variants={containerVariants} initial="hidden" animate="visible">
-      {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 12 }}>{error} <button onClick={fetch_} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button></div>}
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
+      {error && (
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626', marginBottom: 12 }}>
+          {error}
+          <button onClick={fetch_} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', marginLeft: 8, fontWeight: 600 }}>Retry</button>
+        </div>
+      )}
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--bg-card)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: 'var(--bg-subtle)' }}>
                 {['Trainer', 'Active Members', 'Total Members', 'This Month', 'All-time Revenue'].map((h) => (
                   <th key={h} style={{ ...tableHeadStyle }}>{h}</th>
                 ))}
@@ -369,7 +362,7 @@ function TrainerSummaryTab() {
             <tbody>
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}><td colSpan={5} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: '#f3f4f6', borderRadius: 6 }} /></td></tr>
+                  <tr key={i}><td colSpan={5} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: 'var(--bg-subtle)', borderRadius: 6 }} /></td></tr>
                 ))
               ) : trainers.length === 0 ? (
                 <tr><td colSpan={5} style={{ padding: 40, textAlign: 'center' }}>
@@ -377,27 +370,27 @@ function TrainerSummaryTab() {
                     <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.15)' }}>
                       <Users size={24} color="#6366f1" />
                     </div>
-                    <div style={{ fontWeight: 600, fontSize: 16, color: '#374151' }}>No trainer data yet</div>
-                    <div style={{ fontSize: 13, color: '#9ca3af', maxWidth: 300 }}>Trainer summaries will appear here once members are assigned.</div>
+                    <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>No trainer data yet</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300 }}>Trainer summaries will appear here once members are assigned.</div>
                   </div>
                 </td></tr>
               ) : (
                 (trainers ?? []).map((t, i) => (
-                  <tr key={t.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
+                  <tr key={t.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                    <td style={{ ...tableCellStyle, fontWeight: 600, color: '#111827' }}>{t.name}</td>
+                    onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
+                    <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{t.name}</td>
                     <td style={{ ...tableCellStyle, color: '#059669', fontWeight: 600 }}>{t.active_clients}</td>
-                    <td style={{ ...tableCellStyle, color: '#6b7280' }}>{t.total_clients}</td>
+                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{t.total_clients}</td>
                     <td style={{ ...tableCellStyle, fontWeight: 700, color: '#2563eb' }}>{fmtAmt(t.month_revenue)}</td>
-                    <td style={{ ...tableCellStyle, fontWeight: 700, color: '#374151' }}>{fmtAmt(t.total_revenue)}</td>
+                    <td style={{ ...tableCellStyle, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtAmt(t.total_revenue)}</td>
                   </tr>
                 ))
               )}
             </tbody>
             {!loading && trainers.length > 0 && (
               <tfoot>
-                <tr style={{ fontWeight: 700, background: '#f1f5f9', borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                <tr style={{ fontWeight: 700, background: 'var(--bg-subtle)', borderTop: '1px solid var(--border)' }}>
                   <td style={tableCellStyle}>Total</td>
                   <td style={{ ...tableCellStyle, color: '#059669' }}>{totals.active}</td>
                   <td style={tableCellStyle}>{totals.total}</td>
@@ -461,13 +454,13 @@ function StaffTab() {
   return (
     <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <m.div variants={itemVariants} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '6px 14px', border: '1px solid rgba(0,0,0,0.07)' }}>
-          <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>From</span>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: '4px 0', width: 130 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>From</span>
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '4px 0', width: 130 }} />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 10, padding: '6px 14px', border: '1px solid rgba(0,0,0,0.07)' }}>
-          <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>To</span>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 13, fontWeight: 600, outline: 'none', padding: '4px 0', width: 130 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>To</span>
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '4px 0', width: 130 }} />
         </div>
         <Link href="/attendance/staff"
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid rgba(37,99,235,0.2)', color: '#2563eb', fontSize: 12, fontWeight: 600, textDecoration: 'none', marginLeft: 'auto', transition: 'all 0.2s' }}
@@ -480,21 +473,21 @@ function StaffTab() {
       {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>{error}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
-        <KpiCard label="Present" value={String(summary.present)} icon={<UserCheck size={16} />} gradient="linear-gradient(135deg, #f0fdf4, #fff)" />
-        <KpiCard label="Late" value={String(summary.late)} icon={<Clock size={16} />} gradient="linear-gradient(135deg, #fffbeb, #fff)" />
-        <KpiCard label="Absent" value={String(summary.absent)} icon={<AlertCircle size={16} />} gradient="linear-gradient(135deg, #fef2f2, #fff)" />
-        <KpiCard label="Total Marked" value={String(summary.total)} icon={<BarChart2 size={16} />} gradient="linear-gradient(135deg, #ecfeff, #fff)" />
+        <KpiCard label="Present" value={String(summary.present)} icon={<UserCheck size={16} />} accent="emerald" />
+        <KpiCard label="Late" value={String(summary.late)} icon={<Clock size={16} />} accent="amber" />
+        <KpiCard label="Absent" value={String(summary.absent)} icon={<AlertCircle size={16} />} accent="rose" />
+        <KpiCard label="Total Marked" value={String(summary.total)} icon={<BarChart2 size={16} />} accent="cyan" />
       </div>
 
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)', fontWeight: 600, fontSize: 14, color: '#111827', background: '#f8fafc' }}>
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--bg-card)' }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', background: 'var(--bg-subtle)' }}>
           <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)', display: 'inline-block', marginRight: 10, verticalAlign: 'middle' }} />
           Per-Trainer Attendance
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: 'var(--bg-subtle)' }}>
                 {['Trainer', 'Present', 'Late', 'Absent', 'Attendance %', 'Workload'].map((h) => (
                   <th key={h} style={{ ...tableHeadStyle }}>{h}</th>
                 ))}
@@ -503,7 +496,7 @@ function StaffTab() {
             <tbody>
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}><td colSpan={6} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: '#f3f4f6', borderRadius: 6 }} /></td></tr>
+                  <tr key={i}><td colSpan={6} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: 'var(--bg-subtle)', borderRadius: 6 }} /></td></tr>
                 ))
               ) : perStaff.length === 0 ? (
                 <tr><td colSpan={6} style={{ padding: 40, textAlign: 'center' }}>
@@ -511,8 +504,8 @@ function StaffTab() {
                     <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.15)' }}>
                       <CalendarCheck size={24} color="#6366f1" />
                     </div>
-                    <div style={{ fontWeight: 600, fontSize: 16, color: '#374151' }}>No attendance data</div>
-                    <div style={{ fontSize: 13, color: '#9ca3af', maxWidth: 300 }}>Start marking staff attendance to see reports here.</div>
+                    <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>No attendance data</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300 }}>Start marking staff attendance to see reports here.</div>
                   </div>
                 </td></tr>
               ) : (
@@ -521,16 +514,16 @@ function StaffTab() {
                   const pct = total > 0 ? Math.round(((s.present + s.late) / total) * 100) : 0;
                   const pctColor = pct >= 90 ? '#059669' : pct >= 70 ? '#d97706' : '#dc2626';
                   return (
-                    <tr key={s.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
+                    <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                      <td style={{ ...tableCellStyle, fontWeight: 600, color: '#111827' }}>{s.name}</td>
+                      onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
+                      <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</td>
                       <td style={{ ...tableCellStyle, color: '#059669', fontWeight: 600 }}>{s.present}</td>
                       <td style={{ ...tableCellStyle, color: '#d97706' }}>{s.late}</td>
-                      <td style={{ ...tableCellStyle, color: s.absent > 0 ? '#dc2626' : '#6b7280', fontWeight: s.absent > 0 ? 600 : 400 }}>{s.absent}</td>
+                      <td style={{ ...tableCellStyle, color: s.absent > 0 ? '#dc2626' : 'var(--text-muted)', fontWeight: s.absent > 0 ? 600 : 400 }}>{s.absent}</td>
                       <td style={{ ...tableCellStyle, fontWeight: 700, color: pctColor }}>{total > 0 ? `${pct}%` : '—'}</td>
                       <td style={tableCellStyle}>
-                        <div style={{ background: '#e5e7eb', borderRadius: 4, height: 6, overflow: 'hidden' }}>
+                        <div style={{ background: 'var(--bg-subtle)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
                           <div style={{ width: `${pct}%`, height: '100%', background: pctColor, borderRadius: 4, transition: 'width 0.4s' }} />
                         </div>
                       </td>
@@ -543,15 +536,15 @@ function StaffTab() {
         </div>
       </m.div>
 
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(0,0,0,0.07)', fontWeight: 600, fontSize: 14, color: '#111827', background: '#f8fafc' }}>
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--bg-card)' }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', background: 'var(--bg-subtle)' }}>
           <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)', display: 'inline-block', marginRight: 10, verticalAlign: 'middle' }} />
           Recent Staff Check-ins
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: 'var(--bg-subtle)' }}>
                 {['Date', 'Staff', 'Status', 'Check-in', 'Notes'].map((h) => (
                   <th key={h} style={{ ...tableHeadStyle }}>{h}</th>
                 ))}
@@ -562,14 +555,14 @@ function StaffTab() {
                 .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
                 .slice(0, 30)
                 .map((r, i) => (
-                  <tr key={r.id || i} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
+                  <tr key={r.id || i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                    <td style={{ ...tableCellStyle, color: '#6b7280' }}>{fmtDate(r.date)}</td>
-                    <td style={{ ...tableCellStyle, fontWeight: 600, color: '#111827' }}>{r.ref_name || r.trainer_name || '—'}</td>
+                    onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
+                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{fmtDate(r.date)}</td>
+                    <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{r.ref_name || r.trainer_name || '—'}</td>
                     <td style={tableCellStyle}><StatusBadge status={r.status} /></td>
-                    <td style={{ ...tableCellStyle, color: '#6b7280' }}>{r.check_in ?? r.check_in_time ?? '—'}</td>
-                    <td style={{ ...tableCellStyle, color: '#6b7280' }}>{r.notes ?? '—'}</td>
+                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{r.check_in ?? r.check_in_time ?? '—'}</td>
+                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{r.notes ?? '—'}</td>
                   </tr>
                 ))}
             </tbody>
@@ -606,21 +599,21 @@ function ReportsContent() {
 
   return (
     <AppShell title="Reports">
-      <div style={{ background: '#f8fafc', padding: '52px 32px 28px', borderRadius: '0 0 36px 36px', marginBottom: 24 }}>
+      <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 28px', borderRadius: '0 0 36px 36px', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 8px 32px rgba(37,99,235,0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(37,99,235,0.2)' }}>
             <BarChart2 size={24} color="#fff" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Reports Dashboard</h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>Business analytics &amp; insights</p>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Reports Dashboard</h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Business analytics &amp; insights</p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid rgba(0,0,0,0.07)', paddingBottom: 2 }}>
+        <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid var(--border)', paddingBottom: 2 }}>
           {TABS.filter((t) => !t.adminOnly || isAdmin).map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              style={{ padding: '10px 20px', borderRadius: '10px 10px 0 0', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', color: tab === t.key ? '#111827' : '#6b7280', background: tab === t.key ? 'rgba(37,99,235,0.08)' : 'transparent', transition: 'all 0.25s', position: 'relative', letterSpacing: '0.3px' }}>
+              style={{ padding: '10px 20px', borderRadius: '10px 10px 0 0', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', color: tab === t.key ? 'var(--text-primary)' : 'var(--text-muted)', background: tab === t.key ? 'rgba(37,99,235,0.08)' : 'transparent', transition: 'all 0.25s', position: 'relative', letterSpacing: '0.3px' }}>
               {tab === t.key && (
                 <div style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 3, borderRadius: '3px 3px 0 0', background: 'linear-gradient(90deg, #6366f1, #2563eb)' }} />
               )}

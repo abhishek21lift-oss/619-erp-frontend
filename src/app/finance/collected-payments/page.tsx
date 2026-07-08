@@ -7,7 +7,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
-import { PremiumButton } from '@/components/premium/PremiumButton';
+import { Button } from '@/components/ui';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
   Smartphone, CreditCard, Receipt, CalendarDays, RefreshCw, Inbox,
@@ -152,12 +152,12 @@ function Inner() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <PremiumButton tone="secondary" size="sm" icon={<RefreshCw size={13} />} onClick={fetchPayments}>
+                <Button variant="outline" size="sm" iconLeft={<RefreshCw size={13} />} onClick={fetchPayments}>
                   Refresh
-                </PremiumButton>
-                <PremiumButton tone="primary" glow size="sm" icon={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
+                </Button>
+                <Button variant="primary" size="sm" iconLeft={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
                   + Record Payment
-                </PremiumButton>
+                </Button>
               </div>
             </div>
 
@@ -346,9 +346,9 @@ function Inner() {
                             <div style={{ fontSize: 13, color: '#6b7280' }}>{search ? 'Try a different search term.' : 'No payments yet. Record your first PT payment to get started.'}</div>
                           </div>
                           {!search && (
-                            <PremiumButton tone="primary" glow size="sm" icon={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
+                            <Button variant="primary" size="sm" iconLeft={<Banknote size={13} />} onClick={() => router.push('/finance/record-payment')}>
                               + Record Payment
-                            </PremiumButton>
+                            </Button>
                           )}
                         </div>
                       </td>

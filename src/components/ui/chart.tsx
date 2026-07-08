@@ -174,7 +174,7 @@ export { Legend as ChartLegend } from 'recharts';
 const TICK_STYLE = {
   fontSize: 10,
   fontWeight: 600 as const,
-  fill: '#9ca3af',
+  fill: 'var(--text-muted)',
 };
 
 function PremiumTooltipBox({ active, payload, label, formatValue }: {
@@ -253,7 +253,7 @@ export function PremiumBarChart({
               );
             })}
           </defs>
-          <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.05)" />
+          <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey={xKey}
             tickLine={false}
@@ -271,7 +271,7 @@ export function PremiumBarChart({
             width={44}
           />
           <Tooltip
-            cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+            cursor={{ fill: 'var(--bg-subtle)' }}
             content={(props: TooltipProps<number, string>) => (
               <PremiumTooltipBox
                 active={props.active}
@@ -339,7 +339,7 @@ export function PremiumAreaChart({
               );
             })}
           </defs>
-          <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.05)" />
+          <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey={xKey}
             tickLine={false}
@@ -357,7 +357,7 @@ export function PremiumAreaChart({
             width={44}
           />
           <Tooltip
-            cursor={{ stroke: 'rgba(0,0,0,0.07)', strokeWidth: 1 }}
+            cursor={{ stroke: 'var(--border)', strokeWidth: 1 }}
             content={(props: TooltipProps<number, string>) => (
               <PremiumTooltipBox
                 active={props.active}
