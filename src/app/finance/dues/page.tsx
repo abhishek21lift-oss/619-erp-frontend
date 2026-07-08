@@ -107,7 +107,7 @@ function Inner() {
               <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#111827' }}>Pending Dues</h1>
             </div>
             <h2 style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1.5px', margin: '0 0 4px' }}>Total Outstanding Amount</h2>
-            <div style={{ fontSize: 44, fontWeight: 900, color: '#111827', letterSpacing: '-0.03em', lineHeight: 1 }}>{fmtCompact(total)}</div>
+            <div style={{ fontSize: 'clamp(28px, 8vw, 44px)', fontWeight: 900, color: '#111827', letterSpacing: '-0.03em', lineHeight: 1 }}>{fmtCompact(total)}</div>
             <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0' }}>{filtered.length} member{filtered.length !== 1 ? 's' : ''} with pending dues</p>
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

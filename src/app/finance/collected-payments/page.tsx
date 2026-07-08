@@ -137,7 +137,7 @@ function Inner() {
                 </div>
                 <div>
                   <h1 style={{
-                    fontSize: 28,
+                    fontSize: 'clamp(20px, 4vw, 28px)',
                     fontWeight: 700,
                     letterSpacing: '-0.03em',
                     margin: 0,

@@ -81,7 +81,7 @@ function Inner() {
               <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(139,92,246,0.4)' }}>
                 <TrendingUp size={20} color="white" />
               </div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#111827' }}>Projected Revenue (estimate)</h1>
+              <h1 style={{ fontSize: 'clamp(16px, 3.5vw, 26px)', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#111827' }}>Projected Revenue (estimate)</h1>
             </div>
             <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>Projected vs actual revenue &middot; {year} full year view</p>
           </div>

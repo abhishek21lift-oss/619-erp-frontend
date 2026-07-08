@@ -45,7 +45,7 @@ function StatCard({ label, value, sub, icon: Icon, color }: {
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
             {label}
           </div>
-          <div style={{ fontSize: 36, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
           {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>{sub}</div>}
         </div>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color }}>
@@ -100,7 +100,7 @@ export default function DashboardPage() {
       <AppShell>
         {/* Hero */}
         <div style={{ background: '#f8fafc', borderRadius: 16, padding: '20px 24px', marginBottom: 20, border: '1px solid rgba(0,0,0,0.07)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Activity size={22} color="#fff" />
@@ -148,30 +148,34 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Clock size={14} color="#6366f1" /> Hourly Check-in Distribution — Today
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80 }}>
-                  {Array.from({ length: 24 }, (_, h) => {
-                    const count = hourMap[h] || 0;
-                    const pct   = count / maxHour;
-                    const isNow = new Date().getHours() === h;
-                    return (
-                      <div key={h} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }} title={`${HOUR_LABELS[h]}: ${count} check-ins`}>
-                        <div style={{ fontSize: 9, color: count > 0 ? '#6366f1' : 'var(--text-disabled)', fontWeight: count > 0 ? 700 : 400 }}>{count || ''}</div>
-                        <div style={{
-                          width: '100%',
-                          background: count > 0 ? `rgba(99,102,241,${0.15 + pct * 0.85})` : 'var(--bg-subtle)',
-                          borderRadius: 3,
-                          height: Math.max(4, pct * 60),
-                          border: isNow ? '1px solid #6366f1' : 'none',
-                          transition: 'height 0.4s ease',
-                        }} />
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                  {[0, 6, 12, 18, 23].map((h) => (
-                    <span key={h} style={{ fontSize: 9, color: 'var(--text-disabled)' }}>{HOUR_LABELS[h]}</span>
-                  ))}
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <div style={{ minWidth: 420 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80 }}>
+                      {Array.from({ length: 24 }, (_, h) => {
+                        const count = hourMap[h] || 0;
+                        const pct   = count / maxHour;
+                        const isNow = new Date().getHours() === h;
+                        return (
+                          <div key={h} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }} title={`${HOUR_LABELS[h]}: ${count} check-ins`}>
+                            <div style={{ fontSize: 9, color: count > 0 ? '#6366f1' : 'var(--text-disabled)', fontWeight: count > 0 ? 700 : 400 }}>{count || ''}</div>
+                            <div style={{
+                              width: '100%',
+                              background: count > 0 ? `rgba(99,102,241,${0.15 + pct * 0.85})` : 'var(--bg-subtle)',
+                              borderRadius: 3,
+                              height: Math.max(4, pct * 60),
+                              border: isNow ? '1px solid #6366f1' : 'none',
+                              transition: 'height 0.4s ease',
+                            }} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                      {[0, 6, 12, 18, 23].map((h) => (
+                        <span key={h} style={{ fontSize: 9, color: 'var(--text-disabled)' }}>{HOUR_LABELS[h]}</span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
