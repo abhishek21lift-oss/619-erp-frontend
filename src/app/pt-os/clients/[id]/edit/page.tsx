@@ -43,8 +43,8 @@ function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
       animate={{ opacity: 1, y: 0 }}
       className="rounded-[20px] p-6"
       style={{
-        background: '#fff',
-        border: '1px solid rgba(0,0,0,0.07)',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
         boxShadow: '0 2px 16px rgba(15,23,42,0.05)',
       }}
     >
@@ -53,7 +53,7 @@ function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
           style={{ background: `${accent}14` }}>
           <span style={{ color: accent }}>{icon}</span>
         </div>
-        <h2 className="text-[15px] font-[720]" style={{ color: '#111827' }}>{title}</h2>
+        <h2 className="text-[15px] font-[720]" style={{ color: 'var(--text-primary)' }}>{title}</h2>
       </div>
       {children}
     </m.div>
@@ -63,8 +63,8 @@ function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
 function ReadOnlyField({ label, value, highlight }: { label: string; value: string; highlight?: 'green' | 'red' | 'amber' }) {
   const color = highlight === 'green' ? '#10b981' : highlight === 'red' ? '#ef4444' : highlight === 'amber' ? '#f59e0b' : '#111827';
   return (
-    <div className="rounded-[13px] px-4 py-3" style={{ background: '#F9FAFB', border: '1.5px solid #e5e7eb' }}>
-      <p className="text-[10.5px] font-[600] uppercase tracking-wider mb-0.5" style={{ color: '#6b7280' }}>{label}</p>
+    <div className="rounded-[13px] px-4 py-3" style={{ background: 'var(--bg-subtle)', border: '1.5px solid var(--border)' }}>
+      <p className="text-[10.5px] font-[600] uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
       <p className="text-[14px] font-[700]" style={{ color }}>{value}</p>
     </div>
   );
@@ -243,8 +243,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       <Guard>
         <AppShell>
           <div className="animate-pulse space-y-6 p-6 max-w-3xl mx-auto">
-            <div className="h-16 rounded-[20px]" style={{ background: '#f1f5f9' }} />
-            {[1,2,3].map(i => <div key={i} className="h-48 rounded-[20px]" style={{ background: '#f1f5f9' }} />)}
+            <div className="h-16 rounded-[20px]" style={{ background: 'var(--bg-subtle)' }} />
+            {[1,2,3].map(i => <div key={i} className="h-48 rounded-[20px]" style={{ background: 'var(--bg-subtle)' }} />)}
           </div>
         </AppShell>
       </Guard>
@@ -263,14 +263,14 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-center gap-3">
                 <button onClick={() => router.push(`/pt-os/clients/${id}`)}
                   className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-zinc-50"
-                  style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
-                  <ArrowLeft size={15} style={{ color: '#9ca3af' }} />
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <ArrowLeft size={15} style={{ color: 'var(--text-disabled)' }} />
                 </button>
                 <div>
-                  <h1 className="text-[20px] font-[780] tracking-[-0.02em]" style={{ color: '#111827' }}>
+                  <h1 className="text-[20px] font-[780] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
                     Edit Client
                   </h1>
-                  <p className="text-[12px]" style={{ color: '#6b7280' }}>All changes auto-save on submit</p>
+                  <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>All changes auto-save on submit</p>
                 </div>
               </div>
               <Button variant="primary" iconLeft={<Save size={14} />} onClick={handleSave} loading={saving}>
@@ -285,14 +285,14 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 <FloatInput label="Phone Number" type="tel" value={form.mobile} onChange={set('mobile')} />
                 <FloatInput label="Email Address" type="email" value={form.email} onChange={set('email')} />
                 <div>
-                  <label className="block text-[11px] font-[600] mb-2" style={{ color: '#9ca3af' }}>Gender</label>
+                  <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>Gender</label>
                   <select
                     value={form.gender}
                     onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}
                     className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
                     style={{
-                      background: '#fff', color: form.gender ? '#111827' : '#6b7280',
-                      border: '1.5px solid #d1d5db',
+                      background: 'var(--bg-card)', color: form.gender ? '#111827' : '#6b7280',
+                      border: '1.5px solid var(--border)',
                     }}>
                     <option value="">Select gender</option>
                     <option value="Male">Male</option>
@@ -309,12 +309,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   <FloatInput label="Emergency Contact" type="tel" value={form.emergency_contact} onChange={set('emergency_contact')} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-[600] mb-2" style={{ color: '#9ca3af' }}>Status</label>
+                  <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>Status</label>
                   <select
                     value={form.status}
                     onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
                     className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
-                    style={{ background: '#fff', color: '#111827', border: '1.5px solid #d1d5db' }}>
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1.5px solid var(--border)' }}>
                     <option value="active">Active</option>
                     <option value="expired">Expired</option>
                     <option value="frozen">Frozen</option>
@@ -330,7 +330,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
                 {/* Trainer dropdown */}
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-[600] mb-2" style={{ color: '#9ca3af' }}>
+                  <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>
                     Trainer
                   </label>
                   <select
@@ -341,7 +341,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                       setForm(p => ({ ...p, trainer_id: tid, trainer_name: t?.name ?? p.trainer_name }));
                     }}
                     className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
-                    style={{ background: '#fff', color: form.trainer_id ? '#111827' : '#6b7280', border: '1.5px solid #d1d5db' }}>
+                    style={{ background: 'var(--bg-card)', color: form.trainer_id ? '#111827' : '#6b7280', border: '1.5px solid var(--border)' }}>
                     <option value="">Select trainer…</option>
                     {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
@@ -353,14 +353,14 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
                 {/* Plan selector — drives base_amount, duration_months, end_date, monthly fee */}
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-[600] mb-2" style={{ color: '#9ca3af' }}>
-                    Subscription Plan <span className="text-[10px] font-[400]" style={{ color: '#6b7280' }}>— auto-fills duration &amp; base amount</span>
+                  <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>
+                    Subscription Plan <span className="text-[10px] font-[400]" style={{ color: 'var(--text-muted)' }}>— auto-fills duration &amp; base amount</span>
                   </label>
                   <select
                     value={selectedPlanId}
                     onChange={e => handlePlanChange(e.target.value)}
                     className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
-                    style={{ background: '#fff', color: selectedPlanId ? '#111827' : '#6b7280', border: '1.5px solid #d1d5db' }}>
+                    style={{ background: 'var(--bg-card)', color: selectedPlanId ? '#111827' : '#6b7280', border: '1.5px solid var(--border)' }}>
                     <option value="">Select plan to auto-fill…</option>
                     {plans.map(p => (
                       <option key={p.id} value={p.id}>{p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo</option>
@@ -471,7 +471,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <div className="mt-4 flex items-start gap-2 rounded-[10px] px-3.5 py-2.5"
                 style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}>
                 <Info size={12} style={{ color: '#6366f1', marginTop: 2, flexShrink: 0 }} />
-                <p className="text-[11.5px] leading-relaxed" style={{ color: '#9ca3af' }}>
+                <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-disabled)' }}>
                   Discount = Base − Final. Balance = Final − Paid. Monthly Fee = Final ÷ Duration. These recalculate automatically as you type.
                 </p>
               </div>
@@ -500,10 +500,10 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             {/* ── Save footer ── */}
             <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="flex items-center justify-between rounded-[16px] px-5 py-4"
-              style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(15,23,42,0.04)' }}>
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(15,23,42,0.04)' }}>
               <div className="flex items-center gap-2">
                 <CheckCircle size={15} style={{ color: '#10b981' }} />
-                <span className="text-[12.5px] font-[550]" style={{ color: '#9ca3af' }}>
+                <span className="text-[12.5px] font-[550]" style={{ color: 'var(--text-disabled)' }}>
                   Review all fields before saving
                 </span>
               </div>

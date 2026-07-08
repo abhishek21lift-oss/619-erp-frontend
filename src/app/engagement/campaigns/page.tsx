@@ -66,14 +66,14 @@ function CampaignContent() {
   const convRate = totalSent > 0 ? ((totalConv / totalSent) * 100).toFixed(1) : '0';
   const kpiVals = [active, totalSent, totalConv, convRate + '%'];
 
-  const inp = { width: '100%', border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: '#111827', background: '#f9fafb', outline: 'none', fontFamily: 'inherit' } as const;
+  const inp = { width: '100%', border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-subtle)', outline: 'none', fontFamily: 'inherit' } as const;
 
   return (
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         {/* ── HERO ── */}
         <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: '#f8fafc', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 44px', marginBottom: 28, background: 'var(--bg-subtle)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
           <div style={{ position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
@@ -83,8 +83,8 @@ function CampaignContent() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#111827', margin: '0 0 8px' }}>Campaigns</h1>
-                <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: '#6b7280' }}>Plan, launch &amp; track multi-channel marketing campaigns.</p>
+                <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: 'var(--text-primary)', margin: '0 0 8px' }}>Campaigns</h1>
+                <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>Plan, launch &amp; track multi-channel marketing campaigns.</p>
               </div>
               <button onClick={() => setShowForm(v => !v)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
@@ -103,10 +103,10 @@ function CampaignContent() {
           style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
           {KPIS.map((k, i) => (
             <m.div key={k.label} variants={itemVariants}
-              style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '22px 24px', background: k.bg, border: `1px solid ${k.color}22`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'default' }}>
+              style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '22px 24px', background: k.bg, border: `1px solid ${k.color}22`, boxShadow: 'var(--shadow-xs)', cursor: 'default' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${k.color}18` }}>{k.icon}</div>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280' }}>{k.label}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{k.label}</span>
               </div>
               <div style={{ fontSize: 30, fontWeight: 800, color: k.color, lineHeight: 1.2, letterSpacing: '-0.02em' }}>{loading ? '—' : kpiVals[i]}</div>
             </m.div>
@@ -116,8 +116,8 @@ function CampaignContent() {
         {/* ── CREATE FORM ── */}
         {showForm && (
           <m.div initial={{ opacity: 0, y: -10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-            style={{ borderRadius: 20, background: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: 24, marginBottom: 22 }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: '#111827', display: 'flex', gap: 8, alignItems: 'center' }}><TrendingUp size={16} color="#a855f7" /> Create Campaign</h3>
+            style={{ borderRadius: 20, background: '#ffffff', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: 24, marginBottom: 22 }}>
+            <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', gap: 8, alignItems: 'center' }}><TrendingUp size={16} color="#a855f7" /> Create Campaign</h3>
             <form onSubmit={addCampaign} style={{ display: 'grid', gap: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 {[
@@ -125,32 +125,32 @@ function CampaignContent() {
                   { label: 'Goal', key: 'goal', type: 'text', placeholder: 'e.g. Increase renewals by 20%' },
                 ].map(fd => (
                   <label key={fd.key} style={{ display: 'grid', gap: 5 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#374151' }}>{fd.label}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>{fd.label}</span>
                     <input value={(form as any)[fd.key]} onChange={e => setForm(f => ({ ...f, [fd.key]: e.target.value }))} placeholder={fd.placeholder} required={fd.key === 'name'} style={inp} />
                   </label>
                 ))}
                 <label style={{ display: 'grid', gap: 5 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#374151' }}>Channel</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>Channel</span>
                   <select value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value }))} style={inp}>
                     {CHANNELS.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </label>
                 <label style={{ display: 'grid', gap: 5 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#374151' }}>Target Audience</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>Target Audience</span>
                   <input value={form.audience} onChange={e => setForm(f => ({ ...f, audience: e.target.value }))} placeholder="e.g. Expiring This Month" style={inp} />
                 </label>
                 <label style={{ display: 'grid', gap: 5 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#374151' }}>Start Date</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>Start Date</span>
                   <input type="date" value={form.start} onChange={e => setForm(f => ({ ...f, start: e.target.value }))} style={inp} />
                 </label>
                 <label style={{ display: 'grid', gap: 5 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#374151' }}>End Date</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-secondary)' }}>End Date</span>
                   <input type="date" value={form.end} onChange={e => setForm(f => ({ ...f, end: e.target.value }))} style={inp} />
                 </label>
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowForm(false)}
-                  style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, border: '1px solid #d1d5db', background: 'transparent', color: '#6b7280', cursor: 'pointer' }}>Cancel</button>
+                  style={{ fontSize: 12, fontWeight: 700, padding: '8px 18px', borderRadius: 10, border: '1px solid #d1d5db', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={saving}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '8px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, boxShadow: '0 4px 16px rgba(139,92,246,0.35)' }}>
                   {saving ? <><Loader2 size={13} /> Creating…</> : <><Plus size={13} /> Create Campaign</>}
@@ -171,7 +171,7 @@ function CampaignContent() {
               const sc = STATUS_COLOR[c.status] || '#94a3b8';
               return (
                 <m.div key={c.id} variants={itemVariants}
-                  style={{ borderRadius: 20, background: '#ffffff', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden', transition: 'all 0.2s ease' }}
+                  style={{ borderRadius: 20, background: '#ffffff', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', overflow: 'hidden', transition: 'all 0.2s ease' }}
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
                   <div style={{ height: 4, background: `linear-gradient(90deg, ${sc}, ${sc}bb)` }} />
@@ -179,12 +179,12 @@ function CampaignContent() {
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5, flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>{c.name}</span>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>{c.name}</span>
                           <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: `${sc}18`, color: sc, textTransform: 'capitalize' }}>{c.status}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' }}>{c.channel}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>{c.channel}</span>
                         </div>
-                        {c.goal && <p style={{ margin: '0 0 4px', fontSize: 13, color: '#374151' }}>🎯 {c.goal}</p>}
-                        {c.audience && <p style={{ margin: 0, fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}><Users size={11}/>{c.audience}</p>}
+                        {c.goal && <p style={{ margin: '0 0 4px', fontSize: 13, color: 'var(--text-secondary)' }}>🎯 {c.goal}</p>}
+                        {c.audience && <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}><Users size={11}/>{c.audience}</p>}
                       </div>
                       <button onClick={() => deleteCampaign(c.id)}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.08)', color: '#dc2626', cursor: 'pointer' }}>
@@ -192,21 +192,21 @@ function CampaignContent() {
                       </button>
                     </div>
                     {c.start && (
-                      <div style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4, marginBottom: c.sent > 0 ? 12 : 0 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, marginBottom: c.sent > 0 ? 12 : 0 }}>
                         <Calendar size={11}/> {c.start}{c.end ? ` → ${c.end}` : ''}
                       </div>
                     )}
                     {c.sent > 0 && (
-                      <div style={{ paddingTop: 12, borderTop: '1px solid #f3f4f6', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+                      <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
                         {[
-                          { label: 'Sent', value: c.sent, color: '#6b7280' },
+                          { label: 'Sent', value: c.sent, color: 'var(--text-muted)' },
                           { label: 'Opened', value: c.opened, color: '#3b82f6' },
                           { label: 'Open Rate', value: openRate + '%', color: '#d97706' },
                           { label: 'Converted', value: `${c.converted} (${convR}%)`, color: '#16a34a' },
                         ].map(m => (
                           <div key={m.label} style={{ textAlign: 'center' }}>
                             <div style={{ fontSize: 18, fontWeight: 800, color: m.color }}>{m.value}</div>
-                            <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{m.label}</div>
+                            <div style={{ fontSize: 10, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{m.label}</div>
                           </div>
                         ))}
                       </div>
@@ -216,10 +216,10 @@ function CampaignContent() {
               );
             })}
             {campaigns.length === 0 && (
-              <div style={{ padding: '64px 20px', textAlign: 'center', background: '#ffffff', borderRadius: 20, border: '1px solid #e5e7eb' }}>
+              <div style={{ padding: '64px 20px', textAlign: 'center', background: '#ffffff', borderRadius: 20, border: '1px solid var(--border)' }}>
                 <Send size={36} color="#d1d5db" style={{ marginBottom: 14 }} />
-                <p style={{ fontSize: 15, fontWeight: 700, color: '#374151', margin: 0 }}>No campaigns yet</p>
-                <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Click "New Campaign" to launch your first campaign.</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', margin: 0 }}>No campaigns yet</p>
+                <p style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 4 }}>Click "New Campaign" to launch your first campaign.</p>
               </div>
             )}
           </m.div>

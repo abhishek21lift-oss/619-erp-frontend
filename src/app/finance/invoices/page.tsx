@@ -127,27 +127,27 @@ function SkeletonCard() {
         gap: '16px',
         borderRadius: '18px',
         padding: '16px 20px',
-        background: 'white',
-        border: '1px solid #f1f5f9',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
         boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-        <m.div animate={pulse} transition={pulseTrans} style={{ height: '36px', width: '36px', flexShrink: 0, borderRadius: '10px', background: '#f1f5f9' }} />
+        <m.div animate={pulse} transition={pulseTrans} style={{ height: '36px', width: '36px', flexShrink: 0, borderRadius: '10px', background: 'var(--bg-subtle)' }} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <m.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '176px', borderRadius: '9999px', background: '#f1f5f9' }} />
-          <m.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '256px', borderRadius: '9999px', background: '#f1f5f9' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '176px', borderRadius: '9999px', background: 'var(--bg-subtle)' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '256px', borderRadius: '9999px', background: 'var(--bg-subtle)' }} />
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'right' }}>
-          <m.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '80px', borderRadius: '9999px', background: '#f1f5f9', marginLeft: 'auto' }} />
-          <m.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '64px', borderRadius: '9999px', background: '#f1f5f9', marginLeft: 'auto' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '16px', width: '80px', borderRadius: '9999px', background: 'var(--bg-subtle)', marginLeft: 'auto' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '12px', width: '64px', borderRadius: '9999px', background: 'var(--bg-subtle)', marginLeft: 'auto' }} />
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
-          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
-          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
-          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: '#f1f5f9' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: 'var(--bg-subtle)' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: 'var(--bg-subtle)' }} />
+          <m.div animate={pulse} transition={pulseTrans} style={{ height: '32px', width: '32px', borderRadius: '10px', background: 'var(--bg-subtle)' }} />
         </div>
       </div>
     </m.div>
@@ -277,7 +277,7 @@ export default function InvoicesPage() {
           <div style={{
             position: 'relative',
             overflow: 'hidden',
-            borderBottom: '1px solid rgba(0,0,0,0.07)',
+            borderBottom: '1px solid var(--border)',
           }}>
 
             <div style={{
@@ -315,10 +315,10 @@ export default function InvoicesPage() {
                       fontWeight: 860,
                       letterSpacing: '-0.03em',
                       margin: 0,
-                      color: '#111827',
+                      color: 'var(--text-primary)',
                     }}>Invoices</h1>
                   </div>
-                  <p style={{ marginTop: '6px', fontSize: '13px', color: '#6b7280' }}>
+                  <p style={{ marginTop: '6px', fontSize: '13px', color: 'var(--text-muted)' }}>
                     Manage billing, track payments, and send invoices.
                   </p>
                   <div style={{
@@ -327,7 +327,7 @@ export default function InvoicesPage() {
                     alignItems: 'center',
                     gap: '8px',
                     fontSize: '12px',
-                    color: '#9ca3af',
+                    color: 'var(--text-disabled)',
                   }}>
                     <span>Finance</span>
                     <ChevronDown size={10} style={{ transform: 'rotate(-90deg)' }} />
@@ -353,7 +353,7 @@ export default function InvoicesPage() {
                       <div style={{
                         fontSize: '11px',
                         fontWeight: 600,
-                        color: '#6b7280',
+                        color: 'var(--text-muted)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                       }}>Overdue</div>
@@ -369,7 +369,7 @@ export default function InvoicesPage() {
                       <div style={{
                         fontSize: '11px',
                         fontWeight: 600,
-                        color: '#6b7280',
+                        color: 'var(--text-muted)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                       }}>Pending</div>
@@ -414,8 +414,8 @@ export default function InvoicesPage() {
               marginBottom: '20px',
               padding: isSm ? '6px 8px' : '6px',
               borderRadius: '16px',
-              background: 'white',
-              border: '1px solid #f1f5f9',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
               boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
             }}>
               <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -463,7 +463,7 @@ export default function InvoicesPage() {
                   gap: '8px',
                   padding: '10px 14px',
                   borderRadius: '13px',
-                  background: '#fafafa',
+                  background: 'var(--bg-subtle)',
                   border: '1.5px solid #e2e8f0',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
                 }}>
@@ -652,7 +652,7 @@ export default function InvoicesPage() {
                     value={createForm[key]}
                     onChange={e => setCreateForm(f => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: '#f8fafc', boxSizing: 'border-box' }}
+                    style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: 'var(--bg-subtle)', boxSizing: 'border-box' }}
                   />
                 </div>
               ))}
@@ -661,7 +661,7 @@ export default function InvoicesPage() {
                 <select
                   value={createForm.paymentMethod}
                   onChange={e => setCreateForm(f => ({ ...f, paymentMethod: e.target.value as PaymentMethod }))}
-                  style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: '#f8fafc' }}
+                  style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', fontSize: 14, outline: 'none', background: 'var(--bg-subtle)' }}
                 >
                   {Object.entries(PAYMENT_ICONS).map(([k, v]) => (
                     <option key={k} value={k}>{v.label}</option>
@@ -687,7 +687,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
     paid: { color: '#059669', bg: 'rgba(5,150,105,0.08)', dot: '#10b981' },
     pending: { color: '#d97706', bg: 'rgba(217,119,6,0.08)', dot: '#f59e0b' },
     overdue: { color: '#dc2626', bg: 'rgba(220,38,38,0.08)', dot: '#ef4444' },
-    draft: { color: '#6b7280', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
+    draft: { color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
     cancelled: { color: 'rgba(148,163,184,0.6)', bg: 'rgba(148,163,184,0.12)', dot: '#cbd5e1' },
   };
 
@@ -706,8 +706,8 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
         gap: '16px',
         borderRadius: '18px',
         padding: '16px 20px',
-        background: 'white',
-        border: '1px solid #f1f5f9',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
         boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
         position: 'relative',
         transition: 'all 0.2s ease',
@@ -731,7 +731,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
               fontSize: '14px',
               fontWeight: 720,
               letterSpacing: '-0.01em',
-              color: '#0f172a',
+              color: 'var(--text-primary)',
             }}>{invoice.memberName}</p>
             <span style={{
               fontSize: '11px',
@@ -788,7 +788,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
             fontSize: '16px',
             fontWeight: 780,
             letterSpacing: '-0.02em',
-            color: '#0f172a',
+            color: 'var(--text-primary)',
           }}>{fmtCurrency(invoice.amount)}</p>
           <p style={{
             fontSize: '11px',
@@ -810,7 +810,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
               borderRadius: '10px',
               border: 'none',
               cursor: 'pointer',
-              background: '#f1f5f9',
+              background: 'var(--bg-subtle)',
             }}
             title="View Invoice"
           >
@@ -829,7 +829,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
               borderRadius: '10px',
               border: 'none',
               cursor: 'pointer',
-              background: '#f1f5f9',
+              background: 'var(--bg-subtle)',
             }}
             title="Download PDF"
           >
@@ -849,7 +849,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
                 borderRadius: '10px',
                 border: 'none',
                 cursor: 'pointer',
-                background: '#f1f5f9',
+                background: 'var(--bg-subtle)',
               }}
             >
               <MoreHorizontal size={14} style={{ color: 'rgba(100,116,139,0.7)' }} />
@@ -870,8 +870,8 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
                     overflow: 'hidden',
                     borderRadius: '14px',
                     padding: '4px',
-                    background: '#fff',
-                    border: '1px solid rgba(0,0,0,0.07)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
                     boxShadow: '0 12px 32px rgba(15,23,42,0.14)',
                   }}
                 >
@@ -953,7 +953,7 @@ function InvoiceDetail({ invoice, onDownload, onRemind, onMarkPaid }: { invoice:
               marginTop: '6px',
               fontSize: '15px',
               fontWeight: 720,
-              color: '#0f172a',
+              color: 'var(--text-primary)',
             }}>{field.value}</p>
           </div>
         ))}

@@ -17,7 +17,7 @@ const FAQS = [
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
-const lightCard: React.CSSProperties = { background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' };
+const lightCard: React.CSSProperties = { background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' };
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -41,16 +41,16 @@ export default function HelpPage() {
               borderRadius: 24, padding: '32px 36px',
               display: 'flex', alignItems: 'center', gap: 20,
               background: 'linear-gradient(135deg, #eff6ff, #f5f3ff, #f8fafc)',
-              border: '1px solid rgba(0,0,0,0.07)',
-              boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
             <div style={{ position: 'relative', zIndex: 1, width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(99,102,241,0.3)' }}>
               <HelpCircle size={26} color="#fff" />
             </div>
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: '#111827', margin: 0 }}>Help &amp; Support</h1>
-              <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>Find answers to common questions</p>
+              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: 0 }}>Help &amp; Support</h1>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Find answers to common questions</p>
             </div>
           </m.div>
 
@@ -62,7 +62,7 @@ export default function HelpPage() {
               type="text" placeholder="Search FAQs…" value={search} onChange={(e) => { setOpenIdx(null); setSearch(e.target.value); }}
               style={{
                 flex: 1, border: 'none', outline: 'none', padding: '12px 0',
-                background: 'transparent', color: '#111827', fontSize: 13,
+                background: 'transparent', color: 'var(--text-primary)', fontSize: 13,
               }}
             />
           </m.div>
@@ -73,8 +73,8 @@ export default function HelpPage() {
               <m.div key={i} variants={itemVariants}
                 style={{
                   borderRadius: 16, overflow: 'hidden',
-                  background: '#fff',
-                  border: '1px solid rgba(0,0,0,0.07)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                   borderLeft: `3px solid ${openIdx === i ? '#6366f1' : 'rgba(0,0,0,0.07)'}`,
                   transition: 'border-color 0.25s',
@@ -87,7 +87,7 @@ export default function HelpPage() {
                     padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                 >
-                  <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{faq.q}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)' }}>{faq.q}</span>
                   <m.span
                     animate={{ rotate: openIdx === i ? 180 : 0 }}
                     transition={{ duration: 0.25 }}
@@ -108,7 +108,7 @@ export default function HelpPage() {
                     >
                       <div style={{
                         padding: '0 20px 16px', fontSize: 13,
-                        color: '#6b7280', lineHeight: 1.7,
+                        color: 'var(--text-muted)', lineHeight: 1.7,
                         borderTop: '1px solid rgba(0,0,0,0.06)',
                       }}>
                         {faq.a}
@@ -120,7 +120,7 @@ export default function HelpPage() {
             ))}
             {filtered.length === 0 && (
               <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: '#9ca3af' }}>
+                style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: 'var(--text-disabled)' }}>
                 No results found.
               </m.p>
             )}
@@ -132,14 +132,14 @@ export default function HelpPage() {
             <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.12)', marginBottom: 16 }}>
               <HelpCircle size={22} color="#6366f1" />
             </div>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: 0 }}>Still need help?</p>
-            <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 20px' }}>Reach out to our support team</p>
+            <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Still need help?</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 20px' }}>Reach out to our support team</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <a href="mailto:support@619fitness.com"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-                  borderRadius: 16, background: '#f9fafb',
-                  border: '1px solid rgba(0,0,0,0.07)', textDecoration: 'none',
+                  borderRadius: 16, background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
                 onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
@@ -151,15 +151,15 @@ export default function HelpPage() {
                   <Mail size={18} color="#6366f1" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>Email Support</p>
-                  <p style={{ fontSize: 11.5, color: '#6b7280', margin: '1px 0 0' }}>support@619fitness.com</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Email Support</p>
+                  <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '1px 0 0' }}>support@619fitness.com</p>
                 </div>
               </a>
               <a href={`tel:${process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+918756562188'}`}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-                  borderRadius: 16, background: '#f9fafb',
-                  border: '1px solid rgba(0,0,0,0.07)', textDecoration: 'none',
+                  borderRadius: 16, background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
                 onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
@@ -171,15 +171,15 @@ export default function HelpPage() {
                   <Phone size={18} color="#6366f1" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>Call Us</p>
-                  <p style={{ fontSize: 11.5, color: '#6b7280', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Call Us</p>
+                  <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
                 </div>
               </a>
               <a href={`https://wa.me/${(process.env.NEXT_PUBLIC_SUPPORT_PHONE || '918756562188').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-                  borderRadius: 16, background: '#f9fafb',
-                  border: '1px solid rgba(0,0,0,0.07)', textDecoration: 'none',
+                  borderRadius: 16, background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
                 onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
@@ -191,8 +191,8 @@ export default function HelpPage() {
                   <MessageCircle size={18} color="#6366f1" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>WhatsApp Support</p>
-                  <p style={{ fontSize: 11.5, color: '#6b7280', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>WhatsApp Support</p>
+                  <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
                 </div>
               </a>
             </div>

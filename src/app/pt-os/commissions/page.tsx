@@ -18,9 +18,9 @@ const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transiti
 const itemVariants = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } };
 const fadeUp = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, ease: 'easeOut' as const } };
 
-const card = { background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' };
-const label = { fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: '#6b7280' };
-const value = { fontSize: 13, fontWeight: 700, color: '#111827' };
+const card = { background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' };
+const label = { fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', color: 'var(--text-muted)' };
+const value = { fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' };
 
 export default function CommissionsPage() {
   const { toast } = useToast();
@@ -134,7 +134,7 @@ export default function CommissionsPage() {
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 16px' }}>
           {/* ── Hero ── */}
           <m.div {...fadeUp}
-            style={{ padding: '32px 40px', marginBottom: 32, borderBottom: '1px solid #f3f4f6' }}
+            style={{ padding: '32px 40px', marginBottom: 32, borderBottom: '1px solid var(--border)' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               <div style={{ display: 'flex', width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: 'rgba(34,197,94,0.1)' }}>
@@ -142,10 +142,10 @@ export default function CommissionsPage() {
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#16a34a' }}>Finance</span>
             </div>
-            <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.15, color: '#111827', margin: 0 }}>
+            <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.15, color: 'var(--text-primary)', margin: 0 }}>
               Trainer Commissions
             </h1>
-            <p style={{ marginTop: 10, maxWidth: 500, fontSize: 14, lineHeight: 1.6, color: '#6b7280', fontWeight: 400 }}>
+            <p style={{ marginTop: 10, maxWidth: 500, fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)', fontWeight: 400 }}>
               Calculate monthly commissions, manage payouts, and track trainer performance. Full admin control over all financial data.
             </p>
           </m.div>
@@ -156,13 +156,13 @@ export default function CommissionsPage() {
               <input type="month" value={month} onChange={e => setMonth(e.target.value)}
                 style={{
                   borderRadius: 12, padding: '10px 36px 10px 16px', fontSize: 14, fontWeight: 500,
-                  background: '#fff',
-                  border: '1px solid #d1d5db', color: '#111827',
+                  background: 'var(--bg-card)',
+                  border: '1px solid #d1d5db', color: 'var(--text-primary)',
                   outline: 'none', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
                   minWidth: 180, cursor: 'pointer', fontFamily: 'inherit',
                 }}
               />
-              <ChevronDown size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
+              <ChevronDown size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)', pointerEvents: 'none' }} />
             </div>
             <Button onClick={handleCalculate} disabled={calculating}
               style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff', borderRadius: 12, fontWeight: 600, border: 'none', padding: '10px 22px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8, cursor: calculating ? 'not-allowed' : 'pointer', opacity: calculating ? 0.7 : 1, boxShadow: '0 4px 16px rgba(22,163,74,0.3)' }}>
@@ -187,11 +187,11 @@ export default function CommissionsPage() {
                 <div style={{ position: 'relative', zIndex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                     <span style={{ ...label, textTransform: 'uppercase' }}>{kpi.label}</span>
-                    <div style={{ display: 'flex', width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 8, background: 'rgba(0,0,0,0.04)', color: kpi.accent }}>
+                    <div style={{ display: 'flex', width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 8, background: 'var(--bg-subtle)', color: kpi.accent }}>
                       {kpi.icon}
                     </div>
                   </div>
-                  <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: '#111827', margin: 0, lineHeight: 1.2 }}>{kpi.value}</p>
+                  <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>{kpi.value}</p>
                 </div>
               </m.div>
             ))}
@@ -206,11 +206,11 @@ export default function CommissionsPage() {
                 ...card,
               }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <UserCheck size={18} style={{ color: '#22c55e' }} />
                   Trainer Performance
                 </h2>
-                <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>{perfData.length} trainers</span>
+                <span style={{ fontSize: 12, color: 'var(--text-disabled)', fontWeight: 500 }}>{perfData.length} trainers</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 600, overflowY: 'auto' }}>
                 {perfData.map((t: any, i: number) => {
@@ -227,7 +227,7 @@ export default function CommissionsPage() {
                       }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                         <div>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{t.name}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{t.name}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                             <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(16,185,129,0.1)', color: '#059669', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                               <Users size={10} />
@@ -235,7 +235,7 @@ export default function CommissionsPage() {
                             </span>
                             {!isEditing && (
                               <button onClick={() => handleEditCommission(t.id, t)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6, color: '#9ca3af', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6, color: 'var(--text-disabled)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                 onMouseOver={e => (e.currentTarget.style.color = '#16a34a')}
                                 onMouseOut={e => (e.currentTarget.style.color = '#9ca3af')}>
                                 <Pencil size={12} /> Edit
@@ -246,7 +246,7 @@ export default function CommissionsPage() {
                         {isEditing && (
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button onClick={() => { setEditingCommission(null); }}
-                              style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#374151', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                               <X size={13} /> Cancel
                             </button>
                             <button onClick={() => handleSaveCommission(t.id)} disabled={saving}
@@ -285,21 +285,21 @@ export default function CommissionsPage() {
                             <label style={{ ...label, textTransform: 'uppercase' }}>Commission %</label>
                             <input type="number" value={draft.commission_pct ?? ''}
                               onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_pct: Number(e.target.value) } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#111827', background: '#fff', outline: 'none', fontFamily: 'inherit' }}
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
                           <div>
                             <label style={{ ...label, textTransform: 'uppercase' }}>Amount (₹)</label>
                             <input type="number" value={draft.commission_amount ?? ''}
                               onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], commission_amount: Number(e.target.value) } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#059669', background: '#fff', outline: 'none', fontFamily: 'inherit' }}
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
                           <div>
                             <label style={{ ...label, textTransform: 'uppercase' }}>Incentives (₹)</label>
                             <input type="number" value={draft.incentives ?? ''}
                               onChange={e => setCommissionDraft(prev => ({ ...prev, [t.id]: { ...prev[t.id], incentives: Number(e.target.value) } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#111827', background: '#fff', outline: 'none', fontFamily: 'inherit' }}
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
                         </div>
@@ -309,7 +309,7 @@ export default function CommissionsPage() {
                 })}
                 {perfData.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                    <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>No trainer data yet. Calculate commissions to populate.</p>
+                    <p style={{ fontSize: 13, color: 'var(--text-disabled)', margin: 0 }}>No trainer data yet. Calculate commissions to populate.</p>
                   </div>
                 )}
               </div>
@@ -322,12 +322,12 @@ export default function CommissionsPage() {
                 ...card,
               }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
-                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Wallet size={18} style={{ color: '#22c55e' }} />
                   Payouts
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', background: '#F3F4F6', padding: '4px 10px', borderRadius: 6, border: '1px solid #e5e7eb' }}>{month}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', background: 'var(--bg-subtle)', padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>{month}</span>
                   {payoutsData.some((p: any) => p.payout_status !== 'paid') && (
                     <button onClick={handleMarkAllPaid}
                       style={{
@@ -358,7 +358,7 @@ export default function CommissionsPage() {
                       }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{p.trainer_name}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{p.trainer_name}</span>
                           {!isEditing && (
                             <span style={{
                               fontSize: 10, fontWeight: 700, padding: '2px 10px', borderRadius: 6, textTransform: 'uppercase', letterSpacing: '0.03em',
@@ -372,7 +372,7 @@ export default function CommissionsPage() {
                         </div>
                         {!isEditing && (
                           <button onClick={() => handleEditPayout(tid, p)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, color: '#9ca3af', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 6, color: 'var(--text-disabled)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             onMouseOver={e => (e.currentTarget.style.color = '#16a34a')}
                             onMouseOut={e => (e.currentTarget.style.color = '#9ca3af')}>
                             <Pencil size={12} /> Edit
@@ -397,7 +397,7 @@ export default function CommissionsPage() {
                             <label style={{ ...label, textTransform: 'uppercase' }}>Status</label>
                             <select value={draft.payout_status || 'pending'}
                               onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], payout_status: e.target.value } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#111827', background: '#fff', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit', cursor: 'pointer' }}>
                               <option value="pending">Pending</option>
                               <option value="paid">Paid</option>
                             </select>
@@ -406,12 +406,12 @@ export default function CommissionsPage() {
                             <label style={{ ...label, textTransform: 'uppercase' }}>Paid Amount (₹)</label>
                             <input type="number" value={draft.paid_amount ?? ''}
                               onChange={e => setPayoutDraft(prev => ({ ...prev, [tid]: { ...prev[tid], paid_amount: Number(e.target.value) } }))}
-                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#059669', background: '#fff', outline: 'none', fontFamily: 'inherit' }}
+                              style={{ width: '100%', marginTop: 4, padding: '6px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 13, fontWeight: 600, color: '#059669', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }}
                             />
                           </div>
                           <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                             <button onClick={() => setEditingPayout(null)}
-                              style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#374151', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', cursor: 'pointer', padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                               <X size={13} /> Cancel
                             </button>
                             <button onClick={() => handleSavePayout(tid)} disabled={saving}
@@ -433,7 +433,7 @@ export default function CommissionsPage() {
                 })}
                 {payoutsData.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                    <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>No payouts for this month yet.</p>
+                    <p style={{ fontSize: 13, color: 'var(--text-disabled)', margin: 0 }}>No payouts for this month yet.</p>
                   </div>
                 )}
               </div>
