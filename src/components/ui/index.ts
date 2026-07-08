@@ -85,5 +85,14 @@ export {
   ChartLegendContent,
   CHART_COLORS,
   useChartConfig,
+  PremiumBarChart,
+  PremiumAreaChart,
 } from './chart';
-export type { ChartConfig, ChartColor } from './chart';
+export type {
+  ChartConfig,
+  ChartColor,
+  PremiumBarChartProps,
+  PremiumAreaChartProps,
+  PremiumBarEntry,
+  PremiumAreaEntry,
+} from './chart';

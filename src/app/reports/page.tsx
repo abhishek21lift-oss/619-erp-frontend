@@ -12,6 +12,7 @@ import {
   ChevronLeft, ChevronRight, Download, TrendingUp,
   Search, DollarSign, Clock, UserCheck,
 } from 'lucide-react';
+import { PremiumBarChart } from '@/components/ui';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 type Tab = 'monthly' | 'dues' | 'trainers' | 'staff';
@@ -66,39 +67,6 @@ function KpiCard({ label, value, icon, gradient, sub }: {
   );
 }
 
-function RevenueBarChart({ data, maxVal }: { data: { month: string; revenue: number; count: number }[]; maxVal: number }) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, padding: '0 4px' }}>
-        {(data ?? []).map((m, i) => {
-          const pct = maxVal > 0 ? Math.max((m.revenue / maxVal) * 100, m.revenue > 0 ? 4 : 0) : 0;
-          return (
-            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}
-              onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-              {hovered === i && m.revenue > 0 && (
-                <div style={{ fontSize: 10, color: '#fff', fontWeight: 700, background: 'rgba(37,99,235,0.9)', borderRadius: 6, padding: '3px 7px', marginBottom: 3, whiteSpace: 'nowrap' }}>
-                  {m.revenue >= 1000 ? `₹${(m.revenue/1000).toFixed(1)}K` : fmtAmt(m.revenue)}
-                </div>
-              )}
-              {hovered !== i && (
-                <div style={{ marginTop: 'auto', fontSize: 9, color: '#9ca3af', fontWeight: 600 }}>
-                  {m.revenue > 0 ? (m.revenue >= 1000 ? `₹${(m.revenue/1000).toFixed(0)}K` : '') : ''}
-                </div>
-              )}
-              <div style={{ width: '100%', height: `${pct}%`, background: m.revenue > 0 ? 'linear-gradient(180deg, #6366f1 0%, #2563eb 50%, rgba(37,99,235,0.3) 100%)' : '#e5e7eb', borderRadius: '4px 4px 0 0', minHeight: m.revenue > 0 ? 6 : 2, transition: 'opacity 150ms, height 0.4s', opacity: hovered !== null && hovered !== i ? 0.5 : 1, boxShadow: m.revenue > 0 ? '0 2px 8px rgba(99,102,241,0.2)' : 'none' }} />
-            </div>
-          );
-        })}
-      </div>
-      <div style={{ display: 'flex', gap: 6, marginTop: 8, padding: '0 4px' }}>
-        {(data ?? []).map((m, i) => (
-          <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>{m.month}</div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function StatusBadge({ status, label }: { status: string; label?: string }) {
   const v = (label || status || '').toLowerCase();
@@ -196,7 +164,17 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
           <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)' }} />
           <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Monthly Revenue — {year}</span>
         </div>
-        {loading ? <div style={{ height: 160, background: '#f3f4f6', borderRadius: 10 }} /> : <RevenueBarChart data={fullYear} maxVal={maxRevenue} />}
+        {loading ? (
+          <div style={{ height: 200, background: '#f3f4f6', borderRadius: 10 }} />
+        ) : (
+          <PremiumBarChart
+            data={fullYear as Record<string, unknown>[]}
+            xKey="month"
+            bars={[{ key: 'revenue', label: 'Revenue', color: '#6366f1' }]}
+            height={200}
+            formatValue={fmtAmt}
+          />
+        )}
       </m.div>
 
       <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>

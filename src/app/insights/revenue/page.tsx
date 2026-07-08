@@ -6,6 +6,7 @@ import AppShell from '@/components/AppShell';
 import { TrendingUp, DollarSign, Users, Clock, BarChart3, Percent, Search, ArrowUpRight, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
 import { fmtMoney } from '@/lib/format';
+import { PremiumBarChart } from '@/components/ui';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -103,8 +104,6 @@ function Inner() {
   const maxRevenue = Math.max(...fullYear.map((m) => m.revenue), 1);
   const totalRevenueAll = revenueByTrainer.reduce((s, t) => s + Number(t.total_revenue || 0), 0);
 
-  const [chartHovered, setChartHovered] = useState<number | null>(null);
-
   return (
     <AppShell>
       <div style={{ background: '#f8fafc', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px' }}>
@@ -155,37 +154,15 @@ function Inner() {
               </div>
             </div>
             {loading ? (
-              <div style={{ height: 160, background: '#f3f4f6', borderRadius: 10 }} />
+              <div style={{ height: 200, background: '#f3f4f6', borderRadius: 10 }} />
             ) : (
-              <>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 160, padding: '0 4px' }}>
-                  {fullYear.map((m, i) => {
-                    const pct = maxRevenue > 0 ? Math.max((m.revenue / maxRevenue) * 100, m.revenue > 0 ? 4 : 0) : 0;
-                    const hovered = chartHovered; const setHovered = setChartHovered;
-                    return (
-                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}
-                        onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-                        {hovered === i && m.revenue > 0 && (
-                          <div style={{ fontSize: 10, color: '#fff', fontWeight: 700, background: '#2563eb', borderRadius: 6, padding: '3px 7px', marginBottom: 3, whiteSpace: 'nowrap' }}>
-                            {fmtAmt(m.revenue)} ({m.count})
-                          </div>
-                        )}
-                        {hovered !== i && (
-                          <div style={{ marginTop: 'auto', fontSize: 9, color: '#9ca3af', fontWeight: 600 }}>
-                            {m.revenue > 0 ? (m.revenue >= 1000 ? `₹${(m.revenue/1000).toFixed(0)}K` : '') : ''}
-                          </div>
-                        )}
-                        <div style={{ width: '100%', height: `${pct}%`, background: m.revenue > 0 ? 'linear-gradient(180deg, #6366f1 0%, #2563eb 50%, rgba(37,99,235,0.3) 100%)' : '#e5e7eb', borderRadius: '4px 4px 0 0', minHeight: m.revenue > 0 ? 6 : 2, transition: 'height 0.4s, opacity 0.15s', opacity: hovered !== null && hovered !== i ? 0.5 : 1, boxShadow: m.revenue > 0 ? '0 2px 8px rgba(99,102,241,0.3)' : 'none' }} />
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 10, padding: '0 4px' }}>
-                  {fullYear.map((m, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 9, color: '#9ca3af', fontWeight: 600 }}>{m.month}</div>
-                  ))}
-                </div>
-              </>
+              <PremiumBarChart
+                data={fullYear as Record<string, unknown>[]}
+                xKey="month"
+                bars={[{ key: 'revenue', label: 'Revenue', color: '#6366f1' }]}
+                height={200}
+                formatValue={fmtAmt}
+              />
             )}
           </m.div>
 
