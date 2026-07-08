@@ -12,7 +12,7 @@ import {
   ChevronLeft, ChevronRight, Download, TrendingUp,
   Search, DollarSign, Clock, UserCheck,
 } from 'lucide-react';
-import { PremiumBarChart } from '@/components/ui';
+import { PremiumBarChart, PremiumAreaChart } from '@/components/ui';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 type Tab = 'monthly' | 'dues' | 'trainers' | 'staff';
@@ -42,7 +42,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] } }
 };
 
-const tableHeadStyle: React.CSSProperties = { padding: '10px 14px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' };
+const tableHeadStyle: React.CSSProperties = { padding: '10px 14px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' };
 const tableCellStyle: React.CSSProperties = { padding: '10px 14px', fontSize: 12 };
 
 function KpiCard({ label, value, icon, gradient, sub }: {
@@ -50,19 +50,19 @@ function KpiCard({ label, value, icon, gradient, sub }: {
 }) {
   return (
     <m.div variants={itemVariants}
-      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
+      style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '22px 20px', background: gradient, border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'default', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
       onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
       onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, position: 'relative', zIndex: 1 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#6b7280' }}>{label}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)' }}>{label}</span>
         {icon && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.07)', color: '#374151' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
             {icon}
           </div>
         )}
       </div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, position: 'relative', zIndex: 1 }}>{sub}</div>}
+      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, position: 'relative', zIndex: 1 }}>{sub}</div>}
     </m.div>
   );
 }
@@ -87,7 +87,7 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
 }
 
 function lightBox(extra: React.CSSProperties = {}): React.CSSProperties {
-  return { background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden', ...extra };
+  return { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden', ...extra };
 }
 
 function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => void }) {
@@ -162,10 +162,10 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
       <m.div variants={itemVariants} style={lightBox({ padding: '20px 20px 16px' })}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)' }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Monthly Revenue — {year}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Monthly Revenue — {year}</span>
         </div>
         {loading ? (
-          <div style={{ height: 200, background: '#f3f4f6', borderRadius: 10 }} />
+          <div style={{ height: 200, background: 'var(--bg-subtle)', borderRadius: 10 }} />
         ) : (
           <PremiumBarChart
             data={fullYear as Record<string, unknown>[]}
@@ -177,11 +177,29 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
         )}
       </m.div>
 
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: '#fff' }}>
+      <m.div variants={itemVariants} style={lightBox({ padding: '20px 20px 16px' })}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <div style={{ width: 3, height: 18, borderRadius: 2, background: 'linear-gradient(180deg, #10b981, #059669)' }} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Membership Growth — {year}</span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>New transactions per month</span>
+        </div>
+        {loading ? (
+          <div style={{ height: 160, background: 'var(--bg-subtle)', borderRadius: 10 }} />
+        ) : (
+          <PremiumAreaChart
+            data={fullYear as Record<string, unknown>[]}
+            xKey="month"
+            areas={[{ key: 'count', label: 'New Members', color: '#10b981' }]}
+            height={160}
+          />
+        )}
+      </m.div>
+
+      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', background: 'var(--bg-card)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: 'var(--bg-subtle)' }}>
                 <th style={{ ...tableHeadStyle }}>Month</th>
                 <th style={{ ...tableHeadStyle }}>Payments</th>
                 <th style={{ ...tableHeadStyle }}>Revenue</th>
@@ -191,19 +209,19 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
             <tbody>
               {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i}><td colSpan={4} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: '#f3f4f6', borderRadius: 6 }} /></td></tr>
+                  <tr key={i}><td colSpan={4} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: 'var(--bg-subtle)', borderRadius: 6 }} /></td></tr>
                 ))
               ) : (
                 fullYear.map((m, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: m.revenue === 0 ? 0.5 : 1, transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border)', opacity: m.revenue === 0 ? 0.5 : 1, transition: 'background 0.2s' }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
-                    <td style={{ ...tableCellStyle, fontWeight: 600, color: '#111827' }}>{m.month} {year}</td>
-                    <td style={{ ...tableCellStyle, color: '#6b7280' }}>{m.count || '—'}</td>
-                    <td style={{ ...tableCellStyle, fontWeight: 700, color: m.revenue > 0 ? '#059669' : '#9ca3af' }}>{m.revenue > 0 ? fmtAmt(m.revenue) : '—'}</td>
+                    onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
+                    <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{m.month} {year}</td>
+                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{m.count || '—'}</td>
+                    <td style={{ ...tableCellStyle, fontWeight: 700, color: m.revenue > 0 ? '#059669' : 'var(--text-muted)' }}>{m.revenue > 0 ? fmtAmt(m.revenue) : '—'}</td>
                     <td style={tableCellStyle}>
                       {m.revenue > 0 && (
-                        <div style={{ background: '#e5e7eb', borderRadius: 4, height: 6, overflow: 'hidden' }}>
+                        <div style={{ background: 'var(--bg-subtle)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
                           <div style={{ width: `${(m.revenue / maxRevenue) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #2563eb)', borderRadius: 4, transition: 'width 400ms' }} />
                         </div>
                       )}
@@ -213,7 +231,7 @@ function MonthlyTab({ year, setYear }: { year: number; setYear: (y: number) => v
               )}
             </tbody>
             <tfoot>
-              <tr style={{ fontWeight: 700, background: '#f1f5f9', borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+              <tr style={{ fontWeight: 700, background: 'var(--bg-subtle)', borderTop: '1px solid var(--border)' }}>
                 <td style={tableCellStyle}>Total</td>
                 <td style={tableCellStyle}>{fullYear.reduce((s, m) => s + m.count, 0)}</td>
                 <td style={{ ...tableCellStyle, color: '#2563eb', fontSize: 13 }}>{fmtAmt(totalRevenue)}</td>

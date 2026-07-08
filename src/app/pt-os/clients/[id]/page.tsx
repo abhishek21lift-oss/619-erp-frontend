@@ -17,6 +17,7 @@ import AppShell from '@/components/AppShell';
 import { PremiumButton } from '@/components/premium/PremiumButton';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { PremiumAreaChart } from '@/components/ui';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -576,24 +577,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     {/* Weight Trend */}
                     {recentWeights.length >= 2 && (
                       <DarkCard title="Weight Trend" icon={<TrendingUp size={14} />} from="#10b981">
-                        <div className="flex items-end gap-2 h-24">
-                          {recentWeights.map((a: any, i: number) => {
-                            const maxW = Math.max(...recentWeights.map((w: any) => Number(w.weight)));
-                            const barH = (Number(a.weight) / maxW) * 80;
-                            return (
-                              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                <m.div initial={{ height: 0 }} animate={{ height: barH }}
-                                  transition={{ duration: 0.5, delay: i * 0.06 }}
-                                  className="w-full rounded-[5px]"
-                                  style={{ background: 'linear-gradient(180deg, #10b981, #34d399)', minHeight: 4 }} />
-                                <span className="text-[9px] font-[700] text-emerald-600 tabular-nums">{a.weight}</span>
-                                <span className="text-[8px] text-slate-400">
-                                  {fmtDate(a.created_at || a.assessment_date).slice(0, 5)}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <PremiumAreaChart
+                          data={recentWeights.map((a: any) => ({
+                            date: fmtDate(a.created_at || a.assessment_date).slice(0, 5),
+                            weight: Number(a.weight),
+                          })) as Record<string, unknown>[]}
+                          xKey="date"
+                          areas={[{ key: 'weight', label: 'Weight (kg)', color: '#10b981' }]}
+                          height={100}
+                          formatValue={(v) => `${v} kg`}
+                        />
                       </DarkCard>
                     )}
 

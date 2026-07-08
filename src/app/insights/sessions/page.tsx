@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { PremiumBarChart } from '@/components/ui';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -51,7 +52,6 @@ function Inner() {
     return DAYS.map((d, i) => ({ day: d, count: counts[i] }));
   }, [records]);
 
-  const max = Math.max(...byDay.map((d) => d.count), 1);
   const total = records.filter((r) => r.status === 'present' || r.status === 'late').length;
   const avg = Math.round(total / Math.max(byDay.filter((d) => d.count > 0).length, 1));
   const busiest = byDay.reduce((b, d) => (d.count > b.count ? d : b), byDay[0]);
@@ -71,26 +71,14 @@ function Inner() {
           <div className="card">
             <div className="card-title">Check-ins by day of week</div>
             {loading ? (
-              <div className="text-muted">Loading…</div>
+              <div style={{ height: 220, background: 'var(--bg-subtle)', borderRadius: 10 }} />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {byDay.map((d) => (
-                  <div key={d.day} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 60, fontWeight: 600, fontSize: 13 }}>{d.day}</div>
-                    <div style={{ flex: 1 }}>
-                      <div className="progress" style={{ height: 16 }}>
-                        <div
-                          className="progress-fill red"
-                          style={{ width: `${(d.count / max) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="tabular" style={{ width: 50, textAlign: 'right', fontWeight: 700 }}>
-                      {d.count}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <PremiumBarChart
+                data={byDay as Record<string, unknown>[]}
+                xKey="day"
+                bars={[{ key: 'count', label: 'Check-ins', color: '#10b981' }]}
+                height={220}
+              />
             )}
           </div>
         </div>

@@ -17,6 +17,7 @@
 
 import { useMemo } from 'react';
 import { m } from 'framer-motion';
+import { PremiumBarChart } from '@/components/ui';
 import {
   Users, TrendingUp, Wallet, Percent, RefreshCw,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
@@ -390,33 +391,9 @@ function RevenueChart({ data }: { data: DashData['revenueTrend'] }) {
     </Glass>
   );
 
-  const W = 600, H = 180, PL = 8, PR = 8, PT = 16, PB = 26;
-  const cW = W - PL - PR, cH = H - PT - PB;
-  const maxRev = Math.max(...data.map(d => Number(d.revenue)), 1);
-  const slotW = cW / data.length;
-  const barW = slotW * 0.5;
-
-  const bars = data.map((d, i) => ({
-    x: PL + i * slotW + slotW / 2,
-    barTop: PT + cH - (Number(d.revenue) / maxRev) * cH,
-    barH: (Number(d.revenue) / maxRev) * cH,
-    lineY: PT + cH - (Number(d.incentives ?? 0) / Math.max(...data.map(d=>Number(d.incentives)),1)) * cH,
-    revenue: Number(d.revenue), incentives: Number(d.incentives),
-    label: (d.label ?? '').split(' ')[0],
-  }));
-
-  const buildLine = (pts: Array<{ x: number; lineY: number }>) => {
-    if (!pts.length) return '';
-    let p = `M${pts[0].x},${pts[0].lineY}`;
-    for (let i = 1; i < pts.length; i++) {
-      const cx = (pts[i].x + pts[i-1].x) / 2;
-      p += ` C${cx},${pts[i-1].lineY} ${cx},${pts[i].lineY} ${pts[i].x},${pts[i].lineY}`;
-    }
-    return p;
-  };
-
   const totalRev = data.reduce((s, d) => s + Number(d.revenue), 0);
   const totalComm = data.reduce((s, d) => s + Number(d.incentives), 0);
+  const chartData = data.map(d => ({ ...d, label: (d.label ?? '').split(' ')[0] }));
 
   return (
     <Glass className="p-4 sm:p-5">
@@ -427,37 +404,20 @@ function RevenueChart({ data }: { data: DashData['revenueTrend'] }) {
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <span className="inline-flex items-center gap-1"><span className="h-2 w-4 rounded-full" style={{ background: C.purple }} /><span className="text-[9px] font-[600]" style={{ color: C.muted }}>Revenue</span></span>
-          <span className="inline-flex items-center gap-1"><span className="h-[2px] w-4 rounded-full" style={{ background: C.rose }} /><span className="text-[9px] font-[600]" style={{ color: C.muted }}>Comm.</span></span>
+          <span className="inline-flex items-center gap-1"><span className="h-2 w-4 rounded-full" style={{ background: C.rose }} /><span className="text-[9px] font-[600]" style={{ color: C.muted }}>Comm.</span></span>
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ overflow: 'visible' }}>
-        <defs>
-          <linearGradient id="bar-r" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={C.purple} stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.4" />
-          </linearGradient>
-          <filter id="gl"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        </defs>
-        {[0.33, 0.67, 1].map(r => (
-          <line key={r} x1={PL} x2={PL+cW} y1={PT+cH-r*cH} y2={PT+cH-r*cH}
-            stroke="rgba(124,58,237,0.07)" strokeWidth="1" strokeDasharray="4 5" />
-        ))}
-        {bars.map((b, i) => (
-          <m.rect key={i} x={b.x - barW/2} width={barW} rx={4} fill="url(#bar-r)"
-            initial={{ y: PT+cH, height: 0 }} animate={{ y: b.barTop, height: b.barH }}
-            transition={{ delay: 0.08 + i*0.07, duration: 0.5, ease: [0.16,1,0.3,1] }} />
-        ))}
-        <m.path d={buildLine(bars)} fill="none" stroke={C.rose} strokeWidth="2" strokeLinecap="round" filter="url(#gl)"
-          initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8, ease: [0.16,1,0.3,1] }} />
-        {bars.map((b,i) => (
-          <circle key={i} cx={b.x} cy={b.lineY} r={2.5} fill={C.rose} stroke="#fff" strokeWidth="1.2" />
-        ))}
-        {bars.map((b,i) => (
-          <text key={i} x={b.x} y={H-2} textAnchor="middle" fill={C.muted} fontSize="8.5" fontWeight="600">{b.label}</text>
-        ))}
-      </svg>
+      <PremiumBarChart
+        data={chartData as Record<string, unknown>[]}
+        xKey="label"
+        bars={[
+          { key: 'revenue', label: 'Revenue', color: C.purple },
+          { key: 'incentives', label: 'Commission', color: C.rose },
+        ]}
+        height={160}
+        formatValue={fmtCompact}
+      />
 
       <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(124,58,237,0.08)' }}>
         {[
