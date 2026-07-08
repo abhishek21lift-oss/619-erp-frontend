@@ -477,26 +477,24 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
   onMarkAll?: () => void;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,rgba(9,9,11,0.97),rgba(12,10,30,0.95),rgba(15,10,35,0.94))] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)] sm:p-8 lg:p-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_25%,rgba(245,158,11,0.20),transparent_28%),radial-gradient(circle_at_75%_12%,rgba(16,185,129,0.14),transparent_20%),radial-gradient(circle_at_60%_85%,rgba(255,255,255,0.04),transparent_14%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:22px_22px]" />
+    <section className="relative overflow-hidden rounded-[32px] border border-black/[0.07] bg-[#f8fafc] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] sm:p-8 lg:p-10">
 
       <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
-        <div className="space-y-5 text-white">
+        <div className="space-y-5 text-[#111827]">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300 backdrop-blur-md">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-700 backdrop-blur-md">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
               Live sync active
             </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium text-white/80 backdrop-blur-md">
+            <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 backdrop-blur-md">
               <Wifi className="h-3.5 w-3.5" />Biometric device connected
             </span>
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-[0.26em] text-white/50">619 Fitness Studio</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-[3rem] lg:leading-[1.06]">Member Attendance</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60 sm:text-base">
+            <p className="text-xs uppercase tracking-[0.26em] text-gray-500">619 Fitness Studio</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#111827] sm:text-4xl lg:text-[3rem] lg:leading-[1.06]">Member Attendance</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
               Real-time biometric attendance and member check-in management across all sessions.
             </p>
           </div>
@@ -507,11 +505,11 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
               type="date" value={date}
               onChange={e => setDate(e.target.value)}
               max={today}
-              className="rounded-full border border-white/15 bg-white/10 px-4 py-2.5 text-sm text-white backdrop-blur-md transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/20 [color-scheme:dark]"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm text-[#111827] backdrop-blur-md transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black/10"
             />
-            <HeroBtn label="Manual Entry"    icon={<Plus className="h-4 w-4" />} />
-            <HeroBtn label="Export"          icon={<Download className="h-4 w-4" />} />
-            <HeroBtn label="Reports"         icon={<FileText className="h-4 w-4" />} />
+            <HeroBtn label="Manual Entry"    icon={<Plus className="h-4 w-4" />} light />
+            <HeroBtn label="Export"          icon={<Download className="h-4 w-4" />} light />
+            <HeroBtn label="Reports"         icon={<FileText className="h-4 w-4" />} light />
             {onMarkAll && (
               <HeroBtn label="Mark All Present" icon={<CheckCircle2 className="h-4 w-4" />} primary onClick={onMarkAll} />
             )}
@@ -525,10 +523,10 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
             { label: 'Late arrivals',  value: summary.late,     sub: 'logged' },
             { label: 'Unmarked',       value: summary.unmarked, sub: 'pending' },
           ].map(stat => (
-            <div key={stat.label} className="rounded-[22px] border border-white/10 bg-white/10 p-3 sm:p-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] backdrop-blur-xl">
-              <p className="text-xs text-white/45">{stat.label}</p>
+            <div key={stat.label} className="rounded-[22px] border border-black/[0.07] bg-white p-3 sm:p-4 text-[#111827] shadow-[0_1px_4px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+              <p className="text-xs text-gray-500">{stat.label}</p>
               <p className="mt-2 text-2xl font-semibold tabular-nums">{stat.value}</p>
-              <p className="mt-1 text-xs text-white/50">{stat.sub}</p>
+              <p className="mt-1 text-xs text-gray-500">{stat.sub}</p>
             </div>
           ))}
         </div>
@@ -1229,7 +1227,7 @@ function FeedAvatar({ initials, status, size = 'sm' }: { initials: string; statu
   );
 }
 
-function HeroBtn({ label, icon, primary, compact, onClick }: { label: string; icon: React.ReactNode; primary?: boolean; compact?: boolean; onClick?: () => void }) {
+function HeroBtn({ label, icon, primary, compact, onClick, light }: { label: string; icon: React.ReactNode; primary?: boolean; compact?: boolean; onClick?: () => void; light?: boolean }) {
   return (
     <button onClick={onClick}
       className={`inline-flex items-center gap-2 rounded-full border font-medium transition hover:-translate-y-0.5 ${
@@ -1237,7 +1235,9 @@ function HeroBtn({ label, icon, primary, compact, onClick }: { label: string; ic
       } ${
         primary
           ? 'border-transparent bg-[linear-gradient(135deg,#F59E0B,#D97706)] text-white shadow-[0_10px_28px_rgba(245,158,11,0.32)] hover:shadow-[0_14px_36px_rgba(245,158,11,0.42)]'
-          : 'border-white/15 bg-white/10 text-white/85 hover:bg-white/18 backdrop-blur-md'
+          : light
+            ? 'border-black/10 bg-white text-gray-700 shadow-sm hover:bg-gray-50'
+            : 'border-white/15 bg-white/10 text-white/85 hover:bg-white/18 backdrop-blur-md'
       }`}>
       {icon}{label}
     </button>

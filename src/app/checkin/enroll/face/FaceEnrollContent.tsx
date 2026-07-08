@@ -194,7 +194,7 @@ function FaceEnrollContent() {
         }
       `}</style>
       {/* Header */}
-      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f0a1e 0%,#1a0a2e 30%,#0f172a 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px' }}>
+      <div className="relative overflow-hidden" style={{ background: '#f8fafc', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
         <div className="fe-header-pad relative z-10 mx-auto" style={{ maxWidth: 860 }}>
           <div className="flex items-center gap-4">
             <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -204,10 +204,10 @@ function FaceEnrollContent() {
             </m.div>
             <div>
               <h1 className="text-[24px] font-[860] tracking-[-0.03em]"
-                style={{ background: 'linear-gradient(135deg,#c7d2fe,#6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                style={{ color: '#111827' }}>
                 Face Enrollment
               </h1>
-              <p className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <p className="text-[12px]" style={{ color: '#6b7280' }}>
                 Register a member's face for biometric check-in
               </p>
             </div>

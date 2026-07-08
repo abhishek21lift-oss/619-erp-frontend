@@ -37,9 +37,9 @@ const MUSCLE_GROUPS: MuscleGroup[] = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arm
 const DIFFICULTIES: Difficulty[] = ['Beginner', 'Intermediate', 'Advanced'];
 
 const DIFFICULTY_COLORS: Record<Difficulty, { bg: string; color: string }> = {
-  Beginner: { bg: 'rgba(16,185,129,0.15)', color: '#6ee7b7' },
-  Intermediate: { bg: 'rgba(245,158,11,0.15)', color: '#fcd34d' },
-  Advanced: { bg: 'rgba(239,68,68,0.15)', color: '#fca5a5' },
+  Beginner: { bg: 'rgba(16,185,129,0.1)', color: '#059669' },
+  Intermediate: { bg: 'rgba(245,158,11,0.1)', color: '#d97706' },
+  Advanced: { bg: 'rgba(239,68,68,0.1)', color: '#dc2626' },
 };
 
 const GROUP_COLORS: Record<MuscleGroup, string> = {
@@ -115,36 +115,28 @@ function Inner() {
   });
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f0a1e 0%, #0f172a 50%, #0a0a1a 100%)' }}>
+    <div>
       {/* ── Hero ── */}
-      <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0f0a1e 0%, #1a1040 25%, #0f172a 55%, #1e0a2e 80%, #0f0a1e 100%)', padding: '48px 32px 40px', borderRadius: '0 0 40px 40px' }}>
-        <m.div style={{ position: 'absolute', top: -100, right: -40, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)', pointerEvents: 'none' }}
-          animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' as const }} />
-        <m.div style={{ position: 'absolute', bottom: -70, left: -30, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%)', pointerEvents: 'none' }}
-          animate={{ x: [0, -25, 30, 0], y: [0, 25, -15, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' as const }} />
-        <m.div style={{ position: 'absolute', top: '30%', left: '55%', width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.06), transparent 70%)', pointerEvents: 'none' }}
-          animate={{ x: [0, 15, -10, 0], y: [0, -20, 10, 0] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' as const }} />
-        <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '22px 22px', pointerEvents: 'none' }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+      <div style={{ padding: '32px 32px 28px', borderBottom: '1px solid #f3f4f6' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <m.div variants={heroVariants} initial="hidden" animate="visible"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 58, height: 58, borderRadius: 18, background: 'linear-gradient(135deg, #6366f1, #ec4899)', boxShadow: '0 8px 32px rgba(99,102,241,0.3)' }}>
-              <Dumbbell size={26} color="#fff" />
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #6366f1, #ec4899)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}>
+              <Dumbbell size={22} color="#fff" />
             </m.div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #e0e7ff, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Workout Plans</h1>
-              <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'rgba(255,255,255,0.45)' }}>Build and manage personalized training programs</p>
+              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>Workout Plans</h1>
+              <p style={{ margin: '4px 0 0', fontSize: 13.5, color: '#6b7280' }}>Build and manage personalized training programs</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 2 }}>
+            <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 8, padding: 2 }}>
               <button onClick={() => setView('grid')}
-                style={{ padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'grid' ? 'rgba(99,102,241,0.2)' : 'transparent', color: view === 'grid' ? '#a5b4fc' : 'rgba(255,255,255,0.3)' }}>
+                style={{ padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'grid' ? '#fff' : 'transparent', color: view === 'grid' ? '#6366f1' : '#9ca3af', boxShadow: view === 'grid' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
                 <LayoutGrid size={15} />
               </button>
               <button onClick={() => setView('list')}
-                style={{ padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'list' ? 'rgba(99,102,241,0.2)' : 'transparent', color: view === 'list' ? '#a5b4fc' : 'rgba(255,255,255,0.3)' }}>
+                style={{ padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'list' ? '#fff' : 'transparent', color: view === 'list' ? '#6366f1' : '#9ca3af', boxShadow: view === 'list' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
                 <List size={15} />
               </button>
             </div>
@@ -163,21 +155,21 @@ function Inner() {
             { label: 'Completion Rate', value: plans.length ? `${Math.round(plans.reduce((s, p) => s + p.progress, 0) / plans.length)}%` : '—', icon: <Trophy size={15} />, from: '#ec4899', to: '#db2777' },
           ].map((s, i) => (
             <m.div key={s.label} variants={itemVariants}
-              style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '18px 18px', background: `linear-gradient(135deg, ${s.from}18, rgba(30,27,75,0.6))`, border: '1px solid rgba(255,255,255,0.08)', cursor: 'default', transition: 'transform 0.3s' }}
+              style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '18px 18px', background: '#fff', border: '1px solid #e5e7eb', cursor: 'default', transition: 'transform 0.3s' }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
-              <div style={{ position: 'absolute', top: -15, right: -15, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${s.from}22, transparent 70%)`, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', top: -15, right: -15, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${s.from}15, transparent 70%)`, pointerEvents: 'none' }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, position: 'relative', zIndex: 1 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'rgba(255,255,255,0.5)' }}>{s.label}</span>
-                <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>{s.icon}</div>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#9ca3af' }}>{s.label}</span>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: `${s.from}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.from }}>{s.icon}</div>
               </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{s.value}</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{s.value}</div>
             </m.div>
           ))}
         </m.div>
 
         {/* ── Section Tabs ── */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 3 }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#F3F4F6', borderRadius: 12, padding: 3 }}>
           {[
             { key: 'plans', label: 'Active Plans', count: plans.length, color: '#6366f1' },
             { key: 'library', label: 'Exercise Library', count: filteredExercises.length, color: '#10b981' },
@@ -188,10 +180,11 @@ function Inner() {
               style={{
                 padding: '8px 18px', borderRadius: 9, border: 'none', cursor: 'pointer',
                 fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
-                background: activeTab === tab.key ? `linear-gradient(135deg, ${tab.color}22, ${tab.color}11)` : 'transparent',
-                color: activeTab === tab.key ? tab.color : 'rgba(255,255,255,0.3)',
+                background: activeTab === tab.key ? '#fff' : 'transparent',
+                color: activeTab === tab.key ? tab.color : '#9ca3af',
+                boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               }}>
-              {tab.label}{tab.count !== undefined ? <span style={{ marginLeft: 6, padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: `${tab.color}22`, color: tab.color }}>{tab.count}</span> : null}
+              {tab.label}{tab.count !== undefined ? <span style={{ marginLeft: 6, padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: `${tab.color}18`, color: tab.color }}>{tab.count}</span> : null}
             </button>
           ))}
         </div>
@@ -202,30 +195,30 @@ function Inner() {
             style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
             {plans.slice(0, 4).map((plan, i) => (
               <m.div key={plan.id} variants={itemVariants}
-                style={{ borderRadius: 18, padding: view === 'grid' ? 20 : '14px 18px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', display: view === 'list' ? 'flex' : 'block', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'all 0.3s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(99,102,241,0.12)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}>
+                style={{ borderRadius: 18, padding: view === 'grid' ? 20 : '14px 18px', background: '#fff', border: '1px solid #e5e7eb', display: view === 'list' ? 'flex' : 'block', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'all 0.3s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = '#d1d5db'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
                 <div style={{ width: view === 'grid' ? '100%' : 44, height: view === 'grid' ? 4 : 44, borderRadius: view === 'grid' ? 20 : 12, background: PLAN_COLORS[i % PLAN_COLORS.length], marginBottom: view === 'grid' ? 14 : 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{plan.name}</h3>
-                    <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700, background: DIFFICULTY_COLORS[plan.difficulty]?.bg || 'rgba(148,163,184,0.15)', color: DIFFICULTY_COLORS[plan.difficulty]?.color || '#cbd5e1' }}>{plan.difficulty}</span>
+                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>{plan.name}</h3>
+                    <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700, background: DIFFICULTY_COLORS[plan.difficulty]?.bg || 'rgba(148,163,184,0.12)', color: DIFFICULTY_COLORS[plan.difficulty]?.color || '#6b7280' }}>{plan.difficulty}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{plan.description}</p>
-                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+                  <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{plan.description}</p>
+                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#9ca3af' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Target size={12} /> {plan.goal}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {plan.duration}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Activity size={12} /> {plan.exercises} exercises</span>
                   </div>
                   {view === 'grid' && (
                     <div style={{ marginTop: 12 }}>
-                      <div style={{ height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <div style={{ height: 4, borderRadius: 2, background: '#F3F4F6', overflow: 'hidden' }}>
                         <m.div initial={{ width: 0 }} animate={{ width: `${plan.progress}%` }} transition={{ duration: 1, ease: 'easeOut' }}
                           style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${PLAN_COLORS[i % PLAN_COLORS.length]})` }} />
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: '#9ca3af' }}>
                         <span>Progress</span>
-                        <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>{plan.progress}%</span>
+                        <span style={{ fontWeight: 700, color: '#6b7280' }}>{plan.progress}%</span>
                       </div>
                     </div>
                   )}
@@ -239,19 +232,19 @@ function Inner() {
         {activeTab === 'library' && <div style={{ marginBottom: 28 }}>
           <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
             <button onClick={() => setActiveMuscle('All')}
-              style={{ padding: '6px 16px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s', background: activeMuscle === 'All' ? 'rgba(99,102,241,0.2)' : 'transparent', color: activeMuscle === 'All' ? '#a5b4fc' : 'rgba(255,255,255,0.4)', borderColor: activeMuscle === 'All' ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.08)' }}>
+              style={{ padding: '6px 16px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s', background: activeMuscle === 'All' ? 'rgba(99,102,241,0.1)' : '#fff', color: activeMuscle === 'All' ? '#6366f1' : '#6b7280', borderColor: activeMuscle === 'All' ? 'rgba(99,102,241,0.3)' : '#e5e7eb' }}>
               All
             </button>
             {MUSCLE_GROUPS.map((mg) => (
               <button key={mg} onClick={() => setActiveMuscle(mg)}
-                style={{ padding: '6px 16px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s', background: activeMuscle === mg ? `${GROUP_COLORS[mg]}22` : 'transparent', color: activeMuscle === mg ? GROUP_COLORS[mg] : 'rgba(255,255,255,0.4)', borderColor: activeMuscle === mg ? `${GROUP_COLORS[mg]}44` : 'rgba(255,255,255,0.08)' }}>
+                style={{ padding: '6px 16px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s', background: activeMuscle === mg ? `${GROUP_COLORS[mg]}12` : '#fff', color: activeMuscle === mg ? GROUP_COLORS[mg] : '#6b7280', borderColor: activeMuscle === mg ? `${GROUP_COLORS[mg]}40` : '#e5e7eb' }}>
                 {mg}
               </button>
             ))}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '4px 12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <Search size={13} color="rgba(255,255,255,0.3)" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', background: '#F9FAFB', borderRadius: 8, padding: '4px 12px', border: '1px solid #e5e7eb' }}>
+              <Search size={13} color="#9ca3af" />
               <input placeholder="Search exercises…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: 12, fontWeight: 500, outline: 'none', width: 180 }} />
+                style={{ background: 'transparent', border: 'none', color: '#111827', fontSize: 12, fontWeight: 500, outline: 'none', width: 180 }} />
             </div>
           </div>
 
@@ -259,15 +252,15 @@ function Inner() {
             style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
             {filteredExercises.slice(0, 12).map((ex, i) => (
               <m.div key={ex.id} variants={itemVariants}
-                style={{ borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.02)', border: `1px solid ${GROUP_COLORS[ex.muscleGroup]}15`, cursor: 'pointer', transition: 'all 0.3s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = `${GROUP_COLORS[ex.muscleGroup]}08`; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}30`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}15`; }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: `${GROUP_COLORS[ex.muscleGroup]}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, color: GROUP_COLORS[ex.muscleGroup] }}>
+                style={{ borderRadius: 14, padding: 16, background: '#fff', border: `1px solid ${GROUP_COLORS[ex.muscleGroup]}20`, cursor: 'pointer', transition: 'all 0.3s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = `${GROUP_COLORS[ex.muscleGroup]}08`; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}40`; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}20`; }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: `${GROUP_COLORS[ex.muscleGroup]}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, color: GROUP_COLORS[ex.muscleGroup] }}>
                   <Dumbbell size={14} />
                 </div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>{ex.name}</h4>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '0 0 8px' }}>{ex.muscleGroup} · {ex.difficulty}</p>
-                <div style={{ display: 'flex', gap: 6, fontSize: 10.5, color: 'rgba(255,255,255,0.3)' }}>
+                <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#111827' }}>{ex.name}</h4>
+                <p style={{ fontSize: 11, color: '#6b7280', margin: '0 0 8px' }}>{ex.muscleGroup} · {ex.difficulty}</p>
+                <div style={{ display: 'flex', gap: 6, fontSize: 10.5, color: '#9ca3af' }}>
                   <span>{ex.sets} sets</span>
                   <span>·</span>
                   <span>{ex.reps}</span>
@@ -278,12 +271,12 @@ function Inner() {
         </div>}
 
         {/* ── Plan Builder ── */}
-        {activeTab === 'builder' && <div style={{ marginBottom: 28, borderRadius: 20, padding: 28, background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.12)' }}>
+        {activeTab === 'builder' && <div style={{ marginBottom: 28, borderRadius: 20, padding: 28, background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.15)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Dumbbell size={17} color="#fbbf24" />
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Dumbbell size={17} color="#d97706" />
             </div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>Plan Builder</h3>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>Plan Builder</h3>
           </div>
           {[
             { step: 0, label: 'Choose Client', icon: <User size={16} />, desc: 'Select the client this plan is for' },
@@ -292,15 +285,15 @@ function Inner() {
             { step: 3, label: 'Review & Save', icon: <Check size={16} />, desc: 'Review and publish the plan' },
           ].map((s) => (
             <div key={s.step} onClick={() => setBuilderStep(s.step)}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', marginBottom: 8, borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s', background: builderStep === s.step ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.02)', border: `1px solid ${builderStep === s.step ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.05)'}` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: builderStep === s.step ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: builderStep === s.step ? '#fbbf24' : 'rgba(255,255,255,0.3)' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', marginBottom: 8, borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s', background: builderStep === s.step ? 'rgba(245,158,11,0.06)' : '#F9FAFB', border: `1px solid ${builderStep === s.step ? 'rgba(245,158,11,0.25)' : '#e5e7eb'}` }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: builderStep === s.step ? 'rgba(245,158,11,0.15)' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: builderStep === s.step ? '#d97706' : '#9ca3af' }}>
                 {s.icon}
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: builderStep === s.step ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)' }}>Step {s.step + 1}: {s.label}</div>
-                <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{s.desc}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: builderStep === s.step ? '#111827' : '#374151' }}>Step {s.step + 1}: {s.label}</div>
+                <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 2 }}>{s.desc}</div>
               </div>
-              {builderStep === s.step && <ChevronRight size={16} color="#fbbf24" style={{ marginLeft: 'auto' }} />}
+              {builderStep === s.step && <ChevronRight size={16} color="#d97706" style={{ marginLeft: 'auto' }} />}
             </div>
           ))}
           <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
@@ -311,13 +304,13 @@ function Inner() {
         </div>}
 
         {/* ── AI Section ── */}
-        {activeTab === 'ai' && <div style={{ borderRadius: 20, padding: 22, background: 'linear-gradient(135deg, rgba(139,92,246,0.06), rgba(236,72,153,0.04))', border: '1px solid rgba(139,92,246,0.12)' }}>
+        {activeTab === 'ai' && <div style={{ borderRadius: 20, padding: 22, background: 'rgba(99,102,241,0.03)', border: '1px solid rgba(99,102,241,0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={17} color="#c4b5fd" />
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(236,72,153,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={17} color="#6366f1" />
             </div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>AI-Powered Suggestions</h3>
-            <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 9.5, fontWeight: 700, background: 'rgba(139,92,246,0.15)', color: '#a78bfa', letterSpacing: '0.05em' }}>BETA</span>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#111827' }}>AI-Powered Suggestions</h3>
+            <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 9.5, fontWeight: 700, background: 'rgba(99,102,241,0.1)', color: '#6366f1', letterSpacing: '0.05em' }}>BETA</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
             {[
@@ -327,18 +320,18 @@ function Inner() {
               { title: 'Flexibility Flow', description: 'Yoga-inspired mobility and recovery routine', goal: 'Flexibility', intensity: 'Low', color: '#10b981' },
             ].map((s, i) => (
               <m.div key={s.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                style={{ borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${s.color}15`, cursor: 'pointer', transition: 'all 0.3s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = `${s.color}08`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                style={{ borderRadius: 14, padding: 16, background: '#fff', border: `1px solid ${s.color}20`, cursor: 'pointer', transition: 'all 0.3s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = `${s.color}06`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(0)'; }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 7, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 7, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>
                     <Zap size={13} />
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>{s.goal}</span>
-                  <span style={{ marginLeft: 'auto', padding: '2px 8px', borderRadius: 10, fontSize: 9.5, fontWeight: 700, background: `${s.color}18`, color: s.color }}>{s.intensity}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>{s.goal}</span>
+                  <span style={{ marginLeft: 'auto', padding: '2px 8px', borderRadius: 10, fontSize: 9.5, fontWeight: 700, background: `${s.color}15`, color: s.color }}>{s.intensity}</span>
                 </div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>{s.title}</h4>
-                <p style={{ margin: 0, fontSize: 11.5, color: 'rgba(255,255,255,0.35)' }}>{s.description}</p>
+                <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#111827' }}>{s.title}</h4>
+                <p style={{ margin: 0, fontSize: 11.5, color: '#6b7280' }}>{s.description}</p>
               </m.div>
             ))}
           </div>

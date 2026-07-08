@@ -118,7 +118,7 @@ function Inner() {
         clients_count: tc.length,
         monthly_pt_revenue: monthlyRevenue,
         incentive_rate: Number(t.incentive_rate) || 0,
-        incentive_amount: monthlyRevenue * (Number(t.incentive_rate) || 0) / 100,
+        incentive_amount: monthlyRevenue * (Number(t.incentive_rate) || 0),
         revenue_percentage: 0,
       };
     });
@@ -168,43 +168,12 @@ function Inner() {
     <AppShell>
       <div style={{ minHeight: '100vh', background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
 
-        {/* ── Dark Gradient Hero ── */}
+        {/* ── Hero ── */}
         <div style={{
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg,#0f172a,#1e293b)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: '1px solid rgba(0,0,0,0.07)',
         }}>
-          {/* Orb 1 — Indigo */}
-          <m.div
-            animate={{ x: [0, 40, -20, 0], y: [0, -50, 30, 0] }}
-            transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
-            style={{
-              position: 'absolute', width: 320, height: 320, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
-              top: -120, right: '10%', pointerEvents: 'none',
-            }}
-          />
-          {/* Orb 2 — Violet */}
-          <m.div
-            animate={{ x: [0, -50, 40, 0], y: [0, 60, -30, 0] }}
-            transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
-            style={{
-              position: 'absolute', width: 260, height: 260, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)',
-              top: -60, left: '15%', pointerEvents: 'none',
-            }}
-          />
-          {/* Orb 3 — Purple */}
-          <m.div
-            animate={{ x: [0, 30, -50, 0], y: [0, -40, 50, 0] }}
-            transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-            style={{
-              position: 'absolute', width: 220, height: 220, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%)',
-              bottom: -40, right: '25%', pointerEvents: 'none',
-            }}
-          />
 
           {/* Hero Content */}
           <div style={{
@@ -232,13 +201,10 @@ function Inner() {
                   <h1 style={{
                     fontSize: 26, fontWeight: 860,
                     letterSpacing: '-0.03em', margin: 0,
-                    background: 'linear-gradient(135deg,#f8fafc,#94a3b8)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    color: '#111827',
                   }}>Trainer Payouts</h1>
                 </div>
-                <p style={{ marginTop: 6, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
+                <p style={{ marginTop: 6, fontSize: 13, color: '#6b7280' }}>
                   PT revenue, incentives & payout summaries for all trainers.
                 </p>
               </div>
@@ -247,15 +213,13 @@ function Inner() {
               <div style={{
                 padding: '8px 14px',
                 borderRadius: 12,
-                background: 'rgba(255,255,255,0.06)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: '#fff',
+                border: '1px solid rgba(0,0,0,0.07)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
                 <span style={{
                   fontSize: 12, fontWeight: 700,
-                  color: 'rgba(255,255,255,0.45)',
+                  color: '#6b7280',
                   letterSpacing: '0.5px', textTransform: 'uppercase',
                 }}>
                   {monthLabel(curYear, curMonth)}
@@ -278,9 +242,7 @@ function Inner() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 style={{
-                  background: 'rgba(254,202,202,0.15)',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
+                  background: '#fef2f2',
                   border: '1px solid rgba(239,68,68,0.25)',
                   borderRadius: 14, padding: '12px 16px',
                   fontSize: 14, color: '#f87171', marginBottom: 16,
@@ -427,13 +389,13 @@ function Inner() {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{
-                        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                        background: '#f9fafb',
                       }}>
                         {['Trainer', 'PT Clients', 'Monthly Revenue', 'Incentive %', 'Incentive Amount', 'Revenue Share'].map((h) => (
                           <th key={h} style={{
                             padding: '14px 20px',
                             textAlign: h === 'Monthly Revenue' || h === 'Incentive Amount' || h === 'PT Clients' || h === 'Revenue Share' ? 'right' : 'left',
-                            fontSize: 11, fontWeight: 700, color: 'white',
+                            fontSize: 11, fontWeight: 700, color: '#6b7280',
                             textTransform: 'uppercase', letterSpacing: '0.8px',
                             whiteSpace: 'nowrap',
                           }}>

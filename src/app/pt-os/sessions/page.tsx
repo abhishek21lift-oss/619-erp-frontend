@@ -121,7 +121,7 @@ export default function PTSessionsPage() {
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-[var(--text-primary)]">
+              <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-[#111827]">
                 Session History
               </h1>
               <p className="mt-1 text-[13px] text-[#6B7280]">
@@ -143,11 +143,11 @@ export default function PTSessionsPage() {
           {/* Filters */}
           <div className="mb-5 flex flex-col gap-3">
             <div className="relative w-full">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-disabled)]" strokeWidth={1.5} />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" strokeWidth={1.5} />
               <input
                 type="text" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by client name or mobile..."
-                className="w-full h-11 rounded-xl border border-[rgba(0,0,0,0.06)] bg-white pl-9 pr-4 text-[13px] text-[var(--text-primary)] placeholder-[#9CA3AF] outline-none transition-all duration-200 focus:border-[#3B82F6]/30 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
+                className="w-full h-11 rounded-xl border border-[#d1d5db] bg-white pl-9 pr-4 text-[13px] text-[#111827] placeholder-[#9CA3AF] outline-none transition-all duration-200 focus:border-[#3B82F6]/30 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
               />
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
@@ -190,7 +190,7 @@ export default function PTSessionsPage() {
                 <Calendar className="h-7 w-7" strokeWidth={1.5} />
               </div>
               <p className="text-sm font-medium text-[#6B7280]">No sessions found</p>
-              <p className="mt-1 text-[12px] text-[var(--text-disabled)]">Schedule a PT session to see it here</p>
+              <p className="mt-1 text-[12px] text-[#9ca3af]">Schedule a PT session to see it here</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -216,7 +216,7 @@ export default function PTSessionsPage() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
+                      <p className="truncate text-[14px] font-semibold text-[#111827]">
                         {s.client_name || 'Unknown Client'}
                       </p>
                       <div className="mt-0.5 flex items-center gap-3 text-[12px] text-[#6B7280]">

@@ -189,17 +189,17 @@ export default function QrScannerPage() {
 
         {/* Hero */}
         <div style={{
-          background: 'linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0c4a6e 100%)',
+          background: '#f8fafc',
           borderRadius: 16, padding: '20px 24px', marginBottom: 20,
-          border: '1px solid rgba(6,182,212,0.2)',
+          border: '1px solid rgba(0,0,0,0.07)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#06b6d4,#0284c7)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(6,182,212,0.3)' }}>
               <QrCode size={22} color="#fff" />
             </div>
             <div>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>QR Check-In Scanner</h1>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>QR Check-In Scanner</h1>
+              <p style={{ fontSize: 12, color: '#6b7280', margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: scanState === 'scanning' ? '#10b981' : '#94a3b8', display: 'inline-block' }} />
                 {sc.label}
               </p>

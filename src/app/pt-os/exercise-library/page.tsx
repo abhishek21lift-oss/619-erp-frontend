@@ -40,48 +40,46 @@ interface Meta {
 }
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner:     '#6ee7b7',
-  intermediate: '#fbbf24',
-  advanced:     '#f87171',
+  beginner:     '#059669',
+  intermediate: '#d97706',
+  advanced:     '#dc2626',
 };
 
 const BODY_PART_COLORS: Record<string, string> = {
-  Core:      '#a78bfa',
-  Back:      '#60a5fa',
-  Legs:      '#34d399',
-  Chest:     '#f87171',
-  Shoulders: '#fbbf24',
-  Arms:      '#fb923c',
-  Neck:      '#94a3b8',
-  'Full Body': '#818cf8',
+  Core:      '#7c3aed',
+  Back:      '#2563eb',
+  Legs:      '#059669',
+  Chest:     '#dc2626',
+  Shoulders: '#d97706',
+  Arms:      '#ea580c',
+  Neck:      '#6b7280',
+  'Full Body': '#4f46e5',
 };
 
 const PAGE_SIZE = 40;
 
-const ExerciseCard = React.memo(function ExerciseCard({
+function ExerciseCard({
   exercise, onClick, onDelete,
 }: { exercise: Exercise; onClick: () => void; onDelete: (e: React.MouseEvent) => void }) {
   const [imgError, setImgError] = useState(false);
-  const bodyColor = BODY_PART_COLORS[exercise.body_part] || '#94a3b8';
-  const diffColor = DIFFICULTY_COLORS[exercise.difficulty] || '#94a3b8';
+  const bodyColor = BODY_PART_COLORS[exercise.body_part] || '#6b7280';
+  const diffColor = DIFFICULTY_COLORS[exercise.difficulty] || '#6b7280';
 
   return (
     <div
       onClick={onClick}
       className="relative group cursor-pointer rounded-xl border overflow-hidden transition-all hover:scale-[1.01]"
-      style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}
+      style={{ background: '#fff', borderColor: '#e5e7eb' }}
     >
       {/* GIF / placeholder */}
       <div
         className="w-full h-36 flex items-center justify-center overflow-hidden"
-        style={{ background: 'var(--muted)', borderBottom: '1px solid var(--border)' }}
+        style={{ background: '#F9FAFB', borderBottom: '1px solid #f3f4f6' }}
       >
         {exercise.gif_url && !imgError ? (
           <img
             src={exercise.gif_url}
             alt={exercise.name}
-            loading="lazy"
-            decoding="async"
             className="w-full h-full object-cover"
             onError={() => setImgError(true)}
           />
@@ -96,7 +94,7 @@ const ExerciseCard = React.memo(function ExerciseCard({
       {/* Body badge */}
       <span
         className="absolute top-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full"
-        style={{ background: bodyColor + '22', color: bodyColor, border: `1px solid ${bodyColor}44` }}
+        style={{ background: bodyColor + '18', color: bodyColor, border: `1px solid ${bodyColor}30` }}
       >
         {exercise.body_part}
       </span>
@@ -105,29 +103,29 @@ const ExerciseCard = React.memo(function ExerciseCard({
       <button
         onClick={onDelete}
         className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
+        style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}
       >
         <Trash2 size={13} />
       </button>
 
       <div className="p-3">
-        <p className="font-semibold text-sm leading-snug line-clamp-2 mb-2" style={{ color: 'var(--foreground)' }}>
+        <p className="font-semibold text-sm leading-snug line-clamp-2 mb-2" style={{ color: '#111827' }}>
           {exercise.name}
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
           {exercise.equipment && (
-            <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+            <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#6b7280' }}>
               {exercise.equipment}
             </span>
           )}
           <span
             className="text-xs px-1.5 py-0.5 rounded"
-            style={{ background: diffColor + '22', color: diffColor }}
+            style={{ background: diffColor + '15', color: diffColor }}
           >
             {exercise.difficulty}
           </span>
           {exercise.exercise_type && (
-            <span className="text-xs px-1.5 py-0.5 rounded capitalize" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+            <span className="text-xs px-1.5 py-0.5 rounded capitalize" style={{ background: '#F3F4F6', color: '#6b7280' }}>
               {exercise.exercise_type}
             </span>
           )}
@@ -135,7 +133,7 @@ const ExerciseCard = React.memo(function ExerciseCard({
       </div>
     </div>
   );
-});
+}
 
 function ExerciseModal({ exercise, onClose, onSave }: {
   exercise: Exercise | null;
@@ -154,8 +152,8 @@ function ExerciseModal({ exercise, onClose, onSave }: {
 
   if (!exercise) return null;
 
-  const bodyColor = BODY_PART_COLORS[exercise.body_part] || '#94a3b8';
-  const diffColor = DIFFICULTY_COLORS[exercise.difficulty] || '#94a3b8';
+  const bodyColor = BODY_PART_COLORS[exercise.body_part] || '#6b7280';
+  const diffColor = DIFFICULTY_COLORS[exercise.difficulty] || '#6b7280';
 
   async function handleSave() {
     setSaving(true);
@@ -168,35 +166,35 @@ function ExerciseModal({ exercise, onClose, onSave }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
       <div
         className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
-        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+        style={{ background: '#fff', border: '1px solid #e5e7eb' }}
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: '#e5e7eb' }}>
           <div className="flex-1 pr-4">
             {editing ? (
               <input
                 className="w-full text-xl font-bold rounded-lg px-2 py-1"
-                style={{ background: 'var(--muted)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+                style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db' }}
                 value={form.name ?? ''}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               />
             ) : (
-              <h2 className="text-xl font-bold" style={{ color: 'var(--foreground)' }}>{exercise.name}</h2>
+              <h2 className="text-xl font-bold" style={{ color: '#111827' }}>{exercise.name}</h2>
             )}
             <div className="flex gap-2 mt-2 flex-wrap">
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: bodyColor + '22', color: bodyColor }}>
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: bodyColor + '18', color: bodyColor }}>
                 {exercise.body_part}
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: diffColor + '22', color: diffColor }}>
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: diffColor + '15', color: diffColor }}>
                 {exercise.difficulty}
               </span>
               {exercise.equipment && (
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#F3F4F6', color: '#6b7280' }}>
                   {exercise.equipment}
                 </span>
               )}
               {exercise.exercise_type && (
-                <span className="text-xs px-2 py-0.5 rounded-full capitalize" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+                <span className="text-xs px-2 py-0.5 rounded-full capitalize" style={{ background: '#F3F4F6', color: '#6b7280' }}>
                   {exercise.exercise_type}
                 </span>
               )}
@@ -204,11 +202,11 @@ function ExerciseModal({ exercise, onClose, onSave }: {
           </div>
           <div className="flex gap-2">
             {!editing && (
-              <button onClick={() => setEditing(true)} className="p-2 rounded-lg transition-colors" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+              <button onClick={() => setEditing(true)} className="p-2 rounded-lg transition-colors" style={{ background: '#F3F4F6', color: '#6b7280' }}>
                 <Edit3 size={16} />
               </button>
             )}
-            <button onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+            <button onClick={onClose} className="p-2 rounded-lg" style={{ background: '#F3F4F6', color: '#6b7280' }}>
               <X size={16} />
             </button>
           </div>
@@ -216,7 +214,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
 
         {/* GIF */}
         {exercise.gif_url && !imgError && (
-          <div className="w-full h-56 overflow-hidden" style={{ background: 'var(--muted)' }}>
+          <div className="w-full h-56 overflow-hidden" style={{ background: '#F9FAFB' }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- external user-provided GIF URL, domain unknown */}
             <img src={exercise.gif_url} alt={exercise.name} className="w-full h-full object-contain" onError={() => setImgError(true)} />
           </div>
@@ -226,24 +224,24 @@ function ExerciseModal({ exercise, onClose, onSave }: {
         <div className="p-5 space-y-4">
           {/* Muscle info */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg p-3" style={{ background: 'var(--muted)' }}>
-              <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>Primary Muscle</p>
-              <p className="font-semibold capitalize text-sm" style={{ color: 'var(--foreground)' }}>{exercise.target_muscle || '—'}</p>
+            <div className="rounded-lg p-3" style={{ background: '#F9FAFB' }}>
+              <p className="text-xs mb-1" style={{ color: '#6b7280' }}>Primary Muscle</p>
+              <p className="font-semibold capitalize text-sm" style={{ color: '#111827' }}>{exercise.target_muscle || '—'}</p>
             </div>
-            <div className="rounded-lg p-3" style={{ background: 'var(--muted)' }}>
-              <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>Secondary Muscles</p>
-              <p className="text-sm capitalize" style={{ color: 'var(--foreground)' }}>{exercise.secondary_muscles || '—'}</p>
+            <div className="rounded-lg p-3" style={{ background: '#F9FAFB' }}>
+              <p className="text-xs mb-1" style={{ color: '#6b7280' }}>Secondary Muscles</p>
+              <p className="text-sm capitalize" style={{ color: '#111827' }}>{exercise.secondary_muscles || '—'}</p>
             </div>
             {exercise.force && (
-              <div className="rounded-lg p-3" style={{ background: 'var(--muted)' }}>
-                <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>Force</p>
-                <p className="font-semibold capitalize text-sm" style={{ color: 'var(--foreground)' }}>{exercise.force}</p>
+              <div className="rounded-lg p-3" style={{ background: '#F9FAFB' }}>
+                <p className="text-xs mb-1" style={{ color: '#6b7280' }}>Force</p>
+                <p className="font-semibold capitalize text-sm" style={{ color: '#111827' }}>{exercise.force}</p>
               </div>
             )}
             {exercise.mechanic && (
-              <div className="rounded-lg p-3" style={{ background: 'var(--muted)' }}>
-                <p className="text-xs mb-1" style={{ color: 'var(--muted-foreground)' }}>Mechanic</p>
-                <p className="font-semibold capitalize text-sm" style={{ color: 'var(--foreground)' }}>{exercise.mechanic}</p>
+              <div className="rounded-lg p-3" style={{ background: '#F9FAFB' }}>
+                <p className="text-xs mb-1" style={{ color: '#6b7280' }}>Mechanic</p>
+                <p className="font-semibold capitalize text-sm" style={{ color: '#111827' }}>{exercise.mechanic}</p>
               </div>
             )}
           </div>
@@ -251,19 +249,19 @@ function ExerciseModal({ exercise, onClose, onSave }: {
           {/* Instructions */}
           {exercise.instructions && (
             <div>
-              <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--muted-foreground)' }}>Instructions</p>
+              <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: '#6b7280' }}>Instructions</p>
               {editing ? (
                 <textarea
                   className="w-full rounded-lg p-3 text-sm resize-none"
-                  style={{ background: 'var(--muted)', color: 'var(--foreground)', border: '1px solid var(--border)', minHeight: 120 }}
+                  style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db', minHeight: 120 }}
                   value={form.instructions ?? ''}
                   onChange={e => setForm(f => ({ ...f, instructions: e.target.value }))}
                 />
               ) : (
                 <ol className="space-y-2">
                   {exercise.instructions.split('\n').filter(Boolean).map((step, i) => (
-                    <li key={i} className="flex gap-3 text-sm" style={{ color: 'var(--foreground)' }}>
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'var(--primary)', color: 'white' }}>
+                    <li key={i} className="flex gap-3 text-sm" style={{ color: '#111827' }}>
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: '#6366f1', color: 'white' }}>
                         {i + 1}
                       </span>
                       <span className="leading-snug">{step}</span>
@@ -277,10 +275,10 @@ function ExerciseModal({ exercise, onClose, onSave }: {
           {/* Edit actions */}
           {editing && (
             <div className="flex gap-3 pt-2">
-              <button onClick={() => { setEditing(false); setForm(exercise); }} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>
+              <button onClick={() => { setEditing(false); setForm(exercise); }} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: '#F3F4F6', color: '#6b7280' }}>
                 Cancel
               </button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: 'var(--primary)', color: 'white', opacity: saving ? 0.6 : 1 }}>
+              <button onClick={handleSave} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: '#6366f1', color: 'white', opacity: saving ? 0.6 : 1 }}>
                 {saving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
@@ -310,17 +308,17 @@ function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreat
 
   const field = (label: string, key: keyof typeof form, type: 'text' | 'select' | 'textarea' = 'text', options?: string[]) => (
     <div>
-      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--muted-foreground)' }}>{label}</label>
+      <label className="block text-xs font-medium mb-1" style={{ color: '#6b7280' }}>{label}</label>
       {type === 'select' ? (
-        <select className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--muted)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+        <select className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db' }}
           value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}>
           {options!.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
       ) : type === 'textarea' ? (
-        <textarea rows={4} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--muted)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+        <textarea rows={4} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db' }}
           value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
       ) : (
-        <input className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--muted)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+        <input className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: '#F9FAFB', color: '#111827', border: '1px solid #d1d5db' }}
           value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
       )}
     </div>
@@ -328,10 +326,10 @@ function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: 'var(--border)' }}>
-          <h2 className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>Add Exercise</h2>
-          <button aria-label="Close" onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}><X size={16} /></button>
+      <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #e5e7eb' }}>
+        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#e5e7eb' }}>
+          <h2 className="text-lg font-bold" style={{ color: '#111827' }}>Add Exercise</h2>
+          <button onClick={onClose} className="p-2 rounded-lg" style={{ background: '#F3F4F6', color: '#6b7280' }}><X size={16} /></button>
         </div>
         <div className="p-5 space-y-4">
           {field('Exercise Name *', 'name')}
@@ -341,8 +339,8 @@ function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreat
           {field('Type', 'exercise_type', 'select', ['strength', 'cardio', 'stretching', 'plyometrics', 'powerlifting', 'strongman', 'olympic weightlifting'])}
           {field('Instructions', 'instructions', 'textarea')}
           <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}>Cancel</button>
-            <button onClick={handleCreate} disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: 'var(--primary)', color: 'white', opacity: saving ? 0.6 : 1 }}>
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: '#F3F4F6', color: '#6b7280' }}>Cancel</button>
+            <button onClick={handleCreate} disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: '#6366f1', color: 'white', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Creating…' : 'Create Exercise'}
             </button>
           </div>
@@ -427,19 +425,19 @@ export default function ExerciseLibraryPage() {
   return (
     <Guard>
       <AppShell>
-        <div className="min-h-screen p-4 md:p-6" style={{ background: 'var(--background)' }}>
+        <div className="min-h-screen p-4 md:p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>Exercise Library</h1>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+              <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>Exercise Library</h1>
+              <p className="text-sm mt-0.5" style={{ color: '#6b7280' }}>
                 {meta?.total ?? total} exercises · {meta?.body_parts.length ?? 7} body parts · {meta?.equipment_types.length ?? 12} equipment types
               </p>
             </div>
             <button
               onClick={() => setShowAdd(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: 'var(--primary)', color: 'white' }}
+              style={{ background: '#6366f1', color: 'white' }}
             >
               <Plus size={16} /> Add Exercise
             </button>
@@ -448,10 +446,10 @@ export default function ExerciseLibraryPage() {
           {/* Search + Filters */}
           <div className="mb-5 space-y-3">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#6b7280' }} />
               <input
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
-                style={{ background: 'var(--bg-elevated)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+                style={{ background: '#fff', color: '#111827', border: '1px solid #d1d5db' }}
                 placeholder="Search exercises…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -469,17 +467,17 @@ export default function ExerciseLibraryPage() {
                   <select
                     className="appearance-none pl-3 pr-8 py-2 rounded-xl text-sm font-medium cursor-pointer"
                     style={{
-                      background: value ? 'var(--primary)' : 'var(--bg-elevated)',
-                      color: value ? 'white' : 'var(--foreground)',
-                      border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
+                      background: value ? '#6366f1' : '#fff',
+                      color: value ? 'white' : '#374151',
+                      border: `1px solid ${value ? '#6366f1' : '#d1d5db'}`,
                     }}
                     value={value}
                     onChange={e => setter(e.target.value)}
                   >
                     <option value="">{label}</option>
-                    {options.map(o => <option key={o} value={o} style={{ background: 'var(--bg-elevated)', color: 'var(--foreground)' }}>{o}</option>)}
+                    {options.map(o => <option key={o} value={o} style={{ background: '#fff', color: '#111827' }}>{o}</option>)}
                   </select>
-                  <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: value ? 'white' : 'var(--muted-foreground)' }} />
+                  <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: value ? 'white' : '#6b7280' }} />
                 </div>
               ))}
 
@@ -487,7 +485,7 @@ export default function ExerciseLibraryPage() {
                 <button
                   onClick={() => { setBodyPart(''); setEquipment(''); setExerciseType(''); setDifficulty(''); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium"
-                  style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+                  style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.2)' }}
                 >
                   <X size={13} /> Clear filters
                 </button>
@@ -499,13 +497,13 @@ export default function ExerciseLibraryPage() {
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
               {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                <div key={i} className="rounded-xl h-52 animate-pulse" style={{ background: 'var(--muted)' }} />
+                <div key={i} className="rounded-xl h-52 animate-pulse" style={{ background: '#F3F4F6' }} />
               ))}
             </div>
           ) : exercises.length === 0 ? (
             <div className="text-center py-20">
               <Dumbbell size={40} className="mx-auto mb-3 opacity-20" />
-              <p style={{ color: 'var(--muted-foreground)' }}>No exercises found</p>
+              <p style={{ color: '#6b7280' }}>No exercises found</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -527,18 +525,18 @@ export default function ExerciseLibraryPage() {
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
                 className="p-2 rounded-xl disabled:opacity-30"
-                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+                style={{ background: '#fff', border: '1px solid #e5e7eb', color: '#374151' }}
               >
                 <ChevronLeft size={18} />
               </button>
-              <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+              <span className="text-sm" style={{ color: '#6b7280' }}>
                 Page {page + 1} of {totalPages} · {total} exercises
               </span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 className="p-2 rounded-xl disabled:opacity-30"
-                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--foreground)' }}
+                style={{ background: '#fff', border: '1px solid #e5e7eb', color: '#374151' }}
               >
                 <ChevronRight size={18} />
               </button>

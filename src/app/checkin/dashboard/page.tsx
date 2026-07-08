@@ -99,22 +99,22 @@ export default function DashboardPage() {
     <Guard role="admin">
       <AppShell>
         {/* Hero */}
-        <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1a1a2e 50%,#0d1117 100%)', borderRadius: 16, padding: '20px 24px', marginBottom: 20, border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ background: '#f8fafc', borderRadius: 16, padding: '20px 24px', marginBottom: 20, border: '1px solid rgba(0,0,0,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Activity size={22} color="#fff" />
               </div>
               <div>
-                <h1 style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: 0 }}>Attendance Dashboard</h1>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '3px 0 0' }}>
+                <h1 style={{ fontSize: 20, fontWeight: 800, color: '#111827', margin: 0 }}>Attendance Dashboard</h1>
+                <p style={{ fontSize: 11, color: '#6b7280', margin: '3px 0 0' }}>
                   Live · Refreshes every 30s · Last updated {lastRefresh.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </p>
               </div>
             </div>
             <button
               onClick={load} disabled={loading}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(0,0,0,0.07)', background: '#f1f5f9', color: '#374151', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
             >
               <RefreshCw size={13} style={loading ? { animation: 'spin 0.9s linear infinite' } : {}} />
               Refresh

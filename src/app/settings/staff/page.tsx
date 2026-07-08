@@ -151,13 +151,6 @@ function Inner() {
 
       <div className="sm-page">
 
-        {/* ── MESH BACKGROUND ─────────────────────────────────── */}
-        <div className="sm-mesh" aria-hidden="true">
-          <div className="sm-blob sm-blob-1" />
-          <div className="sm-blob sm-blob-2" />
-          <div className="sm-blob sm-blob-3" />
-        </div>
-
         {/* ── HERO ────────────────────────────────────────────── */}
         <section className="sm-hero">
           <div className="sm-hero-left">
@@ -806,38 +799,6 @@ const CSS = `
 }
 @media (max-width: 768px) { .sm-page { padding: 18px 16px 80px; } }
 
-/* ── Mesh bg ───────────────────────────────────────── */
-.sm-mesh {
-  position: fixed; inset: 0; z-index: 0;
-  pointer-events: none; overflow: hidden;
-}
-.sm-blob {
-  position: absolute; border-radius: 50%;
-  filter: blur(80px); opacity: 0.28;
-  animation: float 12s ease-in-out infinite;
-}
-.sm-blob-1 {
-  width: 560px; height: 560px; top: -120px; right: -80px;
-  background: radial-gradient(circle, #7c3aed55, #4f46e533);
-  animation-delay: 0s;
-}
-.sm-blob-2 {
-  width: 400px; height: 400px; bottom: 5%; left: -60px;
-  background: radial-gradient(circle, #0ea5e944, #06b6d422);
-  animation-delay: 4s;
-}
-.sm-blob-3 {
-  width: 300px; height: 300px; top: 40%; left: 40%;
-  background: radial-gradient(circle, #e11d4822, #f59e0b11);
-  animation-delay: 8s;
-}
-@keyframes float {
-  0%,100% { transform: translate(0,0) scale(1); }
-  33%      { transform: translate(18px,-22px) scale(1.05); }
-  66%      { transform: translate(-12px,14px) scale(0.97); }
-}
-.sm-page > *:not(.sm-mesh) { position: relative; z-index: 1; }
-
 /* ── Hero ──────────────────────────────────────────── */
 .sm-hero {
   display: flex;
@@ -845,9 +806,8 @@ const CSS = `
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 28px;
-  background: rgba(255,255,255,0.82);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(124,58,237,0.12);
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.07);
   border-radius: 20px;
   padding: 28px 32px;
   box-shadow: 0 4px 24px rgba(124,58,237,0.08), 0 1px 4px rgba(0,0,0,0.04);
@@ -875,7 +835,7 @@ const CSS = `
 .sm-hero-sub { font-size: 13.5px; color: #64748b; margin-top: 8px; max-width: 440px; line-height: 1.55; }
 .sm-hero-stats { display: flex; gap: 12px; flex-wrap: wrap; }
 .sm-stat-card {
-  background: rgba(255,255,255,0.9);
+  background: #fff;
   border: 1px solid #f1f5f9;
   border-radius: 14px; padding: 14px 20px;
   min-width: 96px; text-align: center;
@@ -911,11 +871,10 @@ const CSS = `
   color: #94a3b8; pointer-events: none;
 }
 .sm-search {
-  width: 100%; background: rgba(255,255,255,0.9);
+  width: 100%; background: #fff;
   border: 1.5px solid #e2e8f0;
   border-radius: 12px; padding: 11px 36px 11px 40px;
   font-size: 13.5px; color: #0f172a; outline: none;
-  backdrop-filter: blur(8px);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .sm-search:focus {
@@ -968,10 +927,9 @@ const CSS = `
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 14px; border-radius: 100px;
   font-size: 12px; font-weight: 650;
-  background: rgba(255,255,255,0.85); color: #475569;
+  background: #fff; color: #475569;
   border: 1.5px solid #e2e8f0;
   cursor: pointer; transition: all 0.15s;
-  backdrop-filter: blur(8px);
 }
 .sm-filter-tab:hover { border-color: #cbd5e1; background: #fff; }
 .sm-filter-tab.active { border-color: currentColor; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -1001,11 +959,10 @@ const CSS = `
 
 /* ── Card ──────────────────────────────────────────── */
 .sm-card {
-  background: rgba(255,255,255,0.9);
-  border: 1.5px solid #f1f5f9;
+  background: #fff;
+  border: 1.5px solid rgba(0,0,0,0.07);
   border-radius: 18px; padding: 20px;
   display: flex; flex-direction: column; gap: 16px;
-  backdrop-filter: blur(12px);
   box-shadow: 0 2px 12px rgba(0,0,0,0.04);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   animation: card-in 0.3s ease both;
@@ -1114,11 +1071,10 @@ const CSS = `
 
 /* ── Table ──────────────────────────────────────────── */
 .sm-table-card {
-  background: rgba(255,255,255,0.9);
-  border: 1.5px solid #f1f5f9;
+  background: #fff;
+  border: 1.5px solid rgba(0,0,0,0.07);
   border-radius: 18px; overflow: hidden;
   box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-  backdrop-filter: blur(12px);
 }
 .sm-table { width: 100%; border-collapse: collapse; }
 .sm-table thead tr { background: #f8fafc; border-bottom: 1.5px solid #f1f5f9; }
@@ -1154,8 +1110,7 @@ const CSS = `
   position: fixed; top: 0; right: 0; bottom: 0;
   width: 420px; max-width: 100%;
   z-index: 50;
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(20px);
+  background: #fff;
   border-left: 1.5px solid #e2e8f0;
   display: flex; flex-direction: column;
   box-shadow: -8px 0 32px rgba(0,0,0,0.1);
@@ -1220,9 +1175,8 @@ const CSS = `
 /* ── Empty ─────────────────────────────────────────── */
 .sm-empty {
   padding: 80px 32px; text-align: center;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(12px);
-  border: 1.5px solid #f1f5f9;
+  background: #fff;
+  border: 1.5px solid rgba(0,0,0,0.07);
   border-radius: 20px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.04);
 }

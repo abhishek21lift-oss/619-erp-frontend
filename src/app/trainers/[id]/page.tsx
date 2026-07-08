@@ -44,11 +44,11 @@ function fmtDate(d?: string) {
 }
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  active: { bg: 'rgba(16,185,129,0.15)', color: '#6ee7b7' },
-  expired: { bg: 'rgba(239,68,68,0.15)', color: '#fca5a5' },
-  frozen: { bg: 'rgba(59,130,246,0.15)', color: '#93c5fd' },
-  pending: { bg: 'rgba(245,158,11,0.15)', color: '#fcd34d' },
-  inactive: { bg: 'rgba(148,163,184,0.15)', color: '#cbd5e1' },
+  active: { bg: 'rgba(16,185,129,0.12)', color: '#059669' },
+  expired: { bg: 'rgba(239,68,68,0.12)', color: '#dc2626' },
+  frozen: { bg: 'rgba(59,130,246,0.12)', color: '#2563eb' },
+  pending: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
+  inactive: { bg: 'rgba(148,163,184,0.12)', color: '#6b7280' },
 };
 
 import { avatarGradient, initialsAvatar } from '@/lib/avatar';
@@ -68,8 +68,8 @@ function StatusBadge({ status }: { status: string }) {
 function InfoRow({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
-      <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{value ?? '—'}</span>
+      <span style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: 14, color: '#111827', fontWeight: 500 }}>{value ?? '—'}</span>
     </div>
   );
 }
@@ -144,9 +144,9 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
         <AppShell>
           <div style={{ padding: '32px', maxWidth: 1000, margin: '0 auto' }}>
             <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-              style={{ height: 200, borderRadius: 20, background: 'rgba(255,255,255,0.03)', marginBottom: 16, border: '1px solid rgba(255,255,255,0.05)' }} />
+              style={{ height: 200, borderRadius: 20, background: '#f3f4f6', marginBottom: 16, border: '1px solid rgba(0,0,0,0.07)' }} />
             <m.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-              style={{ height: 350, borderRadius: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }} />
+              style={{ height: 350, borderRadius: 20, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)' }} />
           </div>
         </AppShell>
       </Guard>
@@ -159,11 +159,11 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
         <AppShell>
           <div style={{ padding: '60px 32px', textAlign: 'center' }}>
             <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '1px solid rgba(239,68,68,0.2)' }}>
-              <User size={28} color="#fca5a5" />
+              <User size={28} color="#dc2626" />
             </div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>{error || 'Trainer not found'}</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: '#6b7280', marginBottom: 8 }}>{error || 'Trainer not found'}</div>
             <button onClick={() => router.back()}
-              style={{ padding: '8px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ padding: '8px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: '#f9fafb', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               Go back
             </button>
           </div>
@@ -177,17 +177,11 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   return (
     <Guard roles={['admin', 'manager']}>
       <AppShell>
-        <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0f0a1e 0%, #0f172a 50%, #0a0a1a 100%)' }}>
+        <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
           {/* ── Hero ── */}
-          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #0f0a1e 0%, #1a1040 30%, #0f172a 60%, #1e0a2e 100%)', padding: '28px 32px 36px', borderRadius: '0 0 40px 40px' }}>
-            <m.div style={{ position: 'absolute', top: -60, right: -30, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%)', pointerEvents: 'none' }}
-              animate={{ x: [0, 25, -15, 0], y: [0, -30, 15, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-            <m.div style={{ position: 'absolute', bottom: -50, left: -20, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.1), transparent 70%)', pointerEvents: 'none' }}
-              animate={{ x: [0, -20, 25, 0], y: [0, 20, -10, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-            <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '20px 20px', pointerEvents: 'none' }} />
-
+          <div style={{ position: 'relative', overflow: 'hidden', background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '28px 32px 36px', borderRadius: '0 0 40px 40px' }}>
             <button onClick={() => router.back()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20, transition: 'background 0.2s', position: 'relative', zIndex: 1 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#6b7280', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20, transition: 'background 0.2s', position: 'relative', zIndex: 1 }}>
               <ArrowLeft size={13} /> Back to Trainers
             </button>
 
@@ -198,46 +192,46 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
               </m.div>
               <div style={{ flex: 1, minWidth: 220 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>{trainer.name}</h2>
+                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>{trainer.name}</h2>
                   <StatusBadge status={trainer.status} />
                 </div>
                 {trainer.specialization && (
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
-                    <Dumbbell size={13} color="rgba(255,255,255,0.3)" /> {trainer.specialization}
+                  <div style={{ fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
+                    <Dumbbell size={13} color="#9ca3af" /> {trainer.specialization}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 4 }}>
                   {trainer.phone && (
-                    <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Phone size={12} color="rgba(255,255,255,0.3)" /> {trainer.phone}
+                    <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Phone size={12} color="#9ca3af" /> {trainer.phone}
                     </span>
                   )}
                   {trainer.email && (
-                    <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <Mail size={12} color="rgba(255,255,255,0.3)" /> {trainer.email}
+                    <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Mail size={12} color="#9ca3af" /> {trainer.email}
                     </span>
                   )}
-                  <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Users size={12} color="rgba(255,255,255,0.3)" /> {members.length} member{members.length !== 1 ? 's' : ''}
+                  <span style={{ fontSize: 12.5, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Users size={12} color="#9ca3af" /> {members.length} member{members.length !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {trainer.phone && (
                   <a href={whatsappHref()} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', color: '#6ee7b7', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)', color: '#059669', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s' }}>
                     <MessageCircle size={13} /> WhatsApp
                   </a>
                 )}
                 {isAdmin && (
                   <Link href={`/trainers/${id}/edit`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#4f46e5', fontSize: 11.5, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s' }}>
                     <Edit2 size={13} /> Edit
                   </Link>
                 )}
                 {user?.role === 'admin' && (
                   <button onClick={() => setDeleteConfirm(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}>
                     <Trash2 size={13} /> Remove
                   </button>
                 )}
@@ -255,25 +249,25 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                 { label: 'Joined Date', value: fmtDate(trainer.join_date), icon: <Calendar size={14} />, color: '#f59e0b' },
               ].map((s, i) => (
                 <m.div key={s.label} variants={itemVariants}
-                  style={{ borderRadius: 16, padding: '16px 18px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(8px)' }}>
+                  style={{ borderRadius: 16, padding: '16px 18px', background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
-                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)' }}>{s.label}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280' }}>{s.label}</span>
                   </div>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{s.value}</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{s.value}</span>
                 </m.div>
               ))}
             </m.div>
 
             {/* ── Tabs ── */}
-            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 20, background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 3 }}>
+            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 20, background: '#f3f4f6', borderRadius: 12, padding: 3 }}>
               {(['profile', 'members'] as const).map((t) => (
                 <button key={t} onClick={() => setActiveTab(t)}
                   style={{
                     padding: '8px 20px', borderRadius: 9, border: 'none', cursor: 'pointer',
                     fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
                     background: activeTab === t ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
-                    color: activeTab === t ? '#fff' : 'rgba(255,255,255,0.4)',
+                    color: activeTab === t ? '#fff' : '#6b7280',
                     boxShadow: activeTab === t ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
                   }}>
                   {t === 'members' ? `Members (${members.length})` : 'Profile'}
@@ -285,9 +279,9 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
             {activeTab === 'profile' && (
               <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-                <div style={{ borderRadius: 20, padding: 22, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)' }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <User size={14} color="rgba(255,255,255,0.4)" /> Personal Details
+                <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <User size={14} color="#9ca3af" /> Personal Details
                   </h3>
                   <div className="rg-2" style={{ gap: 16 }}>
                     <InfoRow label="Full Name" value={trainer.name} />
@@ -300,28 +294,28 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
                   </div>
                 </div>
 
-                <div style={{ borderRadius: 20, padding: 22, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)' }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Award size={14} color="rgba(255,255,255,0.4)" /> Certifications & Schedule
+                <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Award size={14} color="#9ca3af" /> Certifications & Schedule
                   </h3>
                   {trainer.certifications && trainer.certifications.length > 0 ? (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
                       {trainer.certifications.map((c, i) => (
-                        <span key={i} style={{ padding: '4px 12px', borderRadius: 20, background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', fontSize: 11.5, fontWeight: 600, border: '1px solid rgba(99,102,241,0.15)' }}>{c}</span>
+                        <span key={i} style={{ padding: '4px 12px', borderRadius: 20, background: 'rgba(99,102,241,0.1)', color: '#4f46e5', fontSize: 11.5, fontWeight: 600, border: '1px solid rgba(99,102,241,0.15)' }}>{c}</span>
                       ))}
                     </div>
                   ) : (
-                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>No certifications listed.</p>
+                    <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>No certifications listed.</p>
                   )}
                   <InfoRow label="Schedule / Timing" value={trainer.schedule} />
                 </div>
 
                 {trainer.bio && (
-                  <div style={{ borderRadius: 20, padding: 22, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)', gridColumn: '1/-1' }}>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Star size={14} color="rgba(255,255,255,0.4)" /> Bio
+                  <div style={{ borderRadius: 20, padding: 22, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', gridColumn: '1/-1' }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Star size={14} color="#9ca3af" /> Bio
                     </h3>
-                    <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{trainer.bio}</p>
+                    <p style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{trainer.bio}</p>
                   </div>
                 )}
               </m.div>
@@ -330,45 +324,45 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
             {/* ── Members Tab ── */}
             {activeTab === 'members' && (
               <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
-                style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', background: 'rgba(255,255,255,0.02)' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.03)' }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.85)', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Users size={14} color="rgba(255,255,255,0.4)" /> Assigned Members
-                    <span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: 'rgba(99,102,241,0.15)', color: '#a5b4fc' }}>{members.length}</span>
+                style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', background: '#fff' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#f9fafb' }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Users size={14} color="#9ca3af" /> Assigned Members
+                    <span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: 'rgba(99,102,241,0.1)', color: '#4f46e5' }}>{members.length}</span>
                   </h3>
                 </div>
                 {members.length === 0 ? (
                   <div style={{ padding: '50px', textAlign: 'center' }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', border: '1px solid rgba(99,102,241,0.15)' }}>
-                      <Users size={24} color="#a5b4fc" />
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', border: '1px solid rgba(99,102,241,0.15)' }}>
+                      <Users size={24} color="#6366f1" />
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>No members assigned</div>
-                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', maxWidth: 300, margin: '0 auto' }}>Assign members to this trainer from the Members page.</div>
+                    <div style={{ fontWeight: 700, fontSize: 16, color: '#374151', marginBottom: 4 }}>No members assigned</div>
+                    <div style={{ fontSize: 13, color: '#6b7280', maxWidth: 300, margin: '0 auto' }}>Assign members to this trainer from the Members page.</div>
                   </div>
                 ) : (
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                       <thead>
-                        <tr style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))' }}>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Name</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Status</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Plan</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Expiry</th>
-                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc' }}>Phone</th>
+                        <tr style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))' }}>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Name</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Status</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Plan</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Expiry</th>
+                          <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5' }}>Phone</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {(members ?? []).map((member, i) => (
-                          <m.tr key={member.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                            style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', transition: 'background 0.2s', background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent' }}
-                            onClick={() => router.push(`/clients/${member.id}`)}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.06)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'; }}>
-                            <td style={{ padding: '12px 16px', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>{member.name}</td>
-                            <td style={{ padding: '12px 16px' }}><StatusBadge status={member.status} /></td>
-                            <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{member.membership_plan ?? '—'}</td>
-                            <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{fmtDate(member.expiry_date)}</td>
-                            <td style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.5)' }}>{member.phone ?? '—'}</td>
+                        {(members ?? []).map((m, i) => (
+                          <m.tr key={m.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                            style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'background 0.2s', background: i % 2 === 0 ? '#f9fafb' : '#fff' }}
+                            onClick={() => router.push(`/clients/${m.id}`)}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.04)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 0 ? '#f9fafb' : '#fff'; }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 600, color: '#111827' }}>{m.name}</td>
+                            <td style={{ padding: '12px 16px' }}><StatusBadge status={m.status} /></td>
+                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{m.membership_plan ?? '—'}</td>
+                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{fmtDate(m.expiry_date)}</td>
+                            <td style={{ padding: '12px 16px', color: '#6b7280' }}>{m.phone ?? '—'}</td>
                           </m.tr>
                         ))}
                       </tbody>
@@ -383,23 +377,23 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
           <AnimatePresence>
             {deleteConfirm && (
               <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+                style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
                 onClick={() => setDeleteConfirm(false)}>
                 <m.div initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
-                  style={{ background: 'linear-gradient(145deg, #1e1b4b, #0f172a)', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}
+                  style={{ background: '#fff', borderRadius: 22, padding: 28, width: '100%', maxWidth: 420, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 24px 80px rgba(0,0,0,0.15)' }}
                   onClick={(e) => e.stopPropagation()}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <AlertTriangle size={18} color="#fca5a5" />
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <AlertTriangle size={18} color="#dc2626" />
                     </div>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#fff' }}>Remove Trainer</h3>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111827' }}>Remove Trainer</h3>
                   </div>
-                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
-                    Remove <strong style={{ color: '#fff' }}>{trainer.name}</strong>? Their {members.length} assigned member{members.length !== 1 ? 's' : ''} will become unassigned.
+                  <p style={{ color: '#6b7280', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
+                    Remove <strong style={{ color: '#111827' }}>{trainer.name}</strong>? Their {members.length} assigned member{members.length !== 1 ? 's' : ''} will become unassigned.
                   </p>
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                     <button onClick={() => setDeleteConfirm(false)}
-                      style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ padding: '9px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: '#f9fafb', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                       Cancel
                     </button>
                     <button onClick={handleDelete} disabled={deleting}

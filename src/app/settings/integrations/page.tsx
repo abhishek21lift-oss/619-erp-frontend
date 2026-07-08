@@ -566,16 +566,15 @@ export default function IntegrationsPage() {
 
           {/* ── Hero ── */}
           <m.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-            style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 36px', marginBottom: 32, background: 'linear-gradient(135deg, #0a0f1a 0%, #451a03 25%, #78350f 50%, #451a03 75%, #0a0f1a 100%)', border: '1px solid rgba(245,158,11,0.15)', boxShadow: '0 25px 60px -12px rgba(69,26,3,0.6)' }}
+            style={{ position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '40px 36px', marginBottom: 32, background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%)', border: '1px solid rgba(245,158,11,0.25)', boxShadow: '0 4px 24px rgba(245,158,11,0.15)' }}
           >
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 20% 40%, rgba(245,158,11,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 60%, rgba(217,119,6,0.08) 0%, transparent 50%)', pointerEvents: 'none' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative', zIndex: 1 }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(245,158,11,0.3)' }}>
                 <Zap size={26} color="#fff" />
               </div>
               <div>
-                <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.03em' }}>Integrations</h1>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: '4px 0 0' }}>Connect your studio with powerful tools</p>
+                <h1 style={{ fontSize: 28, fontWeight: 800, color: '#92400e', margin: 0, letterSpacing: '-0.03em' }}>Integrations</h1>
+                <p style={{ fontSize: 14, color: '#78716c', margin: '4px 0 0' }}>Connect your studio with powerful tools</p>
               </div>
             </div>
           </m.div>

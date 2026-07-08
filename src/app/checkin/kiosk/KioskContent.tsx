@@ -276,7 +276,7 @@ export default function KioskContent() {
   const isDup     = kstate === 'duplicate';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none' }}>
       <style>{`
         @keyframes kk-scan { 0% { top: 8%; } 100% { top: 88%; } }
         @keyframes kk-pulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
@@ -292,17 +292,17 @@ export default function KioskContent() {
       `}</style>
 
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ScanFace size={18} color="#fff" />
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>619 FITNESS</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Self Check-In Kiosk</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>619 FITNESS</div>
+            <div style={{ fontSize: 11, color: '#9ca3af' }}>Self Check-In Kiosk</div>
           </div>
         </div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums' }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#374151', fontVariantNumeric: 'tabular-nums' }}>
           <Clock2 />
         </div>
       </div>
@@ -356,17 +356,17 @@ export default function KioskContent() {
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           style={{ textAlign: 'center', maxWidth: 400 }}
         >
-          <div className="kk-msg" style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{kstate === 'loading' && detection.loadingModel ? detection.loadingModel : msg}</div>
+          <div className="kk-msg" style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 6 }}>{kstate === 'loading' && detection.loadingModel ? detection.loadingModel : msg}</div>
           {kstate === 'liveness' && (
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>This confirms you are a real person</div>
+            <div style={{ fontSize: 14, color: '#6b7280' }}>This confirms you are a real person</div>
           )}
           {kstate === 'scanning' && mode === 'face' && (
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>Blink once when prompted</div>
+            <div style={{ fontSize: 14, color: '#9ca3af' }}>Blink once when prompted</div>
           )}
         </m.div>
 
         {/* Mode toggle tabs */}
-        <div style={{ display: 'flex', gap: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: 6, border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ display: 'flex', gap: 8, background: '#f3f4f6', borderRadius: 16, padding: 6, border: '1px solid rgba(0,0,0,0.07)' }}>
           {(['face', 'qr'] as Mode[]).map((m) => (
             <button
               key={m}
@@ -375,7 +375,7 @@ export default function KioskContent() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, border: 'none', cursor: mode === m ? 'default' : 'pointer', fontSize: 14, fontWeight: 700, transition: 'all 0.2s', minHeight: 48, touchAction: 'manipulation',
                 background: mode === m ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent',
-                color: mode === m ? '#fff' : 'rgba(255,255,255,0.4)',
+                color: mode === m ? '#fff' : '#6b7280',
                 boxShadow: mode === m ? '0 4px 16px rgba(99,102,241,0.3)' : 'none',
               }}
             >
@@ -400,9 +400,9 @@ export default function KioskContent() {
       </div>
 
       {/* Bottom bar */}
-      <div style={{ padding: '12px 24px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>619 Fitness Studio · Kiosk Mode</span>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>Face descriptors are never stored on this device</span>
+      <div style={{ padding: '12px 24px', background: '#fff', borderTop: '1px solid rgba(0,0,0,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 11, color: '#9ca3af' }}>619 Fitness Studio · Kiosk Mode</span>
+        <span style={{ fontSize: 11, color: '#9ca3af' }}>Face descriptors are never stored on this device</span>
       </div>
     </div>
   );

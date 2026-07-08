@@ -61,17 +61,13 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'trainer-management',
-    label: 'Trainers',
-    icon: 'UserCog',
+    label: 'Programs',
+    icon: 'Dumbbell',
     items: [
-      { href: '/trainers/add',              label: 'Add Trainer',          icon: 'UserPlus',    roles: ['admin'] },
-      { href: '/trainers',                  label: 'Trainer Profiles',     icon: 'UserCog',     roles: ['admin'] },
       { href: '/pt-os/workout-plans',       label: 'Workout Plans',        icon: 'Dumbbell' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
       { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['admin', 'manager'], comingSoon: true },
-      { href: '/trainers/leave',            label: 'Leave Requests',       icon: 'CalendarOff', roles: ['admin', 'manager'], badge: 'pendingLeaves' },
-      { href: '/trainer/dashboard',         label: 'Trainer Dashboard',    icon: 'LayoutGrid',  roles: ['trainer'] },
       { href: '/trainers/[id]',             label: 'Trainer Profile',      icon: 'UserCog',     hidden: true, matchPrefix: '/trainers/' },
     ],
   },
@@ -110,8 +106,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/pl',                label: 'Profit & Loss',        icon: 'BarChart3',    roles: ['admin'] },
       { href: '/finance/collection',        label: 'Collection',           icon: 'ArrowUpRight', roles: ['admin'] },
       { href: '/finance/forecast',          label: 'Revenue Forecast',     icon: 'TrendingUp',   roles: ['admin'] },
-      { href: '/pt-os/commissions',         label: 'Trainer Commissions',  icon: 'Percent',      roles: ['admin'], isNew: true },
-      { href: '/finance/trainer-revenue',   label: 'Trainer Payouts',      icon: 'Award',        roles: ['admin'] },
     ],
   },
   {
@@ -187,7 +181,6 @@ export const QUICK_ACTIONS = [
   { id: 'qa-record-pay',   label: 'Record payment',  icon: 'Wallet',       href: '/finance/record-payment',    roles: ['admin'] as Role[] },
   { id: 'qa-book-session', label: 'Book PT session', icon: 'CalendarPlus', href: '/pt-os/schedule-session' },
   { id: 'qa-face-checkin', label: 'Check In',         icon: 'ScanFace',     href: '/checkin' },
-  { id: 'qa-add-coach',    label: 'Add trainer',      icon: 'UserCog',      href: '/trainers/add',              roles: ['admin'] as Role[] },
 ];
 
 export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: string }> {

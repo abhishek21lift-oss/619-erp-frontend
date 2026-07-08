@@ -74,45 +74,29 @@ function Inner() {
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
-        {/* Dark Gradient Hero */}
-        <div style={{
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: 24,
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          padding: '36px 36px 32px',
-          marginBottom: 24,
-        }}>
-          {/* Animated Orbs */}
-          <m.div animate={{ x: [0, 60, 0, -60, 0], y: [0, -40, 0, 40, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '10%', left: '5%', width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <m.div animate={{ x: [0, -50, 0, 50, 0], y: [0, 60, 0, -60, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, delay: 2, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', top: '50%', right: '10%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          <m.div animate={{ x: [0, 70, 0, -70, 0], y: [0, -30, 0, 30, 0], scale: [1, 1.2, 0.9, 1.1, 1], opacity: [0.15, 0.25, 0.12, 0.22, 0.15] }} transition={{ duration: 12, delay: 4, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', bottom: '5%', left: '40%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(139,92,246,0.4)' }}>
-                  <TrendingUp size={20} color="white" />
-                </div>
-                <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #e2e8f0, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Projected Revenue (estimate)</h1>
+        {/* ── Hero ── */}
+        <div style={{ padding: '24px 0', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, borderBottom: '1px solid #f3f4f6' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg, #a855f7, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(139,92,246,0.4)' }}>
+                <TrendingUp size={20} color="white" />
               </div>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: 0 }}>Projected vs actual revenue &middot; {year} full year view</p>
+              <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#111827' }}>Projected Revenue (estimate)</h1>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '6px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <BarChart3 size={14} color="rgba(255,255,255,0.4)" />
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>{growthRate}% growth rate</span>
-            </div>
+            <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>Projected vs actual revenue &middot; {year} full year view</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F9FAFB', borderRadius: 20, padding: '6px 14px', border: '1px solid rgba(0,0,0,0.07)' }}>
+            <BarChart3 size={14} color="#9ca3af" />
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>{growthRate}% growth rate</span>
           </div>
         </div>
 
-        {/* Finance Tab Bar - glass morphism */}
+        {/* ── Finance Tabs ── */}
         <div style={{
           display: 'flex', gap: 4, marginBottom: 24,
-          background: 'rgba(255,255,255,0.7)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          padding: '6px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.6)',
-          boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+          background: '#fff',
+          padding: '6px', borderRadius: 14, border: '1px solid #e5e7eb',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
           overflowX: 'auto', flexWrap: 'nowrap',
         }}>
           {FINANCE_TABS.map((tab) => {
@@ -121,7 +105,7 @@ function Inner() {
               <button key={tab.href} onClick={() => router.push(tab.href)}
                 style={{ padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: active ? 700 : 500, fontSize: 13, whiteSpace: 'nowrap', transition: 'all 180ms ease',
                   background: active ? 'linear-gradient(135deg,#8b5cf6,#7c3aed)' : 'transparent',
-                  color: active ? 'white' : '#64748b',
+                  color: active ? 'white' : '#374151',
                   boxShadow: active ? '0 2px 8px rgba(139,92,246,0.35)' : 'none',
                 }}>
                 {tab.label}
@@ -132,7 +116,7 @@ function Inner() {
 
         {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#dc2626', marginBottom: 16 }}>{error}</div>}
 
-        {/* KPI Cards */}
+        {/* ── KPI Cards ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, marginBottom: 24 }}>
           {kpis.map((k, idx) => (
             <m.div
@@ -159,18 +143,18 @@ function Inner() {
               <div style={{ position: 'absolute', top: 0, left: 24, right: 24, height: 3, background: `linear-gradient(90deg, ${k.accent}, ${k.accent}88)`, borderRadius: '0 0 3px 3px', opacity: 0.8 }} />
               <div style={{ width: 40, height: 40, borderRadius: 12, background: `${k.accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.accent }}>{k.icon}</div>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1 }}>{k.value}</div>
-                <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, fontWeight: 500 }}>{k.label}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: '#111827', letterSpacing: '-0.02em', lineHeight: 1 }}>{k.value}</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4, fontWeight: 500 }}>{k.label}</div>
               </div>
             </m.div>
           ))}
         </div>
 
-        {/* Forecast Table */}
+        {/* ── Forecast Table ── */}
         <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
           <div style={{ padding: '16px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>Monthly Revenue — {year}</div>
-            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>Monthly Revenue — {year}</div>
+            <div style={{ fontSize: 12, color: '#6b7280', fontWeight: 500 }}>
               Growth rate: <strong style={{ color: '#8b5cf6' }}>{growthRate}%</strong>
             </div>
           </div>
@@ -193,12 +177,11 @@ function Inner() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr>
+                  <tr style={{ background: '#F9FAFB' }}>
                     {['Month', 'Type', 'Amount', 'vs Avg'].map((h) => (
                       <th key={h} style={{
                         padding: '14px 20px', textAlign: 'left', fontSize: 11, fontWeight: 700,
-                        color: 'white', textTransform: 'uppercase', letterSpacing: '0.8px',
-                        background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                        color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.8px',
                         whiteSpace: 'nowrap',
                       }}>{h}</th>
                     ))}
@@ -216,7 +199,7 @@ function Inner() {
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#f8f4ff'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = rowBg; }}
                       >
-                        <td style={{ padding: '14px 20px', fontWeight: 600, color: '#0f172a' }}>{m.month} {year}</td>
+                        <td style={{ padding: '14px 20px', fontWeight: 600, color: '#111827' }}>{m.month} {year}</td>
                         <td style={{ padding: '14px 20px' }}>
                           {m.actual ? (
                             <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 10px', background: '#ecfdf5', color: '#16a34a', border: '1px solid #86efac' }}>Actual</span>
@@ -232,15 +215,15 @@ function Inner() {
                             <span style={{ fontSize: 12, fontWeight: 600, color: diff >= 0 ? '#16a34a' : '#ef4444' }}>
                               {diff >= 0 ? '▲' : '▼'} {Math.abs(Number(diffPct))}%
                             </span>
-                          ) : <span style={{ color: '#cbd5e1', fontSize: 12 }}>—</span>}
+                          ) : <span style={{ color: '#d1d5db', fontSize: 12 }}>—</span>}
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
                 <tfoot>
-                  <tr style={{ borderTop: '2px solid #e8dff5', background: 'linear-gradient(135deg, #f8f4ff, #f0ebff)' }}>
-                    <td style={{ padding: '14px 20px', fontWeight: 800, color: '#0f172a' }} colSpan={2}>Projected Full Year</td>
+                  <tr style={{ borderTop: '2px solid #e5e7eb', background: '#F9FAFB' }}>
+                    <td style={{ padding: '14px 20px', fontWeight: 800, color: '#111827' }} colSpan={2}>Projected Full Year</td>
                     <td style={{ padding: '14px 20px', fontWeight: 900, fontSize: 16, color: '#7c3aed', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmt(projectedYearTotal)}</td>
                     <td />
                   </tr>
@@ -249,9 +232,10 @@ function Inner() {
             </div>
           )}
         </div>
+
         {/* Disclaimer */}
-        <div style={{ marginTop: 12, padding: '10px 16px', background: 'rgba(139,92,246,0.06)', borderRadius: 10, border: '1px solid rgba(139,92,246,0.12)' }}>
-          <p style={{ margin: 0, fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
+        <div style={{ marginTop: 12, padding: '10px 16px', background: '#F9FAFB', borderRadius: 10, border: '1px solid #e5e7eb' }}>
+          <p style={{ margin: 0, fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>
             <strong style={{ color: '#8b5cf6' }}>Note:</strong> Projection based on 3-month rolling average with a 5% uplift. Figures are estimates only and may not reflect seasonal variations or planned business changes.
           </p>
         </div>

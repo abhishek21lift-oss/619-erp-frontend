@@ -55,7 +55,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div ref={revealRoot}>
+    <div ref={revealRoot} style={{ paddingTop: 52 }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root{
@@ -71,10 +71,11 @@ export default function LandingPage() {
           --red:#d91f3c;
           --red-soft:rgba(217,31,60,0.12);
           --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Helvetica,Arial,sans-serif;
+          --px:clamp(24px,6vw,72px);
         }
-        html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+        html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;scroll-padding-top:52px}
         body{background:var(--black);color:var(--white);font-family:var(--font);overflow-x:hidden;line-height:1.5}
-        nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background 0.3s}
+        nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 var(--px);height:52px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background 0.3s}
         .nav-logo-wrap{display:flex;align-items:center;gap:8px;text-decoration:none}
         .reveal{opacity:0;transform:translateY(40px);transition:opacity 0.8s cubic-bezier(.22,1,.36,1),transform 0.8s cubic-bezier(.22,1,.36,1)}
         .reveal.visible{opacity:1;transform:none}
@@ -84,12 +85,23 @@ export default function LandingPage() {
         .reveal-delay-4{transition-delay:.4s}
         @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
         @keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(5px)}}
-        @media(max-width:640px){.nav-links{display:none!important}.hero-h1{font-size:2.4rem}.team-grid{grid-template-columns:1fr}.footer-inner{flex-direction:column;align-items:flex-start}}
+        @media(max-width:640px){
+          .nav-links{display:none!important}
+          .hero-h1{font-size:2.4rem}
+          .team-grid{grid-template-columns:1fr}
+          .footer-inner{flex-direction:column;align-items:flex-start}
+          .hero{padding-top:40px!important;padding-bottom:56px!important}
+          .hero-logo{margin-bottom:24px!important}
+          .hero-label{margin-bottom:10px!important}
+          .hero-sub-title{margin-bottom:16px!important}
+          .hero-desc{margin-bottom:28px!important}
+        }
         @media(max-width:900px){.numbers-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:900px){.number-item{border-right:none!important;border-bottom:1px solid var(--border)}}
         @media(max-width:900px){.plans-grid{grid-template-columns:1fr}.why-grid{grid-template-columns:1fr}.contact-inner{grid-template-columns:1fr}}
         @media(max-width:640px){.team-card{padding:32px 24px}}
         @media(prefers-reduced-motion:reduce){.hero-logo,.hero-scroll-arrow,.reveal{animation:none;transition:none;opacity:1;transform:none}}
+        .numbers-grid > div:last-child{border-right:none!important}
       `}</style>
 
       {/* ─── NAV ─── */}
@@ -135,9 +147,9 @@ export default function LandingPage() {
 
       {/* ─── HERO ─── */}
       <section className="hero" style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column',
+        minHeight: 'calc(100vh - 52px)', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        padding: '120px 24px 80px', position: 'relative',
+        padding: '68px var(--px) 80px', position: 'relative',
         background: 'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(217,31,60,0.07) 0%, transparent 70%)',
       }}>
         <Image src="/619-logo.png" alt="619 Fitness Studio" width={180} height={180} className="hero-logo"
@@ -194,7 +206,7 @@ export default function LandingPage() {
       {/* ─── OWNERS ─── */}
       <div className="owners-band" style={{
         borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
-        padding: '32px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, flexWrap: 'wrap',
+        padding: '32px var(--px)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, flexWrap: 'wrap',
         background: 'var(--surface)', textAlign: 'center',
       }}>
         <span className="owners-kicker" style={{ fontSize: '0.7rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--grey2)' }}>Founded &amp; Owned By</span>
@@ -205,7 +217,7 @@ export default function LandingPage() {
       </div>
 
       {/* ─── NUMBERS ─── */}
-      <section className="numbers-strip" id="about" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '72px 24px' }}>
+      <section className="numbers-strip" id="about" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '72px var(--px)' }}>
         <div className="numbers-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', maxWidth: 900, margin: '0 auto' }}>
           {[
             { val: '67+', label: 'Active Clients', delay: '' },
@@ -224,7 +236,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── ABOUT ─── */}
-      <div className="chapter chapter-center" style={{ padding: '120px 24px', maxWidth: 1080, margin: '0 auto', textAlign: 'center' }}>
+      <div className="chapter chapter-center" style={{ padding: '120px var(--px)', maxWidth: 1080, margin: '0 auto', textAlign: 'center' }}>
         <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Who We Are</span>
         <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20 }}>
           Fitness that <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>actually</em><br />changes your life.
@@ -235,7 +247,7 @@ export default function LandingPage() {
       </div>
 
       {/* ─── PROGRAMS ─── */}
-      <section className="programs-section" id="programs" style={{ background: 'var(--surface)', padding: '120px 24px' }}>
+      <section className="programs-section" id="programs" style={{ background: 'var(--surface)', padding: '120px var(--px)' }}>
         <div className="programs-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
           <div style={{ textAlign: 'center' }}>
             <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>What We Offer</span>
@@ -275,7 +287,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── TEAM ─── */}
-      <section className="team-section" id="team" style={{ background: 'var(--black)', padding: '120px 24px' }}>
+      <section className="team-section" id="team" style={{ background: 'var(--black)', padding: '120px var(--px)' }}>
         <div className="team-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
           <div style={{ textAlign: 'center' }}>
             <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>The People Behind Your Progress</span>
@@ -318,7 +330,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── MEMBERSHIP ─── */}
-      <section className="membership-section" id="membership" style={{ background: 'var(--black)', padding: '120px 24px' }}>
+      <section className="membership-section" id="membership" style={{ background: 'var(--black)', padding: '120px var(--px)' }}>
         <div className="membership-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
           <div style={{ textAlign: 'center' }}>
             <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Membership Plans</span>
@@ -368,7 +380,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── WHY US ─── */}
-      <section className="why-section" style={{ background: 'var(--surface)', padding: '120px 24px' }}>
+      <section className="why-section" style={{ background: 'var(--surface)', padding: '120px var(--px)' }}>
         <div className="why-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
           <div style={{ textAlign: 'center' }}>
             <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Why 619?</span>
@@ -400,7 +412,7 @@ export default function LandingPage() {
 
       {/* ─── FREE TRIAL ─── */}
       <section className="trial-section" id="trial" style={{
-        padding: '100px 24px', textAlign: 'center',
+        padding: '100px var(--px)', textAlign: 'center',
         background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(217,31,60,0.12) 0%, transparent 70%)',
         borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
       }}>
@@ -426,7 +438,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FAQ ─── */}
-      <section className="faq-section" style={{ background: 'var(--black)', padding: '120px 24px' }}>
+      <section className="faq-section" style={{ background: 'var(--black)', padding: '120px var(--px)' }}>
         <div className="faq-inner" style={{ maxWidth: 720, margin: '0 auto' }}>
           <div style={{ textAlign: 'center' }}>
             <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Questions</span>
@@ -468,7 +480,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── CONTACT ─── */}
-      <section className="contact-section" id="contact" style={{ background: 'var(--surface)', padding: '120px 24px' }}>
+      <section className="contact-section" id="contact" style={{ background: 'var(--surface)', padding: '120px var(--px)' }}>
         <div className="contact-inner" style={{ maxWidth: 1080, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
           <div>
             <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Find Us</span>
@@ -501,7 +513,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── SOCIAL ─── */}
-      <section className="social-section" style={{ background: 'var(--black)', padding: '80px 24px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+      <section className="social-section" style={{ background: 'var(--black)', padding: '80px var(--px)', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
         <div style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--grey2)', marginBottom: 32 }}>Follow Our Journey</div>
         <div className="social-links" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
           {[
@@ -526,7 +538,7 @@ export default function LandingPage() {
       {/* ─── BIG CTA ─── */}
       <section className="bigcta-section" style={{
         background: 'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(217,31,60,0.1) 0%, transparent 70%)',
-        padding: '120px 24px', textAlign: 'center',
+        padding: '120px var(--px)', textAlign: 'center',
       }}>
         <h2 className="bigcta-h2 reveal" style={{ fontSize: 'clamp(2.5rem,6vw,5rem)', fontWeight: 700, letterSpacing: '-.04em', lineHeight: 1.04, marginBottom: 20 }}>
           Your strongest self<br />starts <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>today.</em>
@@ -559,7 +571,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '48px 24px' }}>
+      <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '48px var(--px)' }}>
         <div className="footer-inner" style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
           <a href="#" className="footer-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
             <Image src="/619-logo.png" alt="619" width={32} height={32} className="footer-logo" style={{ objectFit: 'contain' }} />

@@ -174,14 +174,8 @@ function MarkAttendanceContent() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       {/* Hero */}
-      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f0a1e 0%,#1a2e0a 30%,#0f172a 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px' }}>
-        <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 90%)' }}>
-          <m.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #10b981, transparent 70%)' }}
-            animate={{ x: [0, 25, -15, 0], y: [0, -30, 10, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-          <m.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
-            animate={{ x: [0, -20, 15, 0], y: [0, 20, -8, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-        </div>
-        <div className="relative z-10 mx-auto" style={{ maxWidth: 600 }}>
+      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#f0fdf4 0%,#f5f3ff 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+        <div className="mx-auto" style={{ maxWidth: 600 }}>
           <div className="flex items-center gap-4">
             <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px]"
@@ -191,11 +185,11 @@ function MarkAttendanceContent() {
             <div>
               <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
-                style={{ background: 'linear-gradient(135deg,#6ee7b7,#c7d2fe)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                style={{ color: '#111827' }}>
                 Mark Attendance
               </m.h1>
               <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
-                className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                className="text-[12px]" style={{ color: '#6b7280' }}>
                 GPS + Biometric verification required
               </m.p>
             </div>

@@ -70,19 +70,18 @@ export default function PtAssessmentPage() {
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-            style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)', boxShadow: '0 20px 60px rgba(15,23,42,0.3)' }}>
-            <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, rgba(148,163,184,0.4), transparent 70%)' }} />
+            style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <div className="relative z-10">
               <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                  <ClipboardCheck size={16} style={{ color: 'var(--text-disabled)' }} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: '#f3f4f6' }}>
+                  <ClipboardCheck size={16} style={{ color: '#6b7280' }} />
                 </div>
-                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>PT Assessment</span>
+                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#9ca3af' }}>PT Assessment</span>
               </div>
-              <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#ffffff' }}>
+              <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#111827' }}>
                 Initial Assessment
               </h1>
-              <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              <p className="mt-3 max-w-xl text-[14px]" style={{ color: '#6b7280' }}>
                 Record body measurements, fitness scores, and health notes for new PT clients.
               </p>
             </div>
@@ -90,12 +89,12 @@ export default function PtAssessmentPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-              className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-              <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'rgb(15,23,42)' }}>Record Assessment</h2>
+              className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+              <h2 className="text-[18px] font-[760] mb-5" style={{ color: '#111827' }}>Record Assessment</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <select value={clientId} onChange={e => setClientId(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }}>
+                  style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }}>
                   <option value="">Select client...</option>
                   {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -104,17 +103,17 @@ export default function PtAssessmentPage() {
                     <input key={f.key} type={f.type} step="0.1" placeholder={f.label} value={form[f.key] || ''}
                       onChange={e => updateField(f.key, e.target.value)}
                       className="rounded-[12px] px-3 py-2 text-xs outline-none"
-                      style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
+                      style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }} />
                   ))}
                 </div>
                 <textarea placeholder="Posture notes..." rows={2} value={form.posture_notes || ''}
                   onChange={e => updateField('posture_notes', e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
+                  style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }} />
                 <textarea placeholder="Health notes..." rows={2} value={form.health_notes || ''}
                   onChange={e => updateField('health_notes', e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
+                  style={{ background: '#fff', border: '1px solid #d1d5db', color: '#111827' }} />
                 <Button type="submit" disabled={!clientId || saving}
                   className="!w-full !rounded-[14px] !py-3 !font-[700]"
                   style={{ background: !clientId || saving ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #1e293b, #475569)', color: '#fff' }}>
@@ -125,23 +124,23 @@ export default function PtAssessmentPage() {
             </m.div>
 
             <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
-              className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-              <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'rgb(15,23,42)' }}>Assessment History</h2>
+              className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+              <h2 className="text-[18px] font-[760] mb-5" style={{ color: '#111827' }}>Assessment History</h2>
               {assessments.loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" /></div>}
               {!assessments.loading && (!assessments.data || (assessments.data as unknown[]).length === 0) && (
-                <p className="text-center py-8 text-sm" style={{ color: 'rgb(148,163,184)' }}>No assessments recorded yet.</p>
+                <p className="text-center py-8 text-sm" style={{ color: '#9ca3af' }}>No assessments recorded yet.</p>
               )}
               <div className="space-y-3 max-h-[500px] overflow-y-auto">
                 {(assessments.data as any[] || []).map((a: any) => (
-                  <div key={a.id} className="rounded-[14px] p-4" style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.04)' }}>
+                  <div key={a.id} className="rounded-[14px] p-4" style={{ background: '#F9FAFB', border: '1px solid #e5e7eb' }}>
                     <div className="flex justify-between mb-2">
-                      <span className="text-[12px] font-semibold" style={{ color: 'rgb(148,163,184)' }}>{a.assessment_date}</span>
+                      <span className="text-[12px] font-semibold" style={{ color: '#6b7280' }}>{a.assessment_date}</span>
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-[6px]" style={{ background: 'rgba(124,58,237,0.1)', color: '#7c3aed' }}>{a.assessment_type?.replace(/_/g, ' ')}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-1 text-[11px]">
-                      {a.weight && <div><span style={{ color: 'rgb(148,163,184)' }}>Wt: </span><span className="font-semibold">{a.weight}kg</span></div>}
-                      {a.body_fat_pct && <div><span style={{ color: 'rgb(148,163,184)' }}>BF: </span><span className="font-semibold">{a.body_fat_pct}%</span></div>}
-                      {a.bmi && <div><span style={{ color: 'rgb(148,163,184)' }}>BMI: </span><span className="font-semibold">{a.bmi}</span></div>}
+                      {a.weight && <div><span style={{ color: '#6b7280' }}>Wt: </span><span className="font-semibold" style={{ color: '#111827' }}>{a.weight}kg</span></div>}
+                      {a.body_fat_pct && <div><span style={{ color: '#6b7280' }}>BF: </span><span className="font-semibold" style={{ color: '#111827' }}>{a.body_fat_pct}%</span></div>}
+                      {a.bmi && <div><span style={{ color: '#6b7280' }}>BMI: </span><span className="font-semibold" style={{ color: '#111827' }}>{a.bmi}</span></div>}
                     </div>
                   </div>
                 ))}

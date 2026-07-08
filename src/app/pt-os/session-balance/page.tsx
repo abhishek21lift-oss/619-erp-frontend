@@ -38,22 +38,20 @@ export default function SessionBalancePage() {
       <AppShell>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-            style={{ background: 'linear-gradient(135deg, #1c1917 0%, #292524 50%, #44403c 100%)', boxShadow: '0 20px 60px rgba(28,25,23,0.3)' }}>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                  <Gauge size={16} style={{ color: '#a8a29e' }} />
-                </div>
-                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#a8a29e' }}>Session Management</span>
+            className="p-8 sm:p-10 mb-6"
+            style={{ borderBottom: '1px solid #f3f4f6' }}>
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(0,0,0,0.06)' }}>
+                <Gauge size={16} style={{ color: '#6b7280' }} />
               </div>
-              <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#ffffff' }}>
-                Session Balance
-              </h1>
-              <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                Track PT session usage, view low balance alerts, and manage package renewals.
-              </p>
+              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#6b7280' }}>Session Management</span>
             </div>
+            <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: '#111827' }}>
+              Session Balance
+            </h1>
+            <p className="mt-3 max-w-xl text-[14px]" style={{ color: '#6b7280' }}>
+              Track PT session usage, view low balance alerts, and manage package renewals.
+            </p>
           </m.div>
 
           {/* Low Balance Alert */}
@@ -64,7 +62,7 @@ export default function SessionBalancePage() {
               <AlertTriangle size={20} style={{ color: '#ef4444', flexShrink: 0 }} />
               <div>
                 <p className="text-[13px] font-[700]" style={{ color: '#ef4444' }}>Low Session Balance Alert</p>
-                <p className="text-[12px] mt-1" style={{ color: 'rgb(100,116,139)' }}>
+                <p className="text-[12px] mt-1" style={{ color: '#6b7280' }}>
                   {(balances.data as any[]).length} client(s) have 3 or fewer sessions remaining.
                 </p>
               </div>
@@ -72,40 +70,40 @@ export default function SessionBalancePage() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-              <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'rgb(15,23,42)' }}>Add Session Package</h2>
+            <div className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+              <h2 className="text-[18px] font-[760] mb-5" style={{ color: '#111827' }}>Add Session Package</h2>
               <form onSubmit={handleCreate} className="space-y-3">
                 <select value={clientId} onChange={e => setClientId(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }}>
+                  style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#111827' }}>
                   <option value="">Select client...</option>
                   {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <input required type="number" placeholder="Total sessions" value={totalSessions} onChange={e => setTotalSessions(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#111827' }} />
                 <input placeholder="Package name (e.g., 12 PT Sessions)" value={packageName} onChange={e => setPackageName(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#111827' }} />
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                   className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)', color: 'rgb(15,23,42)' }} />
+                  style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#111827' }} />
                 <Button type="submit" disabled={!clientId || !totalSessions || saving}
                   className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                  style={{ background: !clientId || !totalSessions || saving ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #292524, #57534e)', color: '#fff' }}>
+                  style={{ background: !clientId || !totalSessions || saving ? '#e5e7eb' : 'linear-gradient(135deg, #292524, #57534e)', color: '#fff' }}>
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Create Balance
                 </Button>
               </form>
             </div>
 
-            <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.95)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
+            <div className="rounded-[20px] p-6" style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[18px] font-[760]" style={{ color: 'rgb(15,23,42)' }}>All Balances</h2>
+                <h2 className="text-[18px] font-[760]" style={{ color: '#111827' }}>All Balances</h2>
                 <div className="flex gap-2">
                   <button onClick={() => balances.refetch()} className="text-[11px] font-semibold px-3 py-1.5 rounded-[8px]" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
                     Low ({((balances.data as any[]) || []).length})
                   </button>
-                  <button onClick={() => allBalances.refetch()} className="text-[11px] font-semibold px-3 py-1.5 rounded-[8px]" style={{ background: 'var(--border)', color: 'rgb(100,116,139)' }}>
+                  <button onClick={() => allBalances.refetch()} className="text-[11px] font-semibold px-3 py-1.5 rounded-[8px]" style={{ background: '#F3F4F6', color: '#6b7280' }}>
                     All
                   </button>
                 </div>
@@ -113,22 +111,22 @@ export default function SessionBalancePage() {
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {(allBalances.data as any[] || []).map((sb: any) => (
                   <div key={sb.id} className="rounded-[12px] p-3 flex items-center justify-between"
-                    style={{ background: sb.remaining_sessions <= 3 ? 'rgba(239,68,68,0.06)' : 'rgba(0,0,0,0.02)', border: `1px solid ${sb.remaining_sessions <= 3 ? 'rgba(239,68,68,0.15)' : 'var(--border)'}` }}>
+                    style={{ background: sb.remaining_sessions <= 3 ? 'rgba(239,68,68,0.06)' : '#F9FAFB', border: `1px solid ${sb.remaining_sessions <= 3 ? 'rgba(239,68,68,0.15)' : '#f3f4f6'}` }}>
                     <div>
-                      <p className="text-[13px] font-[700]" style={{ color: 'rgb(15,23,42)' }}>{sb.client_name}</p>
-                      <p className="text-[11px]" style={{ color: 'rgb(148,163,184)' }}>{sb.package_name || 'PT Package'}</p>
+                      <p className="text-[13px] font-[700]" style={{ color: '#111827' }}>{sb.client_name}</p>
+                      <p className="text-[11px]" style={{ color: '#9ca3af' }}>{sb.package_name || 'PT Package'}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-[16px] font-[800]" style={{ color: sb.remaining_sessions <= 3 ? '#ef4444' : '#10b981' }}>
                         {sb.remaining_sessions}
-                        <span className="text-[11px] font-normal" style={{ color: 'rgb(148,163,184)' }}>/{sb.total_sessions}</span>
+                        <span className="text-[11px] font-normal" style={{ color: '#9ca3af' }}>/{sb.total_sessions}</span>
                       </p>
-                      <p className="text-[10px]" style={{ color: 'rgb(148,163,184)' }}>{sb.used_sessions} used</p>
+                      <p className="text-[10px]" style={{ color: '#9ca3af' }}>{sb.used_sessions} used</p>
                     </div>
                   </div>
                 ))}
                 {(!allBalances.data || (allBalances.data as any[]).length === 0) && (
-                  <p className="text-center py-8 text-sm" style={{ color: 'rgb(148,163,184)' }}>No session balances yet.</p>
+                  <p className="text-center py-8 text-sm" style={{ color: '#9ca3af' }}>No session balances yet.</p>
                 )}
               </div>
             </div>

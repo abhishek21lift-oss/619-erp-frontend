@@ -233,38 +233,33 @@ function StaffWizard() {
 
         /* ─── HERO ─── */
         .sw-hero {
-          background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e0a2e 100%);
+          background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+          border: 1px solid rgba(0,0,0,0.07);
           border-radius: var(--radius-lg); padding: 32px; margin-bottom: 24px;
           position: relative; overflow: hidden;
         }
-        .sw-hero::before {
-          content: ''; position: absolute; inset: 0;
-          background: radial-gradient(ellipse at 80% 50%, rgba(124,58,237,0.35) 0%, transparent 60%),
-                      radial-gradient(ellipse at 20% 80%, rgba(225,29,72,0.25) 0%, transparent 50%);
-          pointer-events: none;
-        }
         .sw-hero-badge {
           display: inline-flex; align-items: center; gap: 6px;
-          background: rgba(225,29,72,0.2); border: 1px solid rgba(225,29,72,0.4);
-          color: #fca5a5; border-radius: 100px; padding: 4px 12px;
+          background: #fff1f2; border: 1px solid #fecdd3;
+          color: #be123c; border-radius: 100px; padding: 4px 12px;
           font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
           text-transform: uppercase; margin-bottom: 14px; position: relative;
         }
         .sw-hero-title {
-          font-size: clamp(22px,3vw,32px); font-weight: 900; color: #fff;
+          font-size: clamp(22px,3vw,32px); font-weight: 900; color: #0f172a;
           letter-spacing: -0.04em; line-height: 1.15; position: relative;
         }
-        .sw-hero-title span { color: #f87171; }
+        .sw-hero-title span { color: #e11d48; }
         .sw-hero-sub {
-          font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 8px;
+          font-size: 14px; color: #64748b; margin-top: 8px;
           max-width: 480px; line-height: 1.6; position: relative;
         }
         .sw-hero-chips {
           display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; position: relative;
         }
         .sw-hero-chip {
-          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-          color: rgba(255,255,255,0.75); border-radius: 100px;
+          background: #fff; border: 1px solid #e2e8f0;
+          color: #475569; border-radius: 100px;
           padding: 5px 14px; font-size: 12px; font-weight: 600;
         }
 
@@ -447,21 +442,17 @@ function StaffWizard() {
         .sw-payroll-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         @media (max-width: 540px) { .sw-payroll-grid { grid-template-columns: 1fr; } }
         .sw-salary-preview {
-          background: linear-gradient(135deg, #0f172a, #1e1b4b);
+          background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+          border: 1px solid #bbf7d0;
           border-radius: 14px; padding: 22px 20px; margin-top: 16px;
           position: relative; overflow: hidden;
         }
-        .sw-salary-preview::before {
-          content: ''; position: absolute; inset: 0;
-          background: radial-gradient(ellipse at 80% 20%, rgba(124,58,237,0.3) 0%, transparent 60%);
-          pointer-events: none;
-        }
-        .sw-sp-label { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 700;
+        .sw-sp-label { font-size: 11px; color: #6b7280; font-weight: 700;
           text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; position: relative; }
-        .sw-sp-amount { font-size: 34px; font-weight: 900; color: #fff; letter-spacing: -0.04em;
+        .sw-sp-amount { font-size: 34px; font-weight: 900; color: #15803d; letter-spacing: -0.04em;
           position: relative; }
-        .sw-sp-amount span { font-size: 16px; color: rgba(255,255,255,0.5); margin-right: 4px; }
-        .sw-sp-freq { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 4px; position: relative; }
+        .sw-sp-amount span { font-size: 16px; color: #6b7280; margin-right: 4px; }
+        .sw-sp-freq { font-size: 12px; color: #6b7280; margin-top: 4px; position: relative; }
 
         /* ─── REVIEW ─── */
         .sw-review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }

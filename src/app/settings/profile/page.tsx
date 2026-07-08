@@ -382,11 +382,11 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
           className="fixed bottom-6 left-1/2 z-50 flex items-center gap-3 rounded-2xl px-5 py-3"
           style={{
             transform: 'translateX(-50%)',
-            background: 'rgba(15,23,42,0.92)',
+            background: '#fff',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.24)',
+            border: '1px solid rgba(0,0,0,0.10)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
           }}
         >
           {msg ? (
@@ -400,11 +400,11 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
             </>
           ) : (
             <>
-              <span className="text-[12.5px] font-[500]" style={{ color: 'rgba(255,255,255,0.6)' }}>Unsaved changes</span>
+              <span className="text-[12.5px] font-[500]" style={{ color: '#374151' }}>Unsaved changes</span>
               <button
                 onClick={onDiscard}
                 className="rounded-xl px-3 py-1.5 text-[12px] font-[620] transition-colors"
-                style={{ color: 'rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.08)' }}
+                style={{ color: '#6b7280', background: 'rgba(0,0,0,0.05)' }}
               >
                 Discard
               </button>
@@ -704,12 +704,6 @@ export default function ProfilePage() {
                   boxShadow: '0 12px 48px rgba(99,102,241,0.32)',
                 }}
               >
-                {/* ambient blobs */}
-                <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.08)', filter: 'blur(40px)' }} />
-                <div className="pointer-events-none absolute -bottom-12 -left-8 h-48 w-48 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.05)', filter: 'blur(32px)' }} />
-
                 <div className="relative flex flex-col items-center gap-5 sm:flex-row sm:items-start">
                   {/* Avatar */}
                   <m.div
@@ -743,20 +737,20 @@ export default function ProfilePage() {
                       <h2 className="text-[26px] font-[880] tracking-[-0.03em] text-white">{displayName}</h2>
                       <span
                         className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-[760]"
-                        style={{ background: 'rgba(255,255,255,0.18)', color: 'var(--text-primary)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}
+                        style={{ background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}
                       >
                         <ShieldCheck size={10} /> {profile.role}
                       </span>
                     </div>
-                    <p className="mt-1 text-[13.5px] font-[500]" style={{ color: 'var(--text-primary)' }}>{profile.jobTitle} · 619 Fitness Studio</p>
+                    <p className="mt-1 text-[13.5px] font-[500]" style={{ color: 'rgba(255,255,255,0.85)' }}>{profile.jobTitle} · 619 Fitness Studio</p>
                     <div className="mt-3 flex flex-wrap items-center justify-center gap-4 sm:justify-start">
-                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--text-primary)' }}>
+                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
                         <Mail size={11} /> {profile.email}
                       </span>
-                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--text-primary)' }}>
+                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
                         <MapPin size={11} /> {profile.location}
                       </span>
-                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--text-primary)' }}>
+                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
                         <Calendar size={11} /> Since {profile.memberSince}
                       </span>
                     </div>

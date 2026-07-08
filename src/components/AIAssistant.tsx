@@ -86,8 +86,10 @@ export default function AIAssistant() {
                   : msg
               ));
             } else if (evt.event === 'done') {
-              const summary = evt.summary || 'Done.';
-              setMessages(m => m.map(msg => msg.id === assistantId ? { ...msg, content: summary } : msg));
+              if (evt.status !== 'requires_confirmation') {
+                const summary = evt.summary || 'Done.';
+                setMessages(m => m.map(msg => msg.id === assistantId ? { ...msg, content: summary } : msg));
+              }
             } else if (evt.event === 'error') {
               setMessages(m => m.map(msg =>
                 msg.id === assistantId

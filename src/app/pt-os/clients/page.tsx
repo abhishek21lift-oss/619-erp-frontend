@@ -3,10 +3,10 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Search, Users, TrendingUp, Wallet, Percent,
-  RefreshCw, UserPlus, User, Clock, Zap, Star,
-  ChevronRight, LayoutGrid, LayoutList, Filter,
-  Dumbbell, IndianRupee, Trophy, Flame,
+  Search, Users, TrendingUp, Wallet,
+  RefreshCw, UserPlus, User, Star,
+  ChevronRight, LayoutGrid, LayoutList,
+  Dumbbell, IndianRupee, AlertCircle, Flame,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
@@ -84,7 +84,7 @@ function DaysArc({ days_left }: { days_left: number | null }) {
   return (
     <div className="flex flex-col items-center">
       <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`}>
-        <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={sw} />
+        <circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth={sw} />
         <m.circle cx={sz / 2} cy={sz / 2} r={r} fill="none" stroke={info.color}
           strokeWidth={sw} strokeLinecap="round" strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }}
@@ -121,9 +121,9 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
       onClick={() => router.push(`/pt-os/clients/${client.id}`)}
       className="group cursor-pointer rounded-[20px] p-5 transition-all duration-300 hover:-translate-y-1.5"
       style={{
-        background: 'linear-gradient(145deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))',
-        border: '1px solid rgba(255,255,255,0.06)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+        background: '#fff',
+        border: '1px solid rgba(0,0,0,0.07)',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
       }}
     >
       {/* Top row */}
@@ -132,11 +132,11 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
           <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] text-white text-[13px] font-[800] transition-transform duration-300 group-hover:scale-110"
             style={{ background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`, boxShadow: `0 4px 14px ${palette.glow}` }}>
             {initials}
-            <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-slate-900"
+            <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white"
               style={{ background: statusInfo.dot }} />
           </div>
           <div>
-            <p className="text-[13.5px] font-[760] text-white leading-tight tracking-[-0.01em]">{client.name}</p>
+            <p className="text-[13.5px] font-[760] text-gray-900 leading-tight tracking-[-0.01em]">{client.name}</p>
             <div className="mt-0.5 flex items-center gap-1">
               <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color={palette.from} />
             </div>
@@ -160,9 +160,9 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
         )}
         {client.package_type && (
           <div className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1"
-            style={{ background: 'rgba(255,255,255,0.06)' }}>
+            style={{ background: 'rgba(0,0,0,0.05)' }}>
             <Dumbbell size={10} className="text-slate-400" />
-            <span className="text-[11px] font-[600] text-slate-400">{client.package_type}</span>
+            <span className="text-[11px] font-[600] text-slate-500">{client.package_type}</span>
           </div>
         )}
       </div>
@@ -170,14 +170,14 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
       {/* Financial row */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {[
-          { label: 'Amount', value: fmtShortINR(client.final_amount), color: '#fff' },
+          { label: 'Amount', value: fmtShortINR(client.final_amount), color: '#111827' },
           { label: 'Paid', value: fmtShortINR(client.paid_amount), color: '#34d399' },
           { label: 'Balance', value: fmtShortINR(client.balance_amount), color: client.balance_amount > 0 ? '#f87171' : '#34d399' },
         ].map(f => (
           <div key={f.label} className="rounded-[10px] p-2.5 text-center"
-            style={{ background: 'rgba(255,255,255,0.04)' }}>
+            style={{ background: '#f9fafb', border: '1px solid rgba(0,0,0,0.06)' }}>
             <p className="text-[11px] font-[700] tabular-nums" style={{ color: f.color }}>{f.value}</p>
-            <p className="text-[9px] font-[600] text-slate-500 mt-0.5 uppercase tracking-wide">{f.label}</p>
+            <p className="text-[9px] font-[600] text-slate-400 mt-0.5 uppercase tracking-wide">{f.label}</p>
           </div>
         ))}
       </div>
@@ -185,12 +185,12 @@ function ClientCard({ client, index }: { client: PtClient; index: number }) {
       {/* Progress bar */}
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-[9px] font-[700] uppercase tracking-wider text-slate-500">Payment Progress</span>
+          <span className="text-[9px] font-[700] uppercase tracking-wider text-slate-400">Payment Progress</span>
           <span className="text-[10px] font-[700]" style={{ color: palette.from }}>
             {Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)}%
           </span>
         </div>
-        <div className="h-1.5 w-full rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="h-1.5 w-full rounded-full" style={{ background: 'rgba(0,0,0,0.07)' }}>
           <m.div
             initial={{ width: 0 }}
             animate={{ width: `${Math.min(Math.round((client.paid_amount / Math.max(client.final_amount, 1)) * 100), 100)}%` }}
@@ -225,8 +225,8 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.025, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       onClick={() => router.push(`/pt-os/clients/${client.id}`)}
-      className="group cursor-pointer transition-all duration-200"
-      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+      className="group cursor-pointer transition-all duration-200 hover:bg-gray-50"
+      style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}
     >
       <td className="py-3.5 px-5">
         <div className="flex items-center gap-3">
@@ -235,7 +235,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
             {initials}
           </div>
           <div>
-            <p className="text-[13px] font-[740] text-white">{client.name}</p>
+            <p className="text-[13px] font-[740] text-gray-900">{client.name}</p>
             <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color={palette.from} />
           </div>
         </div>
@@ -243,7 +243,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
       <td className="py-3.5 px-4 hidden sm:table-cell">
         <div className="flex items-center gap-1.5">
           <User size={11} style={{ color: palette.from }} />
-          <span className="text-[12px] font-[600] text-slate-300">{client.trainer_name || '—'}</span>
+          <span className="text-[12px] font-[600] text-gray-600">{client.trainer_name || '—'}</span>
         </div>
       </td>
       <td className="py-3.5 px-4 hidden md:table-cell">
@@ -260,7 +260,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
         </span>
       </td>
       <td className="py-3.5 px-4 text-right">
-        <span className="text-[13px] font-[760] text-white tabular-nums">{fmtShortINR(client.final_amount)}</span>
+        <span className="text-[13px] font-[760] text-gray-900 tabular-nums">{fmtShortINR(client.final_amount)}</span>
       </td>
       <td className="py-3.5 px-4 text-right hidden lg:table-cell">
         <span className="text-[12px] font-[700] tabular-nums"
@@ -269,7 +269,7 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
         </span>
       </td>
       <td className="py-3.5 px-4 text-right hidden xl:table-cell">
-        <span className="text-[12px] font-[700] text-violet-400 tabular-nums">
+        <span className="text-[12px] font-[700] text-violet-600 tabular-nums">
           {fmtShortINR(client.total_earned_commission)}
         </span>
       </td>
@@ -313,9 +313,9 @@ export default function PtClientsPage() {
       total: acc.total + 1,
       revenue: acc.revenue + Number(c.final_amount || 0),
       paid: acc.paid + Number(c.paid_amount || 0),
-      commission: acc.commission + Number(c.total_earned_commission || 0),
+      balance: acc.balance + Number(c.balance_amount || 0),
     }),
-    { total: 0, revenue: 0, paid: 0, commission: 0 },
+    { total: 0, revenue: 0, paid: 0, balance: 0 },
   ), [clients.data]);
 
   const activeCount = useMemo(() => (clients.data?.data ?? []).filter(c => c.status === 'active' && (c.days_left ?? 1) > 0).length, [clients.data]);
@@ -323,19 +323,9 @@ export default function PtClientsPage() {
   return (
     <Guard>
       <AppShell>
-        <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #060b17 0%, #0d1525 40%, #0a0e1a 100%)' }}>
+        <div className="min-h-screen" style={{ background: '#f9fafb' }}>
 
-          {/* ── Ambient background orbs ── */}
-          <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
-            <div className="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-[0.15]"
-              style={{ background: 'radial-gradient(circle, rgba(124,58,237,1) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-            <div className="absolute bottom-0 left-0 h-[400px] w-[400px] rounded-full opacity-[0.10]"
-              style={{ background: 'radial-gradient(circle, rgba(6,182,212,1) 0%, transparent 70%)', filter: 'blur(80px)' }} />
-            <div className="absolute top-1/2 left-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08]"
-              style={{ background: 'radial-gradient(circle, rgba(16,185,129,1) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-          </div>
-
-          <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8" style={{ zIndex: 1 }}>
+          <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
 
             {/* ── PAGE HEADER ── */}
             <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -343,7 +333,7 @@ export default function PtClientsPage() {
               className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px]"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', boxShadow: '0 8px 28px rgba(124,58,237,0.45)' }}>
+                  style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', boxShadow: '0 8px 28px rgba(124,58,237,0.35)' }}>
                   <Users size={24} className="text-white" />
                   <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-[800] text-white"
                     style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.5)' }}>
@@ -351,8 +341,8 @@ export default function PtClientsPage() {
                   </div>
                 </div>
                 <div>
-                  <h1 className="text-[28px] font-[860] tracking-[-0.04em] text-white leading-tight">PT Clients</h1>
-                  <p className="mt-0.5 text-[13px] font-[500] text-slate-400">
+                  <h1 className="text-[28px] font-[860] tracking-[-0.04em] text-gray-900 leading-tight">PT Clients</h1>
+                  <p className="mt-0.5 text-[13px] font-[500] text-slate-500">
                     Personal training client management
                   </p>
                 </div>
@@ -393,11 +383,11 @@ export default function PtClientsPage() {
                   subIcon: <Star size={11} />,
                 },
                 {
-                  label: 'Commission', value: summary?.commission ?? 0, prefix: '₹',
-                  icon: <Trophy size={20} className="text-white" />,
-                  from: '#db2777', to: '#9d174d', glow: 'rgba(219,39,119,0.4)',
-                  sub: 'Trainer payouts',
-                  subIcon: <Percent size={11} />,
+                  label: 'Total Balance', value: summary?.balance ?? 0, prefix: '₹',
+                  icon: <AlertCircle size={20} className="text-white" />,
+                  from: '#dc2626', to: '#b91c1c', glow: 'rgba(220,38,38,0.4)',
+                  sub: 'Pending dues',
+                  subIcon: <IndianRupee size={11} />,
                 },
               ].map((card, i) => (
                 <m.div key={card.label}
@@ -406,13 +396,10 @@ export default function PtClientsPage() {
                   transition={{ delay: 0.12 + i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                   className="relative overflow-hidden rounded-[22px] p-5"
                   style={{
-                    background: `linear-gradient(145deg, ${card.from}22, ${card.from}0a)`,
-                    border: `1px solid ${card.from}30`,
-                    boxShadow: `0 4px 24px ${card.glow}20`,
+                    background: '#fff',
+                    border: `1px solid ${card.from}20`,
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
                   }}>
-                  {/* Glow orb */}
-                  <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-30"
-                    style={{ background: `radial-gradient(circle, ${card.from}, transparent 70%)`, filter: 'blur(16px)' }} />
                   <div className="relative">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
@@ -420,14 +407,14 @@ export default function PtClientsPage() {
                         {card.icon}
                       </div>
                       <span className="flex items-center gap-1 text-[10px] font-[700] px-2 py-1 rounded-[6px]"
-                        style={{ background: `${card.from}18`, color: card.from }}>
+                        style={{ background: `${card.from}12`, color: card.from }}>
                         {card.subIcon}{card.sub}
                       </span>
                     </div>
-                    <p className="text-[26px] font-[860] tracking-[-0.03em] text-white">
+                    <p className="text-[26px] font-[860] tracking-[-0.03em] text-gray-900">
                       {summary ? <AnimatedCounter value={card.value} prefix={card.prefix === '₹' ? '₹' : ''} /> : '—'}
                     </p>
-                    <p className="mt-1 text-[11px] font-[600] text-slate-400 uppercase tracking-wider">{card.label}</p>
+                    <p className="mt-1 text-[11px] font-[600] text-slate-500 uppercase tracking-wider">{card.label}</p>
                   </div>
                 </m.div>
               ))}
@@ -438,26 +425,25 @@ export default function PtClientsPage() {
               transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="overflow-hidden rounded-[24px]"
               style={{
-                background: 'linear-gradient(145deg, rgba(15,23,42,0.90), rgba(30,41,59,0.85))',
-                border: '1px solid rgba(255,255,255,0.07)',
-                boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
-                backdropFilter: 'blur(20px)',
+                background: '#fff',
+                border: '1px solid rgba(0,0,0,0.07)',
+                boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
               }}>
 
               {/* ── TOOLBAR ── */}
               <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5 sm:py-4"
-                style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                style={{ borderColor: 'rgba(0,0,0,0.07)' }}>
 
                 {/* Search */}
                 <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-sm">
-                  <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text" placeholder="Search clients or trainers…"
                     value={search} onChange={e => setSearch(e.target.value)}
-                    className="w-full rounded-[12px] py-2.5 pl-9 pr-4 text-[12.5px] font-[500] text-white outline-none transition-all duration-200 placeholder:text-slate-500"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.08)' }}
-                    onFocus={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.12)'; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = ''; }}
+                    className="w-full rounded-[12px] py-2.5 pl-9 pr-4 text-[12.5px] font-[500] text-gray-900 outline-none transition-all duration-200 placeholder:text-slate-400"
+                    style={{ background: '#fff', border: '1.5px solid #d1d5db' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.08)'; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.boxShadow = ''; }}
                   />
                 </div>
 
@@ -465,7 +451,7 @@ export default function PtClientsPage() {
                 <div className="flex w-full items-center gap-2 overflow-x-auto pb-0.5 sm:w-auto sm:overflow-visible">
                   {/* Status filter pills */}
                   <div className="flex shrink-0 gap-1 rounded-[12px] p-1"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)' }}>
                     {STATUS_FILTERS.map(f => (
                       <button key={f.value} onClick={() => setStatusFilter(f.value)}
                         className="rounded-[8px] px-3.5 py-2 text-[11px] font-[700] transition-all duration-200"
@@ -479,12 +465,12 @@ export default function PtClientsPage() {
 
                   {/* View mode */}
                   <div className="flex shrink-0 gap-1 rounded-[10px] p-1"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)' }}>
                     {([['table', LayoutList], ['grid', LayoutGrid]] as const).map(([mode, Icon]) => (
                       <button key={mode} onClick={() => setViewMode(mode)}
                         className="rounded-[7px] p-2 transition-all duration-200"
                         style={viewMode === mode
-                          ? { background: 'rgba(124,58,237,0.25)', color: '#a78bfa' }
+                          ? { background: 'rgba(124,58,237,0.10)', color: '#7c3aed' }
                           : { color: 'rgb(100,116,139)' }}>
                         <Icon size={14} />
                       </button>
@@ -492,14 +478,14 @@ export default function PtClientsPage() {
                   </div>
 
                   <button onClick={() => clients.refetch()}
-                    className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[11px] font-[600] text-slate-400 transition-all duration-200 hover:text-slate-300"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    className="flex shrink-0 items-center gap-1.5 rounded-[10px] px-3 py-2 text-[11px] font-[600] text-slate-500 transition-all duration-200 hover:text-slate-700"
+                    style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)' }}>
                     <RefreshCw size={11} />Refresh
                   </button>
 
                   <span className="ml-auto shrink-0 text-[11px] font-[600] text-slate-500">
-                    <span className="text-slate-300">{filtered.length}</span>
-                    <span className="mx-1 text-slate-600">/</span>
+                    <span className="text-gray-700">{filtered.length}</span>
+                    <span className="mx-1 text-slate-300">/</span>
                     {clients.data?.data?.length ?? 0}
                   </span>
                 </div>
@@ -523,7 +509,7 @@ export default function PtClientsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#fafafa' }}>
                         {[
                           { label: 'Client', cls: '' },
                           { label: 'Trainer', cls: 'hidden sm:table-cell' },
@@ -557,7 +543,7 @@ export default function PtClientsPage() {
                 <div className="flex flex-col items-center justify-center gap-4 py-24">
                   <div className="relative h-12 w-12">
                     <div className="absolute inset-0 rounded-full"
-                      style={{ border: '2px solid rgba(124,58,237,0.15)', borderTopColor: '#7c3aed', animation: 'spin 0.9s linear infinite' }} />
+                      style={{ border: '2px solid rgba(124,58,237,0.12)', borderTopColor: '#7c3aed', animation: 'spin 0.9s linear infinite' }} />
                   </div>
                   <p className="text-[13px] font-[500] text-slate-500">Loading clients…</p>
                 </div>
@@ -565,6 +551,7 @@ export default function PtClientsPage() {
             </m.div>
           </div>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </AppShell>
     </Guard>
   );
@@ -574,10 +561,10 @@ function EmptyState({ search, statusFilter, onNew }: { search: string; statusFil
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-20">
       <div className="flex h-20 w-20 items-center justify-center rounded-[24px]"
-        style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(6,182,212,0.06))', border: '1px solid rgba(124,58,237,0.2)' }}>
+        style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.15)' }}>
         <Users size={32} style={{ color: '#7c3aed' }} />
       </div>
-      <p className="text-[17px] font-[760] tracking-[-0.01em] text-white">No PT clients found</p>
+      <p className="text-[17px] font-[760] tracking-[-0.01em] text-gray-900">No PT clients found</p>
       <p className="text-[13px] text-slate-500">
         {search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Get started by adding a new client'}
       </p>

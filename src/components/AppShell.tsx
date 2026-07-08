@@ -151,15 +151,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const dur  = reducedMotion ? 0 : 0.28;
   const transConfig = { duration: dur, ease: EASE };
 
-  // Close all dropdowns when header slides away — no orphaned panels
-  useEffect(() => {
-    if (topBar === 'hidden') {
-      setSettingsOpen(false);
-      setProfileOpen(false);
-      setNotifOpen(false);
-      setSearchOpen(false);
-    }
-  }, [topBar]);
 
   const settingsLinks = [
     { href: '/settings/studio',          label: 'Studio Settings',       icon: Building2 },
@@ -347,7 +338,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               willChange: 'transform',
             }}
             animate={{
-              y: topBar === 'hidden' ? '-100%' : 0,
+              y: 0,
               boxShadow: topBar === 'compact'
                 ? darkMode ? '0 1px 4px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)'
                 : darkMode ? '0 2px 8px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)'  : '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
@@ -702,15 +693,23 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             </m.div>
           </m.header>
 
+          {/* Spacer — tracks fixed header height so content always starts below it */}
+          <motion.div
+            aria-hidden="true"
+            className="flex-shrink-0 pointer-events-none"
+            style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+            animate={{ height: topBar === 'compact' ? 32 : 46 }}
+            transition={transConfig}
+            initial={false}
+          />
+
           {headerLeft && (
-            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8"
-              style={{ paddingTop: 'calc(46px + env(safe-area-inset-top, 0px))' }}>
+            <div className="flex items-center gap-3 px-4 sm:px-6 lg:px-8">
               {headerLeft}
             </div>
           )}
 
           <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 sm:px-6 lg:px-8 shell-main"
-            style={{ paddingTop: 'calc(46px + env(safe-area-inset-top, 0px))' }}
           >
             {title && (
               <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">

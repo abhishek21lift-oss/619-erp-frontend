@@ -7,17 +7,17 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
 const FAQS = [
-  { q: 'How do I add a new member?', a: 'Go to Members \u2192 Add Member or click the quick action button from the dashboard.' },
-  { q: 'How do I record a payment?', a: 'Navigate to Finance \u2192 Record Payment, fill in the member details and amount.' },
+  { q: 'How do I add a new member?', a: 'Go to Members → Add Member or click the quick action button from the dashboard.' },
+  { q: 'How do I record a payment?', a: 'Navigate to Finance → Record Payment, fill in the member details and amount.' },
   { q: 'How do I assign a PT to a client?', a: 'Open the client profile and click "Assign PT" in the action buttons bar.' },
   { q: 'How do I check attendance?', a: 'Use the Check-In page for QR/biometric check-in, or visit Attendance Records.' },
-  { q: 'How do I generate reports?', a: 'Go to Reports section \u2014 you can access revenue, member, and attendance reports.' },
-  { q: 'How do I reset a user password?', a: 'Admins can manage users under Settings \u2192 Staff & Access.' },
+  { q: 'How do I generate reports?', a: 'Go to Reports section — you can access revenue, member, and attendance reports.' },
+  { q: 'How do I reset a user password?', a: 'Admins can manage users under Settings → Staff & Access.' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const itemVariants = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
-const glass = { background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' };
+const lightCard: React.CSSProperties = { background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' };
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -40,33 +40,29 @@ export default function HelpPage() {
               position: 'relative', overflow: 'hidden',
               borderRadius: 24, padding: '32px 36px',
               display: 'flex', alignItems: 'center', gap: 20,
-              background: 'linear-gradient(135deg, #0a0f1a 0%, #1e1b4b 25%, #312e81 50%, #1e1b4b 75%, #0a0f1a 100%)',
-              border: '1px solid rgba(99,102,241,0.15)',
-              boxShadow: '0 25px 60px -12px rgba(30,27,75,0.6)',
+              background: 'linear-gradient(135deg, #eff6ff, #f5f3ff, #f8fafc)',
+              border: '1px solid rgba(0,0,0,0.07)',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
             }}
           >
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 20% 40%, rgba(99,102,241,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 60%, rgba(139,92,246,0.08) 0%, transparent 50%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', top: -80, right: -40, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: -60, left: -20, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.015) 1px, rgba(255,255,255,0.015) 2px), repeating-linear-gradient(90deg, transparent, transparent 1px, rgba(255,255,255,0.015) 1px, rgba(255,255,255,0.015) 2px)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1, width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(99,102,241,0.3)' }}>
               <HelpCircle size={26} color="#fff" />
             </div>
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', margin: 0 }}>Help &amp; Support</h1>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>Find answers to common questions</p>
+              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: '#111827', margin: 0 }}>Help &amp; Support</h1>
+              <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>Find answers to common questions</p>
             </div>
           </m.div>
 
           {/* ── Search ── */}
           <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-            style={{ ...glass, borderRadius: 16, padding: '4px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Search size={16} color="rgba(255,255,255,0.3)" />
+            style={{ ...lightCard, borderRadius: 16, padding: '4px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Search size={16} color="#9ca3af" />
             <input
-              type="text" placeholder="Search FAQs\u2026" value={search} onChange={(e) => { setOpenIdx(null); setSearch(e.target.value); }}
+              type="text" placeholder="Search FAQs…" value={search} onChange={(e) => { setOpenIdx(null); setSearch(e.target.value); }}
               style={{
                 flex: 1, border: 'none', outline: 'none', padding: '12px 0',
-                background: 'transparent', color: '#ffffff', fontSize: 13,
+                background: 'transparent', color: '#111827', fontSize: 13,
               }}
             />
           </m.div>
@@ -77,8 +73,10 @@ export default function HelpPage() {
               <m.div key={i} variants={itemVariants}
                 style={{
                   borderRadius: 16, overflow: 'hidden',
-                  ...glass,
-                  borderLeft: `3px solid ${openIdx === i ? '#6366f1' : 'rgba(255,255,255,0.06)'}`,
+                  background: '#fff',
+                  border: '1px solid rgba(0,0,0,0.07)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  borderLeft: `3px solid ${openIdx === i ? '#6366f1' : 'rgba(0,0,0,0.07)'}`,
                   transition: 'border-color 0.25s',
                 }}
               >
@@ -89,13 +87,13 @@ export default function HelpPage() {
                     padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                 >
-                  <span style={{ fontSize: 13.5, fontWeight: 600, color: '#e2e8f0' }}>{faq.q}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{faq.q}</span>
                   <m.span
                     animate={{ rotate: openIdx === i ? 180 : 0 }}
                     transition={{ duration: 0.25 }}
                     style={{ display: 'flex', lineHeight: 0, flexShrink: 0, marginLeft: 12 }}
                   >
-                    <ChevronDown size={15} color="rgba(255,255,255,0.3)" />
+                    <ChevronDown size={15} color="#9ca3af" />
                   </m.span>
                 </button>
                 <AnimatePresence initial={false}>
@@ -110,8 +108,8 @@ export default function HelpPage() {
                     >
                       <div style={{
                         padding: '0 20px 16px', fontSize: 13,
-                        color: 'rgba(255,255,255,0.55)', lineHeight: 1.7,
-                        borderTop: '1px solid rgba(255,255,255,0.04)',
+                        color: '#6b7280', lineHeight: 1.7,
+                        borderTop: '1px solid rgba(0,0,0,0.06)',
                       }}>
                         {faq.a}
                       </div>
@@ -122,7 +120,7 @@ export default function HelpPage() {
             ))}
             {filtered.length === 0 && (
               <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+                style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: '#9ca3af' }}>
                 No results found.
               </m.p>
             )}
@@ -130,71 +128,71 @@ export default function HelpPage() {
 
           {/* ── Support contacts ── */}
           <m.div {...fadeUp} transition={{ duration: 0.5, delay: 0.25 }}
-            style={{ ...glass, borderRadius: 20, padding: 28, marginTop: 8 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))', marginBottom: 16 }}>
-              <HelpCircle size={22} color="#818cf8" />
+            style={{ ...lightCard, borderRadius: 20, padding: 28, marginTop: 8 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.12)', marginBottom: 16 }}>
+              <HelpCircle size={22} color="#6366f1" />
             </div>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#e2e8f0', margin: 0 }}>Still need help?</p>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '4px 0 20px' }}>Reach out to our support team</p>
+            <p style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: 0 }}>Still need help?</p>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '4px 0 20px' }}>Reach out to our support team</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <a href="mailto:support@619fitness.com"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-                  borderRadius: 16, background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none',
+                  borderRadius: 16, background: '#f9fafb',
+                  border: '1px solid rgba(0,0,0,0.07)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.08)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}>
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))',
+                  background: 'rgba(99,102,241,0.08)',
                 }}>
-                  <Mail size={18} color="#818cf8" />
+                  <Mail size={18} color="#6366f1" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', margin: 0 }}>Email Support</p>
-                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>support@619fitness.com</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>Email Support</p>
+                  <p style={{ fontSize: 11.5, color: '#6b7280', margin: '1px 0 0' }}>support@619fitness.com</p>
                 </div>
               </a>
               <a href={`tel:${process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+918756562188'}`}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-                  borderRadius: 16, background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none',
+                  borderRadius: 16, background: '#f9fafb',
+                  border: '1px solid rgba(0,0,0,0.07)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.08)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}>
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))',
+                  background: 'rgba(99,102,241,0.08)',
                 }}>
-                  <Phone size={18} color="#818cf8" />
+                  <Phone size={18} color="#6366f1" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', margin: 0 }}>Call Us</p>
-                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>Call Us</p>
+                  <p style={{ fontSize: 11.5, color: '#6b7280', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
                 </div>
               </a>
               <a href={`https://wa.me/${(process.env.NEXT_PUBLIC_SUPPORT_PHONE || '918756562188').replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-                  borderRadius: 16, background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none',
+                  borderRadius: 16, background: '#f9fafb',
+                  border: '1px solid rgba(0,0,0,0.07)', textDecoration: 'none',
                   transition: 'all 0.2s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.08)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}>
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.2)'; }}
+                onMouseOut={e => { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))',
+                  background: 'rgba(99,102,241,0.08)',
                 }}>
-                  <MessageCircle size={18} color="#818cf8" />
+                  <MessageCircle size={18} color="#6366f1" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', margin: 0 }}>WhatsApp Support</p>
-                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>WhatsApp Support</p>
+                  <p style={{ fontSize: 11.5, color: '#6b7280', margin: '1px 0 0' }}>{process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91-8756562188'}</p>
                 </div>
               </a>
             </div>

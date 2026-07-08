@@ -13,10 +13,10 @@ export default function CollectionPage() {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const fmt = (n: any) => '\u20B9' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const fmt = (n: any) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 function fmtCompact(n: number) {
-  if (n >= 10_00_000) return '\u20B9' + (n / 10_00_000).toFixed(1) + 'L';
-  if (n >= 1_000) return '\u20B9' + (n / 1_000).toFixed(1) + 'K';
+  if (n >= 10_00_000) return '₹' + (n / 10_00_000).toFixed(1) + 'L';
+  if (n >= 1_000) return '₹' + (n / 1_000).toFixed(1) + 'K';
   return fmt(n);
 }
 
@@ -71,7 +71,7 @@ function Inner() {
     { label: 'Total Collected',  value: fmtCompact(total),         sub: fmt(total),           icon: <Banknote size={18} />,     accent: '#10b981' },
     { label: 'Monthly Average',  value: fmtCompact(avg),           sub: `${activeMonths} active months`, icon: <TrendingUp size={18} />, accent: '#0ea5e9' },
     { label: 'Total Payments',   value: String(totalCount),        sub: 'transactions',       icon: <CreditCard size={18} />,   accent: '#8b5cf6' },
-    { label: 'Best Month',       value: best?.month ?? '\u2014',        sub: fmtCompact(best?.revenue ?? 0), icon: <CalendarCheck size={18} />, accent: '#f59e0b' },
+    { label: 'Best Month',       value: best?.month ?? '—',        sub: fmtCompact(best?.revenue ?? 0), icon: <CalendarCheck size={18} />, accent: '#f59e0b' },
   ];
 
   return (
@@ -82,120 +82,64 @@ function Inner() {
         transition={{ duration: 0.4 }}
         style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}
       >
-        {/* ── Dark Gradient Hero ── */}
-        <div style={{
-          background: 'linear-gradient(135deg,#0f172a,#1e293b)',
-          borderRadius: 24,
-          padding: '32px 36px',
-          position: 'relative',
-          overflow: 'hidden',
-          marginBottom: 20,
-        }}>
-          {/* Animated Orbs */}
-          <m.div
-            animate={{ x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.05, 1] }}
-            transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
-            style={{
-              position: 'absolute', top: '-80px', right: '10%',
-              width: 350, height: 350, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(20,184,166,0.2) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }}
-          />
-          <m.div
-            animate={{ x: [0, -30, 0], y: [0, 40, 0], scale: [1, 1.08, 1] }}
-            transition={{ repeat: Infinity, duration: 10, ease: 'easeInOut' }}
-            style={{
-              position: 'absolute', bottom: '-60px', left: '15%',
-              width: 280, height: 280, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }}
-          />
-          <m.div
-            animate={{ x: [0, 25, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
-            style={{
-              position: 'absolute', top: '35%', left: '50%',
-              width: 200, height: 200, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }}
-          />
+        {/* ── Hero ── */}
+        <div style={{ padding: '24px 0', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, borderBottom: '1px solid #f3f4f6' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 16,
+              background: 'linear-gradient(135deg,#10b981,#14b8a6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 8px 24px rgba(16,185,129,0.3)',
+            }}>
+              <Banknote size={24} color="white" />
+            </div>
+            <div>
+              <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: '#111827', letterSpacing: '-0.02em' }}>Collection</h1>
+              <p style={{ fontSize: 13, color: '#6b7280', margin: '2px 0 0' }}>Monthly revenue collected — Payment volume</p>
+            </div>
+          </div>
 
-          {/* Hero Content */}
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 16,
-                background: 'linear-gradient(135deg,#10b981,#14b8a6)',
+          {/* Year Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => setYear(y => y - 1)}
+              style={{
+                width: 36, height: 36, borderRadius: 12,
+                border: '1px solid #e5e7eb',
+                background: '#fff',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', color: '#374151',
+                transition: 'all 0.2s',
+              }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span style={{ fontSize: 16, fontWeight: 700, minWidth: 48, textAlign: 'center', color: '#111827' }}>{year}</span>
+            <button
+              onClick={() => setYear(y => y + 1)}
+              disabled={year >= new Date().getFullYear()}
+              style={{
+                width: 36, height: 36, borderRadius: 12,
+                border: '1px solid #e5e7eb',
+                background: '#fff',
+                cursor: year >= new Date().getFullYear() ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 24px rgba(16,185,129,0.3)',
-              }}>
-                <Banknote size={24} color="white" />
-              </div>
-              <div>
-                <h1 style={{
-                  fontSize: 28, fontWeight: 800, margin: 0,
-                  background: 'linear-gradient(135deg,#10b981,#14b8a6)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                  letterSpacing: '-0.02em',
-                }}>Collection</h1>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
-                  Monthly revenue collected — Payment volume
-                </p>
-              </div>
-            </div>
-
-            {/* Year Selector — Glass Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button
-                onClick={() => setYear(y => y - 1)}
-                style={{
-                  width: 36, height: 36, borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  background: 'rgba(255,255,255,0.08)',
-                  backdropFilter: 'blur(8px)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', color: 'rgba(255,255,255,0.7)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span style={{
-                fontSize: 16, fontWeight: 700, minWidth: 48,
-                textAlign: 'center', color: 'rgba(255,255,255,0.9)',
-              }}>{year}</span>
-              <button
-                onClick={() => setYear(y => y + 1)}
-                disabled={year >= new Date().getFullYear()}
-                style={{
-                  width: 36, height: 36, borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  background: 'rgba(255,255,255,0.08)',
-                  backdropFilter: 'blur(8px)',
-                  cursor: year >= new Date().getFullYear() ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: year >= new Date().getFullYear() ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+                color: year >= new Date().getFullYear() ? '#d1d5db' : '#374151',
+                transition: 'all 0.2s',
+              }}
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
 
-        {/* ── Finance Tabs — Glass-morphism ── */}
+        {/* ── Finance Tabs ── */}
         <div style={{
           display: 'flex', gap: 4, marginBottom: 24,
-          background: 'rgba(255,255,255,0.75)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          background: '#fff',
           padding: '6px', borderRadius: 14,
-          border: '1px solid rgba(255,255,255,0.3)',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
           overflowX: 'auto', flexWrap: 'nowrap',
         }}>
           {FINANCE_TABS.map((tab) => {
@@ -211,7 +155,7 @@ function Inner() {
                   background: active
                     ? 'linear-gradient(135deg,#10b981,#059669)'
                     : 'transparent',
-                  color: active ? 'white' : 'rgba(15,23,42,0.6)',
+                  color: active ? 'white' : '#374151',
                   boxShadow: active ? '0 2px 8px rgba(16,185,129,0.35)' : 'none',
                 }}
               >
@@ -236,7 +180,7 @@ function Inner() {
           </m.div>
         )}
 
-        {/* ── KPI Cards (solid white) ── */}
+        {/* ── KPI Cards ── */}
         {!loading && (
           <div style={{
             display: 'grid',
@@ -280,20 +224,20 @@ function Inner() {
                 <div>
                   <div style={{
                     fontSize: 26, fontWeight: 800,
-                    color: '#0f172a',
+                    color: '#111827',
                     letterSpacing: '-0.02em', lineHeight: 1,
                   }}>
                     {k.value}
                   </div>
                   <div style={{
-                    fontSize: 12, color: '#64748b',
+                    fontSize: 12, color: '#9ca3af',
                     marginTop: 4, fontWeight: 500,
                   }}>
                     {k.label}
                   </div>
                   {k.sub && (
                     <div style={{
-                      fontSize: 11, color: '#94a3b8',
+                      fontSize: 11, color: '#6b7280',
                       marginTop: 2,
                     }}>
                       {k.sub}
@@ -305,7 +249,7 @@ function Inner() {
           </div>
         )}
 
-        {/* ── Monthly Breakdown Table (solid white) ── */}
+        {/* ── Monthly Breakdown Table ── */}
         <div style={{
           background: 'white',
           borderRadius: 20,
@@ -321,16 +265,16 @@ function Inner() {
           }}>
             <div style={{
               fontWeight: 700, fontSize: 15,
-              color: '#0f172a',
+              color: '#111827',
             }}>
               Monthly Breakdown — {year}
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            <div style={{ fontSize: 12, color: '#6b7280' }}>
               Avg: <strong style={{ color: '#10b981' }}>{fmtCompact(avg)}</strong> / month
             </div>
           </div>
 
-          {/* ── Loading Skeleton (framer-motion shimmer) ── */}
+          {/* ── Loading Skeleton ── */}
           {loading ? (
             <div style={{ padding: '32px 24px' }}>
               {Array.from({ length: 12 }).map((_, i) => (
@@ -370,16 +314,14 @@ function Inner() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{
-                    background: 'linear-gradient(135deg,#10b981,#14b8a6)',
-                  }}>
+                  <tr style={{ background: '#F9FAFB' }}>
                     {['Month', 'Payments', 'Collected', 'Bar'].map((h) => (
                       <th
                         key={h}
                         style={{
                           padding: '14px 20px',
                           textAlign: h === 'Collected' ? 'right' : 'left',
-                          fontSize: 11, fontWeight: 700, color: 'white',
+                          fontSize: 11, fontWeight: 700, color: '#6b7280',
                           textTransform: 'uppercase', letterSpacing: '0.8px',
                           whiteSpace: 'nowrap',
                         }}
@@ -390,7 +332,7 @@ function Inner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {fullYear.map((row, i) => (
+                  {fullYear.map((m, i) => (
                     <m.tr
                       key={i}
                       whileHover={{ backgroundColor: '#f0fdf4' }}
@@ -398,30 +340,30 @@ function Inner() {
                       style={{
                         borderBottom: '1px solid #f1f5f9',
                         backgroundColor: 'white',
-                        opacity: row.revenue === 0 ? 0.45 : 1,
+                        opacity: m.revenue === 0 ? 0.45 : 1,
                       }}
                     >
                       <td style={{
                         padding: '14px 20px', fontWeight: 600,
-                        color: '#0f172a',
+                        color: '#111827',
                       }}>
-                        {row.month} {year}
+                        {m.month} {year}
                       </td>
                       <td style={{
                         padding: '14px 20px',
-                        color: '#64748b',
+                        color: '#9ca3af',
                         fontVariantNumeric: 'tabular-nums',
                       }}>
-                        {row.count || '\u2014'}
+                        {m.count || '—'}
                       </td>
                       <td style={{
                         padding: '14px 20px', textAlign: 'right',
                         fontWeight: 800, fontSize: 15,
-                        color: row.revenue > 0 ? '#10b981' : '#cbd5e1',
+                        color: m.revenue > 0 ? '#10b981' : '#d1d5db',
                         fontVariantNumeric: 'tabular-nums',
                         letterSpacing: '-0.02em',
                       }}>
-                        {row.revenue > 0 ? fmt(row.revenue) : '\u2014'}
+                        {m.revenue > 0 ? fmt(m.revenue) : '—'}
                       </td>
                       <td style={{ padding: '14px 20px', minWidth: 140 }}>
                         <div style={{
@@ -430,11 +372,11 @@ function Inner() {
                         }}>
                           <m.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${(row.revenue / maxRevenue) * 100}%` }}
+                            animate={{ width: `${(m.revenue / maxRevenue) * 100}%` }}
                             transition={{ duration: 0.8, ease: 'easeOut', delay: i * 0.03 }}
                             style={{
                               height: '100%',
-                              background: row.revenue === best?.revenue && row.revenue > 0
+                              background: m.revenue === best?.revenue && m.revenue > 0
                                 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
                                 : 'linear-gradient(90deg,#10b981,#34d399)',
                               borderRadius: 4,
@@ -452,14 +394,14 @@ function Inner() {
                   }}>
                     <td style={{
                       padding: '14px 20px', fontWeight: 800,
-                      color: '#0f172a',
+                      color: '#111827',
                     }}>
                       Total
                     </td>
                     <td style={{
                       padding: '14px 20px', fontWeight: 700,
                       fontVariantNumeric: 'tabular-nums',
-                      color: '#0f172a',
+                      color: '#111827',
                     }}>
                       {totalCount}
                     </td>

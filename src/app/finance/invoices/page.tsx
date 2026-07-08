@@ -80,7 +80,7 @@ function Avatar({ name }: { name: string }) {
 function normaliseInvoice(raw: Record<string, unknown>): Invoice {
   return {
     id: String(raw.id ?? ''),
-    memberName: String(raw.member_name ?? raw.memberName ?? ''),
+    memberName: String(raw.client_name ?? raw.member_name ?? raw.memberName ?? ''),
     memberAvatar: String(raw.member_avatar ?? raw.memberAvatar ?? ''),
     amount: Number(raw.amount ?? 0),
     date: String(raw.date ?? ''),
@@ -254,6 +254,14 @@ export default function InvoicesPage() {
     try { await api.invoices.remind(invoice.id); } catch { /* silently ignore */ }
   }, []);
 
+  const handleMarkPaid = React.useCallback(async (invoice: Invoice) => {
+    try {
+      await api.invoices.markPaid(invoice.id);
+      setSelectedInvoice(null);
+      fetchInvoices();
+    } catch { /* silently ignore */ }
+  }, [fetchInvoices]);
+
   const statusTabs = React.useMemo(() => {
     const counts: Record<string, number> = { all: invoices.length, paid: 0, pending: 0, overdue: 0, draft: 0, cancelled: 0 };
     invoices.forEach((i) => { if (i.status in counts) counts[i.status]++; });
@@ -271,56 +279,12 @@ export default function InvoicesPage() {
       <AppShell>
         <div style={{ minHeight: '100vh', background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
 
-          {/* ── Dark Gradient Hero ── */}
+          {/* ── Hero ── */}
           <div style={{
             position: 'relative',
             overflow: 'hidden',
-            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            borderBottom: '1px solid rgba(0,0,0,0.07)',
           }}>
-            {/* Floating Orbs */}
-            <m.div
-              animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0] }}
-              transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-              style={{
-                position: 'absolute',
-                width: '320px',
-                height: '320px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)',
-                top: '-120px',
-                right: '10%',
-                pointerEvents: 'none',
-              }}
-            />
-            <m.div
-              animate={{ x: [0, -40, 30, 0], y: [0, 50, -30, 0] }}
-              transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-              style={{
-                position: 'absolute',
-                width: '260px',
-                height: '260px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
-                top: '-60px',
-                left: '20%',
-                pointerEvents: 'none',
-              }}
-            />
-            <m.div
-              animate={{ x: [0, 20, -40, 0], y: [0, -30, 40, 0] }}
-              transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-              style={{
-                position: 'absolute',
-                width: '220px',
-                height: '220px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)',
-                bottom: '-40px',
-                right: '30%',
-                pointerEvents: 'none',
-              }}
-            />
 
             <div style={{
               position: 'relative',
@@ -357,13 +321,10 @@ export default function InvoicesPage() {
                       fontWeight: 860,
                       letterSpacing: '-0.03em',
                       margin: 0,
-                      background: 'linear-gradient(135deg, #f8fafc, #94a3b8)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
+                      color: '#111827',
                     }}>Invoices</h1>
                   </div>
-                  <p style={{ marginTop: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
+                  <p style={{ marginTop: '6px', fontSize: '13px', color: '#6b7280' }}>
                     Manage billing, track payments, and send invoices.
                   </p>
                   <div style={{
@@ -372,7 +333,7 @@ export default function InvoicesPage() {
                     alignItems: 'center',
                     gap: '8px',
                     fontSize: '12px',
-                    color: 'rgba(255,255,255,0.4)',
+                    color: '#9ca3af',
                   }}>
                     <span>Finance</span>
                     <ChevronDown size={10} style={{ transform: 'rotate(-90deg)' }} />
@@ -398,34 +359,30 @@ export default function InvoicesPage() {
                       <div style={{
                         fontSize: '11px',
                         fontWeight: 600,
-                        color: 'rgba(255,255,255,0.45)',
+                        color: '#6b7280',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                       }}>Overdue</div>
                       <div style={{
                         fontSize: '17px',
                         fontWeight: 800,
-                        background: 'linear-gradient(135deg,#ef4444,#f43f5e)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
+                        color: '#ef4444',
                         marginTop: '2px',
                       }}>{fmtCurrency(stats.overdue)}</div>
                     </div>
-                    <div style={{ width: '1px', height: '32px', background: 'rgba(255,255,255,0.1)' }} />
+                    <div style={{ width: '1px', height: '32px', background: 'rgba(0,0,0,0.1)' }} />
                     <div style={{ textAlign: 'right' }}>
                       <div style={{
                         fontSize: '11px',
                         fontWeight: 600,
-                        color: 'rgba(255,255,255,0.45)',
+                        color: '#6b7280',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                       }}>Pending</div>
                       <div style={{
                         fontSize: '17px',
                         fontWeight: 800,
-                        background: 'linear-gradient(135deg,#f59e0b,#f97316)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
+                        color: '#F59E0B',
                         marginTop: '2px',
                       }}>{fmtCurrency(stats.pending)}</div>
                     </div>
@@ -741,7 +698,7 @@ export default function InvoicesPage() {
               </>
             }
           >
-            {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} onDownload={handleDownloadPDF} onRemind={handleSendReminder} />}
+            {selectedInvoice && <InvoiceDetail invoice={selectedInvoice} onDownload={handleDownloadPDF} onRemind={handleSendReminder} onMarkPaid={handleMarkPaid} />}
           </PremiumModal>
 
           <PremiumModal
@@ -991,10 +948,8 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
                     overflow: 'hidden',
                     borderRadius: '14px',
                     padding: '4px',
-                    background: 'rgba(255,255,255,0.95)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(15,23,42,0.09)',
+                    background: '#fff',
+                    border: '1px solid rgba(0,0,0,0.07)',
                     boxShadow: '0 12px 32px rgba(15,23,42,0.14)',
                   }}
                 >
@@ -1045,7 +1000,7 @@ function InvoiceCard({ invoice, index, onView, onDownload, onRemind }: { invoice
 
 /* ────────── Invoice Detail ────────── */
 
-function InvoiceDetail({ invoice, onDownload, onRemind }: { invoice: Invoice; onDownload: (i: Invoice) => void; onRemind: (i: Invoice) => void }) {
+function InvoiceDetail({ invoice, onDownload, onRemind, onMarkPaid }: { invoice: Invoice; onDownload: (i: Invoice) => void; onRemind: (i: Invoice) => void; onMarkPaid: (i: Invoice) => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{
@@ -1157,8 +1112,8 @@ function InvoiceDetail({ invoice, onDownload, onRemind }: { invoice: Invoice; on
         {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
           <PremiumButton tone="secondary" icon={<Send size={16} />} size="sm" onClick={() => onRemind(invoice)}>Send Reminder</PremiumButton>
         )}
-        {invoice.status === 'pending' && (
-          <PremiumButton tone="success" icon={<CheckCircle2 size={16} />} size="sm">Mark as Paid</PremiumButton>
+        {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
+          <PremiumButton tone="success" icon={<CheckCircle2 size={16} />} size="sm" onClick={() => onMarkPaid(invoice)}>Mark as Paid</PremiumButton>
         )}
       </div>
     </div>

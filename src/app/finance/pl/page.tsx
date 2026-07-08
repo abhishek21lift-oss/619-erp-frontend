@@ -60,9 +60,7 @@ function Inner() {
 
   const totals = useMemo(() => {
     const revenue      = monthly.reduce((s: number, m: any) => s + Number(m.revenue || 0), 0);
-    // Uses incentive_rate (commission/incentive) from the trainers table — not a fixed base salary.
-    // incentive_rate is stored as a monthly amount (not a percentage), so we multiply by 12 for annualised cost.
-    const monthlySal   = trainers.reduce((s: number, t: any) => s + Number(t.incentive_rate || 0), 0);
+    const monthlySal   = trainers.reduce((s: number, t: any) => s + Number(t.salary || 0), 0);
     const annualSalary = monthlySal * 12;
     const overheads    = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
     const totalCost    = annualSalary + overheads;
@@ -104,37 +102,22 @@ function Inner() {
   return (
     <AppShell>
       <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
-        {/* Premium Hero Header */}
+        {/* Hero Header */}
         <div className="relative overflow-hidden rounded-none sm:rounded-[28px] mx-0 sm:mx-6 mt-0 sm:mt-6 p-6 sm:p-8"
           style={{
-            background: 'linear-gradient(145deg, #0f0c29 0%, #1a1440 30%, #1e1b4b 60%, #1e40af 100%)',
-            boxShadow: '0 24px 80px rgba(30,27,75,0.35)',
+            background: '#f8fafc',
+            borderBottom: '1px solid rgba(0,0,0,0.07)',
           }}>
-          <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-            }} />
-          <m.div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full opacity-30"
-            style={{ background: 'radial-gradient(circle, rgba(167,139,250,0.5) 0%, transparent 70%)' }}
-            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.4, 0.3] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} />
-          <m.div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full opacity-25"
-            style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, transparent 70%)' }}
-            animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-purple-400 to-cyan-400 opacity-60" />
-
-          <div className="relative z-10">
+          <div className="relative">
             {/* Finance Tabs */}
             <div className="flex flex-wrap gap-2 mb-5">
               {FINANCE_TABS.map(tab => (
                 <button key={tab.href} onClick={() => router.push(tab.href)}
                   className="rounded-[10px] px-3.5 py-2 text-[11px] font-[700] uppercase tracking-[0.06em] transition-all"
                   style={{
-                    background: tab.href === '/finance/pl' ? 'rgba(167,139,250,0.2)' : 'rgba(255,255,255,0.06)',
-                    color: tab.href === '/finance/pl' ? '#c4b5fd' : 'rgba(255,255,255,0.6)',
-                    border: tab.href === '/finance/pl' ? '1.5px solid rgba(167,139,250,0.4)' : '1.5px solid rgba(255,255,255,0.08)',
+                    background: tab.href === '/finance/pl' ? 'rgba(99,102,241,0.1)' : 'rgba(0,0,0,0.04)',
+                    color: tab.href === '/finance/pl' ? '#6366f1' : '#6b7280',
+                    border: tab.href === '/finance/pl' ? '1.5px solid rgba(99,102,241,0.3)' : '1.5px solid rgba(0,0,0,0.07)',
                   }}>
                   {tab.label}
                 </button>
@@ -144,26 +127,26 @@ function Inner() {
             {/* Title + Year Selector */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-[26px] sm:text-[34px] font-[860] tracking-[-0.03em] leading-[1.2]" style={{ color: '#ffffff' }}>
+                <h1 className="text-[26px] sm:text-[34px] font-[860] tracking-[-0.03em] leading-[1.2]" style={{ color: '#111827' }}>
                   Profit &{' '}
-                  <span style={{ background: 'linear-gradient(135deg, #c4b5fd, #67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  <span style={{ color: '#6366f1' }}>
                     Loss
                   </span>
                 </h1>
-                <p className="mt-1 text-[13px]" style={{ color: 'rgba(255,255,255,0.6)' }}>Annual financial overview and performance metrics</p>
+                <p className="mt-1 text-[13px]" style={{ color: '#6b7280' }}>Annual financial overview and performance metrics</p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button onClick={() => setYear(y => y - 1)}
-                  className="flex h-8 w-8 items-center justify-center rounded-[10px] transition-all hover:bg-white/10"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <ChevronLeft size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+                  className="flex h-8 w-8 items-center justify-center rounded-[10px] transition-all hover:bg-black/5"
+                  style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)' }}>
+                  <ChevronLeft size={14} style={{ color: '#6b7280' }} />
                 </button>
-                <span className="text-[15px] font-[760] min-w-[52px] text-center" style={{ color: '#ffffff' }}>{year}</span>
+                <span className="text-[15px] font-[760] min-w-[52px] text-center" style={{ color: '#111827' }}>{year}</span>
                 <button onClick={() => setYear(y => y + 1)} disabled={year >= new Date().getFullYear()}
-                  className="flex h-8 w-8 items-center justify-center rounded-[10px] transition-all hover:bg-white/10"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', opacity: year >= new Date().getFullYear() ? 0.4 : 1 }}>
-                  <ChevronRight size={14} style={{ color: 'rgba(255,255,255,0.7)' }} />
+                  className="flex h-8 w-8 items-center justify-center rounded-[10px] transition-all hover:bg-black/5"
+                  style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', opacity: year >= new Date().getFullYear() ? 0.4 : 1 }}>
+                  <ChevronRight size={14} style={{ color: '#6b7280' }} />
                 </button>
               </div>
             </div>

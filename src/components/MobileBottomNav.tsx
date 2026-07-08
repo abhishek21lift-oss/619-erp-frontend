@@ -34,10 +34,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   const isAdminOrManager = role === 'admin' || role === 'manager';
   const items    = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
 
-  const { bottomBar, reducedMotion } = useNavScroll();
+  const { reducedMotion } = useNavScroll();
 
-  const isVisible = !sidebarOpen && bottomBar !== 'hidden';
-  const dur       = reducedMotion ? 0 : 0.28;
+  const dur = reducedMotion ? 0 : 0.28;
 
   return (
     <m.nav
@@ -48,7 +47,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
         willChange: 'transform',
         boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
       }}
-      animate={{ y: isVisible ? 0 : '100%' }}
+      animate={{ y: sidebarOpen ? '100%' : 0 }}
       transition={{ duration: dur, ease: EASE }}
       aria-label="Primary navigation"
       initial={false}

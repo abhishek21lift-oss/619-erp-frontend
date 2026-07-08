@@ -80,15 +80,7 @@ function CheckInHub() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       {/* Hero */}
-      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f0a1e 0%,#1a0a2e 30%,#0f172a 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px' }}>
-        <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to bottom, black 40%, transparent 90%)' }}>
-          <m.div className="absolute -top-16 -left-8 w-64 h-64 rounded-full opacity-20"
-            style={{ background: 'radial-gradient(circle, #6366f1, transparent 70%)' }}
-            animate={{ x: [0, 25, -15, 0], y: [0, -30, 10, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }} />
-          <m.div className="absolute -bottom-16 -right-8 w-72 h-72 rounded-full opacity-15"
-            style={{ background: 'radial-gradient(circle, #10b981, transparent 70%)' }}
-            animate={{ x: [0, -20, 15, 0], y: [0, 20, -8, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }} />
-        </div>
+      <div className="relative overflow-hidden" style={{ background: '#f8fafc', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
         <div className="relative z-10 mx-auto" style={{ maxWidth: 900 }}>
           <div className="flex items-center gap-4">
             <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -99,11 +91,11 @@ function CheckInHub() {
             <div>
               <m.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className="text-[24px] font-[860] tracking-[-0.03em]"
-                style={{ background: 'linear-gradient(135deg,#c7d2fe,#6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                style={{ color: '#111827' }}>
                 Check In
               </m.h1>
               <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
-                className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                className="text-[12px]" style={{ color: '#6b7280' }}>
                 Choose a check-in method below
               </m.p>
             </div>
@@ -114,32 +106,32 @@ function CheckInHub() {
       <div className="mx-auto px-5 py-6 sm:px-8" style={{ maxWidth: 900 }}>
         {/* Method Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {METHODS.map((method, i) => {
-            const Icon = method.icon;
-            const isActive = active === method.id;
+          {METHODS.map((m, i) => {
+            const Icon = m.icon;
+            const isActive = active === m.id;
             return (
               <m.div
-                key={method.id}
+                key={m.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.07 }}
               >
-                {method.inline ? (
+                {m.inline ? (
                   <button
-                    onClick={() => setActive(isActive ? null : method.id)}
+                    onClick={() => setActive(isActive ? null : m.id)}
                     className="w-full text-left rounded-[18px] p-5 transition-all"
                     style={{
-                      background: isActive ? `${method.color}10` : 'white',
-                      border: `1.5px solid ${isActive ? method.color : '#e2e8f0'}`,
-                      boxShadow: isActive ? `0 4px 20px ${method.color}20` : '0 1px 6px rgba(0,0,0,0.04)',
+                      background: isActive ? `${m.color}10` : 'white',
+                      border: `1.5px solid ${isActive ? m.color : '#e2e8f0'}`,
+                      boxShadow: isActive ? `0 4px 20px ${m.color}20` : '0 1px 6px rgba(0,0,0,0.04)',
                     }}
                   >
-                    <MethodCardInner m={method} isActive={isActive} />
+                    <MethodCardInner m={m} isActive={isActive} />
                   </button>
                 ) : (
-                  <Link href={method.href!} className="block rounded-[18px] p-5 transition-all"
+                  <Link href={m.href!} className="block rounded-[18px] p-5 transition-all"
                     style={{ background: 'white', border: '1.5px solid #e2e8f0', boxShadow: '0 1px 6px rgba(0,0,0,0.04)', textDecoration: 'none' }}>
-                    <MethodCardInner m={method} isActive={false} />
+                    <MethodCardInner m={m} isActive={false} />
                   </Link>
                 )}
               </m.div>

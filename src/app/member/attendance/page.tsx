@@ -23,7 +23,7 @@ const METHOD_ICONS: Record<string, React.ReactNode> = {
   biometric: <Zap size={12} />,
 };
 
-const glass = { background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' } as const;
+const glass = { background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' } as const;
 
 function StatPill({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ElementType; color: string }) {
   return (
@@ -33,7 +33,7 @@ function StatPill({ label, value, icon: Icon, color }: { label: string; value: s
       </div>
       <div>
         <div style={{ fontSize: 20, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+        <div style={{ fontSize: 10, color: '#6b7280', marginTop: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
       </div>
     </div>
   );
@@ -58,7 +58,7 @@ function MonthCalendar({ year, month, presentDays }: { year: number; month: numb
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
         {dayNames.map((d) => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{d}</div>
+          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>{d}</div>
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
@@ -76,8 +76,8 @@ function MonthCalendar({ year, month, presentDays }: { year: number; month: numb
                 borderRadius: 6,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 11, fontWeight: isPresent ? 700 : 400,
-                background: isPresent ? '#10b981' : isFuture ? 'transparent' : 'var(--bg-subtle)',
-                color: isPresent ? '#fff' : isToday ? '#6366f1' : isFuture ? 'var(--text-disabled)' : 'var(--text-muted)',
+                background: isPresent ? '#10b981' : isFuture ? 'transparent' : '#f3f4f6',
+                color: isPresent ? '#fff' : isToday ? '#6366f1' : isFuture ? '#9ca3af' : '#6b7280',
                 border: isToday ? '2px solid #6366f1' : '2px solid transparent',
                 cursor: 'default',
               }}
@@ -145,14 +145,14 @@ export default function MemberAttendancePage() {
     <Guard>
       <AppShell>
         {/* Header */}
-        <div style={{ background: 'linear-gradient(135deg,#0f172a 0%,#111827 100%)', borderRadius: 16, padding: '18px 22px', marginBottom: 20, border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ background: '#f9fafb', borderRadius: 16, padding: '18px 22px', marginBottom: 20, border: '1px solid rgba(0,0,0,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <CalendarCheck size={20} color="#fff" />
             </div>
             <div>
-              <h1 style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: 0 }}>My Attendance</h1>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '2px 0 0' }}>Your gym visit history and streaks</p>
+              <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111827', margin: 0 }}>My Attendance</h1>
+              <p style={{ fontSize: 11, color: '#9ca3af', margin: '2px 0 0' }}>Your gym visit history and streaks</p>
             </div>
           </div>
         </div>
@@ -161,24 +161,24 @@ export default function MemberAttendancePage() {
         <div style={{ ...glass, borderRadius: 16, padding: 20, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ flexShrink: 0 }}>
             {qrLoading ? (
-              <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-subtle)', borderRadius: 10 }}>
-                <Loader2 size={24} style={{ animation: 'spin 0.9s linear infinite', color: 'var(--text-muted)' }} />
+              <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: 10 }}>
+                <Loader2 size={24} style={{ animation: 'spin 0.9s linear infinite', color: '#6b7280' }} />
               </div>
             ) : qrDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qrDataUrl} alt="Your check-in QR code" style={{ width: 120, height: 120, borderRadius: 10, display: 'block' }} />
             ) : (
-              <div style={{ width: 120, height: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-subtle)', borderRadius: 10, color: 'var(--text-muted)', gap: 6 }}>
+              <div style={{ width: 120, height: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: 10, color: '#6b7280', gap: 6 }}>
                 <QrCode size={28} />
                 <span style={{ fontSize: 10 }}>Unavailable</span>
               </div>
             )}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
               <QrCode size={16} color="#06b6d4" /> Your Check-in QR Code
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 12, lineHeight: 1.5 }}>
               Show this QR at the gym entrance or kiosk to check in. Your static QR code never expires — you can print it too.
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -194,7 +194,7 @@ export default function MemberAttendancePage() {
               <button
                 onClick={loadQr}
                 disabled={qrLoading}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', background: '#f3f4f6', color: '#111827', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
               >
                 <RefreshCw size={11} style={qrLoading ? { animation: 'spin 0.9s linear infinite' } : {}} /> Refresh
               </button>
@@ -203,7 +203,7 @@ export default function MemberAttendancePage() {
         </div>
 
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6b7280' }}>
             <Loader2 size={18} style={{ animation: 'spin 0.9s linear infinite' }} /> Loading your attendance…
           </div>
         ) : (
@@ -224,33 +224,33 @@ export default function MemberAttendancePage() {
               {/* Calendar */}
               <div style={{ ...glass, borderRadius: 16, padding: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <button onClick={prevMonth} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)' }}>
+                  <button onClick={prevMonth} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', background: '#f3f4f6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111827' }}>
                     <ChevronLeft size={14} />
                   </button>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{monthName}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{daysThisMonth} visits</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{monthName}</div>
+                    <div style={{ fontSize: 11, color: '#6b7280' }}>{daysThisMonth} visits</div>
                   </div>
-                  <button onClick={nextMonth} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-subtle)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)' }}>
+                  <button onClick={nextMonth} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', background: '#f3f4f6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#111827' }}>
                     <ChevronRight size={14} />
                   </button>
                 </div>
                 <MonthCalendar year={calYear} month={calMonth} presentDays={presentDays} />
                 {/* Legend */}
-                <div style={{ display: 'flex', gap: 12, marginTop: 14, fontSize: 10, color: 'var(--text-muted)' }}>
+                <div style={{ display: 'flex', gap: 12, marginTop: 14, fontSize: 10, color: '#6b7280' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <div style={{ width: 12, height: 12, borderRadius: 3, background: '#10b981' }} /> Present
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--bg-subtle)' }} /> Absent
+                    <div style={{ width: 12, height: 12, borderRadius: 3, background: '#f3f4f6', border: '1px solid rgba(0,0,0,0.07)' }} /> Absent
                   </div>
                 </div>
               </div>
 
               {/* Visit log */}
               <div style={{ ...glass, borderRadius: 16, overflow: 'hidden' }}>
-                <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Visit History</div>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>Visit History</div>
                   <button
                     title="Export CSV"
                     onClick={() => {
@@ -271,14 +271,14 @@ export default function MemberAttendancePage() {
                       a.download = 'attendance.csv';
                       a.click();
                     }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-subtle)', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.07)', background: '#f3f4f6', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#111827' }}
                   >
                     <Download size={12} /> Export CSV
                   </button>
                 </div>
                 <div style={{ maxHeight: 440, overflowY: 'auto' }}>
                   {history.length === 0 ? (
-                    <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>No visits recorded yet</div>
+                    <div style={{ padding: 40, textAlign: 'center', color: '#6b7280', fontSize: 13 }}>No visits recorded yet</div>
                   ) : history.map((r, i) => {
                     const date      = r.check_in_time ? new Date(r.check_in_time) : null;
                     const checkOut  = r.check_out_time ? new Date(r.check_out_time as string) : null;
@@ -287,21 +287,21 @@ export default function MemberAttendancePage() {
                       <m.div
                         key={i}
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.015 }}
-                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: '1px solid var(--border)' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.07)' }}
                       >
                         <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
-                          <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+                          <div style={{ fontSize: 18, fontWeight: 900, color: '#111827', lineHeight: 1 }}>
                             {date ? date.getDate() : '?'}
                           </div>
-                          <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          <div style={{ fontSize: 9, color: '#6b7280', textTransform: 'uppercase' }}>
                             {date ? date.toLocaleDateString('en-IN', { month: 'short' }) : ''}
                           </div>
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: '#111827', marginBottom: 2 }}>
                             {date ? date.toLocaleDateString('en-IN', { weekday: 'long' }) : 'Unknown'}
                           </div>
-                          <div style={{ fontSize: 10, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <div style={{ fontSize: 10, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <span>
                               In: {date ? date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}
                             </span>
