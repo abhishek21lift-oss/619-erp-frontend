@@ -276,7 +276,7 @@ export default function CommandPalette() {
     if (!aiPlan || !aiTaskId) return;
     setAiLoading(true);
     try {
-      const result = await api.agent.confirm(aiTaskId, aiPlan.confirmationToken, approved);
+      await api.agent.confirm(aiTaskId, aiPlan.confirmationToken, approved);
       setAiMessages(m => [...m, { role: 'system', content: approved ? 'Action completed successfully.' : 'Action cancelled.' }]);
       setAiPlan(null);
     } catch (err: any) {
@@ -328,8 +328,9 @@ export default function CommandPalette() {
         onMouseDown={e => e.stopPropagation()}
         style={mode === 'ai' ? { maxHeight: '70vh', display: 'flex', flexDirection: 'column' } : undefined}
       >
+        {/* ── Input row ── */}
         <div className="cmdk-input-wrap">
-          <span className="cmdk-icon">{mode === 'ai' ? '✦' : '⌕'}</span>
+          <span className="cmdk-icon" aria-hidden="true">{mode === 'ai' ? '✦' : '⌕'}</span>
           <input
             ref={inputRef}
             className="cmdk-input"
@@ -344,75 +345,181 @@ export default function CommandPalette() {
             }}
             autoComplete="off"
             spellCheck={false}
+            aria-autocomplete="list"
           />
-          {(memberLoading || aiLoading) && <span className="cmdk-spinner">…</span>}
+          {(memberLoading || aiLoading) && (
+            <span className="cmdk-spinner" aria-label="Loading" aria-live="polite">…</span>
+          )}
           {mode === 'nav' && <kbd className="cmdk-kbd">esc</kbd>}
           {mode === 'ai' && (
             <button
               type="button"
               onClick={() => { setMode('nav'); setAiMessages([]); setAiPlan(null); setQ(''); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.5, fontSize: 12, padding: '0 8px' }}
+              aria-label="Switch to navigation mode"
+              style={{
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-2)',
+                borderRadius: 6,
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '2px 8px',
+                lineHeight: '18px',
+                flexShrink: 0,
+                letterSpacing: '0.02em',
+              }}
             >
               ✕ nav
             </button>
           )}
         </div>
 
-        {/* AI mode: conversation + plan confirmation */}
+        {/* ── AI mode: conversation + plan confirmation ── */}
         {mode === 'ai' && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div
+            role="log"
+            aria-live="polite"
+            aria-label="AI conversation"
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '12px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              scrollbarWidth: 'thin',
+            }}
+          >
+            {/* Empty state */}
             {aiMessages.length === 0 && !aiLoading && (
-              <div className="cmdk-empty" style={{ padding: '24px 0' }}>
-                <div style={{ fontSize: 22, marginBottom: 8, opacity: 0.55 }}>✦</div>
-                <div style={{ fontSize: 13, opacity: 0.6 }}>Ask anything — members, attendance, payments, schedules…</div>
-                <div style={{ fontSize: 11, opacity: 0.4, marginTop: 4 }}>Press Enter to ask</div>
+              <div className="cmdk-empty" style={{ padding: '28px 0', gap: 6 }}>
+                <div style={{
+                  fontSize: 28,
+                  marginBottom: 4,
+                  color: 'var(--accent)',
+                  opacity: 0.7,
+                  lineHeight: 1,
+                }}>
+                  ✦
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
+                  Ask anything about your gym
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 2 }}>
+                  Members · Attendance · Payments · Schedules — Press Enter to send
+                </div>
               </div>
             )}
-            {aiMessages.map((m, i) => (
-              <div key={i} style={{
-                alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: '85%',
-                padding: '8px 12px',
-                borderRadius: m.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                background: m.role === 'user' ? 'var(--color-primary, #6c63ff)' : m.role === 'system' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)',
-                color: m.role === 'user' ? '#fff' : 'var(--color-text, #e2e8f0)',
-                fontSize: 13,
-                lineHeight: 1.5,
-                whiteSpace: 'pre-wrap',
-                border: m.role === 'system' ? '1px solid rgba(255,255,255,0.1)' : 'none',
-              }}>
-                {m.content}
-              </div>
-            ))}
 
-            {/* Confirmation UI */}
-            {aiPlan && !aiLoading && (
-              <div style={{
-                border: '1px solid rgba(255, 200, 0, 0.3)',
-                borderRadius: 8,
-                padding: '12px 14px',
-                background: 'rgba(255, 200, 0, 0.05)',
-                fontSize: 13,
-              }}>
-                <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--color-warning, #f59e0b)' }}>
-                  ⚠ Confirm Actions
+            {/* Messages */}
+            {aiMessages.map((msg, i) => {
+              const isUser   = msg.role === 'user';
+              const isSystem = msg.role === 'system';
+              return (
+                <div
+                  key={i}
+                  style={{
+                    alignSelf: isUser ? 'flex-end' : 'flex-start',
+                    maxWidth: '86%',
+                    padding: '8px 12px',
+                    borderRadius: isUser ? '14px 14px 3px 14px' : isSystem ? '10px' : '14px 14px 14px 3px',
+                    background: isUser
+                      ? 'var(--accent)'
+                      : isSystem
+                        ? 'var(--bg-subtle)'
+                        : 'var(--bg-hover)',
+                    color: isUser ? '#fff' : 'var(--text-primary)',
+                    fontSize: 13,
+                    lineHeight: 1.55,
+                    whiteSpace: 'pre-wrap',
+                    border: isSystem
+                      ? '1px solid var(--border-2)'
+                      : isUser
+                        ? 'none'
+                        : '1px solid var(--border)',
+                    boxShadow: isUser
+                      ? '0 2px 10px rgba(139,92,246,0.28)'
+                      : '0 1px 4px rgba(0,0,0,0.08)',
+                  }}
+                >
+                  {msg.content}
                 </div>
-                <div style={{ marginBottom: 8, opacity: 0.8 }}>{aiPlan.summary}</div>
+              );
+            })}
+
+            {/* Plan confirmation card */}
+            {aiPlan && !aiLoading && (
+              <div
+                style={{
+                  border: '1px solid rgba(245,158,11,0.30)',
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  background: 'rgba(245,158,11,0.06)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  marginTop: 4,
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 10,
+                }}>
+                  <span style={{ fontSize: 14, lineHeight: 1 }}>⚠</span>
+                  <span style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: 'var(--warning)',
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                  }}>
+                    Confirm Actions
+                  </span>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, lineHeight: 1.5 }}>
+                  {aiPlan.summary}
+                </div>
                 {aiPlan.actions?.filter(a => a.type === 'write').map((a, i) => (
-                  <div key={i} style={{ fontSize: 12, opacity: 0.65, marginBottom: 2 }}>• {a.description}</div>
+                  <div key={i} style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 3, lineHeight: 1.4 }}>
+                    · {a.description}
+                  </div>
                 ))}
-                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                   <button
                     type="button"
                     onClick={() => confirmAi(true)}
-                    style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'var(--color-primary, #6c63ff)', color: '#fff', fontSize: 13, fontWeight: 600 }}
+                    style={{
+                      flex: 1,
+                      padding: '7px 0',
+                      borderRadius: 8,
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: 'var(--accent)',
+                      color: '#fff',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      letterSpacing: '0.01em',
+                      boxShadow: '0 2px 10px var(--accent-soft)',
+                    }}
                   >
                     Confirm
                   </button>
                   <button
                     type="button"
                     onClick={() => confirmAi(false)}
-                    style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', background: 'transparent', color: 'var(--color-text, #e2e8f0)', fontSize: 13 }}
+                    style={{
+                      flex: 1,
+                      padding: '7px 0',
+                      borderRadius: 8,
+                      border: '1px solid var(--border-2)',
+                      cursor: 'pointer',
+                      background: 'var(--bg-subtle)',
+                      color: 'var(--text-muted)',
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
                   >
                     Cancel
                   </button>
@@ -422,24 +529,35 @@ export default function CommandPalette() {
           </div>
         )}
 
-        {/* Nav mode: standard results */}
+        {/* ── Nav mode: standard results ── */}
         {mode === 'nav' && (
-          <div className="cmdk-list" ref={listRef}>
+          <div className="cmdk-list" ref={listRef} role="listbox" aria-label="Search results">
             {results.length === 0 && q.trim() && (
               <div className="cmdk-empty">
-                <div style={{ fontSize: 22, marginBottom: 8, opacity: 0.55 }}>○</div>
-                <div>No matches for &quot;{q}&quot;</div>
+                <div style={{ fontSize: 22, marginBottom: 8, color: 'var(--border-3)', lineHeight: 1 }}>○</div>
+                <div style={{ fontWeight: 500 }}>No matches for &ldquo;{q}&rdquo;</div>
                 <button
                   type="button"
                   onClick={() => setMode('ai')}
-                  style={{ marginTop: 10, padding: '6px 14px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', color: 'inherit', fontSize: 12 }}
+                  style={{
+                    marginTop: 12,
+                    padding: '6px 16px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border-2)',
+                    cursor: 'pointer',
+                    background: 'var(--bg-subtle)',
+                    color: 'var(--accent)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: '0.02em',
+                  }}
                 >
                   ✦ Ask 619 AI instead
                 </button>
               </div>
             )}
             {Object.entries(grouped).map(([groupName, items]) => (
-              <div key={groupName} className="cmdk-group">
+              <div key={groupName} className="cmdk-group" role="group" aria-label={groupName}>
                 <div className="cmdk-group-label">{groupName}</div>
                 {(items ?? []).map(r => {
                   const idx = runningIdx++;
@@ -449,14 +567,16 @@ export default function CommandPalette() {
                       key={r.id}
                       type="button"
                       data-idx={idx}
+                      role="option"
+                      aria-selected={isActive}
                       className={`cmdk-item${isActive ? ' is-active' : ''}`}
                       onMouseEnter={() => setActiveIdx(idx)}
                       onClick={() => choose(r)}
                     >
-                      <span className="cmdk-item-icon">{r.icon}</span>
+                      <span className="cmdk-item-icon" aria-hidden="true">{r.icon}</span>
                       <span className="cmdk-item-label">{r.label}</span>
                       {r.sub && <span className="cmdk-item-sub">{r.sub}</span>}
-                      {isActive && <span className="cmdk-enter">↵</span>}
+                      {isActive && <span className="cmdk-enter" aria-hidden="true">↵</span>}
                     </button>
                   );
                 })}
@@ -465,6 +585,7 @@ export default function CommandPalette() {
           </div>
         )}
 
+        {/* ── Footer ── */}
         <div className="cmdk-footer">
           {mode === 'nav' ? (
             <>
