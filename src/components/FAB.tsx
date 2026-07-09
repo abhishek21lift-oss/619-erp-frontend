@@ -11,51 +11,51 @@ const FAB_ITEMS = [
     icon: UserPlus,
     label: 'New Client',
     href: '/pt-os/new-client',
-    color: '#7c3aed',
-    glow: 'rgba(124,58,237,0.4)',
-    gradient: 'linear-gradient(135deg, #7c3aed, #5b21b6)',
+    glow: 'rgba(124,58,237,0.50)',
+    gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
   },
   {
     icon: IndianRupee,
     label: 'Quick Payment',
     href: '/pt-os/clients',
-    color: '#059669',
-    glow: 'rgba(5,150,105,0.4)',
-    gradient: 'linear-gradient(135deg, #059669, #047857)',
+    glow: 'rgba(5,150,105,0.50)',
+    gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
   },
   {
     icon: Dumbbell,
     label: 'New Session',
     href: '/pt-os/schedule-session',
-    color: '#0891b2',
-    glow: 'rgba(8,145,178,0.4)',
-    gradient: 'linear-gradient(135deg, #0891b2, #0e7490)',
+    glow: 'rgba(8,145,178,0.50)',
+    gradient: 'linear-gradient(135deg, #22d3ee 0%, #0891b2 100%)',
   },
   {
     icon: ClipboardList,
     label: 'Assessment',
     href: '/pt-os/weekly-checkin',
-    color: '#d97706',
-    glow: 'rgba(217,119,6,0.4)',
-    gradient: 'linear-gradient(135deg, #d97706, #b45309)',
+    glow: 'rgba(217,119,6,0.50)',
+    gradient: 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
   },
   {
     icon: ScanFace,
     label: 'Check-in',
     href: '/checkin',
-    color: '#db2777',
-    glow: 'rgba(219,39,119,0.4)',
-    gradient: 'linear-gradient(135deg, #db2777, #be185d)',
+    glow: 'rgba(219,39,119,0.50)',
+    gradient: 'linear-gradient(135deg, #f472b6 0%, #db2777 100%)',
   },
 ];
+
+const ITEM_SPRING = { type: 'spring', stiffness: 520, damping: 32 } as const;
 
 export default function FAB() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const { bottomBar, reducedMotion } = useNavScroll();
 
-  const navVisible = bottomBar !== 'hidden';
-  const dur = reducedMotion ? 0 : 0.28;
+  const navVisible  = bottomBar !== 'hidden';
+  const dur         = reducedMotion ? 0 : 0.28;
+  const bottomBase  = navVisible
+    ? 'calc(60px + env(safe-area-inset-bottom, 0px) + 16px)'
+    : 'calc(env(safe-area-inset-bottom, 0px) + 20px)';
 
   const handleItem = (href: string) => {
     setOpen(false);
@@ -69,11 +69,15 @@ export default function FAB() {
         {open && (
           <m.div
             className="fixed inset-0 z-[49] lg:hidden"
-            style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+            style={{
+              background: 'rgba(7,5,15,0.72)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.22 }}
             onClick={() => setOpen(false)}
           />
         )}
@@ -82,50 +86,59 @@ export default function FAB() {
       {/* Action items */}
       <AnimatePresence>
         {open && (
-          <div className="fixed z-50 lg:hidden" style={{
-            bottom: navVisible
-              ? 'calc(60px + env(safe-area-inset-bottom, 0px) + 12px)'
-              : 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
-            right: 16,
-            transition: `bottom ${dur}s`,
-          }}>
-            <div className="flex flex-col-reverse gap-3 items-end">
+          <div
+            className="fixed z-50 lg:hidden"
+            style={{
+              bottom: bottomBase,
+              right: 20,
+              transition: `bottom ${dur}s cubic-bezier(0.22,1,0.36,1)`,
+            }}
+          >
+            <div className="flex flex-col-reverse items-end" style={{ gap: 10 }}>
               {FAB_ITEMS.map((item, i) => {
                 const Icon = item.icon;
                 return (
                   <m.button
                     key={item.href + item.label}
-                    initial={{ opacity: 0, y: 20, scale: 0.7 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.8 }}
+                    initial={{ opacity: 0, y: 22, scale: 0.62, x: 6 }}
+                    animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.78, x: 4 }}
                     transition={{
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 30,
-                      delay: i * 0.04,
+                      ...ITEM_SPRING,
+                      delay: reducedMotion ? 0 : i * 0.044,
                     }}
                     onClick={() => handleItem(item.href)}
-                    className="flex items-center gap-3"
-                    style={{ minHeight: 44 }}
+                    className="flex items-center"
+                    style={{ gap: 10, minHeight: 44 }}
+                    aria-label={item.label}
                   >
+                    {/* Glass label pill */}
                     <span
-                      className="rounded-full px-3.5 py-1.5 text-[12px] font-bold text-white shadow-lg"
+                      className="text-[11.5px] font-semibold select-none"
                       style={{
-                        background: 'rgba(10,14,26,0.92)',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(12px)',
+                        padding: '6px 14px',
+                        borderRadius: 9999,
+                        background: 'rgba(7,5,15,0.88)',
+                        border: '1px solid rgba(255,255,255,0.10)',
+                        backdropFilter: 'blur(18px)',
+                        WebkitBackdropFilter: 'blur(18px)',
+                        boxShadow: '0 4px 18px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.06)',
+                        color: 'rgba(255,255,255,0.88)',
+                        letterSpacing: '0.01em',
                       }}
                     >
                       {item.label}
                     </span>
+
+                    {/* Gradient icon circle */}
                     <div
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
                       style={{
                         background: item.gradient,
-                        boxShadow: `0 4px 16px ${item.glow}`,
+                        boxShadow: `0 4px 20px ${item.glow}, 0 1px 6px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.22)`,
                       }}
                     >
-                      <Icon size={18} className="text-white" />
+                      <Icon size={18} className="text-white" strokeWidth={2} aria-hidden="true" />
                     </div>
                   </m.button>
                 );
@@ -139,30 +152,31 @@ export default function FAB() {
       <m.button
         className="fixed z-50 flex h-[56px] w-[56px] items-center justify-center rounded-full lg:hidden"
         style={{
-          bottom: navVisible
-            ? 'calc(60px + env(safe-area-inset-bottom, 0px) + 12px)'
-            : 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
-          right: 16,
+          bottom: bottomBase,
+          right: 20,
           background: open
-            ? 'linear-gradient(135deg, #374151, #1f2937)'
+            ? 'rgba(7,5,15,0.90)'
             : 'linear-gradient(135deg, #FF9E00 0%, #F57C00 55%, #E65100 100%)',
+          border: open ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
           boxShadow: open
-            ? '0 4px 20px rgba(0,0,0,0.4)'
-            : '0 6px 24px rgba(255,140,0,0.45)',
-          transition: `bottom ${dur}s cubic-bezier(0.22,1,0.36,1), background 0.25s ease`,
+            ? '0 4px 28px rgba(0,0,0,0.52), inset 0 1px 0 rgba(255,255,255,0.08)'
+            : '0 6px 28px rgba(255,140,0,0.52), 0 2px 8px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.28)',
+          backdropFilter: open ? 'blur(18px)' : 'none',
+          WebkitBackdropFilter: open ? 'blur(18px)' : 'none',
+          transition: `bottom ${dur}s cubic-bezier(0.22,1,0.36,1), background 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease`,
         }}
         onClick={() => setOpen(s => !s)}
-        whileTap={reducedMotion ? {} : { scale: 0.92 }}
+        whileTap={reducedMotion ? {} : { scale: 0.88 }}
         transition={{ type: 'spring', stiffness: 700, damping: 22 }}
         aria-label={open ? 'Close quick actions' : 'Quick actions'}
         aria-expanded={open}
       >
         <m.div
           animate={{ rotate: open ? 45 : 0 }}
-          transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+          transition={{ type: 'spring', stiffness: 580, damping: 28 }}
         >
           {open
-            ? <X size={22} className="text-white" />
+            ? <X size={22} style={{ color: 'rgba(255,255,255,0.78)' }} />
             : <Plus size={24} className="text-white" strokeWidth={2.5} />
           }
         </m.div>
