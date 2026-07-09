@@ -69,15 +69,56 @@ export { NavItemPrimitive }            from './primitives/nav-item';
 export { NavGroupPrimitive }           from './primitives/nav-group';
 
 // ─── Motion ──────────────────────────────────────────────────────────────────
-export { MOTION_TOKENS, type EaseCurve, type MotionTokens } from './motion/tokens';
 export {
+  DUR,
+  EASE,
+  SPRING,
+  SCROLL,
+  NAV_SIZE,
+  STAGGER,
+  MOTION_TOKENS,
+  motionSafe,
+  type EaseCurve,
+  type SpringConfig,
+  type TweenConfig,
+  type MotionTokens,
+}                                                            from './motion/tokens';
+export {
+  // Fade
   fadeVariants,
+  fadeSlowVariants,
+  // Slide
   slideUpVariants,
+  slideDownVariants,
+  slideInLeftVariants,
   slideInRightVariants,
-  sidebarVariants,
-  collapseVariants,
+  // Scale
   scaleInVariants,
+  scaleFabVariants,
+  scaleIconVariants,
+  // Stagger
   staggerContainerVariants,
+  staggerTightVariants,
+  staggerLooseVariants,
+  // Sidebar
+  sidebarVariants,
+  sidebarLabelVariants,
+  sidebarGroupVariants,
+  sidebarActivePillTransition,
+  // Floating navbar
+  navbarScrollTransition,
+  navbarHeightVariants,
+  navbarBlurVariants,
+  // Bottom navigation
+  bottomBarScrollTransition,
+  bottomBarMountVariants,
+  bottomNavActivePillTransition,
+  bottomNavLabelVariants,
+  bottomNavIconTapVariants,
+  // Hide on scroll
+  hideOnScrollTransition,
+  // Generic collapse
+  collapseVariants,
 }                                                            from './motion/variants';
 
 // ─── Shell ───────────────────────────────────────────────────────────────────
