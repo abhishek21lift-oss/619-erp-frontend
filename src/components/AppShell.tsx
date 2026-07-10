@@ -15,6 +15,7 @@ import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import FAB from '@/components/FAB';
+import AIAssistant from '@/components/AIAssistant';
 import { api } from '@/lib/api';
 import { allNavItems } from '@/lib/nav-config';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
@@ -726,6 +727,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
       {/* Floating Action Button — mobile only */}
       <FAB />
+
+      {/* AI Assistant — persistent floating chat panel */}
+      <AIAssistant />
     </LazyMotion>
   );
 }
