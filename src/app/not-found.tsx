@@ -50,11 +50,11 @@ export default function NotFound() {
           lineHeight: 1.6,
         }}
       >
-        The page you’re looking for doesn’t exist or has been moved.
+        The page you're looking for doesn't exist or has been moved.
         Check the URL or head back to the app.
       </p>
       <Link
-        href="/"
+        href="/pt-os"
         style={{
           display: 'inline-flex',
           alignItems: 'center',

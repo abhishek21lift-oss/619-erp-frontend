@@ -1,7 +1,7 @@
 {
-  "name": "Coach Abhishek",
-  "short_name": "Coach",
-  "description": "Personal training client, session, program, and payment workspace for Coach Abhishek.",
+  "name": "619 FITNESS STUDIO — Operating System",
+  "short_name": "619 ERP",
+  "description": "Train heavy. Run light. The classy operating system for serious gyms.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -27,17 +27,17 @@
   ],
   "shortcuts": [
     {
-      "name": "Schedule",
-      "short_name": "Schedule",
-      "description": "Open the training schedule",
-      "url": "/schedule",
+      "name": "Check-in",
+      "short_name": "Check-in",
+      "description": "Open face recognition check-in",
+      "url": "/checkin",
       "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     },
     {
       "name": "Clients",
       "short_name": "Clients",
-      "description": "Browse coaching clients",
-      "url": "/clients",
+      "description": "Browse PT clients",
+      "url": "/pt-os/clients",
       "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
     }
   ],

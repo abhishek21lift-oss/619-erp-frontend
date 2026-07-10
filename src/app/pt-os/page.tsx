@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function PtOsPage() {
-  redirect('/');
+  redirect('/pt-os/clients');
 }
