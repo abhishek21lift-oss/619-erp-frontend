@@ -3,10 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Dumbbell, Plus, Search, User, Clock, ChevronRight, Target,
-  Activity, Heart, Zap, Brain, FileText, LayoutGrid, List,
-  Check, Copy, Edit3, Trash2, Sparkles, ArrowRight, RefreshCw,
-  Flame, Trophy, BarChart3, Sun,
+  Dumbbell, Plus, Search, User, Clock, Target,
+  Activity, FileText, LayoutGrid, List, Check,
+  Trophy, Sparkles, ChevronRight, Filter, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -14,6 +13,11 @@ import { Button } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { SpotlightCard } from '@/components/fitness/SpotlightCard';
+import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
+import { WorkoutPlanCard } from '@/components/fitness/WorkoutPlanCard';
+import { ExerciseCard } from '@/components/fitness/ExerciseCard';
+import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
 
 type MuscleGroup = 'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Arms' | 'Core' | 'Cardio';
 type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
@@ -21,6 +25,7 @@ type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
 interface Exercise {
   id: string; name: string; sets: number; reps: string;
   muscleGroup: MuscleGroup; difficulty: Difficulty; description: string; image: string;
+  equipment?: string; restSeconds?: number;
 }
 
 interface WorkoutPlan {
@@ -29,23 +34,7 @@ interface WorkoutPlan {
   client: string; exercises: number; progress: number; color: string;
 }
 
-interface AISuggestion {
-  id: string; title: string; description: string; goal: string; intensity: string;
-}
-
 const MUSCLE_GROUPS: MuscleGroup[] = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio'];
-const DIFFICULTIES: Difficulty[] = ['Beginner', 'Intermediate', 'Advanced'];
-
-const DIFFICULTY_COLORS: Record<Difficulty, { bg: string; color: string }> = {
-  Beginner: { bg: 'rgba(16,185,129,0.1)', color: '#059669' },
-  Intermediate: { bg: 'rgba(245,158,11,0.1)', color: '#d97706' },
-  Advanced: { bg: 'rgba(239,68,68,0.1)', color: '#dc2626' },
-};
-
-const GROUP_COLORS: Record<MuscleGroup, string> = {
-  Chest: '#ef4444', Back: '#8b5cf6', Legs: '#f59e0b',
-  Shoulders: '#06b6d4', Arms: '#ec4899', Core: '#10b981', Cardio: '#6366f1',
-};
 
 const PLAN_COLORS = [
   'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -58,21 +47,12 @@ const PLAN_COLORS = [
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const } },
 };
-
-const heroVariants = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } }
-};
-
-function fmtINR(n: number | string | null | undefined) {
-  return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-}
 
 export default function WorkoutPlansPage() {
   return <Guard roles={['admin', 'manager', 'trainer']}><AppShell><Inner /></AppShell></Guard>;
@@ -87,12 +67,12 @@ function Inner() {
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [trainers, setTrainers] = useState<string[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [dataError, setDataError] = useState('');
   const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'builder' | 'ai'>('plans');
   const [builderStep, setBuilderStep] = useState(0);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
-    setDataLoading(true); setDataError('');
+    setDataLoading(true);
     try {
       const [exRes, plRes, trRes] = await Promise.all([
         api.workouts.exercises.list(),
@@ -102,8 +82,9 @@ function Inner() {
       setExercises(Array.isArray((exRes as any)?.data) ? (exRes as any).data : []);
       setPlans(Array.isArray((plRes as any)?.data) ? (plRes as any).data : []);
       setTrainers(Array.isArray((trRes as any)?.data) ? (trRes as any).data.map((t: any) => t.name ?? t) : []);
-    } catch (err: any) { setDataError(err?.message || 'Failed to load data'); }
-    finally { setDataLoading(false); }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to load data');
+    } finally { setDataLoading(false); }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -114,229 +95,365 @@ function Inner() {
     return true;
   });
 
+  const avgProgress = plans.length
+    ? Math.round(plans.reduce((s, p) => s + (p.progress || 0), 0) / plans.length)
+    : 0;
+
   return (
-    <div>
+    <div style={{ minHeight: '100%', position: 'relative' }}>
       {/* ── Hero ── */}
-      <div style={{ padding: '32px 32px 28px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <m.div variants={heroVariants} initial="hidden" animate="visible"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #6366f1, #ec4899)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}>
+      <div style={{ padding: '28px 32px 24px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <m.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #6366f1, #ec4899)', boxShadow: '0 4px 20px rgba(99,102,241,0.35)', flexShrink: 0 }}
+            >
               <Dumbbell size={22} color="#fff" />
             </m.div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Workout Plans</h1>
-              <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'var(--text-muted)' }}>Build and manage personalized training programs</p>
+              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Workout Plans</h1>
+              <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Build and manage personalized training programs</p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ display: 'flex', background: 'var(--bg-subtle)', borderRadius: 8, padding: 2 }}>
-              <button onClick={() => setView('grid')}
-                style={{ padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'grid' ? '#fff' : 'transparent', color: view === 'grid' ? '#6366f1' : '#9ca3af', boxShadow: view === 'grid' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
-                <LayoutGrid size={15} />
-              </button>
-              <button onClick={() => setView('list')}
-                style={{ padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: view === 'list' ? '#fff' : 'transparent', color: view === 'list' ? '#6366f1' : '#9ca3af', boxShadow: view === 'list' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
-                <List size={15} />
-              </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'flex', background: 'var(--bg-subtle)', borderRadius: 9, padding: 3, gap: 2 }}>
+              {(['grid', 'list'] as const).map((v) => (
+                <button key={v} onClick={() => setView(v)}
+                  style={{ padding: '6px 9px', borderRadius: 7, border: 'none', cursor: 'pointer', transition: 'all 0.18s', background: view === v ? 'var(--bg-card)' : 'transparent', color: view === v ? '#6366f1' : 'var(--text-muted)', boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+                  {v === 'grid' ? <LayoutGrid size={14} /> : <List size={14} />}
+                </button>
+              ))}
             </div>
+            <Button variant="primary" size="sm" onClick={() => toast.info('Plan creation coming soon.')}>
+              <Plus size={14} style={{ marginRight: 5 }} />New Plan
+            </Button>
           </div>
         </div>
-      </div>
 
-      <div style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
-        {/* ── Quick Stats ── */}
+        {/* ── KPI cards ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {[
-            { label: 'Total Plans', value: plans.length, icon: <FileText size={15} />, from: '#6366f1', to: '#4f46e5' },
-            { label: 'Exercises', value: exercises.length, icon: <Activity size={15} />, from: '#10b981', to: '#059669' },
-            { label: 'Active Clients', value: trainers.length, icon: <User size={15} />, from: '#f59e0b', to: '#d97706' },
-            { label: 'Completion Rate', value: plans.length ? `${Math.round(plans.reduce((s, p) => s + p.progress, 0) / plans.length)}%` : '—', icon: <Trophy size={15} />, from: '#ec4899', to: '#db2777' },
-          ].map((s, i) => (
-            <m.div key={s.label} variants={itemVariants}
-              style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '18px 18px', background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'default', transition: 'transform 0.3s' }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
-              <div style={{ position: 'absolute', top: -15, right: -15, width: 80, height: 80, borderRadius: '50%', background: `radial-gradient(circle, ${s.from}15, transparent 70%)`, pointerEvents: 'none' }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, position: 'relative', zIndex: 1 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-disabled)' }}>{s.label}</span>
-                <div style={{ width: 32, height: 32, borderRadius: 9, background: `${s.from}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.from }}>{s.icon}</div>
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', position: 'relative', zIndex: 1 }}>{s.value}</div>
+            { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
+            { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
+            { label: 'Active Clients', value: trainers.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
+            { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
+          ].map((s) => (
+            <m.div key={s.label} variants={itemVariants}>
+              <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '16px 18px', cursor: 'default' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-disabled)' }}>{s.label}</span>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                  {dataLoading ? '—' : <AnimatedCounter value={s.value} suffix={s.suffix} />}
+                </div>
+              </SpotlightCard>
             </m.div>
           ))}
         </m.div>
+      </div>
 
-        {/* ── Section Tabs ── */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'var(--bg-subtle)', borderRadius: 12, padding: 3 }}>
+      <div style={{ padding: '20px 32px 60px', maxWidth: 1400, margin: '0 auto' }}>
+        {/* ── Tabs ── */}
+        <div style={{ display: 'flex', gap: 3, marginBottom: 20, background: 'var(--bg-subtle)', borderRadius: 11, padding: 3 }}>
           {[
             { key: 'plans', label: 'Active Plans', count: plans.length, color: '#6366f1' },
             { key: 'library', label: 'Exercise Library', count: filteredExercises.length, color: '#10b981' },
             { key: 'builder', label: 'Plan Builder', color: '#f59e0b' },
             { key: 'ai', label: 'AI Suggestions', color: '#ec4899' },
           ].map((tab) => (
-            <button key={tab.key} onClick={() => { setActiveTab(tab.key as typeof activeTab); if (tab.key === 'builder') setBuilderStep(0); }}
+            <button key={tab.key}
+              onClick={() => { setActiveTab(tab.key as typeof activeTab); if (tab.key === 'builder') setBuilderStep(0); }}
               style={{
-                padding: '8px 18px', borderRadius: 9, border: 'none', cursor: 'pointer',
-                fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
-                background: activeTab === tab.key ? '#fff' : 'transparent',
-                color: activeTab === tab.key ? tab.color : '#9ca3af',
+                padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
+                background: activeTab === tab.key ? 'var(--bg-card)' : 'transparent',
+                color: activeTab === tab.key ? tab.color : 'var(--text-muted)',
                 boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               }}>
-              {tab.label}{tab.count !== undefined ? <span style={{ marginLeft: 6, padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: `${tab.color}18`, color: tab.color }}>{tab.count}</span> : null}
+              {tab.label}
+              {tab.count !== undefined && (
+                <span style={{ marginLeft: 5, padding: '1px 6px', borderRadius: 9, fontSize: 10, fontWeight: 700, background: `${tab.color}18`, color: tab.color }}>{tab.count}</span>
+              )}
             </button>
           ))}
         </div>
 
-        {/* ── Plan Cards ── */}
-        {activeTab === 'plans' && <div style={{ marginBottom: 28 }}>
-          <m.div variants={containerVariants} initial="hidden" animate="visible"
-            style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
-            {plans.slice(0, 4).map((plan, i) => (
-              <m.div key={plan.id} variants={itemVariants}
-                style={{ borderRadius: 18, padding: view === 'grid' ? 20 : '14px 18px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: view === 'list' ? 'flex' : 'block', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'all 0.3s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = '#d1d5db'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
-                <div style={{ width: view === 'grid' ? '100%' : 44, height: view === 'grid' ? 4 : 44, borderRadius: view === 'grid' ? 20 : 12, background: PLAN_COLORS[i % PLAN_COLORS.length], marginBottom: view === 'grid' ? 14 : 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{plan.name}</h3>
-                    <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700, background: DIFFICULTY_COLORS[plan.difficulty]?.bg || 'rgba(148,163,184,0.12)', color: DIFFICULTY_COLORS[plan.difficulty]?.color || '#6b7280' }}>{plan.difficulty}</span>
-                  </div>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{plan.description}</p>
-                  <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--text-disabled)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Target size={12} /> {plan.goal}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {plan.duration}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Activity size={12} /> {plan.exercises} exercises</span>
-                  </div>
-                  {view === 'grid' && (
-                    <div style={{ marginTop: 12 }}>
-                      <div style={{ height: 4, borderRadius: 2, background: 'var(--bg-subtle)', overflow: 'hidden' }}>
-                        <m.div initial={{ width: 0 }} animate={{ width: `${plan.progress}%` }} transition={{ duration: 1, ease: 'easeOut' }}
-                          style={{ height: '100%', borderRadius: 2, background: `linear-gradient(90deg, ${PLAN_COLORS[i % PLAN_COLORS.length]})` }} />
+        <AnimatePresence mode="wait">
+          {/* ── Plans Tab ── */}
+          {activeTab === 'plans' && (
+            <m.div key="plans" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              {dataLoading ? (
+                <div style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} style={{ height: 180, borderRadius: 18, background: 'var(--bg-subtle)', animation: 'pulse 1.5s ease-in-out infinite', opacity: 0.6 }} />
+                  ))}
+                </div>
+              ) : plans.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                  <Dumbbell size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
+                  <p style={{ margin: 0, fontSize: 14 }}>No workout plans yet. Create your first plan to get started.</p>
+                </div>
+              ) : (
+                <m.div variants={containerVariants} initial="hidden" animate="visible"
+                  style={{ display: 'grid', gridTemplateColumns: view === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr', gap: 14 }}>
+                  {plans.map((plan, i) => (
+                    <m.div key={plan.id} variants={itemVariants}>
+                      <WorkoutPlanCard
+                        id={plan.id}
+                        name={plan.name}
+                        description={plan.description}
+                        goal={plan.goal}
+                        difficulty={plan.difficulty}
+                        duration={plan.duration}
+                        exerciseCount={plan.exercises}
+                        progress={plan.progress}
+                        color={PLAN_COLORS[i % PLAN_COLORS.length]}
+                        compact={view === 'list'}
+                        onAssign={() => toast.info('Assign client to plan coming soon.')}
+                        onEdit={() => toast.info('Plan editor coming soon.')}
+                        onDelete={() => toast.info('Delete plan coming soon.')}
+                      />
+                    </m.div>
+                  ))}
+                </m.div>
+              )}
+            </m.div>
+          )}
+
+          {/* ── Library Tab ── */}
+          {activeTab === 'library' && (
+            <m.div key="library" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              {/* Filter bar */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                {(['All', ...MUSCLE_GROUPS] as const).map((mg) => (
+                  <button key={mg}
+                    onClick={() => setActiveMuscle(mg as MuscleGroup | 'All')}
+                    style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.18s', background: activeMuscle === mg ? 'rgba(99,102,241,0.1)' : 'transparent', color: activeMuscle === mg ? '#6366f1' : 'var(--text-muted)', borderColor: activeMuscle === mg ? 'rgba(99,102,241,0.3)' : 'var(--border)' }}>
+                    {mg}
+                  </button>
+                ))}
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '5px 12px', border: '1px solid var(--border)' }}>
+                  <Search size={13} color="var(--text-disabled)" />
+                  <input placeholder="Search exercises…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, outline: 'none', width: 180 }} />
+                  {searchQuery && <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-disabled)', padding: 0, display: 'flex' }}><X size={12} /></button>}
+                </div>
+              </div>
+
+              {dataLoading ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} style={{ height: 130, borderRadius: 14, background: 'var(--bg-subtle)', opacity: 0.6 }} />
+                  ))}
+                </div>
+              ) : (
+                <m.div variants={containerVariants} initial="hidden" animate="visible"
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                  {filteredExercises.slice(0, 24).map((ex) => (
+                    <m.div key={ex.id} variants={itemVariants}>
+                      <ExerciseCard
+                        id={ex.id}
+                        name={ex.name}
+                        muscleGroup={ex.muscleGroup}
+                        equipment={ex.equipment}
+                        difficulty={ex.difficulty}
+                        setsDefault={ex.sets}
+                        repsDefault={ex.reps}
+                        restSeconds={ex.restSeconds}
+                        onAdd={() => toast.info(`Added ${ex.name} to plan.`)}
+                      />
+                    </m.div>
+                  ))}
+                  {filteredExercises.length === 0 && (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', fontSize: 13 }}>
+                      No exercises found matching your filters.
+                    </div>
+                  )}
+                </m.div>
+              )}
+            </m.div>
+          )}
+
+          {/* ── Builder Tab ── */}
+          {activeTab === 'builder' && (
+            <m.div key="builder" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <div style={{ maxWidth: 640, margin: '0 auto' }}>
+                {/* Step progress */}
+                <div style={{ display: 'flex', gap: 0, marginBottom: 28, position: 'relative' }}>
+                  {[0, 1, 2, 3].map((step) => (
+                    <div key={step} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                      <div onClick={() => setBuilderStep(step)}
+                        style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1, fontWeight: 700, fontSize: 13, transition: 'all 0.2s', background: builderStep >= step ? '#6366f1' : 'var(--bg-subtle)', color: builderStep >= step ? '#fff' : 'var(--text-muted)', border: builderStep >= step ? 'none' : '2px solid var(--border)' }}>
+                        {builderStep > step ? <Check size={14} /> : step + 1}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: 'var(--text-disabled)' }}>
-                        <span>Progress</span>
-                        <span style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{plan.progress}%</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: builderStep >= step ? '#6366f1' : 'var(--text-muted)', marginTop: 6, textAlign: 'center' }}>
+                        {['Client', 'Goal', 'Exercises', 'Review'][step]}
+                      </span>
+                      {step < 3 && <div style={{ position: 'absolute', top: 16, left: '50%', right: '-50%', height: 2, background: builderStep > step ? '#6366f1' : 'var(--border)', zIndex: 0 }} />}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Step content */}
+                <div style={{ borderRadius: 18, padding: 28, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  {builderStep === 0 && (
+                    <div>
+                      <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Choose a Client</h3>
+                      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--text-muted)' }}>Select the client this plan is for. You can search by name or phone number.</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-subtle)', borderRadius: 10, padding: '10px 14px', border: '1px solid var(--border)', marginBottom: 16 }}>
+                        <Search size={15} color="var(--text-disabled)" />
+                        <input placeholder="Search clients…" style={{ background: 'none', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text-primary)', flex: 1, fontFamily: 'inherit' }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {trainers.slice(0, 6).map((t, i) => (
+                          <button key={i} onClick={() => setBuilderStep(1)}
+                            style={{ padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.18s' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#6366f1'; e.currentTarget.style.background = 'rgba(99,102,241,0.06)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-subtle)'; }}>
+                            <User size={12} style={{ marginRight: 5, verticalAlign: 'middle' }} />{t}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
+                  {builderStep === 1 && (
+                    <div>
+                      <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Set Goal & Duration</h3>
+                      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--text-muted)' }}>Define the fitness goal and program length for this client.</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        {[['Muscle Gain', '#6366f1'], ['Weight Loss', '#10b981'], ['Strength', '#f59e0b'], ['Endurance', '#ec4899'], ['Flexibility', '#06b6d4'], ['General Fitness', '#8b5cf6']].map(([goal, color]) => (
+                          <button key={goal} onClick={() => setBuilderStep(2)}
+                            style={{ padding: '12px 14px', borderRadius: 12, border: `1px solid ${color}30`, background: `${color}08`, color: 'var(--text-primary)', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.18s' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = `${color}15`; e.currentTarget.style.borderColor = `${color}50`; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = `${color}08`; e.currentTarget.style.borderColor = `${color}30`; }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />{goal}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {builderStep === 2 && (
+                    <div>
+                      <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Add Exercises</h3>
+                      <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-muted)' }}>Pick exercises from the library to include in this plan.</p>
+                      <div style={{ maxHeight: 280, overflowY: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        {exercises.slice(0, 8).map((ex) => (
+                          <button key={ex.id} onClick={() => {}}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-subtle)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.18s' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#6366f1'; e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-subtle)'; }}>
+                            <Dumbbell size={14} color="#6366f1" />
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{ex.name}</div>
+                              <div style={{ fontSize: 11, color: 'var(--text-disabled)' }}>{ex.sets}×{ex.reps}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <button onClick={() => setBuilderStep(3)} style={{ marginTop: 16, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
+                        Continue <ChevronRight size={14} style={{ verticalAlign: 'middle' }} />
+                      </button>
+                    </div>
+                  )}
+                  {builderStep === 3 && (
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                        <Check size={24} color="#10b981" />
+                      </div>
+                      <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>Review & Save Plan</h3>
+                      <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--text-muted)' }}>Your workout plan is ready. Click below to save and assign it to your client.</p>
+                      <Button variant="primary" onClick={() => { toast.success('Plan saved successfully!'); setBuilderStep(0); setActiveTab('plans'); }}>
+                        <Check size={14} style={{ marginRight: 6 }} />Save Plan
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              </m.div>
-            ))}
-          </m.div>
-        </div>}
 
-        {/* ── Exercise Library ── */}
-        {activeTab === 'library' && <div style={{ marginBottom: 28 }}>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-            <button onClick={() => setActiveMuscle('All')}
-              style={{ padding: '6px 16px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s', background: activeMuscle === 'All' ? 'rgba(99,102,241,0.1)' : '#fff', color: activeMuscle === 'All' ? '#6366f1' : '#6b7280', borderColor: activeMuscle === 'All' ? 'rgba(99,102,241,0.3)' : '#e5e7eb' }}>
-              All
-            </button>
-            {MUSCLE_GROUPS.map((mg) => (
-              <button key={mg} onClick={() => setActiveMuscle(mg)}
-                style={{ padding: '6px 16px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s', background: activeMuscle === mg ? `${GROUP_COLORS[mg]}12` : '#fff', color: activeMuscle === mg ? GROUP_COLORS[mg] : '#6b7280', borderColor: activeMuscle === mg ? `${GROUP_COLORS[mg]}40` : '#e5e7eb' }}>
-                {mg}
-              </button>
-            ))}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', background: 'var(--bg-subtle)', borderRadius: 8, padding: '4px 12px', border: '1px solid var(--border)' }}>
-              <Search size={13} color="#9ca3af" />
-              <input placeholder="Search exercises…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, outline: 'none', width: 180 }} />
-            </div>
-          </div>
-
-          <m.div variants={containerVariants} initial="hidden" animate="visible"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-            {filteredExercises.slice(0, 12).map((ex, i) => (
-              <m.div key={ex.id} variants={itemVariants}
-                style={{ borderRadius: 14, padding: 16, background: 'var(--bg-card)', border: `1px solid ${GROUP_COLORS[ex.muscleGroup]}20`, cursor: 'pointer', transition: 'all 0.3s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = `${GROUP_COLORS[ex.muscleGroup]}08`; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}40`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${GROUP_COLORS[ex.muscleGroup]}20`; }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: `${GROUP_COLORS[ex.muscleGroup]}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10, color: GROUP_COLORS[ex.muscleGroup] }}>
-                  <Dumbbell size={14} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'space-between' }}>
+                  <button onClick={() => setBuilderStep(Math.max(0, builderStep - 1))} disabled={builderStep === 0}
+                    style={{ padding: '8px 18px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: builderStep === 0 ? 'not-allowed' : 'pointer', opacity: builderStep === 0 ? 0.5 : 1 }}>
+                    ← Back
+                  </button>
+                  {builderStep < 2 && (
+                    <button onClick={() => setBuilderStep(Math.min(3, builderStep + 1))}
+                      style={{ padding: '8px 18px', borderRadius: 9, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
+                      Next →
+                    </button>
+                  )}
                 </div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{ex.name}</h4>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 8px' }}>{ex.muscleGroup} · {ex.difficulty}</p>
-                <div style={{ display: 'flex', gap: 6, fontSize: 10.5, color: 'var(--text-disabled)' }}>
-                  <span>{ex.sets} sets</span>
-                  <span>·</span>
-                  <span>{ex.reps}</span>
-                </div>
-              </m.div>
-            ))}
-          </m.div>
-        </div>}
-
-        {/* ── Plan Builder ── */}
-        {activeTab === 'builder' && <div style={{ marginBottom: 28, borderRadius: 20, padding: 28, background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.15)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Dumbbell size={17} color="#d97706" />
-            </div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Plan Builder</h3>
-          </div>
-          {[
-            { step: 0, label: 'Choose Client', icon: <User size={16} />, desc: 'Select the client this plan is for' },
-            { step: 1, label: 'Set Goal & Duration', icon: <Target size={16} />, desc: 'Define fitness goal and program length' },
-            { step: 2, label: 'Add Exercises', icon: <Dumbbell size={16} />, desc: 'Pick exercises from the library' },
-            { step: 3, label: 'Review & Save', icon: <Check size={16} />, desc: 'Review and publish the plan' },
-          ].map((s) => (
-            <div key={s.step} onClick={() => setBuilderStep(s.step)}
-              style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', marginBottom: 8, borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s', background: builderStep === s.step ? 'rgba(245,158,11,0.06)' : '#F9FAFB', border: `1px solid ${builderStep === s.step ? 'rgba(245,158,11,0.25)' : '#e5e7eb'}` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: builderStep === s.step ? 'rgba(245,158,11,0.15)' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: builderStep === s.step ? '#d97706' : '#9ca3af' }}>
-                {s.icon}
               </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: builderStep === s.step ? '#111827' : '#374151' }}>Step {s.step + 1}: {s.label}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--text-disabled)', marginTop: 2 }}>{s.desc}</div>
-              </div>
-              {builderStep === s.step && <ChevronRight size={16} color="#d97706" style={{ marginLeft: 'auto' }} />}
-            </div>
-          ))}
-          <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-            <Button variant="primary" size="sm" onClick={() => { toast.info('Select a client first to start building a plan.'); }}>
-              Start Building
-            </Button>
-          </div>
-        </div>}
+            </m.div>
+          )}
 
-        {/* ── AI Section ── */}
-        {activeTab === 'ai' && <div style={{ borderRadius: 20, padding: 22, background: 'rgba(99,102,241,0.03)', border: '1px solid rgba(99,102,241,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(236,72,153,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={17} color="#6366f1" />
-            </div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>AI-Powered Suggestions</h3>
-            <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 9.5, fontWeight: 700, background: 'rgba(99,102,241,0.1)', color: '#6366f1', letterSpacing: '0.05em' }}>BETA</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-            {[
-              { title: 'Strength Builder', description: 'Progressive overload program for muscle gain', goal: 'Muscle Gain', intensity: 'High', color: '#ef4444' },
-              { title: 'Fat Loss Circuit', description: 'High-intensity circuit training for fat burn', goal: 'Weight Loss', intensity: 'High', color: '#f59e0b' },
-              { title: 'Endurance Plus', description: 'Build stamina with mixed cardio & strength', goal: 'Endurance', intensity: 'Medium', color: '#06b6d4' },
-              { title: 'Flexibility Flow', description: 'Yoga-inspired mobility and recovery routine', goal: 'Flexibility', intensity: 'Low', color: '#10b981' },
-            ].map((s, i) => (
-              <m.div key={s.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                style={{ borderRadius: 14, padding: 16, background: 'var(--bg-card)', border: `1px solid ${s.color}20`, cursor: 'pointer', transition: 'all 0.3s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = `${s.color}06`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 7, background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>
-                    <Zap size={13} />
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>{s.goal}</span>
-                  <span style={{ marginLeft: 'auto', padding: '2px 8px', borderRadius: 10, fontSize: 9.5, fontWeight: 700, background: `${s.color}15`, color: s.color }}>{s.intensity}</span>
+          {/* ── AI Tab ── */}
+          {activeTab === 'ai' && (
+            <m.div key="ai" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center', padding: '32px 20px' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(236,72,153,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <Sparkles size={28} color="#6366f1" />
                 </div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{s.title}</h4>
-                <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-muted)' }}>{s.description}</p>
-              </m.div>
-            ))}
-          </div>
-        </div>}
+                <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>AI Workout Coach</h2>
+                <p style={{ margin: '0 0 24px', fontSize: 14, color: 'var(--text-muted)', maxWidth: 400, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+                  Generate personalized workout plans using AI. Just provide your client's details and let the AI build a complete training program.
+                </p>
+                <button onClick={() => setAiPanelOpen(true)}
+                  style={{ padding: '12px 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Sparkles size={16} />Open AI Coach
+                </button>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 32, textAlign: 'left' }}>
+                  {[
+                    { title: 'Personalized Plans', desc: 'Tailored to age, weight, goal, and experience level', color: '#6366f1' },
+                    { title: 'Weekly Schedule', desc: 'Complete day-by-day training schedule with exercises', color: '#10b981' },
+                    { title: 'Progression Notes', desc: 'Smart progression guidelines to maximize results', color: '#f59e0b' },
+                  ].map((f) => (
+                    <div key={f.title} style={{ padding: '16px', borderRadius: 14, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: f.color, marginBottom: 10 }} />
+                      <h4 style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{f.title}</h4>
+                      <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>{f.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </m.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* ── Floating AI button ── */}
+      <m.button
+        onClick={() => setAiPanelOpen(true)}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.96 }}
+        style={{ position: 'fixed', bottom: 28, right: 28, width: 52, height: 52, borderRadius: 16, border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 24px rgba(99,102,241,0.45)', zIndex: 100 }}
+        title="Open AI Coach"
+      >
+        <Sparkles size={20} />
+      </m.button>
+
+      {/* ── AI Coach Panel ── */}
+      <AnimatePresence>
+        {aiPanelOpen && (
+          <>
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 8999 }}
+              onClick={() => setAiPanelOpen(false)} />
+            <AiCoachPanel type="workout" onClose={() => setAiPanelOpen(false)} />
+          </>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 }
