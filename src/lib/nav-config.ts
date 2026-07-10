@@ -40,10 +40,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/checkin',             label: 'Check In',            icon: 'ScanFace' },
       { href: '/checkin/enroll',     label: 'Enroll Member',       icon: 'UserCheck',      roles: ['admin', 'manager'] },
       { href: '/checkin/enroll/face', label: 'Face Enrollment',    icon: 'Camera',         roles: ['admin', 'manager'], hidden: true, matchPrefix: '/checkin/enroll/face' },
-      { href: '/checkin/kiosk',      label: 'Kiosk Mode',          icon: 'Monitor',        roles: ['admin', 'manager'] },
+      { href: '/checkin/kiosk',      label: 'Kiosk Mode',          icon: 'Monitor',        roles: ['admin', 'manager'], hidden: true },
       { href: '/member/attendance',  label: 'My Attendance',       icon: 'CalendarCheck' },
       { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['admin', 'manager', 'trainer'] },
-      { href: '/attendance/staff',   label: 'Staff Attendance',    icon: 'UsersRound',     roles: ['admin', 'manager'] },
+      { href: '/attendance/staff',   label: 'Staff Attendance',    icon: 'UsersRound',     roles: ['admin', 'manager'], hidden: true },
       { href: '/attendance/reports', label: 'Reports & Dashboard', icon: 'BarChart3',      roles: ['admin'] },
     ],
   },
@@ -115,10 +115,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/engagement/whatsapp',      label: 'WhatsApp / SMS',       icon: 'MessageCircle', roles: ['admin'] },
       { href: '/engagement/notifications', label: 'Notifications',        icon: 'Bell',          roles: ['admin'] },
-      { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',          roles: ['admin'] },
-      { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',           roles: ['admin'] },
+      { href: '/engagement/campaigns',     label: 'Campaigns',            icon: 'Send',          roles: ['admin'], hidden: true },
+      { href: '/engagement/offers',        label: 'Promotional Offers',   icon: 'Tag',           roles: ['admin'], hidden: true },
       { href: '/engagement/feedback',      label: 'Feedback',             icon: 'Star',          roles: ['admin'] },
-      { href: '/engagement/automation',    label: 'Automation Rules',     icon: 'Bot',           roles: ['admin'], isNew: true },
+      { href: '/engagement/automation',    label: 'Automation Rules',     icon: 'Bot',           roles: ['admin'], isNew: true, hidden: true },
     ],
   },
   {
@@ -126,8 +126,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Subscription',
     icon: 'CreditCard',
     items: [
-      { href: '/subscription/packages',      label: 'Plans & Packages', icon: 'Package', roles: ['admin'] },
-      { href: '/subscription/subscriptions', label: 'Subscriptions',    icon: 'Users',   roles: ['admin'], isNew: true },
+      { href: '/subscription/packages',      label: 'Plans & Packages', icon: 'Package', roles: ['admin'], hidden: true },
+      { href: '/subscription/subscriptions', label: 'Subscriptions',    icon: 'Users',   roles: ['admin'], isNew: true, hidden: true },
     ],
   },
   {
@@ -165,8 +165,8 @@ export const SETTINGS_GROUP: NavGroup = {
   items: [
     { href: '/settings/studio',           label: 'Studio Settings',      icon: 'Building2',      roles: ['admin'], isNew: true },
     { href: '/settings/profile',          label: 'My Profile',           icon: 'User' },
-    { href: '/settings/staff',            label: 'Staff & Access',       icon: 'Shield',         roles: ['admin'] },
-    { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['admin'] },
+    { href: '/settings/staff',            label: 'Staff & Access',       icon: 'Shield',         roles: ['admin'], hidden: true },
+    { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['admin'], hidden: true },
     { href: '/settings/biometric',        label: 'Biometric & Face',     icon: 'Fingerprint',    roles: ['admin'] },
     { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['admin'] },
     { href: '/settings/billing',          label: 'GST / Invoice',        icon: 'Receipt',        roles: ['admin'] },
