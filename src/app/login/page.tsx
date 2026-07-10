@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { m, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Mail, ArrowRight, Fingerprint, Loader2, Dumbbell } from 'lucide-react';
+import { Eye, EyeOff, Mail, ArrowRight, Fingerprint, Loader2 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 
@@ -79,17 +79,17 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: '#0A0F1E' }}>
+      <div className="flex items-center justify-center h-screen" style={{ background: '#f8fafc' }}>
         <div className="flex flex-col items-center gap-5">
           <m.div
             animate={{ scale: [1, 1.06, 1], opacity: [0.8, 1, 0.8] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <CoachLogo size={72} />
+            <ShieldLogo size={72} />
           </m.div>
           <div
             className="animate-spin"
-            style={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px solid rgba(59,130,246,0.3)', borderTopColor: '#3B82F6' }}
+            style={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px solid rgba(220,38,38,0.3)', borderTopColor: '#DC2626' }}
           />
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen flex overflow-hidden relative"
-      style={{ background: '#0A0F1E', fontFamily: "'Inter', system-ui, sans-serif" }}
+      style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', fontFamily: "'Inter', system-ui, sans-serif" }}
     >
       {/* ── Back to home ── */}
       <Link
@@ -107,41 +107,57 @@ export default function LoginPage() {
         style={{
           position: 'absolute', top: 20, left: 20, zIndex: 20,
           display: 'flex', alignItems: 'center', gap: 7,
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          background: '#fff',
+          border: '1px solid rgba(0,0,0,0.07)',
           borderRadius: 980, padding: '7px 14px',
-          color: 'rgba(148,163,184,0.9)', fontSize: 12, fontWeight: 600,
+          color: '#6b7280', fontSize: 12, fontWeight: 600,
           textDecoration: 'none', transition: 'all 200ms',
           letterSpacing: '0.02em',
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; e.currentTarget.style.color = '#f1f5f9'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(148,163,184,0.9)'; }}
+        onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#111827'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#6b7280'; }}
       >
         ← Home
       </Link>
 
-      {/* ── Radial glow backgrounds ── */}
+      {/* ── Subtle dot grid background ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Top-left blue glow */}
-        <div style={{
-          position: 'absolute', top: -120, left: -120,
-          width: 480, height: 480, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-        }} />
-        {/* Bottom-right subtle glow */}
-        <div style={{
-          position: 'absolute', bottom: -80, right: -80,
-          width: 360, height: 360, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-        }} />
-        {/* Grid pattern */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+      </div>
+
+      {/* ── Bottom-Left Brush Strokes ── */}
+      <div className="absolute bottom-0 left-0 pointer-events-none select-none">
+        <svg width="340" height="280" viewBox="0 0 340 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 250 C50 230 90 175 130 155 C170 135 195 85 235 65 C270 48 305 18 335 0 L340 0 L340 280 L0 280 Z"
+            fill="#DC2626" opacity="0.14" />
+          <path d="M0 262 C35 248 70 218 105 200 C140 182 165 140 200 120 C235 100 265 72 295 52 L340 25 L340 280 L0 280 Z"
+            fill="#991B1B" opacity="0.18" />
+          <path d="M0 272 C25 260 50 238 80 222 C110 206 130 172 162 152 C194 132 222 105 255 85 L340 45 L340 280 L0 280 Z"
+            fill="#DC2626" opacity="0.07" />
+          {/* Glowing edge line */}
+          <path d="M0 252 C50 232 90 177 130 157 C170 137 195 87 235 67 C270 50 305 20 335 2"
+            stroke="#EF4444" strokeWidth="1" opacity="0.3" fill="none" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      {/* ── Top Right Corner Accent ── */}
+      <div className="absolute top-0 right-0 pointer-events-none select-none">
+        <svg width="180" height="180" viewBox="0 0 180 180" fill="none">
+          <path d="M180 0 C180 0 145 18 125 45 C105 72 115 95 95 115 C75 135 45 145 35 165 C25 185 35 180 35 180 L180 180 Z"
+            fill="url(#tr-g)" opacity="0.6" />
+          <defs>
+            <linearGradient id="tr-g" x1="180" y1="0" x2="35" y2="180">
+              <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#DC2626" stopOpacity="0.04" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
 
       {/* ── Main Content ── */}
@@ -154,18 +170,17 @@ export default function LoginPage() {
         >
           {/* ── Login Card ── */}
           <div style={{
-            background: 'rgba(15,23,42,0.90)',
-            border: '1px solid rgba(59,130,246,0.20)',
+            background: '#fff',
+            border: '1px solid rgba(0,0,0,0.07)',
             borderRadius: 24,
-            boxShadow: '0 0 0 1px rgba(59,130,246,0.08), 0 32px 64px rgba(0,0,0,0.60), 0 0 80px rgba(59,130,246,0.06)',
-            backdropFilter: 'blur(24px)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
             position: 'relative',
             overflow: 'hidden',
           }}>
             {/* Top accent line */}
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: 1,
-              background: 'linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.6) 25%, rgba(96,165,250,1) 50%, rgba(59,130,246,0.6) 75%, transparent 100%)',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(220,38,38,0.5) 25%, rgba(239,68,68,1) 50%, rgba(220,38,38,0.5) 75%, transparent 100%)',
             }} />
 
             <div className="px-8 py-10 sm:px-10 sm:py-12 relative" style={{ zIndex: 1 }}>
@@ -178,22 +193,22 @@ export default function LoginPage() {
                   transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   style={{ marginBottom: 22, position: 'relative' }}
                 >
-                  {/* Outer glow */}
+                  {/* Outer atmosphere */}
                   <div style={{
-                    position: 'absolute', inset: -24, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(59,130,246,0.30) 0%, transparent 70%)',
-                    filter: 'blur(16px)',
+                    position: 'absolute', inset: -20, borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(220,38,38,0.22) 0%, transparent 70%)',
+                    filter: 'blur(12px)',
                   }} />
                   {/* Ring border */}
                   <div style={{
-                    position: 'absolute', inset: -6, borderRadius: '50%',
-                    border: '1px solid rgba(59,130,246,0.28)',
+                    position: 'absolute', inset: -5, borderRadius: '50%',
+                    border: '1px solid rgba(220,38,38,0.22)',
                   }} />
                   <div style={{
-                    position: 'absolute', inset: -12, borderRadius: '50%',
-                    border: '1px solid rgba(59,130,246,0.10)',
+                    position: 'absolute', inset: -10, borderRadius: '50%',
+                    border: '1px solid rgba(220,38,38,0.08)',
                   }} />
-                  <CoachLogo size={88} />
+                  <ShieldLogo size={88} />
                 </m.div>
 
                 <m.div
@@ -202,21 +217,21 @@ export default function LoginPage() {
                   transition={{ duration: 0.4, delay: 0.15 }}
                   style={{ textAlign: 'center' }}
                 >
-                  <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', lineHeight: 1.1 }}>
-                    <span style={{ color: '#f1f5f9' }}>COACH </span>
+                  <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', lineHeight: 1.1 }}>
+                    <span style={{ color: '#111827' }}>619 FITNESS </span>
                     <span style={{
-                      background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #93C5FD 100%)',
+                      background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #FF7070 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
-                    }}>ABHISHEK</span>
+                    }}>STUDIO</span>
                   </h1>
                   <p style={{
                     marginTop: 6, fontSize: 10.5, fontWeight: 600,
-                    letterSpacing: '0.20em', color: 'rgba(148,163,184,0.75)',
+                    letterSpacing: '0.20em', color: '#6b7280',
                     textTransform: 'uppercase',
                   }}>
-                    Personal Training Suite
+                    Management Suite
                   </p>
                 </m.div>
               </div>
@@ -231,15 +246,15 @@ export default function LoginPage() {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       borderRadius: 12,
-                      background: 'rgba(239,68,68,0.10)',
-                      border: '1px solid rgba(239,68,68,0.25)',
+                      background: 'rgba(220,38,38,0.09)',
+                      border: '1px solid rgba(220,38,38,0.22)',
                       padding: '10px 14px', marginBottom: 20,
                     }}
                   >
                     <span style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: 20, height: 20, borderRadius: '50%',
-                      background: 'rgba(239,68,68,0.20)',
+                      background: 'rgba(239,68,68,0.2)',
                       fontSize: 10, fontWeight: 800, color: '#FCA5A5', flexShrink: 0,
                     }}>!</span>
                     <span style={{ fontSize: 13, fontWeight: 500, color: '#FCA5A5', lineHeight: 1.4 }}>{error}</span>
@@ -255,7 +270,7 @@ export default function LoginPage() {
                   <div>
                     <label style={{
                       display: 'block', fontSize: 11, fontWeight: 600,
-                      color: 'rgba(148,163,184,0.8)', marginBottom: 8,
+                      color: '#6b7280', marginBottom: 8,
                       letterSpacing: '0.09em', textTransform: 'uppercase',
                     }}>Email address</label>
                     <div className="relative">
@@ -272,15 +287,15 @@ export default function LoginPage() {
                           width: '100%', height: 50,
                           paddingLeft: 16, paddingRight: 44,
                           borderRadius: 12,
-                          background: focused === 'email' ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.05)',
-                          border: focused === 'email' ? '1px solid rgba(59,130,246,0.50)' : '1px solid rgba(255,255,255,0.10)',
-                          boxShadow: focused === 'email' ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none',
-                          color: '#f1f5f9', fontSize: 14, outline: 'none',
+                          background: '#fff',
+                          border: focused === 'email' ? '1px solid rgba(220,38,38,0.45)' : '1px solid #d1d5db',
+                          boxShadow: focused === 'email' ? '0 0 0 3px rgba(220,38,38,0.09)' : 'none',
+                          color: '#111827', fontSize: 14, outline: 'none',
                           transition: 'all 200ms',
                         }}
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{
-                        color: focused === 'email' ? 'rgba(96,165,250,0.7)' : 'rgba(100,116,139,0.5)',
+                        color: focused === 'email' ? 'rgba(239,68,68,0.55)' : 'rgba(100,116,139,0.4)',
                         transition: 'color 200ms',
                       }}>
                         <Mail size={17} />
@@ -292,7 +307,7 @@ export default function LoginPage() {
                   <div>
                     <label style={{
                       display: 'block', fontSize: 11, fontWeight: 600,
-                      color: 'rgba(148,163,184,0.8)', marginBottom: 8,
+                      color: '#6b7280', marginBottom: 8,
                       letterSpacing: '0.09em', textTransform: 'uppercase',
                     }}>Password</label>
                     <div className="relative">
@@ -309,10 +324,10 @@ export default function LoginPage() {
                           width: '100%', height: 50,
                           paddingLeft: 16, paddingRight: 44,
                           borderRadius: 12,
-                          background: focused === 'password' ? 'rgba(59,130,246,0.08)' : 'rgba(255,255,255,0.05)',
-                          border: focused === 'password' ? '1px solid rgba(59,130,246,0.50)' : '1px solid rgba(255,255,255,0.10)',
-                          boxShadow: focused === 'password' ? '0 0 0 3px rgba(59,130,246,0.12)' : 'none',
-                          color: '#f1f5f9', fontSize: 14, outline: 'none',
+                          background: '#fff',
+                          border: focused === 'password' ? '1px solid rgba(220,38,38,0.45)' : '1px solid #d1d5db',
+                          boxShadow: focused === 'password' ? '0 0 0 3px rgba(220,38,38,0.09)' : 'none',
+                          color: '#111827', fontSize: 14, outline: 'none',
                           transition: 'all 200ms',
                         }}
                       />
@@ -341,16 +356,17 @@ export default function LoginPage() {
                     position: 'relative', width: '100%', height: 52, marginTop: 24,
                     borderRadius: 14,
                     background: busy
-                      ? 'rgba(59,130,246,0.35)'
-                      : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 45%, #1D4ED8 100%)',
-                    border: '1px solid rgba(96,165,250,0.30)',
-                    boxShadow: busy ? 'none' : '0 8px 32px rgba(37,99,235,0.40), 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.14)',
+                      ? 'rgba(220,38,38,0.35)'
+                      : 'linear-gradient(135deg, #EF4444 0%, #DC2626 45%, #C41E1E 100%)',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    boxShadow: busy ? 'none' : '0 8px 32px rgba(220,38,38,0.32), 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.14)',
                     color: '#FFFFFF', fontSize: 15, fontWeight: 700,
                     letterSpacing: '0.04em', cursor: busy ? 'not-allowed' : 'pointer',
                     transition: 'all 280ms cubic-bezier(0.16,1,0.3,1)',
                     overflow: 'hidden',
                   }}
                 >
+                  {/* Shimmer sweep */}
                   <div
                     className="absolute inset-0"
                     style={{
@@ -380,9 +396,9 @@ export default function LoginPage() {
                 {/* ── Divider ── */}
                 {(GOOGLE_CLIENT_ID || passkeyReady) && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '22px 0' }}>
-                    <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(148,163,184,0.6)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>or</span>
-                    <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+                    <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.10)' }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(71,85,105,0.8)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>or</span>
+                    <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.10)' }} />
                   </div>
                 )}
 
@@ -415,7 +431,9 @@ export default function LoginPage() {
                       width: '100%', height: 50,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                       borderRadius: 14,
-                      background: passkeyBusy ? 'rgba(124,58,237,0.12)' : 'rgba(124,58,237,0.08)',
+                      background: passkeyBusy
+                        ? 'rgba(124,58,237,0.12)'
+                        : 'rgba(124,58,237,0.08)',
                       border: '1px solid rgba(124,58,237,0.30)',
                       boxShadow: passkeyBusy ? 'none' : '0 0 16px rgba(124,58,237,0.10)',
                       color: '#C4B5FD', fontSize: 14, fontWeight: 700,
@@ -435,6 +453,7 @@ export default function LoginPage() {
                         <span>Sign in with Fingerprint / Face ID</span>
                       </>
                     )}
+                    {/* Inner glow */}
                     <div style={{
                       position: 'absolute', inset: 0, borderRadius: 'inherit',
                       background: 'radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.08) 0%, transparent 70%)',
@@ -446,15 +465,15 @@ export default function LoginPage() {
 
               {/* Support link */}
               <div style={{ marginTop: 24, textAlign: 'center' }}>
-                <p style={{ fontSize: 12, color: 'rgba(148,163,184,0.6)', lineHeight: 1.6 }}>
-                  Having trouble signing in?{' '}
+                <p style={{ fontSize: 12, color: '#374151', lineHeight: 1.6 }}>
+                  Having trouble?{' '}
                   <button
                     type="button"
-                    style={{ color: 'rgba(96,165,250,0.80)', fontWeight: 600, fontSize: 12, cursor: 'pointer', transition: 'color 150ms' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#60A5FA')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(96,165,250,0.80)')}
+                    style={{ color: 'rgba(239,68,68,0.80)', fontWeight: 600, fontSize: 12, cursor: 'pointer', transition: 'color 150ms' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(239,68,68,0.80)')}
                   >
-                    Contact Coach Abhishek
+                    Contact your gym administrator
                   </button>
                 </p>
               </div>
@@ -468,10 +487,10 @@ export default function LoginPage() {
             transition={{ delay: 0.6 }}
             style={{
               marginTop: 28, textAlign: 'center', fontSize: 11,
-              color: 'rgba(100,116,139,0.7)', letterSpacing: '0.03em',
+              color: '#6b7280', letterSpacing: '0.03em',
             }}
           >
-            &copy; {new Date().getFullYear()} Coach Abhishek. All rights reserved.
+            &copy; {new Date().getFullYear()} 619 FITNESS STUDIO. All rights reserved.
           </m.p>
         </m.div>
       </div>
@@ -479,56 +498,49 @@ export default function LoginPage() {
   );
 }
 
-/* ── Coach Logo — dumbbell inside a circle ── */
-function CoachLogo({ size = 88 }: { size?: number }) {
+/* ── Premium Red Shield Logo ── */
+function ShieldLogo({ size = 88 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="bg-grad" x1="0" y1="0" x2="88" y2="88" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#1E3A8A" />
-          <stop offset="100%" stopColor="#1D4ED8" />
+        <linearGradient id="sg" x1="44" y1="2" x2="44" y2="88" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#EF4444" />
+          <stop offset="55%" stopColor="#DC2626" />
+          <stop offset="100%" stopColor="#991B1B" />
         </linearGradient>
-        <linearGradient id="db-grad" x1="20" y1="44" x2="68" y2="44" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#93C5FD" />
-          <stop offset="50%" stopColor="#60A5FA" />
-          <stop offset="100%" stopColor="#93C5FD" />
-        </linearGradient>
-        <linearGradient id="shine" x1="10" y1="10" x2="50" y2="30" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />
+        <linearGradient id="shi" x1="20" y1="8" x2="68" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.22" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        <filter id="sdrop">
+          <feDropShadow dx="0" dy="3" stdDeviation="5" floodColor="#DC2626" floodOpacity="0.45" />
         </filter>
       </defs>
       {/* Drop shadow */}
-      <circle cx="44" cy="48" r="38" fill="rgba(37,99,235,0.35)" filter="url(#glow)" />
-      {/* Background circle */}
-      <circle cx="44" cy="44" r="40" fill="url(#bg-grad)" />
-      {/* Shine overlay */}
-      <ellipse cx="36" cy="28" rx="20" ry="14" fill="url(#shine)" />
-      {/* Border ring */}
-      <circle cx="44" cy="44" r="39" stroke="rgba(96,165,250,0.35)" strokeWidth="1" fill="none" />
-      {/* ── Dumbbell icon ── */}
-      {/* Left weight block outer */}
-      <rect x="14" y="36" width="10" height="16" rx="2.5" fill="url(#db-grad)" />
-      {/* Left weight block inner */}
-      <rect x="16" y="39" width="6" height="10" rx="1.5" fill="rgba(30,58,138,0.5)" />
-      {/* Left collar */}
-      <rect x="23" y="39.5" width="5" height="9" rx="1.5" fill="#60A5FA" />
-      {/* Right weight block outer */}
-      <rect x="64" y="36" width="10" height="16" rx="2.5" fill="url(#db-grad)" />
-      {/* Right weight block inner */}
-      <rect x="66" y="39" width="6" height="10" rx="1.5" fill="rgba(30,58,138,0.5)" />
-      {/* Right collar */}
-      <rect x="60" y="39.5" width="5" height="9" rx="1.5" fill="#60A5FA" />
-      {/* Bar */}
-      <rect x="27" y="42" width="34" height="4" rx="2" fill="#93C5FD" />
-      {/* Center grip highlight */}
-      <rect x="39" y="42.5" width="10" height="3" rx="1.5" fill="rgba(255,255,255,0.25)" />
-      {/* 'A' monogram below */}
-      <text x="44" y="72" textAnchor="middle" fill="rgba(147,197,253,0.85)" fontSize="9" fontWeight="800" fontFamily="Inter, sans-serif" letterSpacing="1">ABHISHEK</text>
+      <path
+        d="M44 2 C44 2 12 14 6 20 C0 26 0 30 2 38 C4 46 10 58 18 68 C26 78 34 82 40 86 C42 87 46 87 48 86 C54 82 62 78 70 68 C78 58 84 46 86 38 C88 30 88 26 82 20 C76 14 44 2 44 2 Z"
+        fill="rgba(0,0,0,0.5)" transform="translate(0,4)" filter="url(#sdrop)"
+      />
+      {/* Shield body */}
+      <path
+        d="M44 2 C44 2 12 14 6 20 C0 26 0 30 2 38 C4 46 10 58 18 68 C26 78 34 82 40 86 C42 87 46 87 48 86 C54 82 62 78 70 68 C78 58 84 46 86 38 C88 30 88 26 82 20 C76 14 44 2 44 2 Z"
+        fill="url(#sg)"
+      />
+      {/* Inner highlight */}
+      <path
+        d="M44 8 C44 8 16 18 11 23 C6 28 6 32 8 39 C10 46 15 57 22 66 C29 75 36 79 41 82 C43 83 45 83 47 82 C52 79 59 75 66 66 C73 57 78 46 80 39 C82 32 82 28 77 23 C72 18 44 8 44 8 Z"
+        fill="url(#shi)"
+      />
+      {/* Deer body */}
+      <path
+        d="M44 30 C40 30 37 33 36 36 C35 39 33 42 30 44 C27 46 24 50 23 54 C22 58 21 62 22 65 C23 68 26 70 30 72 C34 74 39 75 44 76 C49 75 54 74 58 72 C62 70 65 68 66 65 C67 62 66 58 65 54 C64 50 61 46 58 44 C55 42 53 39 52 36 C51 33 48 30 44 30 Z"
+        fill="#1A0808" opacity="0.92"
+      />
+      {/* Antlers */}
+      <path d="M33 38 C30 32 28 26 29 20 C29 16 32 14 35 16 C38 18 40 22 39 27 C38 32 36 36 35 38" fill="#1A0808" opacity="0.92" />
+      <path d="M55 38 C58 32 60 26 59 20 C59 16 56 14 53 16 C50 18 48 22 49 27 C50 32 52 36 53 38" fill="#1A0808" opacity="0.92" />
+      {/* 619 text */}
+      <text x="44" y="68" textAnchor="middle" fill="white" fontSize="11" fontWeight="800" fontFamily="Inter, sans-serif" letterSpacing="1">619</text>
     </svg>
   );
 }

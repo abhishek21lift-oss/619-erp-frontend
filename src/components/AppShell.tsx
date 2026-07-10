@@ -15,7 +15,6 @@ import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import FAB from '@/components/FAB';
-import AIAssistant from '@/components/AIAssistant';
 import { api } from '@/lib/api';
 import { allNavItems } from '@/lib/nav-config';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
@@ -330,12 +329,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64 xl:left-72',
             )}
             style={{
-              background: 'var(--topbar-bg)',
-              borderBottom: '1px solid var(--topbar-border)',
+              background: darkMode ? 'rgba(15,23,42,0.90)' : 'rgba(255,255,255,0.88)',
+              borderBottom: darkMode ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)',
               backdropFilter: 'blur(24px) saturate(200%)',
               WebkitBackdropFilter: 'blur(24px) saturate(200%)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
-              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1)',
+              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1), background 200ms ease, border-color 200ms ease',
               willChange: 'transform',
             }}
             animate={{
@@ -379,7 +378,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       className={cn(
                         'relative w-full rounded-2xl py-[7px] pl-9 pr-8 text-[13px] outline-none transition-all duration-300',
                         darkMode
-                          ? 'border border-white/10 bg-white/8 text-slate-100 placeholder:text-slate-500 focus:border-white/25 focus:bg-white/12 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]'
+                          ? 'border border-white/10 bg-white/8 text-slate-100 placeholder:text-slate-500 focus:border-white/25 focus:bg-white/12 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]'
                           : 'border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]',
                       )}
                     />
@@ -416,22 +415,25 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                                   className={cn(
                                     'flex w-full items-center gap-3 px-4 py-2 text-left text-[13px] transition-all duration-100',
                                     isActive
-                                      ? 'bg-[rgba(59,130,246,0.08)] pl-5'
+                                      ? 'bg-[rgba(212,175,55,0.08)] pl-5'
                                       : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:pl-5',
                                   )}
-                                  style={isActive ? { color: '#3B82F6' } : undefined}
+                                  style={isActive ? { color: '#D4AF37' } : undefined}
                                 >
                                   <span
-                                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold shadow-sm text-white"
+                                    className={cn(
+                                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold shadow-sm',
+                                      isActive ? 'text-[#050816]' : 'text-white',
+                                    )}
                                     style={isActive
-                                      ? { background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' }
+                                      ? { background: 'linear-gradient(135deg, #D4AF37 0%, #F7E7A1 100%)' }
                                       : { background: 'linear-gradient(135deg, var(--brand-lo), var(--brand))' }
                                     }
                                   >
                                     {r.label.charAt(0)}
                                   </span>
                                   <span className="font-medium flex-1">{r.label}</span>
-                                  {isActive && <ChevronRight size={12} style={{ color: '#3B82F6', opacity: 0.8 }} />}
+                                  {isActive && <ChevronRight size={12} style={{ color: '#D4AF37', opacity: 0.8 }} />}
                                 </button>
                               );
                             })}
@@ -500,7 +502,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(59,130,246,0.12)]"
+                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.12)]"
                     >
                       <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">Settings</div>
                       <div className="pb-2">
@@ -643,7 +645,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                     <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
                   </div>
                   <div className="hidden sm:block text-left">
-                    <p className={cn('text-[12px] font-semibold leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>COACH ABHISHEK</p>
+                    <p className={cn('text-[12px] font-semibold leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>619 FITNESS STUDIO</p>
                     <p className={cn('text-[10px] leading-tight capitalize', darkMode ? 'text-slate-400' : 'text-slate-500')}>{user?.role || '—'}</p>
                   </div>
                   <ChevronDown size={12} strokeWidth={1.5} className={cn('shrink-0', darkMode ? 'text-slate-500' : 'text-slate-400')} />
@@ -655,13 +657,13 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.96 }}
                       transition={{ duration: 0.12, ease: 'easeOut' }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(59,130,246,0.10)]"
+                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_12px_40px_rgba(212,175,55,0.10)]"
                     >
                       <div className="px-3 py-2.5 border-b border-[var(--border)]">
                         <p className="text-[12px] font-semibold text-[var(--text-primary)]">{user?.name || 'Admin'}</p>
                         <p className="text-[10px] text-[var(--text-muted)]">{user?.email || '—'}</p>
                         <span className="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                          style={{ background: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}>
+                          style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>
                           {user?.role || 'admin'}
                         </span>
                       </div>
@@ -709,22 +711,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
           <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 sm:px-6 lg:px-8 shell-main"
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              <m.div
-                key={pathname}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
-              >
-                {title && (
-                  <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
-                    {title}
-                  </h1>
-                )}
-                {children}
-              </m.div>
-            </AnimatePresence>
+            {title && (
+              <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
+                {title}
+              </h1>
+            )}
+            {children}
           </main>
         </div>
       </div>
@@ -734,9 +726,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
       {/* Floating Action Button — mobile only */}
       <FAB />
-
-      {/* AI Assistant — persistent floating chat panel */}
-      <AIAssistant />
     </LazyMotion>
   );
 }

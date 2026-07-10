@@ -25,13 +25,13 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://coachabhishek.in'),
+  metadataBase: new URL('https://619fitness.in'),
   title: {
-    default: 'Coach Abhishek — Personal Training Suite',
-    template: '%s | Coach Abhishek',
+    default: '619 FITNESS STUDIO — Operating System',
+    template: '%s | 619 FITNESS STUDIO',
   },
   description:
-    'Coach Abhishek — Your personal training management suite. Track clients, sessions, progress, and payments in one place.',
+    '619 FITNESS STUDIO — Train heavy. Run light. The classy operating system for serious gyms.',
   alternates: { canonical: '/' },
   icons: {
     icon: [
@@ -40,17 +40,17 @@ export const metadata: Metadata = {
     apple: '/logo.png',
   },
   openGraph: {
-    url: 'https://coachabhishek.in',
-    siteName: 'Coach Abhishek',
+    url: 'https://619fitness.in',
+    siteName: '619 FITNESS STUDIO',
     type: 'website',
-    title: 'Coach Abhishek — Personal Training Suite',
-    description: 'Your personal training management suite. Track clients, sessions, progress, and payments.',
+    title: '619 FITNESS STUDIO — Operating System',
+    description: 'Train heavy. Run light. The classy operating system for serious gyms.',
     images: [
       {
         url: '/619-logo.png',
         width: 1200,
         height: 630,
-        alt: 'Coach Abhishek Training Suite',
+        alt: '619 FITNESS STUDIO ERP',
       },
     ],
   },
@@ -61,6 +61,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // maximumScale removed — WCAG 1.4.4: users must be able to resize text
+  // iOS auto-zoom on inputs is prevented by ensuring font-size >= 16px on all inputs
   viewportFit: 'cover',
   themeColor: '#ffffff',
   colorScheme: 'light',
@@ -72,9 +74,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="manifest" href="/manifest.json" />
+        {/* Skip-to-content link (Accessibility — Issue #16) */}
         <style>{`.skip-link{position:absolute;top:-999px;left:0;z-index:9999;padding:8px 16px;background:#fff;color:#111;font-weight:600;border-radius:0 0 8px 0;}.skip-link:focus{top:0}`}</style>
       </head>
       <body>
+        {/* Issue #17 — noscript fallback: JS is required for auth + face recognition */}
         <noscript>
           <div
             role="alert"
@@ -89,7 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 JavaScript Required
               </strong>
               <p style={{ color: 'var(--text-muted)', maxWidth: 400 }}>
-                Coach Abhishek Training Suite requires JavaScript for authentication and
+                619 FITNESS STUDIO ERP requires JavaScript for authentication and
                 face-recognition check-in. Please enable JavaScript in your browser
                 settings and reload the page.
               </p>
@@ -97,10 +101,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </noscript>
 
+        {/* Skip link for keyboard navigation (WCAG 2.4.1) */}
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
 
+        {/*
+         * ErrorBoundary is outermost so a throw from AuthProvider's
+         * effect still renders the fallback instead of a blank page.
+         */}
         <GoogleAuthWrapper clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ''}>
           <ErrorBoundary>
             <ThemeProvider>
