@@ -216,20 +216,20 @@ export default function LoginPage() {
                   style={{ textAlign: 'center' }}
                 >
                   <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', lineHeight: 1.1 }}>
-                    <span style={{ color: 'var(--text-primary)' }}>SOLO </span>
+                    <span style={{ color: 'var(--text-primary)' }}>COACH </span>
                     <span style={{
                       background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #FF7070 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
-                    }}>TRAINER</span>
+                    }}>ABHISHEK</span>
                   </h1>
                   <p style={{
                     marginTop: 6, fontSize: 10.5, fontWeight: 600,
                     letterSpacing: '0.20em', color: 'var(--text-muted)',
                     textTransform: 'uppercase',
                   }}>
-                    Operating System
+                    Personal Training
                   </p>
                 </m.div>
               </div>
@@ -488,7 +488,7 @@ export default function LoginPage() {
               color: 'var(--text-muted)', letterSpacing: '0.03em',
             }}
           >
-            &copy; {new Date().getFullYear()} Solo Trainer OS. All rights reserved.
+            &copy; {new Date().getFullYear()} Coach Abhishek. All rights reserved.
           </m.p>
         </m.div>
       </div>
@@ -537,8 +537,8 @@ function ShieldLogo({ size = 88 }: { size?: number }) {
       {/* Antlers */}
       <path d="M33 38 C30 32 28 26 29 20 C29 16 32 14 35 16 C38 18 40 22 39 27 C38 32 36 36 35 38" fill="#1A0808" opacity="0.92" />
       <path d="M55 38 C58 32 60 26 59 20 C59 16 56 14 53 16 C50 18 48 22 49 27 C50 32 52 36 53 38" fill="#1A0808" opacity="0.92" />
-      {/* ST text */}
-      <text x="44" y="68" textAnchor="middle" fill="white" fontSize="13" fontWeight="800" fontFamily="Inter, sans-serif" letterSpacing="1">ST</text>
+      {/* CA text */}
+      <text x="44" y="68" textAnchor="middle" fill="white" fontSize="13" fontWeight="800" fontFamily="Inter, sans-serif" letterSpacing="1">CA</text>
     </svg>
   );
 }

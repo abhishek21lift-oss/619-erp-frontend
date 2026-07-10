@@ -197,7 +197,7 @@ const templates = [
 ];
 
 function initials(name?: string | null) {
-  if (!name) return 'ST';
+  if (!name) return 'CA';
   return name
     .split(' ')
     .filter(Boolean)
@@ -332,11 +332,11 @@ function SoloShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-full flex-col">
           <Link href="/" className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-sm font-bold text-white">
-              ST
+              CA
             </div>
             <div>
-              <div className="text-sm font-bold tracking-normal text-slate-950">Solo Trainer</div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Operating System</div>
+              <div className="text-sm font-bold tracking-normal text-slate-950">Coach Abhishek</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Personal Training</div>
             </div>
           </Link>
 
@@ -367,7 +367,7 @@ function SoloShell({ children }: { children: React.ReactNode }) {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-bold text-slate-950">{user?.name || 'Trainer'}</div>
-                <div className="truncate text-xs text-slate-500">{user?.email || 'solo account'}</div>
+                <div className="truncate text-xs text-slate-500">{user?.email || 'coach account'}</div>
               </div>
               <button
                 type="button"
@@ -394,8 +394,8 @@ function SoloShell({ children }: { children: React.ReactNode }) {
               <Menu size={18} />
             </button>
             <Link href="/" className="flex items-center gap-2 font-bold text-slate-950 lg:hidden">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-950 text-xs text-white">ST</span>
-              Solo Trainer
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-950 text-xs text-white">CA</span>
+              Coach Abhishek
             </Link>
             <div className="hidden min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 sm:flex">
               <Search size={16} />

@@ -1,5 +1,5 @@
 // src/lib/nav-config.ts
-// Solo Trainer OS navigation source of truth.
+// Coach Abhishek navigation source of truth.
 
 import { normaliseRole } from './roles';
 import type { Role } from './roles';

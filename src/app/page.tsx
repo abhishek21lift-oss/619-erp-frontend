@@ -27,7 +27,7 @@ export default function Root() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-600">
         <div className="rounded-lg border border-slate-200 bg-white px-5 py-4 text-sm font-semibold shadow-sm">
-          Loading Solo Trainer OS
+          Loading Coach Abhishek
         </div>
       </div>
     );

@@ -25,11 +25,11 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://619fitness.in'),
   title: {
-    default: 'Solo Trainer OS',
-    template: '%s | Solo Trainer OS',
+    default: 'Coach Abhishek',
+    template: '%s | Coach Abhishek',
   },
   description:
-    'Solo Trainer OS for clients, sessions, programs, payments, and trainer settings.',
+    'Coach Abhishek personal training workspace for clients, sessions, programs, payments, and trainer settings.',
   alternates: { canonical: '/' },
   icons: {
     icon: [
@@ -39,16 +39,16 @@ export const metadata: Metadata = {
   },
   openGraph: {
     url: 'https://619fitness.in',
-    siteName: 'Solo Trainer OS',
+    siteName: 'Coach Abhishek',
     type: 'website',
-    title: 'Solo Trainer OS',
-    description: 'Manage clients, schedule sessions, build programs, record payments, and export trainer data.',
+    title: 'Coach Abhishek',
+    description: 'Manage clients, schedule sessions, build programs, record payments, and export coaching data.',
     images: [
       {
         url: '/619-logo.png',
         width: 1200,
         height: 630,
-        alt: 'Solo Trainer OS',
+        alt: 'Coach Abhishek',
       },
     ],
   },
@@ -91,7 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 JavaScript Required
               </strong>
               <p style={{ color: 'var(--text-muted)', maxWidth: 400 }}>
-                Solo Trainer OS requires JavaScript for authentication. Please
+                Coach Abhishek requires JavaScript for authentication. Please
                 enable JavaScript in your browser settings and reload the page.
               </p>
             </div>
