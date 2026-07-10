@@ -330,12 +330,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               sidebarCollapsed ? 'left-0 lg:left-16' : 'left-0 lg:left-64 xl:left-72',
             )}
             style={{
-              background: darkMode ? 'rgba(15,23,42,0.90)' : 'rgba(255,255,255,0.88)',
-              borderBottom: darkMode ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)',
+              background: 'var(--topbar-bg)',
+              borderBottom: '1px solid var(--topbar-border)',
               backdropFilter: 'blur(24px) saturate(200%)',
               WebkitBackdropFilter: 'blur(24px) saturate(200%)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
-              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1), background 200ms ease, border-color 200ms ease',
+              transition: 'left 300ms cubic-bezier(0.16,1,0.3,1)',
               willChange: 'transform',
             }}
             animate={{
@@ -379,7 +379,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       className={cn(
                         'relative w-full rounded-2xl py-[7px] pl-9 pr-8 text-[13px] outline-none transition-all duration-300',
                         darkMode
-                          ? 'border border-white/10 bg-white/8 text-slate-100 placeholder:text-slate-500 focus:border-white/25 focus:bg-white/12 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]'
+                          ? 'border border-white/10 bg-white/8 text-slate-100 placeholder:text-slate-500 focus:border-white/25 focus:bg-white/12 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]'
                           : 'border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]',
                       )}
                     />
@@ -709,12 +709,22 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
           <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 sm:px-6 lg:px-8 shell-main"
           >
-            {title && (
-              <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
-                {title}
-              </h1>
-            )}
-            {children}
+            <AnimatePresence mode="popLayout" initial={false}>
+              <m.div
+                key={pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                transition={{ duration: 0.22, ease: [0.21, 0.47, 0.32, 0.98] }}
+              >
+                {title && (
+                  <h1 className="mb-6 text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
+                    {title}
+                  </h1>
+                )}
+                {children}
+              </m.div>
+            </AnimatePresence>
           </main>
         </div>
       </div>
