@@ -21,7 +21,6 @@ import {
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen,
-  Search, Upload, KeyRound, DatabaseBackup, Receipt,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -32,7 +31,6 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen,
-  Search, Upload, KeyRound, DatabaseBackup, Receipt,
 };
 
 // ── Design constants ──────────────────────────────────────────────────────────
