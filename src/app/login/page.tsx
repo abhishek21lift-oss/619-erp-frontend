@@ -31,9 +31,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      if (user.role === 'trainer') router.replace('/trainer/dashboard');
-      else if (user.role === 'member') router.replace('/member/dashboard');
-      else router.replace('/pt-os');
+      router.replace('/');
     }
   }, [user, loading, router]);
 
@@ -117,7 +115,7 @@ export default function LoginPage() {
         onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#111827'; }}
         onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#6b7280'; }}
       >
-        ← Home
+        Back Home
       </Link>
 
       {/* ── Subtle dot grid background ── */}
@@ -218,20 +216,20 @@ export default function LoginPage() {
                   style={{ textAlign: 'center' }}
                 >
                   <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', lineHeight: 1.1 }}>
-                    <span style={{ color: 'var(--text-primary)' }}>619 FITNESS </span>
+                    <span style={{ color: 'var(--text-primary)' }}>SOLO </span>
                     <span style={{
                       background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #FF7070 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
-                    }}>STUDIO</span>
+                    }}>TRAINER</span>
                   </h1>
                   <p style={{
                     marginTop: 6, fontSize: 10.5, fontWeight: 600,
                     letterSpacing: '0.20em', color: 'var(--text-muted)',
                     textTransform: 'uppercase',
                   }}>
-                    Management Suite
+                    Operating System
                   </p>
                 </m.div>
               </div>
@@ -473,7 +471,7 @@ export default function LoginPage() {
                     onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'rgba(239,68,68,0.80)')}
                   >
-                    Contact your gym administrator
+                    Contact support
                   </button>
                 </p>
               </div>
@@ -490,7 +488,7 @@ export default function LoginPage() {
               color: 'var(--text-muted)', letterSpacing: '0.03em',
             }}
           >
-            &copy; {new Date().getFullYear()} 619 FITNESS STUDIO. All rights reserved.
+            &copy; {new Date().getFullYear()} Solo Trainer OS. All rights reserved.
           </m.p>
         </m.div>
       </div>
@@ -539,8 +537,8 @@ function ShieldLogo({ size = 88 }: { size?: number }) {
       {/* Antlers */}
       <path d="M33 38 C30 32 28 26 29 20 C29 16 32 14 35 16 C38 18 40 22 39 27 C38 32 36 36 35 38" fill="#1A0808" opacity="0.92" />
       <path d="M55 38 C58 32 60 26 59 20 C59 16 56 14 53 16 C50 18 48 22 49 27 C50 32 52 36 53 38" fill="#1A0808" opacity="0.92" />
-      {/* 619 text */}
-      <text x="44" y="68" textAnchor="middle" fill="white" fontSize="11" fontWeight="800" fontFamily="Inter, sans-serif" letterSpacing="1">619</text>
+      {/* ST text */}
+      <text x="44" y="68" textAnchor="middle" fill="white" fontSize="13" fontWeight="800" fontFamily="Inter, sans-serif" letterSpacing="1">ST</text>
     </svg>
   );
 }

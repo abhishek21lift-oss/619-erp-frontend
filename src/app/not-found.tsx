@@ -54,7 +54,7 @@ export default function NotFound() {
         Check the URL or head back to the app.
       </p>
       <Link
-        href="/pt-os"
+        href="/"
         style={{
           display: 'inline-flex',
           alignItems: 'center',
