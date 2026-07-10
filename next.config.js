@@ -6,6 +6,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: __dirname,
   reactStrictMode: true,
   poweredByHeader: false,
 
@@ -25,7 +26,7 @@ const nextConfig = {
 
   images: {
     formats: ['image/avif', 'image/webp'],
-    // M-02: explicit allowlist — wildcard '**' allows SSRF via Next.js image optimizer
+    // M-02: explicit allowlist - wildcard '**' allows SSRF via Next.js image optimizer
     remotePatterns: [
       // Supabase storage (replace <project-ref> with your actual project ref via env)
       {
@@ -97,12 +98,12 @@ const nextConfig = {
         source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
         headers: securityHeaders,
       },
-      // Versioned path (/models/v2/…) gets long-lived immutable caching.
+      // Versioned path (/models/v2/...) gets long-lived immutable caching.
       {
         source: '/models/v:version/(.*)',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
-      // Unversioned path (/models/…) gets a 24-hour TTL.
+      // Unversioned path (/models/...) gets a 24-hour TTL.
       {
         source: '/models/(.*)',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=86400' }],
@@ -112,13 +113,38 @@ const nextConfig = {
 
   async redirects() {
     return [
-      { source: '/admin',              destination: '/admin/dashboard',         permanent: true },
-      { source: '/member',             destination: '/member/dashboard',         permanent: true },
-      { source: '/pt-os',              destination: '/',                         permanent: true },
-      { source: '/trainer',            destination: '/trainer/dashboard',        permanent: true },
-      { source: '/operations',         destination: '/operations/leaderboard',   permanent: true },
-      { source: '/checkin/reports',    destination: '/attendance/reports',       permanent: true },
-      { source: '/pt-os/plans',        destination: '/subscription/packages',    permanent: true },
+      { source: '/pt-os',                         destination: '/',                   permanent: true },
+      { source: '/pt-os/clients',                 destination: '/clients',            permanent: true },
+      { source: '/pt-os/clients/:id',             destination: '/clients/:id',        permanent: true },
+      { source: '/pt-os/clients/:id/:path*',      destination: '/clients/:id',        permanent: true },
+      { source: '/pt-os/new-client',              destination: '/clients/new',        permanent: true },
+      { source: '/pt-os/schedule-session',        destination: '/schedule/book',      permanent: true },
+      { source: '/pt-os/sessions',                destination: '/schedule',           permanent: true },
+      { source: '/pt-os/session-balance',         destination: '/schedule',           permanent: true },
+      { source: '/pt-os/workout-plans',           destination: '/programs',           permanent: true },
+      { source: '/pt-os/exercise-library',        destination: '/programs',           permanent: true },
+      { source: '/pt-os/diet-plans',              destination: '/programs',           permanent: true },
+      { source: '/pt-os/:path*',                  destination: '/',                   permanent: true },
+      { source: '/finance',                       destination: '/payments',           permanent: true },
+      { source: '/finance/record-payment',        destination: '/payments/new',       permanent: true },
+      { source: '/finance/:path*',                destination: '/payments',           permanent: true },
+      { source: '/subscription/:path*',           destination: '/settings',           permanent: true },
+      { source: '/settings/:path*',               destination: '/settings',           permanent: true },
+      { source: '/admin/:path*',                  destination: '/',                   permanent: true },
+      { source: '/member/:path*',                 destination: '/',                   permanent: true },
+      { source: '/trainer/:path*',                destination: '/',                   permanent: true },
+      { source: '/operations/:path*',             destination: '/',                   permanent: true },
+      { source: '/attendance/:path*',             destination: '/schedule',           permanent: true },
+      { source: '/checkin/:path*',                destination: '/schedule',           permanent: true },
+      { source: '/ai/:path*',                     destination: '/programs',           permanent: true },
+      { source: '/ai-coach',                      destination: '/programs',           permanent: true },
+      { source: '/engagement/:path*',             destination: '/clients',            permanent: true },
+      { source: '/insights/:path*',               destination: '/',                   permanent: true },
+      { source: '/reports/:path*',                destination: '/',                   permanent: true },
+      { source: '/sales/:path*',                  destination: '/payments',           permanent: true },
+      { source: '/staff/:path*',                  destination: '/settings',           permanent: true },
+      { source: '/trainers/:path*',               destination: '/settings',           permanent: true },
+      { source: '/training/:path*',               destination: '/programs',           permanent: true },
     ];
   },
 
