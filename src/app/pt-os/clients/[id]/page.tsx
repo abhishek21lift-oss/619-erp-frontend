@@ -10,7 +10,7 @@ import {
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Camera, Ruler, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
-  Trophy, Award,
+  Trophy, Award, HeartPulse,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -113,6 +113,7 @@ const QUICK_ACTIONS = [
   { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id: string) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
   { label: 'Fitness Testing', icon: <Activity size={16} />, href: (id: string) => `/pt-os/assessment?client_id=${id}`, from: '#10b981', to: '#059669' },
   { label: 'Goals', icon: <Target size={16} />, href: (id: string) => `/pt-os/goals?client_id=${id}`, from: '#3b82f6', to: '#2563eb' },
+  { label: 'Lifestyle', icon: <HeartPulse size={16} />, href: (id: string) => `/pt-os/lifestyle-assessment?client_id=${id}`, from: '#e11d48', to: '#be123c' },
   { label: 'Photos', icon: <Camera size={16} />, href: (id: string) => `/pt-os/progress-photos?client_id=${id}`, from: '#ec4899', to: '#db2777' },
   { label: 'Strength', icon: <Zap size={16} />, href: (id: string) => `/pt-os/strength-tracking?client_id=${id}`, from: '#6366f1', to: '#4f46e5' },
   { label: 'Check-in', icon: <CheckCircle size={16} />, href: (id: string) => `/pt-os/weekly-checkin?client_id=${id}`, from: '#14b8a6', to: '#0d9488' },

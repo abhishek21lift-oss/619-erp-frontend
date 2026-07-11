@@ -904,6 +904,18 @@ export const api = {
         }),
       delete: (id: string) => http(`/api/progress/progress-photos/${id}`, { method: 'DELETE' }),
     },
+    lifestyleAssessments: {
+      list: (params?: Record<string, string | number>) =>
+        http<{ data: unknown[] }>(`/api/progress/lifestyle-assessments${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: unknown }>('/api/progress/lifestyle-assessments', {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: unknown }>(`/api/progress/lifestyle-assessments/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+    },
   },
 
   // ── Automation & Communication ─────────────────────────────────
