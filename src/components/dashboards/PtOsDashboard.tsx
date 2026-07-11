@@ -266,7 +266,7 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
             filter: 'drop-shadow(0 2px 16px rgba(245,158,11,0.50))',
           }}
         >
-          619 PERSONAL TRAINING
+          ABHISHEK PERSONAL TRAINING STUDIO
         </h1>
 
         <div className="mt-3 h-px w-24 sm:w-32"
