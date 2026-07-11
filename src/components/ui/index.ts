@@ -37,6 +37,7 @@ export { PageHeader } from './PageHeader';
 export type { PageHeaderProps } from './PageHeader';
 
 export { FloatInput } from './FloatInput';
+export { Slider } from './Slider';
 export { SearchInput } from './SearchInput';
 export type { SearchInputProps } from './SearchInput';
 
