@@ -3,18 +3,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Check, User, Camera, CheckCircle2, Award, FileSpreadsheet, X,
-  ChevronDown, Plus, Contact, MapPin,
+  Check, User, Camera, CheckCircle2, Award, FileSpreadsheet, X, Contact, MapPin,
 } from 'lucide-react';
 import { getSheetCacheSync, lookupByMobile } from '@/lib/sheet-import';
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button } from '@/components/ui';
-import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
 import FloatInput from '@/components/ui/FloatInput';
 import PhotoCropModal from '@/components/pt-os/PhotoCropModal';
+import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useToast } from '@/lib/toast';
 
@@ -150,98 +149,6 @@ function computeProgress(form: FormData): number {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const DRAFT_KEY = 'pt-os.new-client.draft.v1';
-
-/* ─────────────────────────────────────────────────────── SEARCHABLE SELECT */
-function SearchableSelect({ label, value, onChange, options, placeholder, error, required }: {
-  label: string; value: string; onChange: (v: string) => void; options: string[];
-  placeholder?: string; error?: string; required?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) { setOpen(false); setQuery(''); }
-    }
-    if (open) document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [open]);
-
-  const filtered = options.filter((o) => o.toLowerCase().includes(query.trim().toLowerCase()));
-  const exactMatch = options.some((o) => o.toLowerCase() === query.trim().toLowerCase());
-
-  return (
-    <div className="relative" ref={wrapRef}>
-      <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-        {label} {required && <span style={{ color: '#F59E0B' }}>*</span>}
-      </p>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
-        style={{
-          background: open ? 'var(--bg-card)' : 'var(--bg-subtle)',
-          border: error ? '1.5px solid rgba(239,68,68,0.5)' : open ? '1.5px solid rgba(245,158,11,0.50)' : '1.5px solid rgba(15,23,42,0.09)',
-          boxShadow: open ? '0 0 0 3px rgba(245,158,11,0.08)' : '0 1px 2px rgba(15,23,42,0.04)',
-        }}
-      >
-        <span className={cn('flex-1 text-[13px] font-[500]', value ? 'text-[rgb(15,23,42)]' : 'text-[rgb(148,163,184)]')}>
-          {value || placeholder || `Select ${label}`}
-        </span>
-        <ChevronDown size={14} style={{ color: 'rgb(148,163,184)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms', flexShrink: 0 }} />
-      </button>
-      {error && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
-      <AnimatePresence>
-        {open && (
-          <m.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-[14px]"
-            style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: '0 12px 32px rgba(15,23,42,0.12)' }}
-          >
-            <div className="border-b p-2" style={{ borderColor: 'rgba(15,23,42,0.06)' }}>
-              <input
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search or type your own..."
-                className="w-full rounded-[10px] px-3 py-2 text-[12.5px] outline-none"
-                style={{ background: 'var(--bg-subtle)', color: 'rgb(15,23,42)' }}
-              />
-            </div>
-            <div className="max-h-56 overflow-y-auto p-1">
-              {filtered.map((opt) => (
-                <button
-                  key={opt} type="button"
-                  onClick={() => { onChange(opt); setOpen(false); setQuery(''); }}
-                  className="flex w-full items-center justify-between rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[580] transition hover:bg-slate-50"
-                  style={{ color: 'rgb(30,30,40)' }}
-                >
-                  {opt}
-                  {value === opt && <Check size={12} style={{ color: '#F59E0B' }} />}
-                </button>
-              ))}
-              {query.trim() && !exactMatch && (
-                <button
-                  type="button"
-                  onClick={() => { onChange(query.trim()); setOpen(false); setQuery(''); }}
-                  className="flex w-full items-center gap-2 rounded-[10px] px-3.5 py-2.5 text-[12.5px] font-[580] transition hover:bg-slate-50"
-                  style={{ color: '#F59E0B' }}
-                >
-                  <Plus size={12} /> Use &quot;{query.trim()}&quot;
-                </button>
-              )}
-              {filtered.length === 0 && !query.trim() && (
-                <p className="px-3.5 py-3 text-[12px]" style={{ color: 'rgb(148,163,184)' }}>No options</p>
-              )}
-            </div>
-          </m.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 /* ─────────────────────────────────────────────────────── PAGE EXPORT */
 export default function NewPTClientPage() {
@@ -435,13 +342,21 @@ function NewClientForm() {
             </p>
           </m.div>
 
-          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-            <Button variant="primary" onClick={() => { setShowSuccess(false); setForm(initForm()); initFormRef.current = initForm(); setErrors({}); }}>
-              Onboard Another
+          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex flex-col gap-3 justify-center mt-6">
+            <Button
+              style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              onClick={() => router.push(`/pt-os/clients/${createdId}/enroll`)}
+            >
+              Enroll in PT
             </Button>
-            <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${createdId}`)}>
-              View Client Profile
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${createdId}`)}>
+                View Client Profile
+              </Button>
+              <Button variant="ghost" onClick={() => { setShowSuccess(false); setForm(initForm()); initFormRef.current = initForm(); setErrors({}); }}>
+                Onboard Another
+              </Button>
+            </div>
           </m.div>
         </div>
       </m.div>

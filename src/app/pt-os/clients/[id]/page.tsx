@@ -10,7 +10,7 @@ import {
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Camera, Ruler, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
-  Trophy,
+  Trophy, Award,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -108,6 +108,7 @@ function DarkCard({ title, icon, from, children, className = '' }:
 }
 
 const QUICK_ACTIONS = [
+  { label: 'Enroll in PT', icon: <Award size={16} />, href: (id: string) => `/pt-os/clients/${id}/enroll`, from: '#F59E0B', to: '#D97706' },
   { label: 'Payments', icon: <Wallet size={16} />, href: (id: string) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
   { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id: string) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
   { label: 'Assessment', icon: <Activity size={16} />, href: (id: string) => `/pt-os/assessment?client_id=${id}`, from: '#10b981', to: '#059669' },
@@ -369,6 +370,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                         className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
                         style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                         <Pencil size={13} /> Edit
+                      </button>
+                      <button onClick={() => router.push(`/pt-os/clients/${id}/enroll`)}
+                        className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-white transition-all hover:-translate-y-0.5"
+                        style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 16px rgba(245,158,11,0.35)' }}>
+                        <Award size={13} /> Enroll in PT
                       </button>
                       <button onClick={() => router.push(`/pt-os/clients/${id}/renew`)}
                         className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-white transition-all hover:-translate-y-0.5"
