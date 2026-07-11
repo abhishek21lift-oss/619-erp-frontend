@@ -156,7 +156,7 @@ function Inner() {
           <div className="sm-hero-left">
             <div className="sm-hero-eyebrow">
               <span className="sm-pulse-dot" />
-              619 Fitness Studio · Team Management
+              Coach Abhishek · Team Management
             </div>
             <h1 className="sm-hero-title">Team Management</h1>
             <p className="sm-hero-sub">

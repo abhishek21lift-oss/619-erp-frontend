@@ -84,7 +84,7 @@ function BranchesContent() {
             style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)', padding: 20, marginBottom: 22, alignItems: 'end', boxShadow: 'var(--shadow-xs)' }}>
             <div style={{ display: 'grid', gap: 5 }}>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Branch Name *</span>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. 619 Fitness Gomti Nagar" required
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Coach Abhishek Gomti Nagar" required
                 style={{ border: '1px solid #d1d5db', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', background: 'var(--bg-card)', outline: 'none', fontFamily: 'inherit' }} />
             </div>
             <div style={{ display: 'grid', gap: 5 }}>

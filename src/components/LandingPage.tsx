@@ -44,7 +44,7 @@ export default function LandingPage() {
   const faqs = [
     { q: 'Do I need prior experience to join?', a: 'Absolutely not. We welcome complete beginners. Our trainers will build a program appropriate for your current level and progress you safely from there.' },
     { q: 'What is the free trial?', a: 'You get 3 full days of access to the studio — attend any class, train with our coaches, use the floor. No credit card, no commitment, no catch.' },
-    { q: 'Can women train here safely?', a: 'Yes, and we strongly encourage it. 619 is a respectful, inclusive environment. We have female trainers on staff and dedicated programs for women\'s health and fitness.' },
+    { q: 'Can women train here safely?', a: 'Yes, and we strongly encourage it. Coach Abhishek runs a respectful, inclusive environment, with dedicated programs for women\'s health and fitness.' },
     { q: 'Do you offer online coaching?', a: 'Yes. Our remote coaching program includes a custom training plan, nutrition plan, weekly video check-ins, and WhatsApp access to your coach. Perfect if you travel or prefer to train at home.' },
     { q: 'Can I change or pause my membership?', a: 'Yes. We offer flexible membership management. Speak to us directly — we\'ll always find a solution that works for your situation.' },
     { q: 'Is nutrition coaching included in my plan?', a: 'Basic nutritional guidance is included in Pro and Elite plans. Full custom diet planning with weekly revisions is available as an add-on or in Elite membership.' },
@@ -107,9 +107,9 @@ export default function LandingPage() {
       {/* ─── NAV ─── */}
       <nav style={{ background: navSolid ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.72)' }}>
         <a href="#" className="nav-logo-wrap" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-          <Image src="/619-logo.png" alt="619" width={28} height={28} className="nav-logo" style={{ objectFit: 'contain' }} />
+          <Image src="/619-logo.png" alt="Coach Abhishek" width={28} height={28} className="nav-logo" style={{ objectFit: 'contain' }} />
           <span className="nav-brand-text" style={{ fontSize: '0.88rem', fontWeight: 600, letterSpacing: '-.01em', color: 'var(--white)' }}>
-            <span style={{ color: 'var(--red)' }}>619</span> Fitness Studio
+            <span style={{ color: 'var(--red)' }}>COACH</span> ABHISHEK
           </span>
         </a>
         <ul className="nav-links" style={{ display: 'flex', gap: 0, listStyle: 'none' }}>
@@ -152,17 +152,17 @@ export default function LandingPage() {
         padding: '68px var(--px) 80px', position: 'relative',
         background: 'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(217,31,60,0.07) 0%, transparent 70%)',
       }}>
-        <Image src="/619-logo.png" alt="619 Fitness Studio" width={180} height={180} className="hero-logo"
+        <Image src="/619-logo.png" alt="Coach Abhishek" width={180} height={180} className="hero-logo"
           style={{ objectFit: 'contain', marginBottom: 48, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.2s forwards' }}
         />
         <span className="hero-label" style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 20, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.4s forwards' }}>
-          Lucknow&apos;s Premier Fitness Studio
+          Lucknow&apos;s Premier Personal Trainer
         </span>
         <h1 className="hero-h1" style={{ fontSize: 'clamp(2.8rem,7vw,6rem)', fontWeight: 700, letterSpacing: '-.04em', lineHeight: 1.04, color: 'var(--white)', marginBottom: 6, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.5s forwards' }}>
           Train Like You<br /><em style={{ fontStyle: 'normal', color: 'var(--red)' }}>Mean It.</em>
         </h1>
         <p className="hero-sub-title" style={{ fontSize: 'clamp(1.6rem,4vw,3rem)', fontWeight: 300, letterSpacing: '-.02em', color: 'var(--grey)', marginBottom: 28, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.6s forwards' }}>
-          619 Fitness Studio
+          Coach Abhishek
         </p>
         <p className="hero-desc" style={{ fontSize: '1.05rem', fontWeight: 400, color: 'var(--grey)', lineHeight: 1.7, maxWidth: 520, margin: '0 auto 48px', opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.7s forwards' }}>
           Elite personal training, MMA, Yoga, Zumba and strength coaching — all under one roof in Lucknow. Backed by certified experts. Built for real results.
@@ -242,7 +242,7 @@ export default function LandingPage() {
           Fitness that <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>actually</em><br />changes your life.
         </h2>
         <p className="chapter-p reveal reveal-delay-2" style={{ fontSize: '1.05rem', color: 'var(--grey)', lineHeight: 1.75, maxWidth: 600, margin: '0 auto' }}>
-          619 Fitness Studio was founded with one mission — bring world-class coaching to Lucknow. Every trainer on our team is certified, every program is personalised, and every client matters. No cookie-cutter plans. No guesswork. Just results.
+          Coach Abhishek was founded with one mission — bring world-class coaching to Lucknow. Every program is certified, personalised, and every client matters. No cookie-cutter plans. No guesswork. Just results.
         </p>
       </div>
 
@@ -295,7 +295,7 @@ export default function LandingPage() {
               Meet the <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>experts.</em>
             </h2>
             <p className="chapter-p reveal reveal-delay-2" style={{ fontSize: '1.05rem', color: 'var(--grey)', lineHeight: 1.75, maxWidth: 600, margin: '0 auto 64px' }}>
-              Every coach at 619 is certified, passionate, and personally invested in your transformation. These aren&apos;t gym staff — they&apos;re specialists.
+              Coach Abhishek is certified, passionate, and personally invested in your transformation. Not gym staff — a specialist.
             </p>
           </div>
           <div className="team-grid" style={{
@@ -383,14 +383,14 @@ export default function LandingPage() {
       <section className="why-section" style={{ background: 'var(--surface)', padding: '120px var(--px)' }}>
         <div className="why-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
           <div style={{ textAlign: 'center' }}>
-            <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Why 619?</span>
+            <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Why Coach Abhishek?</span>
             <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20 }}>
               Not just a gym.<br /><em style={{ fontStyle: 'normal', color: 'var(--red)' }}>A system.</em>
             </h2>
           </div>
           <div className="why-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden', marginTop: 64 }}>
             {[
-              { icon: '🎯', title: 'Personalised to You', body: 'No two clients are the same. Every program at 619 is built around your body, history, schedule, and goals — not a generic template.' },
+              { icon: '🎯', title: 'Personalised to You', body: 'No two clients are the same. Every program at Coach Abhishek is built around your body, history, schedule, and goals — not a generic template.' },
               { icon: '🏆', title: 'Elite Coach Credentials', body: 'Our head trainer is an active national-level powerlifter. The coaches teaching you aren\'t just certified — they live what they teach.', delay: 'reveal-delay-1' },
               { icon: '📊', title: 'Progress You Can Measure', body: 'We track body composition, strength metrics, and wellness markers so you can see exactly how far you\'ve come — and where you\'re headed.', delay: 'reveal-delay-2' },
               { icon: '🤝', title: 'Real Accountability', body: 'Check-ins, WhatsApp support, and coaches who actually notice when you miss a session. We\'re invested in your outcome.' },
@@ -418,7 +418,7 @@ export default function LandingPage() {
       }}>
         <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Zero Risk</span>
         <h2 className="trial-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', marginBottom: 16 }}>
-          Try 619 Free<br />for 3 Days.
+          Try Coach Abhishek Free<br />for 3 Days.
         </h2>
         <p className="trial-p reveal reveal-delay-2" style={{ fontSize: '1rem', color: 'var(--grey)', marginBottom: 40, maxWidth: 440, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.7 }}>
           Walk in, train with our coaches, experience the studio — completely free, no strings attached. We&apos;re confident you&apos;ll stay.
@@ -492,9 +492,9 @@ export default function LandingPage() {
             </p>
             {[
               { label: 'Phone / WhatsApp', value: <a href={SUPPORT_TEL_URL} style={{ color: 'var(--red)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>{SUPPORT_PHONE_RAW}</a>, delay: '' },
-              { label: 'Location', value: <>619 Fitness Studio<br />Lucknow, Uttar Pradesh, India</>, delay: 'reveal-delay-1' },
+              { label: 'Location', value: <>Coach Abhishek<br />Lucknow, Uttar Pradesh, India</>, delay: 'reveal-delay-1' },
               { label: 'Studio Hours', value: <>Mon – Sat &nbsp;·&nbsp; 6:00 AM – 9:00 PM<br />Sunday &nbsp;·&nbsp; 7:00 AM – 12:00 PM</>, delay: 'reveal-delay-2' },
-              { label: 'Owned By', value: 'Narayan Chandel & Rishi Gaur', delay: 'reveal-delay-3' },
+              { label: 'Owned By', value: 'Abhishek Katiyar', delay: 'reveal-delay-3' },
             ].map((info, i) => (
               <div key={i} className={`contact-info-block reveal ${info.delay}`} style={{ marginBottom: 28 }}>
                 <div className="contact-label" style={{ fontSize: '0.7rem', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--grey2)', marginBottom: 8 }}>{info.label}</div>
@@ -507,7 +507,7 @@ export default function LandingPage() {
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--grey2)', fontSize: '0.88rem', textAlign: 'center', padding: 24,
           }}>
             <div style={{ fontSize: '2.5rem', opacity: 0.5 }}>📍</div>
-            <p><strong style={{ color: 'var(--white)' }}>619 Fitness Studio</strong><br />Lucknow, Uttar Pradesh<br /><br /><a href="https://maps.google.com" target="_blank" style={{ color: 'var(--red)', fontSize: '0.82rem' }}>Open in Google Maps →</a></p>
+            <p><strong style={{ color: 'var(--white)' }}>Coach Abhishek</strong><br />Lucknow, Uttar Pradesh<br /><br /><a href="https://maps.google.com" target="_blank" style={{ color: 'var(--red)', fontSize: '0.82rem' }}>Open in Google Maps →</a></p>
           </div>
         </div>
       </section>
@@ -574,8 +574,8 @@ export default function LandingPage() {
       <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '48px var(--px)' }}>
         <div className="footer-inner" style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
           <a href="#" className="footer-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-            <Image src="/619-logo.png" alt="619" width={32} height={32} className="footer-logo" style={{ objectFit: 'contain' }} />
-            <span className="footer-name" style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--white)' }}><span style={{ color: 'var(--red)' }}>619</span> Fitness Studio</span>
+            <Image src="/619-logo.png" alt="Coach Abhishek" width={32} height={32} className="footer-logo" style={{ objectFit: 'contain' }} />
+            <span className="footer-name" style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--white)' }}><span style={{ color: 'var(--red)' }}>COACH</span> ABHISHEK</span>
           </a>
           <ul className="footer-nav" style={{ display: 'flex', gap: 24, listStyle: 'none', flexWrap: 'wrap' }}>
             {['About', 'Team', 'Programs', 'Pricing', 'Contact'].map((item) => (
@@ -588,7 +588,7 @@ export default function LandingPage() {
               </li>
             ))}
           </ul>
-          <span className="footer-copy" style={{ fontSize: '0.75rem', color: 'var(--grey2)' }}>© 2026 619 Fitness Studio · Narayan Chandel &amp; Rishi Gaur · Lucknow</span>
+          <span className="footer-copy" style={{ fontSize: '0.75rem', color: 'var(--grey2)' }}>© 2026 Coach Abhishek · Lucknow</span>
         </div>
       </footer>
     </div>

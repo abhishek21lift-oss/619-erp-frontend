@@ -742,7 +742,7 @@ export default function ProfilePage() {
                         <ShieldCheck size={10} /> {profile.role}
                       </span>
                     </div>
-                    <p className="mt-1 text-[13.5px] font-[500]" style={{ color: 'rgba(255,255,255,0.85)' }}>{profile.jobTitle} · 619 Fitness Studio</p>
+                    <p className="mt-1 text-[13.5px] font-[500]" style={{ color: 'rgba(255,255,255,0.85)' }}>{profile.jobTitle} · Coach Abhishek</p>
                     <div className="mt-3 flex flex-wrap items-center justify-center gap-4 sm:justify-start">
                       <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
                         <Mail size={11} /> {profile.email}

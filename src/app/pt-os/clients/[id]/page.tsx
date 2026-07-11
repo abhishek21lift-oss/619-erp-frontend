@@ -229,7 +229,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     const p = (phone ?? '').replace(/\D/g, '');
     if (!p) return '#';
     const num = p.startsWith('91') ? p : `91${p}`;
-    return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, this is your trainer from 619 Fitness Studio.`)}`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, this is your trainer from Coach Abhishek.`)}`;
   };
 
   const initials = (name: string) =>

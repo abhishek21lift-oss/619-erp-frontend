@@ -9,8 +9,8 @@ type Props = {
 };
 
 /**
- * BrandLogo — 619 FITNESS STUDIO mark.
- * Falls back to a gradient "619" tile if logo file not found.
+ * BrandLogo — COACH ABHISHEK mark.
+ * Falls back to a gradient "CA" tile if logo file not found.
  */
 export default function BrandLogo({
   size = 40,
@@ -23,7 +23,7 @@ export default function BrandLogo({
 
   const Mark = failed ? (
     <div
-      aria-label="619 FITNESS STUDIO"
+      aria-label="COACH ABHISHEK"
       style={{
         width: size,
         height: size,
@@ -43,7 +43,7 @@ export default function BrandLogo({
         fontFeatureSettings: '"tnum"',
       }}
     >
-      619
+      CA
     </div>
   ) : (
     <div
@@ -66,7 +66,7 @@ export default function BrandLogo({
     >
       <Image
         src="/logo.png"
-        alt="619 FITNESS STUDIO"
+        alt="COACH ABHISHEK"
         fill
         className="object-contain"
         onError={() => setFailed(true)}
@@ -88,10 +88,10 @@ export default function BrandLogo({
       }}
     >
       <div className="brand-619-name">
-        619 FITNESS STUDIO
+        COACH ABHISHEK
       </div>
       <div className="brand-619-tag">
-        Premium Strength Studio
+        Strength · Motivation · Trust
       </div>
     </div>
   );

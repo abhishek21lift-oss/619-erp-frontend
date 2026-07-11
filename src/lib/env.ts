@@ -42,7 +42,7 @@ export function validateEnv(): void {
     if (process.env.NODE_ENV === 'production') {
       throw new Error(msg);
     } else {
-      console.warn('[619 ERP] ' + msg);
+      console.warn('[Coach Abhishek] ' + msg);
     }
   }
 }

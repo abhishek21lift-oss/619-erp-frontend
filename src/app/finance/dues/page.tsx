@@ -42,7 +42,7 @@ function whatsappHref(phone?: string, name?: string) {
   const p = (phone ?? '').replace(/\D/g, '');
   if (!p) return '#';
   const num = p.startsWith('91') ? p : `91${p}`;
-  return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, kindly clear your outstanding dues at 619 Fitness Studio. Thank you.`)}`;
+  return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${name ?? 'there'}, kindly clear your outstanding dues at Coach Abhishek. Thank you.`)}`;
 }
 
 function riskLevel(amount: number): { label: string; color: string; bg: string } {

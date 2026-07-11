@@ -581,7 +581,7 @@ export default function Sidebar({
                 <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
                   <Image
                     src="/logo.png"
-                    alt="619 Fitness"
+                    alt="Coach Abhishek"
                     width={collapsed ? 24 : 28}
                     height={collapsed ? 24 : 28}
                     className={cn('rounded-lg object-cover', collapsed ? 'h-6 w-6' : 'h-7 w-7')}
@@ -602,12 +602,12 @@ export default function Sidebar({
                     <span
                       className="bg-clip-text text-transparent"
                       style={{ backgroundImage: 'linear-gradient(135deg, #FCD34D, #F59E0B, #D97706)' }}
-                    >619</span>
+                    >COACH</span>
                     {' '}
-                    <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">FITNESS</span>
+                    <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">ABHISHEK</span>
                   </h2>
                   <p className="mt-[2px] text-[9px] font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase whitespace-nowrap">
-                    Studio Suite
+                    Strength · Motivation · Trust
                   </p>
                 </m.div>
               )}

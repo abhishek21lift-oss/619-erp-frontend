@@ -298,7 +298,7 @@ export default function KioskContent() {
             <ScanFace size={18} color="#fff" />
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>619 FITNESS</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>COACH ABHISHEK</div>
             <div style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Self Check-In Kiosk</div>
           </div>
         </div>
@@ -401,7 +401,7 @@ export default function KioskContent() {
 
       {/* Bottom bar */}
       <div style={{ padding: '12px 24px', background: 'var(--bg-card)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>619 Fitness Studio · Kiosk Mode</span>
+        <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Coach Abhishek · Kiosk Mode</span>
         <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Face descriptors are never stored on this device</span>
       </div>
     </div>

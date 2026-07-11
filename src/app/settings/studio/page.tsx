@@ -156,7 +156,7 @@ export default function StudioSettingsPage() {
         api.settings.getPermissions(),
       ]);
       const s: Record<string, unknown> = studioRes.settings ?? {};
-      setStudioName(String(s.name ?? s.studio_name ?? '619 Fitness Studio'));
+      setStudioName(String(s.name ?? s.studio_name ?? 'Coach Abhishek'));
       setLocation(String(s.location ?? ''));
       setTimezone(String(s.timezone ?? 'Asia/Kolkata'));
       setCurrency(String(s.currency ?? 'INR'));

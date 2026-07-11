@@ -133,7 +133,7 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
     if (!trainer?.phone) return '#';
     const n = trainer.phone.replace(/\D/g, '');
     const num = n.startsWith('91') ? n : `91${n}`;
-    return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${trainer.name}, this is a message from 619 Fitness Studio.`)}`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(`Hi ${trainer.name}, this is a message from Coach Abhishek.`)}`;
   };
 
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';

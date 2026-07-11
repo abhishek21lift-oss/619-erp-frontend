@@ -24,7 +24,7 @@ export function whatsappHref(
 }
 
 export function memberWhatsAppMessage(client: Pick<Client, 'name' | 'pt_end_date' | 'balance_amount'>) {
-  const parts = [`Hi ${client.name || 'there'}, this is 619 Fitness Studio.`];
+  const parts = [`Hi ${client.name || 'there'}, this is Coach Abhishek.`];
   if (client.pt_end_date) parts.push(`Your membership end date is ${client.pt_end_date}.`);
   if (Number(client.balance_amount || 0) > 0) {
     parts.push(`Your pending balance is Rs ${Number(client.balance_amount || 0).toLocaleString('en-IN')}.`);
