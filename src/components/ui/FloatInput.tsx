@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId } from 'react';
+import { useState, useId, useRef, useEffect } from 'react';
 import { cn } from './cn';
 
 interface FloatInputProps {
@@ -8,12 +8,17 @@ interface FloatInputProps {
   type?: string;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   suffix?: React.ReactNode;
   prefix?: React.ReactNode;
   required?: boolean;
   multiline?: boolean;
   rows?: number;
+  /** Multiline only: grows the textarea to fit content instead of a fixed row count. */
+  autoGrow?: boolean;
+  /** Multiline + autoGrow only: caps growth before it scrolls internally. */
+  maxHeight?: number;
   error?: string;
   disabled?: boolean;
   className?: string;
@@ -24,12 +29,15 @@ export function FloatInput({
   type = 'text',
   value,
   onChange,
+  onBlur,
   placeholder = ' ',
   suffix,
   prefix,
   required,
   multiline,
   rows = 3,
+  autoGrow = false,
+  maxHeight = 280,
   error,
   disabled,
   className,
@@ -37,6 +45,14 @@ export function FloatInput({
   const id = useId();
   const [focused, setFocused] = useState(false);
   const lifted = focused || value.length > 0;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!multiline || !autoGrow || !textareaRef.current) return;
+    const el = textareaRef.current;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
+  }, [multiline, autoGrow, maxHeight, value]);
 
   const baseInputClass = cn(
     'w-full bg-transparent pb-3 pt-7 text-[13.5px] font-medium outline-none',
@@ -97,15 +113,16 @@ export function FloatInput({
         {multiline ? (
           <textarea
             id={id}
+            ref={textareaRef}
             value={value}
             placeholder={lifted ? placeholder : ''}
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
+            onBlur={() => { setFocused(false); onBlur?.(); }}
             disabled={disabled}
-            rows={rows}
-            className={cn(baseInputClass, 'resize-none')}
-            style={{ minHeight: `${rows * 24 + 28}px` }}
+            rows={autoGrow ? 1 : rows}
+            className={cn(baseInputClass, 'resize-none', autoGrow && 'overflow-y-auto')}
+            style={autoGrow ? { maxHeight } : { minHeight: `${rows * 24 + 28}px` }}
           />
         ) : (
           <input
@@ -115,7 +132,7 @@ export function FloatInput({
             placeholder={lifted ? placeholder : ''}
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
+            onBlur={() => { setFocused(false); onBlur?.(); }}
             disabled={disabled}
             className={baseInputClass}
           />
