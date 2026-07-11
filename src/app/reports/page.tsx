@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useMemo, useState, useCallback, Suspense } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
@@ -9,14 +8,14 @@ import AppShell from '@/components/AppShell';
 import { KpiCard } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import {
-  BarChart2, AlertCircle, Users, CalendarCheck,
+  BarChart2, AlertCircle, Users,
   ChevronLeft, ChevronRight, Download, TrendingUp,
-  Search, DollarSign, Clock, UserCheck,
+  Search, DollarSign, Clock,
 } from 'lucide-react';
 import { PremiumBarChart, PremiumAreaChart } from '@/components/ui';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-type Tab = 'monthly' | 'dues' | 'trainers' | 'staff';
+type Tab = 'monthly' | 'dues' | 'trainers';
 
 function fmtDate(d?: string) {
   if (!d) return '—';
@@ -406,173 +405,6 @@ function TrainerSummaryTab() {
   );
 }
 
-function StaffTab() {
-  const [from, setFrom] = useState(iso30dAgo());
-  const [to, setTo] = useState(isoToday());
-  const [records, setRecords] = useState<any[]>([]);
-  const [trainers, setTrainers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const fetchStaff = useCallback(async () => {
-    setLoading(true); setError('');
-    try {
-      const [rRes, tRes] = await Promise.allSettled([
-        api.attendance.list({ from, to, type: 'trainer' }),
-        api.trainers.list(),
-      ]);
-      if (rRes.status === 'fulfilled') setRecords(Array.isArray(rRes.value) ? rRes.value : []);
-      if (tRes.status === 'fulfilled') setTrainers(Array.isArray(tRes.value) ? tRes.value : []);
-    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
-  }, [from, to]);
-
-  useEffect(() => { fetchStaff(); }, [fetchStaff]);
-
-  const summary = useMemo(() => ({
-    present: records.filter((r) => r.status === 'present').length,
-    absent: records.filter((r) => r.status === 'absent').length,
-    late: records.filter((r) => r.status === 'late').length,
-    total: records.length,
-  }), [records]);
-
-  const perStaff = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; present: number; absent: number; late: number }>();
-    trainers.forEach((t) => map.set(String(t.id), { id: String(t.id), name: t.name, present: 0, absent: 0, late: 0 }));
-    records.forEach((r) => {
-      const id = String(r.ref_id || r.trainer_id || '');
-      const name = r.ref_name || r.trainer_name || '';
-      const row = map.get(id) ?? (id ? { id, name, present: 0, absent: 0, late: 0 } : null);
-      if (!row) return;
-      if (r.status === 'present') row.present++;
-      else if (r.status === 'absent') row.absent++;
-      else if (r.status === 'late') row.late++;
-      map.set(id, row);
-    });
-    return Array.from(map.values()).sort((a, b) => (b.present + b.late) - (a.present + a.late));
-  }, [records, trainers]);
-
-  return (
-    <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <m.div variants={itemVariants} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid var(--border)' }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>From</span>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '4px 0', width: 130 }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)', borderRadius: 10, padding: '6px 14px', border: '1px solid var(--border)' }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>To</span>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, outline: 'none', padding: '4px 0', width: 130 }} />
-        </div>
-        <Link href="/attendance/staff"
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: '#eff6ff', border: '1px solid rgba(37,99,235,0.2)', color: '#2563eb', fontSize: 12, fontWeight: 600, textDecoration: 'none', marginLeft: 'auto', transition: 'all 0.2s' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-          <CalendarCheck size={13} /> Mark Staff Attendance
-        </Link>
-      </m.div>
-
-      {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#dc2626' }}>{error}</div>}
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
-        <KpiCard label="Present" value={String(summary.present)} icon={<UserCheck size={16} />} accent="emerald" />
-        <KpiCard label="Late" value={String(summary.late)} icon={<Clock size={16} />} accent="amber" />
-        <KpiCard label="Absent" value={String(summary.absent)} icon={<AlertCircle size={16} />} accent="rose" />
-        <KpiCard label="Total Marked" value={String(summary.total)} icon={<BarChart2 size={16} />} accent="cyan" />
-      </div>
-
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--bg-card)' }}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', background: 'var(--bg-subtle)' }}>
-          <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)', display: 'inline-block', marginRight: 10, verticalAlign: 'middle' }} />
-          Per-Trainer Attendance
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: 'var(--bg-subtle)' }}>
-                {['Trainer', 'Present', 'Late', 'Absent', 'Attendance %', 'Workload'].map((h) => (
-                  <th key={h} style={{ ...tableHeadStyle }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}><td colSpan={6} style={{ padding: '12px 16px' }}><div style={{ height: 14, background: 'var(--bg-subtle)', borderRadius: 6 }} /></td></tr>
-                ))
-              ) : perStaff.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: 40, textAlign: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.15)' }}>
-                      <CalendarCheck size={24} color="#6366f1" />
-                    </div>
-                    <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--text-primary)' }}>No attendance data</div>
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 300 }}>Start marking staff attendance to see reports here.</div>
-                  </div>
-                </td></tr>
-              ) : (
-                perStaff.map((s, i) => {
-                  const total = s.present + s.late + s.absent;
-                  const pct = total > 0 ? Math.round(((s.present + s.late) / total) * 100) : 0;
-                  const pctColor = pct >= 90 ? '#059669' : pct >= 70 ? '#d97706' : '#dc2626';
-                  return (
-                    <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
-                      <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</td>
-                      <td style={{ ...tableCellStyle, color: '#059669', fontWeight: 600 }}>{s.present}</td>
-                      <td style={{ ...tableCellStyle, color: '#d97706' }}>{s.late}</td>
-                      <td style={{ ...tableCellStyle, color: s.absent > 0 ? '#dc2626' : 'var(--text-muted)', fontWeight: s.absent > 0 ? 600 : 400 }}>{s.absent}</td>
-                      <td style={{ ...tableCellStyle, fontWeight: 700, color: pctColor }}>{total > 0 ? `${pct}%` : '—'}</td>
-                      <td style={tableCellStyle}>
-                        <div style={{ background: 'var(--bg-subtle)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: '100%', background: pctColor, borderRadius: 4, transition: 'width 0.4s' }} />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </m.div>
-
-      <m.div variants={itemVariants} style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--bg-card)' }}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', background: 'var(--bg-subtle)' }}>
-          <div style={{ width: 3, height: 16, borderRadius: 2, background: 'linear-gradient(180deg, #6366f1, #2563eb)', display: 'inline-block', marginRight: 10, verticalAlign: 'middle' }} />
-          Recent Staff Check-ins
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: 'var(--bg-subtle)' }}>
-                {['Date', 'Staff', 'Status', 'Check-in', 'Notes'].map((h) => (
-                  <th key={h} style={{ ...tableHeadStyle }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[...records]
-                .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
-                .slice(0, 30)
-                .map((r, i) => (
-                  <tr key={r.id || i} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}>
-                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{fmtDate(r.date)}</td>
-                    <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--text-primary)' }}>{r.ref_name || r.trainer_name || '—'}</td>
-                    <td style={tableCellStyle}><StatusBadge status={r.status} /></td>
-                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{r.check_in ?? r.check_in_time ?? '—'}</td>
-                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)' }}>{r.notes ?? '—'}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      </m.div>
-    </m.div>
-  );
-}
-
 function ReportsContent() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
@@ -583,7 +415,6 @@ function ReportsContent() {
     const v = (sp.get('view') ?? '').toLowerCase();
     if (v === 'dues') return 'dues';
     if (v === 'trainers' || v === 'coaches') return 'trainers';
-    if (v === 'staff') return 'staff';
     return 'monthly';
   }, [sp]);
 
@@ -594,7 +425,6 @@ function ReportsContent() {
     { key: 'monthly', label: 'Monthly Revenue' },
     { key: 'dues', label: 'Pending Dues' },
     { key: 'trainers', label: 'Coach Summary', adminOnly: true },
-    { key: 'staff', label: 'Staff Attendance', adminOnly: true },
   ];
 
   return (
@@ -627,7 +457,6 @@ function ReportsContent() {
         {tab === 'monthly' && <MonthlyTab year={year} setYear={setYear} />}
         {tab === 'dues' && <DuesTab />}
         {tab === 'trainers' && isAdmin && <TrainerSummaryTab />}
-        {tab === 'staff' && isAdmin && <StaffTab />}
       </div>
     </AppShell>
   );

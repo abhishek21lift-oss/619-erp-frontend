@@ -43,7 +43,6 @@ const NAV_KEYWORDS: Record<string, string> = {
   '/ai/diet-generator':          'ai diet nutrition plan generator meal food macros calories',
   '/ai/progress-analysis':       'ai progress analysis analyzer client report insights',
   '/ai/business-insights':       'ai business insights report revenue kpi analytics',
-  '/member/attendance':          'my attendance history streak visits calendar heatmap',
   '/pt-os/weekly-checkin':       'progress tracking weekly check-in measurements goals',
   '/pt-os/schedule-session':     'session booking schedule appointments',
   '/pt-os/session-balance':      'session balance remaining credits',
