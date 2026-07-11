@@ -1265,6 +1265,12 @@ export const api = {
         body: JSON.stringify({ client_id }),
       }),
 
+    analyzeFitnessTest: (assessment_id: string) =>
+      httpSSE<{ data: AiFitnessTestAnalysis; model: string; tier: string; used_fallback: boolean }>('/api/ai/fitness-testing/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ assessment_id }),
+      }),
+
     businessInsights: (params?: { from?: string; to?: string }) =>
       httpSSE<{ data: AiBusinessInsights; model: string; tier: string; used_fallback: boolean }>('/api/ai/business/insights', {
         method: 'POST',
@@ -1461,6 +1467,30 @@ export type AiProgressAnalysis = {
   risks: AiProgressRisk[];
   recommendations: AiProgressRec[];
   next_month_strategy: string;
+  motivation_message: string;
+};
+
+export type AiFitnessTestRisk = {
+  flag: string;
+  severity: 'low' | 'medium' | 'high';
+  action: string;
+};
+
+export type AiFitnessTestRec = {
+  priority: number;
+  focus_area: string;
+  action: string;
+  rationale: string;
+};
+
+export type AiFitnessTestAnalysis = {
+  summary: string;
+  overall_assessment: string;
+  strengths: string[];
+  areas_to_improve: string[];
+  risk_flags: AiFitnessTestRisk[];
+  recommendations: AiFitnessTestRec[];
+  suggested_next_test_focus: string;
   motivation_message: string;
 };
 

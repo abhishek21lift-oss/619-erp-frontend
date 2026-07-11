@@ -5,15 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, Loader2, Search, Users, AlertCircle,
-  ClipboardCheck, History, ChevronRight, X,
+  ClipboardCheck, History, X, CheckCircle2, Plus, Download, Sparkles,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
+import { downloadAssessmentPdf } from '@/lib/assessment-pdf';
 import {
   computeAge, calcBmi, classifyBp, calcVo2MaxRockport, calcVo2MaxCooper,
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
@@ -34,6 +35,7 @@ import StepEndurance from '@/components/pt-os/fitness-testing/StepEndurance';
 import StepFlexibility from '@/components/pt-os/fitness-testing/StepFlexibility';
 import FitnessDashboard, { type FitnessScores } from '@/components/pt-os/fitness-testing/FitnessDashboard';
 import ProgressComparison from '@/components/pt-os/fitness-testing/ProgressComparison';
+import AiRecommendationsPanel from '@/components/pt-os/fitness-testing/AiRecommendationsPanel';
 
 interface ClientOption { id: string; name: string; }
 interface TrainerOption { id: string; name: string; }
@@ -63,6 +65,23 @@ function estimateOneRM(form: AssessmentFormData): number | null {
   return form.strengthMode === 'direct'
     ? n(form.strengthDirect1RM)
     : calc1RM(n(form.strengthWeightKg), n(form.strengthReps), form.strengthFormula);
+}
+
+function scoreNum(v: unknown): number | null {
+  const f = typeof v === 'number' ? v : parseFloat(String(v ?? ''));
+  return Number.isFinite(f) ? f : null;
+}
+
+function scoresFromRow(row: Record<string, unknown>): FitnessScores {
+  return {
+    cardioScore: scoreNum(row.cardio_score_computed),
+    strengthScore: scoreNum(row.strength_score_computed),
+    enduranceScore: scoreNum(row.endurance_score_computed),
+    mobilityScore: scoreNum(row.mobility_score_computed),
+    bodyCompositionScore: scoreNum(row.body_composition_score),
+    healthRiskScore: scoreNum(row.health_risk_score),
+    overallScore: scoreNum(row.overall_fitness_score),
+  };
 }
 
 function validateStep(id: StepId, form: AssessmentFormData): string | undefined {
@@ -189,6 +208,8 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
   const [step, setStep] = useState<StepId>(1);
   const [reviewMode, setReviewMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Record<string, unknown> | null>(null);
+  const [historyAiId, setHistoryAiId] = useState<string | null>(null);
   const initFormRef = useRef<AssessmentFormData>(initAssessmentForm());
 
   const draftKey = `fitness-testing-draft.v1:${clientId}`;
@@ -393,19 +414,24 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
       if (created) setHistory((h) => [created, ...h]);
       toast.success(created?.bp_unsafe ? 'Assessment saved. Blood pressure flagged unsafe — medical clearance recommended.' : 'Assessment saved.');
 
-      const fresh = initAssessmentForm();
-      fresh.trainerId = form.trainerId;
-      fresh.trainerName = form.trainerName;
-      setForm(fresh);
-      initFormRef.current = fresh;
-      setErrors({});
-      setStep(1);
+      if (created) setLastSaved(created);
       setReviewMode(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to save assessment.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleNewAssessment = () => {
+    const fresh = initAssessmentForm();
+    fresh.trainerId = form.trainerId;
+    fresh.trainerName = form.trainerName;
+    setForm(fresh);
+    initFormRef.current = fresh;
+    setErrors({});
+    setStep(1);
+    setLastSaved(null);
   };
 
   if (loading) {
@@ -451,7 +477,7 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
             <X size={12} /> Change client
           </button>
         </div>
-        {!reviewMode && (
+        {!reviewMode && !lastSaved && (
           <div className="mx-auto max-w-3xl px-5 sm:px-8 pb-3">
             <ProgressTimeline current={step} onStep={setStep} />
           </div>
@@ -459,7 +485,35 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
       </div>
 
       <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
-        {!reviewMode ? (
+        {lastSaved ? (
+          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
+            <div className="flex items-center gap-4 rounded-[20px] p-5" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
+              <CheckCircle2 size={22} style={{ color: '#059669', flexShrink: 0 }} />
+              <div>
+                <p className="text-[14px] font-[760] text-slate-900">Assessment Saved</p>
+                <p className="text-[12.5px] text-slate-500">
+                  Assessment #{String(lastSaved.assessment_number ?? '')} recorded for {clientName}.
+                </p>
+              </div>
+            </div>
+
+            <FitnessDashboard scores={scoresFromRow(lastSaved)} />
+            <AiRecommendationsPanel assessmentId={String(lastSaved.id)} />
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                iconLeft={<Download size={14} />}
+                onClick={() => downloadAssessmentPdf(lastSaved, clientName)}
+                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              >
+                Download PDF Report
+              </Button>
+              <Button variant="outline" iconLeft={<Plus size={14} />} onClick={handleNewAssessment}>
+                New Assessment
+              </Button>
+            </div>
+          </m.div>
+        ) : !reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <AssessmentInfoCard form={form} set={set} clientName={clientName} nextAssessmentNumber={nextAssessmentNumber} isAdmin={isAdmin} trainers={trainers} onTrainerChange={handleTrainerChange} />}
             {step === 1 && <StepBloodPressure form={form} set={set} error={errors.bp} />}
@@ -494,13 +548,24 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
                       <p className="text-[13px] font-[700] text-slate-700">{String(a.assessment_date ?? '').slice(0, 10)}</p>
                       <p className="text-[11px] text-slate-400 capitalize">{String(a.assessment_type ?? '').replace(/_/g, ' ')}</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       {a.overall_fitness_score != null && (
                         <span className="rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#d97706' }}>
                           Score {String(a.overall_fitness_score)}
                         </span>
                       )}
-                      <ChevronRight size={14} style={{ color: '#cbd5e1' }} />
+                      <button
+                        type="button" title="AI Recommendations" onClick={() => setHistoryAiId(String(a.id))}
+                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-white"
+                      >
+                        <Sparkles size={13} style={{ color: '#94a3b8' }} />
+                      </button>
+                      <button
+                        type="button" title="Download PDF" onClick={() => downloadAssessmentPdf(a, clientName)}
+                        className="flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors hover:bg-white"
+                      >
+                        <Download size={13} style={{ color: '#94a3b8' }} />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -510,32 +575,43 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
-          <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={handleSaveDraft}>Save Draft</Button>
-            {!reviewMode ? (
-              <Button
-                iconLeft={<ArrowRight size={14} />}
-                onClick={handleNext}
-                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
-              >
-                {step === 7 ? 'Review' : 'Next'}
-              </Button>
-            ) : (
-              <Button
-                iconLeft={!saving ? <Check size={14} /> : undefined}
-                loading={saving} disabled={saving}
-                onClick={handleSubmit}
-                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
-              >
-                {saving ? 'Saving...' : 'Save Assessment'}
-              </Button>
-            )}
+      {!lastSaved && (
+        <div className="fixed bottom-0 left-0 right-0 z-40" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+          <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
+            <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" onClick={handleSaveDraft}>Save Draft</Button>
+              {!reviewMode ? (
+                <Button
+                  iconLeft={<ArrowRight size={14} />}
+                  onClick={handleNext}
+                  style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+                >
+                  {step === 7 ? 'Review' : 'Next'}
+                </Button>
+              ) : (
+                <Button
+                  iconLeft={!saving ? <Check size={14} /> : undefined}
+                  loading={saving} disabled={saving}
+                  onClick={handleSubmit}
+                  style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+                >
+                  {saving ? 'Saving...' : 'Save Assessment'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      <Dialog open={!!historyAiId} onOpenChange={(open) => { if (!open) setHistoryAiId(null); }}>
+        <DialogContent className="!max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>AI Recommendations</DialogTitle>
+          </DialogHeader>
+          {historyAiId && <AiRecommendationsPanel assessmentId={historyAiId} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
