@@ -54,7 +54,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/clients',          label: 'All Clients',        icon: 'Users' },
       { href: '/pt-os/balance-sheet',    label: 'Balance Sheet',      icon: 'Wallet' },
       { href: '/pt-os/goals',            label: 'Goal Setting',       icon: 'Target' },
-      { href: '/pt-os/assessment',       label: 'Assessment',         icon: 'ClipboardCheck' },
+      { href: '/pt-os/assessment',       label: 'Fitness Testing',    icon: 'ClipboardCheck' },
     ],
   },
   {
@@ -85,7 +85,6 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'TrendingUp',
     items: [
       { href: '/pt-os/weekly-checkin',    label: 'Weekly Check-In',     icon: 'ClipboardCheck', isNew: true },
-      { href: '/pt-os/measurements',      label: 'Measurements',        icon: 'Ruler',          isNew: true },
       { href: '/pt-os/strength-tracking', label: 'Strength Tracking',   icon: 'Zap',             isNew: true },
       { href: '/pt-os/progress-photos',   label: 'Progress Photos',     icon: 'Camera',         isNew: true },
       { href: '/pt-os/reports',           label: 'Progress Report',     icon: 'FileBarChart' },

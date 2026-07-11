@@ -1,0 +1,89 @@
+'use client';
+
+import { ClipboardList } from 'lucide-react';
+import FloatInput from '@/components/ui/FloatInput';
+import SearchableSelect from '@/components/pt-os/SearchableSelect';
+import type { AssessmentFormData, AssessmentType } from './types';
+
+interface TrainerOption { id: string; name: string; }
+
+const ASSESSMENT_TYPES: { value: AssessmentType; label: string }[] = [
+  { value: 'initial', label: 'Initial' },
+  { value: 'week_4', label: 'Week 4' },
+  { value: 'week_8', label: 'Week 8' },
+  { value: 'week_12', label: 'Week 12' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'custom', label: 'Custom' },
+];
+
+interface AssessmentInfoCardProps {
+  form: AssessmentFormData;
+  set: <K extends keyof AssessmentFormData>(key: K, val: AssessmentFormData[K]) => void;
+  clientName: string;
+  nextAssessmentNumber: number | null;
+  isAdmin: boolean;
+  trainers: TrainerOption[];
+  onTrainerChange: (trainerId: string) => void;
+}
+
+export function AssessmentInfoCard({
+  form, set, clientName, nextAssessmentNumber, isAdmin, trainers, onTrainerChange,
+}: AssessmentInfoCardProps) {
+  return (
+    <div className="rounded-[24px] overflow-hidden mb-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
+      <div className="p-6 sm:p-8">
+        <div className="flex items-start gap-4 mb-6">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: '#0f172a' }}>
+            <ClipboardList size={18} color="#F59E0B" />
+          </div>
+          <div>
+            <h2 className="text-[18px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Assessment Information</h2>
+            <p className="text-[12.5px] text-slate-400 mt-1.5">Scientific Baseline Performance Assessment</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FloatInput label="Client Name" value={clientName} onChange={() => {}} disabled />
+          <div>
+            <FloatInput
+              label="Assessment Number" value={nextAssessmentNumber != null ? `#${nextAssessmentNumber}` : ''}
+              onChange={() => {}} disabled
+            />
+            <p className="mt-1.5 text-[11px] text-slate-400">Auto-generated on save.</p>
+          </div>
+
+          <FloatInput label="Assessment Date" type="date" value={form.assessmentDate} onChange={(v) => set('assessmentDate', v)} />
+
+          <SearchableSelect
+            label="Assessment Type" required allowCustom={false}
+            value={form.assessmentType}
+            onChange={(v) => set('assessmentType', v as AssessmentType)}
+            options={ASSESSMENT_TYPES}
+          />
+
+          {isAdmin ? (
+            <SearchableSelect
+              label="Coach" allowCustom={false}
+              value={form.trainerId}
+              onChange={onTrainerChange}
+              options={trainers.map((t) => ({ value: t.id, label: t.name }))}
+            />
+          ) : (
+            <FloatInput label="Coach" value={form.trainerName || 'Coach Abhishek'} onChange={() => {}} disabled />
+          )}
+        </div>
+
+        <div className="mt-4">
+          <FloatInput
+            label="Assessment Notes" multiline autoGrow
+            value={form.assessmentNotes}
+            onChange={(v) => set('assessmentNotes', v)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default AssessmentInfoCard;
