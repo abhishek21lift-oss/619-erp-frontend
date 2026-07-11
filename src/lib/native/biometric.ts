@@ -34,7 +34,7 @@ export async function authenticateWithBiometric(reason?: string): Promise<boolea
     const { NativeBiometric } = await import('capacitor-native-biometric');
     await NativeBiometric.verifyIdentity({
       reason: reason ?? 'Confirm your identity',
-      title: '619 Fitness',
+      title: 'Coach Abhishek',
       subtitle: isIOS() ? undefined : 'Use biometric to sign in',
       description: 'Touch the sensor or look at the camera',
       negativeButtonText: 'Use password instead',

@@ -43,7 +43,7 @@ export default function Root() {
             <BrandLogo size={84} />
           </div>
           <div className="display" style={{ fontSize: 22, marginBottom: 8 }}>
-            619 FITNESS STUDIO
+            COACH ABHISHEK
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '2.4px', textTransform: 'uppercase', fontWeight: 700 }}>
             Initialising …

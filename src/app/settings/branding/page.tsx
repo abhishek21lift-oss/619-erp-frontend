@@ -288,8 +288,8 @@ export default function BrandingPage() {
                         <span style={{ fontSize: 14 }}>🏋️</span>
                       </div>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: typeface }}>619 FITNESS STUDIO</div>
-                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontFamily: typeface }}>Studio Suite</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: typeface }}>COACH ABHISHEK</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', fontFamily: typeface }}>Strength · Motivation · Trust</div>
                       </div>
                     </div>
                   </div>

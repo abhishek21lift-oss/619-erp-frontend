@@ -2,6 +2,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import { m, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Mail, ArrowRight, Fingerprint, Loader2 } from 'lucide-react';
@@ -218,13 +219,13 @@ export default function LoginPage() {
                   style={{ textAlign: 'center' }}
                 >
                   <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', lineHeight: 1.1 }}>
-                    <span style={{ color: 'var(--text-primary)' }}>619 FITNESS </span>
+                    <span style={{ color: 'var(--text-primary)' }}>COACH </span>
                     <span style={{
                       background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #FF7070 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
-                    }}>STUDIO</span>
+                    }}>ABHISHEK</span>
                   </h1>
                   <p style={{
                     marginTop: 6, fontSize: 10.5, fontWeight: 600,
@@ -488,7 +489,7 @@ export default function LoginPage() {
               color: 'var(--text-muted)', letterSpacing: '0.03em',
             }}
           >
-            &copy; {new Date().getFullYear()} 619 FITNESS STUDIO. All rights reserved.
+            &copy; {new Date().getFullYear()} COACH ABHISHEK. All rights reserved.
           </m.p>
         </m.div>
       </div>
@@ -496,43 +497,9 @@ export default function LoginPage() {
   );
 }
 
-/* ── Premium Red Shield Logo ── */
+/* ── Coach Abhishek Logo ── */
 function ShieldLogo({ size = 88 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 88 88" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="sg" x1="44" y1="2" x2="44" y2="88" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#EF4444" />
-          <stop offset="55%" stopColor="#DC2626" />
-          <stop offset="100%" stopColor="#991B1B" />
-        </linearGradient>
-        <linearGradient id="shi" x1="20" y1="8" x2="68" y2="40" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-        </linearGradient>
-        <filter id="sdrop">
-          <feDropShadow dx="0" dy="3" stdDeviation="5" floodColor="#DC2626" floodOpacity="0.45" />
-        </filter>
-      </defs>
-      <path
-        d="M44 2 C44 2 12 14 6 20 C0 26 0 30 2 38 C4 46 10 58 18 68 C26 78 34 82 40 86 C42 87 46 87 48 86 C54 82 62 78 70 68 C78 58 84 46 86 38 C88 30 88 26 82 20 C76 14 44 2 44 2 Z"
-        fill="rgba(0,0,0,0.5)" transform="translate(0,4)" filter="url(#sdrop)"
-      />
-      <path
-        d="M44 2 C44 2 12 14 6 20 C0 26 0 30 2 38 C4 46 10 58 18 68 C26 78 34 82 40 86 C42 87 46 87 48 86 C54 82 62 78 70 68 C78 58 84 46 86 38 C88 30 88 26 82 20 C76 14 44 2 44 2 Z"
-        fill="url(#sg)"
-      />
-      <path
-        d="M44 8 C44 8 16 18 11 23 C6 28 6 32 8 39 C10 46 15 57 22 66 C29 75 36 79 41 82 C43 83 45 83 47 82 C52 79 59 75 66 66 C73 57 78 46 80 39 C82 32 82 28 77 23 C72 18 44 8 44 8 Z"
-        fill="url(#shi)"
-      />
-      <path
-        d="M44 30 C40 30 37 33 36 36 C35 39 33 42 30 44 C27 46 24 50 23 54 C22 58 21 62 22 65 C23 68 26 70 30 72 C34 74 39 75 44 76 C49 75 54 74 58 72 C62 70 65 68 66 65 C67 62 66 58 65 54 C64 50 61 46 58 44 C55 42 53 39 52 36 C51 33 48 30 44 30 Z"
-        fill="#1A0808" opacity="0.92"
-      />
-      <path d="M33 38 C30 32 28 26 29 20 C29 16 32 14 35 16 C38 18 40 22 39 27 C38 32 36 36 35 38" fill="#1A0808" opacity="0.92" />
-      <path d="M55 38 C58 32 60 26 59 20 C59 16 56 14 53 16 C50 18 48 22 49 27 C50 32 52 36 53 38" fill="#1A0808" opacity="0.92" />
-      <text x="44" y="68" textAnchor="middle" fill="white" fontSize="11" fontWeight="800" fontFamily="Inter, sans-serif" letterSpacing="1">619</text>
-    </svg>
+    <Image src="/logo.png" alt="Coach Abhishek" width={size} height={size} className="object-contain" priority />
   );
 }

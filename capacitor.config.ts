@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 /**
- * 619 Fitness ERP — Capacitor Configuration
+ * Coach Abhishek — Capacitor Configuration
  *
  * Architecture: Remote-shell pattern.
  * The Capacitor WebView loads the live Vercel deployment (server.url).
@@ -16,7 +16,7 @@ const LIVE_URL = process.env.CAPACITOR_LIVE_URL || 'https://619-erp-frontend.ver
 
 const config: CapacitorConfig = {
   appId: 'com.fitness619.erp',
-  appName: '619 Fitness',
+  appName: 'Coach Abhishek',
   webDir: 'www',
 
   // ── Remote server URL ──────────────────────────────────────────────

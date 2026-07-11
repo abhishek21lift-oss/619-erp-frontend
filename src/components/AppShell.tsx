@@ -641,10 +641,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
                       boxShadow: '0 0 0 1.5px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.15)',
                     }}>
-                    <Image src="/logo.png" alt="619" width={20} height={20} className="h-5 w-5 object-contain" />
+                    <Image src="/logo.png" alt="Coach Abhishek" width={20} height={20} className="h-5 w-5 object-contain" />
                   </div>
                   <div className="hidden sm:block text-left">
-                    <p className={cn('text-[12px] font-semibold leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>619 FITNESS STUDIO</p>
+                    <p className={cn('text-[12px] font-semibold leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>COACH ABHISHEK</p>
                     <p className={cn('text-[10px] leading-tight capitalize', darkMode ? 'text-slate-400' : 'text-slate-500')}>{user?.role || '—'}</p>
                   </div>
                   <ChevronDown size={12} strokeWidth={1.5} className={cn('shrink-0', darkMode ? 'text-slate-500' : 'text-slate-400')} />

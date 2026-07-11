@@ -595,7 +595,7 @@ function StaffWizard() {
             <div className="sw-hero">
               <div className="sw-hero-badge">
                 <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" fill="#f87171"/></svg>
-                619 Fitness Studio · Staff Onboarding
+                Coach Abhishek · Staff Onboarding
               </div>
               <div className="sw-hero-title">Create <span>Staff</span> Account</div>
               <div className="sw-hero-sub">Onboard trainers, managers, and staff into your fitness operating system. Complete all steps to grant access.</div>
