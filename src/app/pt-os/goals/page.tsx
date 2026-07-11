@@ -1,151 +1,510 @@
 'use client';
-import { useState } from 'react';
+
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
-import { Target, Plus, Check, Loader2, Dumbbell, Heart, Zap, Flame, Activity } from 'lucide-react';
+import {
+  ArrowLeft, ArrowRight, Check, Loader2, Search, Users, AlertCircle,
+  Target, Plus, X,
+} from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { api, Client } from '@/lib/api';
-import { useAsync } from '@/lib/use-async';
 import { Button } from '@/components/ui';
+import { api } from '@/lib/api';
+import { useToast } from '@/lib/toast';
+import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
+import {
+  goalDirection, calcRequiredWeeklyRate, calcSafeWeeklyRate, classifyGoalDifficulty,
+  calcEstimatedDurationWeeks, recommendPtDurationMonths, buildRiskFactors, calcLifestyleReadinessScore, daysRemaining,
+} from '@/lib/goal-calculations';
+import {
+  STEPS, GOAL_TYPE_META, PRIORITY_META, initGoalForm, n,
+} from '@/components/pt-os/goal-assessment/types';
+import type { GoalFormData, FormErrors, StepId, LifestyleAnswers } from '@/components/pt-os/goal-assessment/types';
+import StepPrimaryGoal from '@/components/pt-os/goal-assessment/StepPrimaryGoal';
+import StepTargetWeight from '@/components/pt-os/goal-assessment/StepTargetWeight';
+import StepTargetBodyFat from '@/components/pt-os/goal-assessment/StepTargetBodyFat';
+import StepDeadline from '@/components/pt-os/goal-assessment/StepDeadline';
+import StepPriority from '@/components/pt-os/goal-assessment/StepPriority';
+import StepMotivationCommitment from '@/components/pt-os/goal-assessment/StepMotivationCommitment';
+import StepChallenges, { CHALLENGE_OPTIONS } from '@/components/pt-os/goal-assessment/StepChallenges';
+import StepLifestyle from '@/components/pt-os/goal-assessment/StepLifestyle';
+import GoalAnalysisDashboard from '@/components/pt-os/goal-assessment/GoalAnalysisDashboard';
+import GoalSummaryCard from '@/components/pt-os/goal-assessment/GoalSummaryCard';
+import GoalTimeline from '@/components/pt-os/goal-assessment/GoalTimeline';
+import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
+import GoalProgressTimeline from '@/components/pt-os/goal-assessment/GoalProgressTimeline';
 
-const GOAL_TYPES = [
-  { value: 'fat_loss', label: 'Fat Loss', icon: <Flame size={18} />, color: '#F59E0B' },
-  { value: 'muscle_gain', label: 'Muscle Gain', icon: <Dumbbell size={18} />, color: '#7c3aed' },
-  { value: 'strength', label: 'Strength', icon: <Zap size={18} />, color: '#f59e0b' },
-  { value: 'powerlifting', label: 'Powerlifting', icon: <Activity size={18} />, color: '#1e40af' },
-  { value: 'endurance', label: 'Endurance', icon: <Heart size={18} />, color: '#10b981' },
-  { value: 'general_fitness', label: 'General Fitness', icon: <Target size={18} />, color: '#0891b2' },
-];
+interface ClientOption { id: string; name: string; }
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+const CHALLENGE_VALUES = new Set(CHALLENGE_OPTIONS.map((c) => c.value));
+
+function labelFor<T extends { value: string; label: string }>(list: T[], value: string): string {
+  return list.find((o) => o.value === value)?.label || '';
+}
+
+function validateStep(id: StepId, form: GoalFormData): string | undefined {
+  if (id === 1) {
+    if (!form.goalType) return 'Please select a primary goal.';
+    if (form.goalType === 'custom' && !form.goalName.trim()) return 'Please name the custom goal.';
+  }
+  if (id === 4 && !form.targetDate) return 'Please choose a target date.';
+  if (id === 5 && !form.priorityGoal) return 'Please select a top priority.';
+  return undefined;
+}
+
+function buildLifestylePayload(l: LifestyleAnswers): Record<string, boolean> | undefined {
+  const entries = Object.entries(l).filter(([, v]) => v !== null) as [string, boolean][];
+  return entries.length ? Object.fromEntries(entries) : undefined;
+}
+
+function formFromGoalRow(row: Record<string, unknown>): GoalFormData {
+  const fresh = initGoalForm();
+  const challenges = Array.isArray(row.biggest_challenges) ? (row.biggest_challenges as string[]) : [];
+  const lifestyleRaw = (row.lifestyle_readiness as Record<string, boolean> | null) || {};
+  return {
+    ...fresh,
+    goalType: (row.goal_type as GoalFormData['goalType']) || '',
+    goalName: row.goal_type === 'custom' ? String(row.goal_other ?? '') : '',
+    goalDescription: String(row.goal_description ?? ''),
+    targetWeight: row.target_weight != null ? String(row.target_weight) : '',
+    targetBodyFat: row.target_body_fat != null ? String(row.target_body_fat) : '',
+    targetDate: row.target_date ? String(row.target_date).slice(0, 10) : '',
+    priorityGoal: (row.priority_goal as GoalFormData['priorityGoal']) || '',
+    motivationLevel: row.motivation_level != null ? String(row.motivation_level) : '7',
+    commitmentLevel: row.commitment_level != null ? String(row.commitment_level) : '7',
+    motivationReason: String(row.motivation_reason ?? ''),
+    biggestChallenges: challenges.filter((c) => CHALLENGE_VALUES.has(c)),
+    challengeOther: challenges.find((c) => !CHALLENGE_VALUES.has(c)) || '',
+    lifestyle: { ...fresh.lifestyle, ...lifestyleRaw },
+    startingWeightManual: row.starting_weight != null ? String(row.starting_weight) : '',
+    startingBodyFatManual: row.starting_body_fat_pct != null ? String(row.starting_body_fat_pct) : '',
+    notes: String(row.notes ?? ''),
+  };
+}
 
 export default function PtGoalsPage() {
-  const [selectedClient, setSelectedClient] = useState('');
-  const [goalType, setGoalType] = useState('fat_loss');
-  const [targetWeight, setTargetWeight] = useState('');
-  const [targetBodyFat, setTargetBodyFat] = useState('');
-  const [targetDate, setTargetDate] = useState('');
-  const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const clients = useAsync<any[]>(() => api.pt.clients().then(r => r.data), []);
-  const goals = useAsync(() => api.progress.goals.list(selectedClient ? { client_id: selectedClient } : {}).then(r => r.data), [selectedClient]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedClient) return;
-    setSaving(true);
-    try {
-      await api.progress.goals.create({
-        client_id: selectedClient, goal_type: goalType,
-        target_weight: targetWeight ? parseFloat(targetWeight) : undefined,
-        target_body_fat: targetBodyFat ? parseFloat(targetBodyFat) : undefined,
-        target_date: targetDate || undefined, notes,
-      });
-      setTargetWeight(''); setTargetBodyFat(''); setTargetDate(''); setNotes('');
-      goals.refetch();
-    } finally { setSaving(false); }
-  }
-
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-            style={{ background: '#F8FAFC', border: '1px solid var(--border)' }}>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2.5 mb-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(124,58,237,0.1)' }}>
-                  <Target size={16} style={{ color: '#7c3aed' }} />
-                </div>
-                <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: '#7c3aed' }}>PT System</span>
-              </div>
-              <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-                Goal Setting
-              </h1>
-              <p className="mt-3 max-w-xl text-[14px] sm:text-[15px]" style={{ color: 'var(--text-muted)' }}>
-                Set and track client fitness goals — Fat Loss, Muscle Gain, Strength, Powerlifting, and more.
-              </p>
-            </div>
-          </m.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-              className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-              <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>New Goal</h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)}
-                  className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}>
-                  <option value="">Select client...</option>
-                  {clients.data?.map(c => <option key={c.id} value={c.id}>{c.name} ({c.member_code || c.client_id})</option>)}
-                </select>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {GOAL_TYPES.map(g => (
-                    <button key={g.value} type="button" onClick={() => setGoalType(g.value)}
-                      className="flex items-center gap-2 rounded-[12px] px-3 py-2.5 text-sm font-medium transition-all"
-                      style={{
-                        background: goalType === g.value ? `${g.color}15` : '#F9FAFB',
-                        border: `1.5px solid ${goalType === g.value ? g.color : '#e5e7eb'}`,
-                        color: goalType === g.value ? g.color : '#9ca3af',
-                      }}>
-                      {g.icon} {g.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="number" step="0.1" placeholder="Target Weight (kg)" value={targetWeight}
-                    onChange={e => setTargetWeight(e.target.value)}
-                    className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
-                  <input type="number" step="0.1" placeholder="Target Body Fat %" value={targetBodyFat}
-                    onChange={e => setTargetBodyFat(e.target.value)}
-                    className="rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                    style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
-                </div>
-                <input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)}
-                  className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
-                <textarea placeholder="Notes about this goal..." rows={3} value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  className="w-full rounded-[12px] px-4 py-2.5 text-sm outline-none resize-none"
-                  style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }} />
-                <Button type="submit" disabled={!selectedClient || saving}
-                  className="!w-full !rounded-[14px] !py-3 !font-[700]"
-                  style={{ background: !selectedClient || saving ? 'rgba(0,0,0,0.1)' : 'linear-gradient(135deg, #7c3aed, #a78bfa)', color: '#fff' }}>
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                  {saving ? 'Saving...' : 'Set Goal'}
-                </Button>
-              </form>
-            </m.div>
-
-            <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
-              className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 20px rgba(15,23,42,0.06)' }}>
-              <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Active Goals</h2>
-              {goals.loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: 'var(--text-disabled)' }} /></div>}
-              {!goals.loading && (!goals.data || (goals.data as unknown[]).length === 0) && (
-                <p className="text-center py-8 text-sm" style={{ color: 'var(--text-disabled)' }}>No goals set yet. Select a client and create a goal.</p>
-              )}
-              <div className="space-y-3">
-                {(goals.data as unknown[] || []).map((g: any) => (
-                  <div key={g.id} className="rounded-[14px] p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>{g.goal_type?.replace(/_/g, ' ')}</span>
-                      {g.is_active && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-[6px]" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>ACTIVE</span>}
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-[12px]">
-                      {g.target_weight && <div><span style={{ color: 'var(--text-disabled)' }}>Target: </span><span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{g.target_weight} kg</span></div>}
-                      {g.target_body_fat && <div><span style={{ color: 'var(--text-disabled)' }}>Body Fat: </span><span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{g.target_body_fat}%</span></div>}
-                      {g.target_date && <div><span style={{ color: 'var(--text-disabled)' }}>By: </span><span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{g.target_date}</span></div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </m.div>
-          </div>
-        </div>
+        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>}>
+          <GoalsContent />
+        </Suspense>
       </AppShell>
     </Guard>
+  );
+}
+
+function GoalsContent() {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const { toast } = useToast();
+  const clientId = sp.get('client_id') || '';
+
+  if (!clientId) return <ClientPicker />;
+  return <GoalsHub key={clientId} clientId={clientId} router={router} toast={toast} />;
+}
+
+/* ─────────────────────────────────────────────────────── CLIENT PICKER */
+function ClientPicker() {
+  const router = useRouter();
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setLoadError(false);
+    api.pt.clients().then((r: { data?: unknown[] }) => {
+      const arr = Array.isArray(r?.data) ? r.data : [];
+      setClients((arr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
+    }).catch(() => setLoadError(true)).finally(() => setLoading(false));
+  }, []);
+
+  const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
+            <Target size={16} style={{ color: 'var(--text-muted)' }} />
+          </div>
+          <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Goal Assessment</span>
+        </div>
+        <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
+          Define Your Transformation Journey
+        </h1>
+        <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'var(--text-muted)' }}>
+          Select a client to set a new goal or review their existing ones.
+        </p>
+      </m.div>
+
+      <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+        <div className="relative mb-3">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          <input
+            type="text" placeholder="Search clients..." value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2.5 rounded-[10px] text-[13px] outline-none"
+            style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
+          />
+        </div>
+        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" /></div>}
+        {loadError && <p className="text-center py-8 text-[13px]" style={{ color: 'var(--text-muted)' }}>Could not load clients.</p>}
+        {!loading && !loadError && (
+          <div className="flex flex-wrap gap-2 max-h-[360px] overflow-y-auto">
+            {filtered.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => router.push(`/pt-os/goals?client_id=${c.id}`)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-[13px] font-[600] transition-all"
+                style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#334155' }}
+              >
+                <Users size={13} /> {c.name}
+              </button>
+            ))}
+            {filtered.length === 0 && <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>No clients found.</p>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────── HUB (list + wizard) */
+interface GoalsHubProps {
+  clientId: string;
+  router: ReturnType<typeof useRouter>;
+  toast: ReturnType<typeof useToast>['toast'];
+}
+
+function GoalsHub({ clientId, toast }: GoalsHubProps) {
+  const [clientName, setClientName] = useState('');
+  const [latestWeight, setLatestWeight] = useState<number | null>(null);
+  const [latestBodyFat, setLatestBodyFat] = useState<number | null>(null);
+  const [goals, setGoals] = useState<Record<string, unknown>[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [view, setView] = useState<'list' | 'wizard'>('list');
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const [clientRes, assessRes, goalsRes] = await Promise.all([
+        api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
+        api.progress.assessments.list({ client_id: clientId, limit: 1 }) as Promise<{ data?: Record<string, unknown>[] }>,
+        api.progress.goals.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
+      ]);
+      const c = clientRes?.data;
+      if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
+      setClientName(String(c.name ?? ''));
+
+      const latest = Array.isArray(assessRes?.data) ? assessRes.data[0] : null;
+      setLatestWeight(latest?.weight != null ? parseFloat(String(latest.weight)) : null);
+      setLatestBodyFat(latest?.body_fat_pct != null ? parseFloat(String(latest.body_fat_pct)) : null);
+
+      setGoals(Array.isArray(goalsRes?.data) ? goalsRes.data : []);
+    } catch (err: unknown) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
+    } finally {
+      setLoading(false);
+    }
+  }, [clientId]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const openWizard = (goalId: string | null) => {
+    setEditingGoalId(goalId);
+    setView('wizard');
+  };
+
+  const closeWizard = (refresh: boolean) => {
+    setView('list');
+    setEditingGoalId(null);
+    if (refresh) loadData();
+  };
+
+  if (loading) {
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>;
+  }
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-md py-24 text-center">
+        <AlertCircle size={32} style={{ color: '#ef4444', margin: '0 auto 12px' }} />
+        <p className="text-[14px] font-[600] text-slate-600">{loadError}</p>
+        <Button variant="outline" className="mt-4" onClick={loadData}>Retry</Button>
+      </div>
+    );
+  }
+
+  if (view === 'wizard') {
+    const editingGoal = editingGoalId ? goals.find((g) => String(g.id) === editingGoalId) : null;
+    return (
+      <GoalWizard
+        clientId={clientId} clientName={clientName}
+        latestWeight={latestWeight} latestBodyFat={latestBodyFat}
+        editingGoal={editingGoal || null}
+        toast={toast}
+        onDone={closeWizard}
+      />
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
+                <Target size={16} style={{ color: 'var(--text-muted)' }} />
+              </div>
+              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Goal Assessment</span>
+            </div>
+            <h1 className="text-[26px] sm:text-[32px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
+              {clientName}&apos;s Goals
+            </h1>
+          </div>
+          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+            New Goal
+          </Button>
+        </div>
+      </m.div>
+
+      <div className="space-y-3">
+        {goals.length === 0 && (
+          <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <p className="text-[14px] font-[600] text-slate-500">No goals set yet.</p>
+            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+              Set First Goal
+            </Button>
+          </div>
+        )}
+        {goals.map((g) => (
+          <GoalCard key={String(g.id)} goal={g} latestWeight={latestWeight} onClick={() => openWizard(String(g.id))} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────── WIZARD */
+interface GoalWizardProps {
+  clientId: string;
+  clientName: string;
+  latestWeight: number | null;
+  latestBodyFat: number | null;
+  editingGoal: Record<string, unknown> | null;
+  toast: ReturnType<typeof useToast>['toast'];
+  onDone: (refresh: boolean) => void;
+}
+
+function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editingGoal, toast, onDone }: GoalWizardProps) {
+  const goalId = editingGoal ? String(editingGoal.id) : null;
+  const initial = useMemo(() => (editingGoal ? formFromGoalRow(editingGoal) : initGoalForm()), [editingGoal]);
+
+  const [form, setForm] = useState<GoalFormData>(initial);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [step, setStep] = useState<StepId>(1);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const initFormRef = useRef<GoalFormData>(initial);
+
+  const draftKey = `goal-assessment-draft.v1:${clientId}:${goalId || 'new'}`;
+  const isDirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(initFormRef.current), [form]);
+  const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
+
+  useEffect(() => {
+    const draft = restore();
+    if (draft) { setForm({ ...initial, ...draft }); toast.info('Restored your unsaved draft.'); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  const set = useCallback(<K extends keyof GoalFormData>(key: K, val: GoalFormData[K]) => {
+    setForm((prev) => ({ ...prev, [key]: val }));
+  }, []);
+
+  const currentWeight = latestWeight ?? n(form.startingWeightManual);
+  const currentBodyFat = latestBodyFat ?? n(form.startingBodyFatManual);
+
+  const analysis = useMemo(() => {
+    const days = daysRemaining(form.targetDate || null);
+    const target = n(form.targetWeight);
+    const direction = goalDirection(currentWeight, target);
+    const requiredRate = calcRequiredWeeklyRate(currentWeight, target, days);
+    const safeRate = calcSafeWeeklyRate(currentWeight, direction);
+    const lifestyleScore = calcLifestyleReadinessScore(form.lifestyle);
+    const motivationLevel = n(form.motivationLevel);
+    const commitmentLevel = n(form.commitmentLevel);
+    const difficulty = classifyGoalDifficulty(requiredRate, safeRate, lifestyleScore, motivationLevel, commitmentLevel);
+    const estimatedWeeks = calcEstimatedDurationWeeks(currentWeight, target, safeRate);
+    const recommendedMonths = recommendPtDurationMonths(estimatedWeeks);
+    const riskFactors = buildRiskFactors({
+      requiredRate, safeRate, lifestyleReadinessScore: lifestyleScore,
+      medicalRestrictions: form.lifestyle.medical_restrictions, daysRemaining: days, motivationLevel, commitmentLevel,
+    });
+    return { days, difficulty, estimatedWeeks, recommendedMonths, requiredRate, safeRate, riskFactors };
+  }, [form, currentWeight]);
+
+  const handleNext = () => {
+    const stepDef = STEPS.find((s) => s.id === step)!;
+    const err = validateStep(step, form);
+    setErrors((e) => ({ ...e, [stepDef.key]: err }));
+    if (err) { toast.error(err); return; }
+    if (step === 8) { setReviewMode(true); return; }
+    setStep((s) => (s + 1) as StepId);
+  };
+
+  const handleBack = () => {
+    if (reviewMode) { setReviewMode(false); return; }
+    if (step > 1) { setStep((s) => (s - 1) as StepId); return; }
+    if (isDirty && !window.confirm('Discard unsaved changes?')) return;
+    onDone(false);
+  };
+
+  const handleSaveDraft = () => {
+    const ok = saveNow();
+    toast[ok ? 'success' : 'error'](ok ? 'Draft saved.' : 'Could not save draft — storage unavailable.');
+  };
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      const challenges = [...form.biggestChallenges];
+      if (form.challengeOther.trim()) challenges.push(form.challengeOther.trim());
+
+      const payload: Record<string, unknown> = {
+        client_id: clientId,
+        goal_type: form.goalType,
+        goal_other: form.goalType === 'custom' ? form.goalName.trim() || undefined : undefined,
+        goal_description: form.goalType === 'custom' ? form.goalDescription || undefined : undefined,
+        target_weight: n(form.targetWeight) ?? undefined,
+        target_body_fat: n(form.targetBodyFat) ?? undefined,
+        target_date: form.targetDate || undefined,
+        priority_goal: form.priorityGoal || undefined,
+        motivation_reason: form.motivationReason || undefined,
+        motivation_level: n(form.motivationLevel) ?? undefined,
+        commitment_level: n(form.commitmentLevel) ?? undefined,
+        biggest_challenges: challenges.length ? challenges : undefined,
+        lifestyle_readiness: buildLifestylePayload(form.lifestyle),
+        starting_weight: latestWeight == null ? (n(form.startingWeightManual) ?? undefined) : undefined,
+        starting_body_fat_pct: latestBodyFat == null ? (n(form.startingBodyFatManual) ?? undefined) : undefined,
+        notes: form.notes || undefined,
+      };
+
+      if (goalId) {
+        await api.progress.goals.update(goalId, payload);
+        toast.success('Goal updated.');
+      } else {
+        await api.progress.goals.create(payload);
+        toast.success('Goal saved.');
+      }
+      clear();
+      onDone(true);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save goal.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
+      <div className="sticky top-0 z-40" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
+        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[13px]" style={{ background: '#0f172a' }}>
+              <Target size={17} color="#F59E0B" />
+            </div>
+            <div>
+              <h1 className="text-[18px] font-[860] tracking-[-0.03em] text-slate-900 leading-none">{goalId ? 'Edit Goal' : 'New Goal'}</h1>
+              <p className="text-[11px] font-[600] text-slate-400 mt-0.5">{clientName}</p>
+            </div>
+          </div>
+          <button type="button" onClick={() => onDone(false)} className="flex items-center gap-1 text-[11.5px] font-[650]" style={{ color: '#94a3b8' }}>
+            <X size={12} /> Cancel
+          </button>
+        </div>
+        {!reviewMode && (
+          <div className="mx-auto max-w-3xl px-5 sm:px-8 pb-3">
+            <GoalProgressTimeline current={step} onStep={setStep} />
+          </div>
+        )}
+      </div>
+
+      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+        {!reviewMode ? (
+          <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
+            {step === 1 && <StepPrimaryGoal form={form} set={set} error={errors.primaryGoal} />}
+            {step === 2 && <StepTargetWeight form={form} set={set} currentWeight={latestWeight} error={errors.targetWeight} />}
+            {step === 3 && <StepTargetBodyFat form={form} set={set} currentBodyFat={latestBodyFat} />}
+            {step === 4 && <StepDeadline form={form} set={set} error={errors.deadline} />}
+            {step === 5 && <StepPriority form={form} set={set} error={errors.priority} />}
+            {step === 6 && <StepMotivationCommitment form={form} set={set} />}
+            {step === 7 && <StepChallenges form={form} set={set} error={errors.challenges} />}
+            {step === 8 && <StepLifestyle form={form} set={set} error={errors.lifestyle} />}
+          </m.div>
+        ) : (
+          <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
+            <GoalAnalysisDashboard
+              difficulty={analysis.difficulty} estimatedDurationWeeks={analysis.estimatedWeeks}
+              recommendedPtDurationMonths={analysis.recommendedMonths} requiredWeeklyRate={analysis.requiredRate}
+              safeWeeklyRate={analysis.safeRate} riskFactors={analysis.riskFactors}
+            />
+            {form.targetDate && <GoalTimeline targetDate={form.targetDate} />}
+            <GoalSummaryCard
+              primaryGoalLabel={form.goalType === 'custom' ? (form.goalName || 'Custom Goal') : labelFor(GOAL_TYPE_META, form.goalType)}
+              currentWeight={currentWeight} targetWeight={n(form.targetWeight)}
+              currentBodyFat={currentBodyFat} targetBodyFat={n(form.targetBodyFat)}
+              targetDate={form.targetDate} priorityLabel={labelFor(PRIORITY_META, form.priorityGoal)}
+              motivationLevel={n(form.motivationLevel) ?? 0} commitmentLevel={n(form.commitmentLevel) ?? 0}
+            />
+          </m.div>
+        )}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 z-40" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(15,23,42,0.08)' }}>
+        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-3.5 flex items-center justify-between gap-3">
+          <Button variant="outline" iconLeft={<ArrowLeft size={14} />} onClick={handleBack}>Back</Button>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" onClick={handleSaveDraft}>Save Draft</Button>
+            {!reviewMode ? (
+              <Button
+                iconLeft={<ArrowRight size={14} />}
+                onClick={handleNext}
+                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              >
+                {step === 8 ? 'Review' : 'Next'}
+              </Button>
+            ) : (
+              <Button
+                iconLeft={!saving ? <Check size={14} /> : undefined}
+                loading={saving} disabled={saving}
+                onClick={handleSubmit}
+                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              >
+                {saving ? 'Saving...' : goalId ? 'Update Goal' : 'Save Goal'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
