@@ -692,11 +692,15 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             </m.div>
           </m.header>
 
-          {/* Spacer — tracks fixed header height so content always starts below it */}
+          {/* Spacer — tracks fixed header height so content always starts below it.
+              marginTop (not paddingTop) for the safe-area inset: box-sizing:border-box
+              means an explicit `height` clamps the box to that height regardless of
+              padding, so padding-based inset would get silently swallowed on notched
+              devices. margin sits outside the height calculation, so it's additive. */}
           <m.div
             aria-hidden="true"
             className="flex-shrink-0 pointer-events-none"
-            style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+            style={{ marginTop: 'env(safe-area-inset-top, 0px)' }}
             animate={{ height: topBar === 'compact' ? 32 : 46 }}
             transition={transConfig}
             initial={false}
@@ -708,7 +712,11 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
             </div>
           )}
 
-          <main id="main-content" className="mx-auto w-full max-w-[1440px] flex-1 min-w-0 overflow-x-hidden px-4 sm:px-6 lg:px-8 shell-main"
+          {/* Width/max-width/margin/padding all come from .shell-main in globals.css —
+              the equivalent Tailwind utilities (mx-auto w-full max-w-[1440px] px-4
+              sm:px-6 lg:px-8) were dead here: same-specificity CSS declared later in
+              globals.css always won, so they never actually took effect. */}
+          <main id="main-content" className="flex-1 min-w-0 overflow-x-hidden shell-main"
           >
             <AnimatePresence mode="popLayout" initial={false}>
               <m.div
