@@ -638,7 +638,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                   style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg overflow-hidden"
                     style={{
-                      background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
+                      background: '#fff',
                       boxShadow: '0 0 0 1.5px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.15)',
                     }}>
                     <Image src="/logo.png" alt="Coach Abhishek" width={20} height={20} className="h-5 w-5 object-contain" />
