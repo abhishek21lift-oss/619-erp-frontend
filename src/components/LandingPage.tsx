@@ -18,7 +18,7 @@ import {
   Dumbbell, Salad, Trophy, Smartphone, Users,
   Target, BarChart3, HeartHandshake, Sparkles, ShieldCheck,
   Phone, MapPin, Clock, Instagram, Youtube, MessageCircle,
-  ArrowRight, Check, Plus, Menu, X,
+  ArrowRight, Check, Plus, Menu, X, LogIn,
 } from 'lucide-react';
 
 /* ────────────────────────────────────────────────────────────────
@@ -317,23 +317,29 @@ export default function LandingPage() {
           ))}
         </div>
 
-        <div className="l-desk-nav" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Login — always visible, on every screen size */}
           <button onClick={() => router.push('/login')}
-            style={{ background: 'transparent', color: 'var(--l-ink)', padding: '9px 18px', borderRadius: 999, border: '1px solid var(--l-line-2)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', transition: 'background .2s' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--l-grad)', color: '#fff', padding: '9px 20px', borderRadius: 999, border: 'none', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 8px 22px -8px rgba(245,158,11,0.7)', transition: 'transform .15s' }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(0.97)')}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}>
+            <LogIn size={15} /> Login
+          </button>
+
+          {/* Free trial — desktop only (WhatsApp) */}
+          <a className="l-desk-nav" href={SUPPORT_WA_URL}
+            style={{ background: 'transparent', color: 'var(--l-ink)', padding: '9px 18px', borderRadius: 999, border: '1px solid var(--l-line-2)', fontSize: '0.82rem', fontWeight: 600, textDecoration: 'none', transition: 'background .2s' }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(26,20,16,0.05)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-            Login
-          </button>
-          <Magnetic href={SUPPORT_WA_URL} strength={0.4}
-            style={{ background: 'var(--l-grad)', color: '#fff', padding: '9px 20px', borderRadius: 999, fontSize: '0.82rem', fontWeight: 700, boxShadow: '0 8px 22px -8px rgba(245,158,11,0.7)', cursor: 'pointer' }}>
             Start Free
-          </Magnetic>
-        </div>
+          </a>
 
-        <button className="l-mobile-btn" onClick={() => setMenuOpen((o) => !o)}
-          style={{ display: 'none', alignItems: 'center', justifyContent: 'center', height: 40, width: 40, borderRadius: 12, background: '#fff', border: '1px solid var(--l-line)', cursor: 'pointer' }}>
-          {menuOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
+          {/* Hamburger — mobile only */}
+          <button className="l-mobile-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="Menu"
+            style={{ display: 'none', alignItems: 'center', justifyContent: 'center', height: 40, width: 40, borderRadius: 12, background: '#fff', border: '1px solid var(--l-line)', cursor: 'pointer' }}>
+            {menuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        </div>
       </m.nav>
 
       {/* Mobile menu */}
