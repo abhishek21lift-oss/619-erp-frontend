@@ -111,7 +111,6 @@
   --sidebar-w-collapsed: 68px;
 
   /* ── Top bar ─────────────────────────────────────────────── */
-  --topbar-h:      56px;
   --topbar-bg:     rgba(248,250,252,0.85);
   --topbar-border: rgba(15,23,42,0.08);
 
@@ -352,21 +351,6 @@ body {
   min-height: 100dvh;
 }
 .shell-body.sidebar-collapsed { margin-left: var(--sidebar-w-collapsed); }
-.shell-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  height: var(--topbar-h);
-  background: var(--topbar-bg);
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
-  border-bottom: 1px solid var(--topbar-border);
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  gap: 16px;
-  flex-shrink: 0;
-}
 .shell-main {
   flex: 1;
   padding: 24px;
@@ -385,7 +369,6 @@ body {
   .shell-sidebar.drawer-open { transform: translateX(0); box-shadow: var(--shadow-xl); }
   .shell-body { margin-left: 0 !important; }
   .shell-main { padding: 16px; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px); }
-  .shell-topbar { padding: 0 16px; }
 }
 .sidebar-backdrop {
   display: none;
@@ -1779,19 +1762,6 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
 .progress-bar.success {
   background: linear-gradient(90deg, var(--success-lo) 0%, var(--success) 100%);
   box-shadow: 0 0 6px rgba(34,197,94,0.3);
-}
-
-/* ── Premium topbar (used by shell-topbar in light mode) ── */
-.shell-topbar {
-  background: var(--topbar-bg);
-  border-bottom: 1px solid var(--topbar-border);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 2px 8px rgba(15,23,42,0.04);
-}
-[data-theme="dark"] .shell-topbar,
-.dark .shell-topbar {
-  background: rgba(7,6,14,0.92);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 4px 24px rgba(0,0,0,0.4);
 }
 
 /* ── Tab active indicator with glow ── */
