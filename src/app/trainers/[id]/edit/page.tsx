@@ -634,7 +634,7 @@ function EditContent({ id }: { id: string }) {
         </form>
 
         {/* ── Floating action bar ─────────────────────────────────────── */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-3 lg:pl-[calc(var(--sidebar-w,256px)+16px)]"
+        <div className="page-action-bar px-4 pb-6 pt-3 lg:pl-[calc(var(--sidebar-w,256px)+16px)]"
           style={{ background: 'linear-gradient(to top, rgba(255,247,237,0.95) 70%, transparent)', backdropFilter: 'blur(12px)' }}>
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
             <Link href={`/trainers/${id}`}

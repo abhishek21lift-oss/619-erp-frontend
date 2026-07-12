@@ -381,6 +381,25 @@ body {
 @media (max-width: 767px) { .sidebar-backdrop.visible { display: block; } }
 
 /* ════════════════════════════════════════════════════════════════════
+   PAGE ACTION BAR  —  sticky Save/Submit footer on form & wizard pages
+   Sits directly above the mobile bottom nav (60px tall + safe area) so
+   both are visible and the action bar reads as part of the page instead
+   of overlapping the nav. On desktop (>=1024px) the bottom nav is hidden,
+   so the bar drops flush to the viewport bottom. Kept as one shared class
+   so every form's action bar clears the bottom nav identically.
+   ════════════════════════════════════════════════════════════════════ */
+.page-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  z-index: 50;
+}
+@media (min-width: 1024px) {
+  .page-action-bar { bottom: 0; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
    SIDEBAR  —  Premium Obsidian Edition
    ════════════════════════════════════════════════════════════════════ */
 .sidebar {
