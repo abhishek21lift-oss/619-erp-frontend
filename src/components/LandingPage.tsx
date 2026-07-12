@@ -15,7 +15,7 @@ import {
   AnimatePresence,
 } from 'framer-motion';
 import {
-  Dumbbell, Swords, Flower2, Music2, Salad, Trophy, Smartphone, Users,
+  Dumbbell, Salad, Trophy, Smartphone, Users,
   Target, BarChart3, HeartHandshake, Sparkles, ShieldCheck,
   Phone, MapPin, Clock, Instagram, Youtube, MessageCircle,
   ArrowRight, Check, Plus, Menu, X,
@@ -131,51 +131,45 @@ function Magnetic({
 const NAV_LINKS = [
   { label: 'Programs', href: '#programs' },
   { label: 'Why Us',   href: '#why' },
-  { label: 'Team',     href: '#team' },
+  { label: 'Coach',    href: '#team' },
   { label: 'Pricing',  href: '#pricing' },
   { label: 'Contact',  href: '#contact' },
 ];
 
 const STATS = [
-  { to: 67, suffix: '+', label: 'Active Clients' },
-  { to: 7,  suffix: '',  label: 'Expert Coaches' },
-  { to: 5,  suffix: '+', label: 'Disciplines' },
-  { to: 260, suffix: 'kg', label: 'Coach Deadlift' },
+  { to: 67,  suffix: '+',  label: 'Clients Coached' },
+  { to: 230, suffix: 'kg', label: 'Competition Squat' },
+  { to: 150, suffix: 'kg', label: 'Competition Bench' },
+  { to: 260, suffix: 'kg', label: 'Competition Deadlift' },
 ];
 
 const PROGRAMS = [
-  { icon: Dumbbell,  name: 'Personal Training',   tag: 'Certified Trainers', desc: '1-on-1 sessions built around your body, goals and schedule. Strength, fat-loss and muscle — done right.', span: 2, accent: '#F59E0B' },
-  { icon: Trophy,    name: 'Powerlifting & Strength', tag: 'Advanced', desc: 'Squat, bench and deadlift coached by a national-level competitive powerlifter.', span: 1, accent: '#8B1E2B' },
-  { icon: Swords,    name: 'MMA & Combat Fitness', tag: 'All Levels', desc: 'Striking, grappling and conditioning that builds real skill and discipline.', span: 1, accent: '#8B1E2B' },
-  { icon: Flower2,   name: 'Yoga',                tag: 'Mind & Body', desc: 'Authentic asana, pranayama and mindful movement guided by a dedicated Yog Guru.', span: 1, accent: '#F59E0B' },
-  { icon: Music2,    name: 'Zumba',               tag: 'Dance Fitness', desc: 'High-energy dance cardio that burns serious calories — and is genuinely fun.', span: 1, accent: '#F59E0B' },
-  { icon: Salad,     name: 'Nutrition Coaching',  tag: 'Diet Plans', desc: 'Practical, sustainable nutrition that fits your training — no fad diets.', span: 1, accent: '#F59E0B' },
-  { icon: Smartphone, name: 'Online Coaching',    tag: 'Remote', desc: 'Custom training and nutrition with weekly check-ins, delivered anywhere.', span: 1, accent: '#8B1E2B' },
+  { icon: Dumbbell,   name: 'Personal Training',       tag: 'K11 Certified', desc: '1-on-1 sessions built around your body, goals and schedule. Strength, fat-loss and muscle — done right.', span: 2, accent: '#F59E0B' },
+  { icon: Trophy,     name: 'Powerlifting & Strength', tag: 'National-Level', desc: 'Squat, bench and deadlift coached by an active national-level competitive powerlifter.', span: 1, accent: '#8B1E2B' },
+  { icon: Salad,      name: 'Nutrition Coaching',      tag: 'Diet Plans', desc: 'Practical, sustainable nutrition that fits your training — no fad diets, just what works.', span: 1, accent: '#F59E0B' },
+  { icon: Smartphone, name: 'Online Coaching',         tag: 'Remote', desc: 'A fully custom training and nutrition plan with weekly check-ins, delivered anywhere you are.', span: 2, accent: '#8B1E2B' },
 ];
 
 const WHY = [
   { icon: Target,        title: 'Personalised to You', body: 'Every program is built around your body, history and goals — never a generic template.' },
-  { icon: ShieldCheck,   title: 'Elite Credentials',   body: 'Coached by an active national-level powerlifter and certified specialists who live what they teach.' },
+  { icon: ShieldCheck,   title: 'Elite Credentials',   body: 'Coached directly by a K11-certified trainer and active national-level powerlifter who lives what he teaches.' },
   { icon: BarChart3,     title: 'Measured Progress',   body: 'Body composition, strength and wellness markers tracked so you see exactly how far you\'ve come.' },
-  { icon: HeartHandshake, title: 'Real Accountability', body: 'Check-ins, WhatsApp support and coaches who notice when you miss a session.' },
-  { icon: Sparkles,      title: '5 Disciplines, One Roof', body: 'Personal training, MMA, Yoga, Zumba and nutrition — no juggling multiple gyms or apps.' },
-  { icon: Users,         title: 'A Community That Pushes', body: 'A studio of members who motivate each other, with challenges and shared wins.' },
+  { icon: HeartHandshake, title: 'Real Accountability', body: 'Check-ins, WhatsApp support and a coach who actually notices when you miss a session.' },
+  { icon: Sparkles,      title: 'One Coach, Start to Finish', body: 'Training, strength and nutrition under a single coach — no juggling multiple gyms or apps.' },
+  { icon: Users,         title: 'A Community That Pushes', body: 'Train alongside a group of members who motivate each other, with challenges and shared wins.' },
 ];
 
-const TEAM = [
-  { role: 'Head Trainer · Powerlifting', name: 'Abhishek Katiyar', badge: 'K11 Certified', featured: true, bio: 'K11-certified head trainer and national-level powerlifter (83kg). Competition lifts: 230kg squat · 150kg bench · 260kg deadlift.' },
-  { role: 'Personal Training', name: 'Riya Singh', badge: 'Certified Trainer', bio: 'Body transformation, weight management and functional fitness for women and beginners.' },
-  { role: 'Strength & Conditioning', name: 'Rajat Katiyar', badge: 'Hypertrophy', bio: 'Movement mechanics and progressive-overload programming for every level.' },
-  { role: 'Personal Training', name: 'Shivani Verma', badge: 'Certified Trainer', bio: 'Science-based programs, consistent accountability and motivation that sticks.' },
-  { role: 'MMA Expert', name: 'Vikrant Agnihotri', badge: 'Combat Sports', bio: 'Combat conditioning, striking fundamentals and mental toughness — beginner to advanced.' },
-  { role: 'Yog Guru', name: 'Shagun Savita', badge: 'Yoga & Wellness', bio: 'Authentic yogic practice for strength, flexibility and inner stillness.' },
-  { role: 'Zumba Expert', name: 'Gaurav', badge: 'Dance Fitness', bio: 'Cardio that feels like a celebration — every single session.' },
-];
+const COACH = {
+  role: 'Your Coach · K11 Certified',
+  name: 'Abhishek Katiyar',
+  bio: 'K11-certified personal trainer and active national-level competitive powerlifter in the 83kg category. A coach whose own performance backs every cue he gives — with competition lifts of 230kg squat, 150kg bench and 260kg deadlift.',
+  badges: ['K11 Certified', 'National-Level Powerlifter', 'Personal Training', 'Powerlifting & Strength', 'Nutrition'],
+};
 
 const PLANS = [
   { name: 'Starter', monthly: 1999, popular: false, features: ['Gym floor access', '1 group class / week', 'Basic fitness assessment', 'Locker facility', 'Trainer guidance on floor'] },
   { name: 'Pro', monthly: 3999, popular: true, features: ['Everything in Starter', '8 personal training sessions', 'Custom nutrition plan', '3 group classes / week', 'Monthly body-composition check', 'WhatsApp coach support'] },
-  { name: 'Elite', monthly: 6499, popular: false, features: ['Everything in Pro', 'Unlimited PT sessions', 'Unlimited group classes', 'MMA / Yoga / Zumba access', 'Weekly diet revision', 'Priority scheduling', 'Quarterly progress report'] },
+  { name: 'Elite', monthly: 6499, popular: false, features: ['Everything in Pro', 'Unlimited PT sessions', 'Advanced strength & powerlifting coaching', 'Weekly diet revision', 'Priority scheduling', 'Quarterly progress report'] },
 ];
 
 const FAQS = [
@@ -394,7 +388,7 @@ export default function LandingPage() {
 
           <m.p initial={reduce ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.42, ease: EASE }}
             style={{ fontSize: 'clamp(1rem,1.6vw,1.2rem)', color: 'var(--l-ink-soft)', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 36px' }}>
-            Elite personal training, powerlifting, MMA, yoga, zumba and nutrition — all under one roof, coached by certified experts. Built for real results.
+            Elite personal training, powerlifting and nutrition coaching — one certified coach, real accountability, and progress you can measure.
           </m.p>
 
           <m.div initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.54, ease: EASE }}
@@ -411,7 +405,7 @@ export default function LandingPage() {
 
           <m.div initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.7 }}
             style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {['Certified Coaches', '5 Disciplines', 'Measured Progress', 'Free Trial'].map((b) => (
+            {['K11 Certified', 'National-Level Powerlifter', 'Measured Progress', 'Free Trial'].map((b) => (
               <span key={b} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: '0.82rem', fontWeight: 500, color: 'var(--l-ink-soft)' }}>
                 <Check size={15} style={{ color: 'var(--l-saffron-3)' }} /> {b}
               </span>
@@ -441,8 +435,8 @@ export default function LandingPage() {
       <section id="programs" style={{ padding: '100px var(--l-px)', maxWidth: 1180, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <Reveal><span className="l-kicker">What We Offer</span></Reveal>
-          <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>Every goal. <span className="l-grad-text">One studio.</span></h2></Reveal>
-          <Reveal delay={0.16}><p style={{ fontSize: '1.05rem', color: 'var(--l-ink-soft)', maxWidth: 560, margin: '18px auto 0', lineHeight: 1.7 }}>From raw strength to inner balance — a specialist and a program waiting for you.</p></Reveal>
+          <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>Every goal. <span className="l-grad-text">One coach.</span></h2></Reveal>
+          <Reveal delay={0.16}><p style={{ fontSize: '1.05rem', color: 'var(--l-ink-soft)', maxWidth: 560, margin: '18px auto 0', lineHeight: 1.7 }}>From your first session to your strongest lifts — a program built around you.</p></Reveal>
         </div>
 
         <div className="l-bento" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
@@ -489,25 +483,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─────────────────────────── TEAM ─────────────────────────── */}
+      {/* ─────────────────────────── COACH ─────────────────────────── */}
       <section id="team" style={{ padding: '100px var(--l-px)', maxWidth: 1180, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <Reveal><span className="l-kicker">The People Behind Your Progress</span></Reveal>
-          <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>Meet the <span className="l-grad-text">experts.</span></h2></Reveal>
-          <Reveal delay={0.16}><p style={{ fontSize: '1.05rem', color: 'var(--l-ink-soft)', maxWidth: 560, margin: '18px auto 0', lineHeight: 1.7 }}>Certified, passionate, and personally invested in your transformation — not gym staff, specialists.</p></Reveal>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <Reveal><span className="l-kicker">Your Coach</span></Reveal>
+          <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>Coached by <span className="l-grad-text">Abhishek.</span></h2></Reveal>
+          <Reveal delay={0.16}><p style={{ fontSize: '1.05rem', color: 'var(--l-ink-soft)', maxWidth: 560, margin: '18px auto 0', lineHeight: 1.7 }}>Certified, and personally invested in your transformation — every session, start to finish.</p></Reveal>
         </div>
-        <div className="l-team-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-          {TEAM.map((mem, i) => (
-            <Reveal key={mem.name} delay={(i % 3) * 0.07} className="l-card"
-              style={{ padding: '32px 30px', gridColumn: mem.featured ? 'span 1' : undefined, position: 'relative', background: mem.featured ? 'linear-gradient(150deg,rgba(245,158,11,0.09),#fff 60%)' : undefined, borderColor: mem.featured ? 'rgba(245,158,11,0.3)' : undefined }}>
-              {mem.featured && <span style={{ position: 'absolute', top: 22, right: 22, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff', background: 'var(--l-maroon)', padding: '4px 10px', borderRadius: 999 }}>Head Coach</span>}
-              <div style={{ fontSize: '0.66rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--l-saffron-3)', fontWeight: 700, marginBottom: 12 }}>{mem.role}</div>
-              <div style={{ fontSize: '1.28rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 12, lineHeight: 1.15 }}>{mem.name}</div>
-              <div style={{ fontSize: '0.88rem', color: 'var(--l-ink-soft)', lineHeight: 1.65 }}>{mem.bio}</div>
-              <span style={{ display: 'inline-block', marginTop: 18, fontSize: '0.64rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--l-ink-soft)', border: '1px solid var(--l-line-2)', padding: '4px 12px', borderRadius: 999 }}>{mem.badge}</span>
-            </Reveal>
-          ))}
-        </div>
+
+        <Reveal delay={0.1}
+          style={{ position: 'relative', overflow: 'hidden', borderRadius: 30, border: '1px solid rgba(245,158,11,0.3)', background: 'linear-gradient(150deg,rgba(245,158,11,0.1) 0%,#fff 55%)', padding: 'clamp(36px,5vw,56px)', maxWidth: 860, margin: '0 auto' }}>
+          <span aria-hidden style={{ position: 'absolute', top: -80, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.22) 0%, transparent 70%)', filter: 'blur(10px)' }} />
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 26, flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', height: 72, width: 72, alignItems: 'center', justifyContent: 'center', borderRadius: 20, background: '#fff', border: '1px solid var(--l-line)', boxShadow: '0 10px 30px -12px rgba(26,20,16,0.3)', flexShrink: 0 }}>
+                <Image src="/logo.png" alt="Abhishek Katiyar" width={46} height={46} style={{ objectFit: 'contain' }} />
+              </span>
+              <div>
+                <div style={{ fontSize: '0.68rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--l-saffron-3)', fontWeight: 700, marginBottom: 8 }}>{COACH.role}</div>
+                <div style={{ fontSize: 'clamp(1.7rem,3vw,2.3rem)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05 }}>{COACH.name}</div>
+              </div>
+            </div>
+            <p style={{ fontSize: '1rem', color: 'var(--l-ink-soft)', lineHeight: 1.75, maxWidth: 620, marginBottom: 26 }}>{COACH.bio}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+              {COACH.badges.map((b) => (
+                <span key={b} style={{ fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--l-ink)', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', padding: '6px 14px', borderRadius: 999 }}>{b}</span>
+              ))}
+            </div>
+          </div>
+        </Reveal>
       </section>
 
       {/* ─────────────────────────── PRICING ─────────────────────────── */}
@@ -637,7 +641,7 @@ export default function LandingPage() {
                 <span style={{ fontSize: '1rem', fontWeight: 700 }}><span style={{ color: 'var(--l-maroon)' }}>COACH</span> ABHISHEK</span>
               </div>
               <p style={{ fontSize: '0.9rem', color: 'var(--l-ink-soft)', lineHeight: 1.7, maxWidth: 320, marginBottom: 22 }}>
-                Elite personal training and strength coaching in Lucknow. Certified experts, real accountability, results you can measure.
+                Elite personal training and strength coaching in Lucknow. Certified, real accountability, and results you can measure.
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
                 {[{ Icon: Instagram, href: '#' }, { Icon: Youtube, href: '#' }, { Icon: MessageCircle, href: SUPPORT_WA_URL }].map(({ Icon, href }, i) => (
