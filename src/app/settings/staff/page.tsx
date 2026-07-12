@@ -794,7 +794,7 @@ const CSS = `
   padding: 32px 32px 120px;
   max-width: 1320px;
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
 }
 @media (max-width: 768px) { .sm-page { padding: 18px 16px 80px; } }

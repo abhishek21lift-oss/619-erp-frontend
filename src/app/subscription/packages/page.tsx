@@ -480,7 +480,7 @@ function PageContent() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-subtle)' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg-subtle)' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px', position: 'relative' }}>
         {/* Header */}
         <m.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>

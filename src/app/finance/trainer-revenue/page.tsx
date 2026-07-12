@@ -160,7 +160,7 @@ function Inner() {
 
   return (
     <AppShell>
-      <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
+      <div style={{ minHeight: '100dvh', background: 'var(--bg-base)' }}>
 
         {/* ── Hero ── */}
         <div style={{

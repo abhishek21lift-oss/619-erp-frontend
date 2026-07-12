@@ -271,7 +271,7 @@ export default function InvoicesPage() {
   return (
     <Guard role="admin">
       <AppShell>
-        <div style={{ minHeight: '100vh', background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+        <div style={{ minHeight: '100dvh', background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
 
           {/* ── Hero ── */}
           <div style={{

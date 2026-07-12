@@ -117,7 +117,7 @@ function Inner() {
 
   return (
     <AppShell>
-      <div style={{ minHeight: '100vh' }}>
+      <div style={{ minHeight: '100dvh' }}>
         {/* Page Header */}
         <div style={{
           padding: '24px 20px',

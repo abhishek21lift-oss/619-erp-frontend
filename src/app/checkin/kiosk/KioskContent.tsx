@@ -276,7 +276,7 @@ export default function KioskContent() {
   const isDup     = kstate === 'duplicate';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-subtle)', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg-subtle)', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none' }}>
       <style>{`
         @keyframes kk-scan { 0% { top: 8%; } 100% { top: 88%; } }
         @keyframes kk-pulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }

@@ -54,7 +54,7 @@ export default function AttendanceReportsPage() {
   return (
     <Guard role="admin">
       <AppShell>
-        <div style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)', minHeight: '100vh' }}>
+        <div style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)', minHeight: '100dvh' }}>
           <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
 
             {/* ═══════ HERO SECTION ═══════ */}

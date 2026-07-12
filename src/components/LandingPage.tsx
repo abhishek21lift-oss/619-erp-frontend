@@ -147,7 +147,7 @@ export default function LandingPage() {
 
       {/* ─── HERO ─── */}
       <section className="hero" style={{
-        minHeight: 'calc(100vh - 52px)', display: 'flex', flexDirection: 'column',
+        minHeight: 'calc(100dvh - 52px)', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
         padding: '68px var(--px) 80px', position: 'relative',
         background: 'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(217,31,60,0.07) 0%, transparent 70%)',

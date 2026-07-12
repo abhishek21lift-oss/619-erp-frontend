@@ -293,7 +293,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
   return (
     <LazyMotion features={domAnimation} strict>
-      <div className="flex min-h-screen bg-[var(--bg-canvas)]">
+      <div className="flex min-h-dvh bg-[var(--bg-canvas)]">
         {/* Sidebar — desktop */}
         <Sidebar collapsed={sidebarCollapsed} onExpand={() => setSidebarCollapsed(false)} onCollapse={() => setSidebarCollapsed(true)} />
 
