@@ -5,7 +5,6 @@ import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
 import { PermissionsProvider } from '@/lib/permissions-context';
 import CommandPalette from '@/components/CommandPalette';
-import AIAssistant from '@/components/AIAssistant';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import CapacitorInit from '@/components/CapacitorInit';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -120,7 +119,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <CapacitorInit />
                       {children}
                       <CommandPalette />
-                      <AIAssistant />
                     </LazyMotion>
                   </ToastProvider>
                 </PermissionsProvider>

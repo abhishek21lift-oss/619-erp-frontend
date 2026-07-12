@@ -1,7 +1,6 @@
 import { http, httpSSE } from './http';
 export { http };
 import type { Role } from './roles';
-import type { AgentTask, AgentAuditEntry } from '../types/agent';
 
 export { ROLES, normaliseRole, hasRole, isAdminOrManager } from './roles';
 
@@ -1325,24 +1324,6 @@ export const api = {
         body: JSON.stringify(params || {}),
       }),
   },
-
-  agent: {
-    /** Returns the SSE endpoint URL for the execute call */
-    executeUrl: () => `/api/agent/execute`,
-
-    confirm: (taskId: string, confirmationToken: string, approved: boolean) =>
-      http<{ status: string; message?: string }>('/api/agent/confirm', {
-        method: 'POST',
-        body: JSON.stringify({ task_id: taskId, confirmation_token: confirmationToken, approved }),
-      }),
-
-    tasks: (params?: { limit?: number; offset?: number }) =>
-      http<{ tasks: AgentTask[]; count: number }>(`/api/agent/tasks${buildQs(params)}`),
-
-    task: (id: string) =>
-      http<{ task: AgentTask; audit_trail: AgentAuditEntry[] }>(`/api/agent/tasks/${id}`),
-  },
-
 };
 
 // ── AI types ────────────────────────────────────────────────────────────────
@@ -1552,6 +1533,3 @@ export type AiBusinessInsights = {
   recommendations: { priority: number; action: string; rationale: string; timeframe: string }[];
   executive_summary: string;
 };
-
-// ── Agent types ──────────────────────────────────────────────────────────────
-export type { AgentTask, AgentPlan, AgentStep, AgentAction, AgentResult, AgentDeptResult, AgentAuditEntry, AgentSSEEvent } from '../types/agent';
