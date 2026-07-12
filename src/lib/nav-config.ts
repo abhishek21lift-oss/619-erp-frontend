@@ -85,6 +85,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'TrendingUp',
     items: [
       { href: '/pt-os/weekly-checkin',    label: 'Weekly Check-In',     icon: 'ClipboardCheck', isNew: true },
+      { href: '/pt-os/lifestyle-assessment', label: 'Lifestyle Assessment', icon: 'HeartPulse',  isNew: true },
       { href: '/pt-os/strength-tracking', label: 'Strength Tracking',   icon: 'Zap',             isNew: true },
       { href: '/pt-os/progress-photos',   label: 'Progress Photos',     icon: 'Camera',         isNew: true },
       { href: '/pt-os/reports',           label: 'Progress Report',     icon: 'FileBarChart' },
