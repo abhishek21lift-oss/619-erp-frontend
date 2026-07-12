@@ -203,7 +203,7 @@ export default function RecordPaymentPage() {
                       {pickerOpen && (
                         <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
                           transition={{ duration: 0.15 }}
-                          style={{ position: 'absolute', left: 20, right: 20, borderRadius: 16, background: 'var(--bg-card)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid var(--border)', zIndex: 40, overflow: 'hidden', marginTop: 4 }}>
+                          style={{ position: 'absolute', left: 20, right: 20, borderRadius: 16, background: 'var(--bg-elevated)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid var(--border)', zIndex: 40, overflow: 'hidden', marginTop: 4 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
                             <Search size={13} color="#9ca3af" />
                             <input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)}
