@@ -20,20 +20,10 @@ const fmtDate = (d?: string | null) => {
   return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-interface Plan { id: string; name: string; base_amount: number; duration_months: number; }
 interface Client {
   id: string; name: string; mobile?: string; trainer_name?: string;
   package_type?: string; pt_end_date?: string; final_amount: number;
   paid_amount: number; balance_amount: number;
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      {children}
-    </div>
-  );
 }
 
 function ReadOnly({ label, value, highlight }: { label: string; value: string; highlight?: string }) {
@@ -51,11 +41,9 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
   const { toast } = useToast();
 
   const [client, setClient] = useState<Client | null>(null);
-  const [plans, setPlans] = useState<Plan[]>([]);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
-    planId: '',
     packageType: '',
     baseAmount: '',
     discount: '0',
@@ -80,7 +68,7 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
   })();
 
   useEffect(() => {
-    Promise.allSettled([api.pt.client(id), api.pt.plans.list()]).then(([cRes, pRes]) => {
+    Promise.allSettled([api.pt.client(id)]).then(([cRes]) => {
       if (cRes.status === 'fulfilled') {
         const c = (cRes.value as any)?.data;
         setClient(c);
@@ -92,30 +80,8 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
           startDate: new Date().toISOString().slice(0, 10),
         }));
       }
-      if (pRes.status === 'fulfilled') {
-        setPlans(((pRes.value as any)?.data || []).map((p: any) => ({
-          id: p.id, name: p.name, base_amount: p.base_amount, duration_months: p.duration_months,
-        })));
-      }
     });
   }, [id]);
-
-  const onPlanSelect = (planId: string) => {
-    const plan = plans.find(p => p.id === planId);
-    if (plan) {
-      setForm(f => ({
-        ...f,
-        planId: plan.id,
-        packageType: plan.name,
-        baseAmount: String(plan.base_amount),
-        finalAmount: String(plan.base_amount),
-        discount: '0',
-        durationMonths: String(plan.duration_months),
-      }));
-    } else {
-      setForm(f => ({ ...f, planId: '', packageType: client?.package_type || '', durationMonths: '' }));
-    }
-  };
 
   const handleSubmit = async () => {
     if (!form.startDate || !form.durationMonths) {
@@ -192,20 +158,10 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
                 <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'rgba(139,92,246,0.12)' }}>
                   <Dumbbell size={13} style={{ color: '#8b5cf6' }} />
                 </div>
-                <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Subscription Plan</h2>
+                <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Package Details</h2>
               </div>
               <div className="space-y-4">
-                <Field label="Select from plans (optional)">
-                  <select value={form.planId} onChange={e => onPlanSelect(e.target.value)}
-                    className="w-full rounded-[13px] px-4 py-3.5 text-[13px] font-[500] outline-none appearance-none cursor-pointer"
-                    style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border)', color: form.planId ? '#111827' : '#9ca3af' }}>
-                    <option value="">— Custom / No plan —</option>
-                    {plans.map(p => (
-                      <option key={p.id} value={p.id}>{p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo</option>
-                    ))}
-                  </select>
-                </Field>
-                <FloatInput label="Plan name / Package type" value={form.packageType} onChange={v => setForm(f => ({ ...f, packageType: v }))} />
+                <FloatInput label="Package type" value={form.packageType} onChange={v => setForm(f => ({ ...f, packageType: v }))} />
                 <div className="grid grid-cols-2 gap-3">
                   <FloatInput label="Start Date *" type="date" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} />
                   <FloatInput label="Duration (months) *" type="number" value={form.durationMonths} onChange={v => setForm(f => ({ ...f, durationMonths: v }))} />

@@ -125,11 +125,10 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'subscription',
-    label: 'Subscription',
-    icon: 'CreditCard',
+    label: 'Packages',
+    icon: 'Package',
     items: [
-      { href: '/subscription/packages',      label: 'Plans & Packages', icon: 'Package', roles: ['admin'] },
-      { href: '/subscription/subscriptions', label: 'Subscriptions',    icon: 'Users',   roles: ['admin'], isNew: true },
+      { href: '/subscription/packages', label: 'Session Packages', icon: 'Package', roles: ['admin'] },
     ],
   },
   {

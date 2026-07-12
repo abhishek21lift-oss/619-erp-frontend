@@ -1060,15 +1060,6 @@ export const api = {
       http<{ data: DuplicateGroup[]; total_groups: number; total_records: number; total_duplicates: number; total_financial_value: number }>('/api/pt-os/clients/duplicates'),
     mergeDuplicates: () =>
       http<{ success: boolean; run_id: string; merged_groups: number; records_removed: number; results: MergeResult[] }>('/api/pt-os/clients/merge-duplicates', { method: 'POST' }),
-    plans: {
-      list: () => http<{ data: unknown[] }>('/api/pt-os/plans'),
-      create: (data: Record<string, unknown>) =>
-        http<{ data: unknown }>('/api/pt-os/plans', { method: 'POST', body: JSON.stringify(data) }),
-      update: (id: string, data: Record<string, unknown>) =>
-        http<{ data: unknown }>(`/api/pt-os/plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-      delete: (id: string) =>
-        http<{ message: string }>(`/api/pt-os/plans/${id}`, { method: 'DELETE' }),
-    },
   },
 
   memberWebauthn: {

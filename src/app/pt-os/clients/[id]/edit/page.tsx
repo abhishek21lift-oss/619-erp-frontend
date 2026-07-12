@@ -14,13 +14,6 @@ import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
-interface Plan {
-  id: string;
-  name: string;
-  base_amount: number;
-  duration_months: number;
-}
-
 interface Trainer {
   id: string;
   name: string;
@@ -73,9 +66,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [plans, setPlans] = useState<Plan[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
-  const [selectedPlanId, setSelectedPlanId] = useState('');
 
   const [form, setForm] = useState({
     // Personal
@@ -114,43 +105,16 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
   }, []);
 
-  const handlePlanChange = (planId: string) => {
-    setSelectedPlanId(planId);
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
-    const months = String(plan.duration_months);
-    const base   = String(plan.base_amount);
-    setForm(p => {
-      const newForm = { ...p, package_type: plan.name, base_amount: base, duration_months: months };
-      // Also recalculate end date and monthly fee
-      if (p.pt_start_date && plan.duration_months > 0) {
-        newForm.pt_end_date = addMonths(p.pt_start_date, plan.duration_months);
-      }
-      if (plan.base_amount > 0 && plan.duration_months > 0) {
-        const finalAmt = parseFloat(p.final_amount) || plan.base_amount;
-        newForm.monthly_pt_amount = (finalAmt / plan.duration_months).toFixed(2);
-      }
-      return newForm;
-    });
-  };
-
-  // Load client data, plans, and trainers
+  // Load client data and trainers
   useEffect(() => {
     (async () => {
       try {
-        const [clientRes, plansRes, trainersRes] = await Promise.all([
+        const [clientRes, trainersRes] = await Promise.all([
           api.pt.client(id),
-          api.pt.plans.list(),
           api.pt.trainers(),
         ]);
         const c = (clientRes as any)?.data;
-        const plansArr = Array.isArray((plansRes as any)?.data) ? (plansRes as any).data : [];
         const trainersArr = Array.isArray((trainersRes as any)?.data) ? (trainersRes as any).data : [];
-        setPlans(plansArr.map((p: any) => ({
-          id: p.id, name: p.name,
-          base_amount: Number(p.base_amount ?? 0),
-          duration_months: Number(p.duration_months ?? 0),
-        })));
         setTrainers(trainersArr.map((t: any) => ({ id: t.id, name: t.name })));
         if (c) {
           setForm({
@@ -347,26 +311,9 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   )}
                 </div>
 
-                {/* Plan selector — drives base_amount, duration_months, end_date, monthly fee */}
+                {/* Package name (editable text) */}
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>
-                    Subscription Plan <span className="text-[10px] font-[400]" style={{ color: 'var(--text-muted)' }}>— auto-fills duration &amp; base amount</span>
-                  </label>
-                  <select
-                    value={selectedPlanId}
-                    onChange={e => handlePlanChange(e.target.value)}
-                    className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
-                    style={{ background: 'var(--bg-card)', color: selectedPlanId ? '#111827' : '#6b7280', border: '1.5px solid var(--border)' }}>
-                    <option value="">Select plan to auto-fill…</option>
-                    {plans.map(p => (
-                      <option key={p.id} value={p.id}>{p.name} — {fmtINR(p.base_amount)} / {p.duration_months}mo</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Plan name (editable text, pre-filled by selector) */}
-                <div className="sm:col-span-2">
-                  <FloatInput label="Plan Name (editable)" value={form.package_type} onChange={set('package_type')} />
+                  <FloatInput label="Package Name" value={form.package_type} onChange={set('package_type')} />
                 </div>
 
                 <FloatInput
