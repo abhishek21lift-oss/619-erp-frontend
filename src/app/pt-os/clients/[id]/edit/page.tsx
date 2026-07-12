@@ -41,12 +41,8 @@ function SectionCard({ title, icon, children, accent = '#F59E0B' }: {
     <m.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-[20px] p-6"
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        boxShadow: '0 2px 16px rgba(15,23,42,0.05)',
-      }}
+      className="pb-8 border-b"
+      style={{ borderColor: 'var(--border)' }}
     >
       <div className="flex items-center gap-3 mb-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-[10px]"

@@ -183,9 +183,8 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
             </div>
           )}
 
-          {/* Form card */}
-          <div className="rounded-[20px] p-6 space-y-6"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+          {/* Form sections (flat — no wrapper card) */}
+          <div className="space-y-6">
 
             {/* Section: Plan */}
             <div>

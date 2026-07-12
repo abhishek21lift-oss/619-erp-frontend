@@ -291,9 +291,10 @@ function StaffWizard() {
 
         /* ─── CARD ─── */
         .sw-card {
-          background: var(--surface); border: 1px solid var(--border-soft);
-          border-radius: var(--radius-lg); padding: 28px;
-          box-shadow: var(--shadow-md); margin-bottom: 16px;
+          background: transparent; border: none;
+          border-radius: 0; padding: 0 0 28px;
+          box-shadow: none; margin-bottom: 28px;
+          border-bottom: 1px solid var(--border-soft);
         }
         .sw-card-title {
           font-size: 17px; font-weight: 800; color: var(--text);

@@ -592,31 +592,27 @@ export default function AddCoachPage() {
 
             <AnimatePresence mode="wait">
               <m.div key={step}
-                initial={{ opacity: 0, y: 20, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.985 }}
-                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="overflow-hidden rounded-[28px]"
-                style={{ boxShadow: '0 12px 48px rgba(0,0,0,0.10), 0 0 0 1px rgba(255,255,255,0.85)' }}>
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}>
 
-                <div className="px-6 py-5" style={{ background: ag }}>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
-                      style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)' }}>
-                      <span style={{ color: '#fff' }}>{current.icon}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-[17px] font-[800] tracking-[-0.01em] text-white">{current.title}</h2>
-                      <p className="text-[12px] font-[500]" style={{ color: 'rgba(255,255,255,0.75)' }}>{current.subtitle}</p>
-                    </div>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                      style={{ background: 'rgba(255,255,255,0.22)' }}>
-                      <span className="text-[14px] font-[800] text-white">{step}</span>
-                    </div>
+                <div className="mb-6 flex items-center gap-3 border-b pb-5" style={{ borderColor: 'rgba(15,23,42,0.10)' }}>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
+                    style={{ background: ag }}>
+                    <span style={{ color: '#fff' }}>{current.icon}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-[17px] font-[800] tracking-[-0.01em]" style={{ color: 'rgb(15,23,42)' }}>{current.title}</h2>
+                    <p className="text-[12px] font-[500]" style={{ color: 'rgb(100,116,139)' }}>{current.subtitle}</p>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: ag }}>
+                    <span className="text-[14px] font-[800] text-white">{step}</span>
                   </div>
                 </div>
 
-                <div className="p-6" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)' }}>
+                <div>
                   {stepContent[step]}
                 </div>
 

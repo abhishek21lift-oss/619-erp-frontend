@@ -380,9 +380,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
 
         {/* ── MAIN CARD ── */}
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }}>
-          <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-            <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-            <div className="p-7 sm:p-10 space-y-8">
+          <div>
+            <div className="space-y-8">
 
               {/* Start / Duration / End */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

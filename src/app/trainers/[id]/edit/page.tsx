@@ -107,18 +107,15 @@ function SectionCard({ sectionId, children }: { sectionId: string; children: Rea
   const s = SECTIONS.find(x => x.id === sectionId)!;
   const Icon = s.icon;
   return (
-    <div className="overflow-hidden rounded-[24px]"
-      style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.85)' }}>
-      <div className="flex items-center gap-3 px-5 py-4" style={{ background: s.gradient }}>
+    <div className="pb-8 border-b" style={{ borderColor: 'rgba(15,23,42,0.10)' }}>
+      <div className="flex items-center gap-3 mb-5">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
-          style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)' }}>
+          style={{ background: s.gradient }}>
           <Icon size={16} className="text-white" />
         </div>
-        <h2 className="text-[14px] font-[800] tracking-[-0.01em] text-white">{s.label}</h2>
+        <h2 className="text-[15px] font-[800] tracking-[-0.01em]" style={{ color: 'rgb(15,23,42)' }}>{s.label}</h2>
       </div>
-      <div className="p-5" style={{ background: 'rgba(255,255,255,0.96)' }}>
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
