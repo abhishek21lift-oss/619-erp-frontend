@@ -70,7 +70,7 @@ export default function SessionBalancePage() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+            <div>
               <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Add Session Package</h2>
               <form onSubmit={handleCreate} className="space-y-3">
                 <select value={clientId} onChange={e => setClientId(e.target.value)}

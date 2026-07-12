@@ -122,8 +122,7 @@ export default function WeeklyCheckinPage() {
           </m.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-              className="rounded-[20px] p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
               <h2 className="text-[18px] font-[760] mb-5" style={{ color: 'var(--text-primary)' }}>Log Check-In</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <select value={clientId} onChange={e => setClientId(e.target.value)}
