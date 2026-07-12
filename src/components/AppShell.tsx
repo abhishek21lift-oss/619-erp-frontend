@@ -735,14 +735,18 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               </m.div>
             </AnimatePresence>
           </main>
+
+          {/* Mobile bottom navigation — hidden when sidebar drawer is open.
+              Rendered inside this isolated stacking context (not as a sibling
+              of it) so its z-index is actually compared against page-level
+              fixed footers (e.g. form Save/Submit bars) instead of always
+              painting on top of them regardless of their z-index. */}
+          <MobileBottomNav sidebarOpen={mobileMenuOpen} />
+
+          {/* Floating Action Button — mobile only */}
+          <FAB />
         </div>
       </div>
-
-      {/* Mobile bottom navigation — hidden when sidebar drawer is open */}
-      <MobileBottomNav sidebarOpen={mobileMenuOpen} />
-
-      {/* Floating Action Button — mobile only */}
-      <FAB />
     </LazyMotion>
   );
 }
