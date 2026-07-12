@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Check, User, Camera, CheckCircle2, Award, FileSpreadsheet, X, Contact, MapPin,
+  Check, Camera, CheckCircle2, Award, FileSpreadsheet, X,
 } from 'lucide-react';
 import { getSheetCacheSync, lookupByMobile } from '@/lib/sheet-import';
 import { useRouter } from 'next/navigation';
@@ -77,7 +77,7 @@ function validateGender(v: string): string | undefined {
   return v ? undefined : 'Please select a gender.';
 }
 function validateDob(v: string): string | undefined {
-  if (!v) return 'Date of birth is required.';
+  if (!v) return undefined; // optional
   const d = new Date(v);
   if (isNaN(d.getTime())) return 'Invalid date.';
   if (d > new Date()) return 'Date of birth cannot be in the future.';
@@ -104,7 +104,7 @@ function validateEmail(v: string): string | undefined {
 }
 function validateEmergencyContact(v: string): string | undefined {
   const digits = v.replace(/\D/g, '');
-  if (!digits) return 'Emergency contact is required.';
+  if (!digits) return undefined; // optional
   if (!MOBILE_RE.test(digits)) return 'Enter a valid 10-digit Indian mobile number.';
   return undefined;
 }
@@ -135,15 +135,15 @@ function hasErrors(errors: FormErrors): boolean {
 
 function computeProgress(form: FormData): number {
   let filled = 0;
-  const total = 8; // 7 required + email bonus
+  const total = 8; // 5 required + 3 optional bonus (DOB, Email, Emergency Contact)
   if (!validateName(form.name)) filled++;
   if (!validateGender(form.gender)) filled++;
-  if (!validateDob(form.dob)) filled++;
   if (!validateMobile(form.mobile)) filled++;
-  if (!validateEmergencyContact(form.emergencyContact)) filled++;
   if (!validateOccupation(form.occupation)) filled++;
   if (!validateAddress(form.address)) filled++;
+  if (form.dob.trim() && !validateDob(form.dob)) filled++;
   if (form.email.trim() && !validateEmail(form.email)) filled++;
+  if (form.emergencyContact.trim() && !validateEmergencyContact(form.emergencyContact)) filled++;
   return Math.round((filled / total) * 100);
 }
 
@@ -153,6 +153,28 @@ const DRAFT_KEY = 'pt-os.new-client.draft.v1';
 /* ─────────────────────────────────────────────────────── PAGE EXPORT */
 export default function NewPTClientPage() {
   return <Guard><AppShell><NewClientForm /></AppShell></Guard>;
+}
+
+/* ─────────────────────────────────────────────────────── SECTION (divider layout, no card) */
+interface SectionProps {
+  kicker?: string;
+  title: string;
+  subtitle?: string;
+  last?: boolean;
+  children: React.ReactNode;
+}
+function Section({ kicker, title, subtitle, last, children }: SectionProps) {
+  return (
+    <div className={last ? '' : 'pb-10 mb-10 border-b'} style={last ? undefined : { borderColor: 'var(--border)' }}>
+      {kicker && (
+        <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: '#F59E0B' }}>{kicker}</p>
+      )}
+      <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">{title}</h2>
+      {subtitle && <p className="text-[13px] text-slate-400 mt-1.5 mb-7">{subtitle}</p>}
+      {!subtitle && <div className="mb-7" />}
+      {children}
+    </div>
+  );
 }
 
 /* ─────────────────────────────────────────────────────── MAIN FORM */
@@ -282,7 +304,7 @@ function NewClientForm() {
           ? form.mobile.replace(/\D/g, '')
           : (form.whatsapp.replace(/\D/g, '') || undefined),
         email: form.email.trim() || undefined,
-        emergency_contact: form.emergencyContact.replace(/\D/g, ''),
+        emergency_contact: form.emergencyContact.replace(/\D/g, '') || undefined,
         occupation: form.occupation.trim(),
         address: form.address.trim(),
       } as Record<string, unknown>);
@@ -375,7 +397,7 @@ function NewClientForm() {
             </div>
             <div>
               <h1 className="text-[18px] font-[860] tracking-[-0.03em] text-slate-900 leading-none">New PT Client</h1>
-              <p className="text-[11px] font-[600] text-slate-400 mt-0.5">Client Information</p>
+              <p className="text-[11px] font-[600] text-slate-400 mt-0.5">Create a new Personal Training client profile.</p>
             </div>
           </div>
           {/* Progress */}
@@ -413,213 +435,177 @@ function NewClientForm() {
         )}
 
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }}>
-          <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-            <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-            <div className="p-7 sm:p-10 space-y-10">
 
-              {/* ═══ IDENTITY ═══ */}
+          {/* ═══ BASIC INFORMATION ═══ */}
+          <Section kicker="Client Information" title="Basic Information">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
               <div>
-                <div className="flex items-start gap-4 mb-7">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-                    <User size={20} color="#F59E0B" />
-                  </div>
-                  <div>
-                    <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Identity</h2>
-                    <p className="text-[13px] text-slate-400 mt-1.5">Who this client is.</p>
-                  </div>
+                <FloatInput label="Client ID" value="" onChange={() => {}} disabled />
+                <p className="mt-1.5 text-[11px] text-slate-400">Assigned automatically when you save.</p>
+              </div>
+
+              <FloatInput
+                label="Full Name" required value={form.name}
+                onChange={(v) => set('name', v)}
+                onBlur={() => touchField('name')}
+                error={errors.name}
+              />
+
+              <div>
+                <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                  Gender <span style={{ color: '#F59E0B' }}>*</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {GENDERS.map((g) => (
+                    <button
+                      key={g} type="button"
+                      onClick={() => { set('gender', g); setErrors((e) => ({ ...e, gender: undefined })); }}
+                      className="rounded-[11px] px-4 py-2.5 text-[13px] font-[660] transition-all duration-200"
+                      style={{
+                        background: form.gender === g ? '#0f172a' : '#f8fafc',
+                        color: form.gender === g ? '#fff' : '#64748b',
+                        border: form.gender === g ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                        boxShadow: form.gender === g ? '0 2px 12px rgba(15,23,42,0.18)' : 'none',
+                        transform: form.gender === g ? 'scale(1.03)' : 'scale(1)',
+                      }}
+                    >
+                      {g}
+                    </button>
+                  ))}
                 </div>
+                {errors.gender && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{errors.gender}</p>}
+              </div>
 
-                <div className="space-y-5">
-                  <div>
-                    <FloatInput label="Client ID" value="" onChange={() => {}} disabled />
-                    <p className="mt-1.5 text-[11px] text-slate-400">Auto-generated on save — e.g. PTC-00001</p>
-                  </div>
+              <FloatInput
+                label="Date of Birth" type="date" value={form.dob}
+                onChange={(v) => set('dob', v)}
+                onBlur={() => touchField('dob')}
+                error={errors.dob}
+              />
 
-                  <FloatInput
-                    label="Full Name" required value={form.name}
-                    onChange={(v) => set('name', v)}
-                    onBlur={() => touchField('name')}
-                    error={errors.name}
-                  />
+              <FloatInput label="Age" value={age !== null ? String(age) : ''} onChange={() => {}} disabled />
 
-                  <div>
-                    <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-                      Gender <span style={{ color: '#F59E0B' }}>*</span>
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {GENDERS.map((g) => (
-                        <button
-                          key={g} type="button"
-                          onClick={() => { set('gender', g); setErrors((e) => ({ ...e, gender: undefined })); }}
-                          className="rounded-[11px] px-4 py-2.5 text-[13px] font-[660] transition-all duration-200"
-                          style={{
-                            background: form.gender === g ? '#0f172a' : '#f8fafc',
-                            color: form.gender === g ? '#fff' : '#64748b',
-                            border: form.gender === g ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
-                            boxShadow: form.gender === g ? '0 2px 12px rgba(15,23,42,0.18)' : 'none',
-                            transform: form.gender === g ? 'scale(1.03)' : 'scale(1)',
-                          }}
-                        >
-                          {g}
-                        </button>
-                      ))}
+              {/* Profile Photo */}
+              <div>
+                <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Profile Photo</p>
+                {form.photoDataUrl ? (
+                  <div className="flex items-center gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={form.photoDataUrl} alt="Client preview" className="h-20 w-20 rounded-full object-cover shadow-lg" />
+                    <div className="flex flex-col gap-1.5">
+                      <button type="button" onClick={() => setCropModalOpen(true)} className="text-left text-[12.5px] font-[640]" style={{ color: '#F59E0B' }}>
+                        Change Photo
+                      </button>
+                      <button type="button" onClick={() => set('photoDataUrl', null)} className="text-left text-[12.5px] font-[640] text-slate-400">
+                        Remove
+                      </button>
                     </div>
-                    {errors.gender && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{errors.gender}</p>}
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FloatInput
-                      label="Date of Birth" type="date" required value={form.dob}
-                      onChange={(v) => set('dob', v)}
-                      onBlur={() => touchField('dob')}
-                      error={errors.dob}
-                    />
-                    <FloatInput label="Age" value={age !== null ? String(age) : ''} onChange={() => {}} disabled />
+                ) : (
+                  <div
+                    role="button" tabIndex={0}
+                    onDragOver={(e) => { e.preventDefault(); setPhotoDragOver(true); }}
+                    onDragLeave={() => setPhotoDragOver(false)}
+                    onDrop={handlePhotoDrop}
+                    onClick={() => setCropModalOpen(true)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setCropModalOpen(true); }}
+                    className="flex w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed p-6 text-center transition-all"
+                    style={{
+                      borderColor: photoDragOver ? 'rgba(245,158,11,0.6)' : 'rgba(15,23,42,0.12)',
+                      background: photoDragOver ? 'rgba(245,158,11,0.05)' : 'var(--bg-subtle)',
+                    }}
+                  >
+                    <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-[14px]" style={{ background: 'var(--bg-subtle)' }}>
+                      <Camera size={20} style={{ color: photoDragOver ? '#F59E0B' : '#94a3b8' }} />
+                    </div>
+                    <p className="text-[13px] font-[640] text-slate-500">
+                      {photoDragOver ? 'Drop here' : 'Drag & drop, browse, or use your camera'}
+                    </p>
+                    <p className="text-[11.5px] mt-1 text-slate-400">JPG or PNG — optional</p>
                   </div>
-
-                  {/* Profile Photo */}
-                  <div>
-                    <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Profile Photo</p>
-                    {form.photoDataUrl ? (
-                      <div className="flex items-center gap-4">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={form.photoDataUrl} alt="Client preview" className="h-20 w-20 rounded-full object-cover shadow-lg" />
-                        <div className="flex flex-col gap-1.5">
-                          <button type="button" onClick={() => setCropModalOpen(true)} className="text-left text-[12.5px] font-[640]" style={{ color: '#F59E0B' }}>
-                            Change Photo
-                          </button>
-                          <button type="button" onClick={() => set('photoDataUrl', null)} className="text-left text-[12.5px] font-[640] text-slate-400">
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        role="button" tabIndex={0}
-                        onDragOver={(e) => { e.preventDefault(); setPhotoDragOver(true); }}
-                        onDragLeave={() => setPhotoDragOver(false)}
-                        onDrop={handlePhotoDrop}
-                        onClick={() => setCropModalOpen(true)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setCropModalOpen(true); }}
-                        className="flex w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed p-8 text-center transition-all"
-                        style={{
-                          borderColor: photoDragOver ? 'rgba(245,158,11,0.6)' : 'rgba(15,23,42,0.12)',
-                          background: photoDragOver ? 'rgba(245,158,11,0.05)' : 'var(--bg-subtle)',
-                        }}
-                      >
-                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[14px]" style={{ background: 'var(--bg-subtle)' }}>
-                          <Camera size={22} style={{ color: photoDragOver ? '#F59E0B' : '#94a3b8' }} />
-                        </div>
-                        <p className="text-[13px] font-[640] text-slate-500">
-                          {photoDragOver ? 'Drop here' : 'Drag & drop, browse, or use your camera'}
-                        </p>
-                        <p className="text-[11.5px] mt-1 text-slate-400">JPG or PNG — optional</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
-
-              {/* ═══ CONTACT DETAILS ═══ */}
-              <div>
-                <div className="flex items-start gap-4 mb-7">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-                    <Contact size={20} color="#F59E0B" />
-                  </div>
-                  <div>
-                    <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Contact Details</h2>
-                    <p className="text-[13px] text-slate-400 mt-1.5">How to reach this client.</p>
-                  </div>
-                </div>
-
-                <div className="space-y-5">
-                  <div>
-                    <FloatInput
-                      label="Mobile Number" type="tel" required value={form.mobile}
-                      onChange={(v) => set('mobile', v)}
-                      onBlur={() => touchField('mobile')}
-                      error={errors.mobile}
-                    />
-                    <AnimatePresence>
-                      {autofillNote && (
-                        <m.div
-                          initial={{ opacity: 0, y: -4, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                          className="mt-1.5 flex items-center gap-2 rounded-[10px] px-3 py-2"
-                          style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.18)' }}
-                        >
-                          <CheckCircle2 size={12} style={{ color: '#0d9488', flexShrink: 0 }} />
-                          <span className="text-[11.5px] font-[640]" style={{ color: '#065f46' }}>{autofillNote}</span>
-                        </m.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <div>
-                    <FloatInput
-                      label="WhatsApp Number" type="tel" value={form.whatsapp}
-                      onChange={(v) => set('whatsapp', v)}
-                      onBlur={() => touchField('whatsapp')}
-                      error={errors.whatsapp}
-                      disabled={form.whatsappSameAsMobile}
-                    />
-                    <label className="mt-2 flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox" checked={form.whatsappSameAsMobile}
-                        onChange={(e) => handleWhatsappToggle(e.target.checked)}
-                        className="h-4 w-4 rounded accent-[#F59E0B]"
-                      />
-                      <span className="text-[12.5px] font-[560] text-slate-500">Same as Mobile</span>
-                    </label>
-                  </div>
-
-                  <FloatInput
-                    label="Email Address" type="email" value={form.email}
-                    onChange={(v) => set('email', v)}
-                    onBlur={() => touchField('email')}
-                    error={errors.email}
-                  />
-
-                  <FloatInput
-                    label="Emergency Contact" type="tel" required value={form.emergencyContact}
-                    onChange={(v) => set('emergencyContact', v)}
-                    onBlur={() => touchField('emergencyContact')}
-                    error={errors.emergencyContact}
-                  />
-                </div>
-              </div>
-
-              {/* ═══ PERSONAL DETAILS ═══ */}
-              <div>
-                <div className="flex items-start gap-4 mb-7">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-                    <MapPin size={20} color="#F59E0B" />
-                  </div>
-                  <div>
-                    <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Personal Details</h2>
-                    <p className="text-[13px] text-slate-400 mt-1.5">A bit more context.</p>
-                  </div>
-                </div>
-
-                <div className="space-y-5">
-                  <SearchableSelect
-                    label="Occupation" required value={form.occupation}
-                    onChange={(v) => { set('occupation', v); setErrors((e) => ({ ...e, occupation: undefined })); }}
-                    options={OCCUPATIONS}
-                    error={errors.occupation}
-                  />
-
-                  <FloatInput
-                    label="Address" required value={form.address}
-                    onChange={(v) => set('address', v)}
-                    onBlur={() => touchField('address')}
-                    error={errors.address}
-                    multiline autoGrow
-                  />
-                </div>
-              </div>
-
             </div>
-          </div>
+          </Section>
+
+          {/* ═══ CONTACT DETAILS ═══ */}
+          <Section title="Contact Details">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+              <div>
+                <FloatInput
+                  label="Mobile Number" type="tel" required value={form.mobile}
+                  onChange={(v) => set('mobile', v)}
+                  onBlur={() => touchField('mobile')}
+                  error={errors.mobile}
+                />
+                <AnimatePresence>
+                  {autofillNote && (
+                    <m.div
+                      initial={{ opacity: 0, y: -4, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                      className="mt-1.5 flex items-center gap-2 rounded-[10px] px-3 py-2"
+                      style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.18)' }}
+                    >
+                      <CheckCircle2 size={12} style={{ color: '#0d9488', flexShrink: 0 }} />
+                      <span className="text-[11.5px] font-[640]" style={{ color: '#065f46' }}>{autofillNote}</span>
+                    </m.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div>
+                <FloatInput
+                  label="WhatsApp Number" type="tel" value={form.whatsapp}
+                  onChange={(v) => set('whatsapp', v)}
+                  onBlur={() => touchField('whatsapp')}
+                  error={errors.whatsapp}
+                  disabled={form.whatsappSameAsMobile}
+                />
+                <label className="mt-2 flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox" checked={form.whatsappSameAsMobile}
+                    onChange={(e) => handleWhatsappToggle(e.target.checked)}
+                    className="h-4 w-4 rounded accent-[#F59E0B]"
+                  />
+                  <span className="text-[12.5px] font-[560] text-slate-500">Same as Mobile</span>
+                </label>
+              </div>
+
+              <FloatInput
+                label="Email Address" type="email" value={form.email}
+                onChange={(v) => set('email', v)}
+                onBlur={() => touchField('email')}
+                error={errors.email}
+              />
+
+              <FloatInput
+                label="Emergency Contact" type="tel" value={form.emergencyContact}
+                onChange={(v) => set('emergencyContact', v)}
+                onBlur={() => touchField('emergencyContact')}
+                error={errors.emergencyContact}
+              />
+            </div>
+          </Section>
+
+          {/* ═══ PERSONAL DETAILS ═══ */}
+          <Section title="Personal Details" last>
+            <div className="space-y-5">
+              <SearchableSelect
+                label="Occupation" required value={form.occupation}
+                onChange={(v) => { set('occupation', v); setErrors((e) => ({ ...e, occupation: undefined })); }}
+                options={OCCUPATIONS}
+                error={errors.occupation}
+              />
+
+              <FloatInput
+                label="Address" required value={form.address}
+                onChange={(v) => set('address', v)}
+                onBlur={() => touchField('address')}
+                error={errors.address}
+                multiline autoGrow
+              />
+            </div>
+          </Section>
+
         </m.div>
       </div>
 
