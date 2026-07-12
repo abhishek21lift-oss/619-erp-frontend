@@ -1,594 +1,690 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import {
+  m,
+  useScroll,
+  useTransform,
+  useMotionValue,
+  useSpring,
+  useInView,
+  useReducedMotion,
+  AnimatePresence,
+} from 'framer-motion';
+import {
+  Dumbbell, Swords, Flower2, Music2, Salad, Trophy, Smartphone, Users,
+  Target, BarChart3, HeartHandshake, Sparkles, ShieldCheck,
+  Phone, MapPin, Clock, Instagram, Youtube, MessageCircle,
+  ArrowRight, Check, Plus, Menu, X,
+} from 'lucide-react';
 
-const SUPPORT_PHONE_RAW  = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+918756562188';
+/* ────────────────────────────────────────────────────────────────
+   Contact (real business details, driven by env with sane defaults)
+──────────────────────────────────────────────────────────────── */
+const SUPPORT_PHONE_RAW    = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+918756562188';
 const SUPPORT_PHONE_DIGITS = SUPPORT_PHONE_RAW.replace(/\D/g, '');
-const SUPPORT_WA_URL     = `https://wa.me/${SUPPORT_PHONE_DIGITS}`;
-const SUPPORT_TEL_URL    = `tel:${SUPPORT_PHONE_RAW}`;
+const SUPPORT_WA_URL       = `https://wa.me/${SUPPORT_PHONE_DIGITS}`;
+const SUPPORT_TEL_URL      = `tel:${SUPPORT_PHONE_RAW}`;
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+/* ================================================================
+   Reusable motion primitives
+================================================================ */
+
+function Reveal({
+  children, delay = 0, y = 26, className, style, as = 'div',
+}: {
+  children: ReactNode; delay?: number; y?: number;
+  className?: string; style?: CSSProperties; as?: 'div' | 'section' | 'span';
+}) {
+  const reduce = useReducedMotion();
+  const MAP = { div: m.div, section: m.section, span: m.span } as const;
+  const Comp = MAP[as];
+  return (
+    <Comp
+      className={className}
+      style={style}
+      initial={reduce ? false : { opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-70px' }}
+      transition={{ duration: 0.7, delay, ease: EASE }}
+    >
+      {children}
+    </Comp>
+  );
+}
+
+/** Count-up number that animates the first time it scrolls into view. */
+function Counter({ to, suffix = '', duration = 1600 }: { to: number; suffix?: string; duration?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const reduce = useReducedMotion();
+  const [n, setN] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    if (reduce) { setN(to); return; }
+    let raf = 0;
+    const start = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min((t - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.round(to * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, to, reduce, duration]);
+
+  return <span ref={ref}>{n.toLocaleString('en-IN')}{suffix}</span>;
+}
+
+/** Button/link that gently follows the cursor (magnetic hover). */
+function Magnetic({
+  children, onClick, href, className, style, strength = 0.35,
+}: {
+  children: ReactNode; onClick?: () => void; href?: string;
+  className?: string; style?: CSSProperties; strength?: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const x = useSpring(mx, { stiffness: 220, damping: 16, mass: 0.4 });
+  const y = useSpring(my, { stiffness: 220, damping: 16, mass: 0.4 });
+
+  const move = (e: React.MouseEvent) => {
+    if (reduce || !ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    mx.set((e.clientX - (r.left + r.width / 2)) * strength);
+    my.set((e.clientY - (r.top + r.height / 2)) * strength);
+  };
+  const reset = () => { mx.set(0); my.set(0); };
+
+  const inner = (
+    <m.div
+      ref={ref}
+      onMouseMove={move}
+      onMouseLeave={reset}
+      onClick={onClick}
+      onKeyDown={href ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
+      style={{ x, y, ...style }}
+      className={className}
+      whileTap={{ scale: 0.96 }}
+      role={href ? undefined : 'button'}
+      tabIndex={href ? undefined : 0}
+    >
+      {children}
+    </m.div>
+  );
+  return href ? <a href={href} style={{ textDecoration: 'none', display: 'inline-block' }}>{inner}</a> : inner;
+}
+
+/* ================================================================
+   Section content (real Coach Abhishek studio data)
+================================================================ */
+
+const NAV_LINKS = [
+  { label: 'Programs', href: '#programs' },
+  { label: 'Why Us',   href: '#why' },
+  { label: 'Team',     href: '#team' },
+  { label: 'Pricing',  href: '#pricing' },
+  { label: 'Contact',  href: '#contact' },
+];
+
+const STATS = [
+  { to: 67, suffix: '+', label: 'Active Clients' },
+  { to: 7,  suffix: '',  label: 'Expert Coaches' },
+  { to: 5,  suffix: '+', label: 'Disciplines' },
+  { to: 260, suffix: 'kg', label: 'Coach Deadlift' },
+];
+
+const PROGRAMS = [
+  { icon: Dumbbell,  name: 'Personal Training',   tag: 'Certified Trainers', desc: '1-on-1 sessions built around your body, goals and schedule. Strength, fat-loss and muscle — done right.', span: 2, accent: '#F59E0B' },
+  { icon: Trophy,    name: 'Powerlifting & Strength', tag: 'Advanced', desc: 'Squat, bench and deadlift coached by a national-level competitive powerlifter.', span: 1, accent: '#8B1E2B' },
+  { icon: Swords,    name: 'MMA & Combat Fitness', tag: 'All Levels', desc: 'Striking, grappling and conditioning that builds real skill and discipline.', span: 1, accent: '#8B1E2B' },
+  { icon: Flower2,   name: 'Yoga',                tag: 'Mind & Body', desc: 'Authentic asana, pranayama and mindful movement guided by a dedicated Yog Guru.', span: 1, accent: '#F59E0B' },
+  { icon: Music2,    name: 'Zumba',               tag: 'Dance Fitness', desc: 'High-energy dance cardio that burns serious calories — and is genuinely fun.', span: 1, accent: '#F59E0B' },
+  { icon: Salad,     name: 'Nutrition Coaching',  tag: 'Diet Plans', desc: 'Practical, sustainable nutrition that fits your training — no fad diets.', span: 1, accent: '#F59E0B' },
+  { icon: Smartphone, name: 'Online Coaching',    tag: 'Remote', desc: 'Custom training and nutrition with weekly check-ins, delivered anywhere.', span: 1, accent: '#8B1E2B' },
+];
+
+const WHY = [
+  { icon: Target,        title: 'Personalised to You', body: 'Every program is built around your body, history and goals — never a generic template.' },
+  { icon: ShieldCheck,   title: 'Elite Credentials',   body: 'Coached by an active national-level powerlifter and certified specialists who live what they teach.' },
+  { icon: BarChart3,     title: 'Measured Progress',   body: 'Body composition, strength and wellness markers tracked so you see exactly how far you\'ve come.' },
+  { icon: HeartHandshake, title: 'Real Accountability', body: 'Check-ins, WhatsApp support and coaches who notice when you miss a session.' },
+  { icon: Sparkles,      title: '5 Disciplines, One Roof', body: 'Personal training, MMA, Yoga, Zumba and nutrition — no juggling multiple gyms or apps.' },
+  { icon: Users,         title: 'A Community That Pushes', body: 'A studio of members who motivate each other, with challenges and shared wins.' },
+];
+
+const TEAM = [
+  { role: 'Head Trainer · Powerlifting', name: 'Abhishek Katiyar', badge: 'K11 Certified', featured: true, bio: 'K11-certified head trainer and national-level powerlifter (83kg). Competition lifts: 230kg squat · 150kg bench · 260kg deadlift.' },
+  { role: 'Personal Training', name: 'Riya Singh', badge: 'Certified Trainer', bio: 'Body transformation, weight management and functional fitness for women and beginners.' },
+  { role: 'Strength & Conditioning', name: 'Rajat Katiyar', badge: 'Hypertrophy', bio: 'Movement mechanics and progressive-overload programming for every level.' },
+  { role: 'Personal Training', name: 'Shivani Verma', badge: 'Certified Trainer', bio: 'Science-based programs, consistent accountability and motivation that sticks.' },
+  { role: 'MMA Expert', name: 'Vikrant Agnihotri', badge: 'Combat Sports', bio: 'Combat conditioning, striking fundamentals and mental toughness — beginner to advanced.' },
+  { role: 'Yog Guru', name: 'Shagun Savita', badge: 'Yoga & Wellness', bio: 'Authentic yogic practice for strength, flexibility and inner stillness.' },
+  { role: 'Zumba Expert', name: 'Gaurav', badge: 'Dance Fitness', bio: 'Cardio that feels like a celebration — every single session.' },
+];
+
+const PLANS = [
+  { name: 'Starter', monthly: 1999, popular: false, features: ['Gym floor access', '1 group class / week', 'Basic fitness assessment', 'Locker facility', 'Trainer guidance on floor'] },
+  { name: 'Pro', monthly: 3999, popular: true, features: ['Everything in Starter', '8 personal training sessions', 'Custom nutrition plan', '3 group classes / week', 'Monthly body-composition check', 'WhatsApp coach support'] },
+  { name: 'Elite', monthly: 6499, popular: false, features: ['Everything in Pro', 'Unlimited PT sessions', 'Unlimited group classes', 'MMA / Yoga / Zumba access', 'Weekly diet revision', 'Priority scheduling', 'Quarterly progress report'] },
+];
+
+const FAQS = [
+  { q: 'Do I need prior experience to join?', a: 'Not at all. We welcome complete beginners — your coach builds a program for your current level and progresses you safely from there.' },
+  { q: 'What is the free trial?', a: '3 full days of studio access — attend any class, train with our coaches, use the floor. No credit card, no commitment.' },
+  { q: 'Can women train here safely?', a: 'Yes, and we encourage it. Coach Abhishek runs a respectful, inclusive environment with dedicated women\'s health and fitness programs.' },
+  { q: 'Do you offer online coaching?', a: 'Yes — a fully custom training and nutrition plan with weekly video check-ins and WhatsApp access to your coach, wherever you are.' },
+  { q: 'Can I change or pause my membership?', a: 'Yes. Memberships are flexible — talk to us directly and we\'ll find a solution that fits your situation.' },
+  { q: 'Is nutrition coaching included?', a: 'Basic guidance is included in Pro and Elite. Full custom diet planning with weekly revisions is part of Elite or available as an add-on.' },
+];
+
+/* ================================================================
+   Landing Page
+================================================================ */
 
 export default function LandingPage() {
   const router = useRouter();
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [navSolid, setNavSolid] = useState(false);
-  const revealRoot = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
 
+  const [navHidden, setNavHidden] = useState(false);
+  const [navSolid, setNavSolid]   = useState(false);
+  const [menuOpen, setMenuOpen]   = useState(false);
+  const [billing, setBilling]     = useState<'monthly' | 'quarterly'>('monthly');
+  const [openFaq, setOpenFaq]     = useState<number | null>(0);
+  const lastScroll = useRef(0);
+
+  // Match the page (warm white) on overscroll / rubber-band edges
   useEffect(() => {
-    const handleScroll = () => {
-      setNavSolid(window.scrollY > 60);
+    const prev = document.body.style.background;
+    document.body.style.background = '#FBFAF7';
+    return () => { document.body.style.background = prev; };
+  }, []);
+
+  // Nav: solidify + hide-on-scroll-down / show-on-scroll-up
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setNavSolid(y > 40);
+      if (y > lastScroll.current && y > 320) setNavHidden(true);
+      else setNavHidden(false);
+      lastScroll.current = y;
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    const els = revealRoot.current?.querySelectorAll('.reveal');
-    if (!els?.length) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add('visible');
-            observer.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -60px 0px' },
-    );
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
+  // Hero parallax on scroll + mouse
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroFade  = useTransform(scrollYProgress, [0, 1], [1, 0]);
+  const heroLift  = useTransform(scrollYProgress, [0, 1], [0, 90]);
 
-  const faqs = [
-    { q: 'Do I need prior experience to join?', a: 'Absolutely not. We welcome complete beginners. Our trainers will build a program appropriate for your current level and progress you safely from there.' },
-    { q: 'What is the free trial?', a: 'You get 3 full days of access to the studio — attend any class, train with our coaches, use the floor. No credit card, no commitment, no catch.' },
-    { q: 'Can women train here safely?', a: 'Yes, and we strongly encourage it. Coach Abhishek runs a respectful, inclusive environment, with dedicated programs for women\'s health and fitness.' },
-    { q: 'Do you offer online coaching?', a: 'Yes. Our remote coaching program includes a custom training plan, nutrition plan, weekly video check-ins, and WhatsApp access to your coach. Perfect if you travel or prefer to train at home.' },
-    { q: 'Can I change or pause my membership?', a: 'Yes. We offer flexible membership management. Speak to us directly — we\'ll always find a solution that works for your situation.' },
-    { q: 'Is nutrition coaching included in my plan?', a: 'Basic nutritional guidance is included in Pro and Elite plans. Full custom diet planning with weekly revisions is available as an add-on or in Elite membership.' },
-  ];
+  const pmx = useMotionValue(0);
+  const pmy = useMotionValue(0);
+  const px = useSpring(pmx, { stiffness: 60, damping: 18 });
+  const py = useSpring(pmy, { stiffness: 60, damping: 18 });
+  const onHeroMouse = useCallback((e: React.MouseEvent) => {
+    if (reduce) return;
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    pmx.set((e.clientX - cx) / cx);
+    pmy.set((e.clientY - cy) / cy);
+  }, [reduce, pmx, pmy]);
+  const orb1x = useTransform(px, (v) => v * 40);
+  const orb1y = useTransform(py, (v) => v * 40);
+  const orb2x = useTransform(px, (v) => v * -55);
+  const orb2y = useTransform(py, (v) => v * -35);
 
-  const toggleFaq = (idx: number) => {
-    setOpenFaq((prev) => (prev === idx ? null : idx));
+  const go = (href: string) => {
+    setMenuOpen(false);
+    const el = document.querySelector(href);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const quarterly = (mo: number) => Math.round(mo * 0.9); // 10% off, shown per-month
+
   return (
-    <div ref={revealRoot} style={{ paddingTop: 52 }}>
+    <div style={{ paddingTop: 0, background: 'var(--l-bg)', color: 'var(--l-ink)', overflowX: 'hidden' }}>
       <style>{`
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root{
-          --black:#000;
-          --surface:#0a0a0a;
-          --surface2:#141414;
-          --surface3:#1c1c1e;
-          --border:rgba(255,255,255,0.08);
-          --border-hover:rgba(255,255,255,0.16);
-          --white:#f5f5f7;
-          --grey:#86868b;
-          --grey2:#6e6e73;
-          --red:#d91f3c;
-          --red-soft:rgba(217,31,60,0.12);
-          --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Helvetica,Arial,sans-serif;
-          --px:clamp(24px,6vw,72px);
+          --l-bg:#FBFAF7; --l-surface:#FFFFFF; --l-ink:#1A1410; --l-ink-soft:#6B655E;
+          --l-saffron:#F59E0B; --l-saffron-2:#FBBF24; --l-saffron-3:#D97706;
+          --l-maroon:#8B1E2B; --l-maroon-2:#A8253A;
+          --l-line:rgba(26,20,16,0.09); --l-line-2:rgba(26,20,16,0.16);
+          --l-grad:linear-gradient(135deg,#FBBF24 0%,#F59E0B 45%,#D97706 100%);
+          --l-px:clamp(20px,5vw,72px);
         }
-        html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;scroll-padding-top:52px}
-        body{background:var(--black);color:var(--white);font-family:var(--font);overflow-x:hidden;line-height:1.5}
-        nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 var(--px);height:52px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background 0.3s}
-        .nav-logo-wrap{display:flex;align-items:center;gap:8px;text-decoration:none}
-        .reveal{opacity:0;transform:translateY(40px);transition:opacity 0.8s cubic-bezier(.22,1,.36,1),transform 0.8s cubic-bezier(.22,1,.36,1)}
-        .reveal.visible{opacity:1;transform:none}
-        .reveal-delay-1{transition-delay:.1s}
-        .reveal-delay-2{transition-delay:.2s}
-        .reveal-delay-3{transition-delay:.3s}
-        .reveal-delay-4{transition-delay:.4s}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-        @keyframes bounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(5px)}}
-        @media(max-width:640px){
-          .nav-links{display:none!important}
-          .hero-h1{font-size:2.4rem}
-          .team-grid{grid-template-columns:1fr}
-          .footer-inner{flex-direction:column;align-items:flex-start}
-          .hero{padding-top:40px!important;padding-bottom:56px!important}
-          .hero-logo{margin-bottom:24px!important}
-          .hero-label{margin-bottom:10px!important}
-          .hero-sub-title{margin-bottom:16px!important}
-          .hero-desc{margin-bottom:28px!important}
+        html{scroll-behavior:smooth;scroll-padding-top:80px}
+        .l-body-bg{background:var(--l-bg)}
+        .l-h1{font-size:clamp(2.6rem,7.2vw,5.6rem);font-weight:800;letter-spacing:-0.045em;line-height:0.98}
+        .l-h2{font-size:clamp(2rem,4.8vw,3.4rem);font-weight:800;letter-spacing:-0.035em;line-height:1.05}
+        .l-kicker{font-size:0.72rem;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--l-saffron-3)}
+        .l-grad-text{background:var(--l-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+        .l-glass{background:rgba(255,255,255,0.7);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%)}
+        .l-card{background:var(--l-surface);border:1px solid var(--l-line);border-radius:26px;transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s,border-color .35s}
+        .l-card:hover{transform:translateY(-6px);border-color:var(--l-line-2);box-shadow:0 24px 60px -24px rgba(26,20,16,0.22)}
+        .l-fadefloat{animation:lfloat 8s ease-in-out infinite}
+        @keyframes lfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+        @keyframes lbounce{0%,100%{transform:rotate(45deg) translateY(0)}50%{transform:rotate(45deg) translateY(6px)}}
+        .l-link{position:relative;color:var(--l-ink-soft);text-decoration:none;font-size:0.86rem;font-weight:500;transition:color .2s}
+        .l-link:hover{color:var(--l-ink)}
+        .l-underline::after{content:'';position:absolute;left:0;bottom:-4px;height:2px;width:0;background:var(--l-grad);transition:width .28s ease}
+        .l-underline:hover::after{width:100%}
+        .l-mobile-menu{display:none}
+        @media(max-width:860px){
+          .l-desk-nav{display:none!important}
+          .l-mobile-btn{display:flex!important}
+          .l-bento{grid-template-columns:1fr!important}
+          .l-bento-span2{grid-column:span 1!important}
+          .l-pricing-grid{grid-template-columns:1fr!important}
+          .l-contact-grid{grid-template-columns:1fr!important}
+          .l-why-grid{grid-template-columns:1fr!important}
+          .l-team-grid{grid-template-columns:1fr!important}
         }
-        @media(max-width:900px){.numbers-grid{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:900px){.number-item{border-right:none!important;border-bottom:1px solid var(--border)}}
-        @media(max-width:900px){.plans-grid{grid-template-columns:1fr}.why-grid{grid-template-columns:1fr}.contact-inner{grid-template-columns:1fr}}
-        @media(max-width:640px){.team-card{padding:32px 24px}}
-        @media(prefers-reduced-motion:reduce){.hero-logo,.hero-scroll-arrow,.reveal{animation:none;transition:none;opacity:1;transform:none}}
-        .numbers-grid > div:last-child{border-right:none!important}
+        @media(min-width:861px){.l-mobile-btn{display:none!important}}
+        @media(prefers-reduced-motion:reduce){.l-fadefloat,.l-scroll-arrow{animation:none}}
       `}</style>
 
-      {/* ─── NAV ─── */}
-      <nav style={{ background: navSolid ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.72)' }}>
-        <a href="#" className="nav-logo-wrap" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-          <Image src="/619-logo.png" alt="Coach Abhishek" width={28} height={28} className="nav-logo" style={{ objectFit: 'contain' }} />
-          <span className="nav-brand-text" style={{ fontSize: '0.88rem', fontWeight: 600, letterSpacing: '-.01em', color: 'var(--white)' }}>
-            <span style={{ color: 'var(--red)' }}>COACH</span> ABHISHEK
+      {/* ─────────────────────────── NAV ─────────────────────────── */}
+      <m.nav
+        animate={{ y: navHidden ? -90 : 0 }}
+        transition={{ duration: 0.4, ease: EASE }}
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px var(--l-px)',
+          background: navSolid ? 'rgba(251,250,247,0.82)' : 'rgba(251,250,247,0.4)',
+          backdropFilter: 'blur(18px) saturate(150%)', WebkitBackdropFilter: 'blur(18px) saturate(150%)',
+          borderBottom: navSolid ? '1px solid var(--l-line)' : '1px solid transparent',
+          transition: 'background .3s, border-color .3s',
+        }}
+      >
+        <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <span style={{ display: 'flex', height: 34, width: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 11, background: '#fff', boxShadow: '0 2px 10px rgba(26,20,16,0.12)', border: '1px solid var(--l-line)' }}>
+            <Image src="/logo.png" alt="Coach Abhishek" width={24} height={24} style={{ objectFit: 'contain' }} />
           </span>
-        </a>
-        <ul className="nav-links" style={{ display: 'flex', gap: 0, listStyle: 'none' }}>
-          <li><a href="#about" style={{ display: 'block', padding: '0 14px', fontSize: '0.78rem', fontWeight: 400, color: 'var(--grey)', textDecoration: 'none', lineHeight: '52px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--white)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--grey)')}>About</a></li>
-          <li><a href="#team" style={{ display: 'block', padding: '0 14px', fontSize: '0.78rem', fontWeight: 400, color: 'var(--grey)', textDecoration: 'none', lineHeight: '52px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--white)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--grey)')}>Team</a></li>
-          <li><a href="#programs" style={{ display: 'block', padding: '0 14px', fontSize: '0.78rem', fontWeight: 400, color: 'var(--grey)', textDecoration: 'none', lineHeight: '52px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--white)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--grey)')}>Programs</a></li>
-          <li><a href="#membership" style={{ display: 'block', padding: '0 14px', fontSize: '0.78rem', fontWeight: 400, color: 'var(--grey)', textDecoration: 'none', lineHeight: '52px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--white)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--grey)')}>Pricing</a></li>
-          <li><a href="#contact" style={{ display: 'block', padding: '0 14px', fontSize: '0.78rem', fontWeight: 400, color: 'var(--grey)', textDecoration: 'none', lineHeight: '52px', transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--white)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--grey)')}>Contact</a></li>
-        </ul>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => router.push('/login')} className="nav-cta" style={{
-            background: 'rgba(255,255,255,0.1)', color: '#fff',
-            padding: '7px 18px', borderRadius: 980, border: 'none',
-            fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-            transition: 'opacity 0.2s, transform 0.2s', whiteSpace: 'nowrap',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(0.97)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
-          >
+          <span style={{ fontSize: '0.92rem', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--l-ink)' }}>
+            <span style={{ color: 'var(--l-maroon)' }}>COACH</span> ABHISHEK
+          </span>
+        </button>
+
+        <div className="l-desk-nav" style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
+          {NAV_LINKS.map((l) => (
+            <a key={l.href} href={l.href} onClick={(e) => { e.preventDefault(); go(l.href); }} className="l-link l-underline">{l.label}</a>
+          ))}
+        </div>
+
+        <div className="l-desk-nav" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => router.push('/login')}
+            style={{ background: 'transparent', color: 'var(--l-ink)', padding: '9px 18px', borderRadius: 999, border: '1px solid var(--l-line-2)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', transition: 'background .2s' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(26,20,16,0.05)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
             Login
           </button>
-          <a href="#trial" className="nav-cta" style={{
-            background: 'var(--red)', color: '#fff',
-            padding: '7px 18px', borderRadius: 980,
-            fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none',
-            transition: 'opacity 0.2s, transform 0.2s', whiteSpace: 'nowrap',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(0.97)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            Free Trial
-          </a>
+          <Magnetic href={SUPPORT_WA_URL} strength={0.4}
+            style={{ background: 'var(--l-grad)', color: '#fff', padding: '9px 20px', borderRadius: 999, fontSize: '0.82rem', fontWeight: 700, boxShadow: '0 8px 22px -8px rgba(245,158,11,0.7)', cursor: 'pointer' }}>
+            Start Free
+          </Magnetic>
         </div>
-      </nav>
 
-      {/* ─── HERO ─── */}
-      <section className="hero" style={{
-        minHeight: 'calc(100dvh - 52px)', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        padding: '68px var(--px) 80px', position: 'relative',
-        background: 'radial-gradient(ellipse 80% 50% at 50% 100%, rgba(217,31,60,0.07) 0%, transparent 70%)',
-      }}>
-        <Image src="/619-logo.png" alt="Coach Abhishek" width={180} height={180} className="hero-logo"
-          style={{ objectFit: 'contain', marginBottom: 48, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.2s forwards' }}
-        />
-        <span className="hero-label" style={{ fontSize: '0.75rem', fontWeight: 500, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 20, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.4s forwards' }}>
-          Lucknow&apos;s Premier Personal Trainer
-        </span>
-        <h1 className="hero-h1" style={{ fontSize: 'clamp(2.8rem,7vw,6rem)', fontWeight: 700, letterSpacing: '-.04em', lineHeight: 1.04, color: 'var(--white)', marginBottom: 6, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.5s forwards' }}>
-          Train Like You<br /><em style={{ fontStyle: 'normal', color: 'var(--red)' }}>Mean It.</em>
-        </h1>
-        <p className="hero-sub-title" style={{ fontSize: 'clamp(1.6rem,4vw,3rem)', fontWeight: 300, letterSpacing: '-.02em', color: 'var(--grey)', marginBottom: 28, opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.6s forwards' }}>
-          Coach Abhishek
-        </p>
-        <p className="hero-desc" style={{ fontSize: '1.05rem', fontWeight: 400, color: 'var(--grey)', lineHeight: 1.7, maxWidth: 520, margin: '0 auto 48px', opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.7s forwards' }}>
-          Elite personal training, MMA, Yoga, Zumba and strength coaching — all under one roof in Lucknow. Backed by certified experts. Built for real results.
-        </p>
-        <div className="hero-buttons" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', opacity: 0, animation: 'fadeUp 1s cubic-bezier(.22,1,.36,1) 0.8s forwards' }}>
-          <button onClick={() => router.push('/login')} className="btn-fill" style={{
-            background: 'var(--red)', color: '#fff', padding: '14px 28px', borderRadius: 980,
-            fontSize: '0.95rem', fontWeight: 600, border: 'none', cursor: 'pointer',
-            transition: 'opacity 0.2s, transform 0.15s', display: 'inline-block',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(0.97)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
+        <button className="l-mobile-btn" onClick={() => setMenuOpen((o) => !o)}
+          style={{ display: 'none', alignItems: 'center', justifyContent: 'center', height: 40, width: 40, borderRadius: 12, background: '#fff', border: '1px solid var(--l-line)', cursor: 'pointer' }}>
+          {menuOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
+      </m.nav>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <m.div
+            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            style={{ position: 'fixed', top: 66, left: 12, right: 12, zIndex: 999, borderRadius: 22, padding: 16, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(20px)', border: '1px solid var(--l-line)', boxShadow: '0 24px 60px -20px rgba(26,20,16,0.25)' }}
           >
-            Login
-          </button>
-          <a href="#trial" className="btn-ghost" style={{
-            background: 'rgba(255,255,255,0.1)', color: 'var(--white)', padding: '14px 28px', borderRadius: 980,
-            fontSize: '0.95rem', fontWeight: 500, textDecoration: 'none', border: 'none', cursor: 'pointer',
-            transition: 'background 0.2s, transform 0.15s', display: 'inline-block', backdropFilter: 'blur(8px)',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.16)'; e.currentTarget.style.transform = 'scale(0.97)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            View Plans
-          </a>
-        </div>
-        <div className="hero-scroll" style={{
-          position: 'absolute', bottom: 36, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-          opacity: 0, animation: 'fadeUp 1s ease 1.2s forwards',
-          color: 'var(--grey2)', fontSize: '0.68rem', letterSpacing: '.15em', textTransform: 'uppercase',
-        }}>
-          <span>Scroll</span>
-          <div className="hero-scroll-arrow" style={{
-            width: 18, height: 18, borderRight: '1.5px solid currentColor', borderBottom: '1.5px solid currentColor',
-            transform: 'rotate(45deg)', marginTop: -4, animation: 'bounce 2s ease-in-out infinite',
-          }} />
-        </div>
-      </section>
-
-      {/* ─── OWNERS ─── */}
-      <div className="owners-band" style={{
-        borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
-        padding: '32px var(--px)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, flexWrap: 'wrap',
-        background: 'var(--surface)', textAlign: 'center',
-      }}>
-        <span className="owners-kicker" style={{ fontSize: '0.7rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--grey2)' }}>Founded &amp; Owned By</span>
-        <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--red)', flexShrink: 0 }} />
-        <span className="owners-names" style={{ fontSize: '1.25rem', fontWeight: 600, letterSpacing: '-.02em', color: 'var(--white)' }}>Narayan Chandel &amp; Rishi Gaur</span>
-        <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--red)', flexShrink: 0 }} />
-        <span className="owners-kicker" style={{ fontSize: '0.7rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--grey2)' }}>Lucknow, India</span>
-      </div>
-
-      {/* ─── NUMBERS ─── */}
-      <section className="numbers-strip" id="about" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '72px var(--px)' }}>
-        <div className="numbers-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', maxWidth: 900, margin: '0 auto' }}>
-          {[
-            { val: '67+', label: 'Active Clients', delay: '' },
-            { val: '7', label: 'Expert Coaches', delay: 'reveal-delay-1' },
-            { val: '5+', label: 'Disciplines', delay: 'reveal-delay-2' },
-            { val: '1yr', label: 'Of Excellence', delay: 'reveal-delay-3' },
-          ].map((item, i) => (
-            <div key={i} className={`reveal ${item.delay}`} style={{ textAlign: 'center', padding: '0 24px', borderRight: '1px solid var(--border)' }}>
-              <div className="number-val" style={{ fontSize: 'clamp(2.4rem,5vw,4rem)', fontWeight: 700, letterSpacing: '-.04em', color: 'var(--white)', lineHeight: 1 }}>
-                {item.val.includes('+') ? <>{item.val.replace('+', '')}<span style={{ color: 'var(--red)' }}>+</span></> : item.val}
-              </div>
-              <div className="number-label" style={{ fontSize: '0.8rem', color: 'var(--grey2)', marginTop: 10, letterSpacing: '.03em' }}>{item.label}</div>
+            {NAV_LINKS.map((l) => (
+              <a key={l.href} href={l.href} onClick={(e) => { e.preventDefault(); go(l.href); }}
+                style={{ display: 'block', padding: '13px 8px', fontSize: '1rem', fontWeight: 600, color: 'var(--l-ink)', textDecoration: 'none', borderBottom: '1px solid var(--l-line)' }}>
+                {l.label}
+              </a>
+            ))}
+            <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+              <button onClick={() => { setMenuOpen(false); router.push('/login'); }}
+                style={{ flex: 1, padding: '12px', borderRadius: 14, background: 'rgba(26,20,16,0.05)', border: '1px solid var(--l-line-2)', fontWeight: 700, cursor: 'pointer' }}>Login</button>
+              <a href={SUPPORT_WA_URL} style={{ flex: 1, padding: '12px', borderRadius: 14, background: 'var(--l-grad)', color: '#fff', fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>Start Free</a>
             </div>
+          </m.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─────────────────────────── HERO ─────────────────────────── */}
+      <section ref={heroRef} onMouseMove={onHeroMouse}
+        style={{ position: 'relative', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '120px var(--l-px) 90px', overflow: 'hidden' }}>
+        {/* animated glow orbs */}
+        <m.div aria-hidden style={{ position: 'absolute', top: '8%', left: '12%', width: 460, height: 460, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.28) 0%, transparent 70%)', filter: 'blur(20px)', x: orb1x, y: orb1y, pointerEvents: 'none' }} className="l-fadefloat" />
+        <m.div aria-hidden style={{ position: 'absolute', bottom: '4%', right: '10%', width: 520, height: 520, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,30,43,0.20) 0%, transparent 70%)', filter: 'blur(20px)', x: orb2x, y: orb2y, pointerEvents: 'none' }} className="l-fadefloat" />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 42%, rgba(255,255,255,0) 0%, var(--l-bg) 78%)', pointerEvents: 'none' }} />
+
+        <m.div style={{ position: 'relative', opacity: heroFade, y: heroLift, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <m.div
+            initial={reduce ? false : { opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: EASE, delay: 0.05 }}
+            style={{ position: 'relative', marginBottom: 34 }}>
+            <div style={{ position: 'absolute', inset: -30, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.35) 0%, transparent 70%)', filter: 'blur(18px)' }} />
+            <Image src="/logo.png" alt="Coach Abhishek" width={124} height={124} style={{ objectFit: 'contain', position: 'relative' }} priority />
+          </m.div>
+
+          <m.div initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 16px', borderRadius: 999, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', marginBottom: 26 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--l-saffron)' }} className="l-fadefloat" />
+            <span className="l-kicker">Lucknow&apos;s Premier Personal Training</span>
+          </m.div>
+
+          <m.h1 className="l-h1" initial={reduce ? false : { opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3, ease: EASE }} style={{ marginBottom: 22, maxWidth: 900 }}>
+            Train Like You <span className="l-grad-text">Mean It.</span>
+          </m.h1>
+
+          <m.p initial={reduce ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.42, ease: EASE }}
+            style={{ fontSize: 'clamp(1rem,1.6vw,1.2rem)', color: 'var(--l-ink-soft)', lineHeight: 1.7, maxWidth: 560, margin: '0 auto 36px' }}>
+            Elite personal training, powerlifting, MMA, yoga, zumba and nutrition — all under one roof, coached by certified experts. Built for real results.
+          </m.p>
+
+          <m.div initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.54, ease: EASE }}
+            style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 34 }}>
+            <Magnetic href={SUPPORT_WA_URL}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 9, background: 'var(--l-grad)', color: '#fff', padding: '15px 30px', borderRadius: 999, fontSize: '1rem', fontWeight: 700, boxShadow: '0 16px 40px -14px rgba(245,158,11,0.75)', cursor: 'pointer' }}>
+              Start 3-Day Free Trial <ArrowRight size={17} />
+            </Magnetic>
+            <Magnetic onClick={() => go('#pricing')} strength={0.25}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 9, background: '#fff', color: 'var(--l-ink)', padding: '15px 28px', borderRadius: 999, fontSize: '1rem', fontWeight: 600, border: '1px solid var(--l-line-2)', cursor: 'pointer' }}>
+              View Plans
+            </Magnetic>
+          </m.div>
+
+          <m.div initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.7 }}
+            style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {['Certified Coaches', '5 Disciplines', 'Measured Progress', 'Free Trial'].map((b) => (
+              <span key={b} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: '0.82rem', fontWeight: 500, color: 'var(--l-ink-soft)' }}>
+                <Check size={15} style={{ color: 'var(--l-saffron-3)' }} /> {b}
+              </span>
+            ))}
+          </m.div>
+        </m.div>
+
+        <div className="l-scroll-arrow" style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', width: 16, height: 16, borderRight: '1.5px solid var(--l-ink-soft)', borderBottom: '1.5px solid var(--l-ink-soft)', animation: 'lbounce 2s ease-in-out infinite' }} />
+      </section>
+
+      {/* ─────────────────────────── STATS ─────────────────────────── */}
+      <section style={{ padding: '10px var(--l-px) 20px' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }} className="l-team-grid">
+          {STATS.map((s, i) => (
+            <Reveal key={s.label} delay={i * 0.08}
+              style={{ background: 'var(--l-surface)', border: '1px solid var(--l-line)', borderRadius: 22, padding: '30px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }} className="l-grad-text">
+                <Counter to={s.to} suffix={s.suffix} />
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--l-ink-soft)', marginTop: 10, fontWeight: 500, letterSpacing: '0.02em' }}>{s.label}</div>
+            </Reveal>
           ))}
         </div>
       </section>
 
-      {/* ─── ABOUT ─── */}
-      <div className="chapter chapter-center" style={{ padding: '120px var(--px)', maxWidth: 1080, margin: '0 auto', textAlign: 'center' }}>
-        <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Who We Are</span>
-        <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20 }}>
-          Fitness that <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>actually</em><br />changes your life.
-        </h2>
-        <p className="chapter-p reveal reveal-delay-2" style={{ fontSize: '1.05rem', color: 'var(--grey)', lineHeight: 1.75, maxWidth: 600, margin: '0 auto' }}>
-          Coach Abhishek was founded with one mission — bring world-class coaching to Lucknow. Every program is certified, personalised, and every client matters. No cookie-cutter plans. No guesswork. Just results.
-        </p>
-      </div>
+      {/* ─────────────────────────── PROGRAMS (BENTO) ─────────────────────────── */}
+      <section id="programs" style={{ padding: '100px var(--l-px)', maxWidth: 1180, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <Reveal><span className="l-kicker">What We Offer</span></Reveal>
+          <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>Every goal. <span className="l-grad-text">One studio.</span></h2></Reveal>
+          <Reveal delay={0.16}><p style={{ fontSize: '1.05rem', color: 'var(--l-ink-soft)', maxWidth: 560, margin: '18px auto 0', lineHeight: 1.7 }}>From raw strength to inner balance — a specialist and a program waiting for you.</p></Reveal>
+        </div>
 
-      {/* ─── PROGRAMS ─── */}
-      <section className="programs-section" id="programs" style={{ background: 'var(--surface)', padding: '120px var(--px)' }}>
-        <div className="programs-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center' }}>
-            <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>What We Offer</span>
-            <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20 }}>
-              Every goal.<br /><em style={{ fontStyle: 'normal', color: 'var(--red)' }}>One studio.</em>
-            </h2>
-            <p className="chapter-p reveal reveal-delay-2" style={{ fontSize: '1.05rem', color: 'var(--grey)', lineHeight: 1.75, maxWidth: 600, margin: '0 auto 64px' }}>
-              From building raw strength to finding inner balance — we have a specialist and a program waiting for you.
-            </p>
+        <div className="l-bento" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+          {PROGRAMS.map((p, i) => {
+            const Icon = p.icon;
+            return (
+              <Reveal key={p.name} delay={(i % 3) * 0.08}
+                className={p.span === 2 ? 'l-card l-bento-span2' : 'l-card'}
+                style={{ gridColumn: p.span === 2 ? 'span 2' : 'span 1', padding: '34px 30px', position: 'relative', overflow: 'hidden' }}>
+                <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: p.accent === '#8B1E2B' ? 'linear-gradient(90deg,#8B1E2B,#A8253A)' : 'var(--l-grad)', opacity: 0.9 }} />
+                <span style={{ display: 'inline-flex', height: 50, width: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 15, background: p.accent === '#8B1E2B' ? 'rgba(139,30,43,0.1)' : 'rgba(245,158,11,0.12)', marginBottom: 22 }}>
+                  <Icon size={23} style={{ color: p.accent }} strokeWidth={1.9} />
+                </span>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 10 }}>{p.name}</div>
+                <div style={{ fontSize: '0.92rem', color: 'var(--l-ink-soft)', lineHeight: 1.65, maxWidth: p.span === 2 ? 520 : undefined }}>{p.desc}</div>
+                <span style={{ display: 'inline-block', marginTop: 20, fontSize: '0.66rem', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, color: p.accent, background: p.accent === '#8B1E2B' ? 'rgba(139,30,43,0.08)' : 'rgba(245,158,11,0.1)', padding: '5px 12px', borderRadius: 999 }}>{p.tag}</span>
+              </Reveal>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ─────────────────────────── WHY (system) ─────────────────────────── */}
+      <section id="why" style={{ background: 'linear-gradient(180deg,#fff 0%,#FBF7EE 100%)', borderTop: '1px solid var(--l-line)', borderBottom: '1px solid var(--l-line)', padding: '100px var(--l-px)' }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <Reveal><span className="l-kicker">Why Coach Abhishek</span></Reveal>
+            <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>Not just a gym. <span className="l-grad-text">A system.</span></h2></Reveal>
           </div>
-          <div className="programs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
-            {[
-              { emoji: '🏋️', name: 'Personal Training', desc: '1-on-1 sessions tailored to your body, your goals, and your schedule. Strength, fat loss, muscle building — done right.', tag: 'Certified Trainers', delay: '' },
-              { emoji: '🥊', name: 'MMA & Combat Fitness', desc: 'Striking, grappling, and conditioning led by our seasoned MMA expert. Build discipline, fitness, and real self-defence skills.', tag: 'All Levels Welcome', delay: 'reveal-delay-1' },
-              { emoji: '🧘', name: 'Yoga', desc: 'Traditional yogic practice for flexibility, breath control, and mental clarity. Guided by our dedicated Yog Guru.', tag: 'Mind & Body', delay: 'reveal-delay-2' },
-              { emoji: '🎵', name: 'Zumba', desc: 'High-energy dance fitness that burns serious calories while being genuinely fun. Led by our certified Zumba expert.', tag: 'Dance Fitness', delay: 'reveal-delay-3' },
-              { emoji: '🥗', name: 'Nutrition Coaching', desc: 'Custom diet planning aligned with your training. No fad diets — practical, sustainable nutrition guidance you\'ll actually follow.', tag: 'Diet Plans', delay: '' },
-              { emoji: '🏅', name: 'Powerlifting & Strength', desc: 'Train squat, bench, and deadlift under a national-level competitive powerlifter. Learn the technique that moves real weight.', tag: 'Advanced Strength', delay: 'reveal-delay-1' },
-              { emoji: '📱', name: 'Online Coaching', desc: 'Can\'t make it to the studio? Get a fully customised training and nutrition plan with weekly check-ins delivered remotely.', tag: 'Remote Access', delay: 'reveal-delay-2' },
-              { emoji: '👥', name: 'Group Fitness', desc: 'High-energy group sessions that combine cardio, functional training, and community motivation. Better together.', tag: 'Community', delay: 'reveal-delay-3' },
-            ].map((prog, i) => (
-              <div key={i} className={`program-card reveal ${prog.delay}`} style={{
-                background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 20,
-                padding: '40px 32px', cursor: 'default', transition: 'border-color 0.3s, transform 0.3s, background 0.3s',
-              }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.background = 'var(--surface3)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.background = 'var(--surface2)'; }}
-              >
-                <span style={{ fontSize: '2.4rem', marginBottom: 24, display: 'block', lineHeight: 1 }}>{prog.emoji}</span>
-                <div style={{ fontSize: '1.15rem', fontWeight: 600, letterSpacing: '-.02em', marginBottom: 10 }}>{prog.name}</div>
-                <div style={{ fontSize: '0.88rem', color: 'var(--grey)', lineHeight: 1.65 }}>{prog.desc}</div>
-                <span style={{ display: 'inline-block', marginTop: 20, fontSize: '0.68rem', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--red)', border: '1px solid var(--red-soft)', padding: '4px 12px', borderRadius: 980 }}>{prog.tag}</span>
+          <div className="l-why-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+            {WHY.map((w, i) => {
+              const Icon = w.icon;
+              return (
+                <Reveal key={w.title} delay={(i % 3) * 0.08} className="l-card" style={{ padding: '32px 30px' }}>
+                  <span style={{ display: 'inline-flex', height: 46, width: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, background: 'var(--l-grad)', marginBottom: 20, boxShadow: '0 8px 20px -8px rgba(245,158,11,0.7)' }}>
+                    <Icon size={21} color="#fff" strokeWidth={2} />
+                  </span>
+                  <div style={{ fontSize: '1.06rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 9 }}>{w.title}</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--l-ink-soft)', lineHeight: 1.65 }}>{w.body}</div>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────── TEAM ─────────────────────────── */}
+      <section id="team" style={{ padding: '100px var(--l-px)', maxWidth: 1180, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <Reveal><span className="l-kicker">The People Behind Your Progress</span></Reveal>
+          <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>Meet the <span className="l-grad-text">experts.</span></h2></Reveal>
+          <Reveal delay={0.16}><p style={{ fontSize: '1.05rem', color: 'var(--l-ink-soft)', maxWidth: 560, margin: '18px auto 0', lineHeight: 1.7 }}>Certified, passionate, and personally invested in your transformation — not gym staff, specialists.</p></Reveal>
+        </div>
+        <div className="l-team-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+          {TEAM.map((mem, i) => (
+            <Reveal key={mem.name} delay={(i % 3) * 0.07} className="l-card"
+              style={{ padding: '32px 30px', gridColumn: mem.featured ? 'span 1' : undefined, position: 'relative', background: mem.featured ? 'linear-gradient(150deg,rgba(245,158,11,0.09),#fff 60%)' : undefined, borderColor: mem.featured ? 'rgba(245,158,11,0.3)' : undefined }}>
+              {mem.featured && <span style={{ position: 'absolute', top: 22, right: 22, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff', background: 'var(--l-maroon)', padding: '4px 10px', borderRadius: 999 }}>Head Coach</span>}
+              <div style={{ fontSize: '0.66rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--l-saffron-3)', fontWeight: 700, marginBottom: 12 }}>{mem.role}</div>
+              <div style={{ fontSize: '1.28rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 12, lineHeight: 1.15 }}>{mem.name}</div>
+              <div style={{ fontSize: '0.88rem', color: 'var(--l-ink-soft)', lineHeight: 1.65 }}>{mem.bio}</div>
+              <span style={{ display: 'inline-block', marginTop: 18, fontSize: '0.64rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--l-ink-soft)', border: '1px solid var(--l-line-2)', padding: '4px 12px', borderRadius: 999 }}>{mem.badge}</span>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ─────────────────────────── PRICING ─────────────────────────── */}
+      <section id="pricing" style={{ background: 'linear-gradient(180deg,#FBF7EE 0%,#fff 100%)', borderTop: '1px solid var(--l-line)', padding: '100px var(--l-px)' }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <Reveal><span className="l-kicker">Membership</span></Reveal>
+            <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>Simple, honest <span className="l-grad-text">pricing.</span></h2></Reveal>
+            <Reveal delay={0.16}>
+              <div style={{ display: 'inline-flex', marginTop: 30, padding: 5, borderRadius: 999, background: '#fff', border: '1px solid var(--l-line)' }}>
+                {(['monthly', 'quarterly'] as const).map((b) => (
+                  <button key={b} onClick={() => setBilling(b)}
+                    style={{ position: 'relative', padding: '9px 22px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700, textTransform: 'capitalize', color: billing === b ? '#fff' : 'var(--l-ink-soft)', background: billing === b ? 'var(--l-grad)' : 'transparent', transition: 'color .2s' }}>
+                    {b}{b === 'quarterly' && <span style={{ marginLeft: 6, fontSize: '0.64rem', opacity: 0.9 }}>-10%</span>}
+                  </button>
+                ))}
               </div>
-            ))}
+            </Reveal>
           </div>
-        </div>
-      </section>
 
-      {/* ─── TEAM ─── */}
-      <section className="team-section" id="team" style={{ background: 'var(--black)', padding: '120px var(--px)' }}>
-        <div className="team-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center' }}>
-            <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>The People Behind Your Progress</span>
-            <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20 }}>
-              Meet the <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>experts.</em>
-            </h2>
-            <p className="chapter-p reveal reveal-delay-2" style={{ fontSize: '1.05rem', color: 'var(--grey)', lineHeight: 1.75, maxWidth: 600, margin: '0 auto 64px' }}>
-              Coach Abhishek is certified, passionate, and personally invested in your transformation. Not gym staff — a specialist.
-            </p>
-          </div>
-          <div className="team-grid" style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 1,
-            background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden',
-          }}>
-            {[
-              { role: 'Personal Training & Powerlifting', name: 'Abhishek Katiyar', bio: 'K11 Certified Head Trainer and national-level competitive powerlifter in the 83kg Senior category. Current competition lifts: 230kg Squat · 150kg Bench · 260kg Deadlift. A coach whose personal performance backs every cue he gives.', badge: 'K11 Certified', featured: true, head: 'Head Trainer' },
-              { role: 'Personal Training', name: 'Riya Singh', bio: 'Certified personal trainer specialising in body transformation, weight management, and functional fitness for women and beginners. Warm, precise, and genuinely results-driven.', badge: 'Certified Trainer', delay: 'reveal-delay-1' },
-              { role: 'Personal Training', name: 'Rajat Katiyar', bio: 'Strength and hypertrophy specialist with sharp knowledge of movement mechanics and progressive overload programming for every fitness level.', badge: 'Strength & Conditioning', delay: 'reveal-delay-2' },
-              { role: 'Personal Training', name: 'Shivani Verma', bio: 'Dedicated trainer empowering clients through science-based programs, consistent accountability, and the kind of motivation that actually sticks.', badge: 'Certified Trainer' },
-              { role: 'MMA Expert', name: 'Vikrant Agnihotri', bio: 'Seasoned MMA practitioner bringing combat sports conditioning, striking fundamentals, and mental toughness to every class. Beginner to advanced, all welcome.', badge: 'Combat Sports', delay: 'reveal-delay-1' },
-              { role: 'Yog Guru', name: 'Shagun Savita', bio: 'Guiding students through authentic yogic practice — asana, pranayama, and mindful awareness — for strength, flexibility, and inner stillness.', badge: 'Yoga & Wellness', delay: 'reveal-delay-2' },
-              { role: 'Zumba Expert', name: 'Gaurav', bio: 'High-energy Zumba instructor whose sessions feel more like a celebration than a workout. Cardio you\'ll look forward to — every single time.', badge: 'Dance Fitness' },
-            ].map((member, i) => (
-              <div key={i} className={`team-card reveal ${member.delay || ''}`} style={{
-                background: member.featured ? 'linear-gradient(135deg,rgba(217,31,60,0.08) 0%,var(--surface2) 100%)' : 'var(--surface2)',
-                padding: '40px 36px', transition: 'background 0.3s', position: 'relative',
-              }}
-                onMouseEnter={(e) => { if (!member.featured) e.currentTarget.style.background = 'var(--surface3)'; }}
-                onMouseLeave={(e) => { if (!member.featured) e.currentTarget.style.background = 'var(--surface2)'; }}
-              >
-                {member.head && <div style={{ position: 'absolute', top: 20, right: 20, background: 'var(--red)', color: '#fff', fontSize: '0.6rem', letterSpacing: '.14em', fontWeight: 600, textTransform: 'uppercase', padding: '4px 10px', borderRadius: 980 }}>{member.head}</div>}
-                <div className="team-card-role" style={{ fontSize: '0.68rem', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 14 }}>{member.role}</div>
-                <div className="team-card-name" style={{ fontSize: '1.35rem', fontWeight: 600, letterSpacing: '-.02em', marginBottom: 12, lineHeight: 1.15, color: member.featured ? 'var(--white)' : undefined }}>{member.name}</div>
-                <div className="team-card-bio" style={{ fontSize: '0.88rem', color: 'var(--grey)', lineHeight: 1.65 }}>{member.bio}</div>
-                <span className="team-card-badge" style={{ display: 'inline-block', marginTop: 18, fontSize: '0.68rem', letterSpacing: '.1em', textTransform: 'uppercase', border: '1px solid var(--border-hover)', color: 'var(--grey2)', padding: '4px 12px', borderRadius: 980 }}>{member.badge}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── MEMBERSHIP ─── */}
-      <section className="membership-section" id="membership" style={{ background: 'var(--black)', padding: '120px var(--px)' }}>
-        <div className="membership-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center' }}>
-            <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Membership Plans</span>
-            <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20 }}>
-              Simple, honest <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>pricing.</em>
-            </h2>
-            <p className="chapter-p reveal reveal-delay-2" style={{ fontSize: '1.05rem', color: 'var(--grey)', lineHeight: 1.75, maxWidth: 600, margin: '0 auto 64px' }}>
-              Choose the plan that fits your goals. No hidden charges, no lock-in. Just great coaching at a fair price.
-            </p>
-          </div>
-          <div className="plans-grid reveal reveal-delay-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden' }}>
-            {[
-              { name: 'Starter', price: '1,999', period: 'per month', popular: false, features: ['Gym floor access', '1 Group class/week', 'Basic fitness assessment', 'Locker facility', 'Trainer guidance on floor'], primary: false },
-              { name: 'Pro', price: '3,999', period: 'per month', popular: true, features: ['Everything in Starter', '8 Personal training sessions', 'Custom nutrition plan', '3 Group classes/week', 'Monthly body composition check', 'WhatsApp coach support'], primary: true },
-              { name: 'Elite', price: '6,499', period: 'per month', popular: false, features: ['Everything in Pro', 'Unlimited PT sessions', 'Unlimited group classes', 'Speciality class access (MMA/Yoga/Zumba)', 'Weekly diet revision', 'Priority scheduling', 'Quarterly progress report'], primary: false },
-            ].map((plan, i) => (
-              <div key={i} className="plan-card" style={{ background: plan.popular ? 'var(--surface3)' : 'var(--surface2)', padding: '48px 36px', textAlign: 'center', position: 'relative' }}>
-                {plan.popular && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', background: 'var(--red)', color: '#fff', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', padding: '6px 20px', borderRadius: '0 0 12px 12px' }}>Most Popular</div>}
-                <div className="plan-name" style={{ fontSize: '0.75rem', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--grey2)', marginBottom: 24 }}>{plan.name}</div>
-                <div className="plan-price" style={{ fontSize: 'clamp(2.2rem,4vw,3.2rem)', fontWeight: 700, letterSpacing: '-.04em', marginBottom: 4 }}>
-                  <sup style={{ fontSize: '1rem', fontWeight: 400, verticalAlign: 'super', marginRight: 2 }}>₹</sup>{plan.price}
-                </div>
-                <div className="plan-period" style={{ fontSize: '0.82rem', color: 'var(--grey2)', marginBottom: 36 }}>{plan.period}</div>
-                <ul className="plan-features" style={{ listStyle: 'none', textAlign: 'left', marginBottom: 40 }}>
-                  {plan.features.map((f, j) => (
-                    <li key={j} style={{ fontSize: '0.88rem', color: 'var(--grey)', padding: '9px 0', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ color: 'var(--red)', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0 }}>✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-                <a href="#contact" className={`plan-btn ${plan.primary ? 'plan-btn-primary' : 'plan-btn-secondary'}`} style={{
-                  display: 'block', width: '100%', padding: '14px 0', borderRadius: 980,
-                  fontSize: '0.9rem', fontWeight: 600, textDecoration: 'none', textAlign: 'center', cursor: 'pointer', border: 'none',
-                  background: plan.primary ? 'var(--red)' : 'rgba(255,255,255,0.08)', color: plan.primary ? '#fff' : 'var(--white)',
-                  transition: 'opacity 0.2s, transform 0.15s',
-                }}
-                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(0.97)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
-                >
-                  {plan.primary ? 'Join Pro' : plan.name === 'Starter' ? 'Get Started' : 'Go Elite'}
-                </a>
-              </div>
-            ))}
-          </div>
-          <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--grey2)', marginTop: 28, lineHeight: 1.6 }}>* Prices are indicative. Contact us for exact current pricing and custom packages. Corporate and group discounts available.</p>
-        </div>
-      </section>
-
-      {/* ─── WHY US ─── */}
-      <section className="why-section" style={{ background: 'var(--surface)', padding: '120px var(--px)' }}>
-        <div className="why-inner" style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center' }}>
-            <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Why Coach Abhishek?</span>
-            <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20 }}>
-              Not just a gym.<br /><em style={{ fontStyle: 'normal', color: 'var(--red)' }}>A system.</em>
-            </h2>
-          </div>
-          <div className="why-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'var(--border)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden', marginTop: 64 }}>
-            {[
-              { icon: '🎯', title: 'Personalised to You', body: 'No two clients are the same. Every program at Coach Abhishek is built around your body, history, schedule, and goals — not a generic template.' },
-              { icon: '🏆', title: 'Elite Coach Credentials', body: 'Our head trainer is an active national-level powerlifter. The coaches teaching you aren\'t just certified — they live what they teach.', delay: 'reveal-delay-1' },
-              { icon: '📊', title: 'Progress You Can Measure', body: 'We track body composition, strength metrics, and wellness markers so you can see exactly how far you\'ve come — and where you\'re headed.', delay: 'reveal-delay-2' },
-              { icon: '🤝', title: 'Real Accountability', body: 'Check-ins, WhatsApp support, and coaches who actually notice when you miss a session. We\'re invested in your outcome.' },
-              { icon: '🌟', title: '5 Disciplines, One Roof', body: 'Personal training, MMA, Yoga, Zumba, and nutrition coaching — no need to juggle multiple gyms or online apps. It\'s all here.', delay: 'reveal-delay-1' },
-              { icon: '💬', title: 'Community That Pushes You', body: '67+ members who motivate each other. Group challenges, transformation stories, and a culture where everyone is rooting for everyone.', delay: 'reveal-delay-2' },
-            ].map((why, i) => (
-              <div key={i} className={`why-card reveal ${why.delay || ''}`} style={{ background: 'var(--surface2)', padding: '44px 36px', transition: 'background 0.3s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface3)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface2)'; }}
-              >
-                <span style={{ fontSize: '2rem', marginBottom: 20, display: 'block' }}>{why.icon}</span>
-                <div style={{ fontSize: '1.05rem', fontWeight: 600, letterSpacing: '-.02em', marginBottom: 10 }}>{why.title}</div>
-                <div style={{ fontSize: '0.88rem', color: 'var(--grey)', lineHeight: 1.65 }}>{why.body}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── FREE TRIAL ─── */}
-      <section className="trial-section" id="trial" style={{
-        padding: '100px var(--px)', textAlign: 'center',
-        background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(217,31,60,0.12) 0%, transparent 70%)',
-        borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
-      }}>
-        <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Zero Risk</span>
-        <h2 className="trial-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', marginBottom: 16 }}>
-          Try Coach Abhishek Free<br />for 3 Days.
-        </h2>
-        <p className="trial-p reveal reveal-delay-2" style={{ fontSize: '1rem', color: 'var(--grey)', marginBottom: 40, maxWidth: 440, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.7 }}>
-          Walk in, train with our coaches, experience the studio — completely free, no strings attached. We&apos;re confident you&apos;ll stay.
-        </p>
-        <div className="reveal reveal-delay-3">
-          <a href={SUPPORT_WA_URL} className="btn-fill" style={{
-            background: 'var(--red)', color: '#fff', padding: '16px 36px', borderRadius: 980,
-            fontSize: '1rem', fontWeight: 600, textDecoration: 'none', border: 'none', cursor: 'pointer', display: 'inline-block',
-            transition: 'opacity 0.2s, transform 0.15s',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(0.97)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            Claim Your Free Trial →
-          </a>
-        </div>
-      </section>
-
-      {/* ─── FAQ ─── */}
-      <section className="faq-section" style={{ background: 'var(--black)', padding: '120px var(--px)' }}>
-        <div className="faq-inner" style={{ maxWidth: 720, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center' }}>
-            <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Questions</span>
-            <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20 }}>
-              We&apos;ve got <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>answers.</em>
-            </h2>
-          </div>
-          <div className="faq-list reveal reveal-delay-2" style={{ marginTop: 64, borderTop: '1px solid var(--border)' }}>
-            {faqs.map((faq, i) => (
-              <div key={i} className={`faq-item ${openFaq === i ? 'open' : ''}`} style={{ borderBottom: '1px solid var(--border)' }}>
-                <button className="faq-q" onClick={() => toggleFaq(i)} style={{
-                  width: '100%', background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '22px 0', cursor: 'pointer', fontFamily: 'var(--font)', fontSize: '1rem', fontWeight: 500,
-                  color: openFaq === i ? 'var(--red)' : 'var(--white)', textAlign: 'left', gap: 16,
-                }}>
-                  <span>{faq.q}</span>
-                  <div style={{
-                    flexShrink: 0, width: 22, height: 22, border: '1px solid var(--border-hover)', borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 0.2s, transform 0.3s', fontSize: '0.9rem',
-                    color: openFaq === i ? '#fff' : 'var(--grey)',
-                    background: openFaq === i ? 'var(--red)' : undefined,
-                    borderColor: openFaq === i ? 'var(--red)' : undefined,
-                    transform: openFaq === i ? 'rotate(45deg)' : undefined,
-                  }}>+</div>
-                </button>
-                <div className="faq-a" style={{
-                  maxHeight: openFaq === i ? 300 : 0, overflow: 'hidden',
-                  transition: 'max-height 0.45s ease, padding 0.3s ease',
-                }}>
-                  <div className="faq-a-inner" style={{ fontSize: '0.93rem', color: 'var(--grey)', lineHeight: 1.75, paddingBottom: 22 }}>
-                    {faq.a}
+          <div className="l-pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, alignItems: 'stretch' }}>
+            {PLANS.map((plan, i) => {
+              const price = billing === 'monthly' ? plan.monthly : quarterly(plan.monthly);
+              return (
+                <Reveal key={plan.name} delay={i * 0.08}
+                  style={{ position: 'relative', background: plan.popular ? 'linear-gradient(160deg,#1A1410 0%,#2A211A 100%)' : 'var(--l-surface)', color: plan.popular ? '#fff' : 'var(--l-ink)', border: plan.popular ? '1px solid rgba(245,158,11,0.4)' : '1px solid var(--l-line)', borderRadius: 26, padding: '40px 32px', boxShadow: plan.popular ? '0 30px 70px -30px rgba(245,158,11,0.5)' : 'none', transform: plan.popular ? 'scale(1.03)' : undefined }}>
+                  {plan.popular && <span style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: 'var(--l-grad)', color: '#fff', fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '6px 16px', borderRadius: 999, boxShadow: '0 8px 20px -8px rgba(245,158,11,0.8)' }}>Most Popular</span>}
+                  <div style={{ fontSize: '0.72rem', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700, color: plan.popular ? 'var(--l-saffron-2)' : 'var(--l-ink-soft)', marginBottom: 20 }}>{plan.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 4 }}>
+                    <sup style={{ fontSize: '1.1rem', fontWeight: 500, marginTop: 8 }}>₹</sup>
+                    <span style={{ fontSize: 'clamp(2.4rem,4vw,3.2rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>{price.toLocaleString('en-IN')}</span>
+                    <span style={{ fontSize: '0.85rem', color: plan.popular ? 'rgba(255,255,255,0.6)' : 'var(--l-ink-soft)', marginBottom: 6 }}>/ month</span>
                   </div>
-                </div>
-              </div>
-            ))}
+                  <div style={{ fontSize: '0.76rem', color: plan.popular ? 'rgba(255,255,255,0.5)' : 'var(--l-ink-soft)', marginBottom: 30 }}>
+                    {billing === 'quarterly' ? 'billed quarterly · indicative' : 'billed monthly · indicative'}
+                  </div>
+                  <ul style={{ listStyle: 'none', margin: '0 0 32px', padding: 0 }}>
+                    {plan.features.map((f) => (
+                      <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', fontSize: '0.88rem', color: plan.popular ? 'rgba(255,255,255,0.85)' : 'var(--l-ink-soft)' }}>
+                        <Check size={16} style={{ color: 'var(--l-saffron)', flexShrink: 0, marginTop: 2 }} /> {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <a href={SUPPORT_WA_URL}
+                    style={{ display: 'block', textAlign: 'center', padding: '14px', borderRadius: 999, fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none', cursor: 'pointer', background: plan.popular ? 'var(--l-grad)' : 'rgba(26,20,16,0.05)', color: plan.popular ? '#fff' : 'var(--l-ink)', border: plan.popular ? 'none' : '1px solid var(--l-line-2)', transition: 'transform .15s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(0.98)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}>
+                    {plan.popular ? 'Join Pro' : `Choose ${plan.name}`}
+                  </a>
+                </Reveal>
+              );
+            })}
           </div>
+          <Reveal delay={0.1}><p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--l-ink-soft)', marginTop: 28, lineHeight: 1.6 }}>Prices are indicative — contact us for exact current pricing, custom packages, and corporate or group discounts.</p></Reveal>
         </div>
       </section>
 
-      {/* ─── CONTACT ─── */}
-      <section className="contact-section" id="contact" style={{ background: 'var(--surface)', padding: '120px var(--px)' }}>
-        <div className="contact-inner" style={{ maxWidth: 1080, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
+      {/* ─────────────────────────── FAQ ─────────────────────────── */}
+      <section style={{ padding: '100px var(--l-px)' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <Reveal><span className="l-kicker">Questions</span></Reveal>
+            <Reveal delay={0.08}><h2 className="l-h2" style={{ marginTop: 16 }}>We&apos;ve got <span className="l-grad-text">answers.</span></h2></Reveal>
+          </div>
           <div>
-            <span className="kicker reveal" style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 16, display: 'block' }}>Find Us</span>
-            <h2 className="chapter-h2 reveal reveal-delay-1" style={{ fontSize: 'clamp(2rem,5vw,3.5rem)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.08, marginBottom: 20, maxWidth: 420 }}>
-              Let&apos;s talk <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>goals.</em>
+            {FAQS.map((f, i) => {
+              const open = openFaq === i;
+              return (
+                <Reveal key={f.q} delay={i * 0.04}
+                  style={{ borderRadius: 18, border: '1px solid var(--l-line)', background: '#fff', marginBottom: 12, overflow: 'hidden' }}>
+                  <button onClick={() => setOpenFaq(open ? null : i)}
+                    aria-expanded={open}
+                    style={{ width: '100%', background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, color: open ? 'var(--l-saffron-3)' : 'var(--l-ink)', textAlign: 'left', gap: 16 }}>
+                    <span>{f.q}</span>
+                    <m.span animate={{ rotate: open ? 45 : 0 }} transition={{ duration: 0.25 }}
+                      style={{ flexShrink: 0, display: 'flex', height: 26, width: 26, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: open ? 'var(--l-grad)' : 'rgba(26,20,16,0.05)', color: open ? '#fff' : 'var(--l-ink-soft)' }}>
+                      <Plus size={15} />
+                    </m.span>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {open && (
+                      <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: EASE }} style={{ overflow: 'hidden' }}>
+                        <div style={{ padding: '0 24px 22px', fontSize: '0.92rem', color: 'var(--l-ink-soft)', lineHeight: 1.7 }}>{f.a}</div>
+                      </m.div>
+                    )}
+                  </AnimatePresence>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────── FINAL CTA ─────────────────────────── */}
+      <section style={{ padding: '20px var(--l-px) 110px' }}>
+        <Reveal style={{ position: 'relative', maxWidth: 1120, margin: '0 auto', borderRadius: 34, overflow: 'hidden', background: 'linear-gradient(150deg,#1A1410 0%,#2A211A 55%,#3A1418 100%)', padding: 'clamp(48px,7vw,88px) var(--l-px)', textAlign: 'center' }}>
+          <div aria-hidden style={{ position: 'absolute', top: '-30%', left: '20%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.35) 0%, transparent 70%)', filter: 'blur(30px)' }} />
+          <div aria-hidden style={{ position: 'absolute', bottom: '-40%', right: '15%', width: 420, height: 420, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,30,43,0.4) 0%, transparent 70%)', filter: 'blur(30px)' }} />
+          <div style={{ position: 'relative' }}>
+            <h2 style={{ fontSize: 'clamp(2.2rem,5.4vw,4rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.04, color: '#fff', marginBottom: 20 }}>
+              Your strongest self<br />starts <span className="l-grad-text">today.</span>
             </h2>
-            <p className="chapter-p reveal reveal-delay-2" style={{ fontSize: '1.05rem', color: 'var(--grey)', lineHeight: 1.75, maxWidth: 600, marginBottom: 48 }}>
-              Whether you have questions about programs, pricing, or just want to see the studio — we&apos;re here. Come in or reach out directly.
+            <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.68)', maxWidth: 460, margin: '0 auto 40px', lineHeight: 1.7 }}>
+              3-day free trial. No card required. Just show up — we&apos;ll handle the rest.
             </p>
-            {[
-              { label: 'Phone / WhatsApp', value: <a href={SUPPORT_TEL_URL} style={{ color: 'var(--red)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'} onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}>{SUPPORT_PHONE_RAW}</a>, delay: '' },
-              { label: 'Location', value: <>Coach Abhishek<br />Lucknow, Uttar Pradesh, India</>, delay: 'reveal-delay-1' },
-              { label: 'Studio Hours', value: <>Mon – Sat &nbsp;·&nbsp; 6:00 AM – 9:00 PM<br />Sunday &nbsp;·&nbsp; 7:00 AM – 12:00 PM</>, delay: 'reveal-delay-2' },
-              { label: 'Owned By', value: 'Abhishek Katiyar', delay: 'reveal-delay-3' },
-            ].map((info, i) => (
-              <div key={i} className={`contact-info-block reveal ${info.delay}`} style={{ marginBottom: 28 }}>
-                <div className="contact-label" style={{ fontSize: '0.7rem', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--grey2)', marginBottom: 8 }}>{info.label}</div>
-                <div className="contact-value" style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--white)', lineHeight: 1.5 }}>{info.value}</div>
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Magnetic href={SUPPORT_WA_URL} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, background: 'var(--l-grad)', color: '#fff', padding: '16px 32px', borderRadius: 999, fontSize: '1rem', fontWeight: 700, boxShadow: '0 16px 40px -14px rgba(245,158,11,0.7)', cursor: 'pointer' }}>
+                <MessageCircle size={18} /> Book on WhatsApp
+              </Magnetic>
+              <Magnetic href={SUPPORT_TEL_URL} strength={0.25} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '16px 30px', borderRadius: 999, fontSize: '1rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer' }}>
+                <Phone size={17} /> Call Us Now
+              </Magnetic>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* ─────────────────────────── FOOTER ─────────────────────────── */}
+      <footer id="contact" style={{ background: '#fff', borderTop: '1px solid var(--l-line)', padding: '72px var(--l-px) 40px' }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+          <div className="l-contact-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 48, marginBottom: 56 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                <span style={{ display: 'flex', height: 38, width: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 12, background: '#fff', border: '1px solid var(--l-line)', boxShadow: '0 2px 10px rgba(26,20,16,0.1)' }}>
+                  <Image src="/logo.png" alt="Coach Abhishek" width={26} height={26} style={{ objectFit: 'contain' }} />
+                </span>
+                <span style={{ fontSize: '1rem', fontWeight: 700 }}><span style={{ color: 'var(--l-maroon)' }}>COACH</span> ABHISHEK</span>
               </div>
-            ))}
+              <p style={{ fontSize: '0.9rem', color: 'var(--l-ink-soft)', lineHeight: 1.7, maxWidth: 320, marginBottom: 22 }}>
+                Elite personal training and strength coaching in Lucknow. Certified experts, real accountability, results you can measure.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[{ Icon: Instagram, href: '#' }, { Icon: Youtube, href: '#' }, { Icon: MessageCircle, href: SUPPORT_WA_URL }].map(({ Icon, href }, i) => (
+                  <a key={i} href={href} aria-label="social"
+                    style={{ display: 'flex', height: 38, width: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 11, border: '1px solid var(--l-line)', color: 'var(--l-ink-soft)', transition: 'all .2s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--l-saffron)'; e.currentTarget.style.color = 'var(--l-saffron-3)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--l-line)'; e.currentTarget.style.color = 'var(--l-ink-soft)'; }}>
+                    <Icon size={17} />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: '0.72rem', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--l-ink)', marginBottom: 18 }}>Explore</div>
+              {NAV_LINKS.map((l) => (
+                <a key={l.href} href={l.href} onClick={(e) => { e.preventDefault(); go(l.href); }}
+                  style={{ display: 'block', fontSize: '0.9rem', color: 'var(--l-ink-soft)', textDecoration: 'none', padding: '7px 0', transition: 'color .2s' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--l-ink)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--l-ink-soft)')}>{l.label}</a>
+              ))}
+            </div>
+
+            <div>
+              <div style={{ fontSize: '0.72rem', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 700, color: 'var(--l-ink)', marginBottom: 18 }}>Visit &amp; Contact</div>
+              {[
+                { Icon: Phone, node: <a href={SUPPORT_TEL_URL} style={{ color: 'var(--l-ink-soft)', textDecoration: 'none' }}>{SUPPORT_PHONE_RAW}</a> },
+                { Icon: MapPin, node: <>Lucknow, Uttar Pradesh, India</> },
+                { Icon: Clock, node: <>Mon–Sat · 6 AM – 9 PM<br />Sun · 7 AM – 12 PM</> },
+              ].map(({ Icon, node }, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '7px 0', fontSize: '0.9rem', color: 'var(--l-ink-soft)', lineHeight: 1.55 }}>
+                  <Icon size={16} style={{ color: 'var(--l-saffron-3)', flexShrink: 0, marginTop: 3 }} />
+                  <span>{node}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="map-placeholder reveal reveal-delay-2" style={{
-            width: '100%', aspectRatio: '4/3', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 20,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--grey2)', fontSize: '0.88rem', textAlign: 'center', padding: 24,
-          }}>
-            <div style={{ fontSize: '2.5rem', opacity: 0.5 }}>📍</div>
-            <p><strong style={{ color: 'var(--white)' }}>Coach Abhishek</strong><br />Lucknow, Uttar Pradesh<br /><br /><a href="https://maps.google.com" target="_blank" style={{ color: 'var(--red)', fontSize: '0.82rem' }}>Open in Google Maps →</a></p>
+
+          <div style={{ borderTop: '1px solid var(--l-line)', paddingTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--l-ink-soft)' }}>© 2026 Coach Abhishek · Lucknow, India</span>
+            <button onClick={() => router.push('/login')}
+              style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--l-ink-soft)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--l-ink)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--l-ink-soft)')}>
+              Staff / Trainer Login →
+            </button>
           </div>
-        </div>
-      </section>
-
-      {/* ─── SOCIAL ─── */}
-      <section className="social-section" style={{ background: 'var(--black)', padding: '80px var(--px)', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-        <div style={{ fontSize: '0.72rem', letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--grey2)', marginBottom: 32 }}>Follow Our Journey</div>
-        <div className="social-links" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {[
-            { label: 'Instagram', icon: <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: 'currentColor' }}><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg> },
-            { label: 'TikTok / YouTube', icon: <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: 'currentColor' }}><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.19 8.19 0 004.79 1.53V6.77a4.85 4.85 0 01-1.02-.08z" /></svg> },
-            { label: 'WhatsApp', icon: <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: 'currentColor' }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg> },
-          ].map((social, i) => (
-            <a key={i} href="#" className="social-link" style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderRadius: 980,
-              border: '1px solid var(--border)', fontSize: '0.88rem', color: 'var(--grey)', textDecoration: 'none',
-              transition: 'border-color 0.2s, color 0.2s, transform 0.2s',
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.color = 'var(--white)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--grey)'; e.currentTarget.style.transform = 'none'; }}
-            >
-              {social.icon} {social.label}
-            </a>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── BIG CTA ─── */}
-      <section className="bigcta-section" style={{
-        background: 'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(217,31,60,0.1) 0%, transparent 70%)',
-        padding: '120px var(--px)', textAlign: 'center',
-      }}>
-        <h2 className="bigcta-h2 reveal" style={{ fontSize: 'clamp(2.5rem,6vw,5rem)', fontWeight: 700, letterSpacing: '-.04em', lineHeight: 1.04, marginBottom: 20 }}>
-          Your strongest self<br />starts <em style={{ fontStyle: 'normal', color: 'var(--red)' }}>today.</em>
-        </h2>
-        <p className="bigcta-p reveal reveal-delay-1" style={{ fontSize: '1.05rem', color: 'var(--grey)', maxWidth: 480, margin: '0 auto 48px', lineHeight: 1.7 }}>
-          3-day free trial. No card required. Just show up — we&apos;ll handle the rest.
-        </p>
-        <div className="reveal reveal-delay-2" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href={SUPPORT_WA_URL} className="btn-fill" style={{
-            background: 'var(--red)', color: '#fff', padding: '16px 36px', borderRadius: 980,
-            fontSize: '1rem', fontWeight: 600, textDecoration: 'none', border: 'none', cursor: 'pointer', display: 'inline-block',
-            transition: 'opacity 0.2s, transform 0.15s',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; e.currentTarget.style.transform = 'scale(0.97)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            Book Free Trial on WhatsApp
-          </a>
-          <a href={SUPPORT_TEL_URL} className="btn-ghost" style={{
-            background: 'rgba(255,255,255,0.1)', color: 'var(--white)', padding: '16px 36px', borderRadius: 980,
-            fontSize: '1rem', fontWeight: 500, textDecoration: 'none', border: 'none', cursor: 'pointer', display: 'inline-block',
-            backdropFilter: 'blur(8px)', transition: 'background 0.2s, transform 0.15s',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.16)'; e.currentTarget.style.transform = 'scale(0.97)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            Call Us Now
-          </a>
-        </div>
-      </section>
-
-      {/* ─── FOOTER ─── */}
-      <footer style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', padding: '48px var(--px)' }}>
-        <div className="footer-inner" style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
-          <a href="#" className="footer-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-            <Image src="/619-logo.png" alt="Coach Abhishek" width={32} height={32} className="footer-logo" style={{ objectFit: 'contain' }} />
-            <span className="footer-name" style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--white)' }}><span style={{ color: 'var(--red)' }}>COACH</span> ABHISHEK</span>
-          </a>
-          <ul className="footer-nav" style={{ display: 'flex', gap: 24, listStyle: 'none', flexWrap: 'wrap' }}>
-            {['About', 'Team', 'Programs', 'Pricing', 'Contact'].map((item) => (
-              <li key={item}>
-                <a href={`#${item.toLowerCase() === 'pricing' ? 'membership' : item.toLowerCase() === 'about' ? 'about' : item.toLowerCase()}`}
-                  style={{ fontSize: '0.78rem', color: 'var(--grey2)', textDecoration: 'none', transition: 'color .2s' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--white)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey2)'}
-                >{item}</a>
-              </li>
-            ))}
-          </ul>
-          <span className="footer-copy" style={{ fontSize: '0.75rem', color: 'var(--grey2)' }}>© 2026 Coach Abhishek · Lucknow</span>
         </div>
       </footer>
     </div>
