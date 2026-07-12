@@ -916,6 +916,18 @@ export const api = {
           method: 'PATCH', body: JSON.stringify(data),
         }),
     },
+    nutritionAssessments: {
+      list: (params?: Record<string, string | number>) =>
+        http<{ data: unknown[] }>(`/api/progress/nutrition-assessments${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: unknown }>('/api/progress/nutrition-assessments', {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: unknown }>(`/api/progress/nutrition-assessments/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+    },
   },
 
   // ── Automation & Communication ─────────────────────────────────
