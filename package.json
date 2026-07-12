@@ -36,6 +36,7 @@
     "@capacitor/status-bar": "^8.0.2",
     "@radix-ui/react-dialog": "^1.1.19",
     "@react-oauth/google": "^0.13.5",
+    "@sentry/browser": "^10.65.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@vladmandic/face-api": "^1.7.15",
     "capacitor-native-biometric": "^4.2.2",

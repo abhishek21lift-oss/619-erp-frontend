@@ -11,6 +11,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { captureError } from '@/lib/sentry';
 
 /* ── Global chunk-load error handler ── */
 if (typeof window !== 'undefined') {
@@ -61,6 +62,8 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     if (typeof console !== 'undefined') {
       console.error('[ErrorBoundary]', error, info);
     }
+    // Report to Sentry (no-op unless NEXT_PUBLIC_SENTRY_DSN is set).
+    captureError(error, info.componentStack);
     this.props.onError?.(error, info);
 
     // Auto-reload on chunk errors after a brief delay
