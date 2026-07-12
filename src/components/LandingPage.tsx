@@ -294,7 +294,10 @@ export default function LandingPage() {
         style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px var(--l-px)',
+          paddingLeft: 'var(--l-px)', paddingRight: 'var(--l-px)',
+          paddingBottom: 14,
+          // Clear the notch / status bar on phones (matches the app shell)
+          paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
           background: navSolid ? 'rgba(251,250,247,0.82)' : 'rgba(251,250,247,0.4)',
           backdropFilter: 'blur(18px) saturate(150%)', WebkitBackdropFilter: 'blur(18px) saturate(150%)',
           borderBottom: navSolid ? '1px solid var(--l-line)' : '1px solid transparent',
@@ -348,7 +351,7 @@ export default function LandingPage() {
           <m.div
             initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25 }}
-            style={{ position: 'fixed', top: 66, left: 12, right: 12, zIndex: 999, borderRadius: 22, padding: 16, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(20px)', border: '1px solid var(--l-line)', boxShadow: '0 24px 60px -20px rgba(26,20,16,0.25)' }}
+            style={{ position: 'fixed', top: 'calc(66px + env(safe-area-inset-top, 0px))', left: 12, right: 12, zIndex: 999, borderRadius: 22, padding: 16, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(20px)', border: '1px solid var(--l-line)', boxShadow: '0 24px 60px -20px rgba(26,20,16,0.25)' }}
           >
             {NAV_LINKS.map((l) => (
               <a key={l.href} href={l.href} onClick={(e) => { e.preventDefault(); go(l.href); }}
@@ -367,7 +370,7 @@ export default function LandingPage() {
 
       {/* ─────────────────────────── HERO ─────────────────────────── */}
       <section ref={heroRef} onMouseMove={onHeroMouse}
-        style={{ position: 'relative', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '120px var(--l-px) 90px', overflow: 'hidden' }}>
+        style={{ position: 'relative', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 'calc(120px + env(safe-area-inset-top, 0px)) var(--l-px) 90px', overflow: 'hidden' }}>
         {/* animated glow orbs */}
         <m.div aria-hidden style={{ position: 'absolute', top: '8%', left: '12%', width: 460, height: 460, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.28) 0%, transparent 70%)', filter: 'blur(20px)', x: orb1x, y: orb1y, pointerEvents: 'none' }} className="l-fadefloat" />
         <m.div aria-hidden style={{ position: 'absolute', bottom: '4%', right: '10%', width: 520, height: 520, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,30,43,0.20) 0%, transparent 70%)', filter: 'blur(20px)', x: orb2x, y: orb2y, pointerEvents: 'none' }} className="l-fadefloat" />
