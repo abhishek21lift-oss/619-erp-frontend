@@ -10,7 +10,7 @@ import {
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Camera, Ruler, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
-  Trophy, Award, HeartPulse, Salad,
+  Trophy, Award, HeartPulse, Salad, Flag,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -109,6 +109,7 @@ function DarkCard({ title, icon, from, children, className = '' }:
 
 const QUICK_ACTIONS = [
   { label: 'Enroll in PT', icon: <Award size={16} />, href: (id: string) => `/pt-os/clients/${id}/enroll`, from: '#F59E0B', to: '#D97706' },
+  { label: 'Baseline Setup', icon: <Flag size={16} />, href: (id: string) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155' },
   { label: 'Payments', icon: <Wallet size={16} />, href: (id: string) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
   { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id: string) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
   { label: 'Fitness Testing', icon: <Activity size={16} />, href: (id: string) => `/pt-os/assessment?client_id=${id}`, from: '#10b981', to: '#059669' },

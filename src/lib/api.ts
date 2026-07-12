@@ -928,6 +928,30 @@ export const api = {
           method: 'PATCH', body: JSON.stringify(data),
         }),
     },
+    mobilityPerformanceAssessments: {
+      list: (params?: Record<string, string | number>) =>
+        http<{ data: unknown[] }>(`/api/progress/mobility-performance-assessments${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: unknown }>('/api/progress/mobility-performance-assessments', {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: unknown }>(`/api/progress/mobility-performance-assessments/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+    },
+    postureAssessments: {
+      list: (params?: Record<string, string | number>) =>
+        http<{ data: unknown[] }>(`/api/progress/posture-assessments${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: unknown }>('/api/progress/posture-assessments', {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: unknown }>(`/api/progress/posture-assessments/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+    },
   },
 
   // ── Automation & Communication ─────────────────────────────────

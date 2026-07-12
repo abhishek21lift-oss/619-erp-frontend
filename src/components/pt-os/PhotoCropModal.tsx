@@ -18,9 +18,20 @@ interface PhotoCropModalProps {
   onConfirm: (dataUrl: string) => void;
   /** Skip straight to crop mode with this image (e.g. a file dropped on the page-level dropzone). */
   initialImageSrc?: string | null;
+  /** Dialog title — defaults to "Profile Photo" for the existing round-avatar use. */
+  title?: string;
+  /** Crop mask shape. Defaults to 'round' (unchanged behavior for existing callers). */
+  cropShape?: 'round' | 'rect';
+  /** Crop aspect ratio (width/height). Defaults to 1 (unchanged behavior for existing callers). */
+  aspect?: number;
+  /** Max output dimension in px, passed through to cropAndCompressImage. Defaults to 800. */
+  maxDim?: number;
 }
 
-export default function PhotoCropModal({ open, onClose, onConfirm, initialImageSrc }: PhotoCropModalProps) {
+export default function PhotoCropModal({
+  open, onClose, onConfirm, initialImageSrc,
+  title = 'Profile Photo', cropShape = 'round', aspect = 1, maxDim = 800,
+}: PhotoCropModalProps) {
   const { toast } = useToast();
   const camera = useCamera();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -102,7 +113,7 @@ export default function PhotoCropModal({ open, onClose, onConfirm, initialImageS
     if (!rawImageSrc || !croppedAreaPixels) return;
     setSaving(true);
     try {
-      const dataUrl = await cropAndCompressImage(rawImageSrc, croppedAreaPixels, 'round', 800, 0.8);
+      const dataUrl = await cropAndCompressImage(rawImageSrc, croppedAreaPixels, cropShape, maxDim, 0.8);
       onConfirm(dataUrl);
       reset();
       onClose();
@@ -110,13 +121,13 @@ export default function PhotoCropModal({ open, onClose, onConfirm, initialImageS
       toast.error('Could not process that photo. Please try again.');
       setSaving(false);
     }
-  }, [rawImageSrc, croppedAreaPixels, onConfirm, reset, onClose, toast]);
+  }, [rawImageSrc, croppedAreaPixels, onConfirm, reset, onClose, toast, cropShape, maxDim]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Profile Photo</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             {mode === 'select' && 'Upload a photo or use your camera.'}
             {mode === 'camera' && 'Center your face and capture.'}
@@ -191,14 +202,14 @@ export default function PhotoCropModal({ open, onClose, onConfirm, initialImageS
 
         {mode === 'crop' && rawImageSrc && (
           <div className="flex flex-col gap-3">
-            <div className="relative overflow-hidden rounded-2xl bg-[var(--bg-subtle)]" style={{ height: 280 }}>
+            <div className="relative overflow-hidden rounded-2xl bg-[var(--bg-subtle)]" style={{ height: aspect < 1 ? 380 : 280 }}>
               <Cropper
                 image={rawImageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
+                aspect={aspect}
+                cropShape={cropShape}
+                showGrid={cropShape === 'rect'}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={handleCropComplete}
