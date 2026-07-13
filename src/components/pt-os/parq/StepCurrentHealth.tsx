@@ -1,0 +1,131 @@
+'use client';
+
+import { HeartPulse } from 'lucide-react';
+import FloatInput from '@/components/ui/FloatInput';
+import { Slider } from '@/components/ui';
+import ToggleDetailCard from './ToggleDetailCard';
+import type { ParqFormData, CurrentHealthForm } from './types';
+
+const ACTIVITY_LEVELS: { value: string; label: string }[] = [
+  { value: 'sedentary', label: 'Sedentary' },
+  { value: 'lightly_active', label: 'Lightly Active' },
+  { value: 'moderately_active', label: 'Moderately Active' },
+  { value: 'very_active', label: 'Very Active' },
+  { value: 'extremely_active', label: 'Extremely Active' },
+];
+
+const DIETARY_HABITS: { value: string; label: string }[] = [
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'non_vegetarian', label: 'Non-Vegetarian' },
+  { value: 'vegan', label: 'Vegan' },
+  { value: 'eggetarian', label: 'Eggetarian' },
+  { value: 'other', label: 'Other' },
+];
+
+interface StepCurrentHealthProps {
+  form: ParqFormData;
+  set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
+  error?: string;
+}
+
+export function StepCurrentHealth({ form, set, error }: StepCurrentHealthProps) {
+  const ch = form.currentHealth;
+  const setCh = <K extends keyof CurrentHealthForm>(key: K, val: CurrentHealthForm[K]) => {
+    set('currentHealth', { ...ch, [key]: val });
+  };
+
+  return (
+    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
+      <div className="p-7 sm:p-10 space-y-7">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
+            <HeartPulse size={20} color="#F59E0B" />
+          </div>
+          <div>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Current Health</h2>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 9 — toggle YES for anything that applies.</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Activity Level</p>
+          <div className="flex flex-wrap gap-2">
+            {ACTIVITY_LEVELS.map((a) => {
+              const selected = ch.activity_level === a.value;
+              return (
+                <button
+                  key={a.value} type="button" onClick={() => setCh('activity_level', a.value)}
+                  className="rounded-[11px] px-3.5 py-2 text-[12.5px] font-[700] transition-all"
+                  style={{ background: selected ? '#0f172a' : '#f8fafc', color: selected ? '#fff' : '#64748b', border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0' }}
+                >
+                  {a.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Dietary Habits</p>
+          <div className="flex flex-wrap gap-2">
+            {DIETARY_HABITS.map((d) => {
+              const selected = ch.dietary_habits === d.value;
+              return (
+                <button
+                  key={d.value} type="button" onClick={() => setCh('dietary_habits', d.value)}
+                  className="rounded-[11px] px-3.5 py-2 text-[12.5px] font-[700] transition-all"
+                  style={{ background: selected ? '#0f172a' : '#f8fafc', color: selected ? '#fff' : '#64748b', border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0' }}
+                >
+                  {d.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FloatInput label="Water Intake (liters/day)" type="number" value={ch.water_intake} onChange={(v) => setCh('water_intake', v)} />
+        </div>
+
+        <Slider
+          label="Sleep Hours / Night" value={parseFloat(ch.sleep_hours) || 7} min={3} max={12} step={0.5}
+          onChange={(v) => setCh('sleep_hours', String(v))}
+          formatValue={(v) => `${v}h`}
+        />
+
+        <div className="space-y-2.5">
+          <ToggleDetailCard label="Known Disease" checked={ch.known_disease} onToggle={(v) => setCh('known_disease', v)} details={ch.known_disease_details} onDetailsChange={(v) => setCh('known_disease_details', v)} detailsLabel="Which condition(s)?" />
+          <ToggleDetailCard label="Caffeine" checked={ch.caffeine} onToggle={(v) => setCh('caffeine', v)} details={ch.caffeine_details} onDetailsChange={(v) => setCh('caffeine_details', v)} detailsLabel="How much / how often?" />
+          <ToggleDetailCard label="Alcohol" checked={ch.alcohol} onToggle={(v) => setCh('alcohol', v)} details={ch.alcohol_details} onDetailsChange={(v) => setCh('alcohol_details', v)} detailsLabel="How much / how often?" />
+          <ToggleDetailCard label="Smoking" checked={ch.smoking} onToggle={(v) => setCh('smoking', v)} details={ch.smoking_details} onDetailsChange={(v) => setCh('smoking_details', v)} detailsLabel="How much / how often?" />
+          <ToggleDetailCard label="Tobacco" checked={ch.tobacco} onToggle={(v) => setCh('tobacco', v)} details={ch.tobacco_details} onDetailsChange={(v) => setCh('tobacco_details', v)} detailsLabel="How much / how often?" />
+          <ToggleDetailCard label="Nicotine (vaping etc.)" checked={ch.nicotine} onToggle={(v) => setCh('nicotine', v)} details={ch.nicotine_details} onDetailsChange={(v) => setCh('nicotine_details', v)} detailsLabel="How much / how often?" />
+          <ToggleDetailCard label="Medications" checked={ch.medications} onToggle={(v) => setCh('medications', v)} details={ch.medications_details} onDetailsChange={(v) => setCh('medications_details', v)} detailsLabel="List medications" />
+          <ToggleDetailCard label="Supplements" checked={ch.supplements} onToggle={(v) => setCh('supplements', v)} details={ch.supplements_details} onDetailsChange={(v) => setCh('supplements_details', v)} detailsLabel="List supplements" />
+          <ToggleDetailCard label="Steroids / PEDs" checked={ch.steroids_ped} onToggle={(v) => setCh('steroids_ped', v)} details={ch.steroids_ped_details} onDetailsChange={(v) => setCh('steroids_ped_details', v)} detailsLabel="Details" />
+          <ToggleDetailCard label="Recreational Drugs" checked={ch.recreational_drugs} onToggle={(v) => setCh('recreational_drugs', v)} details={ch.recreational_drugs_details} onDetailsChange={(v) => setCh('recreational_drugs_details', v)} detailsLabel="Details" />
+          <ToggleDetailCard label="Currently Under Treatment" checked={ch.current_treatment} onToggle={(v) => setCh('current_treatment', v)} details={ch.current_treatment_details} onDetailsChange={(v) => setCh('current_treatment_details', v)} detailsLabel="Treatment details" />
+        </div>
+
+        <div className="rounded-[16px] overflow-hidden" style={{ border: ch.has_pain ? '2px solid #F59E0B' : '2px solid rgba(15,23,42,0.08)', background: ch.has_pain ? 'rgba(245,158,11,0.04)' : 'var(--bg-subtle)' }}>
+          <button type="button" onClick={() => setCh('has_pain', !ch.has_pain)} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+            <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: ch.has_pain ? '#F59E0B' : '#fff', border: ch.has_pain ? 'none' : '1.5px solid #cbd5e1' }} />
+            <span className="text-[13.5px] font-[700]" style={{ color: ch.has_pain ? '#0f172a' : '#475569' }}>Currently Experiencing Pain</span>
+          </button>
+          {ch.has_pain && (
+            <div className="px-4 pb-4 space-y-4">
+              <Slider label="Pain Scale" value={parseFloat(ch.pain_scale) || 5} min={1} max={10} onChange={(v) => setCh('pain_scale', String(v))} scaleLabels={['1 · Mild', '10 · Severe']} />
+              <FloatInput label="Pain Location" value={ch.pain_location} onChange={(v) => setCh('pain_location', v)} />
+              <FloatInput label="Pain Description" multiline autoGrow value={ch.pain_description} onChange={(v) => setCh('pain_description', v)} />
+            </div>
+          )}
+        </div>
+
+        {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+      </div>
+    </div>
+  );
+}
+
+export default StepCurrentHealth;
