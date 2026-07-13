@@ -27,7 +27,6 @@
   "dependencies": {
     "@capacitor/android": "^8.4.1",
     "@capacitor/app": "^8.1.0",
-    "@capacitor/camera": "^8.2.0",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/preferences": "^8.0.1",
@@ -37,9 +36,7 @@
     "@radix-ui/react-dialog": "^1.1.19",
     "@react-oauth/google": "^0.13.5",
     "@sentry/browser": "^10.65.0",
-    "@simplewebauthn/browser": "^13.3.0",
     "@vladmandic/face-api": "^1.7.15",
-    "capacitor-native-biometric": "^4.2.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "jose": "^6.2.3",
