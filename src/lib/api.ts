@@ -268,6 +268,201 @@ export type PtClientBase = {
   status: string;
 };
 
+// ─────────────────────── PAR-Q / Health Screening ──────────────────────
+// Types matching the /api/pt-os/parq/* contract exactly. Fields marked
+// "server-computed" are never sent by the client — the backend computes
+// and returns them; any value the client sends for those is ignored.
+
+export type ParqAnswerValue = 'yes' | 'no' | 'not_sure';
+
+export interface ParqAnswer {
+  question_id: number;
+  answer: ParqAnswerValue;
+  explanation?: string;
+  diagnosis_date?: string;
+  treatment?: string;
+  doctor_name?: string;
+  hospital?: string;
+  notes?: string;
+}
+
+export interface ParqCurrentHealth {
+  known_disease: boolean;
+  known_disease_details?: string;
+  activity_level: string;
+  dietary_habits: string;
+  water_intake: string;
+  caffeine: boolean;
+  caffeine_details?: string;
+  alcohol: boolean;
+  alcohol_details?: string;
+  smoking: boolean;
+  smoking_details?: string;
+  tobacco: boolean;
+  tobacco_details?: string;
+  nicotine: boolean;
+  nicotine_details?: string;
+  sleep_hours?: number;
+  medications: boolean;
+  medications_details?: string;
+  supplements: boolean;
+  supplements_details?: string;
+  steroids_ped: boolean;
+  steroids_ped_details?: string;
+  recreational_drugs: boolean;
+  recreational_drugs_details?: string;
+  current_treatment: boolean;
+  current_treatment_details?: string;
+  has_pain: boolean;
+  pain_scale?: number;
+  pain_location?: string;
+  pain_description?: string;
+}
+
+export interface ParqPastHistory {
+  heart_disease: boolean;
+  respiratory_disease: boolean;
+  asthma: boolean;
+  copd: boolean;
+  tuberculosis: boolean;
+  joint_problems: boolean;
+  back_pain: boolean;
+  neck_pain: boolean;
+  knee_pain: boolean;
+  shoulder_pain: boolean;
+  hip_pain: boolean;
+  previous_fractures: boolean;
+  surgeries: boolean;
+  hospitalization: boolean;
+  exercise_history?: string;
+  occupation?: string;
+  work_posture?: string;
+  daily_sitting_hours?: number;
+  previous_injuries?: string;
+  previous_physiotherapy: boolean;
+  previous_trainer: boolean;
+  exercise_experience?: string;
+}
+
+export interface ParqTrainerNotes {
+  observations?: string;
+  posture?: string;
+  movement_limitations?: string;
+  recommendations?: string;
+  contraindications?: string;
+  precautions?: string;
+  summary?: string;
+}
+
+export type FamilyRelation = 'father' | 'mother' | 'brother' | 'sister' | 'grandparent';
+
+export interface FamilyHistoryRow {
+  id?: string;
+  relation: FamilyRelation;
+  heart_disease: boolean;
+  diabetes: boolean;
+  stroke: boolean;
+  hypertension: boolean;
+  cancer: boolean;
+  hyperlipidemia: boolean;
+  kidney_disease: boolean;
+  sudden_death: boolean;
+  age_of_onset?: number;
+  notes?: string;
+}
+
+export type ParqStatus = 'draft' | 'submitted' | 'reviewed';
+export type ParqRiskLevel = 'low' | 'medium' | 'high';
+export type WorkoutGateStatus = 'blocked' | 'cleared';
+
+export interface ParqForm {
+  id?: string;
+  client_id: string;
+  assessment_date: string;
+  full_name: string;
+  gender: string;
+  dob: string;
+  mobile: string;
+  email?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  blood_group?: string;
+  height_cm?: number;
+  weight_kg?: number;
+  bmi?: number;
+  trainer_name?: string;
+  current_health: ParqCurrentHealth;
+  past_history: ParqPastHistory;
+  parq_answers: ParqAnswer[];
+  trainer_notes: ParqTrainerNotes;
+  status: ParqStatus;
+  // server-computed — never sent by the client
+  parq_yes_count?: number;
+  risk_level?: ParqRiskLevel;
+  risk_message?: string;
+  workout_gate_status?: WorkoutGateStatus;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ParqFormDetail extends ParqForm {
+  family_history: FamilyHistoryRow[];
+  medical_clearance: MedicalClearance | null;
+  consent: ConsentRecord | null;
+  documents: ParqDocument[];
+}
+
+export type ClearanceApprovalStatus = 'pending' | 'approved' | 'rejected';
+
+export interface MedicalClearance {
+  id?: string;
+  form_id?: string;
+  doctor_name: string;
+  hospital: string;
+  clearance_date: string;
+  certificate_url?: string;
+  doctor_contact?: string;
+  expiry_date?: string;
+  approval_status: ClearanceApprovalStatus;
+}
+
+export interface ConsentCheckboxes {
+  info_true: boolean;
+  understands_risk: boolean;
+  will_inform_changes: boolean;
+  understands_incorrect_info_risk: boolean;
+  voluntary_participation: boolean;
+  consents_emergency_care: boolean;
+  agrees_data_storage: boolean;
+}
+
+export interface ConsentRecord {
+  id?: string;
+  form_id?: string;
+  consent_checkboxes: ConsentCheckboxes;
+  client_signature: string;
+  trainer_signature: string;
+  location?: string;
+  pdf_url?: string;
+  created_at?: string;
+}
+
+export type ParqDocumentType = 'medical_report' | 'medical_certificate' | 'other';
+
+export interface ParqDocument {
+  id: string;
+  form_id?: string;
+  doc_type: ParqDocumentType;
+  file_url: string;
+  file_name?: string;
+  uploaded_at?: string;
+}
+
+export interface ParqGateStatus {
+  workout_gate_status: WorkoutGateStatus;
+  risk_level: ParqRiskLevel;
+}
+
 // Core fetch is handled by http() from ./http
 // This file provides the typed `api` namespace facade over http()
 
@@ -950,6 +1145,48 @@ export const api = {
         http<{ data: unknown }>(`/api/progress/posture-assessments/${id}`, {
           method: 'PATCH', body: JSON.stringify(data),
         }),
+    },
+    parqForms: {
+      list: (params?: { client_id?: string }) =>
+        http<{ data: ParqForm[] }>(`/api/pt-os/parq/forms${buildQs(params)}`),
+      get: (id: string) =>
+        http<{ data: ParqFormDetail }>(`/api/pt-os/parq/forms/${id}`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: ParqForm }>('/api/pt-os/parq/forms', {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: ParqForm }>(`/api/pt-os/parq/forms/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+      gateStatus: (id: string) =>
+        http<ParqGateStatus>(`/api/pt-os/parq/forms/${id}/gate-status`),
+    },
+    parqClearance: {
+      create: (formId: string, data: Record<string, unknown>) =>
+        http<{ data: MedicalClearance }>(`/api/pt-os/parq/forms/${formId}/clearance`, {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: MedicalClearance }>(`/api/pt-os/parq/clearance/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+    },
+    parqConsent: {
+      create: (formId: string, data: Record<string, unknown>) =>
+        http<{ data: ConsentRecord }>(`/api/pt-os/parq/forms/${formId}/consent`, {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+    },
+    parqDocuments: {
+      upload: (formId: string, docType: ParqDocumentType, file: File) => {
+        const formData = new FormData();
+        formData.append('doc_type', docType);
+        formData.append('file', file);
+        return http<{ data: ParqDocument }>(`/api/pt-os/parq/forms/${formId}/documents`, {
+          method: 'POST', body: formData,
+        });
+      },
     },
   },
 
