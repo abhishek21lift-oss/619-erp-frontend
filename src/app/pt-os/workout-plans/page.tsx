@@ -1,17 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Dumbbell, Plus, Search, User, Clock, Target,
   Activity, FileText, LayoutGrid, List, Check,
-  Trophy, Sparkles, ChevronRight, Filter, X,
+  Trophy, Sparkles, ChevronRight, Filter, X, ShieldAlert, Loader2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
+import type { ParqForm } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
@@ -60,12 +62,14 @@ export default function WorkoutPlansPage() {
 
 function Inner() {
   const { toast } = useToast();
+  const router = useRouter();
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [activeMuscle, setActiveMuscle] = useState<MuscleGroup | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [trainers, setTrainers] = useState<string[]>([]);
+  const [assignPlan, setAssignPlan] = useState<WorkoutPlan | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'builder' | 'ai'>('plans');
   const [builderStep, setBuilderStep] = useState(0);
@@ -88,6 +92,39 @@ function Inner() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  /** Pre-check the PAR-Q workout gate before assigning a plan. This is a
+   *  UX signal only — the backend independently enforces the gate — but it
+   *  turns a raw 403 into a clear "PAR-Q required" message with a direct
+   *  link to complete it. */
+  const assignToClient = useCallback(async (client: { id: string; name: string }) => {
+    if (!assignPlan) return;
+    try {
+      const listRes = await api.progress.parqForms.list({ client_id: client.id });
+      const forms: ParqForm[] = listRes?.data ?? [];
+      if (forms.length === 0) {
+        toast.error(`${client.name} has no PAR-Q screening on file — it must be completed before a workout can be assigned.`, {
+          duration: 0,
+          action: { label: 'Start PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
+        });
+        return;
+      }
+      const latest = [...forms].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')))[0];
+      const gate = await api.progress.parqForms.gateStatus(String(latest.id));
+      if (gate.workout_gate_status !== 'cleared') {
+        toast.error(`${client.name}'s PAR-Q risk is ${gate.risk_level.toUpperCase()} — medical clearance is required before a workout can be assigned.`, {
+          duration: 0,
+          action: { label: 'Review PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
+        });
+        return;
+      }
+      await api.workouts.assign({ workout_plan_id: assignPlan.id, client_id: client.id });
+      toast.success(`Assigned "${assignPlan.name}" to ${client.name}.`);
+      setAssignPlan(null);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to assign workout plan.');
+    }
+  }, [assignPlan, toast, router]);
 
   const filteredExercises = exercises.filter((ex) => {
     if (activeMuscle !== 'All' && ex.muscleGroup !== activeMuscle) return false;
@@ -214,7 +251,7 @@ function Inner() {
                         progress={plan.progress}
                         color={PLAN_COLORS[i % PLAN_COLORS.length]}
                         compact={view === 'list'}
-                        onAssign={() => toast.info('Assign client to plan coming soon.')}
+                        onAssign={() => setAssignPlan(plan)}
                         onEdit={() => toast.info('Plan editor coming soon.')}
                         onDelete={() => toast.info('Delete plan coming soon.')}
                       />
@@ -454,6 +491,102 @@ function Inner() {
           50% { opacity: 0.3; }
         }
       `}</style>
+
+      <AssignClientModal
+        plan={assignPlan}
+        onClose={() => setAssignPlan(null)}
+        onSelectClient={assignToClient}
+      />
     </div>
+  );
+}
+
+/* ── Assign-to-client modal — PAR-Q gate pre-check happens on selection ── */
+interface AssignClientOption { id: string; name: string; }
+
+function AssignClientModal({
+  plan, onClose, onSelectClient,
+}: {
+  plan: WorkoutPlan | null;
+  onClose: () => void;
+  onSelectClient: (client: AssignClientOption) => Promise<void>;
+}) {
+  const [clients, setClients] = useState<AssignClientOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [assigningId, setAssigningId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!plan) { setClients([]); setSearch(''); return; }
+    setLoading(true);
+    api.pt.clients().then((r: { data?: unknown[] }) => {
+      const arr = Array.isArray(r?.data) ? r.data : [];
+      setClients((arr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
+    }).finally(() => setLoading(false));
+  }, [plan]);
+
+  const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
+
+  const handleSelect = async (client: AssignClientOption) => {
+    setAssigningId(client.id);
+    try {
+      await onSelectClient(client);
+    } finally {
+      setAssigningId(null);
+    }
+  };
+
+  return (
+    <Dialog open={Boolean(plan)} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Assign &quot;{plan?.name}&quot; to a Client</DialogTitle>
+        </DialogHeader>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 10, padding: '8px 12px', border: '1px solid var(--border)' }}>
+          <Search size={14} color="var(--text-disabled)" />
+          <input
+            autoFocus placeholder="Search clients…" value={search} onChange={(e) => setSearch(e.target.value)}
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 13 }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+          <ShieldAlert size={14} color="#d97706" style={{ marginTop: 1, flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: 11.5, color: '#92400e', lineHeight: 1.5 }}>
+            Assignment is blocked unless the client has a PAR-Q screening on file with a &quot;cleared&quot; workout gate status.
+          </p>
+        </div>
+
+        <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><Loader2 size={18} className="animate-spin" /></div>}
+          {!loading && filtered.length === 0 && (
+            <p style={{ textAlign: 'center', padding: 24, fontSize: 12.5, color: 'var(--text-muted)' }}>No clients found.</p>
+          )}
+          {!loading && filtered.map((c) => (
+            <button
+              key={c.id}
+              disabled={assigningId !== null}
+              onClick={() => handleSelect(c)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)',
+                background: 'var(--bg-card)', cursor: assigningId !== null ? 'not-allowed' : 'pointer',
+                textAlign: 'left', opacity: assigningId !== null && assigningId !== c.id ? 0.5 : 1,
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                <User size={13} color="var(--text-disabled)" /> {c.name}
+              </span>
+              {assigningId === c.id && <Loader2 size={14} className="animate-spin" />}
+            </button>
+          ))}
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
