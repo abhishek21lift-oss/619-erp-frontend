@@ -513,8 +513,11 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   </div>
                 </div>
                 <div className="mt-4">
+                  <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                    Balance / Due
+                  </p>
                   <FloatInput
-                    label="Balance / Due"
+                    label=""
                     value={fmtINR(balanceDue)}
                     onChange={() => {}}
                     disabled
