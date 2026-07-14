@@ -31,11 +31,19 @@ interface EnrollFormData {
   useCustomTime: boolean;
   trainingDays: string[];
   sessionsPerWeek: string; // '1'..'7'
+  // Payment Details — mirrors the existing pt_clients.final_amount /
+  // paid_amount columns already used across the rest of the app (add-client,
+  // renew, payments, dues, commissions). Kept as strings like every other
+  // field here; parsed with Number() at the validation/computation/submit
+  // boundaries, never stored as a parsed number in form state.
+  finalAmount: string;
+  amountPaid: string;
 }
 
 interface FormErrors {
   startDate?: string; duration?: string; goal?: string; trainingMode?: string;
   workoutTime?: string; trainingDays?: string; sessionsPerWeek?: string;
+  finalAmount?: string; amountPaid?: string;
 }
 
 interface TrainerOption { id: string; name: string; }
@@ -108,6 +116,19 @@ function daysBetween(a: string, b: string): number {
   if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return 0;
   return Math.round((d2.getTime() - d1.getTime()) / 86400000);
 }
+function fmtINR(n: number): string {
+  return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+/** Balance Due = Final Selling Price − Amount Paid, never negative. Mirrors
+ *  the backend's GREATEST(final_amount - paid_amount, 0) exactly — this is
+ *  a live UX preview only, the backend independently recomputes and owns
+ *  the source of truth on every save. */
+function calcBalanceDue(finalAmount: string, amountPaid: string): number {
+  const final = parseFloat(finalAmount);
+  const paid = parseFloat(amountPaid);
+  if (!Number.isFinite(final)) return 0;
+  return Math.max(final - (Number.isFinite(paid) ? paid : 0), 0);
+}
 
 /* ─────────────────────────────────────────────────────── VALIDATION */
 function validateStartDate(v: string): string | undefined {
@@ -137,7 +158,27 @@ function validateSessionsPerWeek(v: string): string | undefined {
   if (n < 1 || n > 7) return 'Sessions must be between 1 and 7.';
   return undefined;
 }
-function validateAll(form: EnrollFormData): FormErrors {
+function validateFinalAmount(v: string): string | undefined {
+  if (!v.trim()) return 'Final Selling Price is required.';
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 'Enter a valid amount.';
+  if (n <= 0) return 'Final Selling Price must be greater than zero.';
+  return undefined;
+}
+function validateAmountPaid(form: EnrollFormData): string | undefined {
+  if (!form.amountPaid.trim()) return 'Amount Paid is required.';
+  const paid = Number(form.amountPaid);
+  if (!Number.isFinite(paid)) return 'Enter a valid amount.';
+  if (paid < 0) return 'Amount Paid cannot be negative.';
+  const final = Number(form.finalAmount);
+  if (Number.isFinite(final) && paid > final) return 'Amount Paid cannot exceed Final Selling Price.';
+  return undefined;
+}
+// Payment fields are admin/manager-only, same boundary the backend already
+// enforces (PATCH /clients/:id silently ignores final_amount/paid_amount
+// for the trainer role) — a trainer completing enrollment on a client whose
+// price isn't finalized yet shouldn't be blocked by fields they can't edit.
+function validateAll(form: EnrollFormData, canEditPayment: boolean): FormErrors {
   return {
     startDate: validateStartDate(form.startDate),
     duration: validateDuration(form.duration),
@@ -146,6 +187,8 @@ function validateAll(form: EnrollFormData): FormErrors {
     workoutTime: validateWorkoutTime(form),
     trainingDays: validateTrainingDays(form.trainingDays),
     sessionsPerWeek: validateSessionsPerWeek(form.sessionsPerWeek),
+    finalAmount: canEditPayment ? validateFinalAmount(form.finalAmount) : undefined,
+    amountPaid: canEditPayment ? validateAmountPaid(form) : undefined,
   };
 }
 function hasErrors(errors: FormErrors): boolean {
@@ -157,6 +200,7 @@ function initForm(): EnrollFormData {
     startDate: todayStr(), duration: '', goal: '', customGoal: '',
     trainerId: '', trainerName: '', trainingMode: '', workoutTime: '',
     customTime: '', useCustomTime: false, trainingDays: [], sessionsPerWeek: '',
+    finalAmount: '', amountPaid: '0',
   };
 }
 
@@ -222,6 +266,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
         useCustomTime: false,
         trainingDays: days,
         sessionsPerWeek: c.sessions_per_week ? String(c.sessions_per_week) : '',
+        finalAmount: c.final_amount != null ? String(c.final_amount) : '',
+        amountPaid: c.paid_amount != null ? String(c.paid_amount) : '0',
       };
 
       const draft = restore();
@@ -254,6 +300,11 @@ function EnrollForm({ clientId }: { clientId: string }) {
     () => addMonths(form.startDate, Number(form.duration)),
     [form.startDate, form.duration],
   );
+  const balanceDue = useMemo(
+    () => calcBalanceDue(form.finalAmount, form.amountPaid),
+    [form.finalAmount, form.amountPaid],
+  );
+  const isPaidInFull = Boolean(form.finalAmount) && Number(form.finalAmount) > 0 && balanceDue === 0;
   const totalWeeks = form.duration ? Number(form.duration) * 4 : 0;
   const estimatedSessions = totalWeeks && form.sessionsPerWeek ? totalWeeks * Number(form.sessionsPerWeek) : 0;
   const daysRemaining = endDate ? daysBetween(todayStr(), endDate) : null;
@@ -286,7 +337,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
   };
 
   const handleSubmit = async () => {
-    const allErrors = validateAll(form);
+    const allErrors = validateAll(form, isAdmin);
     setErrors(allErrors);
     if (hasErrors(allErrors)) {
       toast.error('Please fix the highlighted fields.');
@@ -305,6 +356,14 @@ function EnrollForm({ clientId }: { clientId: string }) {
         preferred_workout_time: form.useCustomTime ? form.customTime : form.workoutTime,
         preferred_training_days: form.trainingDays.join(', '),
         sessions_per_week: Number(form.sessionsPerWeek),
+        // Payment fields are admin/manager-only (matches the backend's RBAC
+        // boundary on PATCH /clients/:id, which silently ignores these for
+        // the trainer role) - only send them when they were actually
+        // editable, so a read-only display value never overwrites data.
+        ...(isAdmin ? {
+          final_amount: Number(form.finalAmount),
+          paid_amount: Number(form.amountPaid),
+        } : {}),
       });
       clear();
       toast.success('Client enrolled in PT.');
@@ -414,6 +473,58 @@ function EnrollForm({ clientId }: { clientId: string }) {
               <div>
                 <FloatInput label="PT End Date" value={fmtDateLong(endDate)} onChange={() => {}} disabled />
                 <p className="mt-1.5 text-[11px] text-slate-400">Automatically calculated.</p>
+              </div>
+
+              {/* Payment Details */}
+              <div>
+                <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                  Payment Details
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FloatInput
+                    label="Final / Selling Price" required={isAdmin}
+                    type="number" placeholder="Enter Final Selling Price"
+                    prefix={<span className="text-[13px] font-[700]">₹</span>}
+                    value={form.finalAmount}
+                    onChange={(v) => set('finalAmount', v)}
+                    onBlur={() => setErrors((e) => ({ ...e, finalAmount: isAdmin ? validateFinalAmount(form.finalAmount) : undefined }))}
+                    error={errors.finalAmount}
+                    disabled={!isAdmin}
+                  />
+                  <FloatInput
+                    label="Amount Paid" required={isAdmin}
+                    type="number" placeholder="Enter Amount Paid"
+                    prefix={<span className="text-[13px] font-[700]">₹</span>}
+                    value={form.amountPaid}
+                    onChange={(v) => set('amountPaid', v)}
+                    onBlur={() => setErrors((e) => ({ ...e, amountPaid: isAdmin ? validateAmountPaid(form) : undefined }))}
+                    error={errors.amountPaid}
+                    disabled={!isAdmin}
+                  />
+                </div>
+                <div className="mt-4">
+                  <FloatInput
+                    label="Balance / Due"
+                    value={fmtINR(balanceDue)}
+                    onChange={() => {}}
+                    disabled
+                  />
+                  <AnimatePresence>
+                    {isPaidInFull && (
+                      <m.div
+                        initial={{ opacity: 0, y: -6, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                        className="mt-2 flex items-center gap-1.5 rounded-[10px] px-3 py-2"
+                        style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.2)' }}
+                      >
+                        <Check size={13} style={{ color: '#0d9488', flexShrink: 0 }} />
+                        <span className="text-[12px] font-[700]" style={{ color: '#065f46' }}>Paid in Full</span>
+                      </m.div>
+                    )}
+                  </AnimatePresence>
+                  {!isAdmin && (
+                    <p className="mt-1.5 text-[11px] text-slate-400">Only admins and managers can edit payment details.</p>
+                  )}
+                </div>
               </div>
 
               {/* Goal */}
@@ -596,6 +707,9 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   { label: 'End Date', val: fmtDateLong(endDate) },
                   { label: 'Duration', val: form.duration ? `${form.duration} mo` : '—' },
                   { label: 'Total Weeks', val: totalWeeks || '—' },
+                  { label: 'Selling Price', val: form.finalAmount ? fmtINR(Number(form.finalAmount)) : '—' },
+                  { label: 'Amount Paid', val: form.finalAmount ? fmtINR(Number(form.amountPaid) || 0) : '—' },
+                  { label: 'Balance Due', val: form.finalAmount ? fmtINR(balanceDue) : '—', success: Boolean(form.finalAmount) && isPaidInFull },
                   { label: 'Sessions / Week', val: form.sessionsPerWeek || '—' },
                   { label: 'Estimated Sessions', val: estimatedSessions || '—' },
                   { label: 'Coach', val: form.trainerName || 'Coach Abhishek' },
@@ -607,7 +721,8 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       <m.p
                         key={String(r.val)}
                         initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.15 }}
-                        className="text-[13px] font-[720] text-white"
+                        className="text-[13px] font-[720]"
+                        style={{ color: r.success ? '#2dd4bf' : '#fff' }}
                       >
                         {r.val}
                       </m.p>
