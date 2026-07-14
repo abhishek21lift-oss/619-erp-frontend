@@ -200,7 +200,7 @@ function initForm(): EnrollFormData {
     startDate: todayStr(), duration: '', goal: '', customGoal: '',
     trainerId: '', trainerName: '', trainingMode: '', workoutTime: '',
     customTime: '', useCustomTime: false, trainingDays: [], sessionsPerWeek: '',
-    finalAmount: '', amountPaid: '0',
+    finalAmount: '', amountPaid: '',
   };
 }
 
@@ -267,7 +267,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         trainingDays: days,
         sessionsPerWeek: c.sessions_per_week ? String(c.sessions_per_week) : '',
         finalAmount: c.final_amount != null ? String(c.final_amount) : '',
-        amountPaid: c.paid_amount != null ? String(c.paid_amount) : '0',
+        amountPaid: c.paid_amount != null ? String(c.paid_amount) : '',
       };
 
       const draft = restore();
@@ -481,30 +481,43 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   Payment Details
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FloatInput
-                    label="Final / Selling Price" required={isAdmin}
-                    type="number" placeholder="Enter Final Selling Price"
-                    prefix={<span className="text-[13px] font-[700]">₹</span>}
-                    value={form.finalAmount}
-                    onChange={(v) => set('finalAmount', v)}
-                    onBlur={() => setErrors((e) => ({ ...e, finalAmount: isAdmin ? validateFinalAmount(form.finalAmount) : undefined }))}
-                    error={errors.finalAmount}
-                    disabled={!isAdmin}
-                  />
-                  <FloatInput
-                    label="Amount Paid" required={isAdmin}
-                    type="number" placeholder="Enter Amount Paid"
-                    prefix={<span className="text-[13px] font-[700]">₹</span>}
-                    value={form.amountPaid}
-                    onChange={(v) => set('amountPaid', v)}
-                    onBlur={() => setErrors((e) => ({ ...e, amountPaid: isAdmin ? validateAmountPaid(form) : undefined }))}
-                    error={errors.amountPaid}
-                    disabled={!isAdmin}
-                  />
+                  <div>
+                    <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                      Final / Selling Price {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
+                    </p>
+                    <FloatInput
+                      label="" required={isAdmin}
+                      type="number" placeholder="Enter Final Selling Price"
+                      prefix={<span className="text-[13px] font-[700]">₹</span>}
+                      value={form.finalAmount}
+                      onChange={(v) => set('finalAmount', v)}
+                      onBlur={() => setErrors((e) => ({ ...e, finalAmount: isAdmin ? validateFinalAmount(form.finalAmount) : undefined }))}
+                      error={errors.finalAmount}
+                      disabled={!isAdmin}
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                      Amount Paid {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
+                    </p>
+                    <FloatInput
+                      label="" required={isAdmin}
+                      type="number" placeholder="Enter Amount Paid"
+                      prefix={<span className="text-[13px] font-[700]">₹</span>}
+                      value={form.amountPaid}
+                      onChange={(v) => set('amountPaid', v)}
+                      onBlur={() => setErrors((e) => ({ ...e, amountPaid: isAdmin ? validateAmountPaid(form) : undefined }))}
+                      error={errors.amountPaid}
+                      disabled={!isAdmin}
+                    />
+                  </div>
                 </div>
                 <div className="mt-4">
+                  <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                    Balance / Due
+                  </p>
                   <FloatInput
-                    label="Balance / Due"
+                    label=""
                     value={fmtINR(balanceDue)}
                     onChange={() => {}}
                     disabled
