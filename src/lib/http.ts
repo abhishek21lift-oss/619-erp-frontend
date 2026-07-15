@@ -22,9 +22,8 @@ function apiBase(): string {
 
   const hostname = window.location.hostname;
 
-  // Capacitor native WebView loads the live Vercel URL, so hostname is the
-  // Vercel domain.  Same-origin fetch works — return '' (relative URLs).
-  // Also handles capacitor://localhost when serving local www/ build.
+  // Non-localhost hostname (e.g. the live Vercel domain) — same-origin
+  // fetch works, return '' (relative URLs).
   if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
     return '';
   }

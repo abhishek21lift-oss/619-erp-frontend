@@ -6,7 +6,6 @@ import { ToastProvider } from '@/lib/toast';
 import { PermissionsProvider } from '@/lib/permissions-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import CapacitorInit from '@/components/CapacitorInit';
 import SentryInit from '@/components/SentryInit';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAuthWrapper } from '@/components/GoogleAuthWrapper';
@@ -118,7 +117,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <ToastProvider>
                     <LazyMotion features={domAnimation}>
                       <SentryInit />
-                      <CapacitorInit />
                       {children}
                       <CommandPalette />
                     </LazyMotion>

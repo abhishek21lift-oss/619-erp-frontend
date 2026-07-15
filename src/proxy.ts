@@ -56,16 +56,16 @@ const API_HOST = process.env.NEXT_PUBLIC_API_URL
 function buildCsp(): string {
   const apiConnect = API_HOST ? ` https://${API_HOST}` : '';
   return [
-    "default-src 'self' capacitor://localhost",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/ capacitor://localhost",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/ capacitor://localhost",
-    `img-src 'self' data: blob: https://${SUPABASE_HOST} https://lh3.googleusercontent.com capacitor://localhost`,
-    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://cdn.jsdelivr.net https://accounts.google.com capacitor://localhost`,
-    "font-src 'self' https://fonts.gstatic.com capacitor://localhost",
-    "media-src 'self' blob: capacitor://localhost",
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/",
+    `img-src 'self' data: blob: https://${SUPABASE_HOST} https://lh3.googleusercontent.com`,
+    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://cdn.jsdelivr.net https://accounts.google.com`,
+    "font-src 'self' https://fonts.gstatic.com",
+    "media-src 'self' blob:",
     "worker-src 'self' blob:",
-    "frame-src 'self' https://accounts.google.com capacitor://localhost",
-    "frame-ancestors 'self' capacitor://localhost",
+    "frame-src 'self' https://accounts.google.com",
+    "frame-ancestors 'self'",
     "form-action 'self'",
     "base-uri 'self'",
   ].join('; ');
