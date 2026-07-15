@@ -419,6 +419,77 @@ export interface ParqGateStatus {
   risk_level: ParqRiskLevel;
 }
 
+// ─────────────────── Personal Training Informed Consent ────────────────
+// Types matching the /api/pt-os/informed-consent/* contract exactly.
+
+export type InformedConsentStatus =
+  | 'draft' | 'pending_client_signature' | 'pending_trainer_signature'
+  | 'completed' | 'revoked' | 'expired' | 'archived';
+
+// Fixed 10 keys — Section 4 (client responsibilities), Section 6
+// (confidentiality), Section 7 (voluntary participation), Section 8
+// (final declaration). All must be true before a signature can be captured.
+export interface InformedConsentAcknowledgements {
+  understands_risk?: boolean;
+  accurate_medical_history?: boolean;
+  will_inform_pain?: boolean;
+  will_stop_if_dizzy?: boolean;
+  will_stop_if_chest_pain?: boolean;
+  will_communicate_changes?: boolean;
+  will_follow_instructions?: boolean;
+  understands_confidentiality?: boolean;
+  voluntary_participation?: boolean;
+  final_declaration?: boolean;
+}
+
+export interface InformedConsent {
+  id: string;
+  client_id: string;
+  trainer_id?: string | null;
+  version: number;
+  previous_version_id?: string | null;
+  status: InformedConsentStatus;
+  full_name: string;
+  gender?: string | null;
+  dob?: string | null;
+  mobile?: string | null;
+  email?: string | null;
+  emergency_contact?: string | null;
+  emergency_phone?: string | null;
+  address?: string | null;
+  occupation?: string | null;
+  acknowledgements: InformedConsentAcknowledgements;
+  physician_advised_against?: boolean | null;
+  physician_name?: string | null;
+  hospital?: string | null;
+  medical_condition?: string | null;
+  medical_clearance_file_url?: string | null;
+  client_signature?: string | null;
+  trainer_signature?: string | null;
+  witness_signature?: string | null;
+  witness_name?: string | null;
+  client_signed_at?: string | null;
+  trainer_signed_at?: string | null;
+  witness_signed_at?: string | null;
+  ip_address?: string | null;
+  device?: string | null;
+  browser?: string | null;
+  pdf_url?: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string | null;
+}
+
+export interface InformedConsentActivity {
+  id: string;
+  user_id?: string;
+  user_name?: string;
+  action: string;
+  new_data?: unknown;
+  ip_address?: string;
+  created_at: string;
+}
+
 // Core fetch is handled by http() from ./http
 // This file provides the typed `api` namespace facade over http()
 
@@ -1072,6 +1143,37 @@ export const api = {
         formData.append('doc_type', docType);
         formData.append('file', file);
         return http<{ data: ParqDocument }>(`/api/pt-os/parq/forms/${formId}/documents`, {
+          method: 'POST', body: formData,
+        });
+      },
+    },
+    informedConsent: {
+      list: (params?: { client_id?: string }) =>
+        http<{ data: InformedConsent[] }>(`/api/pt-os/informed-consent${buildQs(params)}`),
+      get: (id: string) =>
+        http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}`),
+      activity: (id: string) =>
+        http<{ data: InformedConsentActivity[] }>(`/api/pt-os/informed-consent/${id}/activity`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: InformedConsent }>('/api/pt-os/informed-consent', {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+      sign: (id: string, data: { signer: 'client' | 'trainer' | 'witness'; signature: string; witness_name?: string }) =>
+        http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}/sign`, {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      revoke: (id: string) =>
+        http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}/revoke`, {
+          method: 'POST',
+        }),
+      uploadClearance: (id: string, file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}/medical-clearance`, {
           method: 'POST', body: formData,
         });
       },

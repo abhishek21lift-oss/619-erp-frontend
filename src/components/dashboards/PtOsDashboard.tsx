@@ -24,6 +24,7 @@ import {
   UserPlus, CreditCard, CalendarPlus, FileBarChart, Dumbbell, Receipt,
   Trophy, ShieldCheck, Target, Gauge, Crown,
   CalendarClock, AlertCircle, CheckCircle2, XCircle, PhoneCall,
+  FileSignature,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -1064,14 +1065,23 @@ export default function PtOsDashboard() {
     (signal) => http<{ data: OpsData }>('/api/pt-os/dashboard/ops', { signal }).then(r => r.data),
     [],
   );
+  const consents = useAsync<{ status: string }[]>(
+    (signal) => http<{ data: { status: string }[] }>('/api/pt-os/informed-consent', { signal }).then(r => r.data),
+    [],
+  );
 
   const d = dash.data;
   const o = ops.data;
   const coach = user?.name?.split(' ')[0] || 'Coach';
 
   const refreshAll = useCallback(async () => {
-    await Promise.all([dash.refetch(), ops.refetch()]);
-  }, [dash.refetch, ops.refetch]);
+    await Promise.all([dash.refetch(), ops.refetch(), consents.refetch()]);
+  }, [dash.refetch, ops.refetch, consents.refetch]);
+
+  const consentCompleted = consents.data?.filter((c) => c.status === 'completed').length ?? 0;
+  const consentPending = consents.data?.filter((c) => c.status !== 'completed' && c.status !== 'revoked' && c.status !== 'archived').length ?? 0;
+  const consentMissing = d ? Math.max(d.active_pt_clients - consentCompleted - consentPending, 0) : 0;
+  const consentCompletionPct = d && d.active_pt_clients > 0 ? Math.round((consentCompleted / d.active_pt_clients) * 100) : 0;
 
   const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
   const incTrend = d?.revenueTrend?.map(x => Number(x.incentives)) ?? [];
@@ -1126,6 +1136,8 @@ export default function PtOsDashboard() {
                   sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.cyan} accent="#22d3ee" delay={0.20} href="/pt-os/clients" />
                 <StatCard icon={<Receipt size={14} />} label="Outstanding" value={fmtCompact(d.total_outstanding)}
                   sub={`${d.clients_with_balance} client${d.clients_with_balance !== 1 ? 's' : ''}`} color={C.amber} accent="#fbbf24" delay={0.25} href="/pt-os/balance-sheet" />
+                <StatCard icon={<FileSignature size={14} />} label="Consent Signed" value={`${consentCompletionPct}%`}
+                  sub={`${consentPending} pending · ${consentMissing} missing`} color={C.crimson} accent="#f87171" delay={0.30} href="/pt-os/informed-consent" />
               </div>
             </div>
 
