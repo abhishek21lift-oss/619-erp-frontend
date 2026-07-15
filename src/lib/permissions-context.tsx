@@ -10,7 +10,6 @@ const DEFAULTS: Record<string, boolean> = {
   perm_trainer_finance: false,
   perm_trainer_reports: false,
   perm_trainer_insights: false,
-  perm_trainer_staff_view: true,
   perm_trainer_settings: false,
   perm_trainer_all_pt_clients: false,
   perm_trainer_commissions: true,
@@ -20,7 +19,6 @@ const DEFAULTS: Record<string, boolean> = {
   perm_reception_finance: false,
   perm_reception_reports: false,
   perm_reception_insights: false,
-  perm_reception_staff_view: true,
   perm_reception_settings: false,
   perm_reception_record_payment: true,
 };

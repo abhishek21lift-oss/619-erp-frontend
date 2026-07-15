@@ -40,7 +40,7 @@ interface Account {
 ──────────────────────────────────────────────────────────────────── */
 const ROLES: Record<Role, { label: string; icon: React.ReactNode; color: string; bg: string; desc: string; perms: string }> = {
   admin:        { label: 'Admin',        icon: <Crown size={14} />,     color: '#6366f1', bg: 'rgba(99,102,241,0.08)',   desc: 'Full system access', perms: 'All permissions' },
-  manager:      { label: 'Manager',      icon: <Briefcase size={14} />, color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)',   desc: 'Ops & reporting',    perms: 'Reports, Staff, Finance' },
+  manager:      { label: 'Manager',      icon: <Briefcase size={14} />, color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)',   desc: 'Ops & reporting',    perms: 'Reports, Finance' },
   coach:        { label: 'Coach',        icon: <Zap size={14} />,       color: '#10b981', bg: 'rgba(16,185,129,0.08)',   desc: 'PT portal access',   perms: 'Clients, Schedule' },
   receptionist: { label: 'Receptionist', icon: <Headphones size={14} />,color: '#f59e0b', bg: 'rgba(245,158,11,0.08)',   desc: 'Front desk access',  perms: 'Check-in, Payments' },
 };
@@ -238,8 +238,8 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
   const [q, setQ] = useState('');
   const [coaches, setCoaches] = useState<string[]>([]);
   useEffect(() => {
-    api.staff.list().then(staff => {
-      setCoaches(staff.filter(s => s.role === 'coach' || s.role === 'trainer').map(s => s.name));
+    api.trainers.list().then(trainers => {
+      setCoaches(trainers.map(t => t.name));
     }).catch(() => {});
   }, []);
   const filtered = coaches.filter((c) => c.toLowerCase().includes(q.toLowerCase()));

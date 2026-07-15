@@ -374,15 +374,6 @@ const simpleModules: Record<string, Partial<ModuleConfig>> = {
     workflows: ['Configure branch', 'Assign staff', 'Allocate members', 'Compare revenue'],
     insights: ['Branch revenue', 'Members', 'Staff load', 'Performance rank'],
   },
-  staff: {
-    title: 'Staff Analytics',
-    description: 'Staff performance, attendance, productivity, KPI dashboard, ratings, salary, and shift analytics.',
-    entityName: 'Staff KPI',
-    primaryAction: 'Create KPI',
-    statuses: statusSets.analytics,
-    workflows: ['Set KPI', 'Track attendance', 'Review rating', 'Plan shift'],
-    insights: ['Productivity', 'Attendance', 'Ratings', 'Salary trend'],
-  },
   biometric: {
     title: 'Biometric & Face',
     description: 'Face recognition attendance, biometric logs, device sync, real-time tracking, verification, and access control.',
@@ -550,7 +541,7 @@ export function getModuleConfig(area: string, tab?: string): ModuleConfig {
 function adminRoleFor(key: string): Role | undefined {
   if (['referrals', 'appointments'].includes(key)) return undefined;
   if (key.startsWith('engagement-') && !['engagement-notifications', 'engagement-whatsapp', 'engagement-sms', 'engagement-community', 'engagement-challenges'].includes(key)) return 'admin';
-  return ['payroll', 'expenses', 'reports', 'trainer-targets', 'attendance-reports', 'branches', 'staff', 'biometric', 'equipment', 'notices', 'billing', 'branding', 'measurements', 'workouts', 'member-analytics', 'billing-analytics', 'leave'].includes(key)
+  return ['payroll', 'expenses', 'reports', 'trainer-targets', 'attendance-reports', 'branches', 'biometric', 'equipment', 'notices', 'billing', 'branding', 'measurements', 'workouts', 'member-analytics', 'billing-analytics', 'leave'].includes(key)
     ? 'admin'
     : undefined;
 }

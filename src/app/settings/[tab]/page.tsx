@@ -12,7 +12,6 @@ const VALID_SETTINGS_TABS = [
   'studio',
   'profile',
   'branches',
-  'staff',
   'biometric',
   'billing',
   'branding',

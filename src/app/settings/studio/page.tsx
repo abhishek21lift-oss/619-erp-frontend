@@ -124,7 +124,6 @@ export default function StudioSettingsPage() {
   const [trainerFinance, setTrainerFinance] = useState(false);
   const [trainerReports, setTrainerReports] = useState(false);
   const [trainerInsights, setTrainerInsights] = useState(false);
-  const [trainerStaffView, setTrainerStaffView] = useState(true);
   const [trainerSettings, setTrainerSettings] = useState(false);
   const [trainerAllClients, setTrainerAllClients] = useState(false);
   const [trainerCommissions, setTrainerCommissions] = useState(true);
@@ -134,7 +133,6 @@ export default function StudioSettingsPage() {
   const [receptionInsights, setReceptionInsights] = useState(false);
   const [receptionPtModule, setReceptionPtModule] = useState(false);
   const [receptionSettings, setReceptionSettings] = useState(false);
-  const [receptionStaffView, setReceptionStaffView] = useState(true);
   const [receptionRecordPayment, setReceptionRecordPayment] = useState(true);
 
   const [branchCount, setBranchCount] = useState(0);
@@ -176,7 +174,6 @@ export default function StudioSettingsPage() {
       setTrainerFinance(!!p.perm_trainer_finance);
       setTrainerReports(!!p.perm_trainer_reports);
       setTrainerInsights(!!p.perm_trainer_insights);
-      setTrainerStaffView(p.perm_trainer_staff_view !== false);
       setTrainerSettings(!!p.perm_trainer_settings);
       setTrainerAllClients(!!p.perm_trainer_all_pt_clients);
       setTrainerCommissions(p.perm_trainer_commissions !== false);
@@ -186,7 +183,6 @@ export default function StudioSettingsPage() {
       setReceptionInsights(!!p.perm_reception_insights);
       setReceptionPtModule(!!p.perm_reception_pt_module);
       setReceptionSettings(!!p.perm_reception_settings);
-      setReceptionStaffView(p.perm_reception_staff_view !== false);
       setReceptionRecordPayment(p.perm_reception_record_payment !== false);
     } catch {
       setError('Failed to load settings. Please try again.');
@@ -226,7 +222,6 @@ export default function StudioSettingsPage() {
           perm_trainer_finance: trainerFinance,
           perm_trainer_reports: trainerReports,
           perm_trainer_insights: trainerInsights,
-          perm_trainer_staff_view: trainerStaffView,
           perm_trainer_settings: trainerSettings,
           perm_trainer_all_pt_clients: trainerAllClients,
           perm_trainer_commissions: trainerCommissions,
@@ -236,7 +231,6 @@ export default function StudioSettingsPage() {
           perm_reception_insights: receptionInsights,
           perm_reception_pt_module: receptionPtModule,
           perm_reception_settings: receptionSettings,
-          perm_reception_staff_view: receptionStaffView,
           perm_reception_record_payment: receptionRecordPayment,
         }),
       ]);
@@ -460,7 +454,6 @@ export default function StudioSettingsPage() {
                       { label: 'View Reports', desc: 'Member & revenue analytics', on: trainerReports, set: wrap(setTrainerReports), icon: <BarChart2 size={12} /> },
                       { label: 'View Insights', desc: 'Revenue trends & renewal data', on: trainerInsights, set: wrap(setTrainerInsights), icon: <Eye size={12} /> },
                       { label: 'Record Payment', desc: 'Can accept & log payments', on: trainerRecordPayment, set: wrap(setTrainerRecordPayment), icon: <CreditCard size={12} /> },
-                      { label: 'View Staff List', desc: 'Access staff directory', on: trainerStaffView, set: wrap(setTrainerStaffView), icon: <Users size={12} /> },
                       { label: 'View All PT Clients', desc: 'See other trainers\' clients', on: trainerAllClients, set: wrap(setTrainerAllClients), icon: <UserCheck size={12} /> },
                       { label: 'View Commissions', desc: 'Commission & payout data', on: trainerCommissions, set: wrap(setTrainerCommissions), icon: <IndianRupee size={12} /> },
                       { label: 'Access Settings', desc: 'Studio configuration pages', on: trainerSettings, set: wrap(setTrainerSettings), icon: <Settings size={12} /> },
@@ -494,7 +487,6 @@ export default function StudioSettingsPage() {
                       { label: 'View Reports', desc: 'Member & revenue analytics', on: receptionReports, set: wrap(setReceptionReports), icon: <BarChart2 size={12} /> },
                       { label: 'View Insights', desc: 'Revenue trends & renewal data', on: receptionInsights, set: wrap(setReceptionInsights), icon: <Eye size={12} /> },
                       { label: 'Record Payment', desc: 'Can accept & log payments', on: receptionRecordPayment, set: wrap(setReceptionRecordPayment), icon: <CreditCard size={12} /> },
-                      { label: 'View Staff List', desc: 'Access staff directory', on: receptionStaffView, set: wrap(setReceptionStaffView), icon: <Users size={12} /> },
                       { label: 'Access PT Module', desc: 'PT-OS dashboard & clients', on: receptionPtModule, set: wrap(setReceptionPtModule), icon: <Dumbbell size={12} /> },
                       { label: 'Access Settings', desc: 'Studio configuration pages', on: receptionSettings, set: wrap(setReceptionSettings), icon: <Settings size={12} /> },
                     ].map(row => (
