@@ -464,6 +464,11 @@ export interface InformedConsent {
   hospital?: string | null;
   medical_condition?: string | null;
   medical_clearance_file_url?: string | null;
+  exercise_consent_text?: string | null;
+  exercise_consent_checked?: boolean;
+  exercise_consent_date?: string | null;
+  exercise_consent_signature?: string | null;
+  exercise_consent_signed_at?: string | null;
   client_signature?: string | null;
   trainer_signature?: string | null;
   witness_signature?: string | null;

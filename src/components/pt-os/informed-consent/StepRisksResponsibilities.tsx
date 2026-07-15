@@ -31,7 +31,7 @@ export function StepRisksResponsibilities({ form, set, error }: StepRisksRespons
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Potential Risks & Your Responsibilities</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 3 of 6 — all items must be checked to continue.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 3 of 7 — all items must be checked to continue.</p>
           </div>
         </div>
 

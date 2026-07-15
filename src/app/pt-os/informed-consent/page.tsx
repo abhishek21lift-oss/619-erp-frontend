@@ -26,6 +26,7 @@ import StepProgramOverview from '@/components/pt-os/informed-consent/StepProgram
 import StepRisksResponsibilities from '@/components/pt-os/informed-consent/StepRisksResponsibilities';
 import StepMedicalClearance from '@/components/pt-os/informed-consent/StepMedicalClearance';
 import StepAgreements from '@/components/pt-os/informed-consent/StepAgreements';
+import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
 import StepSignatures from '@/components/pt-os/informed-consent/StepSignatures';
 
 interface ClientOption { id: string; name: string; }
@@ -51,6 +52,11 @@ function validateStep(step: StepId, form: InformedConsentFormData): string | und
     if (missing) return 'All agreement items must be checked.';
   }
   if (step === 6) {
+    if (!form.exerciseConsentChecked) return 'Please check the consent acknowledgement to continue.';
+    if (!form.exerciseConsentSignature) return 'Client signature is required.';
+    if (!form.exerciseConsentDate) return 'Date is required.';
+  }
+  if (step === 7) {
     if (!form.clientSignature) return 'Client signature is required.';
     if (!form.trainerSignature) return 'Trainer signature is required.';
   }
@@ -483,7 +489,8 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
             />
           )}
           {step === 5 && <StepAgreements form={form} set={set} error={errors.step5} />}
-          {step === 6 && <StepSignatures form={form} set={set} error={errors.step6} />}
+          {step === 6 && <StepExerciseProgrammeConsent form={form} set={set} error={errors.step6} />}
+          {step === 7 && <StepSignatures form={form} set={set} error={errors.step7} />}
         </m.div>
       </div>
 

@@ -21,7 +21,7 @@ export function StepClientInfo({ form, set, error }: StepClientInfoProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Client Information</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 6 — auto-filled from the client profile, edit if anything has changed.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 7 — auto-filled from the client profile, edit if anything has changed.</p>
           </div>
         </div>
 

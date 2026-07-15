@@ -42,7 +42,7 @@ export function StepProgramOverview() {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Nature of the Personal Training Program</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 6 — please read before continuing.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 7 — please read before continuing.</p>
           </div>
         </div>
 
