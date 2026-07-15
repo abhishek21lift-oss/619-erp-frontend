@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CopyId } from '@/components/ui/CopyId';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, User, Mail, Calendar, Target,
+  ArrowLeft, User, Calendar, Target,
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Camera, Ruler, Zap, Repeat, ChevronRight,
@@ -284,106 +284,106 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
             {!loading && !error && client && (
               <>
+                {/* Back nav */}
+                <button onClick={() => router.back()}
+                  className="mb-4 flex items-center gap-2 text-[12px] font-[600] text-slate-500 transition-colors hover:text-slate-700">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                    <ArrowLeft size={13} />
+                  </div>
+                  PT Clients
+                </button>
+
                 {/* ── HERO ── */}
                 <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative mb-6 overflow-hidden rounded-[28px] p-7"
+                  className="relative mb-5 overflow-hidden rounded-[28px] p-6 sm:p-7"
                   style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                    background: 'linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%)',
+                    boxShadow: '0 20px 48px rgba(30,27,75,0.35)',
                   }}>
 
-                  {/* Back nav */}
-                  <button onClick={() => router.back()}
-                    className="relative mb-6 flex items-center gap-2 text-[12px] font-[600] text-slate-500 transition-colors hover:text-slate-700">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                      <ArrowLeft size={13} />
+                  {/* Status pill */}
+                  {statusCfg && (
+                    <div className="absolute right-5 top-5 flex items-center gap-1.5 rounded-full px-3 py-1.5 sm:right-6 sm:top-6"
+                      style={{ background: statusCfg.bg, border: `1px solid ${statusCfg.color}30` }}>
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusCfg.dot }} />
+                      <span className="text-[10.5px] font-[800] uppercase tracking-wider" style={{ color: statusCfg.color }}>
+                        {statusCfg.label}
+                      </span>
                     </div>
-                    PT Clients
-                  </button>
+                  )}
 
-                  <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
+                  <div className="flex items-center gap-4 sm:gap-5">
                     {/* Avatar */}
-                    <div className="relative shrink-0">
-                      <div className="flex h-24 w-24 items-center justify-center rounded-[22px] text-[28px] font-[860] text-white"
-                        style={{
-                          background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
-                          boxShadow: `0 8px 32px ${palette.from}50`,
-                        }}>
-                        {initials(client.name)}
-                      </div>
-                      {/* Status dot */}
-                      {statusCfg && (
-                        <div className="absolute -bottom-1.5 -right-1.5 flex items-center gap-1 rounded-full px-2 py-1"
-                          style={{ background: statusCfg.bg, border: `1px solid ${statusCfg.color}30` }}>
-                          <span className="h-2 w-2 rounded-full" style={{ background: statusCfg.dot }} />
-                          <span className="text-[9px] font-[800] uppercase tracking-wider" style={{ color: statusCfg.color }}>
-                            {statusCfg.label}
-                          </span>
-                        </div>
-                      )}
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[22px] text-[24px] font-[860] text-white sm:h-24 sm:w-24 sm:text-[28px]"
+                      style={{
+                        background: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 10px 24px rgba(0,0,0,0.25)',
+                      }}>
+                      {initials(client.name)}
                     </div>
 
                     {/* Identity */}
-                    <div className="flex-1 min-w-0">
-                      <h1 className="text-[30px] font-[880] tracking-[-0.04em] text-gray-900 leading-tight">{client.name}</h1>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color={palette.from} />
+                    <div className="min-w-0 flex-1 pr-24 sm:pr-0">
+                      <h1 className="truncate text-[22px] font-[880] leading-tight tracking-[-0.03em] text-white sm:text-[30px]">
+                        {client.name}
+                      </h1>
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#2dd4bf" />
                         {client.trainer_name && (
-                          <span className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 text-[11px] font-[600]"
-                            style={{ background: `${palette.from}18`, color: palette.from }}>
-                            <User size={10} />{client.trainer_name}
-                          </span>
-                        )}
-                        {client.package_type && (
-                          <span className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1 text-[11px] font-[600] text-slate-500"
-                            style={{ background: 'var(--bg-subtle)' }}>
-                            <Dumbbell size={10} />{client.package_type}
+                          <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-[700]"
+                            style={{ background: 'rgba(196,181,253,0.18)', color: '#c4b5fd' }}>
+                            <User size={11} />{client.trainer_name}
                           </span>
                         )}
                       </div>
-
-                      {/* Contact actions */}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {client.mobile && (
-                          <a href={whatsappHref(client.mobile, client.name)} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[11.5px] font-[650] transition-all hover:opacity-80"
-                            style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
-                            <MessageCircle size={12} /> WhatsApp
-                          </a>
-                        )}
-                        {client.email && (
-                          <a href={`mailto:${client.email}`}
-                            className="flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[11.5px] font-[650] transition-all hover:opacity-80"
-                            style={{ background: 'rgba(14,165,233,0.15)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.2)' }}>
-                            <Mail size={12} /> Email
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Hero actions */}
-                    <div className="flex flex-wrap gap-2 shrink-0">
-                      <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
-                        className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
-                        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                        <Pencil size={13} /> Edit
-                      </button>
-                      <button onClick={() => router.push(`/pt-os/clients/${id}/enroll`)}
-                        className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-white transition-all hover:-translate-y-0.5"
-                        style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 4px 16px rgba(245,158,11,0.35)' }}>
-                        <Award size={13} /> Enroll in PT
-                      </button>
-                      <button onClick={() => router.push(`/pt-os/clients/${id}/renew`)}
-                        className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-white transition-all hover:-translate-y-0.5"
-                        style={{ background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`, boxShadow: `0 4px 16px ${palette.from}45` }}>
-                        <Repeat size={13} /> Renew PT
-                      </button>
                     </div>
                   </div>
                 </m.div>
+
+                {/* ── CONTACT & ACTIONS ── */}
+                <div className="mb-6 space-y-4">
+                  <div className="space-y-1">
+                    {client.mobile && (
+                      <p className="text-[14px] font-[600] text-gray-800">
+                        Phone: <span className="font-[500] text-gray-500">{client.mobile}</span>
+                      </p>
+                    )}
+                    {client.email && (
+                      <p className="text-[14px] font-[600] text-gray-800">
+                        Email: <span className="font-[500] text-gray-500">{client.email}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {client.mobile && (
+                    <a href={whatsappHref(client.mobile, client.name)} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-[12.5px] font-[700] transition-all hover:opacity-80"
+                      style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                      <MessageCircle size={14} /> WhatsApp
+                    </a>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
+                      className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
+                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                      <Pencil size={13} /> Edit
+                    </button>
+                    <button onClick={() => router.push(`/pt-os/clients/${id}/enroll`)}
+                      className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
+                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                      <Award size={13} /> Enroll in PT
+                    </button>
+                    <button onClick={() => router.push(`/pt-os/clients/${id}/renew`)}
+                      className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
+                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                      <Repeat size={13} /> Renew PT
+                    </button>
+                  </div>
+                </div>
 
                 {/* ── KPI CARDS ── */}
                 <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
