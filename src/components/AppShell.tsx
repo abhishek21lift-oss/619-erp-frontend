@@ -14,7 +14,6 @@ import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import FAB from '@/components/FAB';
 import { api } from '@/lib/api';
 import { allNavItems } from '@/lib/nav-config';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
@@ -739,9 +738,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               fixed footers (e.g. form Save/Submit bars) instead of always
               painting on top of them regardless of their z-index. */}
           <MobileBottomNav sidebarOpen={mobileMenuOpen} />
-
-          {/* Floating Action Button — mobile only */}
-          <FAB />
         </div>
       </div>
     </LazyMotion>
