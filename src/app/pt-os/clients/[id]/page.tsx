@@ -11,6 +11,7 @@ import {
   Camera, Ruler, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag,
+  ShieldCheck, FileSignature,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -90,6 +91,73 @@ function InfoRow({ label, value, valueColor }: { label: string; value: string; v
   );
 }
 
+// ── Documents card: PAR-Q + Informed Consent status at a glance ──
+const DOC_STATUS_STYLE: Record<string, { label: string; bg: string; color: string }> = {
+  none: { label: 'Not Started', bg: 'rgba(148,163,184,0.15)', color: '#64748b' },
+  draft: { label: 'Draft', bg: 'rgba(148,163,184,0.15)', color: '#64748b' },
+  submitted: { label: 'Submitted', bg: 'rgba(16,185,129,0.15)', color: '#059669' },
+  reviewed: { label: 'Reviewed', bg: 'rgba(16,185,129,0.15)', color: '#059669' },
+  pending_client_signature: { label: 'Pending Signature', bg: 'rgba(245,158,11,0.15)', color: '#d97706' },
+  pending_trainer_signature: { label: 'Pending Signature', bg: 'rgba(245,158,11,0.15)', color: '#d97706' },
+  completed: { label: 'Completed', bg: 'rgba(16,185,129,0.15)', color: '#059669' },
+  revoked: { label: 'Revoked', bg: 'rgba(220,38,38,0.15)', color: '#dc2626' },
+};
+
+function DocumentRow({ icon, label, status, onClick }: { icon: React.ReactNode; label: string; status: string; onClick: () => void }) {
+  const style = DOC_STATUS_STYLE[status] || DOC_STATUS_STYLE.none;
+  return (
+    <button onClick={onClick} className="flex w-full items-center justify-between gap-3 rounded-[12px] p-3 text-left transition hover:opacity-80"
+      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+      <div className="flex items-center gap-2.5">
+        <span style={{ color: '#64748b' }}>{icon}</span>
+        <span className="text-[12.5px] font-[650] text-gray-900">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="rounded-full px-2.5 py-1 text-[10.5px] font-[700]" style={{ background: style.bg, color: style.color }}>
+          {style.label}
+        </span>
+        <ChevronRight size={14} style={{ color: '#cbd5e1' }} />
+      </div>
+    </button>
+  );
+}
+
+function DocumentsCard({ clientId }: { clientId: string }) {
+  const router = useRouter();
+  const [parqStatus, setParqStatus] = useState('none');
+  const [consentStatus, setConsentStatus] = useState('none');
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      api.progress.parqForms.list({ client_id: clientId }).catch(() => ({ data: [] })),
+      api.progress.informedConsent.list({ client_id: clientId }).catch(() => ({ data: [] })),
+    ]).then(([parqRes, consentRes]) => {
+      if (cancelled) return;
+      const latestParq = parqRes?.data?.[0];
+      if (latestParq) setParqStatus(String(latestParq.status || 'draft'));
+      const latestConsent = consentRes?.data?.[0];
+      if (latestConsent) setConsentStatus(String(latestConsent.status || 'draft'));
+    });
+    return () => { cancelled = true; };
+  }, [clientId]);
+
+  return (
+    <DarkCard title="Documents" icon={<FileSignature size={14} />} from="#0f172a">
+      <div className="space-y-2.5">
+        <DocumentRow
+          icon={<ShieldCheck size={15} />} label="PAR-Q Screening" status={parqStatus}
+          onClick={() => router.push(`/pt-os/parq?client_id=${clientId}`)}
+        />
+        <DocumentRow
+          icon={<FileSignature size={15} />} label="Informed Consent" status={consentStatus}
+          onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)}
+        />
+      </div>
+    </DarkCard>
+  );
+}
+
 function DarkCard({ title, icon, from, children, className = '' }:
   { title: string; icon: React.ReactNode; from: string; children: React.ReactNode; className?: string }) {
   return (
@@ -121,6 +189,8 @@ const QUICK_ACTIONS = [
   { label: 'Check-in', icon: <CheckCircle size={16} />, href: (id: string) => `/pt-os/weekly-checkin?client_id=${id}`, from: '#14b8a6', to: '#0d9488' },
   { label: 'Diet Plans', icon: <FileText size={16} />, href: (id: string) => `/pt-os/diet-plans?client_id=${id}`, from: '#f97316', to: '#ea580c' },
   { label: 'Sessions', icon: <Calendar size={16} />, href: (id: string) => `/pt-os/sessions?client_id=${id}`, from: '#0ea5e9', to: '#0284c7' },
+  { label: 'PAR-Q', icon: <ShieldCheck size={16} />, href: (id: string) => `/pt-os/parq?client_id=${id}`, from: '#0f172a', to: '#334155' },
+  { label: 'Informed Consent', icon: <FileSignature size={16} />, href: (id: string) => `/pt-os/informed-consent?client_id=${id}`, from: '#7c3aed', to: '#5b21b6' },
   { label: 'Delete', icon: <Trash2 size={16} />, href: () => '#delete', from: '#ef4444', to: '#dc2626' },
 ];
 
@@ -642,6 +712,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <InfoRow label="Days Left" value={client.days_left !== null ? `${client.days_left} days` : '—'}
                         valueColor={client.days_left <= 7 ? '#ef4444' : undefined} />
                     </DarkCard>
+
+                    {/* Documents */}
+                    <DocumentsCard clientId={client.id} />
 
                     {/* Financial Details */}
                     <DarkCard title="Financials" icon={<Wallet size={14} />} from="#10b981">
