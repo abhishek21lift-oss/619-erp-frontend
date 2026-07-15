@@ -41,6 +41,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   return (
     <m.nav
       className="fixed bottom-0 left-0 right-0 z-40 lg:hidden"
+      data-no-pull-refresh
       style={{
         background: 'rgba(7,5,15,0.94)',
         backdropFilter: 'blur(24px) saturate(180%)',

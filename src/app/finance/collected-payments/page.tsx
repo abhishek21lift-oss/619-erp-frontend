@@ -7,7 +7,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import type { Payment } from '@/lib/api';
-import { Button, KpiCard } from '@/components/ui';
+import { Button, KpiCard, PullToRefresh } from '@/components/ui';
 import {
   Banknote, Search, ArrowUpDown, User, Wallet,
   Smartphone, CreditCard, Receipt, CalendarDays, RefreshCw, Inbox,
@@ -117,6 +117,7 @@ function Inner() {
 
   return (
     <AppShell>
+      <PullToRefresh onRefresh={fetchPayments}>
       <div style={{ minHeight: '100dvh' }}>
         {/* Page Header */}
         <div style={{
@@ -420,6 +421,7 @@ function Inner() {
           </div>
         </div>
       </div>
+      </PullToRefresh>
     </AppShell>
   );
 }

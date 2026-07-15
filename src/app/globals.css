@@ -293,6 +293,10 @@ html {
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
   overflow-x: hidden;
+  /* Custom PullToRefresh owns the top-of-page drag gesture; this stops the
+     browser's own native pull-to-refresh/rubber-band from firing alongside
+     it (Chrome/Android in particular double-triggers without this). */
+  overscroll-behavior-y: contain;
 }
 body {
   min-height: 100dvh;
@@ -300,6 +304,7 @@ body {
   background: var(--bg-canvas);
   overflow-x: hidden;
   max-width: 100vw;
+  overscroll-behavior-y: contain;
 }
 :focus { outline: none; }
 :focus-visible {

@@ -15,9 +15,9 @@
  * All figures are raw backend values or honestly-derived metrics.
  */
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { m } from 'framer-motion';
-import { PremiumBarChart } from '@/components/ui';
+import { PremiumBarChart, PullToRefresh } from '@/components/ui';
 import {
   Users, TrendingUp, Wallet, Percent, RefreshCw,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
@@ -1069,6 +1069,10 @@ export default function PtOsDashboard() {
   const o = ops.data;
   const coach = user?.name?.split(' ')[0] || 'Coach';
 
+  const refreshAll = useCallback(async () => {
+    await Promise.all([dash.refetch(), ops.refetch()]);
+  }, [dash.refetch, ops.refetch]);
+
   const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
   const incTrend = d?.revenueTrend?.map(x => Number(x.incentives)) ?? [];
   const revMoM   = momPct(d?.revenueTrend, 'revenue');
@@ -1088,7 +1092,10 @@ export default function PtOsDashboard() {
           style={{ background: 'radial-gradient(ellipse 65% 45% at 10% 0%, rgba(193,18,31,0.05) 0%, transparent 55%), radial-gradient(ellipse 55% 40% at 90% 90%, rgba(124,58,237,0.05) 0%, transparent 55%)' }} />
       </div>
 
-      {/* Scroll container — pb accounts for mobile bottom nav (h-16=64px) + safe area */}
+      {/* Scroll container — pb accounts for mobile bottom nav (h-16=64px) + safe area.
+          QuickDock and the ambient wash above stay outside PullToRefresh: both use
+          position:fixed, which breaks once an ancestor gets a transform. */}
+      <PullToRefresh onRefresh={refreshAll}>
       <div className="relative mx-auto w-full max-w-7xl pt-2 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] lg:pb-28 space-y-3.5 sm:space-y-4"
         style={{ zIndex: 1 }}>
 
@@ -1160,6 +1167,7 @@ export default function PtOsDashboard() {
           </>
         )}
       </div>
+      </PullToRefresh>
 
       {/* Desktop floating dock — hidden on mobile */}
       {d && <QuickDock />}

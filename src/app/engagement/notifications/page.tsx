@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PullToRefresh } from '@/components/ui';
 import { Bell, Send, Users, CheckCircle2, Clock, Plus, Trash2, MessageSquare, RefreshCw, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -75,6 +76,7 @@ function NContent() {
 
   return (
     <AppShell>
+      <PullToRefresh onRefresh={load}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
         {/* ── HERO ── */}
         <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -210,6 +212,7 @@ function NContent() {
           )}
         </m.div>
       </div>
+      </PullToRefresh>
     </AppShell>
   );
 }

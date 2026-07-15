@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 import { CopyId } from '@/components/ui/CopyId';
@@ -323,6 +324,7 @@ export default function PtClientsPage() {
   return (
     <Guard>
       <AppShell>
+        <PullToRefresh onRefresh={clients.refetch}>
         <div className="min-h-screen" style={{ background: 'var(--bg-subtle)' }}>
 
           <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
@@ -552,6 +554,7 @@ export default function PtClientsPage() {
           </div>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        </PullToRefresh>
       </AppShell>
     </Guard>
   );

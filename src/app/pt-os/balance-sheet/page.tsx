@@ -5,6 +5,7 @@ import { m } from 'framer-motion';
 import { Wallet, TrendingUp, AlertCircle, CheckCircle, Search, Download, IndianRupee, Users, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api, PtClientBase } from '@/lib/api';
 
@@ -106,6 +107,7 @@ export default function BalanceSheetPage() {
   return (
     <Guard role="admin">
       <AppShell>
+        <PullToRefresh onRefresh={bs.refetch}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px' }}>
 
           {/* ── Hero ── */}
@@ -276,6 +278,7 @@ export default function BalanceSheetPage() {
             )}
           </m.div>
         </div>
+        </PullToRefresh>
       </AppShell>
     </Guard>
   );
