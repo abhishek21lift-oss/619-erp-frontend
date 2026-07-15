@@ -81,12 +81,15 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'progress-tracking',
-    label: 'Progress',
-    icon: 'TrendingUp',
+    label: 'Screening',
+    icon: 'ShieldCheck',
     items: [
+      { href: '/pt-os/informed-consent',  label: 'Consent',              icon: 'FileSignature',  isNew: true },
+      { href: '/pt-os/parq',              label: 'PAR-Q',                icon: 'ShieldCheck',    isNew: true },
+      { href: '/pt-os/assessment',        label: 'Fitness Testing',      icon: 'ClipboardCheck', isNew: true },
+      { href: '/pt-os/lifestyle-assessment', label: 'Lifestyle',         icon: 'HeartPulse',     isNew: true },
       { href: '/pt-os/progress-tracking-setup', label: 'Progress Tracking Setup', icon: 'Flag', isNew: true },
       { href: '/pt-os/weekly-checkin',    label: 'Weekly Check-In',     icon: 'ClipboardCheck', isNew: true },
-      { href: '/pt-os/lifestyle-assessment', label: 'Lifestyle Assessment', icon: 'HeartPulse',  isNew: true },
       { href: '/pt-os/nutrition-assessment', label: 'Nutrition Assessment', icon: 'Salad',       isNew: true },
       { href: '/pt-os/mobility-assessment', label: 'Mobility Assessment', icon: 'Move',           isNew: true },
       { href: '/pt-os/posture-assessment', label: 'Posture Assessment',   icon: 'Accessibility',  isNew: true },
