@@ -495,6 +495,92 @@ export interface InformedConsentActivity {
   created_at: string;
 }
 
+// ─────────────────────────────── Workout Log ────────────────────────────
+// Types matching the /api/pt-os/workout-log/* contract exactly. is_pr_* and
+// summary fields are always server-computed — never sent by the client.
+
+export interface WorkoutSet {
+  id: string;
+  session_exercise_id: string;
+  set_number: number;
+  weight_kg?: number | null;
+  reps?: number | null;
+  rpe?: number | null;
+  rir?: number | null;
+  tempo?: string | null;
+  rest_seconds?: number | null;
+  completed: boolean;
+  notes?: string | null;
+  is_pr_weight: boolean;
+  is_pr_reps: boolean;
+  is_pr_volume: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkoutSessionExercise {
+  id: string;
+  session_id: string;
+  exercise_id?: string | null;
+  exercise_name: string;
+  sort_order: number;
+  notes?: string | null;
+  created_at: string;
+  sets: WorkoutSet[];
+}
+
+export interface WorkoutSessionSummary {
+  total_sets: number;
+  total_reps: number;
+  total_volume: number;
+  exercises_completed: number;
+  exercises_total: number;
+  avg_rpe: number | null;
+}
+
+export type WorkoutSessionStatus = 'in_progress' | 'completed';
+
+export interface WorkoutSession {
+  id: string;
+  client_id: string;
+  trainer_id?: string | null;
+  workout_assignment_id?: string | null;
+  session_date: string;
+  program_name?: string | null;
+  workout_day?: string | null;
+  notes?: string | null;
+  duration_minutes?: number | null;
+  status: WorkoutSessionStatus;
+  created_at: string;
+  updated_at: string;
+  exercise_count?: number;
+  completed_set_count?: number;
+}
+
+export interface WorkoutSessionDetail extends WorkoutSession {
+  exercises: WorkoutSessionExercise[];
+  summary: WorkoutSessionSummary;
+}
+
+export interface WorkoutProgressPoint {
+  session_date: string;
+  best_weight: number;
+  best_reps: number;
+  est_1rm: number | null;
+  volume: number;
+}
+
+export interface WorkoutVolumePoint {
+  period: string;
+  volume: number;
+  session_count: number;
+}
+
+export interface WorkoutPreviousExercise {
+  session_date: string;
+  sets: WorkoutSet[];
+}
+
 // Core fetch is handled by http() from ./http
 // This file provides the typed `api` namespace facade over http()
 
@@ -1182,6 +1268,50 @@ export const api = {
           method: 'POST', body: formData,
         });
       },
+    },
+    workoutLog: {
+      sessions: {
+        list: (params: { client_id: string; limit?: number; offset?: number }) =>
+          http<{ data: WorkoutSession[] }>(`/api/pt-os/workout-log/sessions${buildQs(params)}`),
+        get: (id: string) =>
+          http<{ data: WorkoutSessionDetail }>(`/api/pt-os/workout-log/sessions/${id}`),
+        create: (data: Record<string, unknown>) =>
+          http<{ data: WorkoutSession }>('/api/pt-os/workout-log/sessions', {
+            method: 'POST', body: JSON.stringify(data),
+          }),
+        update: (id: string, data: Record<string, unknown>) =>
+          http<{ data: WorkoutSession }>(`/api/pt-os/workout-log/sessions/${id}`, {
+            method: 'PATCH', body: JSON.stringify(data),
+          }),
+        delete: (id: string) =>
+          http<{ message: string }>(`/api/pt-os/workout-log/sessions/${id}`, { method: 'DELETE' }),
+      },
+      exercises: {
+        add: (sessionId: string, data: { exercise_id?: string | null; exercise_name: string; notes?: string | null }) =>
+          http<{ data: WorkoutSessionExercise }>(`/api/pt-os/workout-log/sessions/${sessionId}/exercises`, {
+            method: 'POST', body: JSON.stringify(data),
+          }),
+        remove: (id: string) =>
+          http<{ message: string }>(`/api/pt-os/workout-log/exercises/${id}`, { method: 'DELETE' }),
+      },
+      sets: {
+        add: (sessionExerciseId: string, data: Record<string, unknown>) =>
+          http<{ data: WorkoutSet }>(`/api/pt-os/workout-log/exercises/${sessionExerciseId}/sets`, {
+            method: 'POST', body: JSON.stringify(data),
+          }),
+        update: (id: string, data: Record<string, unknown>) =>
+          http<{ data: WorkoutSet }>(`/api/pt-os/workout-log/sets/${id}`, {
+            method: 'PATCH', body: JSON.stringify(data),
+          }),
+        delete: (id: string) =>
+          http<{ message: string }>(`/api/pt-os/workout-log/sets/${id}`, { method: 'DELETE' }),
+      },
+      previous: (params: { client_id: string; exercise_id?: string; exercise_name?: string; exclude_session_id?: string }) =>
+        http<{ data: WorkoutPreviousExercise | null }>(`/api/pt-os/workout-log/previous${buildQs(params)}`),
+      progress: (params: { client_id: string; exercise_id?: string; exercise_name?: string }) =>
+        http<{ data: WorkoutProgressPoint[] }>(`/api/pt-os/workout-log/progress${buildQs(params)}`),
+      volumeSummary: (params: { client_id: string; group_by?: 'week' | 'month' }) =>
+        http<{ data: WorkoutVolumePoint[] }>(`/api/pt-os/workout-log/volume-summary${buildQs(params)}`),
     },
   },
 

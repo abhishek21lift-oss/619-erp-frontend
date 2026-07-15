@@ -11,7 +11,7 @@ import {
   Camera, Ruler, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag,
-  ShieldCheck, FileSignature,
+  ShieldCheck, FileSignature, ClipboardList,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -197,6 +197,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   { label: 'Baseline Setup', icon: <Flag size={16} />, href: (id) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155' },
   { label: 'Payments', icon: <Wallet size={16} />, href: (id) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
   { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
+  { label: 'Workout Log', icon: <ClipboardList size={16} />, href: (id) => `/pt-os/clients/${id}/workout-log`, from: '#f43f5e', to: '#e11d48' },
   {
     label: 'Screening', icon: <ShieldCheck size={16} />, from: '#0f172a', to: '#334155',
     children: [
