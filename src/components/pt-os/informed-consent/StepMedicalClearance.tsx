@@ -50,7 +50,7 @@ export function StepMedicalClearance({ form, set, error, recordId, fileUrl, onFi
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Medical Clearance</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 4 of 6</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 4 of 7</p>
           </div>
         </div>
 
