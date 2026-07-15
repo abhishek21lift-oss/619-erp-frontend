@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import {
   Search, LogOut, Bell, Settings, Building2, Fingerprint,
-  Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown,
+  Receipt, Zap, User, HelpCircle, ChevronDown,
   Menu, X, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
@@ -157,9 +157,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
     { href: '/settings/biometric',       label: 'Biometric & Face',      icon: Fingerprint },
     { href: '/settings/passkeys',        label: 'Passkeys / Face ID Login', icon: KeyRound },
     { href: '/settings/billing',         label: 'GST / Invoice',         icon: Receipt },
-    { href: '/settings/branding',        label: 'Branding',              icon: Palette },
     { href: '/settings/integrations',    label: 'Integrations',          icon: Zap },
-    { href: '/settings/import-database', label: 'Import Database',       icon: DatabaseBackup },
   ];
 
 

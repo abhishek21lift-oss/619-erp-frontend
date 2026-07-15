@@ -713,39 +713,12 @@ export const api = {
   },
 
   admin: {
-    importDatabase: (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      return http<{ message?: string }>('/api/import/import-excel', { method: 'POST', body: formData });
-    },
-    smartImport: (clients: unknown[]) =>
-      http<{ clients_created: number; clients_updated: number; subscriptions_created: number; total_clients: number; review: unknown[]; errors: unknown[] }>(
-        '/api/import/smart-import', { method: 'POST', body: JSON.stringify(clients.length ? { clients } : { clients: [] }) }
-      ),
     exportDatabase: () => http<{ message?: string; url?: string }>('/api/admin/export-database'),
     backupDatabase: () => http<{ message?: string }>('/api/admin/backup-database', { method: 'POST' }),
   },
 
-  // ── Settings / Branding ──────────────────────────────────────────────
+  // ── Settings ──────────────────────────────────────────────
   settings: {
-    /** Load all branding key-value pairs */
-    getBranding: () =>
-      http<Record<string, string>>('/api/settings/branding'),
-
-    /** Persist branding key-value pairs (admin only) */
-    saveBranding: (data: Record<string, string>) =>
-      http<{ message: string; settings: Record<string, string> }>('/api/settings/branding', {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-
-    /** Upload a brand asset (base64 data-URL) and store under `key` */
-      uploadAsset: (image: string, key: string) =>
-      http<{ message: string; url: string }>('/api/settings/branding/upload-logo', {
-        method: 'POST',
-        body: JSON.stringify({ image, key }),
-      }),
-
     /** Full studio config + branches */
     getStudio: () =>
       http<{ settings: Record<string, unknown>; branches: unknown[] }>('/api/settings/studio'),

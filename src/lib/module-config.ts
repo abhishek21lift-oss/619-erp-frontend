@@ -410,15 +410,6 @@ const simpleModules: Record<string, Partial<ModuleConfig>> = {
     workflows: ['Calculate GST', 'Generate invoice', 'Record payment', 'Export tax report'],
     insights: ['GST collected', 'Invoices', 'Receipts', 'Tax reports'],
   },
-  branding: {
-    title: 'Branding & App',
-    description: 'App branding, logo upload structure, themes, colors, mobile settings, splash screen, domain, and SEO settings.',
-    entityName: 'Brand setting',
-    primaryAction: 'Save brand setting',
-    statuses: ['Draft', 'Active', 'Testing', 'Published', 'Rollback'],
-    workflows: ['Upload logo', 'Choose colors', 'Preview mobile app', 'Publish theme'],
-    insights: ['Theme version', 'Mobile settings', 'SEO score', 'Domain status'],
-  },
   measurements: {
     title: 'Measurements',
     description: 'Body measurements, BMI/BMR calculator, progress charts, before/after comparisons, assessments, history, and goals.',
@@ -541,7 +532,7 @@ export function getModuleConfig(area: string, tab?: string): ModuleConfig {
 function adminRoleFor(key: string): Role | undefined {
   if (['referrals', 'appointments'].includes(key)) return undefined;
   if (key.startsWith('engagement-') && !['engagement-notifications', 'engagement-whatsapp', 'engagement-sms', 'engagement-community', 'engagement-challenges'].includes(key)) return 'admin';
-  return ['payroll', 'expenses', 'reports', 'trainer-targets', 'attendance-reports', 'branches', 'biometric', 'equipment', 'notices', 'billing', 'branding', 'measurements', 'workouts', 'member-analytics', 'billing-analytics', 'leave'].includes(key)
+  return ['payroll', 'expenses', 'reports', 'trainer-targets', 'attendance-reports', 'branches', 'biometric', 'equipment', 'notices', 'billing', 'measurements', 'workouts', 'member-analytics', 'billing-analytics', 'leave'].includes(key)
     ? 'admin'
     : undefined;
 }

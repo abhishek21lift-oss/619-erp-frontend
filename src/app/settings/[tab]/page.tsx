@@ -14,9 +14,7 @@ const VALID_SETTINGS_TABS = [
   'branches',
   'biometric',
   'billing',
-  'branding',
   'integrations',
-  'import-database',
 ] as const;
 type SettingsTab = typeof VALID_SETTINGS_TABS[number];
 
