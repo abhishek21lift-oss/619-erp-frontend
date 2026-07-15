@@ -175,22 +175,44 @@ function DarkCard({ title, icon, from, children, className = '' }:
   );
 }
 
-const QUICK_ACTIONS = [
-  { label: 'Enroll in PT', icon: <Award size={16} />, href: (id: string) => `/pt-os/clients/${id}/enroll`, from: '#F59E0B', to: '#D97706' },
-  { label: 'Baseline Setup', icon: <Flag size={16} />, href: (id: string) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155' },
-  { label: 'Payments', icon: <Wallet size={16} />, href: (id: string) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
-  { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id: string) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
-  { label: 'Fitness Testing', icon: <Activity size={16} />, href: (id: string) => `/pt-os/assessment?client_id=${id}`, from: '#10b981', to: '#059669' },
-  { label: 'Goals', icon: <Target size={16} />, href: (id: string) => `/pt-os/goals?client_id=${id}`, from: '#3b82f6', to: '#2563eb' },
-  { label: 'Lifestyle', icon: <HeartPulse size={16} />, href: (id: string) => `/pt-os/lifestyle-assessment?client_id=${id}`, from: '#e11d48', to: '#be123c' },
-  { label: 'Nutrition', icon: <Salad size={16} />, href: (id: string) => `/pt-os/nutrition-assessment?client_id=${id}`, from: '#22c55e', to: '#16a34a' },
-  { label: 'Photos', icon: <Camera size={16} />, href: (id: string) => `/pt-os/progress-photos?client_id=${id}`, from: '#ec4899', to: '#db2777' },
-  { label: 'Strength', icon: <Zap size={16} />, href: (id: string) => `/pt-os/strength-tracking?client_id=${id}`, from: '#6366f1', to: '#4f46e5' },
-  { label: 'Check-in', icon: <CheckCircle size={16} />, href: (id: string) => `/pt-os/weekly-checkin?client_id=${id}`, from: '#14b8a6', to: '#0d9488' },
-  { label: 'Diet Plans', icon: <FileText size={16} />, href: (id: string) => `/pt-os/diet-plans?client_id=${id}`, from: '#f97316', to: '#ea580c' },
-  { label: 'Sessions', icon: <Calendar size={16} />, href: (id: string) => `/pt-os/sessions?client_id=${id}`, from: '#0ea5e9', to: '#0284c7' },
-  { label: 'PAR-Q', icon: <ShieldCheck size={16} />, href: (id: string) => `/pt-os/parq?client_id=${id}`, from: '#0f172a', to: '#334155' },
-  { label: 'Informed Consent', icon: <FileSignature size={16} />, href: (id: string) => `/pt-os/informed-consent?client_id=${id}`, from: '#7c3aed', to: '#5b21b6' },
+interface QuickActionChild {
+  label: string;
+  icon: React.ReactNode;
+  href: (id: string) => string;
+}
+
+interface QuickAction {
+  label: string;
+  icon: React.ReactNode;
+  from: string;
+  to: string;
+  /** Flat actions navigate directly; grouped actions (e.g. "Screening")
+   *  open a sub-menu instead and omit href. */
+  href?: (id: string) => string;
+  children?: QuickActionChild[];
+}
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { label: 'Enroll in PT', icon: <Award size={16} />, href: (id) => `/pt-os/clients/${id}/enroll`, from: '#F59E0B', to: '#D97706' },
+  { label: 'Baseline Setup', icon: <Flag size={16} />, href: (id) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155' },
+  { label: 'Payments', icon: <Wallet size={16} />, href: (id) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
+  { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
+  {
+    label: 'Screening', icon: <ShieldCheck size={16} />, from: '#0f172a', to: '#334155',
+    children: [
+      { label: 'Consent', icon: <FileSignature size={14} />, href: (id) => `/pt-os/informed-consent?client_id=${id}` },
+      { label: 'PAR-Q', icon: <ShieldCheck size={14} />, href: (id) => `/pt-os/parq?client_id=${id}` },
+      { label: 'Fitness Testing', icon: <Activity size={14} />, href: (id) => `/pt-os/assessment?client_id=${id}` },
+      { label: 'Lifestyle', icon: <HeartPulse size={14} />, href: (id) => `/pt-os/lifestyle-assessment?client_id=${id}` },
+    ],
+  },
+  { label: 'Goals', icon: <Target size={16} />, href: (id) => `/pt-os/goals?client_id=${id}`, from: '#3b82f6', to: '#2563eb' },
+  { label: 'Nutrition', icon: <Salad size={16} />, href: (id) => `/pt-os/nutrition-assessment?client_id=${id}`, from: '#22c55e', to: '#16a34a' },
+  { label: 'Photos', icon: <Camera size={16} />, href: (id) => `/pt-os/progress-photos?client_id=${id}`, from: '#ec4899', to: '#db2777' },
+  { label: 'Strength', icon: <Zap size={16} />, href: (id) => `/pt-os/strength-tracking?client_id=${id}`, from: '#6366f1', to: '#4f46e5' },
+  { label: 'Check-in', icon: <CheckCircle size={16} />, href: (id) => `/pt-os/weekly-checkin?client_id=${id}`, from: '#14b8a6', to: '#0d9488' },
+  { label: 'Diet Plans', icon: <FileText size={16} />, href: (id) => `/pt-os/diet-plans?client_id=${id}`, from: '#f97316', to: '#ea580c' },
+  { label: 'Sessions', icon: <Calendar size={16} />, href: (id) => `/pt-os/sessions?client_id=${id}`, from: '#0ea5e9', to: '#0284c7' },
   { label: 'Delete', icon: <Trash2 size={16} />, href: () => '#delete', from: '#ef4444', to: '#dc2626' },
 ];
 
@@ -203,6 +225,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [error, setError] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [openAction, setOpenAction] = useState<string | null>(null);
 
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
@@ -587,21 +610,47 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-11 gap-2.5">
                     {QUICK_ACTIONS.map((action, i) => (
-                      <m.button key={action.label}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.4 + i * 0.025 }}
-                        onClick={() => action.href(client.id) === '#delete' ? setDeleteOpen(true) : router.push(action.href(client.id))}
-                        className="group flex flex-col items-center gap-2 rounded-[14px] p-3 transition-all duration-200 hover:-translate-y-0.5"
-                        style={{ background: `${action.from}0f`, border: `1px solid ${action.from}20` }}>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-all duration-200 group-hover:scale-110"
-                          style={{ background: `linear-gradient(135deg, ${action.from}, ${action.to})`, boxShadow: `0 3px 10px ${action.from}40` }}>
-                          <span className="text-white">{action.icon}</span>
-                        </div>
-                        <span className="text-[9px] font-[700] text-center leading-tight" style={{ color: action.from }}>
-                          {action.label}
-                        </span>
-                      </m.button>
+                      <div key={action.label} className="relative">
+                        <m.button
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.4 + i * 0.025 }}
+                          onClick={() => {
+                            if (action.children) { setOpenAction((o) => (o === action.label ? null : action.label)); return; }
+                            if (action.href!(client.id) === '#delete') { setDeleteOpen(true); return; }
+                            router.push(action.href!(client.id));
+                          }}
+                          className="group flex w-full flex-col items-center gap-2 rounded-[14px] p-3 transition-all duration-200 hover:-translate-y-0.5"
+                          style={{ background: `${action.from}0f`, border: `1px solid ${action.from}20` }}>
+                          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-all duration-200 group-hover:scale-110"
+                            style={{ background: `linear-gradient(135deg, ${action.from}, ${action.to})`, boxShadow: `0 3px 10px ${action.from}40` }}>
+                            <span className="text-white">{action.icon}</span>
+                          </div>
+                          <span className="text-[9px] font-[700] text-center leading-tight" style={{ color: action.from }}>
+                            {action.label}
+                          </span>
+                        </m.button>
+
+                        {action.children && openAction === action.label && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setOpenAction(null)} />
+                            <m.div
+                              initial={{ opacity: 0, y: -6, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute left-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-[14px] p-1.5"
+                              style={{ background: '#fff', border: '1px solid var(--border)', boxShadow: '0 12px 32px rgba(15,23,42,0.16)' }}>
+                              {action.children.map((child) => (
+                                <button key={child.label}
+                                  onClick={() => { setOpenAction(null); router.push(child.href(client.id)); }}
+                                  className="flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left transition hover:bg-slate-50">
+                                  <span style={{ color: action.from }}>{child.icon}</span>
+                                  <span className="text-[12px] font-[650] text-gray-800">{child.label}</span>
+                                </button>
+                              ))}
+                            </m.div>
+                          </>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </m.div>
