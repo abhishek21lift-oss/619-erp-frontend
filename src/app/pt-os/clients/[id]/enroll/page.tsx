@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Calendar, Clock, Award, Building2, Laptop, Repeat,
+  ArrowLeft, Calendar, Clock, Award,
   Check, Sparkles, AlertCircle, Loader2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -46,8 +46,6 @@ interface FormErrors {
   finalAmount?: string; amountPaid?: string;
 }
 
-interface TrainerOption { id: string; name: string; }
-
 /* ─────────────────────────────────────────────────────── CONSTANTS */
 const DURATIONS = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} Month${i > 0 ? 's' : ''}` }));
 
@@ -70,9 +68,9 @@ const GOALS = [
 ];
 
 const TRAINING_MODES = [
-  { key: 'Offline' as const, icon: Building2, emoji: '🏢', desc: 'In-person at the studio' },
-  { key: 'Online' as const, icon: Laptop, emoji: '💻', desc: 'Remote video sessions' },
-  { key: 'Hybrid' as const, icon: Repeat, emoji: '🔄', desc: 'A mix of both' },
+  { value: 'Offline', label: 'Offline — In-person at the studio', icon: '🏢' },
+  { value: 'Online', label: 'Online — Remote video sessions', icon: '💻' },
+  { value: 'Hybrid', label: 'Hybrid — A mix of both', icon: '🔄' },
 ];
 
 const TIME_SLOTS = [
@@ -220,7 +218,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [trainers, setTrainers] = useState<TrainerOption[]>([]);
   const [form, setForm] = useState<EnrollFormData>(initForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
@@ -234,32 +231,22 @@ function EnrollForm({ clientId }: { clientId: string }) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, trainersRes] = await Promise.all([
-        api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
-        api.pt.trainers() as Promise<{ data?: TrainerOption[] }>,
-      ]);
+      const clientRes = await api.pt.client(clientId) as { data?: Record<string, unknown> };
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
 
-      const list = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
-      setTrainers(list);
-
       const days = typeof c.preferred_training_days === 'string' && c.preferred_training_days
         ? c.preferred_training_days.split(',').map((d) => d.trim()).filter(Boolean)
         : [];
-
-      const existingTrainerId = String(c.trainer_id ?? '');
-      const existingTrainerName = String(c.trainer_name ?? '');
-      const defaultTrainer = !existingTrainerId && list.length === 1 ? list[0] : null;
 
       const loaded: EnrollFormData = {
         startDate: String(c.pt_start_date ?? '').slice(0, 10) || todayStr(),
         duration: c.duration_months ? String(c.duration_months) : '',
         goal: String(c.goal ?? ''),
         customGoal: '',
-        trainerId: defaultTrainer?.id || existingTrainerId,
-        trainerName: defaultTrainer?.name || existingTrainerName,
+        trainerId: String(c.trainer_id ?? ''),
+        trainerName: String(c.trainer_name ?? ''),
         trainingMode: (String(c.training_mode ?? '') as EnrollFormData['trainingMode']) || '',
         workoutTime: String(c.preferred_workout_time ?? ''),
         customTime: '',
@@ -319,11 +306,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
         : [...prev.trainingDays, key],
     }));
     setErrors((e) => ({ ...e, trainingDays: undefined }));
-  };
-
-  const handleCoachChange = (trainerId: string) => {
-    const t = trainers.find((tr) => tr.id === trainerId);
-    setForm((prev) => ({ ...prev, trainerId, trainerName: t?.name || '' }));
   };
 
   const handleBack = () => {
@@ -563,47 +545,14 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 </AnimatePresence>
               </div>
 
-              {/* Coach */}
-              {isAdmin ? (
-                <SearchableSelect
-                  label="Coach Assigned" allowCustom={false}
-                  value={form.trainerId}
-                  onChange={handleCoachChange}
-                  options={trainers.map((t) => ({ value: t.id, label: t.name }))}
-                />
-              ) : (
-                <FloatInput label="Coach Assigned" value={form.trainerName || 'Coach Abhishek'} onChange={() => {}} disabled />
-              )}
-
               {/* Training Mode */}
-              <div>
-                <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-                  Training Mode <span style={{ color: '#F59E0B' }}>*</span>
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {TRAINING_MODES.map(({ key, icon: Icon, emoji, desc }) => {
-                    const selected = form.trainingMode === key;
-                    return (
-                      <m.button
-                        key={key} type="button" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
-                        onClick={() => { set('trainingMode', key); setErrors((e) => ({ ...e, trainingMode: undefined })); }}
-                        className="flex flex-col items-center gap-2 rounded-[16px] px-4 py-5 text-center transition-colors"
-                        style={{
-                          background: selected ? 'rgba(245,158,11,0.06)' : 'var(--bg-subtle)',
-                          border: selected ? '2px solid #F59E0B' : '2px solid rgba(15,23,42,0.08)',
-                          boxShadow: selected ? '0 4px 16px rgba(245,158,11,0.18)' : 'none',
-                        }}
-                      >
-                        <span className="text-[22px]">{emoji}</span>
-                        <Icon size={16} style={{ color: selected ? '#F59E0B' : '#94a3b8' }} />
-                        <span className="text-[13px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{key}</span>
-                        <span className="text-[10.5px] text-slate-400">{desc}</span>
-                      </m.button>
-                    );
-                  })}
-                </div>
-                {errors.trainingMode && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{errors.trainingMode}</p>}
-              </div>
+              <SearchableSelect
+                label="Training Mode" required allowCustom={false}
+                value={form.trainingMode}
+                onChange={(v) => { set('trainingMode', v as EnrollFormData['trainingMode']); setErrors((e) => ({ ...e, trainingMode: undefined })); }}
+                options={TRAINING_MODES}
+                error={errors.trainingMode}
+              />
 
               {/* Preferred Workout Time */}
               <div>

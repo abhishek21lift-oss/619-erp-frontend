@@ -64,27 +64,12 @@ export default function BillingSettingsPage() {
   const [error, setError] = React.useState('');
 
   React.useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setError('');
-      try {
-        // The branding endpoint returns all settings as key-value. Use it to
-        // read our payment_method_* keys, falling back to true if absent.
-        const data: Record<string, string> = await api.settings.getBranding();
-        const initial: Record<string, boolean> = {};
-        for (const pm of PAYMENT_METHODS) {
-          initial[pm.key] = pm.key in data ? data[pm.key] === 'true' : true;
-        }
-        setToggles(initial);
-      } catch {
-        // Fall back to all-enabled defaults if settings can't be loaded.
-        const initial: Record<string, boolean> = {};
-        for (const pm of PAYMENT_METHODS) initial[pm.key] = true;
-        setToggles(initial);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    // No backend endpoint returns payment_method_* keys today - all payment
+    // methods default to enabled until a dedicated settings read exists.
+    const initial: Record<string, boolean> = {};
+    for (const pm of PAYMENT_METHODS) initial[pm.key] = true;
+    setToggles(initial);
+    setLoading(false);
   }, []);
 
   async function handleSave() {

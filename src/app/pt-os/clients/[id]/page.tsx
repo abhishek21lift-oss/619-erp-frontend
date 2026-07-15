@@ -10,7 +10,7 @@ import {
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Camera, Ruler, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
-  Trophy, Award, HeartPulse, Salad, Flag,
+  Award, HeartPulse, Salad, Flag,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -139,7 +139,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
   const [editNotes, setEditNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
-  const [totalEarnedCommission, setTotalEarnedCommission] = useState(0);
   const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
 
   const loadData = async () => {
@@ -166,7 +165,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       setActiveGoals(goals.filter((g: any) => g.status === 'active'));
 
       const rawPayments = paymentsRes.status === 'fulfilled' && Array.isArray((paymentsRes.value as any)?.data) ? (paymentsRes.value as any).data : [];
-      setTotalEarnedCommission(rawPayments.reduce((sum: number, p: any) => sum + Number(p.incentive_amt || 0), 0));
 
       const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
       setSubscriptionHistory(renewals);
@@ -388,7 +386,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 </m.div>
 
                 {/* ── KPI CARDS ── */}
-                <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     {
                       label: 'Total PT Fee', value: fmtINR(currentTermFee),
@@ -406,11 +404,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       from: currentTermBalance > 0 ? '#ef4444' : '#10b981',
                       to: currentTermBalance > 0 ? '#dc2626' : '#059669',
                       sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'OVERDUE' : 'Due') : 'Cleared',
-                    },
-                    {
-                      label: 'Commission', value: fmtINR(client.trainer_commission),
-                      icon: <Trophy size={18} />, from: '#db2777', to: '#9d174d',
-                      sub: `${fmtINR(totalEarnedCommission)} earned`,
                     },
                   ].map((card, i) => (
                     <m.div key={card.label}

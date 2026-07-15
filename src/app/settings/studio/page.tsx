@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  Building2, MapPin, Clock, Globe, IndianRupee, Fingerprint, Palette,
-  Zap, DatabaseBackup, GitMerge, Bell, Mail, MessageSquare, Smartphone,
+  Building2, MapPin, Clock, Globe, IndianRupee, Fingerprint,
+  Zap, GitMerge, Bell, Mail, MessageSquare, Smartphone,
   Save, RefreshCw, Loader, ChevronRight, CheckCircle2, AlertTriangle,
   X, Settings, CreditCard, Users, Shield, Lock, Eye, BarChart2,
   DollarSign, Dumbbell, UserCheck,
@@ -248,10 +248,8 @@ export default function StudioSettingsPage() {
     { href: '/settings/branches',        label: 'Branches',         subtitle: `${branchCount} location${branchCount !== 1 ? 's' : ''} · ${fmtMembers(memberCount)}`, icon: <Building2 size={16} />,    accent: '#6366f1' },
     { href: '/settings/biometric',       label: 'Biometric & Face', subtitle: 'Face ID, GPS & check-in config',   icon: <Fingerprint size={16} />,  accent: '#0ea5e9' },
     { href: '/settings/billing',         label: 'GST / Invoice',    subtitle: 'Tax rates, invoice prefix & terms', icon: <CreditCard size={16} />,   accent: '#10b981' },
-    { href: '/settings/branding',        label: 'Branding',         subtitle: 'Colors, logo & theme customization',icon: <Palette size={16} />,      accent: '#f59e0b', badge: 'Custom' },
     { href: '/settings/integrations',    label: 'Integrations',     subtitle: 'AI, payment gateways & APIs',       icon: <Zap size={16} />,          accent: '#8b5cf6', badge: 'New' },
     { href: '/settings/profile',         label: 'My Profile',       subtitle: 'Account info & password',           icon: <Users size={16} />,        accent: '#14b8a6' },
-    { href: '/settings/import-database', label: 'Import Database',  subtitle: 'Bulk CSV import of client data',    icon: <DatabaseBackup size={16} />,accent: '#F59E0B' },
     { href: '/settings/merge-duplicates',label: 'Merge Duplicates', subtitle: 'Find & consolidate duplicate clients',icon: <GitMerge size={16} />,   accent: '#f97316', badge: 'New' },
   ];
 
