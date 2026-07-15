@@ -66,7 +66,6 @@ function canSeeByPermission(href: string, groupId: string, can: (f: string) => b
   if (href === '/finance/record-payment') return can('record_payment');
   if (groupId === 'finance' || href.startsWith('/finance')) return can('finance');
   if (groupId === 'insights' || groupId === 'reports' || href.startsWith('/reports') || href.startsWith('/insights')) return can('reports');
-  if (href.startsWith('/staff')) return can('staff_view');
   if (href.startsWith('/pt-os') || groupId === 'personal-training' || groupId === 'session-management' || groupId === 'progress-tracking') return can('pt_module');
   if (href.startsWith('/settings')) return can('settings');
   return true;

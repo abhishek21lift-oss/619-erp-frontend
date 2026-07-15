@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import {
-  Search, LogOut, Bell, Settings, Building2, ShieldCheck, Fingerprint,
+  Search, LogOut, Bell, Settings, Building2, Fingerprint,
   Receipt, Palette, Zap, DatabaseBackup, User, HelpCircle, ChevronDown,
   Menu, X, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
 } from 'lucide-react';
@@ -154,7 +154,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const settingsLinks = [
     { href: '/settings/studio',          label: 'Studio Settings',       icon: Building2 },
     { href: '/settings/profile',         label: 'My Profile',            icon: User },
-    { href: '/settings/staff',           label: 'Staff & Access',        icon: ShieldCheck },
     { href: '/settings/biometric',       label: 'Biometric & Face',      icon: Fingerprint },
     { href: '/settings/passkeys',        label: 'Passkeys / Face ID Login', icon: KeyRound },
     { href: '/settings/billing',         label: 'GST / Invoice',         icon: Receipt },

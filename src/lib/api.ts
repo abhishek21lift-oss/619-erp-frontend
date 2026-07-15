@@ -161,50 +161,6 @@ export type Trainer = {
   experience_years?: number;
 };
 
-export type StaffMember = {
-  id: string;
-  name: string;
-  email: string;
-  mobile?: string;
-  phone?: string;
-  role: string;
-  status?: string;
-  is_active?: boolean;
-  joining_date?: string;
-  salary?: number;
-  created_at?: string;
-  updated_at?: string;
-  [key: string]: unknown;
-};
-
-export type StaffTarget = {
-  id: string;
-  staff_id: string;
-  staff_name: string;
-  role: string;
-  month: string;
-  target_revenue: number;
-  target_clients: number;
-  target_sessions?: number;
-  achieved_revenue: number;
-  achieved_clients: number;
-  achieved_sessions?: number;
-  created_at?: string;
-  updated_at?: string;
-  [key: string]: unknown;
-};
-
-export type StaffTargetPayload = {
-  staff_id?: string;
-  month?: string;
-  target_revenue?: number;
-  target_clients?: number;
-  target_sessions?: number;
-  achieved_revenue?: number;
-  achieved_clients?: number;
-  achieved_sessions?: number;
-};
-
 export type LeaveStatus = 'pending' | 'approved' | 'rejected';
 
 export type LeaveRequest = {
@@ -481,18 +437,6 @@ function normalisePayment(raw: Record<string, unknown>): Payment {
   } as Payment;
 }
 
-function normaliseStaff(raw: Record<string, unknown>): StaffMember {
-  return {
-    ...raw,
-    id: String(raw.id ?? ''),
-    name: String(raw.name ?? ''),
-    email: String(raw.email ?? ''),
-    phone: raw.phone == null ? undefined : String(raw.phone),
-    role: String(raw.role ?? 'staff'),
-    status: raw.status == null ? undefined : String(raw.status),
-  } as StaffMember;
-}
-
 // ─────────────────────────── API namespace ────────────────────────────
 
 export const api = {
@@ -699,35 +643,6 @@ export const api = {
     delete: (id: string) => http<{ message?: string }>(`/api/expenses/${id}`, { method: 'DELETE' }),
     stats:  (params?: Record<string, string | number>) =>
               http<{ summary: Record<string, unknown>; byCategory: Record<string, unknown>[] }>(`/api/expenses/stats${buildQs(params)}`),
-  },
-
-  staff: {
-    list: async () => {
-      const raw = await http<Record<string, unknown>[]>('/api/staff');
-      return Array.isArray(raw) ? raw.map(normaliseStaff) : [];
-    },
-    get:    (id: string) => http<StaffMember>(`/api/staff/${id}`),
-    create: (data: Record<string, unknown>) =>
-      http<{ message?: string; staff: StaffMember }>('/api/staff', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Record<string, unknown>) =>
-      http<{ message?: string; staff: StaffMember }>(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string) => http<{ message?: string }>(`/api/staff/${id}`, { method: 'DELETE' }),
-    targets: {
-      list: (params?: Record<string, string | number>) =>
-        http<StaffTarget[]>(`/api/staff/targets${buildQs(params)}`),
-      create: (data: StaffTargetPayload) =>
-        http<{ message?: string; target: StaffTarget }>('/api/staff/targets', {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }),
-      update: (id: string, data: StaffTargetPayload) =>
-        http<{ message?: string; target: StaffTarget }>(`/api/staff/targets/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify(data),
-        }),
-      delete: (id: string) =>
-        http<{ message?: string }>(`/api/staff/targets/${id}`, { method: 'DELETE' }),
-    },
   },
 
   leave: {

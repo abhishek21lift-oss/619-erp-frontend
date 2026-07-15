@@ -166,7 +166,6 @@ export const SETTINGS_GROUP: NavGroup = {
   items: [
     { href: '/settings/studio',           label: 'Studio Settings',      icon: 'Building2',      roles: ['admin'], isNew: true },
     { href: '/settings/profile',          label: 'My Profile',           icon: 'User' },
-    { href: '/settings/staff',            label: 'Staff & Access',       icon: 'Shield',         roles: ['admin'] },
     { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['admin'] },
     { href: '/settings/biometric',        label: 'Biometric & Face',     icon: 'Fingerprint',    roles: ['admin'] },
     { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['admin'] },
