@@ -709,7 +709,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
               onClick={handleSubmit}
               style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
             >
-              {saving ? 'Saving...' : 'Continue'}
+              {saving ? 'Saving...' : 'Finish'}
             </Button>
           </div>
         </div>
