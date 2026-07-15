@@ -9,7 +9,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
-import { Button } from '@/components/ui';
+import { Button, PullToRefresh } from '@/components/ui';
 import { useToast } from '@/lib/toast';
 
 function fmtINR(n: number | null | undefined) { return '₹' + Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
@@ -37,6 +37,10 @@ export default function CommissionsPage() {
   const [payoutDraft, setPayoutDraft] = useState<Record<string, { payout_status?: string; paid_amount?: number }>>({});
   const [savingCommission, setSavingCommission] = useState<string | null>(null);
   const [savingPayout, setSavingPayout] = useState<string | null>(null);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([commissions.refetch(), payouts.refetch(), perf.refetch()]);
+  }, [commissions.refetch, payouts.refetch, perf.refetch]);
 
   const perfData = (perf.data || []) as any[];
   const payoutsData = (payouts.data || []) as any[];
@@ -131,6 +135,7 @@ export default function CommissionsPage() {
   return (
     <Guard role="admin">
       <AppShell>
+        <PullToRefresh onRefresh={refreshAll}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 16px' }}>
           {/* ── Hero ── */}
           <m.div {...fadeUp}
@@ -440,6 +445,7 @@ export default function CommissionsPage() {
             </m.div>
           </div>
         </div>
+        </PullToRefresh>
       </AppShell>
     </Guard>
   );

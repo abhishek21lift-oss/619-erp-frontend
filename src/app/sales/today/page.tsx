@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PullToRefresh } from '@/components/ui';
 import { useDashboardData } from '@/lib/hooks/useDashboardData';
 
 function fmtINR(n: number) {
@@ -65,6 +66,7 @@ function Inner() {
         </h1>
       </>
     }>
+      <PullToRefresh onRefresh={refresh}>
       <div className="relative z-10 mt-4 space-y-6 max-w-[1600px] mx-auto pb-6">
         {/* Hero revenue card */}
         <m.div
@@ -231,6 +233,7 @@ function Inner() {
           )}
         </m.div>
       </div>
+      </PullToRefresh>
     </AppShell>
   );
 }

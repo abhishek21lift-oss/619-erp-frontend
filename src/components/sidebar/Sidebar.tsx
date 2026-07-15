@@ -535,6 +535,7 @@ export default function Sidebar({
     <aside
       data-sidebar={variant}
       data-theme="dark"
+      data-no-pull-refresh
       onMouseEnter={!isMobile ? handleMouseEnter : undefined}
       onMouseLeave={!isMobile ? handleMouseLeave : undefined}
       className={cn(

@@ -4,8 +4,10 @@ import { m } from 'framer-motion';
 import {
   TrendingUp, Users,
 } from 'lucide-react';
+import { useCallback } from 'react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PullToRefresh } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
 import { api } from '@/lib/api';
 
@@ -43,9 +45,14 @@ export default function ReportsPage() {
 
   const maxRev = Math.max(...(revenue.data?.data ?? []).map((r) => Number(r.revenue)), 1);
 
+  const refreshAll = useCallback(async () => {
+    await Promise.all([revenue.refetch(), perf.refetch()]);
+  }, [revenue.refetch, perf.refetch]);
+
   return (
     <Guard>
       <AppShell>
+        <PullToRefresh onRefresh={refreshAll}>
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
 
           {/* Monthly Revenue */}
@@ -191,6 +198,7 @@ export default function ReportsPage() {
             )}
           </m.div>
         </div>
+        </PullToRefresh>
       </AppShell>
     </Guard>
   );

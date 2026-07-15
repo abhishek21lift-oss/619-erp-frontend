@@ -6,7 +6,7 @@ import AppShell from '@/components/AppShell';
 import { TrendingUp, DollarSign, Users, Clock, BarChart3, Percent, Search, ArrowUpRight, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
 import { fmtMoney } from '@/lib/format';
-import { PremiumBarChart } from '@/components/ui';
+import { PremiumBarChart, PullToRefresh } from '@/components/ui';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -106,6 +106,7 @@ function Inner() {
 
   return (
     <AppShell>
+      <PullToRefresh onRefresh={fetchData}>
       <div style={{ background: 'var(--bg-subtle)', padding: '52px 32px 40px', borderRadius: '0 0 36px 36px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 54, height: 54, borderRadius: 16, background: '#eff6ff', border: '1px solid rgba(37,99,235,0.15)', boxShadow: 'var(--shadow-xs)' }}>
@@ -270,6 +271,7 @@ function Inner() {
           </m.div>
         </m.div>
       </div>
+      </PullToRefresh>
     </AppShell>
   );
 }

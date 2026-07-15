@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { KpiCard } from '@/components/ui';
+import { KpiCard, PullToRefresh } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { DuesItem } from '@/lib/api';
 import {
@@ -72,7 +72,7 @@ function Inner() {
   const fetchDues = () => {
     setLoading(true);
     setError('');
-    api.reports.dues()
+    return api.reports.dues()
       .then((r) => setDues(Array.isArray(r) ? r : []))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -96,6 +96,7 @@ function Inner() {
 
   return (
     <AppShell>
+      <PullToRefresh onRefresh={fetchDues}>
       <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
 
         {/* ── Hero ── */}
@@ -235,6 +236,7 @@ function Inner() {
           )}
         </div>
       </m.div>
+      </PullToRefresh>
     </AppShell>
   );
 }

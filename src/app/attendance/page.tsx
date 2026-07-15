@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { PullToRefresh } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { api, http, Client, Attendance } from '@/lib/api';
@@ -181,17 +182,21 @@ function AttendanceContent() {
   function showError(msg: string) { clearTimeout(errorTimer.current); setError(msg); errorTimer.current = setTimeout(() => setError(''), 5000); }
 
   /* ── data fetch ── */
-  useEffect(() => {
+  const loadData = useCallback(() => {
     setLoading(true);
-    Promise.all([
+    return Promise.all([
       api.clients.list({ status: 'active' }),
       api.attendance.list({ date, type: 'client' }),
     ])
       .then(([c, a]) => { setClients(c); setRecords(a); })
       .catch((e: Error) => showError(e.message))
       .finally(() => setLoading(false));
-    return () => { clearTimeout(successTimer.current); clearTimeout(errorTimer.current); };
   }, [date]);
+
+  useEffect(() => {
+    loadData();
+    return () => { clearTimeout(successTimer.current); clearTimeout(errorTimer.current); };
+  }, [date, loadData]);
 
   /* ── mark function ── */
   const mark = useCallback(async (client: Client, status: string) => {
@@ -386,6 +391,9 @@ function AttendanceContent() {
   return (
     <AppShell>
       <div className="relative min-h-screen">
+        {/* FooterBar below is position:sticky, which breaks under a
+            transformed ancestor — keep it outside PullToRefresh's wrapper. */}
+        <PullToRefresh onRefresh={loadData}>
         <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-4 sm:px-6 lg:px-8">
 
           {/* ── toasts ── */}
@@ -460,9 +468,10 @@ function AttendanceContent() {
           <QuickActionsPanel onMarkAll={date === today ? markAllPresent : undefined} />
 
         </div>
+        </PullToRefresh>
 
         {/* ── FOOTER BAR ── */}
-        <FooterBar dirty={dirty} setDirty={setDirty} onSync={() => { setLoading(true); Promise.all([api.clients.list({ status: 'active' }), api.attendance.list({ date, type: 'client' })]).then(([c, a]) => { setClients(c); setRecords(a); }).catch(e => setError(e.message)).finally(() => setLoading(false)); }} />
+        <FooterBar dirty={dirty} setDirty={setDirty} onSync={loadData} />
       </div>
     </AppShell>
   );

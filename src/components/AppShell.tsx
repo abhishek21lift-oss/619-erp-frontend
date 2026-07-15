@@ -307,6 +307,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
           {/* Scoped blur overlay — background stays in place, only blurs + dims */}
           <div
             className="absolute inset-0 z-50 lg:hidden"
+            data-no-pull-refresh
             style={{
               background: 'rgba(5,8,22,0.50)',
               backdropFilter: mobileMenuOpen ? 'blur(12px)' : 'blur(0px)',
