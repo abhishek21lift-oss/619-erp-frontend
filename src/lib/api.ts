@@ -560,6 +560,7 @@ export interface WorkoutSession {
 export interface WorkoutSessionDetail extends WorkoutSession {
   exercises: WorkoutSessionExercise[];
   summary: WorkoutSessionSummary;
+  planned: WorkoutPlanned | null;
 }
 
 export interface WorkoutProgressPoint {
@@ -579,6 +580,96 @@ export interface WorkoutVolumePoint {
 export interface WorkoutPreviousExercise {
   session_date: string;
   sets: WorkoutSet[];
+}
+
+export interface WorkoutPlannedExercise {
+  exercise_id: string | null;
+  name: string;
+  sets: number;
+  reps: number;
+  rest_seconds: number | null;
+  sort_order: number;
+  notes?: string | null;
+}
+
+export interface WorkoutPlanned {
+  plan_name: string;
+  exercises: WorkoutPlannedExercise[];
+}
+
+export interface LibraryExercise {
+  id: string;
+  name: string;
+  description?: string | null;
+  muscle_group: string;
+  body_part: string | null;
+  target_muscle: string | null;
+  secondary_muscles: string | null;
+  equipment: string | null;
+  difficulty: string;
+  instructions: string | null;
+  gif_url: string | null;
+  exercise_type: string | null;
+  force: string | null;
+  mechanic: string | null;
+  sets_default: number | null;
+  reps_default: number | null;
+  rest_seconds: number | null;
+  source_id: string | null;
+}
+
+// ── Workout Plans (templates) ──────────────────────────────────────
+export interface WorkoutPlanExercise {
+  id: string;
+  exercise_id: string | null;
+  name: string;
+  muscle_group?: string | null;
+  sets: number;
+  reps: number;
+  rest_seconds: number;
+  day_of_week: number;
+  sort_order: number;
+  notes?: string | null;
+}
+
+export interface WorkoutPlan {
+  id: string;
+  name: string;
+  description?: string | null;
+  goal: string;
+  difficulty: string;
+  duration_weeks: number;
+  sessions_per_week: number;
+  is_template: boolean;
+  is_active: boolean;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  exercise_count: number;
+  progress: number;
+  exercises: WorkoutPlanExercise[];
+}
+
+export interface WorkoutAssignment {
+  id: string;
+  workout_plan_id: string;
+  client_id: string;
+  trainer_id?: string | null;
+  start_date: string;
+  end_date?: string | null;
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  progress_pct: number;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  plan_name: string;
+  plan_goal: string;
+  duration_weeks: number;
+  sessions_per_week: number;
+}
+
+export interface WorkoutAssignmentDetail extends WorkoutAssignment {
+  exercises: WorkoutPlanExercise[];
 }
 
 // Core fetch is handled by http() from ./http
@@ -964,9 +1055,11 @@ export const api = {
   },
 
   // ── Exercise Library ─────────────────────────────────────────────
+  // Single client-side namespace for /api/workouts/exercises* — the old
+  // duplicate api.workouts.exercises pointed at the exact same endpoints.
   exercises: {
     list: (qs?: string) =>
-      http<unknown[]>(`/api/workouts/exercises${qs ? `?${qs}` : ''}`),
+      http<LibraryExercise[]>(`/api/workouts/exercises${qs ? `?${qs}` : ''}`),
     meta: () =>
       http<{ body_parts: string[]; equipment_types: string[]; exercise_types: string[]; difficulties: string[]; total: number }>(
         '/api/workouts/exercises/meta'
@@ -985,47 +1078,47 @@ export const api = {
       http<{ message: string }>(`/api/workouts/exercises/${id}`, { method: 'DELETE' }),
   },
 
-  // ── Workouts / Exercises ──────────────────────────────────────────
+  // ── Workout Plans / Assignments ────────────────────────────────────
   workouts: {
-    exercises: {
-      list: (params?: Record<string, string | number>) =>
-        http<unknown[]>(`/api/workouts/exercises${buildQs(params)}`),
-      create: (data: Record<string, unknown>) =>
-        http<{ message: string; exercise: unknown }>('/api/workouts/exercises', {
-          method: 'POST',
-          body: JSON.stringify(data),
-        }),
-      update: (id: string, data: Record<string, unknown>) =>
-        http<{ message: string; exercise: unknown }>(`/api/workouts/exercises/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify(data),
-        }),
-      delete: (id: string) =>
-        http<{ message: string }>(`/api/workouts/exercises/${id}`, { method: 'DELETE' }),
-    },
     plans: {
       list: (params?: Record<string, string | number>) =>
-        http<unknown[]>(`/api/workouts/plans${buildQs(params)}`),
-      create: (data: Record<string, unknown>) =>
-        http<{ message: string; plan: unknown }>('/api/workouts/plans', {
+        http<WorkoutPlan[]>(`/api/workouts/plans${buildQs(params)}`),
+      detail: (id: string) =>
+        http<WorkoutPlan>(`/api/workouts/plans/${id}`),
+      create: (data: {
+        name: string; description?: string; goal?: string; difficulty?: string;
+        duration_weeks?: number; sessions_per_week?: number; is_template?: boolean;
+        exercises?: Array<{ exercise_id: string; day_of_week: number; sort_order?: number; sets?: number; reps?: number; rest_seconds?: number; notes?: string }>;
+      }) =>
+        http<{ message: string; plan: WorkoutPlan }>('/api/workouts/plans', {
           method: 'POST',
           body: JSON.stringify(data),
         }),
-      update: (id: string, data: Record<string, unknown>) =>
-        http<{ message: string; plan: unknown }>(`/api/workouts/plans/${id}`, {
+      update: (id: string, data: {
+        name?: string; description?: string; goal?: string; difficulty?: string;
+        duration_weeks?: number; sessions_per_week?: number;
+        exercises?: Array<{ exercise_id: string; day_of_week: number; sort_order?: number; sets?: number; reps?: number; rest_seconds?: number; notes?: string }>;
+      }) =>
+        http<{ message: string; plan: WorkoutPlan }>(`/api/workouts/plans/${id}`, {
           method: 'PUT',
           body: JSON.stringify(data),
         }),
       delete: (id: string) =>
         http<{ message: string }>(`/api/workouts/plans/${id}`, { method: 'DELETE' }),
     },
+    assignments: {
+      list: (params: { client_id: string; status?: string }) =>
+        http<WorkoutAssignment[]>(`/api/workouts/assignments${buildQs(params)}`),
+      detail: (id: string) =>
+        http<WorkoutAssignmentDetail>(`/api/workouts/assignments/${id}`),
+    },
     assign: (data: { workout_plan_id: string; client_id: string; start_date?: string; end_date?: string; notes?: string }) =>
-      http<{ message: string; assignment: unknown }>('/api/workouts/assign', {
+      http<{ message: string; assignment: WorkoutAssignment }>('/api/workouts/assign', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     updateProgress: (id: string, data: { progress_pct: number }) =>
-      http<{ message: string; assignment: unknown }>(`/api/workouts/assignments/${id}/progress`, {
+      http<{ message: string; assignment: WorkoutAssignment }>(`/api/workouts/assignments/${id}/progress`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
@@ -1285,6 +1378,8 @@ export const api = {
           }),
         delete: (id: string) =>
           http<{ message: string }>(`/api/pt-os/workout-log/sessions/${id}`, { method: 'DELETE' }),
+        plannedDayOptions: (id: string) =>
+          http<{ data: string[] }>(`/api/pt-os/workout-log/sessions/${id}/planned-day-options`),
       },
       exercises: {
         add: (sessionId: string, data: { exercise_id?: string | null; exercise_name: string; notes?: string | null }) =>

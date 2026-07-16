@@ -2,19 +2,22 @@
 
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { m } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Plus, Search, List as ListIcon, Calendar as CalendarIcon,
   History, Loader2, AlertCircle, ChevronLeft, ChevronRight, Dumbbell,
-  TrendingUp, Flame, CheckCircle2, Clock,
+  TrendingUp, Flame, CheckCircle2, Clock, Sparkles, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button, PremiumAreaChart, PremiumBarChart, PullToRefresh } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { WorkoutSession, WorkoutProgressPoint, WorkoutVolumePoint } from '@/lib/api';
+import type { WorkoutSession, WorkoutProgressPoint, WorkoutVolumePoint, WorkoutAssignment, WorkoutAssignmentDetail } from '@/lib/api';
+import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { fmtDate } from '@/lib/format';
+
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 type ViewMode = 'list' | 'calendar' | 'timeline';
 
@@ -40,6 +43,9 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [creating, setCreating] = useState(false);
+  const [activeAssignment, setActiveAssignment] = useState<WorkoutAssignment | null>(null);
+  const [planDays, setPlanDays] = useState<string[]>([]);
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
 
   const [view, setView] = useState<ViewMode>('list');
   const [search, setSearch] = useState('');
@@ -57,14 +63,24 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, sessionsRes] = await Promise.all([
+      const [clientRes, sessionsRes, assignRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.progress.workoutLog.sessions.list({ client_id: clientId, limit: 100 }),
+        api.workouts.assignments.list({ client_id: clientId, status: 'active' }).catch(() => []),
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
       setClientName(String(c.name ?? ''));
       setSessions(sessionsRes?.data ?? []);
+      const assignment = Array.isArray(assignRes) && assignRes.length > 0 ? assignRes[0] : null;
+      setActiveAssignment(assignment);
+      if (assignment) {
+        const detail: WorkoutAssignmentDetail = await api.workouts.assignments.detail(assignment.id);
+        const days = Array.from(new Set(detail.exercises.map((ex) => WEEKDAYS[ex.day_of_week - 1]).filter(Boolean)));
+        setPlanDays(days);
+      } else {
+        setPlanDays([]);
+      }
     } catch (err: unknown) {
       setLoadError(err instanceof Error ? err.message : 'Failed to load client.');
     } finally {
@@ -97,17 +113,41 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
     await Promise.all([loadData(), loadVolume(), loadProgress()]);
   }, [loadData, loadVolume, loadProgress]);
 
-  const handleNewSession = async () => {
+  const createSession = async (opts: { workout_day?: string; freestyle?: boolean } = {}) => {
     setCreating(true);
+    setDayPickerOpen(false);
     try {
-      const res = await api.progress.workoutLog.sessions.create({ client_id: clientId });
+      const payload: Record<string, unknown> = { client_id: clientId };
+      if (opts.freestyle) {
+        payload.workout_assignment_id = null;
+      } else if (opts.workout_day && activeAssignment) {
+        payload.workout_assignment_id = activeAssignment.id;
+        payload.program_name = activeAssignment.plan_name;
+        payload.workout_day = opts.workout_day;
+      }
+      const res = await api.progress.workoutLog.sessions.create(payload);
       const newId = res?.data?.id;
       if (!newId) throw new Error('Server did not return a session id.');
       router.push(`/pt-os/clients/${clientId}/workout-log/${newId}`);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not start a new session.');
+      if (err instanceof ApiError && err.code === 'PARQ_REQUIRED') {
+        toast.error('PAR-Q health screening required before logging a session.', {
+          duration: 0, action: { label: 'Start PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${clientId}`) },
+        });
+      } else if (err instanceof ApiError && err.code === 'CONSENT_REQUIRED') {
+        toast.error('Informed Consent required before logging a session.', {
+          duration: 0, action: { label: 'Review Consent', onClick: () => router.push(`/pt-os/informed-consent?client_id=${clientId}`) },
+        });
+      } else {
+        toast.error(err instanceof Error ? err.message : 'Could not start a new session.');
+      }
       setCreating(false);
     }
+  };
+
+  const handleNewSession = () => {
+    if (activeAssignment && planDays.length > 0) { setDayPickerOpen(true); return; }
+    createSession();
   };
 
   const programs = useMemo(() => {
@@ -179,6 +219,28 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
             New Session
           </Button>
         </div>
+
+        {/* ── Active Plan ── */}
+        {activeAssignment && (
+          <button onClick={() => router.push(`/pt-os/workout-plans/${activeAssignment.workout_plan_id}`)}
+            className="flex w-full items-center justify-between gap-4 rounded-[18px] px-5 py-4 text-left transition hover:-translate-y-0.5"
+            style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                <Sparkles size={15} style={{ color: '#6366f1' }} />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>{activeAssignment.plan_name}</p>
+                <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Active plan &middot; {activeAssignment.progress_pct}% complete</p>
+              </div>
+            </div>
+            <div className="hidden sm:block w-28 flex-shrink-0">
+              <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                <div className="h-full rounded-full" style={{ width: `${Math.min(100, activeAssignment.progress_pct)}%`, background: '#6366f1' }} />
+              </div>
+            </div>
+          </button>
+        )}
 
         {/* ── Progress Charts ── */}
         <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
@@ -303,6 +365,40 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {dayPickerOpen && (
+          <>
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[8999]" style={{ background: 'rgba(0,0,0,0.35)' }}
+              onClick={() => setDayPickerOpen(false)} />
+            <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
+              className="fixed left-1/2 top-1/2 z-[9000] w-[92%] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[20px] p-5"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>Log a session for {activeAssignment?.plan_name}</p>
+                <button onClick={() => setDayPickerOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
+                  <X size={13} />
+                </button>
+              </div>
+              <p className="mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>Which day's exercises will you log?</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {planDays.map((day) => (
+                  <button key={day} onClick={() => createSession({ workout_day: day })} disabled={creating}
+                    className="rounded-full px-3.5 py-2 text-[12.5px] font-[700] transition"
+                    style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.25)' }}>
+                    {day}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => createSession({ freestyle: true })} disabled={creating}
+                className="w-full rounded-[12px] py-2.5 text-[12.5px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                Or start a freestyle session instead
+              </button>
+            </m.div>
+          </>
+        )}
+      </AnimatePresence>
     </PullToRefresh>
   );
 }

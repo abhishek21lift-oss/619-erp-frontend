@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Plus, Trash2, Copy, Wand2, Check, Loader2, AlertCircle,
-  Dumbbell, ChevronDown, Award, Clock, X, Minus, Pencil, Calendar,
+  Dumbbell, ChevronDown, Award, Clock, X, Minus, Pencil, Calendar, ClipboardList, Layers,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -36,6 +36,8 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [savingHeader, setSavingHeader] = useState(false);
   const [headerOpen, setHeaderOpen] = useState(false);
+  const [dayOptions, setDayOptions] = useState<string[]>([]);
+  const [loadingPlanned, setLoadingPlanned] = useState(false);
 
   const loadSession = useCallback(async () => {
     setLoading(true);
@@ -83,6 +85,58 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
     if (!session) return;
     session.exercises.forEach((ex) => { fetchPrevious(ex); });
   }, [session, fetchPrevious]);
+
+  useEffect(() => {
+    if (!session?.workout_assignment_id) { setDayOptions([]); return; }
+    api.progress.workoutLog.sessions.plannedDayOptions(sessionId)
+      .then((res) => setDayOptions(res?.data ?? []))
+      .catch(() => setDayOptions([]));
+  }, [session?.workout_assignment_id, sessionId]);
+
+  const handleAddPlannedExercise = async (planned: NonNullable<WorkoutSessionDetail['planned']>['exercises'][number]) => {
+    const already = session?.exercises.some((ex) => planned.exercise_id && ex.exercise_id === planned.exercise_id);
+    if (already) return;
+    const res = await api.progress.workoutLog.exercises.add(sessionId, {
+      exercise_id: planned.exercise_id || null,
+      exercise_name: planned.name,
+    });
+    const newExerciseId = res?.data?.id;
+    if (newExerciseId) {
+      for (let i = 1; i <= planned.sets; i++) {
+        await api.progress.workoutLog.sets.add(newExerciseId, {
+          set_number: i, reps: planned.reps, rest_seconds: planned.rest_seconds, completed: false,
+        });
+      }
+    }
+  };
+
+  const handleLoadOnePlanned = async (planned: NonNullable<WorkoutSessionDetail['planned']>['exercises'][number]) => {
+    setLoadingPlanned(true);
+    try {
+      await handleAddPlannedExercise(planned);
+      await loadSession();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not load exercise.');
+    } finally {
+      setLoadingPlanned(false);
+    }
+  };
+
+  const handleLoadAllPlanned = async () => {
+    if (!session?.planned) return;
+    setLoadingPlanned(true);
+    try {
+      for (const planned of session.planned.exercises) {
+        await handleAddPlannedExercise(planned);
+      }
+      await loadSession();
+      toast.success('Loaded today\'s plan into the session.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not load plan.');
+    } finally {
+      setLoadingPlanned(false);
+    }
+  };
 
   const handleAddExercise = async (picked: { id: string; name: string }) => {
     try {
@@ -186,12 +240,31 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                     <FloatInput label="Date" type="date" value={session.session_date?.slice(0, 10) || ''}
                       onChange={(v) => setSession((p) => (p ? { ...p, session_date: v } : p))}
                       onBlur={() => handleHeaderSave({ session_date: session.session_date })} />
-                    <FloatInput label="Program Name" value={session.program_name || ''}
-                      onChange={(v) => setSession((p) => (p ? { ...p, program_name: v } : p))}
-                      onBlur={() => handleHeaderSave({ program_name: session.program_name || null })} />
-                    <FloatInput label="Workout Day" value={session.workout_day || ''}
-                      onChange={(v) => setSession((p) => (p ? { ...p, workout_day: v } : p))}
-                      onBlur={() => handleHeaderSave({ workout_day: session.workout_day || null })} />
+                    {session.workout_assignment_id ? (
+                      <div>
+                        <p className="mb-1.5 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Program</p>
+                        <p className="rounded-[10px] px-3 py-2.5 text-[13px] font-[650]" style={{ background: 'var(--bg-subtle)', color: '#0f172a' }}>{session.program_name}</p>
+                      </div>
+                    ) : (
+                      <FloatInput label="Program Name" value={session.program_name || ''}
+                        onChange={(v) => setSession((p) => (p ? { ...p, program_name: v } : p))}
+                        onBlur={() => handleHeaderSave({ program_name: session.program_name || null })} />
+                    )}
+                    {session.workout_assignment_id && dayOptions.length > 0 ? (
+                      <div>
+                        <p className="mb-1.5 text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Workout Day</p>
+                        <select value={session.workout_day || ''}
+                          onChange={(e) => { setSession((p) => (p ? { ...p, workout_day: e.target.value } : p)); handleHeaderSave({ workout_day: e.target.value || null }); }}
+                          className="w-full rounded-[10px] px-3 py-2.5 text-[13px] font-[650] outline-none" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: '#0f172a' }}>
+                          <option value="">Select a day…</option>
+                          {dayOptions.map((day) => <option key={day} value={day}>{day}</option>)}
+                        </select>
+                      </div>
+                    ) : (
+                      <FloatInput label="Workout Day" value={session.workout_day || ''}
+                        onChange={(v) => setSession((p) => (p ? { ...p, workout_day: v } : p))}
+                        onBlur={() => handleHeaderSave({ workout_day: session.workout_day || null })} />
+                    )}
                   </div>
                   <FloatInput label="Notes" multiline autoGrow value={session.notes || ''}
                     onChange={(v) => setSession((p) => (p ? { ...p, notes: v } : p))}
@@ -205,6 +278,40 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
             )}
           </AnimatePresence>
         </div>
+
+        {/* Planned for Today — prescribed exercises for this plan/day, when linked */}
+        {session.planned && session.planned.exercises.length > 0 && (
+          <div className="rounded-[20px] p-5" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ClipboardList size={15} style={{ color: '#6366f1' }} />
+                <p className="text-[13px] font-[760]" style={{ color: '#312e81' }}>Planned for Today — {session.planned.plan_name}</p>
+              </div>
+              <button onClick={handleLoadAllPlanned} disabled={loadingPlanned}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: '#6366f1', color: '#fff' }}>
+                <Layers size={12} /> Load All
+              </button>
+            </div>
+            <div className="space-y-2">
+              {session.planned.exercises.map((ex, i) => {
+                const alreadyAdded = ex.exercise_id ? session.exercises.some((se) => se.exercise_id === ex.exercise_id) : false;
+                return (
+                  <div key={`${ex.exercise_id || ex.name}-${i}`} className="flex items-center justify-between gap-3 rounded-[12px] px-3.5 py-2.5" style={{ background: '#fff', border: '1px solid rgba(99,102,241,0.12)' }}>
+                    <div className="min-w-0">
+                      <p className="truncate text-[12.5px] font-[650]" style={{ color: '#1e1b4b' }}>{ex.name}</p>
+                      <p className="text-[11px]" style={{ color: '#818cf8' }}>{ex.sets} &times; {ex.reps} target</p>
+                    </div>
+                    <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}
+                      className="flex-shrink-0 rounded-[8px] px-2.5 py-1.5 text-[11px] font-[700]"
+                      style={{ background: alreadyAdded ? 'var(--bg-subtle)' : 'rgba(99,102,241,0.1)', color: alreadyAdded ? '#94a3b8' : '#6366f1' }}>
+                      {alreadyAdded ? 'Added' : '+ Add'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Exercises */}
         <div className="space-y-3">

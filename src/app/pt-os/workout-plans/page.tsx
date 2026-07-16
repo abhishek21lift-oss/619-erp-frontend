@@ -1,42 +1,43 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Dumbbell, Plus, Search, User, Clock, Target,
   Activity, FileText, LayoutGrid, List, Check,
-  Trophy, Sparkles, ChevronRight, Filter, X, ShieldAlert, Loader2,
+  Trophy, Sparkles, ChevronRight, X, ShieldAlert, Loader2, Trash2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
-import { cn } from '@/components/ui/cn';
 import { api } from '@/lib/api';
-import type { ParqForm } from '@/lib/api';
+import type { ParqForm, WorkoutPlan, LibraryExercise } from '@/lib/api';
+import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { WorkoutPlanCard } from '@/components/fitness/WorkoutPlanCard';
 import { ExerciseCard } from '@/components/fitness/ExerciseCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
+import { ExercisePicker, type PickedExercise } from '@/components/pt-os/workout-log/ExercisePicker';
 
-type MuscleGroup = 'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Arms' | 'Core' | 'Cardio';
-type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
+type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 
-interface Exercise {
-  id: string; name: string; sets: number; reps: string;
-  muscleGroup: MuscleGroup; difficulty: Difficulty; description: string; image: string;
-  equipment?: string; restSeconds?: number;
+interface ClientOption { id: string; name: string; }
+interface BuilderExercise {
+  exercise_id: string; name: string; day_of_week: number; sets: number; reps: number; rest_seconds: number;
 }
 
-interface WorkoutPlan {
-  id: string; name: string; description: string; goal: string;
-  duration: string; sessions: number; difficulty: Difficulty;
-  client: string; exercises: number; progress: number; color: string;
-}
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const MUSCLE_GROUPS: MuscleGroup[] = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Cardio'];
+const GOALS: Array<{ value: string; label: string; color: string }> = [
+  { value: 'muscle_gain', label: 'Muscle Gain', color: '#6366f1' },
+  { value: 'weight_loss', label: 'Weight Loss', color: '#10b981' },
+  { value: 'endurance', label: 'Endurance', color: '#ec4899' },
+  { value: 'general_fitness', label: 'General Fitness', color: '#8b5cf6' },
+  { value: 'recovery', label: 'Recovery', color: '#06b6d4' },
+];
 
 const PLAN_COLORS = [
   'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -56,49 +57,104 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const } },
 };
 
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)',
+  background: 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'inherit', outline: 'none',
+};
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em',
+};
+
 export default function WorkoutPlansPage() {
-  return <Guard roles={['admin', 'manager', 'trainer']}><AppShell><Inner /></AppShell></Guard>;
+  return (
+    <Guard roles={['admin', 'manager', 'trainer']}>
+      <AppShell>
+        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Loader2 size={22} className="animate-spin" /></div>}>
+          <Inner />
+        </Suspense>
+      </AppShell>
+    </Guard>
+  );
 }
 
 function Inner() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const presetClientId = searchParams.get('client_id');
+
   const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [activeMuscle, setActiveMuscle] = useState<MuscleGroup | 'All'>('All');
+  const [activeBodyPart, setActiveBodyPart] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [exercises, setExercises] = useState<LibraryExercise[]>([]);
+  const [bodyParts, setBodyParts] = useState<string[]>([]);
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
-  const [trainers, setTrainers] = useState<string[]>([]);
+  const [clients, setClients] = useState<ClientOption[]>([]);
   const [assignPlan, setAssignPlan] = useState<WorkoutPlan | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'builder' | 'ai'>('plans');
   const [builderStep, setBuilderStep] = useState(0);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
+  // ── Plan Builder state ──
+  const [builderClientSearch, setBuilderClientSearch] = useState('');
+  const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null);
+  const [planName, setPlanName] = useState('');
+  const [planGoal, setPlanGoal] = useState(GOALS[0].value);
+  const [planDifficulty] = useState<Difficulty>('intermediate');
+  const [durationWeeks, setDurationWeeks] = useState(4);
+  const [sessionsPerWeek, setSessionsPerWeek] = useState(3);
+  const [builderExercises, setBuilderExercises] = useState<BuilderExercise[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerDay, setPickerDay] = useState(1);
+  const [builderSaving, setBuilderSaving] = useState(false);
+
+  const resetBuilder = useCallback(() => {
+    setBuilderStep(0);
+    setBuilderClientSearch('');
+    setSelectedClient(null);
+    setPlanName('');
+    setPlanGoal(GOALS[0].value);
+    setDurationWeeks(4);
+    setSessionsPerWeek(3);
+    setBuilderExercises([]);
+  }, []);
+
   const fetchData = useCallback(async () => {
     setDataLoading(true);
     try {
-      const [exRes, plRes, trRes] = await Promise.all([
-        api.workouts.exercises.list(),
-        api.workouts.plans.list(),
-        api.pt.trainers(),
+      const [exRes, metaRes, plRes, clRes] = await Promise.all([
+        api.exercises.list(),
+        api.exercises.meta(),
+        api.workouts.plans.list(presetClientId ? { client_id: presetClientId } : undefined),
+        api.pt.clients(),
       ]);
-      setExercises(Array.isArray((exRes as any)?.data) ? (exRes as any).data : []);
-      setPlans(Array.isArray((plRes as any)?.data) ? (plRes as any).data : []);
-      setTrainers(Array.isArray((trRes as any)?.data) ? (trRes as any).data.map((t: any) => t.name ?? t) : []);
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to load data');
+      setExercises(Array.isArray(exRes) ? exRes : []);
+      setBodyParts(metaRes.body_parts || []);
+      setPlans(Array.isArray(plRes) ? plRes : []);
+      const clientArr = Array.isArray(clRes?.data) ? clRes.data : [];
+      setClients((clientArr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load data');
     } finally { setDataLoading(false); }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetClientId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  /** Pre-check the PAR-Q workout gate before assigning a plan. This is a
-   *  UX signal only — the backend independently enforces the gate — but it
-   *  turns a raw 403 into a clear "PAR-Q required" message with a direct
-   *  link to complete it. */
-  const assignToClient = useCallback(async (client: { id: string; name: string }) => {
-    if (!assignPlan) return;
+  // Pre-select the client the trainer arrived from (e.g. client profile
+  // Quick Action) once the client list has loaded.
+  useEffect(() => {
+    if (!presetClientId || selectedClient || clients.length === 0) return;
+    const match = clients.find((c) => c.id === presetClientId);
+    if (match) setSelectedClient(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetClientId, clients]);
+
+  /** Pre-check the PAR-Q + Informed Consent workout gate before assigning a
+   *  plan. UX signal only — the backend independently enforces the gate —
+   *  but it turns a raw 403 into a clear message with a direct action link. */
+  const assignPlanToClient = useCallback(async (plan: WorkoutPlan, client: ClientOption): Promise<boolean> => {
     try {
       const listRes = await api.progress.parqForms.list({ client_id: client.id });
       const forms: ParqForm[] = listRes?.data ?? [];
@@ -107,7 +163,7 @@ function Inner() {
           duration: 0,
           action: { label: 'Start PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
         });
-        return;
+        return false;
       }
       const latest = [...forms].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')))[0];
       const gate = await api.progress.parqForms.gateStatus(String(latest.id));
@@ -116,20 +172,93 @@ function Inner() {
           duration: 0,
           action: { label: 'Review PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
         });
-        return;
+        return false;
       }
-      await api.workouts.assign({ workout_plan_id: assignPlan.id, client_id: client.id });
-      toast.success(`Assigned "${assignPlan.name}" to ${client.name}.`);
-      setAssignPlan(null);
+      await api.workouts.assign({ workout_plan_id: plan.id, client_id: client.id });
+      toast.success(`Assigned "${plan.name}" to ${client.name}.`);
+      return true;
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to assign workout plan.');
+      const code = err instanceof ApiError ? err.code : undefined;
+      if (code === 'CONSENT_REQUIRED') {
+        toast.error(`${client.name} needs a completed Informed Consent before a workout can be assigned.`, {
+          duration: 0,
+          action: { label: 'Review Consent', onClick: () => router.push(`/pt-os/informed-consent?client_id=${client.id}`) },
+        });
+      } else {
+        toast.error(err instanceof Error ? err.message : 'Failed to assign workout plan.');
+      }
+      return false;
     }
-  }, [assignPlan, toast, router]);
+  }, [toast, router]);
+
+  const handleAssignFromModal = useCallback(async (client: ClientOption) => {
+    if (!assignPlan) return;
+    const ok = await assignPlanToClient(assignPlan, client);
+    if (ok) { setAssignPlan(null); fetchData(); }
+  }, [assignPlan, assignPlanToClient, fetchData]);
+
+  const handleDeletePlan = useCallback(async (plan: WorkoutPlan) => {
+    if (!window.confirm(`Delete "${plan.name}"? This cannot be undone.`)) return;
+    try {
+      await api.workouts.plans.delete(plan.id);
+      toast.success('Plan deleted.');
+      fetchData();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete plan.');
+    }
+  }, [toast, fetchData]);
+
+  const handlePickExercise = (ex: PickedExercise) => {
+    if (!ex.id) return;
+    setBuilderExercises((list) => [...list, { exercise_id: ex.id, name: ex.name, day_of_week: pickerDay, sets: 3, reps: 12, rest_seconds: 60 }]);
+  };
+
+  const updateBuilderExercise = (index: number, field: 'sets' | 'reps' | 'rest_seconds', value: number) => {
+    setBuilderExercises((list) => list.map((ex, i) => (i === index ? { ...ex, [field]: value } : ex)));
+  };
+  const removeBuilderExercise = (index: number) => setBuilderExercises((list) => list.filter((_, i) => i !== index));
+
+  const handleSaveBuilderPlan = async () => {
+    if (!selectedClient) { toast.error('Select a client first.'); setBuilderStep(0); return; }
+    if (!planName.trim()) { toast.error('Enter a plan name.'); setBuilderStep(1); return; }
+    if (builderExercises.length === 0) { toast.error('Add at least one exercise.'); setBuilderStep(2); return; }
+
+    setBuilderSaving(true);
+    try {
+      const { plan: createdPlan } = await api.workouts.plans.create({
+        name: planName.trim(),
+        goal: planGoal,
+        difficulty: planDifficulty,
+        duration_weeks: durationWeeks,
+        sessions_per_week: sessionsPerWeek,
+        exercises: builderExercises.map((ex, i) => ({
+          exercise_id: ex.exercise_id, day_of_week: ex.day_of_week, sort_order: i,
+          sets: ex.sets, reps: ex.reps, rest_seconds: ex.rest_seconds,
+        })),
+      });
+      await assignPlanToClient(createdPlan, selectedClient);
+      resetBuilder();
+      setActiveTab('plans');
+      fetchData();
+      router.push(`/pt-os/workout-plans/${createdPlan.id}`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not create plan.');
+    } finally {
+      setBuilderSaving(false);
+    }
+  };
 
   const filteredExercises = exercises.filter((ex) => {
-    if (activeMuscle !== 'All' && ex.muscleGroup !== activeMuscle) return false;
+    if (activeBodyPart !== 'All' && ex.body_part !== activeBodyPart) return false;
     if (searchQuery) return ex.name.toLowerCase().includes(searchQuery.toLowerCase());
     return true;
+  });
+
+  const filteredBuilderClients = clients.filter((c) => c.name.toLowerCase().includes(builderClientSearch.toLowerCase()));
+  const builderExercisesByDay = new Map<number, Array<BuilderExercise & { index: number }>>();
+  builderExercises.forEach((ex, index) => {
+    if (!builderExercisesByDay.has(ex.day_of_week)) builderExercisesByDay.set(ex.day_of_week, []);
+    builderExercisesByDay.get(ex.day_of_week)!.push({ ...ex, index });
   });
 
   const avgProgress = plans.length
@@ -164,7 +293,7 @@ function Inner() {
                 </button>
               ))}
             </div>
-            <Button variant="primary" size="sm" onClick={() => toast.info('Plan creation coming soon.')}>
+            <Button variant="primary" size="sm" onClick={() => { resetBuilder(); setActiveTab('builder'); }}>
               <Plus size={14} style={{ marginRight: 5 }} />New Plan
             </Button>
           </div>
@@ -176,7 +305,7 @@ function Inner() {
           {[
             { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
             { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
-            { label: 'Active Clients', value: trainers.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
+            { label: 'Clients', value: clients.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
             { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
           ].map((s) => (
             <m.div key={s.label} variants={itemVariants}>
@@ -204,7 +333,7 @@ function Inner() {
             { key: 'ai', label: 'AI Suggestions', color: '#ec4899' },
           ].map((tab) => (
             <button key={tab.key}
-              onClick={() => { setActiveTab(tab.key as typeof activeTab); if (tab.key === 'builder') setBuilderStep(0); }}
+              onClick={() => { setActiveTab(tab.key as typeof activeTab); if (tab.key === 'builder' && builderExercises.length === 0 && !selectedClient) setBuilderStep(0); }}
               style={{
                 padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
@@ -243,17 +372,17 @@ function Inner() {
                       <WorkoutPlanCard
                         id={plan.id}
                         name={plan.name}
-                        description={plan.description}
-                        goal={plan.goal}
-                        difficulty={plan.difficulty}
-                        duration={plan.duration}
-                        exerciseCount={plan.exercises}
+                        description={plan.description ?? undefined}
+                        goal={plan.goal.replace('_', ' ')}
+                        difficulty={plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)}
+                        duration={`${plan.sessions_per_week}x/wk · ${plan.duration_weeks}wk`}
+                        exerciseCount={plan.exercise_count}
                         progress={plan.progress}
                         color={PLAN_COLORS[i % PLAN_COLORS.length]}
                         compact={view === 'list'}
                         onAssign={() => setAssignPlan(plan)}
-                        onEdit={() => toast.info('Plan editor coming soon.')}
-                        onDelete={() => toast.info('Delete plan coming soon.')}
+                        onEdit={() => router.push(`/pt-os/workout-plans/${plan.id}`)}
+                        onDelete={() => handleDeletePlan(plan)}
                       />
                     </m.div>
                   ))}
@@ -267,11 +396,11 @@ function Inner() {
             <m.div key="library" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               {/* Filter bar */}
               <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-                {(['All', ...MUSCLE_GROUPS] as const).map((mg) => (
-                  <button key={mg}
-                    onClick={() => setActiveMuscle(mg as MuscleGroup | 'All')}
-                    style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.18s', background: activeMuscle === mg ? 'rgba(99,102,241,0.1)' : 'transparent', color: activeMuscle === mg ? '#6366f1' : 'var(--text-muted)', borderColor: activeMuscle === mg ? 'rgba(99,102,241,0.3)' : 'var(--border)' }}>
-                    {mg}
+                {(['All', ...bodyParts.slice(0, 10)]).map((bp) => (
+                  <button key={bp}
+                    onClick={() => setActiveBodyPart(bp)}
+                    style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textTransform: 'capitalize', transition: 'all 0.18s', background: activeBodyPart === bp ? 'rgba(99,102,241,0.1)' : 'transparent', color: activeBodyPart === bp ? '#6366f1' : 'var(--text-muted)', borderColor: activeBodyPart === bp ? 'rgba(99,102,241,0.3)' : 'var(--border)' }}>
+                    {bp}
                   </button>
                 ))}
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '5px 12px', border: '1px solid var(--border)' }}>
@@ -283,26 +412,26 @@ function Inner() {
               </div>
 
               {dataLoading ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
                   {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} style={{ height: 130, borderRadius: 14, background: 'var(--bg-subtle)', opacity: 0.6 }} />
+                    <div key={i} style={{ height: 220, borderRadius: 18, background: 'var(--bg-subtle)', opacity: 0.6 }} />
                   ))}
                 </div>
               ) : (
                 <m.div variants={containerVariants} initial="hidden" animate="visible"
-                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
                   {filteredExercises.slice(0, 24).map((ex) => (
                     <m.div key={ex.id} variants={itemVariants}>
                       <ExerciseCard
                         id={ex.id}
                         name={ex.name}
-                        muscleGroup={ex.muscleGroup}
-                        equipment={ex.equipment}
+                        muscleGroup={ex.muscle_group}
+                        equipment={ex.equipment ?? undefined}
                         difficulty={ex.difficulty}
-                        setsDefault={ex.sets}
-                        repsDefault={ex.reps}
-                        restSeconds={ex.restSeconds}
-                        onAdd={() => toast.info(`Added ${ex.name} to plan.`)}
+                        gifUrl={ex.gif_url ?? undefined}
+                        setsDefault={ex.sets_default ?? undefined}
+                        repsDefault={ex.reps_default ?? undefined}
+                        restSeconds={ex.rest_seconds ?? undefined}
                       />
                     </m.div>
                   ))}
@@ -329,7 +458,7 @@ function Inner() {
                         {builderStep > step ? <Check size={14} /> : step + 1}
                       </div>
                       <span style={{ fontSize: 11, fontWeight: 600, color: builderStep >= step ? '#6366f1' : 'var(--text-muted)', marginTop: 6, textAlign: 'center' }}>
-                        {['Client', 'Goal', 'Exercises', 'Review'][step]}
+                        {['Client', 'Details', 'Exercises', 'Review'][step]}
                       </span>
                       {step < 3 && <div style={{ position: 'absolute', top: 16, left: '50%', right: '-50%', height: 2, background: builderStep > step ? '#6366f1' : 'var(--border)', zIndex: 0 }} />}
                     </div>
@@ -341,58 +470,98 @@ function Inner() {
                   {builderStep === 0 && (
                     <div>
                       <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Choose a Client</h3>
-                      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--text-muted)' }}>Select the client this plan is for. You can search by name or phone number.</p>
+                      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--text-muted)' }}>Select the client this plan is for.</p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-subtle)', borderRadius: 10, padding: '10px 14px', border: '1px solid var(--border)', marginBottom: 16 }}>
                         <Search size={15} color="var(--text-disabled)" />
-                        <input placeholder="Search clients…" style={{ background: 'none', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text-primary)', flex: 1, fontFamily: 'inherit' }} />
+                        <input placeholder="Search clients…" value={builderClientSearch} onChange={(e) => setBuilderClientSearch(e.target.value)}
+                          style={{ background: 'none', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text-primary)', flex: 1, fontFamily: 'inherit' }} />
                       </div>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        {trainers.slice(0, 6).map((t, i) => (
-                          <button key={i} onClick={() => setBuilderStep(1)}
-                            style={{ padding: '8px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.18s' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#6366f1'; e.currentTarget.style.background = 'rgba(99,102,241,0.06)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-subtle)'; }}>
-                            <User size={12} style={{ marginRight: 5, verticalAlign: 'middle' }} />{t}
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', maxHeight: 260, overflowY: 'auto' }}>
+                        {filteredBuilderClients.slice(0, 40).map((c) => (
+                          <button key={c.id} onClick={() => { setSelectedClient(c); setBuilderStep(1); }}
+                            style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${selectedClient?.id === c.id ? '#6366f1' : 'var(--border)'}`, background: selectedClient?.id === c.id ? 'rgba(99,102,241,0.1)' : 'var(--bg-subtle)', color: selectedClient?.id === c.id ? '#6366f1' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.18s' }}>
+                            <User size={12} style={{ marginRight: 5, verticalAlign: 'middle' }} />{c.name}
                           </button>
                         ))}
+                        {filteredBuilderClients.length === 0 && <p style={{ fontSize: 12.5, color: 'var(--text-disabled)' }}>No clients found.</p>}
                       </div>
                     </div>
                   )}
                   {builderStep === 1 && (
                     <div>
-                      <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Set Goal & Duration</h3>
-                      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--text-muted)' }}>Define the fitness goal and program length for this client.</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                        {[['Muscle Gain', '#6366f1'], ['Weight Loss', '#10b981'], ['Strength', '#f59e0b'], ['Endurance', '#ec4899'], ['Flexibility', '#06b6d4'], ['General Fitness', '#8b5cf6']].map(([goal, color]) => (
-                          <button key={goal} onClick={() => setBuilderStep(2)}
-                            style={{ padding: '12px 14px', borderRadius: 12, border: `1px solid ${color}30`, background: `${color}08`, color: 'var(--text-primary)', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.18s' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = `${color}15`; e.currentTarget.style.borderColor = `${color}50`; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = `${color}08`; e.currentTarget.style.borderColor = `${color}30`; }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />{goal}
-                          </button>
-                        ))}
+                      <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Plan Details</h3>
+                      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--text-muted)' }}>Name the plan and set its goal and schedule.</p>
+
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={labelStyle}>Plan Name</label>
+                        <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="e.g. Push Pull Legs" style={inputStyle} />
                       </div>
+
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={labelStyle}>Goal</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          {GOALS.map((g) => (
+                            <button key={g.value} onClick={() => setPlanGoal(g.value)}
+                              style={{ padding: '12px 14px', borderRadius: 12, border: `1px solid ${planGoal === g.value ? g.color : 'var(--border)'}`, background: planGoal === g.value ? `${g.color}12` : 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.18s' }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: g.color, flexShrink: 0 }} />{g.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                        <div>
+                          <label style={labelStyle}>Duration (weeks)</label>
+                          <input type="number" min={1} max={52} value={durationWeeks} onChange={(e) => setDurationWeeks(Math.max(1, Number(e.target.value) || 4))} style={inputStyle} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Sessions / week</label>
+                          <input type="number" min={1} max={7} value={sessionsPerWeek} onChange={(e) => setSessionsPerWeek(Math.max(1, Number(e.target.value) || 3))} style={inputStyle} />
+                        </div>
+                      </div>
+
+                      <button onClick={() => { if (!planName.trim()) { toast.error('Enter a plan name.'); return; } setBuilderStep(2); }}
+                        style={{ width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
+                        Continue <ChevronRight size={14} style={{ verticalAlign: 'middle' }} />
+                      </button>
                     </div>
                   )}
                   {builderStep === 2 && (
                     <div>
                       <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Add Exercises</h3>
-                      <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-muted)' }}>Pick exercises from the library to include in this plan.</p>
-                      <div style={{ maxHeight: 280, overflowY: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                        {exercises.slice(0, 8).map((ex) => (
-                          <button key={ex.id} onClick={() => {}}
-                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-subtle)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.18s' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#6366f1'; e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-subtle)'; }}>
-                            <Dumbbell size={14} color="#6366f1" />
-                            <div>
-                              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{ex.name}</div>
-                              <div style={{ fontSize: 11, color: 'var(--text-disabled)' }}>{ex.sets}×{ex.reps}</div>
+                      <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-muted)' }}>Assign exercises from the library to each training day.</p>
+
+                      <div style={{ maxHeight: 340, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {WEEKDAYS.map((day, i) => (
+                          <div key={day} style={{ padding: 12, borderRadius: 12, background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{day}</span>
+                              <button onClick={() => { setPickerDay(i + 1); setPickerOpen(true); }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none', color: '#6366f1', fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
+                                <Plus size={12} /> Add
+                              </button>
                             </div>
-                          </button>
+                            {(builderExercisesByDay.get(i + 1) || []).map((ex) => (
+                              <div key={ex.index} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 8, background: 'var(--bg-card)', marginBottom: 4 }}>
+                                <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</span>
+                                <input type="number" min={1} value={ex.sets} onChange={(e) => updateBuilderExercise(ex.index, 'sets', Number(e.target.value) || 1)}
+                                  style={{ width: 34, padding: '3px 4px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 11, textAlign: 'center' }} />
+                                <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>×</span>
+                                <input type="number" min={1} value={ex.reps} onChange={(e) => updateBuilderExercise(ex.index, 'reps', Number(e.target.value) || 1)}
+                                  style={{ width: 34, padding: '3px 4px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 11, textAlign: 'center' }} />
+                                <button onClick={() => removeBuilderExercise(ex.index)} style={{ border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex' }}>
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         ))}
                       </div>
-                      <button onClick={() => setBuilderStep(3)} style={{ marginTop: 16, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
+
+                      <p style={{ margin: '10px 0 0', fontSize: 11.5, color: 'var(--text-disabled)' }}>{builderExercises.length} exercise{builderExercises.length === 1 ? '' : 's'} added</p>
+
+                      <button onClick={() => { if (builderExercises.length === 0) { toast.error('Add at least one exercise.'); return; } setBuilderStep(3); }}
+                        style={{ marginTop: 16, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
                         Continue <ChevronRight size={14} style={{ verticalAlign: 'middle' }} />
                       </button>
                     </div>
@@ -403,9 +572,19 @@ function Inner() {
                         <Check size={24} color="#10b981" />
                       </div>
                       <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>Review & Save Plan</h3>
-                      <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--text-muted)' }}>Your workout plan is ready. Click below to save and assign it to your client.</p>
-                      <Button variant="primary" onClick={() => { toast.success('Plan saved successfully!'); setBuilderStep(0); setActiveTab('plans'); }}>
-                        <Check size={14} style={{ marginRight: 6 }} />Save Plan
+                      <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--text-muted)' }}>Your workout plan is ready. Save it to create and assign it to your client.</p>
+
+                      <div style={{ textAlign: 'left', background: 'var(--bg-subtle)', borderRadius: 12, padding: '14px 16px', marginBottom: 20, fontSize: 12.5, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <span><strong>Client:</strong> {selectedClient?.name || '—'}</span>
+                        <span><strong>Plan:</strong> {planName || '—'}</span>
+                        <span><strong>Goal:</strong> {GOALS.find((g) => g.value === planGoal)?.label}</span>
+                        <span><strong>Schedule:</strong> {sessionsPerWeek}x/week for {durationWeeks} weeks</span>
+                        <span><strong>Exercises:</strong> {builderExercises.length}</span>
+                      </div>
+
+                      <Button variant="primary" onClick={handleSaveBuilderPlan} disabled={builderSaving}>
+                        {builderSaving ? <Loader2 size={14} className="animate-spin" style={{ marginRight: 6 }} /> : <Check size={14} style={{ marginRight: 6 }} />}
+                        Save & Assign Plan
                       </Button>
                     </div>
                   )}
@@ -416,12 +595,6 @@ function Inner() {
                     style={{ padding: '8px 18px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: builderStep === 0 ? 'not-allowed' : 'pointer', opacity: builderStep === 0 ? 0.5 : 1 }}>
                     ← Back
                   </button>
-                  {builderStep < 2 && (
-                    <button onClick={() => setBuilderStep(Math.min(3, builderStep + 1))}
-                      style={{ padding: '8px 18px', borderRadius: 9, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
-                      Next →
-                    </button>
-                  )}
                 </div>
               </div>
             </m.div>
@@ -495,23 +668,23 @@ function Inner() {
       <AssignClientModal
         plan={assignPlan}
         onClose={() => setAssignPlan(null)}
-        onSelectClient={assignToClient}
+        onSelectClient={handleAssignFromModal}
       />
+
+      <ExercisePicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={handlePickExercise} />
     </div>
   );
 }
 
 /* ── Assign-to-client modal — PAR-Q gate pre-check happens on selection ── */
-interface AssignClientOption { id: string; name: string; }
-
 function AssignClientModal({
   plan, onClose, onSelectClient,
 }: {
   plan: WorkoutPlan | null;
   onClose: () => void;
-  onSelectClient: (client: AssignClientOption) => Promise<void>;
+  onSelectClient: (client: ClientOption) => Promise<void>;
 }) {
-  const [clients, setClients] = useState<AssignClientOption[]>([]);
+  const [clients, setClients] = useState<ClientOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [assigningId, setAssigningId] = useState<string | null>(null);
@@ -527,7 +700,7 @@ function AssignClientModal({
 
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
-  const handleSelect = async (client: AssignClientOption) => {
+  const handleSelect = async (client: ClientOption) => {
     setAssigningId(client.id);
     try {
       await onSelectClient(client);
@@ -554,7 +727,7 @@ function AssignClientModal({
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
           <ShieldAlert size={14} color="#d97706" style={{ marginTop: 1, flexShrink: 0 }} />
           <p style={{ margin: 0, fontSize: 11.5, color: '#92400e', lineHeight: 1.5 }}>
-            Assignment is blocked unless the client has a PAR-Q screening on file with a &quot;cleared&quot; workout gate status.
+            Assignment is blocked unless the client has a PAR-Q screening on file with a &quot;cleared&quot; workout gate status and a completed Informed Consent.
           </p>
         </div>
 

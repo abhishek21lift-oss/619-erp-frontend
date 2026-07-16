@@ -320,6 +320,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
   useEffect(() => { loadData(); }, [id]);
 
+  const [activePlanName, setActivePlanName] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.workouts.assignments.list({ client_id: id, status: 'active' }).then((rows) => {
+      if (!cancelled) setActivePlanName(rows[0]?.plan_name ?? null);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [id]);
+
   const whatsappHref = (phone?: string, name?: string) => {
     const p = (phone ?? '').replace(/\D/g, '');
     if (!p) return '#';
@@ -621,11 +630,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             if (action.href!(client.id) === '#delete') { setDeleteOpen(true); return; }
                             router.push(action.href!(client.id));
                           }}
+                          title={action.label === 'Workout Plans' && activePlanName ? `Active plan: ${activePlanName}` : undefined}
                           className="group flex w-full flex-col items-center gap-2 rounded-[14px] p-3 transition-all duration-200 hover:-translate-y-0.5"
                           style={{ background: `${action.from}0f`, border: `1px solid ${action.from}20` }}>
-                          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] transition-all duration-200 group-hover:scale-110"
+                          <div className="relative flex h-9 w-9 items-center justify-center rounded-[10px] transition-all duration-200 group-hover:scale-110"
                             style={{ background: `linear-gradient(135deg, ${action.from}, ${action.to})`, boxShadow: `0 3px 10px ${action.from}40` }}>
                             <span className="text-white">{action.icon}</span>
+                            {action.label === 'Workout Plans' && activePlanName && (
+                              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full" style={{ background: '#10b981', border: '1.5px solid #fff' }} />
+                            )}
                           </div>
                           <span className="text-[9px] font-[700] text-center leading-tight" style={{ color: action.from }}>
                             {action.label}
