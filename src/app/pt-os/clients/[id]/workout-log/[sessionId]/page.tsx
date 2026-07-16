@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Plus, Trash2, Copy, Wand2, Check, Loader2, AlertCircle,
-  Dumbbell, ChevronDown, Award, Clock, X,
+  Dumbbell, ChevronDown, Award, Clock, X, Minus, Pencil, Calendar,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -35,6 +35,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const [previousByExercise, setPreviousByExercise] = useState<Record<string, WorkoutPreviousExercise | null>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [savingHeader, setSavingHeader] = useState(false);
+  const [headerOpen, setHeaderOpen] = useState(false);
 
   const loadSession = useCallback(async () => {
     setLoading(true);
@@ -43,7 +44,12 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       const res = await api.progress.workoutLog.sessions.get(sessionId);
       const data = res?.data;
       if (!data) { setLoadError('Session not found.'); return; }
-      setSession(data);
+      setSession((prev) => {
+        // First load only: a brand-new session (no program/day set yet) opens
+        // the header form immediately so nothing blocks getting straight to it.
+        if (!prev) setHeaderOpen(!data.program_name && !data.workout_day);
+        return data;
+      });
       setExpanded((prev) => {
         const next = { ...prev };
         data.exercises.forEach((ex) => { if (next[ex.id] === undefined) next[ex.id] = true; });
@@ -151,26 +157,53 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       </div>
 
       <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
-        {/* Session header */}
-        <div className="rounded-[24px] p-6 sm:p-7 space-y-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FloatInput label="Date" type="date" value={session.session_date?.slice(0, 10) || ''}
-              onChange={(v) => setSession((p) => (p ? { ...p, session_date: v } : p))}
-              onBlur={() => handleHeaderSave({ session_date: session.session_date })} />
-            <FloatInput label="Program Name" value={session.program_name || ''}
-              onChange={(v) => setSession((p) => (p ? { ...p, program_name: v } : p))}
-              onBlur={() => handleHeaderSave({ program_name: session.program_name || null })} />
-            <FloatInput label="Workout Day" value={session.workout_day || ''}
-              onChange={(v) => setSession((p) => (p ? { ...p, workout_day: v } : p))}
-              onBlur={() => handleHeaderSave({ workout_day: session.workout_day || null })} />
-          </div>
-          <FloatInput label="Notes" multiline autoGrow value={session.notes || ''}
-            onChange={(v) => setSession((p) => (p ? { ...p, notes: v } : p))}
-            onBlur={() => handleHeaderSave({ notes: session.notes || null })} />
-          <FloatInput label="Duration (minutes)" type="number" value={session.duration_minutes != null ? String(session.duration_minutes) : ''}
-            onChange={(v) => setSession((p) => (p ? { ...p, duration_minutes: v ? Number(v) : null } : p))}
-            onBlur={() => handleHeaderSave({ duration_minutes: session.duration_minutes })} />
-          {savingHeader && <p className="text-[10.5px] font-[600]" style={{ color: '#94a3b8' }}>Saving…</p>}
+        {/* Session header — a compact summary strip by default so the
+            exercises (the actual logging work) are reachable without
+            scrolling past a wall of fields; tap to edit. */}
+        <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
+          <button onClick={() => setHeaderOpen((o) => !o)} className="flex w-full items-center justify-between gap-3 px-5 sm:px-7 py-4 text-left">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px]" style={{ background: 'rgba(245,158,11,0.1)' }}>
+                <Calendar size={16} style={{ color: '#d97706' }} />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[14px] font-[760] text-gray-900">{fmtDate(session.session_date)}</p>
+                <p className="truncate text-[12px] text-slate-400">
+                  {[session.program_name, session.workout_day].filter(Boolean).join(' · ') || 'Tap to add program & day'}
+                </p>
+              </div>
+            </div>
+            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
+              {headerOpen ? <ChevronDown size={14} style={{ color: '#64748b' }} /> : <Pencil size={13} style={{ color: '#64748b' }} />}
+            </span>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {headerOpen && (
+              <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: EASE }}>
+                <div className="px-5 sm:px-7 pb-6 pt-1 space-y-4" style={{ borderTop: '1px solid var(--border)' }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                    <FloatInput label="Date" type="date" value={session.session_date?.slice(0, 10) || ''}
+                      onChange={(v) => setSession((p) => (p ? { ...p, session_date: v } : p))}
+                      onBlur={() => handleHeaderSave({ session_date: session.session_date })} />
+                    <FloatInput label="Program Name" value={session.program_name || ''}
+                      onChange={(v) => setSession((p) => (p ? { ...p, program_name: v } : p))}
+                      onBlur={() => handleHeaderSave({ program_name: session.program_name || null })} />
+                    <FloatInput label="Workout Day" value={session.workout_day || ''}
+                      onChange={(v) => setSession((p) => (p ? { ...p, workout_day: v } : p))}
+                      onBlur={() => handleHeaderSave({ workout_day: session.workout_day || null })} />
+                  </div>
+                  <FloatInput label="Notes" multiline autoGrow value={session.notes || ''}
+                    onChange={(v) => setSession((p) => (p ? { ...p, notes: v } : p))}
+                    onBlur={() => handleHeaderSave({ notes: session.notes || null })} />
+                  <FloatInput label="Duration (minutes)" type="number" value={session.duration_minutes != null ? String(session.duration_minutes) : ''}
+                    onChange={(v) => setSession((p) => (p ? { ...p, duration_minutes: v ? Number(v) : null } : p))}
+                    onBlur={() => handleHeaderSave({ duration_minutes: session.duration_minutes })} />
+                  {savingHeader && <p className="text-[10.5px] font-[600]" style={{ color: '#94a3b8' }}>Saving…</p>}
+                </div>
+              </m.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Exercises */}
@@ -317,10 +350,12 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <span onClick={(e) => { e.stopPropagation(); onRemove(); }} role="button" tabIndex={0}
-            className="flex h-7 w-7 items-center justify-center rounded-[8px] transition hover:bg-red-50">
-            <Trash2 size={13} style={{ color: '#ef4444' }} />
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-red-50">
+            <Trash2 size={14} style={{ color: '#ef4444' }} />
           </span>
-          <ChevronDown size={16} style={{ color: '#94a3b8', transform: expanded ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s' }} />
+          <span className="flex h-9 w-9 items-center justify-center rounded-[10px]">
+            <ChevronDown size={16} style={{ color: '#94a3b8', transform: expanded ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s' }} />
+          </span>
         </div>
       </button>
 
@@ -343,21 +378,25 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
                 </div>
               )}
 
-              {exercise.sets.length > 0 && (
-                <div className="grid grid-cols-[28px_1fr_1fr_50px_50px_36px_28px] items-center gap-1.5 px-1 text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>
-                  <span>#</span><span>Weight</span><span>Reps</span><span>RPE</span><span>RIR</span><span>✓</span><span />
-                </div>
-              )}
-              <div className="space-y-1.5">
+              <div className="space-y-2.5">
                 {exercise.sets.map((set) => (
                   <SetRow key={set.id} set={set} onChanged={onChanged} />
                 ))}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" iconLeft={<Plus size={12} />} disabled={busy} onClick={() => handleAddSet()}>Add Set</Button>
-                <Button size="sm" variant="outline" iconLeft={<Copy size={12} />} disabled={busy || exercise.sets.length === 0} onClick={handleDuplicateLast}>Duplicate Last Set</Button>
-                <Button size="sm" variant="outline" iconLeft={<Wand2 size={12} />} disabled={busy || !previous} onClick={handleAutoFillPrevious}>Auto-fill Previous</Button>
+              <div className="space-y-2">
+                <Button iconLeft={<Plus size={15} />} disabled={busy} onClick={() => handleAddSet()} className="w-full"
+                  style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+                  Add Set
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button size="sm" variant="outline" iconLeft={<Copy size={12} />} disabled={busy || exercise.sets.length === 0} onClick={handleDuplicateLast}>
+                    Duplicate Last
+                  </Button>
+                  <Button size="sm" variant="outline" iconLeft={<Wand2 size={12} />} disabled={busy || !previous} onClick={handleAutoFillPrevious}>
+                    Auto-fill Previous
+                  </Button>
+                </div>
               </div>
             </div>
           </m.div>
@@ -368,6 +407,10 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
 }
 
 /* ─────────────────────────────────────────────────────── SET ROW */
+// Card-per-set, not a dense grid row: big +/- steppers and a large
+// completion target are the whole point of "easy to fill" on a phone —
+// weight/reps are what get logged on nearly every set, so they get the
+// most tappable real estate; RPE/RIR are secondary, smaller fields below.
 function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<void> }) {
   const { toast } = useToast();
   const [weight, setWeight] = useState(set.weight_kg != null ? String(set.weight_kg) : '');
@@ -404,37 +447,110 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
     }
   };
 
-  const isPr = set.is_pr_weight || set.is_pr_reps || set.is_pr_volume;
   const numField = (val: string) => (val.trim() === '' ? null : Number(val));
 
+  const adjustWeight = (delta: number) => {
+    const cur = weight.trim() === '' ? 0 : Number(weight);
+    const next = Math.max(0, Math.round((cur + delta) * 2) / 2);
+    setWeight(String(next));
+    save({ weight_kg: next });
+  };
+  const adjustReps = (delta: number) => {
+    const cur = reps.trim() === '' ? 0 : Number(reps);
+    const next = Math.max(0, cur + delta);
+    setReps(String(next));
+    save({ reps: next });
+  };
+
+  const isPr = set.is_pr_weight || set.is_pr_reps || set.is_pr_volume;
+  const prLabel = [set.is_pr_weight && 'Weight', set.is_pr_reps && 'Reps', set.is_pr_volume && 'Volume'].filter(Boolean).join(' & ');
+
   return (
-    <div className="grid grid-cols-[28px_1fr_1fr_50px_50px_36px_28px] items-center gap-1.5 rounded-[10px] px-1 py-1"
-      style={{ background: isPr ? 'rgba(245,158,11,0.06)' : undefined }}>
-      <span className="text-[11.5px] font-[700] text-center" style={{ color: '#94a3b8' }}>{set.set_number}</span>
-      <input type="number" inputMode="decimal" value={weight} placeholder="kg"
-        onChange={(e) => setWeight(e.target.value)}
-        onBlur={() => save({ weight_kg: numField(weight) })}
-        className="w-full rounded-[8px] px-2 py-1.5 text-[12.5px] text-center outline-none" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }} />
-      <input type="number" inputMode="numeric" value={reps} placeholder="reps"
-        onChange={(e) => setReps(e.target.value)}
-        onBlur={() => save({ reps: numField(reps) })}
-        className="w-full rounded-[8px] px-2 py-1.5 text-[12.5px] text-center outline-none" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }} />
-      <input type="number" inputMode="decimal" value={rpe} placeholder="—"
-        onChange={(e) => setRpe(e.target.value)}
-        onBlur={() => save({ rpe: numField(rpe) })}
-        className="w-full rounded-[8px] px-1 py-1.5 text-[12px] text-center outline-none" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }} />
-      <input type="number" inputMode="numeric" value={rir} placeholder="—"
-        onChange={(e) => setRir(e.target.value)}
-        onBlur={() => save({ rir: numField(rir) })}
-        className="w-full rounded-[8px] px-1 py-1.5 text-[12px] text-center outline-none" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }} />
-      <button onClick={() => save({ completed: !set.completed })} disabled={saving}
-        className="flex h-7 w-7 items-center justify-center rounded-[8px] mx-auto transition"
-        style={{ background: set.completed ? '#10b981' : '#f1f5f9', border: set.completed ? 'none' : '1px solid #e2e8f0' }}>
-        {set.completed && <Check size={13} color="#fff" strokeWidth={3} />}
-      </button>
-      <button onClick={handleDelete} className="flex h-7 w-7 items-center justify-center rounded-[8px] transition hover:bg-red-50">
-        <X size={13} style={{ color: '#cbd5e1' }} />
-      </button>
+    <div className="rounded-[16px] p-3" style={{ background: isPr ? 'rgba(245,158,11,0.07)' : 'var(--bg-subtle)', border: isPr ? '1.5px solid rgba(245,158,11,0.35)' : '1px solid var(--border)' }}>
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-[800]" style={{ background: '#0f172a', color: '#fff' }}>
+            {set.set_number}
+          </span>
+          {isPr && (
+            <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-[800]" style={{ background: 'rgba(245,158,11,0.18)', color: '#d97706' }}>
+              <Award size={10} /> New PR — {prLabel}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => save({ completed: !set.completed })} disabled={saving}
+            aria-label="Mark set complete"
+            className="flex h-10 w-10 items-center justify-center rounded-[12px] transition"
+            style={{ background: set.completed ? '#10b981' : '#fff', border: set.completed ? 'none' : '1.5px solid #cbd5e1' }}>
+            {set.completed && <Check size={17} color="#fff" strokeWidth={3} />}
+          </button>
+          <button onClick={handleDelete} aria-label="Delete set"
+            className="flex h-10 w-10 items-center justify-center rounded-[12px] transition hover:bg-red-50" style={{ border: '1.5px solid transparent' }}>
+            <X size={16} style={{ color: '#cbd5e1' }} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <div>
+          <p className="mb-1 text-center text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Weight (kg)</p>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => adjustWeight(-2.5)} aria-label="Decrease weight"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
+              style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
+              <Minus size={16} />
+            </button>
+            <input type="number" inputMode="decimal" value={weight} placeholder="0"
+              onChange={(e) => setWeight(e.target.value)}
+              onBlur={() => save({ weight_kg: numField(weight) })}
+              className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
+              style={{ fontSize: 17, background: '#fff', border: '1.5px solid #e2e8f0', color: '#0f172a' }} />
+            <button onClick={() => adjustWeight(2.5)} aria-label="Increase weight"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
+              style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
+              <Plus size={16} />
+            </button>
+          </div>
+        </div>
+        <div>
+          <p className="mb-1 text-center text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Reps</p>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => adjustReps(-1)} aria-label="Decrease reps"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
+              style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
+              <Minus size={16} />
+            </button>
+            <input type="number" inputMode="numeric" value={reps} placeholder="0"
+              onChange={(e) => setReps(e.target.value)}
+              onBlur={() => save({ reps: numField(reps) })}
+              className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
+              style={{ fontSize: 17, background: '#fff', border: '1.5px solid #e2e8f0', color: '#0f172a' }} />
+            <button onClick={() => adjustReps(1)} aria-label="Increase reps"
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
+              style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
+              <Plus size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex items-center gap-2.5">
+        <label className="flex flex-1 items-center gap-1.5 rounded-[10px] px-2.5 py-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+          <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RPE</span>
+          <input type="number" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
+            onChange={(e) => setRpe(e.target.value)}
+            onBlur={() => save({ rpe: numField(rpe) })}
+            className="w-full min-w-0 text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
+        </label>
+        <label className="flex flex-1 items-center gap-1.5 rounded-[10px] px-2.5 py-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+          <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RIR</span>
+          <input type="number" inputMode="numeric" min={0} max={10} value={rir} placeholder="—"
+            onChange={(e) => setRir(e.target.value)}
+            onBlur={() => save({ rir: numField(rir) })}
+            className="w-full min-w-0 text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
+        </label>
+      </div>
     </div>
   );
 }
