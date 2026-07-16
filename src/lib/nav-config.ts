@@ -63,6 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Dumbbell',
     items: [
       { href: '/pt-os/workout-plans',       label: 'Workout Plans',        icon: 'Dumbbell' },
+      { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', isNew: true, matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
       { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['admin', 'manager'], comingSoon: true },
