@@ -597,6 +597,76 @@ export interface WorkoutPlanned {
   exercises: WorkoutPlannedExercise[];
 }
 
+// ── Diet Plans ──────────────────────────────────────────────────────
+export interface Meal {
+  id: string;
+  name: string;
+  description?: string | null;
+  meal_type: 'breakfast' | 'lunch' | 'snacks' | 'dinner' | 'pre_workout' | 'post_workout';
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fats_g: number;
+  serving_size?: string | null;
+  image_url?: string | null;
+  is_active: boolean;
+}
+
+export interface DietTemplateMeal {
+  id: string;
+  meal_id: string;
+  name: string;
+  meal_type: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fats_g: number;
+  day_of_week: number | null;
+  sort_order: number;
+}
+
+export interface DietTemplate {
+  id: string;
+  name: string;
+  description?: string | null;
+  goal: string;
+  daily_calories: number;
+  daily_protein_g: number;
+  daily_carbs_g: number;
+  daily_fats_g: number;
+  is_active: boolean;
+  meal_count: number;
+  meals: DietTemplateMeal[];
+}
+
+export interface DietAssignment {
+  id: string;
+  diet_template_id: string;
+  client_id: string;
+  trainer_id?: string | null;
+  start_date: string;
+  end_date?: string | null;
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  notes?: string | null;
+  template_name: string;
+  template_goal: string;
+  daily_calories: number;
+  daily_protein_g: number;
+  daily_carbs_g: number;
+  daily_fats_g: number;
+}
+
+export interface NutritionLog {
+  client_id: string;
+  log_date: string;
+  calories_consumed: number;
+  protein_g: number;
+  carbs_g: number;
+  fats_g: number;
+  water_glasses: number;
+  notes?: string | null;
+}
+
 export interface LibraryExercise {
   id: string;
   name: string;
@@ -1128,32 +1198,36 @@ export const api = {
   diet: {
     meals: {
       list: (params?: Record<string, string | number>) =>
-        http<unknown[]>(`/api/diet/meals${buildQs(params)}`),
+        http<Meal[]>(`/api/diet/meals${buildQs(params)}`),
       create: (data: Record<string, unknown>) =>
-        http<{ message: string; meal: unknown }>('/api/diet/meals', {
+        http<{ message: string; meal: Meal }>('/api/diet/meals', {
           method: 'POST',
           body: JSON.stringify(data),
         }),
     },
     templates: {
       list: (params?: Record<string, string | number>) =>
-        http<unknown[]>(`/api/diet/templates${buildQs(params)}`),
+        http<DietTemplate[]>(`/api/diet/templates${buildQs(params)}`),
       create: (data: Record<string, unknown>) =>
-        http<{ message: string; template: unknown }>('/api/diet/templates', {
+        http<{ message: string; template: DietTemplate }>('/api/diet/templates', {
           method: 'POST',
           body: JSON.stringify(data),
         }),
     },
     assign: (data: { diet_template_id: string; client_id: string; start_date?: string; end_date?: string; notes?: string }) =>
-      http<{ message: string; assignment: unknown }>('/api/diet/assign', {
+      http<{ message: string; assignment: DietAssignment }>('/api/diet/assign', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    assignments: {
+      list: (params: { client_id: string; status?: string }) =>
+        http<DietAssignment[]>(`/api/diet/assignments${buildQs(params)}`),
+    },
     tracker: {
       get: (params: { client_id: string; date?: string }) =>
-        http<{ today: Record<string, unknown>; history: unknown[] }>(`/api/diet/tracker${buildQs(params)}`),
+        http<{ today: NutritionLog; history: NutritionLog[] }>(`/api/diet/tracker${buildQs(params)}`),
       update: (data: { client_id: string; log_date?: string; calories_consumed?: number; protein_g?: number; carbs_g?: number; fats_g?: number; water_glasses?: number; notes?: string }) =>
-        http<{ message: string; log: unknown }>('/api/diet/tracker', {
+        http<{ message: string; log: NutritionLog }>('/api/diet/tracker', {
           method: 'PUT',
           body: JSON.stringify(data),
         }),
@@ -1474,7 +1548,11 @@ export const api = {
     sessions: (params?: { trainer_id?: string; date?: string }) =>
       http<{ data: unknown[] }>(`/api/pt-os/sessions${buildQs(params)}`),
     createSession: (data: Record<string, unknown>) =>
-      http<{ data: unknown }>('/api/pt-os/sessions', { method: 'POST', body: JSON.stringify(data) }),
+      // `data` is a single session row normally, or an array of 4 when
+      // booked as recurring (weekly occurrences share one recurrence_id).
+      http<{ data: unknown | unknown[] }>('/api/pt-os/sessions', { method: 'POST', body: JSON.stringify(data) }),
+    updateSession: (id: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/pt-os/sessions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     payments: (params?: { client_id?: string; trainer_id?: string }) =>
       http<{ data: unknown[] }>(`/api/pt-os/payments${buildQs(params)}`),
     createPayment: (data: Record<string, unknown>) =>

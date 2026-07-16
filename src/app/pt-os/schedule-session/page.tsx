@@ -85,6 +85,28 @@ function initials(name: string) {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
+function capitalize(s: string): string {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+function mapApiSession(s: Record<string, unknown>, trainerArr: { id: string; name: string }[]): PTSession {
+  const clientName = String(s.client_name ?? '');
+  return {
+    id: String(s.id ?? ''),
+    client: clientName,
+    client_id: s.client_id != null ? String(s.client_id) : '',
+    trainer: trainerArr.find((t) => t.id === s.trainer_id)?.name ?? String(s.trainer_id ?? ''),
+    date: String(s.session_date ?? ''),
+    time: String(s.start_time ?? ''),
+    duration: Number(s.duration_minutes) || 60,
+    type: capitalize(String(s.session_type ?? '1-on-1')) as SessionType,
+    status: (s.status as SessionStatus) ?? 'scheduled',
+    notes: String(s.notes ?? ''),
+    recurring: Boolean(s.recurrence_id),
+    clientAvatar: initials(clientName),
+  };
+}
+
 const AVATAR_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#0ea5e9', '#8b5cf6', '#dc2626', '#14b8a6'];
 
 function todayStr() {
@@ -151,20 +173,7 @@ function SchedulePageContent() {
             )
           )).flat()
         : [];
-      setSessions(allSessionsData.map((s: any) => ({
-        id: String(s.id ?? ''),
-        client: s.client_name ?? '',
-        client_id: s.client_id ?? '',
-        trainer: (trainerArr.find((t: any) => t.id === s.trainer_id)?.name) ?? s.trainer_id ?? '',
-        date: s.session_date ?? '',
-        time: s.start_time ?? '',
-        duration: 60,
-        type: s.title ?? '1-on-1',
-        status: s.status ?? 'scheduled',
-        notes: s.notes ?? '',
-        recurring: false,
-        clientAvatar: initials(s.client_name ?? ''),
-      })));
+      setSessions(allSessionsData.map((s: Record<string, unknown>) => mapApiSession(s, trainerArr)));
     } catch (err: any) {
       setSessionsError(err?.message || 'Failed to load sessions');
     } finally {
@@ -242,38 +251,45 @@ function SchedulePageContent() {
       return;
     }
     setConflict(false);
-    const newSession: PTSession = {
-      id: Date.now().toString(),
-      client: data.client,
-      client_id: data.client_id ?? '',
-      trainer: data.trainer,
-      date: data.date,
-      time: data.time,
-      duration: data.duration,
-      type: data.type,
-      status: 'scheduled',
-      notes: data.notes,
-      recurring: data.recurring,
-      clientAvatar: initials(data.client),
-    };
+
+    const trainerObj = trainerList.find((t) => t.name === data.trainer);
+    if (!trainerObj) {
+      toast.error('Select a trainer before booking.');
+      return;
+    }
+
     try {
-      const trainerObj = trainerList.find((t) => t.name === data.trainer);
-      if (trainerObj) {
-        await api.pt.createSession({
-          trainer_id: trainerObj.id,
-          client_id: data.client_id,
-          date: data.date,
-          start_time: data.time,
-          notes: data.notes,
-        });
-      }
-    } catch {}
-    setSessions((prev) => [newSession, ...prev]);
-    setShowCreateModal(false);
+      const res = await api.pt.createSession({
+        trainer_id: trainerObj.id,
+        client_id: data.client_id,
+        title: 'PT Session',
+        date: data.date,
+        start_time: data.time,
+        notes: data.notes,
+        duration_minutes: data.duration,
+        session_type: data.type.toLowerCase(),
+        recurring: data.recurring,
+      });
+      const created = Array.isArray(res?.data) ? res.data : [res?.data];
+      const newSessions = (created as Record<string, unknown>[])
+        .filter(Boolean)
+        .map((s) => mapApiSession({ ...s, client_name: data.client }, trainerList));
+      setSessions((prev) => [...newSessions, ...prev]);
+      setShowCreateModal(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Could not book the session.');
+    }
   };
 
   const updateSessionStatus = async (id: string, status: SessionStatus) => {
+    const prevSessions = sessions;
     setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+    try {
+      await api.pt.updateSession(id, { status });
+    } catch (err: unknown) {
+      setSessions(prevSessions);
+      toast.error(err instanceof Error ? err.message : 'Could not update the session.');
+    }
   };
 
   const trainerFilterOptions = ['', ...trainerList.map((t) => t.name)];
