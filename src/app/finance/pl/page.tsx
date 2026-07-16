@@ -174,7 +174,7 @@ function Inner() {
         {/* Action Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-8 mt-6 mb-4">
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" iconLeft={<PlusCircle size={13} />} onClick={() => router.push('/finance/record-payment')}>
+            <Button variant="outline" size="sm" iconLeft={<PlusCircle size={13} />} onClick={() => router.push('/finance/expenses?new=1')}>
               Add Expense
             </Button>
             <Button variant="outline" size="sm" iconLeft={<Users size={13} />} onClick={() => router.push('/finance/trainer-revenue')}>
@@ -271,7 +271,7 @@ function Inner() {
                               </div>
                             ))}
                           </div>
-                          <button onClick={() => router.push('/expenses')}
+                          <button onClick={() => router.push('/finance/expenses')}
                             className="mt-2 text-[11px] font-[700] uppercase tracking-[0.06em] transition-colors hover:opacity-70"
                             style={{ color: '#8B5CF6' }}>
                             View All Expenses →

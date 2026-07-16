@@ -9,7 +9,7 @@ import { PremiumModal } from '@/components/premium/PremiumModal';
 import { Button, KpiCard } from '@/components/ui';
 import {
   FileText, Download, Send, CheckCircle2, Search,
-  ChevronDown, Eye, Clock, Filter,
+  ChevronDown, Eye, Clock,
   AlertTriangle, X, CreditCard,
   Receipt, Plus,
   MoreHorizontal, RefreshCw,
@@ -382,7 +382,6 @@ export default function InvoicesPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button variant="outline" iconLeft={<Filter size={16} />}>Filter</Button>
                     <Button variant="primary" iconLeft={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>Create Invoice</Button>
                   </div>
                 </div>

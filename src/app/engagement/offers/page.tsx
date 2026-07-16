@@ -31,7 +31,22 @@ function OffersContent() {
   const [showForm, setShowForm] = useState(false);
   const [tab, setTab] = useState<'all'|'active'|'expired'|'draft'>('all');
   const [form, setForm] = useState({name:'',type:'percent' as 'percent'|'flat'|'free',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50});
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [copied, setCopied] = useState('');
+
+  const blankForm = {name:'',type:'percent' as 'percent'|'flat'|'free',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50};
+
+  function openNewOfferForm() {
+    setForm(blankForm);
+    setEditingId(null);
+    setShowForm(true);
+  }
+
+  function openEditOfferForm(o: Offer) {
+    setForm({ name: o.name, type: o.type, value: o.value, code: o.code, plan: o.plan, validFrom: o.validFrom, validUntil: o.validUntil, usageLimit: o.usageLimit });
+    setEditingId(o.id);
+    setShowForm(true);
+  }
 
   async function load() {
     setLoading(true); setError(null);
@@ -53,12 +68,19 @@ function OffersContent() {
         valid_from: form.validFrom || null,
         valid_until: form.validUntil || null,
       };
-      const res = await api.offers.create(payload as any) as { message?: string; offer: Offer };
-      if (res?.offer) setOffers(p => [...p, res.offer]); else load();
-      toast.success('Offer created');
-      setForm({name:'',type:'percent',value:0,code:'',plan:'',validFrom:'',validUntil:'',usageLimit:50});
+      if (editingId) {
+        const res = await api.offers.update(editingId, payload as any) as { message?: string; offer: Offer };
+        if (res?.offer) setOffers(p => p.map(o => o.id === editingId ? res.offer : o)); else load();
+        toast.success('Offer updated');
+      } else {
+        const res = await api.offers.create(payload as any) as { message?: string; offer: Offer };
+        if (res?.offer) setOffers(p => [...p, res.offer]); else load();
+        toast.success('Offer created');
+      }
+      setForm(blankForm);
+      setEditingId(null);
       setShowForm(false);
-    } catch (err: any) { toast.error(err?.message || 'Failed to create offer'); }
+    } catch (err: any) { toast.error(err?.message || (editingId ? 'Failed to update offer' : 'Failed to create offer')); }
   }
 
   async function handleDelete(id: string) {
@@ -93,7 +115,7 @@ function OffersContent() {
                 <h1 style={{ fontSize:34, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.1, color:'#111827', margin:'0 0 8px' }}>Offers &amp; Promotions</h1>
                 <p style={{ maxWidth:560, fontSize:14, lineHeight:1.6, color:'#6b7280' }}>Create discount codes, referral offers &amp; promotional deals for members.</p>
               </div>
-              <button onClick={()=>setShowForm(v=>!v)}
+              <button onClick={()=>{ if (showForm) { setShowForm(false); setEditingId(null); } else { openNewOfferForm(); } }}
                 style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'10px 20px', borderRadius:12, background:'linear-gradient(135deg, #8b5cf6, #6d28d9)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(139,92,246,0.35)' }}>
                 <Plus size={14}/> {showForm?'Cancel':'New Offer'}
               </button>
@@ -125,7 +147,7 @@ function OffersContent() {
         {showForm&&(
           <m.div initial={{ opacity: 0, y: -10, scale:0.98 }} animate={{ opacity: 1, y: 0, scale:1 }}
             style={{ borderRadius:20, background:'#ffffff', border:'1px solid #e5e7eb', boxShadow:'0 4px 20px rgba(0,0,0,0.08)', padding:24, marginBottom:22 }}>
-            <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#111827', display:'flex', gap:8, alignItems:'center' }}><Gift size={16} color="#a855f7"/> Create New Offer</h3>
+            <h3 style={{ margin:'0 0 20px', fontSize:15, fontWeight:700, color:'#111827', display:'flex', gap:8, alignItems:'center' }}><Gift size={16} color="#a855f7"/> {editingId ? 'Edit Offer' : 'Create New Offer'}</h3>
             <form onSubmit={addOffer} style={{ display:'grid', gap:16 }}>
               <label style={{ display:'grid', gap:5 }}>
                 <span style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#374151' }}>Offer Name *</span>
@@ -169,9 +191,9 @@ function OffersContent() {
                 </label>
               </div>
               <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                <button type="button" onClick={()=>setShowForm(false)} style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid #d1d5db', background:'transparent', color:'#6b7280', cursor:'pointer' }}>Cancel</button>
+                <button type="button" onClick={()=>{ setShowForm(false); setEditingId(null); }} style={{ fontSize:12, fontWeight:700, padding:'8px 18px', borderRadius:10, border:'1px solid #d1d5db', background:'transparent', color:'#6b7280', cursor:'pointer' }}>Cancel</button>
                 <button type="submit" style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, padding:'8px 20px', borderRadius:12, background:'linear-gradient(135deg, #8b5cf6, #6d28d9)', color:'#fff', border:'none', cursor:'pointer', boxShadow:'0 4px 16px rgba(139,92,246,0.35)' }}>
-                  <Plus size={13}/> Create Offer
+                  <Plus size={13}/> {editingId ? 'Save Changes' : 'Create Offer'}
                 </button>
               </div>
             </form>
@@ -242,7 +264,7 @@ function OffersContent() {
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:11, color:'#9ca3af' }}>
                       <span style={{ display:'flex', alignItems:'center', gap:3 }}><Clock size={11}/>{o.validFrom||'—'} → {o.validUntil||'—'}</span>
                       <div style={{ display:'flex', gap:4 }}>
-                        <button style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'1px solid #e5e7eb', background:'transparent', color:'#6b7280', cursor:'pointer' }}><Edit2 size={12}/></button>
+                        <button onClick={()=>openEditOfferForm(o)} style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'1px solid #e5e7eb', background:'transparent', color:'#6b7280', cursor:'pointer' }}><Edit2 size={12}/></button>
                         <button onClick={()=>handleDelete(o.id)} style={{ display:'flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:6, border:'none', background:'rgba(239,68,68,0.08)', color:'#dc2626', cursor:'pointer' }}><Trash2 size={12}/></button>
                       </div>
                     </div>

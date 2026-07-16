@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { PullToRefresh } from '@/components/ui';
+import { PullToRefresh, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, Button } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { api, http, Client, Attendance } from '@/lib/api';
@@ -36,7 +36,6 @@ import {
   MessageSquare,
   MoreVertical,
   Plus,
-  RefreshCw,
   Scan,
   Search,
   Sparkles,
@@ -101,22 +100,43 @@ function buildWeeklyBars(records: Attendance[]): { day: string; pct: number }[] 
   }));
 }
 
-function buildAlerts(recordMap: Map<string | number, Attendance>, records: Attendance[], clients: Client[]): { type: string; title: string; desc: string; icon: React.ReactNode }[] {
-  const alerts: { type: string; title: string; desc: string; icon: React.ReactNode }[] = [];
+interface SmartAlert { type: string; title: string; desc: string; icon: React.ReactNode; statusFilter: StatusFilter; }
+
+function buildAlerts(recordMap: Map<string | number, Attendance>, records: Attendance[], clients: Client[]): SmartAlert[] {
+  const alerts: SmartAlert[] = [];
   const absent = clients.filter(c => !recordMap.has(c.id));
   if (absent.length > 0) {
-    alerts.push({ type: 'warn', title: `${absent.length} members absent today`, desc: 'No check-in recorded for these members.', icon: <AlertTriangle className="h-4 w-4" /> });
+    alerts.push({ type: 'warn', title: `${absent.length} members absent today`, desc: 'No check-in recorded for these members.', icon: <AlertTriangle className="h-4 w-4" />, statusFilter: 'unmarked' });
   }
   const late = records.filter(r => r.status === 'late');
   if (late.length > 0) {
     const names = late.slice(0, 3).map(r => r.ref_name).filter(Boolean).join(', ');
-    alerts.push({ type: 'amber', title: `${late.length} members arrived late`, desc: names ? `${names} checking in after 10 AM.` : 'Late check-ins detected.', icon: <ArrowDownLeft className="h-4 w-4" /> });
+    alerts.push({ type: 'amber', title: `${late.length} members arrived late`, desc: names ? `${names} checking in after 10 AM.` : 'Late check-ins detected.', icon: <ArrowDownLeft className="h-4 w-4" />, statusFilter: 'late' });
   }
   const perfect = clients.filter(c => recordMap.get(c.id)?.status === 'present');
   if (perfect.length > 0) {
-    alerts.push({ type: 'green', title: `${perfect.length} members marked present`, desc: 'On-time attendance recorded.', icon: <Sparkles className="h-4 w-4" /> });
+    alerts.push({ type: 'green', title: `${perfect.length} members marked present`, desc: 'On-time attendance recorded.', icon: <Sparkles className="h-4 w-4" />, statusFilter: 'present' });
   }
-  return alerts.length > 0 ? alerts : [{ type: 'info', title: 'All clear', desc: 'No attendance anomalies detected today.', icon: <Clock className="h-4 w-4" /> }];
+  return alerts.length > 0 ? alerts : [{ type: 'info', title: 'All clear', desc: 'No attendance anomalies detected today.', icon: <Clock className="h-4 w-4" />, statusFilter: 'all' }];
+}
+
+const PEAK_HOUR_BUCKETS = [
+  { label: '6–8 AM', startHour: 6, endHour: 8 },
+  { label: '8–10 AM', startHour: 8, endHour: 10 },
+  { label: '10 AM–12', startHour: 10, endHour: 12 },
+  { label: '4–6 PM', startHour: 16, endHour: 18 },
+  { label: '6–8 PM', startHour: 18, endHour: 20 },
+];
+
+function buildPeakHours(records: Attendance[], totalClients: number): { label: string; pct: number }[] {
+  const counts = PEAK_HOUR_BUCKETS.map(() => 0);
+  records.forEach(r => {
+    if (!r.check_in) return;
+    const hour = new Date(`1970-01-01T${r.check_in}`).getHours();
+    PEAK_HOUR_BUCKETS.forEach((b, i) => { if (hour >= b.startHour && hour < b.endHour) counts[i]++; });
+  });
+  const denom = totalClients || 1;
+  return PEAK_HOUR_BUCKETS.map((b, i) => ({ label: b.label, pct: Math.round((counts[i] / denom) * 100) }));
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -152,6 +172,7 @@ export default function AttendancePage() {
 function AttendanceContent() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const router  = useRouter();
   const today   = new Date().toISOString().split('T')[0];
 
   /* ── state ── */
@@ -173,7 +194,7 @@ function AttendanceContent() {
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('all');
   const [activeTab,     setActiveTab]     = useState<'members' | 'insights' | 'alerts'>('members');
   const [bioFocus,      setBioFocus]      = useState(false);
-  const [dirty,         setDirty]         = useState(false);
+  const [manualEntryOpen, setManualEntryOpen] = useState(false);
   const bioRef = useRef<HTMLInputElement>(null);
   const successTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const errorTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -214,7 +235,6 @@ function AttendanceContent() {
       const updated = await api.attendance.list({ date, type: 'client' });
       setRecords(updated);
       showSuccess(`Marked ${client.name} as ${status}`);
-      setDirty(true);
     } catch (e: unknown) {
       showError(e instanceof Error ? e.message : 'Failed to mark attendance');
     } finally {
@@ -281,7 +301,6 @@ function AttendanceContent() {
       const updated = await api.attendance.list({ date, type: 'client' });
       setRecords(updated);
       showSuccess(`${authResult.memberName || 'Member'} checked in via fingerprint`);
-      setDirty(true);
     } catch (e: unknown) {
       if (e instanceof DOMException && e.name === 'NotAllowedError') {
         showError('Biometric prompt cancelled — please try again');
@@ -304,7 +323,6 @@ function AttendanceContent() {
       setRecords(updated);
       showSuccess(res.message);
       setBioCode('');
-      setDirty(true);
     } catch (e: unknown) {
       showError((e instanceof Error ? e.message : null) || 'Biometric check-in failed');
     } finally {
@@ -339,7 +357,6 @@ function AttendanceContent() {
       const updated = await api.attendance.list({ date, type: 'client' });
       setRecords(updated);
       showSuccess(`Marked ${toMark.length} member${toMark.length > 1 ? 's' : ''} present`);
-      setDirty(true);
     } catch (e: unknown) {
       showError(e instanceof Error ? e.message : 'Failed to mark all present');
     }
@@ -367,6 +384,7 @@ function AttendanceContent() {
   const feedItems   = useMemo(() => buildFeedFromRecords(records, clients), [records, clients]);
   const weeklyBars  = useMemo(() => buildWeeklyBars(records), [records]);
   const smartAlerts = useMemo(() => buildAlerts(recordMap, records, clients), [recordMap, records, clients]);
+  const peakHours   = useMemo(() => buildPeakHours(records, clients.length), [records, clients]);
 
   const filtered = useMemo(() =>
     clients.filter((c) => {
@@ -405,6 +423,9 @@ function AttendanceContent() {
             date={date} setDate={setDate} today={today}
             attendanceRate={attendanceRate} summary={summary}
             onMarkAll={date === today ? markAllPresent : undefined}
+            onManualEntry={() => setManualEntryOpen(true)}
+            onExport={() => window.open(`/api/attendance?format=csv&date=${date}`, '_blank')}
+            onReports={() => router.push('/attendance/reports')}
           />
 
           {/* ── KPI CARDS ── */}
@@ -457,8 +478,14 @@ function AttendanceContent() {
                 date={date} today={today} onMarkAll={date === today ? markAllPresent : undefined}
               />
             )}
-            {activeTab === 'insights' && <InsightsPanel summary={summary} weeklyBars={weeklyBars} />}
-            {activeTab === 'alerts'   && <AlertsPanel alerts={smartAlerts} />}
+            {activeTab === 'insights' && <InsightsPanel summary={summary} weeklyBars={weeklyBars} peakHours={peakHours} />}
+            {activeTab === 'alerts'   && (
+              <AlertsPanel
+                alerts={smartAlerts}
+                onViewMembers={(f) => { setStatusFilter(f); setActiveTab('members'); }}
+                onSendReminder={() => router.push('/engagement/notifications')}
+              />
+            )}
           </div>
 
           {/* ── LIVE FEED ── */}
@@ -471,7 +498,16 @@ function AttendanceContent() {
         </PullToRefresh>
 
         {/* ── FOOTER BAR ── */}
-        <FooterBar dirty={dirty} setDirty={setDirty} onSync={loadData} />
+        <FooterBar onSync={loadData} onGenerateReport={() => router.push('/attendance/reports')} />
+
+        {/* ── MANUAL ENTRY MODAL ── */}
+        <ManualEntryModal
+          open={manualEntryOpen}
+          onOpenChange={setManualEntryOpen}
+          clients={clients}
+          date={date}
+          onSuccess={loadData}
+        />
       </div>
     </AppShell>
   );
@@ -480,10 +516,13 @@ function AttendanceContent() {
 /* ────────────────────────────────────────────────────────────────
    HERO
 ──────────────────────────────────────────────────────────────── */
-function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkAll }: {
+function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkAll, onManualEntry, onExport, onReports }: {
   date: string; setDate: (d: string) => void; today: string;
   attendanceRate: number; summary: { present: number; absent: number; late: number; unmarked: number; total: number };
   onMarkAll?: () => void;
+  onManualEntry: () => void;
+  onExport: () => void;
+  onReports: () => void;
 }) {
   return (
     <section className="relative overflow-hidden rounded-[32px] border border-black/[0.07] bg-[#f8fafc] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] sm:p-8 lg:p-10">
@@ -516,9 +555,9 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
               max={today}
               className="rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm text-[#111827] backdrop-blur-md transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black/10"
             />
-            <HeroBtn label="Manual Entry"    icon={<Plus className="h-4 w-4" />} light />
-            <HeroBtn label="Export"          icon={<Download className="h-4 w-4" />} light />
-            <HeroBtn label="Reports"         icon={<FileText className="h-4 w-4" />} light />
+            <HeroBtn label="Manual Entry"    icon={<Plus className="h-4 w-4" />} light onClick={onManualEntry} />
+            <HeroBtn label="Export"          icon={<Download className="h-4 w-4" />} light onClick={onExport} />
+            <HeroBtn label="Reports"         icon={<FileText className="h-4 w-4" />} light onClick={onReports} />
             {onMarkAll && (
               <HeroBtn label="Mark All Present" icon={<CheckCircle2 className="h-4 w-4" />} primary onClick={onMarkAll} />
             )}
@@ -961,7 +1000,7 @@ const AttendanceBtns = React.memo(function AttendanceBtns({ client, rec, saving,
 /* ────────────────────────────────────────────────────────────────
    INSIGHTS PANEL
 ──────────────────────────────────────────────────────────────── */
-function InsightsPanel({ summary, weeklyBars }: { summary: { present: number; absent: number; late: number; unmarked: number; total: number }; weeklyBars: { day: string; pct: number }[] }) {
+function InsightsPanel({ summary, weeklyBars, peakHours }: { summary: { present: number; absent: number; late: number; unmarked: number; total: number }; weeklyBars: { day: string; pct: number }[]; peakHours: { label: string; pct: number }[] }) {
   const bars = weeklyBars.length > 0 ? weeklyBars : [{ day: '—', pct: 0 }];
   const max = Math.max(...bars.map(b => b.pct), 1);
   return (
@@ -1005,15 +1044,15 @@ function InsightsPanel({ summary, weeklyBars }: { summary: { present: number; ab
           </div>
         </PremiumCard>
 
-        <PremiumCard title="Peak hours" subtitle="Studio occupancy">
+        <PremiumCard title="Peak hours" subtitle="Today's check-in distribution">
           <div className="space-y-2">
-            {[['6–8 AM', 78], ['8–10 AM', 95], ['10 AM–12', 62], ['4–6 PM', 88], ['6–8 PM', 72]].map(([t, v]) => (
-              <div key={String(t)} className="flex items-center gap-3">
-                <p className="w-20 shrink-0 text-xs text-zinc-500 dark:text-white/40">{t}</p>
+            {peakHours.map(({ label, pct }) => (
+              <div key={label} className="flex items-center gap-3">
+                <p className="w-20 shrink-0 text-xs text-zinc-500 dark:text-white/40">{label}</p>
                 <div className="flex-1 h-2 rounded-full bg-zinc-100 dark:bg-white/10">
-                  <div className="h-2 rounded-full bg-[linear-gradient(90deg,#F59E0B,#FBBF24)]" style={{ width: `${v}%` }} />
+                  <div className="h-2 rounded-full bg-[linear-gradient(90deg,#F59E0B,#FBBF24)]" style={{ width: `${Math.min(pct, 100)}%` }} />
                 </div>
-                <p className="w-8 text-right text-xs font-medium text-zinc-600 dark:text-white/55">{v}%</p>
+                <p className="w-8 text-right text-xs font-medium text-zinc-600 dark:text-white/55">{pct}%</p>
               </div>
             ))}
           </div>
@@ -1026,7 +1065,11 @@ function InsightsPanel({ summary, weeklyBars }: { summary: { present: number; ab
 /* ────────────────────────────────────────────────────────────────
    ALERTS PANEL
 ──────────────────────────────────────────────────────────────── */
-function AlertsPanel({ alerts }: { alerts: { type: string; title: string; desc: string; icon: React.ReactNode }[] }) {
+function AlertsPanel({ alerts, onViewMembers, onSendReminder }: {
+  alerts: SmartAlert[];
+  onViewMembers: (filter: StatusFilter) => void;
+  onSendReminder: () => void;
+}) {
   const COLORS: Record<string, string> = {
     warn:  'border-rose-400/30 bg-rose-500/8 dark:bg-rose-900/15',
     info:  'border-sky-400/30 bg-sky-500/8 dark:bg-sky-900/15',
@@ -1049,8 +1092,8 @@ function AlertsPanel({ alerts }: { alerts: { type: string; title: string; desc: 
               </div>
             </div>
             <div className="mt-4 flex gap-2">
-              <SmBtn label="View members" icon={<Eye className="h-3.5 w-3.5" />} />
-              <SmBtn label="Send reminder" icon={<Bell className="h-3.5 w-3.5" />} />
+              <SmBtn label="View members" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => onViewMembers(a.statusFilter)} />
+              <SmBtn label="Send reminder" icon={<Bell className="h-3.5 w-3.5" />} onClick={onSendReminder} />
             </div>
           </div>
         ))}
@@ -1130,25 +1173,163 @@ function QuickActionsPanel({ onMarkAll }: { onMarkAll?: () => void }) {
 /* ────────────────────────────────────────────────────────────────
    FOOTER BAR
 ──────────────────────────────────────────────────────────────── */
-function FooterBar({ dirty, setDirty, onSync }: { dirty: boolean; setDirty: (v: boolean) => void; onSync: () => void }) {
+function FooterBar({ onSync, onGenerateReport }: { onSync: () => void; onGenerateReport: () => void }) {
   return (
     <div className="sticky bottom-4 z-20 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,20,0.84),rgba(18,18,20,0.72))] px-4 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="flex items-center gap-3 text-white">
-          <span className={`h-2.5 w-2.5 rounded-full ${dirty ? 'bg-amber-400 shadow-[0_0_18px_rgba(251,191,36,0.8)]' : 'bg-emerald-400'}`} />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
           <div>
-            <p className="text-sm font-medium">{dirty ? 'Unsaved attendance changes' : 'All changes saved'}</p>
+            <p className="text-sm font-medium">All changes saved automatically</p>
             <p className="text-xs text-white/50">Sync updates attendance records across all devices.</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <HeroBtn label="Reset"           icon={<RefreshCw className="h-4 w-4" />}      onClick={() => setDirty(false)} compact />
-          <HeroBtn label="Sync Devices"    icon={<Wifi className="h-4 w-4" />}           onClick={() => { onSync(); setDirty(false); }} compact />
-          <HeroBtn label="Generate Report" icon={<FileText className="h-4 w-4" />}       compact />
-          <HeroBtn label="Save Attendance" icon={<CheckCircle2 className="h-4 w-4" />}   primary compact onClick={() => setDirty(false)} />
+          <HeroBtn label="Sync Devices"    icon={<Wifi className="h-4 w-4" />}           onClick={onSync} compact />
+          <HeroBtn label="Generate Report" icon={<FileText className="h-4 w-4" />}       onClick={onGenerateReport} compact />
         </div>
       </div>
     </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
+   MANUAL ENTRY MODAL
+──────────────────────────────────────────────────────────────── */
+function ManualEntryModal({ open, onOpenChange, clients, date, onSuccess }: {
+  open: boolean; onOpenChange: (v: boolean) => void;
+  clients: Client[]; date: string; onSuccess: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [entryDate, setEntryDate] = useState(date);
+  const [checkIn, setCheckIn] = useState('');
+  const [status, setStatus] = useState('present');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setQuery(''); setSelectedClient(null); setEntryDate(date);
+      setCheckIn(''); setStatus('present'); setNotes(''); setError('');
+    }
+  }, [open, date]);
+
+  const filteredClients = useMemo(() => {
+    if (!query) return clients.slice(0, 8);
+    return clients.filter(c => c.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+  }, [clients, query]);
+
+  async function handleSubmit() {
+    if (!selectedClient) { setError('Select a member'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      await api.attendance.mark({
+        type:         'client',
+        ref_id:       selectedClient.id,
+        ref_name:     selectedClient.name,
+        trainer_id:   selectedClient.trainer_id,
+        trainer_name: selectedClient.trainer_name,
+        date:         entryDate,
+        check_in:     checkIn || undefined,
+        status,
+        notes:        notes || undefined,
+      });
+      onSuccess();
+      onOpenChange(false);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to save attendance');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Manual Attendance Entry</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Member</label>
+            {selectedClient ? (
+              <div className="mt-1.5 flex items-center justify-between rounded-[12px] border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-white/10 dark:bg-white/5">
+                <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedClient.name}</span>
+                <button type="button" onClick={() => setSelectedClient(null)} className="text-xs text-zinc-500 hover:text-zinc-800 dark:text-white/40">Change</button>
+              </div>
+            ) : (
+              <>
+                <input
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Search member…"
+                  className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                />
+                <div className="mt-2 max-h-40 overflow-y-auto rounded-[12px] border border-zinc-100 dark:border-white/5">
+                  {filteredClients.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-zinc-400">No members found</p>
+                  ) : filteredClients.map(c => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedClient(c)}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-white/5"
+                    >
+                      <span className="text-zinc-800 dark:text-white/80">{c.name}</span>
+                      <span className="text-xs text-zinc-400">{c.mobile || ''}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Date</label>
+              <input type="date" value={entryDate} max={date} onChange={e => setEntryDate(e.target.value)}
+                className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Check-in time</label>
+              <input type="time" value={checkIn} onChange={e => setCheckIn(e.target.value)}
+                className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Status</label>
+            <div className="mt-1.5 flex gap-2">
+              {(['present', 'late', 'absent'] as const).map(s => (
+                <button key={s} type="button" onClick={() => setStatus(s)}
+                  className={`flex-1 rounded-[10px] border px-3 py-2 text-xs font-medium capitalize transition ${
+                    status === s
+                      ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300'
+                      : 'border-zinc-200 text-zinc-600 dark:border-white/10 dark:text-white/50'
+                  }`}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-zinc-600 dark:text-white/50">Notes (optional)</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+              className="mt-1.5 w-full rounded-[12px] border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400 dark:border-white/10 dark:bg-white/5 dark:text-white" />
+          </div>
+
+          {error && <p className="text-xs text-rose-600">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} loading={saving} disabled={!selectedClient}>Save Entry</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
