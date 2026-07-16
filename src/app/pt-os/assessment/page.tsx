@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, EmptyState } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
@@ -117,6 +117,28 @@ function AssessmentContent() {
 }
 
 /* ─────────────────────────────────────────────────────── CLIENT PICKER */
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  'linear-gradient(135deg, #10b981, #34d399)',
+  'linear-gradient(135deg, #f59e0b, #fbbf24)',
+  'linear-gradient(135deg, #ec4899, #f472b6)',
+  'linear-gradient(135deg, #06b6d4, #22d3ee)',
+  'linear-gradient(135deg, #ef4444, #f87171)',
+];
+
+function ClientAvatar({ name }: { name: string }) {
+  const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_GRADIENTS.length;
+  const initials = name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  return (
+    <div
+      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-[700] text-white"
+      style={{ background: AVATAR_GRADIENTS[idx] }}
+    >
+      {initials || '?'}
+    </div>
+  );
+}
+
 function ClientPicker() {
   const router = useRouter();
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -136,49 +158,87 @@ function ClientPicker() {
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-            <ClipboardCheck size={16} style={{ color: 'var(--text-muted)' }} />
+        className="relative overflow-hidden rounded-[28px] p-8 sm:p-10 mb-6"
+        style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+        <div className="relative flex items-center gap-4">
+          <div
+            className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[16px]"
+            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
+          >
+            <ClipboardCheck size={24} color="#fff" />
           </div>
-          <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Fitness Testing</span>
+          <div>
+            <h1 className="text-[30px] sm:text-[38px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
+              Scientific Baseline Assessment
+            </h1>
+            <p className="mt-1.5 max-w-xl text-[14px]" style={{ color: 'var(--text-muted)' }}>
+              Select a client to begin or review their 7-step fitness assessment.
+            </p>
+          </div>
         </div>
-        <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-          Scientific Baseline Assessment
-        </h1>
-        <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'var(--text-muted)' }}>
-          Select a client to begin or review their 7-step fitness assessment.
-        </p>
       </m.div>
 
-      <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="relative mb-3">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            type="text" placeholder="Search clients..." value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 rounded-[10px] text-[13px] outline-none"
-            style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
-          />
+      <div className="rounded-[22px] p-5 sm:p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="relative min-w-[220px] flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+            <input
+              type="text" placeholder="Search clients..." value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            />
+          </div>
+          {!loading && !loadError && (
+            <span className="flex-shrink-0 text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
+              {filtered.length} {filtered.length === 1 ? 'client' : 'clients'}
+            </span>
+          )}
         </div>
-        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" /></div>}
-        {loadError && <p className="text-center py-8 text-[13px]" style={{ color: 'var(--text-muted)' }}>Could not load clients.</p>}
-        {!loading && !loadError && (
-          <div className="flex flex-wrap gap-2 max-h-[360px] overflow-y-auto">
+
+        {loading && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex animate-pulse items-center gap-3 rounded-[16px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
+                <div className="h-10 w-10 rounded-full" style={{ background: 'var(--border)' }} />
+                <div className="h-3 w-24 rounded-full" style={{ background: 'var(--border)' }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {loadError && (
+          <EmptyState
+            icon={<AlertCircle size={20} />}
+            title="Could not load clients"
+            description="Something went wrong while fetching your client list."
+          />
+        )}
+
+        {!loading && !loadError && filtered.length === 0 && (
+          <EmptyState
+            icon={<Users size={20} />}
+            title="No clients found"
+            description={search ? `No clients match "${search}".` : 'Add a client to get started.'}
+          />
+        )}
+
+        {!loading && !loadError && filtered.length > 0 && (
+          <div className="grid max-h-[440px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => (
               <button
                 key={c.id}
                 onClick={() => router.push(`/pt-os/assessment?client_id=${c.id}`)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-[13px] font-[600] transition-all"
-                style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#334155' }}
+                className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
               >
-                <Users size={13} /> {c.name}
+                <ClientAvatar name={c.name} />
+                <span className="flex-1 truncate text-[13.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+                <ArrowRight size={14} className="flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: 'var(--text-disabled)' }} />
               </button>
             ))}
-            {filtered.length === 0 && <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>No clients found.</p>}
           </div>
         )}
       </div>
