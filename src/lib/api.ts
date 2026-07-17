@@ -1042,6 +1042,10 @@ export const api = {
 
   // ── Settings ──────────────────────────────────────────────
   settings: {
+    /** All key-value settings (system_settings table) */
+    getAll: () =>
+      http<{ settings: Record<string, unknown> }>('/api/settings'),
+
     /** Full studio config + branches */
     getStudio: () =>
       http<{ settings: Record<string, unknown>; branches: unknown[] }>('/api/settings/studio'),

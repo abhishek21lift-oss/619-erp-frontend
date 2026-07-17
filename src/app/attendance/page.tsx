@@ -240,7 +240,6 @@ function AttendanceContent() {
     } finally {
       setSaving(null);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
   /* ── biometric availability ── */
@@ -1175,7 +1174,7 @@ function QuickActionsPanel({ onMarkAll }: { onMarkAll?: () => void }) {
 ──────────────────────────────────────────────────────────────── */
 function FooterBar({ onSync, onGenerateReport }: { onSync: () => void; onGenerateReport: () => void }) {
   return (
-    <div className="sticky bottom-4 z-20 px-4 sm:px-6 lg:px-8">
+    <div className="sticky above-bottom-nav z-20 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,20,0.84),rgba(18,18,20,0.72))] px-4 py-4 shadow-[0_18px_60px_rgba(0,0,0,0.38)] backdrop-blur-2xl sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="flex items-center gap-3 text-white">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />

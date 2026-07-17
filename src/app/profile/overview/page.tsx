@@ -214,7 +214,7 @@ export default function ProfileOverviewPage() {
       {/* Sticky save bar */}
       {isDirty && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl
+          className="fixed above-bottom-nav left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl
             bg-[#141414]/90 border border-white/10 backdrop-blur-xl shadow-2xl"
           style={{ animation: 'slideUp 0.28s cubic-bezier(0.16,1,0.3,1)' }}
         >

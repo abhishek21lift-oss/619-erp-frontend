@@ -135,7 +135,7 @@ function Inner() {
       <div style={{ padding: '24px 32px' }}>
         {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 16px', fontSize: 13, color: '#ef4444', marginBottom: 20 }}>{error}</div>}
 
-        <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+        <m.div variants={containerVariants} initial="hidden" animate="visible" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 24 }}>
           <KpiCard label="This Month Revenue" value={fmtAmt(thisMonthRevenue)} icon={<DollarSign size={16} />} gradient="#eff6ff" />
           <KpiCard label="Avg Revenue / Trainer" value={fmtAmt(avgRevenuePerTrainer)} icon={<Users size={16} />} gradient="#f0fdf4" />
           <KpiCard label="Pending Collections" value={fmtAmt(pendingCollections)} icon={<Clock size={16} />} gradient="#fffbeb" />

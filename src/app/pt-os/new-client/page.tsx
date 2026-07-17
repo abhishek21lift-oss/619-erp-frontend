@@ -395,7 +395,7 @@ function NewClientForm() {
     <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
 
       {/* ── PAGE HEADER ── */}
-      <div className="sticky top-0 z-40" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
+      <div className="sticky below-topbar z-40" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[13px]" style={{ background: '#0f172a' }}>

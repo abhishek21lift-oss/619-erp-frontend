@@ -536,7 +536,7 @@ export default function StudioSettingsPage() {
             <m.div
               initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
-              className="fixed bottom-4 left-1/2 z-30 -translate-x-1/2"
+              className="fixed above-bottom-nav left-1/2 z-50 -translate-x-1/2"
               style={{ width: 'min(480px, calc(100vw - 32px))' }}>
               <div className="rounded-[18px] px-5 py-3.5 flex items-center justify-between gap-4"
                 style={{

@@ -379,7 +379,7 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-          className="fixed bottom-6 left-1/2 z-50 flex items-center gap-3 rounded-2xl px-5 py-3"
+          className="fixed above-bottom-nav left-1/2 z-50 flex items-center gap-3 rounded-2xl px-5 py-3"
           style={{
             transform: 'translateX(-50%)',
             background: '#fff',

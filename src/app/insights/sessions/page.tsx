@@ -62,7 +62,18 @@ function Inner() {
         <div className="page-content fade-up">
           {error && <div className="alert alert-error">{error}</div>}
 
-          <div className="kpi-grid mb-3" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>From</label>
+            <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)}
+              className="rounded-[10px] px-3 py-1.5 text-[13px] outline-none"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+            <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>To</label>
+            <input type="date" value={to} min={from} max={today} onChange={(e) => setTo(e.target.value)}
+              className="rounded-[10px] px-3 py-1.5 text-[13px] outline-none"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+          </div>
+
+          <div className="kpi-grid mb-3">
             <Stat label="Total Check-ins" value={total} color="var(--brand)" />
             <Stat label="Avg Per Day" value={avg} color="var(--info)" />
             <Stat label="Busiest Day" value={busiest.count > 0 ? busiest.day : '—'} color="var(--success)" />

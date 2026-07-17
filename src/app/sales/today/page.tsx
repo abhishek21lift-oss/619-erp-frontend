@@ -10,10 +10,21 @@ import {
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { PullToRefresh } from '@/components/ui';
-import { useDashboardData } from '@/lib/hooks/useDashboardData';
+import { api, Payment } from '@/lib/api';
 
 function fmtINR(n: number) {
   return '₹' + n.toLocaleString('en-IN');
+}
+
+// Ledger stores methods uppercase (CASH/UPI/CARD/NEFT/BANK) — map to the
+// display labels this page's icon/colour tables are keyed on.
+function displayMethod(raw?: string): string {
+  const m = (raw || '').toUpperCase();
+  if (m === 'UPI') return 'UPI';
+  if (m === 'CASH') return 'Cash';
+  if (m === 'CARD') return 'Card';
+  if (m === 'NEFT' || m === 'BANK') return 'Bank';
+  return raw || 'Other';
 }
 
 const METHOD_ICONS: Record<string, React.ReactNode> = {
@@ -40,19 +51,40 @@ export default function TodaysSalePage() {
 
 function Inner() {
   const router = useRouter();
-  const { data, loading, refresh } = useDashboardData('Today');
-  const r = data?.revenue;
-  const payments = data?.recent_payments ?? [];
+  const [rows, setRows] = React.useState<Payment[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  const totalToday = r?.today ?? 0;
+  const refresh = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const list = await api.payments.list({ from: today, to: today });
+      setRows(Array.isArray(list) ? list : []);
+    } catch {
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { refresh(); }, [refresh]);
+
+  const payments = React.useMemo(() => rows.map(p => ({
+    id: p.id,
+    client_name: p.client_name,
+    amount: p.amount,
+    method: displayMethod(p.method),
+    date: p.date ? String(p.date).slice(0, 10) : '',
+  })), [rows]);
+
+  const totalToday = React.useMemo(() => payments.reduce((s, p) => s + p.amount, 0), [payments]);
   const methodTotals = React.useMemo(() => {
     const map: Record<string, number> = {};
-    for (const p of data?.recent_payments ?? []) {
-      const method = p.method || 'Other';
-      map[method] = (map[method] || 0) + p.amount;
+    for (const p of payments) {
+      map[p.method] = (map[p.method] || 0) + p.amount;
     }
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
-  }, [data]);
+  }, [payments]);
 
   return (
     <AppShell headerLeft={

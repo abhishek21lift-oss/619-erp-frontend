@@ -302,6 +302,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
           style={{
             isolation: 'isolate',
             transition: 'padding-left 300ms cubic-bezier(0.16,1,0.3,1)',
+            // Live top-bar height for page-level sticky headers (.below-topbar):
+            // tracks the expanded/compact animation so stuck headers never
+            // slide under (or paint over) the fixed shell header.
+            ['--topbar-h' as string]: `calc(${topBar === 'compact' ? 32 : 46}px + env(safe-area-inset-top, 0px))`,
           }}
         >
           {/* Scoped blur overlay — background stays in place, only blurs + dims */}

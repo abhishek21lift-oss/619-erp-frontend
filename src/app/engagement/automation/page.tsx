@@ -104,7 +104,7 @@ function AutoContent() {
         {/* ── KPI STATS ── */}
         {(logStats.data || logStats.loading) && (
           <m.div variants={containerVariants} initial="hidden" animate="visible"
-            style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:28 }}>
+            style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:14, marginBottom:28 }}>
             {KPIS.map((k,i)=>{
               const keys = ['total','sent','delivered','read','failed'];
               const vals = keys.map(kk => (logStats.data as any)?.[kk] || 0);

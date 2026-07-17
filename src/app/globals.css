@@ -405,6 +405,25 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   SHELL OVERLAP HELPERS
+   .below-topbar — offset for page-level `position: sticky` headers so
+   they stick just below the fixed shell top bar (--topbar-h is set live
+   by AppShell and tracks the expanded/compact height + safe area).
+   .above-bottom-nav — bottom offset for floating footers / FABs / toasts
+   so they clear the 60px mobile bottom nav; drops closer to the viewport
+   edge on desktop where the nav is hidden.
+   ════════════════════════════════════════════════════════════════════ */
+.below-topbar {
+  top: var(--topbar-h, calc(46px + env(safe-area-inset-top, 0px)));
+}
+.above-bottom-nav {
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px);
+}
+@media (min-width: 1024px) {
+  .above-bottom-nav { bottom: 24px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
    SIDEBAR  —  Premium Obsidian Edition
    ════════════════════════════════════════════════════════════════════ */
 .sidebar {
@@ -1908,3 +1927,155 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   .ck-cam-aspect { aspect-ratio: 3/4 !important; }
   .ck-action-btn { padding: 12px 16px !important; font-size: 13px !important; min-height: 44px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   LEGACY PAGE SCAFFOLD — used by /trainer/dashboard, /insights/sessions
+   and /operations/leaderboard. These classes were referenced by those
+   pages but never defined, leaving them completely unstyled.
+   ════════════════════════════════════════════════════════════════════ */
+.page-main {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.page-content { display: block; }
+.fade-up { animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+/* Alias — several pages read var(--muted); the token was renamed to
+   --text-muted in the design system but the old name was never mapped. */
+:root { --muted: var(--text-muted); }
+
+/* ════════════════════════════════════════════════════════════════════
+   MEMBER PORTAL SHELL — /member/dashboard and /member/classes render a
+   standalone mobile-first portal (own header + bottom nav, no AppShell).
+   The classes were referenced but never defined.
+   ════════════════════════════════════════════════════════════════════ */
+.member-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-subtle);
+}
+.member-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.member-header-inner {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.member-main {
+  flex: 1;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 16px calc(76px + env(safe-area-inset-bottom, 0px));
+}
+.member-hero {
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), #1D4ED8);
+  box-shadow: 0 8px 28px rgba(59, 130, 246, 0.25);
+}
+.member-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.member-bottom-nav-inner {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+}
+.member-bottom-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.member-bottom-btn.is-active { color: var(--brand); }
+.member-bottom-btn-icon {
+  display: flex;
+  height: 22px;
+  width: 22px;
+  align-items: center;
+  justify-content: center;
+}
+.user-avatar {
+  height: 36px;
+  width: 36px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+}
+.badge-frozen {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563EB;
+}
+
+/* Missing companions for the legacy scaffold pages */
+.tabular { font-variant-numeric: tabular-nums; }
+.alert-error { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); }
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+/* .progress-fill — the leaderboard's bar-fill class was never defined,
+   leaving the Activity column invisible. Mirrors .progress-bar. */
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gradient-brand);
+  transition: width var(--dur-slow) var(--ease-out);
+}
+.progress-fill.red {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.35);
+}
+:root { --bg-4: var(--bg-hover); }

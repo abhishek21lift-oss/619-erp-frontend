@@ -523,7 +523,7 @@ export default function AddCoachPage() {
           background: 'linear-gradient(160deg, #ede9fe 0%, #e0f2fe 32%, #dcfce7 62%, #fef3c7 100%)',
         }}>
 
-          <div className="sticky top-0 z-30"
+          <div className="sticky below-topbar z-30"
             style={{
               background: 'rgba(255,255,255,0.82)',
               backdropFilter: 'blur(24px)',

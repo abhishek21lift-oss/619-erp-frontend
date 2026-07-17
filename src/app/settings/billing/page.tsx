@@ -64,12 +64,28 @@ export default function BillingSettingsPage() {
   const [error, setError] = React.useState('');
 
   React.useEffect(() => {
-    // No backend endpoint returns payment_method_* keys today - all payment
-    // methods default to enabled until a dedicated settings read exists.
-    const initial: Record<string, boolean> = {};
-    for (const pm of PAYMENT_METHODS) initial[pm.key] = true;
-    setToggles(initial);
-    setLoading(false);
+    let alive = true;
+    api.settings.getAll()
+      .then((res) => {
+        if (!alive) return;
+        const stored = res?.settings ?? {};
+        const initial: Record<string, boolean> = {};
+        for (const pm of PAYMENT_METHODS) {
+          const v = stored[pm.key];
+          // Absent key = method enabled by default; stored values may arrive
+          // as booleans (typed rows) or 'true'/'false' strings (untyped rows).
+          initial[pm.key] = v === undefined ? true : v === true || v === 'true';
+        }
+        setToggles(initial);
+      })
+      .catch(() => {
+        if (!alive) return;
+        const initial: Record<string, boolean> = {};
+        for (const pm of PAYMENT_METHODS) initial[pm.key] = true;
+        setToggles(initial);
+      })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, []);
 
   async function handleSave() {

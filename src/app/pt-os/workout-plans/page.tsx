@@ -640,7 +640,7 @@ function Inner() {
         onClick={() => setAiPanelOpen(true)}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.96 }}
-        style={{ position: 'fixed', bottom: 28, right: 28, width: 52, height: 52, borderRadius: 16, border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 24px rgba(99,102,241,0.45)', zIndex: 100 }}
+        className="above-bottom-nav" style={{ position: 'fixed', right: 28, width: 52, height: 52, borderRadius: 16, border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 24px rgba(99,102,241,0.45)', zIndex: 100 }}
         title="Open AI Coach"
       >
         <Sparkles size={20} />

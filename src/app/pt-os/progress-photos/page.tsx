@@ -343,7 +343,7 @@ function PhotoStudio({ clientId }: PhotoStudioProps) {
       )}
 
       {uploading && (
-        <div className="fixed bottom-6 right-6 flex items-center gap-2 rounded-[12px] px-4 py-3 shadow-lg" style={{ background: '#0f172a', color: '#fff' }}>
+        <div className="fixed above-bottom-nav right-6 z-50 flex items-center gap-2 rounded-[12px] px-4 py-3 shadow-lg" style={{ background: '#0f172a', color: '#fff' }}>
           <Loader2 size={14} className="animate-spin" /> Saving photo...
         </div>
       )}

@@ -100,7 +100,7 @@ function CampaignContent() {
 
         {/* ── KPI CARDS ── */}
         <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 28 }}>
           {KPIS.map((k, i) => (
             <m.div key={k.label} variants={itemVariants}
               style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '22px 24px', background: k.bg, border: `1px solid ${k.color}22`, boxShadow: 'var(--shadow-xs)', cursor: 'default' }}>
@@ -197,7 +197,7 @@ function CampaignContent() {
                       </div>
                     )}
                     {c.sent > 0 && (
-                      <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+                      <div style={{ paddingTop: 12, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
                         {[
                           { label: 'Sent', value: c.sent, color: 'var(--text-muted)' },
                           { label: 'Opened', value: c.opened, color: '#3b82f6' },
