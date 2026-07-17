@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Apple, Loader2, ChevronDown, ChevronUp, Sparkles, RotateCcw, Droplets, ShoppingCart, Pill, Utensils } from 'lucide-react';
 import { m, type Variants } from 'framer-motion';
 import { api } from '@/lib/api';
@@ -8,9 +8,10 @@ import type { AiDietPlan, AiDietMeal } from '@/lib/api';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
-const ACCENT = '#4ADE80';
-const ACCENT_DIM = 'rgba(74,222,128,0.12)';
-const ACCENT_GLOW = 'rgba(74,222,128,0.25)';
+const ACCENT = '#16A34A';
+const ACCENT_SOFT = '#4ADE80';
+const ACCENT_DIM = 'rgba(22,163,74,0.10)';
+const ACCENT_GRADIENT = `linear-gradient(135deg, ${ACCENT_SOFT}, ${ACCENT})`;
 
 const ACTIVITY_LEVELS = ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'];
 const GOALS = ['weight_loss', 'muscle_gain', 'maintenance', 'recomposition'];
@@ -20,8 +21,17 @@ const labelMap: Record<string, string> = {
   sedentary: 'Sedentary (desk job)', lightly_active: 'Lightly Active', moderately_active: 'Moderately Active',
   very_active: 'Very Active', extra_active: 'Extra Active (athlete)',
   weight_loss: 'Weight Loss', muscle_gain: 'Muscle Gain', maintenance: 'Maintenance', recomposition: 'Body Recomposition',
-  budget: 'Budget Friendly', moderate: 'Moderate', premium: 'Premium / Flexible',
+  budget: 'Budget Friendly', moderate: 'Moderate', premium: 'Premium',
+  male: 'Male', female: 'Female', other: 'Other',
 };
+
+const LOADING_STEPS = [
+  'Analysing your profile…',
+  'Calculating your calorie target…',
+  'Balancing protein, carbs and fat…',
+  'Building your meal schedule…',
+  'Writing your grocery list…',
+];
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -31,63 +41,94 @@ const fadeUp: Variants = {
   }),
 };
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 14,
-  background: 'var(--bg-card)', border: '1px solid #d1d5db',
-  color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 600, color: 'var(--text-muted)',
-  letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6, display: 'block',
-};
-
-function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
-  const [open, setOpen] = useState(false);
+/* ─── Form atoms ─────────────────────────────────────────────────────────── */
+function Field({ label, required, children, span }: { label: string; required?: boolean; children: React.ReactNode; span?: boolean }) {
   return (
-    <m.div variants={fadeUp} initial="hidden" animate="show" custom={index} style={{
-      borderRadius: 16, overflow: 'hidden',
-      border: '1px solid var(--border)',
-      background: 'var(--bg-card)',
-    }}>
-      <button onClick={() => setOpen(!open)} style={{
-        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 20px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
-      }}>
-        <div>
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>{meal.name}</span>
-          <span style={{ marginLeft: 10, fontSize: 12, color: 'var(--text-disabled)' }}>{meal.time}</span>
+    <div style={span ? { gridColumn: '1 / -1' } : undefined}>
+      <label className="mb-1.5 block text-[11px] font-[700] uppercase tracking-[0.06em]" style={{ color: 'var(--text-muted)' }}>
+        {label}{required && <span style={{ color: ACCENT }}> *</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputCls = 'w-full rounded-[12px] px-3.5 py-2.5 text-[14px] outline-none transition-colors focus:border-green-500';
+const inputStyle: React.CSSProperties = {
+  background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)',
+};
+
+function PillGroup({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => {
+        const active = value === opt;
+        return (
+          <button
+            key={opt} type="button" onClick={() => onChange(opt)}
+            className="rounded-full px-3.5 py-2 text-[12.5px] font-[650] transition-all"
+            style={active
+              ? { background: ACCENT_GRADIENT, color: '#fff', border: '1px solid transparent', boxShadow: '0 4px 14px rgba(22,163,74,0.35)' }
+              : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+          >
+            {labelMap[opt] ?? opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── Result atoms ───────────────────────────────────────────────────────── */
+function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
+  const [open, setOpen] = useState(index === 0);
+  return (
+    <m.div variants={fadeUp} initial="hidden" animate="show" custom={index}
+      className="overflow-hidden rounded-[18px] transition-shadow hover:shadow-[0_8px_24px_rgba(15,23,42,0.07)]"
+      style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+      <button onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[11px]"
+            style={{ background: open ? ACCENT_GRADIENT : ACCENT_DIM }}>
+            <Utensils size={15} color={open ? '#fff' : ACCENT} />
+          </span>
+          <div className="min-w-0">
+            <span className="block truncate text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>{meal.name}</span>
+            {meal.time && <span className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>{meal.time}</span>}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 12, color: ACCENT, background: ACCENT_DIM, padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
+        <div className="flex flex-shrink-0 items-center gap-2.5">
+          <span className="rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: ACCENT_DIM, color: ACCENT }}>
             {meal.calories} kcal
           </span>
-          {open ? <ChevronUp size={16} color="#9ca3af" /> : <ChevronDown size={16} color="#9ca3af" />}
+          {open ? <ChevronUp size={16} style={{ color: 'var(--text-disabled)' }} /> : <ChevronDown size={16} style={{ color: 'var(--text-disabled)' }} />}
         </div>
       </button>
       {open && (
-        <div style={{ padding: '0 16px 16px' }}>
-          <div style={{ display: 'flex', gap: 0, marginBottom: 12, borderRadius: 10, background: ACCENT_DIM, overflow: 'hidden' }}>
-            {[{ label: 'Protein', value: `${meal.protein_g}g` }, { label: 'Carbs', value: `${meal.carbs_g}g` }, { label: 'Fat', value: `${meal.fat_g}g` }].map((m, i) => (
-              <div key={m.label} style={{ flex: 1, textAlign: 'center', padding: '10px 8px', borderRight: i < 2 ? '1px solid rgba(74,222,128,0.15)' : 'none' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: ACCENT }}>{m.value}</div>
-                <div style={{ fontSize: 10, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.label}</div>
+        <div className="px-4 pb-4">
+          <div className="mb-3 grid grid-cols-3 overflow-hidden rounded-[12px]" style={{ background: ACCENT_DIM }}>
+            {[{ label: 'Protein', value: `${meal.protein_g}g` }, { label: 'Carbs', value: `${meal.carbs_g}g` }, { label: 'Fat', value: `${meal.fat_g}g` }].map((mac, i) => (
+              <div key={mac.label} className="px-2 py-2.5 text-center"
+                style={{ borderRight: i < 2 ? '1px solid rgba(22,163,74,0.15)' : 'none' }}>
+                <div className="text-[15px] font-[750]" style={{ color: ACCENT }}>{mac.value}</div>
+                <div className="text-[9.5px] font-[700] uppercase tracking-[0.06em]" style={{ color: '#15803d' }}>{mac.label}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="flex flex-col">
             {meal.foods?.map((food, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 4px',
-                borderBottom: i < (meal.foods?.length ?? 0) - 1 ? '1px solid #f3f4f6' : 'none',
-              }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{food.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 2 }}>{food.quantity}</div>
+              <div key={i} className="flex items-center justify-between gap-3 py-2.5"
+                style={{ borderBottom: i < (meal.foods?.length ?? 0) - 1 ? '1px solid var(--border)' : 'none' }}>
+                <div className="min-w-0">
+                  <div className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>{food.name}</div>
+                  <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>{food.quantity}</div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{food.calories} kcal</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-disabled)', marginTop: 2 }}>P:{food.protein_g}g C:{food.carbs_g}g F:{food.fat_g}g</div>
+                <div className="flex-shrink-0 text-right">
+                  <div className="text-[13px] font-[650]" style={{ color: 'var(--text-secondary)' }}>{food.calories} kcal</div>
+                  <div className="mt-0.5 text-[11px] tabular-nums" style={{ color: 'var(--text-disabled)' }}>
+                    P {food.protein_g} · C {food.carbs_g} · F {food.fat_g}
+                  </div>
                 </div>
               </div>
             ))}
@@ -98,6 +139,7 @@ function MealCard({ meal, index }: { meal: AiDietMeal; index: number }) {
   );
 }
 
+/* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function DietGeneratorPage() {
   const [form, setForm] = useState({
     age: '', gender: 'male', weight_kg: '', height_cm: '',
@@ -105,11 +147,18 @@ export default function DietGeneratorPage() {
     dietary_preferences: '', allergies: '', budget: 'moderate', meal_frequency: '4',
   });
   const [loading, setLoading] = useState(false);
+  const [loadStep, setLoadStep] = useState(0);
   const [plan, setPlan] = useState<AiDietPlan | null>(null);
   const [meta, setMeta] = useState<{ model?: string; tier?: string; used_fallback?: boolean } | null>(null);
   const [error, setError] = useState('');
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  useEffect(() => {
+    if (!loading) { setLoadStep(0); return; }
+    const t = setInterval(() => setLoadStep((s) => (s + 1) % LOADING_STEPS.length), 2600);
+    return () => clearInterval(t);
+  }, [loading]);
 
   const handleGenerate = async () => {
     if (!form.age || !form.weight_kg || !form.height_cm) { setError('Age, weight and height are required.'); return; }
@@ -132,195 +181,185 @@ export default function DietGeneratorPage() {
 
   return (
     <Guard>
-      <AppShell title="AI Diet Generator">
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 80px' }}>
-          {/* Hero */}
-          <m.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{ marginBottom: 40 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 16, flexShrink: 0,
-                background: '#F0FDF4',
-                border: '1px solid #BBF7D0',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Apple size={24} color={ACCENT} />
+      <AppShell>
+        <div className="mx-auto w-full max-w-4xl px-4 pb-20 pt-6 sm:px-6">
+
+          {/* ── Hero ── */}
+          <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
+            className="relative mb-6 overflow-hidden rounded-[28px] p-7 sm:p-9"
+            style={{ background: 'linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+            <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full opacity-60 blur-3xl"
+              style={{ background: 'rgba(74,222,128,0.35)' }} />
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[16px]"
+                style={{ background: ACCENT_GRADIENT, boxShadow: '0 8px 24px rgba(22,163,74,0.35)' }}>
+                <Apple size={24} color="#fff" />
               </div>
               <div>
-                <h1 style={{
-                  fontSize: 28, fontWeight: 800, margin: 0,
-                  color: 'var(--text-primary)',
-                }}>AI Diet Generator</h1>
-                <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--text-muted)' }}>
-                  Precision nutrition tailored to your metabolism, goals, and lifestyle
+                <h1 className="text-[26px] font-[860] leading-tight tracking-[-0.03em] sm:text-[32px]" style={{ color: 'var(--text-primary)' }}>
+                  AI Diet Generator
+                </h1>
+                <p className="mt-1 max-w-xl text-[13.5px] sm:text-[14px]" style={{ color: 'var(--text-muted)' }}>
+                  Precision nutrition tailored to your metabolism, goals, and lifestyle.
                 </p>
               </div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {['Calorie Calibrated', 'Macro Balanced', 'Allergen-Safe', 'Grocery List Included', 'Supplement Guide'].map((p) => (
-                <span key={p} style={{
-                  fontSize: 12, fontWeight: 500, padding: '5px 12px', borderRadius: 20,
-                  background: ACCENT_DIM, color: ACCENT, border: '1px solid rgba(74,222,128,0.2)',
-                }}>{p}</span>
+            <div className="relative mt-5 flex flex-wrap gap-2">
+              {['Calorie Calibrated', 'Macro Balanced', 'Allergen-Safe', 'Grocery List', 'Supplement Guide'].map((p) => (
+                <span key={p} className="rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
+                  style={{ background: 'rgba(255,255,255,0.75)', color: ACCENT, border: '1px solid rgba(22,163,74,0.2)' }}>
+                  {p}
+                </span>
               ))}
             </div>
           </m.div>
 
-          {/* Form */}
-          <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
-            borderRadius: 24, padding: '28px',
-            background: 'var(--bg-card)', border: '1px solid var(--border)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-            marginBottom: 32,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: ACCENT_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* ── Form ── */}
+          <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
+            className="mb-8 rounded-[22px] p-5 sm:p-7"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-[11px]" style={{ background: ACCENT_DIM }}>
                 <Utensils size={16} color={ACCENT} />
               </div>
-              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 15 }}>Your Profile & Preferences</span>
+              <div>
+                <div className="text-[15px] font-[750]" style={{ color: 'var(--text-primary)' }}>Your Profile & Preferences</div>
+                <div className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>Calories and macros are calculated from these</div>
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-              <div>
-                <label style={labelStyle}>Age *</label>
-                <input type="number" style={inputStyle} placeholder="e.g. 28" value={form.age} onChange={(e) => set('age', e.target.value)} />
-              </div>
-              <div>
-                <label style={labelStyle}>Gender</label>
-                <select style={inputStyle} value={form.gender} onChange={(e) => set('gender', e.target.value)}>
-                  <option value="male">Male</option><option value="female">Female</option><option value="other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Weight (kg) *</label>
-                <input type="number" style={inputStyle} placeholder="e.g. 75" value={form.weight_kg} onChange={(e) => set('weight_kg', e.target.value)} />
-              </div>
-              <div>
-                <label style={labelStyle}>Height (cm) *</label>
-                <input type="number" style={inputStyle} placeholder="e.g. 175" value={form.height_cm} onChange={(e) => set('height_cm', e.target.value)} />
-              </div>
-              <div>
-                <label style={labelStyle}>Activity Level</label>
-                <select style={inputStyle} value={form.activity_level} onChange={(e) => set('activity_level', e.target.value)}>
-                  {ACTIVITY_LEVELS.map((a) => <option key={a} value={a}>{labelMap[a]}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Goal</label>
-                <select style={inputStyle} value={form.goal} onChange={(e) => set('goal', e.target.value)}>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <Field label="Age" required>
+                <input type="number" inputMode="numeric" className={inputCls} style={inputStyle} placeholder="28"
+                  value={form.age} onChange={(e) => set('age', e.target.value)} />
+              </Field>
+              <Field label="Weight (kg)" required>
+                <input type="number" inputMode="decimal" className={inputCls} style={inputStyle} placeholder="75"
+                  value={form.weight_kg} onChange={(e) => set('weight_kg', e.target.value)} />
+              </Field>
+              <Field label="Height (cm)" required>
+                <input type="number" inputMode="decimal" className={inputCls} style={inputStyle} placeholder="175"
+                  value={form.height_cm} onChange={(e) => set('height_cm', e.target.value)} />
+              </Field>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Field label="Gender">
+                <PillGroup options={['male', 'female', 'other']} value={form.gender} onChange={(v) => set('gender', v)} />
+              </Field>
+              <Field label="Goal">
+                <select className={inputCls} style={inputStyle} value={form.goal} onChange={(e) => set('goal', e.target.value)}>
                   {GOALS.map((g) => <option key={g} value={g}>{labelMap[g]}</option>)}
                 </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Meals per Day</label>
-                <select style={inputStyle} value={form.meal_frequency} onChange={(e) => set('meal_frequency', e.target.value)}>
-                  {[3, 4, 5, 6].map((d) => <option key={d} value={d}>{d} meals</option>)}
+              </Field>
+              <Field label="Activity Level">
+                <select className={inputCls} style={inputStyle} value={form.activity_level} onChange={(e) => set('activity_level', e.target.value)}>
+                  {ACTIVITY_LEVELS.map((a) => <option key={a} value={a}>{labelMap[a]}</option>)}
                 </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Budget</label>
-                <select style={inputStyle} value={form.budget} onChange={(e) => set('budget', e.target.value)}>
-                  {BUDGETS.map((b) => <option key={b} value={b}>{labelMap[b]}</option>)}
-                </select>
-              </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={labelStyle}>Dietary Preferences</label>
-                <input type="text" style={inputStyle} placeholder="e.g. vegetarian, vegan, keto, Indian (optional)" value={form.dietary_preferences} onChange={(e) => set('dietary_preferences', e.target.value)} />
-              </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={labelStyle}>Allergies / Foods to Avoid</label>
-                <input type="text" style={inputStyle} placeholder="e.g. nuts, dairy, gluten (optional)" value={form.allergies} onChange={(e) => set('allergies', e.target.value)} />
-              </div>
+              </Field>
+              <Field label="Budget">
+                <PillGroup options={BUDGETS} value={form.budget} onChange={(v) => set('budget', v)} />
+              </Field>
+              <Field label="Meals per Day" span>
+                <PillGroup options={['3', '4', '5', '6']} value={form.meal_frequency} onChange={(v) => set('meal_frequency', v)} />
+              </Field>
+              <Field label="Dietary Preferences" span>
+                <input type="text" className={inputCls} style={inputStyle}
+                  placeholder="e.g. vegetarian, vegan, keto, Indian (optional)"
+                  value={form.dietary_preferences} onChange={(e) => set('dietary_preferences', e.target.value)} />
+              </Field>
+              <Field label="Allergies / Foods to Avoid" span>
+                <input type="text" className={inputCls} style={inputStyle}
+                  placeholder="e.g. nuts, dairy, gluten (optional)"
+                  value={form.allergies} onChange={(e) => set('allergies', e.target.value)} />
+              </Field>
             </div>
 
             {error && (
-              <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontSize: 13 }}>{error}</div>
+              <div className="mt-4 rounded-[12px] px-4 py-2.5 text-[13px] font-[600]"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626' }}>
+                {error}
+              </div>
             )}
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={handleGenerate} disabled={loading} style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '12px 28px',
-                borderRadius: 12, fontSize: 14, fontWeight: 700,
-                background: loading ? 'rgba(74,222,128,0.4)' : `linear-gradient(135deg, ${ACCENT}, #22C55E)`,
-                color: '#050816', border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : `0 4px 20px ${ACCENT_GLOW}`,
-              }}>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button onClick={handleGenerate} disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-[14px] px-7 py-3 text-[14px] font-[750] text-white transition-all sm:w-auto"
+                style={{
+                  background: ACCENT_GRADIENT,
+                  opacity: loading ? 0.6 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  boxShadow: loading ? 'none' : '0 8px 24px rgba(22,163,74,0.35)',
+                }}>
                 {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                 {loading ? 'Generating Plan…' : 'Generate Meal Plan'}
               </button>
               {plan && (
-                <button onClick={() => { setPlan(null); setMeta(null); }} style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px',
-                  borderRadius: 12, fontSize: 14, fontWeight: 600,
-                  background: 'transparent', border: '1px solid var(--border)',
-                  color: 'var(--text-muted)', cursor: 'pointer',
-                }}>
-                  <RotateCcw size={14} /> Reset
+                <button onClick={() => { setPlan(null); setMeta(null); }}
+                  className="flex w-full items-center justify-center gap-2 rounded-[14px] px-5 py-3 text-[13.5px] font-[650] sm:w-auto"
+                  style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                  <RotateCcw size={14} /> Start Over
                 </button>
               )}
             </div>
           </m.div>
 
-          {/* Loading */}
+          {/* ── Loading ── */}
           {loading && (
-            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '60px 0',
-            }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: 20, background: ACCENT_DIM,
-                border: '1px solid rgba(74,222,128,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Loader2 size={28} color={ACCENT} className="animate-spin" />
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="flex flex-col items-center gap-5 py-14">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px]"
+                style={{ background: ACCENT_DIM, border: '1px solid rgba(22,163,74,0.2)' }}>
+                <span className="absolute inset-0 animate-ping rounded-[24px] opacity-20" style={{ background: ACCENT }} />
+                <Apple size={30} color={ACCENT} />
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>Building your nutrition plan…</div>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Calibrating macros and crafting your personalised meal schedule</div>
+              <div className="text-center">
+                <div className="text-[16px] font-[750]" style={{ color: 'var(--text-primary)' }}>{LOADING_STEPS[loadStep]}</div>
+                <div className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>Usually takes 15–30 seconds</div>
+              </div>
+              <div className="flex gap-1.5">
+                {LOADING_STEPS.map((_, i) => (
+                  <span key={i} className="h-1.5 w-6 rounded-full transition-colors"
+                    style={{ background: i <= loadStep ? ACCENT : 'var(--border)' }} />
+                ))}
               </div>
             </m.div>
           )}
 
-          {/* Results */}
+          {/* ── Results ── */}
           {plan && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div className="flex flex-col gap-5">
               {meta && (
-                <m.div variants={fadeUp} initial="hidden" animate="show" custom={0} style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
-                  borderRadius: 20, width: 'fit-content',
-                  background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)',
-                }}>
-                  <Sparkles size={13} color="#D4AF37" />
-                  <span style={{ fontSize: 12, color: '#D4AF37', fontWeight: 600 }}>Generated by {meta.model}</span>
-                  {meta.used_fallback && <span style={{ fontSize: 11, color: 'rgba(255,200,0,0.6)', marginLeft: 4 }}>(fallback)</span>}
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={0}
+                  className="flex w-fit items-center gap-2 rounded-full px-3.5 py-2"
+                  style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
+                  <Sparkles size={13} color="#B8860B" />
+                  <span className="text-[12px] font-[650]" style={{ color: '#B8860B' }}>Generated by {meta.model}</span>
+                  {meta.used_fallback && <span className="text-[11px]" style={{ color: '#B8860B', opacity: 0.7 }}>(fallback)</span>}
                 </m.div>
               )}
 
               {/* Overview */}
-              <m.div variants={fadeUp} initial="hidden" animate="show" custom={1} style={{
-                borderRadius: 20, overflow: 'hidden',
-                border: '1px solid var(--border)',
-                background: 'var(--bg-card)',
-              }}>
-                <div style={{
-                  padding: '20px 24px',
-                  background: '#F0FDF4',
-                  borderBottom: '1px solid var(--border)',
-                }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{plan.name}</h2>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '6px 0 0' }}>{plan.description}</p>
+              <m.div variants={fadeUp} initial="hidden" animate="show" custom={1}
+                className="overflow-hidden rounded-[22px]"
+                style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)', borderBottom: '1px solid var(--border)' }}>
+                  <h2 className="m-0 text-[20px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{plan.name}</h2>
+                  <p className="mb-0 mt-1.5 text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{plan.description}</p>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                <div className="grid grid-cols-2 sm:grid-cols-4">
                   {[
                     { label: 'Daily Calories', value: String(plan.total_calories), unit: 'kcal' },
                     { label: 'Protein', value: String(plan.macros?.protein_g ?? '—'), unit: 'g' },
                     { label: 'Carbs', value: String(plan.macros?.carbs_g ?? '—'), unit: 'g' },
                     { label: 'Fat', value: String(plan.macros?.fat_g ?? '—'), unit: 'g' },
                   ].map((s, i) => (
-                    <div key={i} style={{
-                      padding: '16px 12px', textAlign: 'center',
-                      borderRight: i < 3 ? '1px solid #f3f4f6' : 'none',
-                    }}>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: ACCENT }}>{s.value}</div>
-                      <div style={{ fontSize: 10, color: '#15803d', fontWeight: 600 }}>{s.unit}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
+                    <div key={i} className="px-3 py-4 text-center"
+                      style={{ borderRight: i % 2 === 0 || i < 3 ? '1px solid var(--border)' : 'none', borderTop: i >= 2 ? '1px solid var(--border)' : 'none' }}>
+                      <div className="text-[19px] font-[800]" style={{ color: ACCENT }}>
+                        {s.value}<span className="ml-0.5 text-[11px] font-[700]" style={{ color: '#15803d' }}>{s.unit}</span>
+                      </div>
+                      <div className="mt-0.5 text-[10.5px] font-[600] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
@@ -328,49 +367,51 @@ export default function DietGeneratorPage() {
 
               {/* Meals */}
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Daily Meal Plan</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div className="mb-3 text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
+                  Daily Meal Plan
+                </div>
+                <div className="flex flex-col gap-2.5">
                   {plan.meals?.map((meal, i) => <MealCard key={i} meal={meal} index={i} />)}
                 </div>
               </div>
 
               {/* Hydration */}
               {plan.hydration_ml ? (
-                <m.div variants={fadeUp} initial="hidden" animate="show" custom={2} style={{
-                  borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14,
-                  background: '#EFF6FF', border: '1px solid #BFDBFE',
-                }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Droplets size={20} color="#60A5FA" />
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={2}
+                  className="flex items-center gap-4 rounded-[18px] px-5 py-4"
+                  style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[13px]"
+                    style={{ background: 'linear-gradient(135deg, #60A5FA, #3B82F6)', boxShadow: '0 6px 18px rgba(59,130,246,0.3)' }}>
+                    <Droplets size={20} color="#fff" />
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#60A5FA', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Daily Hydration Target</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>{plan.hydration_ml} <span style={{ fontSize: 12, color: 'var(--text-disabled)' }}>ml / day</span></div>
+                    <div className="text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: '#2563EB' }}>Daily Hydration Target</div>
+                    <div className="mt-0.5 text-[18px] font-[800]" style={{ color: 'var(--text-primary)' }}>
+                      {plan.hydration_ml} <span className="text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>ml / day</span>
+                    </div>
                   </div>
                 </m.div>
               ) : null}
 
               {/* Supplements */}
               {plan.supplements?.length ? (
-                <m.div variants={fadeUp} initial="hidden" animate="show" custom={3} style={{
-                  borderRadius: 20, overflow: 'hidden',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-card)',
-                }}>
-                  <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Pill size={16} color={ACCENT} />
-                    <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>Supplement Guide</span>
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={3}
+                  className="overflow-hidden rounded-[22px]"
+                  style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                  <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: ACCENT_DIM }}>
+                      <Pill size={15} color={ACCENT} />
+                    </span>
+                    <span className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>Supplement Guide</span>
                   </div>
                   {plan.supplements.map((s, i) => (
-                    <div key={i} style={{
-                      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 20px',
-                      borderBottom: i < plan.supplements!.length - 1 ? '1px solid #f3f4f6' : 'none',
-                    }}>
+                    <div key={i} className="flex items-start justify-between gap-4 px-5 py-3.5"
+                      style={{ borderBottom: i < plan.supplements!.length - 1 ? '1px solid var(--border)' : 'none' }}>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-disabled)', marginTop: 2 }}>{s.dose} · {s.timing}</div>
+                        <div className="text-[14px] font-[650]" style={{ color: 'var(--text-primary)' }}>{s.name}</div>
+                        <div className="mt-0.5 text-[12px]" style={{ color: 'var(--text-disabled)' }}>{s.dose} · {s.timing}</div>
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-disabled)', textAlign: 'right', maxWidth: 160 }}>{s.reason}</div>
+                      <div className="max-w-[180px] flex-shrink-0 text-right text-[12px]" style={{ color: 'var(--text-disabled)' }}>{s.reason}</div>
                     </div>
                   ))}
                 </m.div>
@@ -378,25 +419,25 @@ export default function DietGeneratorPage() {
 
               {/* Grocery list */}
               {plan.grocery_list?.length ? (
-                <m.div variants={fadeUp} initial="hidden" animate="show" custom={4} style={{
-                  borderRadius: 20, overflow: 'hidden',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-card)',
-                }}>
-                  <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <ShoppingCart size={16} color={ACCENT} />
-                    <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>Grocery List</span>
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={4}
+                  className="overflow-hidden rounded-[22px]"
+                  style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+                  <div className="flex items-center gap-2.5 px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: ACCENT_DIM }}>
+                      <ShoppingCart size={15} color={ACCENT} />
+                    </span>
+                    <span className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>Grocery List</span>
                   </div>
-                  <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="flex flex-col gap-4 px-5 py-4">
                     {plan.grocery_list.map((cat, i) => (
                       <div key={i}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{cat.category}</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        <div className="mb-2 text-[10px] font-[700] uppercase tracking-[0.1em]" style={{ color: 'var(--text-disabled)' }}>{cat.category}</div>
+                        <div className="flex flex-wrap gap-1.5">
                           {cat.items.map((item) => (
-                            <span key={item} style={{
-                              fontSize: 12, padding: '4px 12px', borderRadius: 20,
-                              background: ACCENT_DIM, color: ACCENT, border: '1px solid rgba(74,222,128,0.2)', fontWeight: 500,
-                            }}>{item}</span>
+                            <span key={item} className="rounded-full px-3 py-1 text-[12px] font-[550]"
+                              style={{ background: ACCENT_DIM, color: ACCENT, border: '1px solid rgba(22,163,74,0.18)' }}>
+                              {item}
+                            </span>
                           ))}
                         </div>
                       </div>
@@ -406,12 +447,11 @@ export default function DietGeneratorPage() {
               ) : null}
 
               {plan.notes && (
-                <m.div variants={fadeUp} initial="hidden" animate="show" custom={5} style={{
-                  borderRadius: 16, padding: '18px 20px',
-                  background: 'var(--bg-card)', border: '1px solid var(--border)',
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-disabled)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Notes</div>
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{plan.notes}</p>
+                <m.div variants={fadeUp} initial="hidden" animate="show" custom={5}
+                  className="rounded-[18px] px-5 py-4"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <div className="mb-2 text-[11px] font-[700] uppercase tracking-[0.08em]" style={{ color: ACCENT }}>Notes</div>
+                  <p className="m-0 text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{plan.notes}</p>
                 </m.div>
               )}
             </div>
