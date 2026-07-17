@@ -395,15 +395,16 @@ function NewClientForm() {
     <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
 
       {/* ── PAGE HEADER ── */}
-      <div className="sticky below-topbar z-40" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
+      {/* Header — in normal flow on the page background (no sticky card). */}
+      <div className="pt-1">
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[13px]" style={{ background: '#0f172a' }}>
-              <Award size={17} color="#F59E0B" />
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}>
+              <Award size={18} color="#fff" />
             </div>
             <div>
-              <h1 className="text-[18px] font-[860] tracking-[-0.03em] text-slate-900 leading-none">New PT Client</h1>
-              <p className="text-[11px] font-[600] text-slate-400 mt-0.5">Create a new Personal Training client profile.</p>
+              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">New PT Client</h1>
+              <p className="text-[12px] font-[600] text-slate-400 mt-1">Create a new Personal Training client profile.</p>
             </div>
           </div>
           {/* Progress */}

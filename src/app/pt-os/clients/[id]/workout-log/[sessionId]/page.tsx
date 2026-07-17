@@ -197,7 +197,8 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
 
   return (
     <div className="min-h-screen pb-32" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
-      <div className="sticky below-topbar z-40" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
+      {/* Header — in normal flow on the page background (no sticky card). */}
+      <div className="pt-1">
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between gap-3">
           <button onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
             className="flex items-center gap-2 text-[12px] font-[650]" style={{ color: '#94a3b8' }}>

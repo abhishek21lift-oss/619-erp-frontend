@@ -369,7 +369,7 @@ function EditContent({ id }: { id: string }) {
       }}>
 
         {/* ── Sticky page header ─────────────────────────────────────── */}
-        <div className="sticky below-topbar z-30"
+        <div className=""
           style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.55)', boxShadow: '0 1px 0 rgba(15,23,42,0.06)' }}>
           <div className="mx-auto flex max-w-2xl items-center gap-3 px-5 py-3.5">
             <Link href={`/trainers/${id}`}

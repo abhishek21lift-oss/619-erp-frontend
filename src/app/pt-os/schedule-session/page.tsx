@@ -297,7 +297,8 @@ function SchedulePageContent() {
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
       {/* ── HEADER ── */}
-      <div className="sticky below-topbar z-40 border-b" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderColor: 'rgba(0,0,0,0.07)' }}>
+      {/* Header — in normal flow on the page background (no sticky bar). */}
+      <div>
         <div className="mx-auto max-w-screen-xl px-5 py-4 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
