@@ -128,15 +128,16 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
       const res = await api.progress.workoutLog.sessions.create(payload);
       const newId = res?.data?.id;
       if (!newId) throw new Error('Server did not return a session id.');
+      if (res?.screening_warnings?.length) {
+        toast.warning(res.screening_warnings.join(' '), {
+          duration: 8000, action: { label: 'Start PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${clientId}`) },
+        });
+      }
       router.push(`/pt-os/clients/${clientId}/workout-log/${newId}`);
     } catch (err: unknown) {
-      if (err instanceof ApiError && err.code === 'PARQ_REQUIRED') {
-        toast.error('PAR-Q health screening required before logging a session.', {
-          duration: 0, action: { label: 'Start PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${clientId}`) },
-        });
-      } else if (err instanceof ApiError && err.code === 'CONSENT_REQUIRED') {
-        toast.error('Informed Consent required before logging a session.', {
-          duration: 0, action: { label: 'Review Consent', onClick: () => router.push(`/pt-os/informed-consent?client_id=${clientId}`) },
+      if (err instanceof ApiError && err.code === 'PARQ_BLOCKED') {
+        toast.error('This client\'s PAR-Q screening flags them as medically blocked — clearance is required before logging a session.', {
+          duration: 0, action: { label: 'Review PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${clientId}`) },
         });
       } else {
         toast.error(err instanceof Error ? err.message : 'Could not start a new session.');

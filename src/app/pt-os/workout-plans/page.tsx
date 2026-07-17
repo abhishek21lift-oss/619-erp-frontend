@@ -12,7 +12,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { ParqForm, WorkoutPlan, LibraryExercise } from '@/lib/api';
+import type { WorkoutPlan, LibraryExercise } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
@@ -151,38 +151,27 @@ function Inner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetClientId, clients]);
 
-  /** Pre-check the PAR-Q + Informed Consent workout gate before assigning a
-   *  plan. UX signal only — the backend independently enforces the gate —
-   *  but it turns a raw 403 into a clear message with a direct action link. */
+  /** Assign a plan. The backend screening gate hard-blocks only clients
+   *  whose PAR-Q explicitly flags them as medically blocked; missing
+   *  paperwork assigns fine and comes back as screening_warnings, which we
+   *  surface as a nudge with a direct link to start the PAR-Q. */
   const assignPlanToClient = useCallback(async (plan: WorkoutPlan, client: ClientOption): Promise<boolean> => {
     try {
-      const listRes = await api.progress.parqForms.list({ client_id: client.id });
-      const forms: ParqForm[] = listRes?.data ?? [];
-      if (forms.length === 0) {
-        toast.error(`${client.name} has no PAR-Q screening on file — it must be completed before a workout can be assigned.`, {
-          duration: 0,
+      const res = await api.workouts.assign({ workout_plan_id: plan.id, client_id: client.id });
+      toast.success(`Assigned "${plan.name}" to ${client.name}.`);
+      if (res?.screening_warnings?.length) {
+        toast.warning(`${client.name}: ${res.screening_warnings.join(' ')}`, {
+          duration: 8000,
           action: { label: 'Start PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
         });
-        return false;
       }
-      const latest = [...forms].sort((a, b) => String(b.assessment_date ?? '').localeCompare(String(a.assessment_date ?? '')))[0];
-      const gate = await api.progress.parqForms.gateStatus(String(latest.id));
-      if (gate.workout_gate_status !== 'cleared') {
-        toast.error(`${client.name}'s PAR-Q risk is ${gate.risk_level.toUpperCase()} — medical clearance is required before a workout can be assigned.`, {
-          duration: 0,
-          action: { label: 'Review PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
-        });
-        return false;
-      }
-      await api.workouts.assign({ workout_plan_id: plan.id, client_id: client.id });
-      toast.success(`Assigned "${plan.name}" to ${client.name}.`);
       return true;
     } catch (err: unknown) {
       const code = err instanceof ApiError ? err.code : undefined;
-      if (code === 'CONSENT_REQUIRED') {
-        toast.error(`${client.name} needs a completed Informed Consent before a workout can be assigned.`, {
+      if (code === 'PARQ_BLOCKED') {
+        toast.error(`${client.name}'s PAR-Q screening flags them as medically blocked — clearance is required before assigning a workout.`, {
           duration: 0,
-          action: { label: 'Review Consent', onClick: () => router.push(`/pt-os/informed-consent?client_id=${client.id}`) },
+          action: { label: 'Review PAR-Q', onClick: () => router.push(`/pt-os/parq?client_id=${client.id}`) },
         });
       } else {
         toast.error(err instanceof Error ? err.message : 'Failed to assign workout plan.');

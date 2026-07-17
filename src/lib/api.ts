@@ -1187,7 +1187,7 @@ export const api = {
         http<WorkoutAssignmentDetail>(`/api/workouts/assignments/${id}`),
     },
     assign: (data: { workout_plan_id: string; client_id: string; start_date?: string; end_date?: string; notes?: string }) =>
-      http<{ message: string; assignment: WorkoutAssignment }>('/api/workouts/assign', {
+      http<{ message: string; assignment: WorkoutAssignment; screening_warnings?: string[] }>('/api/workouts/assign', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -1447,7 +1447,7 @@ export const api = {
         get: (id: string) =>
           http<{ data: WorkoutSessionDetail }>(`/api/pt-os/workout-log/sessions/${id}`),
         create: (data: Record<string, unknown>) =>
-          http<{ data: WorkoutSession }>('/api/pt-os/workout-log/sessions', {
+          http<{ data: WorkoutSession; screening_warnings?: string[] }>('/api/pt-os/workout-log/sessions', {
             method: 'POST', body: JSON.stringify(data),
           }),
         update: (id: string, data: Record<string, unknown>) =>
