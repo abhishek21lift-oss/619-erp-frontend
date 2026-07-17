@@ -516,27 +516,37 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
 
   return (
     <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
-      <div className="sticky below-topbar z-40" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between gap-3">
+      {/* Header — in normal flow, directly on the page background. The old
+          sticky white card floated at a safe-area-dependent offset, which on
+          notched phones opened a large blank band under the top bar. */}
+      <div className="mx-auto max-w-3xl px-5 sm:px-8 pt-1">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[13px]" style={{ background: '#0f172a' }}>
-              <FileSignature size={17} color="#F59E0B" />
+            <div
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
+              style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}
+            >
+              <FileSignature size={18} color="#fff" />
             </div>
             <div>
-              <h1 className="text-[18px] font-[860] tracking-[-0.03em] text-slate-900 leading-none">{currentId ? 'Continue Consent' : 'New Informed Consent'}</h1>
-              <p className="text-[11px] font-[600] text-slate-400 mt-0.5">{clientName}</p>
+              <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">{currentId ? 'Continue Consent' : 'New Informed Consent'}</h1>
+              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName}</p>
             </div>
           </div>
-          <button type="button" onClick={() => onDone(false)} className="flex items-center gap-1 text-[11.5px] font-[650]" style={{ color: '#94a3b8' }}>
+          <button
+            type="button" onClick={() => onDone(false)}
+            className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] font-[650] transition-colors hover:bg-white"
+            style={{ color: '#64748b', border: '1px solid rgba(15,23,42,0.08)' }}
+          >
             <X size={12} /> Cancel
           </button>
         </div>
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 pb-3">
+        <div className="mt-4">
           <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => setStep(id as StepId)} />
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-5 space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
           {step === 1 && <StepClientInfo form={form} set={set} error={errors.step1} />}
           {step === 2 && <StepProgramOverview />}
