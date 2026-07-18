@@ -18,7 +18,7 @@ import { computeParqRisk } from '@/lib/parq-calculations';
 import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import {
   STEPS, type StepId, type ParqFormData, type FormErrors,
-  initParqForm, visibleSteps, nextStepId, prevStepId,
+  initParqForm, visibleSteps, stepPositionLabel, nextStepId, prevStepId,
   CONSENT_CHECKBOX_FIELDS, PARQ_QUESTIONS,
 } from '@/components/pt-os/parq/types';
 import { formFromRow, buildFormPayload, buildClearancePayload, buildConsentPayload } from '@/components/pt-os/parq/mappers';
@@ -546,20 +546,21 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
 
       <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-          {step === 1 && <StepClientDetails form={form} set={set} error={errors.clientDetails} />}
-          {step === 2 && <StepCurrentHealth form={form} set={set} error={errors.currentHealth} />}
-          {step === 3 && <StepPastHistory form={form} set={set} error={errors.pastHistory} />}
-          {step === 4 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} />}
+          {step === 1 && <StepClientDetails form={form} set={set} error={errors.clientDetails} stepLabel={stepPositionLabel('clientDetails', riskLevel)} />}
+          {step === 2 && <StepCurrentHealth form={form} set={set} error={errors.currentHealth} stepLabel={stepPositionLabel('currentHealth', riskLevel)} />}
+          {step === 3 && <StepPastHistory form={form} set={set} error={errors.pastHistory} stepLabel={stepPositionLabel('pastHistory', riskLevel)} />}
+          {step === 4 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} stepLabel={stepPositionLabel('parqQuestionnaire', riskLevel)} />}
           {step === 5 && riskLevel === 'high' && (
             <StepMedicalClearance
               form={form} set={set} error={errors.medicalClearance}
               formId={currentFormId} documents={documents}
               onDocumentUploaded={(doc) => setDocuments((d) => [...d, doc])}
+              stepLabel={stepPositionLabel('medicalClearance', riskLevel)}
             />
           )}
-          {step === 6 && <StepTrainerNotes form={form} set={set} />}
-          {step === 7 && <StepConsent form={form} set={set} error={errors.consent} />}
-          {step === 8 && <ParqReview form={form} onEditStep={setStep} />}
+          {step === 6 && <StepTrainerNotes form={form} set={set} stepLabel={stepPositionLabel('trainerNotes', riskLevel)} />}
+          {step === 7 && <StepConsent form={form} set={set} error={errors.consent} stepLabel={stepPositionLabel('consent', riskLevel)} />}
+          {step === 8 && <ParqReview form={form} onEditStep={setStep} stepLabel={stepPositionLabel('review', riskLevel)} />}
         </m.div>
       </div>
 

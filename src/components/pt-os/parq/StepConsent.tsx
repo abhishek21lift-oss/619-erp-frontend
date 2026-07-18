@@ -11,9 +11,10 @@ interface StepConsentProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
   error?: string;
+  stepLabel: string;
 }
 
-export function StepConsent({ form, set, error }: StepConsentProps) {
+export function StepConsent({ form, set, error, stepLabel }: StepConsentProps) {
   const [userAgent, setUserAgent] = useState('');
   useEffect(() => { if (typeof navigator !== 'undefined') setUserAgent(navigator.userAgent); }, []);
 
@@ -32,7 +33,7 @@ export function StepConsent({ form, set, error }: StepConsentProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Digital Consent</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 7 of 8 — all boxes must be checked, both signatures required.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — all boxes must be checked, both signatures required.</p>
           </div>
         </div>
 

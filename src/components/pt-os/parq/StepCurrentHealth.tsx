@@ -28,9 +28,10 @@ interface StepCurrentHealthProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
   error?: string;
+  stepLabel: string;
 }
 
-export function StepCurrentHealth({ form, set, error }: StepCurrentHealthProps) {
+export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHealthProps) {
   const ch = form.currentHealth;
   const setCh = <K extends keyof CurrentHealthForm>(key: K, val: CurrentHealthForm[K]) => {
     set('currentHealth', { ...ch, [key]: val });
@@ -46,7 +47,7 @@ export function StepCurrentHealth({ form, set, error }: StepCurrentHealthProps) 
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Current Health</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 8 — toggle YES for anything that applies.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — toggle YES for anything that applies.</p>
           </div>
         </div>
 

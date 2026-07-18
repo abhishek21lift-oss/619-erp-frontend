@@ -32,9 +32,10 @@ interface StepPastHistoryProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
   error?: string;
+  stepLabel: string;
 }
 
-export function StepPastHistory({ form, set, error }: StepPastHistoryProps) {
+export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistoryProps) {
   const ph = form.pastHistory;
   const setPh = <K extends keyof PastHistoryForm>(key: K, val: PastHistoryForm[K]) => {
     set('pastHistory', { ...ph, [key]: val });
@@ -51,7 +52,7 @@ export function StepPastHistory({ form, set, error }: StepPastHistoryProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Past Medical History</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 3 of 8 — select any conditions ever diagnosed.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — select any conditions ever diagnosed.</p>
           </div>
         </div>
 

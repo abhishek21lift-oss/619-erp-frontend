@@ -12,6 +12,7 @@ interface StepParqQuestionnaireProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
   error?: string;
+  stepLabel: string;
 }
 
 const ANSWER_OPTIONS: { value: ParqAnswerForm['answer']; label: string }[] = [
@@ -19,7 +20,7 @@ const ANSWER_OPTIONS: { value: ParqAnswerForm['answer']; label: string }[] = [
   { value: 'no', label: 'No' },
 ];
 
-export function StepParqQuestionnaire({ form, set, error }: StepParqQuestionnaireProps) {
+export function StepParqQuestionnaire({ form, set, error, stepLabel }: StepParqQuestionnaireProps) {
   const answers = form.parqAnswers;
   const risk = useMemo(() => computeParqRisk(answers), [answers]);
 
@@ -40,7 +41,7 @@ export function StepParqQuestionnaire({ form, set, error }: StepParqQuestionnair
             </div>
             <div>
               <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">PAR-Q Questionnaire</h2>
-              <p className="text-[13px] text-slate-400 mt-1.5">Step 4 of 8 — {answeredCount}/{PARQ_QUESTIONS.length} answered. YES expands follow-up details.</p>
+              <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — {answeredCount}/{PARQ_QUESTIONS.length} answered. YES expands follow-up details.</p>
             </div>
           </div>
 

@@ -55,7 +55,7 @@ export function StepperTimeline({ steps, current, onStep }: StepperTimelineProps
                       </m.span>
                     ) : (
                       <m.span key="nm" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ duration: 0.15 }}>
-                        {s.id}
+                        {i + 1}
                       </m.span>
                     )}
                   </AnimatePresence>

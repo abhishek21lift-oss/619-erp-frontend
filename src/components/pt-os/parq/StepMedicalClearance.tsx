@@ -21,9 +21,10 @@ interface StepMedicalClearanceProps {
   formId: string | null;
   documents: ParqDocument[];
   onDocumentUploaded: (doc: ParqDocument) => void;
+  stepLabel: string;
 }
 
-export function StepMedicalClearance({ form, set, error, formId, documents, onDocumentUploaded }: StepMedicalClearanceProps) {
+export function StepMedicalClearance({ form, set, error, formId, documents, onDocumentUploaded, stepLabel }: StepMedicalClearanceProps) {
   const { toast } = useToast();
   const mc = form.medicalClearance;
   const setMc = <K extends keyof MedicalClearanceForm>(key: K, val: MedicalClearanceForm[K]) => {
@@ -64,7 +65,7 @@ export function StepMedicalClearance({ form, set, error, formId, documents, onDo
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Medical Clearance</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 5 of 8 — required because this client&apos;s live risk is HIGH.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — required because this client&apos;s live risk is HIGH.</p>
           </div>
         </div>
 

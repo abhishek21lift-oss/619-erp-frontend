@@ -9,6 +9,7 @@ import { PARQ_QUESTIONS } from './types';
 interface ParqReviewProps {
   form: ParqFormData;
   onEditStep: (id: StepId) => void;
+  stepLabel: string;
 }
 
 function SectionCard({ title, stepId, onEdit, children }: { title: string; stepId: StepId; onEdit: (id: StepId) => void; children: React.ReactNode }) {
@@ -34,7 +35,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function ParqReview({ form, onEditStep }: ParqReviewProps) {
+export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
   const age = calcAge(form.dob);
   const bmi = calcBMI(parseFloat(form.heightCm) || null, parseFloat(form.weightKg) || null);
   const risk = computeParqRisk(form.parqAnswers);
@@ -52,7 +53,7 @@ export function ParqReview({ form, onEditStep }: ParqReviewProps) {
             </div>
             <div>
               <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Review &amp; Submit</h2>
-              <p className="text-[13px] text-slate-400 mt-1.5">Step 8 of 8 — confirm everything below, then submit.</p>
+              <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — confirm everything below, then submit.</p>
             </div>
           </div>
         </div>

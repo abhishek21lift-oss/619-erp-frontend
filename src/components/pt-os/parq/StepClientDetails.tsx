@@ -19,9 +19,10 @@ interface StepClientDetailsProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
   error?: string;
+  stepLabel: string;
 }
 
-export function StepClientDetails({ form, set, error }: StepClientDetailsProps) {
+export function StepClientDetails({ form, set, error, stepLabel }: StepClientDetailsProps) {
   const age = useMemo(() => calcAge(form.dob), [form.dob]);
   const bmi = useMemo(() => calcBMI(parseFloat(form.heightCm) || null, parseFloat(form.weightKg) || null), [form.heightCm, form.weightKg]);
   const bmiCategory = useMemo(() => classifyBMI(bmi), [bmi]);
@@ -36,7 +37,7 @@ export function StepClientDetails({ form, set, error }: StepClientDetailsProps) 
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Client Details</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 8 — confirm identity &amp; baseline measurements.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — confirm identity &amp; baseline measurements.</p>
           </div>
         </div>
 

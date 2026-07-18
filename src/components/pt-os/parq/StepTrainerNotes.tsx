@@ -7,9 +7,10 @@ import { TRAINER_NOTES_FIELDS } from './types';
 interface StepTrainerNotesProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
+  stepLabel: string;
 }
 
-export function StepTrainerNotes({ form, set }: StepTrainerNotesProps) {
+export function StepTrainerNotes({ form, set, stepLabel }: StepTrainerNotesProps) {
   const onChange = (key: string, value: string) => {
     set('trainerNotes', { ...form.trainerNotes, [key]: value } as TrainerNotesForm);
   };
@@ -20,7 +21,7 @@ export function StepTrainerNotes({ form, set }: StepTrainerNotesProps) {
       notes={form.trainerNotes as unknown as Record<string, string>}
       onChange={onChange}
       title="Trainer Notes"
-      subtitle="Step 6 of 8 — observations & programming guidance for this client."
+      subtitle={`${stepLabel} — observations & programming guidance for this client.`}
     />
   );
 }

@@ -151,9 +151,20 @@ export const STEPS = [
 export type StepId = typeof STEPS[number]['id'];
 
 /** Steps visible in the stepper/navigation for the given live risk level —
- *  step 6 (Medical Clearance) only appears when risk is HIGH. */
+ *  Medical Clearance only appears when risk is HIGH. */
 export function visibleSteps(riskLevel: 'low' | 'medium' | 'high') {
   return STEPS.filter((s) => !('conditional' in s && s.conditional) || riskLevel === 'high');
+}
+
+/** "Step N of M" for a given step key against the *visible* step list for
+ *  this risk level — so for the common (non-high-risk) client, numbering
+ *  runs 1-7 with no gap where Medical Clearance would have sat, instead of
+ *  a stale count baked in per-component that assumed clearance always
+ *  occupies a slot. */
+export function stepPositionLabel(key: string, riskLevel: 'low' | 'medium' | 'high'): string {
+  const vis = visibleSteps(riskLevel);
+  const idx = vis.findIndex((s) => s.key === key);
+  return `Step ${idx + 1} of ${vis.length}`;
 }
 
 export function nextStepId(current: StepId, riskLevel: 'low' | 'medium' | 'high'): StepId | null {
