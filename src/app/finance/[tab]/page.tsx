@@ -12,8 +12,6 @@ const VALID_FINANCE_TABS = [
   'invoices',
   'record-payment',
   'dues',
-  'collection',
-  'pl',
   'forecast',
   'trainer-revenue',
 ] as const;

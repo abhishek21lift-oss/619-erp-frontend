@@ -17,10 +17,8 @@ function fmtCompact(n: number) {
 }
 
 const FINANCE_TABS = [
-  { label: 'Collection',  href: '/finance/collection' },
   { label: 'Dues',        href: '/finance/dues' },
   { label: 'Invoices',    href: '/finance/invoices' },
-  { label: 'P & L',       href: '/finance/pl' },
   { label: 'Forecast',    href: '/finance/forecast' },
   { label: 'Payroll',     href: '/finance/trainer-revenue' },
 ];
