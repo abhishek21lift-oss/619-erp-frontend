@@ -31,25 +31,22 @@ export function StepParqQuestionnaire({ form, set, error, stepLabel }: StepParqQ
   const answeredCount = answers.filter((a) => a.answer).length;
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-        <div className="p-7 sm:p-10 space-y-6">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-              <ListChecks size={20} color="#F59E0B" />
-            </div>
-            <div>
-              <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">PAR-Q Questionnaire</h2>
-              <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — {answeredCount}/{PARQ_QUESTIONS.length} answered. YES expands follow-up details.</p>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
+          <ListChecks size={20} color="#F59E0B" />
+        </div>
+        <div>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">PAR-Q Questionnaire</h2>
+          <p className="text-[13px] text-slate-400 mt-1.5">{stepLabel} — {answeredCount}/{PARQ_QUESTIONS.length} answered. YES expands follow-up details.</p>
+        </div>
+      </div>
 
-          {answeredCount > 0 && (
-            <RiskLevelBanner level={risk.riskLevel} stat={`${risk.yesCount} of ${PARQ_QUESTIONS.length} flagged YES`} />
-          )}
+      {answeredCount > 0 && (
+        <RiskLevelBanner level={risk.riskLevel} stat={`${risk.yesCount} of ${PARQ_QUESTIONS.length} flagged YES`} />
+      )}
 
-          <div className="space-y-4">
+      <div className="space-y-4">
             {PARQ_QUESTIONS.map((q, i) => {
               const a = answers.find((x) => x.question_id === q.id)!;
               const expanded = a.answer === 'yes';
@@ -105,9 +102,7 @@ export function StepParqQuestionnaire({ form, set, error, stepLabel }: StepParqQ
             })}
           </div>
 
-          {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
-        </div>
-      </div>
+      {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
     </div>
   );
 }
