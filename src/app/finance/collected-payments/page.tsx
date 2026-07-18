@@ -119,40 +119,31 @@ function Inner() {
     <AppShell>
       <PullToRefresh onRefresh={fetchPayments}>
       <div style={{ minHeight: '100dvh' }}>
-        {/* Page Header */}
-        <div style={{
-          padding: '24px 20px',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--bg-card)',
-        }}>
-          <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 14,
-                  background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(6,182,212,0.2)',
-                }}>
-                  <Banknote size={22} color="white" />
-                </div>
+        {/* Page Header — gradient hero, matching Today's Sale / Record Payment */}
+        <div className="relative z-10 mt-1 max-w-[1280px] mx-auto px-5 pt-2">
+          <m.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-violet-500/10 p-6 sm:p-8 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)]"
+          >
+            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-cyan-400/20 to-blue-400/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-gradient-to-br from-violet-400/20 to-blue-400/20 blur-3xl" />
+
+            <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-[0_4px_16px_rgba(6,182,212,0.35)]">
+                  <Banknote size={22} />
+                </span>
                 <div>
-                  <h1 style={{
-                    fontSize: 'clamp(20px, 4vw, 28px)',
-                    fontWeight: 700,
-                    letterSpacing: '-0.03em',
-                    margin: 0,
-                    lineHeight: 1.2,
-                    color: 'var(--text-primary)',
-                  }}>
+                  <h1 className="text-[22px] sm:text-[28px] font-extrabold tracking-[-0.03em] leading-tight text-[var(--text-primary)]">
                     Collected Payments
                   </h1>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                  <p className="mt-1 text-[13px] text-[var(--text-muted)]">
                     Track and manage all incoming payments
                   </p>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" iconLeft={<RefreshCw size={13} />} onClick={fetchPayments}>
                   Refresh
                 </Button>
@@ -162,25 +153,20 @@ function Inner() {
               </div>
             </div>
 
-            {/* KPI Row */}
+            {/* KPI Row — 2-up on mobile instead of stacking full-width */}
             {!loading && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: 12,
-                marginTop: 24,
-              }}>
+              <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <KpiCard icon={<Layers size={16} />} label="Total Payments" value={filtered.length.toString()} accent="sky" />
                 <KpiCard icon={<IndianRupee size={16} />} label="Total Collected" value={fmtINR(totalCollected)} accent="emerald" />
                 <KpiCard icon={<List size={16} />} label="Unique Methods" value={methods.length.toString()} accent="violet" />
                 <KpiCard icon={<TrendingUp size={16} />} label="Largest Payment" value={fmtINR(largestPayment)} accent="amber" />
               </div>
             )}
-          </div>
+          </m.div>
         </div>
 
         {/* Main Content */}
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 48px' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '20px 20px 48px' }}>
           {/* Search & Filters */}
           <div className="mb-5 flex flex-col gap-3">
             <div className="relative w-full">
