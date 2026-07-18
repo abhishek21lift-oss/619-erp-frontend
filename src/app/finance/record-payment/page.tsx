@@ -141,14 +141,11 @@ export default function RecordPaymentPage() {
         <div className="relative z-10 mt-1 max-w-[560px] mx-auto pb-8">
 
           {/* ── Nav row ── */}
-          <div className="flex items-center gap-2.5 pt-2 pb-4">
+          <div className="flex items-center pt-2 pb-2">
             <button onClick={() => router.back()} aria-label="Back"
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-muted)] transition-all duration-200 hover:bg-gradient-to-br hover:from-indigo-500/10 hover:to-violet-500/10 hover:text-indigo-400">
               <ArrowLeft size={16} />
             </button>
-            <span className="text-[13px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-              Record Payment
-            </span>
           </div>
 
           <AnimatePresence mode="wait">
@@ -199,7 +196,7 @@ export default function RecordPaymentPage() {
                 </div>
 
                 {/* ── Client + method card ── */}
-                <div ref={pickerRef} className="relative overflow-visible rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] divide-y divide-[var(--border)]">
+                <div ref={pickerRef} className="relative z-20 overflow-visible rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] divide-y divide-[var(--border)]">
 
                   {/* Client row */}
                   <button onClick={() => { setPickerOpen(v => !v); setClientError(false); setTimeout(() => searchRef.current?.focus(), 50); }}
