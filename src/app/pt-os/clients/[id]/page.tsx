@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import { CopyId } from '@/components/ui/CopyId';
 import { m, AnimatePresence } from 'framer-motion';
@@ -10,7 +10,7 @@ import {
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Camera, Ruler, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
-  Award, HeartPulse, Salad, Flag,
+  Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -80,6 +80,44 @@ function getStatusConfig(status: string, days_left: number | null, pt_end_date?:
   if (status === 'active') return { label: 'Active', color: '#34d399', bg: 'rgba(52,211,153,0.12)', dot: '#10b981' };
   if (status === 'expired' || status === 'inactive') return { label: 'Inactive', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
   return { label: status, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
+}
+
+// Thick, colorful ring chart — replaces the old linear progress bars for
+// Payment Progress / PT Duration. Percent fills clockwise from the top.
+function CircularProgress({
+  percent, size = 92, strokeWidth = 11, colorFrom, colorTo, colorVia, children,
+}: {
+  percent: number; size?: number; strokeWidth?: number;
+  colorFrom: string; colorTo: string; colorVia?: string; children?: React.ReactNode;
+}) {
+  const gradId = useId();
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(Math.max(percent, 0), 100);
+  const offset = circumference * (1 - clamped / 100);
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <defs>
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={colorFrom} />
+            {colorVia && <stop offset="50%" stopColor={colorVia} />}
+            <stop offset="100%" stopColor={colorTo} />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--bg-subtle)" strokeWidth={strokeWidth} />
+        <m.circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={`url(#${gradId})`}
+          strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
@@ -348,6 +386,14 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     ? Math.min(Math.round((currentTermPaid / currentTermFee) * 100), 100)
     : 0;
 
+  const durationProgressPct = client?.duration_months && client?.pt_start_date && client?.pt_end_date
+    ? (() => {
+        const start = new Date(client.pt_start_date!).getTime();
+        const end = new Date(client.pt_end_date!).getTime();
+        return Math.min(Math.max(((Date.now() - start) / (end - start)) * 100, 0), 100);
+      })()
+    : 0;
+
   const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date) : null;
   const palette = client ? getAvatarPalette(client.name) : { from: '#7c3aed', to: '#5b21b6' };
 
@@ -356,7 +402,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       <AppShell>
         <div className="min-h-screen">
 
-          <div className="relative mx-auto max-w-screen-lg px-4 py-6 sm:px-6">
+          <div className="relative mx-auto max-w-screen-lg px-4 pt-2 pb-6 sm:px-6">
 
             {/* ── LOADING ── */}
             {loading && (
@@ -388,13 +434,10 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
             {!loading && !error && client && (
               <>
                 {/* Back nav */}
-                <button onClick={() => router.back()}
-                  className="mb-4 flex items-center gap-2 text-[12px] font-[600] text-slate-500 transition-colors hover:text-slate-700">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                    <ArrowLeft size={13} />
-                  </div>
-                  PT Clients
+                <button onClick={() => router.back()} aria-label="Back"
+                  className="mb-3 flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:opacity-75"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                  <ArrowLeft size={14} />
                 </button>
 
                 {/* ── HERO ── */}
@@ -447,26 +490,25 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 </m.div>
 
                 {/* ── CONTACT & ACTIONS ── */}
-                <div className="mb-6 space-y-4">
-                  <div className="space-y-1">
+                <div className="mb-6 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
                     {client.mobile && (
-                      <p className="text-[14px] font-[600] text-gray-800">
-                        Phone: <span className="font-[500] text-gray-500">{client.mobile}</span>
-                      </p>
+                      <a href={`tel:${client.mobile}`}
+                        className="inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-[12.5px] font-[700] transition-all hover:opacity-80"
+                        style={{ background: 'rgba(99,102,241,0.12)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.2)' }}>
+                        <Phone size={14} /> {client.mobile}
+                      </a>
                     )}
-                    {client.email && (
-                      <p className="text-[14px] font-[600] text-gray-800">
-                        Email: <span className="font-[500] text-gray-500">{client.email}</span>
-                      </p>
+                    {client.mobile && (
+                      <a href={whatsappHref(client.mobile, client.name)} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-[12.5px] font-[700] transition-all hover:opacity-80"
+                        style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                        <MessageCircle size={14} /> WhatsApp
+                      </a>
                     )}
                   </div>
-
-                  {client.mobile && (
-                    <a href={whatsappHref(client.mobile, client.name)} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-[12.5px] font-[700] transition-all hover:opacity-80"
-                      style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <MessageCircle size={14} /> WhatsApp
-                    </a>
+                  {client.email && (
+                    <p className="text-[12.5px] font-[600] text-gray-500">{client.email}</p>
                   )}
 
                   <div className="flex flex-wrap gap-2">
@@ -529,7 +571,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   ))}
                 </div>
 
-                {/* ── PROGRESS BARS ── */}
+                {/* ── PROGRESS RINGS ── */}
                 <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Payment progress */}
                   <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
@@ -538,26 +580,22 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       border: '1px solid var(--border)',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                     }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                          style={{ background: 'rgba(16,185,129,0.12)' }}>
-                          <Wallet size={13} className="text-emerald-500" />
-                        </div>
-                        <span className="text-[12px] font-[700] text-gray-900">Payment Progress</span>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
+                        style={{ background: 'rgba(16,185,129,0.12)' }}>
+                        <Wallet size={13} className="text-emerald-500" />
                       </div>
-                      <span className="text-[13px] font-[800] tabular-nums"
-                        style={{ color: completionPct >= 100 ? '#10b981' : '#7c3aed' }}>
-                        {completionPct}%
-                      </span>
+                      <span className="text-[12px] font-[700] text-gray-900">Payment Progress</span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full" style={{ background: 'var(--bg-subtle)' }}>
-                      <m.div initial={{ width: 0 }} animate={{ width: `${completionPct}%` }}
-                        transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
-                        className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+                    <div className="flex items-center justify-center">
+                      <CircularProgress percent={completionPct} colorFrom="#10b981" colorVia="#14b8a6" colorTo="#06b6d4">
+                        <span className="text-[22px] font-[860] tracking-[-0.02em] tabular-nums" style={{ color: completionPct >= 100 ? '#10b981' : '#0f172a' }}>
+                          {completionPct}%
+                        </span>
+                        <span className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-400">Paid</span>
+                      </CircularProgress>
                     </div>
-                    <div className="mt-2.5 flex justify-between">
+                    <div className="mt-4 flex justify-between">
                       <span className="text-[10.5px] font-[600] text-emerald-600">{fmtINR(currentTermPaid)} paid</span>
                       <span className="text-[10.5px] font-[600] text-slate-500">{fmtINR(currentTermFee)} total</span>
                     </div>
@@ -570,33 +608,23 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       border: '1px solid var(--border)',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                     }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                          style={{ background: 'rgba(99,102,241,0.12)' }}>
-                          <Clock size={13} className="text-indigo-500" />
-                        </div>
-                        <span className="text-[12px] font-[700] text-gray-900">PT Duration</span>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
+                        style={{ background: 'rgba(99,102,241,0.12)' }}>
+                        <Clock size={13} className="text-indigo-500" />
                       </div>
-                      <span className="text-[12px] font-[800] tabular-nums"
-                        style={{ color: (client.days_left <= 7 && client.days_left >= 0) ? '#ef4444' : '#6366f1' }}>
-                        {client.days_left !== null ? `${client.days_left}d left` : '—'}
-                      </span>
+                      <span className="text-[12px] font-[700] text-gray-900">PT Duration</span>
                     </div>
-                    <div className="h-2.5 w-full rounded-full" style={{ background: 'var(--bg-subtle)' }}>
-                      {client.duration_months && client.pt_start_date && client.pt_end_date ? (() => {
-                        const start = new Date(client.pt_start_date!).getTime();
-                        const end = new Date(client.pt_end_date!).getTime();
-                        const progress = Math.min(Math.max(((Date.now() - start) / (end - start)) * 100, 0), 100);
-                        return (
-                          <m.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                            transition={{ duration: 1, ease: 'easeOut', delay: 0.35 }}
-                            className="h-full rounded-full"
-                            style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
-                        );
-                      })() : null}
+                    <div className="flex items-center justify-center">
+                      <CircularProgress percent={durationProgressPct} colorFrom="#6366f1" colorVia="#8b5cf6" colorTo="#ec4899">
+                        <span className="text-[20px] font-[860] tracking-[-0.02em] tabular-nums"
+                          style={{ color: (client.days_left <= 7 && client.days_left >= 0) ? '#ef4444' : '#0f172a' }}>
+                          {client.days_left !== null ? client.days_left : '—'}
+                        </span>
+                        <span className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-400">Days Left</span>
+                      </CircularProgress>
                     </div>
-                    <div className="mt-2.5 flex justify-between">
+                    <div className="mt-4 flex justify-between">
                       <span className="text-[10.5px] font-[600] text-slate-500">Start: {fmtDate(client.pt_start_date)}</span>
                       <span className="text-[10.5px] font-[600] text-slate-500">End: {fmtDate(client.pt_end_date)}</span>
                     </div>
