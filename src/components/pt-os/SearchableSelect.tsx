@@ -33,8 +33,21 @@ export function SearchableSelect({
   );
 
   const [open, setOpen] = useState(false);
+  const [dropUp, setDropUp] = useState(false);
   const [query, setQuery] = useState('');
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  // Open upward when the field sits low in the viewport: the fixed page
+  // action bar + mobile bottom nav reserve the bottom ~160px, and a menu
+  // opening downward there ends up painted behind them, untappable.
+  const toggleOpen = () => {
+    if (!open && wrapRef.current) {
+      const rect = wrapRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom - 160;
+      setDropUp(spaceBelow < 320 && rect.top > spaceBelow);
+    }
+    setOpen((o) => !o);
+  };
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -55,7 +68,7 @@ export function SearchableSelect({
       </p>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggleOpen}
         className="flex w-full items-center gap-3 rounded-[13px] px-4 py-3.5 text-left transition-all"
         style={{
           background: open ? 'var(--bg-card)' : 'var(--bg-subtle)',
@@ -72,10 +85,13 @@ export function SearchableSelect({
       <AnimatePresence>
         {open && (
           <m.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            initial={{ opacity: 0, y: dropUp ? 6 : -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: dropUp ? 6 : -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-[14px]"
-            style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: '0 12px 32px rgba(15,23,42,0.12)' }}
+            className={cn(
+              'absolute left-0 right-0 z-[60] overflow-hidden rounded-[14px]',
+              dropUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
+            )}
+            style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(15,23,42,0.09)', boxShadow: dropUp ? '0 -12px 32px rgba(15,23,42,0.12)' : '0 12px 32px rgba(15,23,42,0.12)' }}
           >
             <div className="border-b p-2" style={{ borderColor: 'rgba(15,23,42,0.06)' }}>
               <input
