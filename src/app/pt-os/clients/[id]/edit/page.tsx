@@ -70,7 +70,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
   const [form, setForm] = useState({
     // Personal
-    name: '', mobile: '', email: '', gender: '', dob: '', address: '', weight: '', emergency_contact: '',
+    name: '', mobile: '', email: '', gender: '', dob: '', address: '', weight: '', emergency_contact: '', emergency_phone: '',
     // PT Assignment
     trainer_id: '', trainer_name: '', package_type: '', pt_start_date: '', pt_end_date: '', duration_months: '',
     // Financial
@@ -126,6 +126,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             address: c.address ?? '',
             weight: c.weight != null ? String(c.weight) : '',
             emergency_contact: c.emergency_contact ?? '',
+            emergency_phone: c.emergency_phone ?? '',
             trainer_id: c.trainer_id ?? '',
             trainer_name: c.trainer_name ?? '',
             package_type: c.package_type ?? '',
@@ -168,6 +169,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         address: str(form.address),
         weight: num(form.weight),
         emergency_contact: str(form.emergency_contact),
+        emergency_phone: str(form.emergency_phone),
         trainer_id: str(form.trainer_id),
         trainer_name: str(form.trainer_name),
         package_type: str(form.package_type),
@@ -265,9 +267,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 <div className="sm:col-span-2">
                   <FloatInput label="Address" value={form.address} onChange={set('address')} />
                 </div>
-                <div className="sm:col-span-2">
-                  <FloatInput label="Emergency Contact" type="tel" value={form.emergency_contact} onChange={set('emergency_contact')} />
-                </div>
+                <FloatInput label="Emergency Contact" value={form.emergency_contact} onChange={set('emergency_contact')} />
+                <FloatInput label="Emergency Number" type="tel" value={form.emergency_phone} onChange={set('emergency_phone')} />
                 <div className="sm:col-span-2">
                   <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>Status</label>
                   <select

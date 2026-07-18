@@ -27,6 +27,7 @@ interface FormData {
   whatsappSameAsMobile: boolean;
   email: string;
   emergencyContact: string;
+  emergencyPhone: string;
   occupation: string;
   address: string;
   photoDataUrl: string | null;
@@ -34,7 +35,7 @@ interface FormData {
 
 interface FormErrors {
   name?: string; gender?: string; dob?: string; mobile?: string;
-  whatsapp?: string; email?: string; emergencyContact?: string;
+  whatsapp?: string; email?: string; emergencyPhone?: string;
   occupation?: string; address?: string;
 }
 
@@ -48,7 +49,7 @@ const OCCUPATIONS = [
 function initForm(): FormData {
   return {
     name: '', gender: '', dob: '', mobile: '', whatsapp: '', whatsappSameAsMobile: true,
-    email: '', emergencyContact: '', occupation: '', address: '', photoDataUrl: null,
+    email: '', emergencyContact: '', emergencyPhone: '', occupation: '', address: '', photoDataUrl: null,
   };
 }
 
@@ -102,7 +103,7 @@ function validateEmail(v: string): string | undefined {
   if (!v.trim()) return undefined; // optional
   return EMAIL_RE.test(v.trim()) ? undefined : 'Enter a valid email address.';
 }
-function validateEmergencyContact(v: string): string | undefined {
+function validateEmergencyPhone(v: string): string | undefined {
   const digits = v.replace(/\D/g, '');
   if (!digits) return undefined; // optional
   if (!MOBILE_RE.test(digits)) return 'Enter a valid 10-digit Indian mobile number.';
@@ -123,7 +124,7 @@ function validateAll(form: FormData): FormErrors {
     mobile: validateMobile(form.mobile),
     whatsapp: validateWhatsapp(form.whatsapp, form.whatsappSameAsMobile),
     email: validateEmail(form.email),
-    emergencyContact: validateEmergencyContact(form.emergencyContact),
+    emergencyPhone: validateEmergencyPhone(form.emergencyPhone),
     occupation: validateOccupation(form.occupation),
     address: validateAddress(form.address),
   };
@@ -135,7 +136,7 @@ function hasErrors(errors: FormErrors): boolean {
 
 function computeProgress(form: FormData): number {
   let filled = 0;
-  const total = 8; // 5 required + 3 optional bonus (DOB, Email, Emergency Contact)
+  const total = 8; // 5 required + 3 optional bonus (DOB, Email, Emergency Phone)
   if (!validateName(form.name)) filled++;
   if (!validateGender(form.gender)) filled++;
   if (!validateMobile(form.mobile)) filled++;
@@ -143,7 +144,7 @@ function computeProgress(form: FormData): number {
   if (!validateAddress(form.address)) filled++;
   if (form.dob.trim() && !validateDob(form.dob)) filled++;
   if (form.email.trim() && !validateEmail(form.email)) filled++;
-  if (form.emergencyContact.trim() && !validateEmergencyContact(form.emergencyContact)) filled++;
+  if (form.emergencyPhone.trim() && !validateEmergencyPhone(form.emergencyPhone)) filled++;
   return Math.round((filled / total) * 100);
 }
 
@@ -247,7 +248,7 @@ function NewClientForm() {
         if (rec.dob && !prev.dob) { next.dob = rec.dob; filled++; }
         if (rec.email && !prev.email) { next.email = rec.email; filled++; }
         if (rec.address && !prev.address) { next.address = rec.address; filled++; }
-        if (rec.emergency_no && !prev.emergencyContact) { next.emergencyContact = rec.emergency_no; filled++; }
+        if (rec.emergency_no && !prev.emergencyPhone) { next.emergencyPhone = rec.emergency_no; filled++; }
         return next;
       });
       if (filled > 0) setAutofillNote(`Auto-filled ${filled} field${filled > 1 ? 's' : ''} from imported sheet`);
@@ -304,7 +305,8 @@ function NewClientForm() {
           ? form.mobile.replace(/\D/g, '')
           : (form.whatsapp.replace(/\D/g, '') || undefined),
         email: form.email.trim() || undefined,
-        emergency_contact: form.emergencyContact.replace(/\D/g, '') || undefined,
+        emergency_contact: form.emergencyContact.trim() || undefined,
+        emergency_phone: form.emergencyPhone.replace(/\D/g, '') || undefined,
         occupation: form.occupation.trim(),
         address: form.address.trim(),
       } as Record<string, unknown>);
@@ -443,14 +445,9 @@ function NewClientForm() {
 
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: EASE }}>
 
-          {/* ═══ BASIC INFORMATION ═══ */}
-          <Section kicker="Client Information" title="Basic Information">
+          {/* ═══ CLIENT INFORMATION ═══ */}
+          <Section kicker="Client Information" title="Basic Information" last>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-              <div>
-                <FloatInput label="Client ID" value="" onChange={() => {}} disabled />
-                <p className="mt-1.5 text-[11px] text-slate-400">Assigned automatically when you save.</p>
-              </div>
-
               <FloatInput
                 label="Full Name" required value={form.name}
                 onChange={(v) => set('name', v)}
@@ -492,55 +489,9 @@ function NewClientForm() {
 
               <FloatInput label="Age" value={age !== null ? String(age) : ''} onChange={() => {}} disabled />
 
-              {/* Profile Photo */}
-              <div>
-                <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Profile Photo</p>
-                {form.photoDataUrl ? (
-                  <div className="flex items-center gap-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={form.photoDataUrl} alt="Client preview" className="h-20 w-20 rounded-full object-cover shadow-lg" />
-                    <div className="flex flex-col gap-1.5">
-                      <button type="button" onClick={() => setCropModalOpen(true)} className="text-left text-[12.5px] font-[640]" style={{ color: '#F59E0B' }}>
-                        Change Photo
-                      </button>
-                      <button type="button" onClick={() => set('photoDataUrl', null)} className="text-left text-[12.5px] font-[640] text-slate-400">
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    role="button" tabIndex={0}
-                    onDragOver={(e) => { e.preventDefault(); setPhotoDragOver(true); }}
-                    onDragLeave={() => setPhotoDragOver(false)}
-                    onDrop={handlePhotoDrop}
-                    onClick={() => setCropModalOpen(true)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setCropModalOpen(true); }}
-                    className="flex w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed p-6 text-center transition-all"
-                    style={{
-                      borderColor: photoDragOver ? 'rgba(245,158,11,0.6)' : 'rgba(15,23,42,0.12)',
-                      background: photoDragOver ? 'rgba(245,158,11,0.05)' : 'var(--bg-subtle)',
-                    }}
-                  >
-                    <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-[14px]" style={{ background: 'var(--bg-subtle)' }}>
-                      <Camera size={20} style={{ color: photoDragOver ? '#F59E0B' : '#94a3b8' }} />
-                    </div>
-                    <p className="text-[13px] font-[640] text-slate-500">
-                      {photoDragOver ? 'Drop here' : 'Drag & drop, browse, or use your camera'}
-                    </p>
-                    <p className="text-[11.5px] mt-1 text-slate-400">JPG or PNG — optional</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Section>
-
-          {/* ═══ CONTACT DETAILS ═══ */}
-          <Section title="Contact Details">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
               <div>
                 <FloatInput
-                  label="Mobile Number" type="tel" required value={form.mobile}
+                  label="Contact Number" type="tel" required value={form.mobile}
                   onChange={(v) => set('mobile', v)}
                   onBlur={() => touchField('mobile')}
                   error={errors.mobile}
@@ -585,17 +536,17 @@ function NewClientForm() {
               />
 
               <FloatInput
-                label="Emergency Contact" type="tel" value={form.emergencyContact}
+                label="Emergency Contact" placeholder="e.g. spouse, parent, friend" value={form.emergencyContact}
                 onChange={(v) => set('emergencyContact', v)}
-                onBlur={() => touchField('emergencyContact')}
-                error={errors.emergencyContact}
               />
-            </div>
-          </Section>
 
-          {/* ═══ PERSONAL DETAILS ═══ */}
-          <Section title="Personal Details" last>
-            <div className="space-y-5">
+              <FloatInput
+                label="Emergency Number" type="tel" value={form.emergencyPhone}
+                onChange={(v) => set('emergencyPhone', v)}
+                onBlur={() => touchField('emergencyPhone')}
+                error={errors.emergencyPhone}
+              />
+
               <SearchableSelect
                 label="Occupation" required value={form.occupation}
                 onChange={(v) => { set('occupation', v); setErrors((e) => ({ ...e, occupation: undefined })); }}
@@ -603,13 +554,56 @@ function NewClientForm() {
                 error={errors.occupation}
               />
 
-              <FloatInput
-                label="Address" required value={form.address}
-                onChange={(v) => set('address', v)}
-                onBlur={() => touchField('address')}
-                error={errors.address}
-                multiline autoGrow
-              />
+              <div className="sm:col-span-2">
+                <FloatInput
+                  label="Address" required value={form.address}
+                  onChange={(v) => set('address', v)}
+                  onBlur={() => touchField('address')}
+                  error={errors.address}
+                  multiline autoGrow
+                />
+              </div>
+
+              {/* Profile Photo */}
+              <div className="sm:col-span-2">
+                <p className="mb-3 text-[12px] font-[700] uppercase tracking-widest text-slate-400">Profile Photo</p>
+                {form.photoDataUrl ? (
+                  <div className="flex items-center gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={form.photoDataUrl} alt="Client preview" className="h-20 w-20 rounded-full object-cover shadow-lg" />
+                    <div className="flex flex-col gap-1.5">
+                      <button type="button" onClick={() => setCropModalOpen(true)} className="text-left text-[12.5px] font-[640]" style={{ color: '#F59E0B' }}>
+                        Change Photo
+                      </button>
+                      <button type="button" onClick={() => set('photoDataUrl', null)} className="text-left text-[12.5px] font-[640] text-slate-400">
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    role="button" tabIndex={0}
+                    onDragOver={(e) => { e.preventDefault(); setPhotoDragOver(true); }}
+                    onDragLeave={() => setPhotoDragOver(false)}
+                    onDrop={handlePhotoDrop}
+                    onClick={() => setCropModalOpen(true)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setCropModalOpen(true); }}
+                    className="flex w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border-2 border-dashed p-6 text-center transition-all"
+                    style={{
+                      borderColor: photoDragOver ? 'rgba(245,158,11,0.6)' : 'rgba(15,23,42,0.12)',
+                      background: photoDragOver ? 'rgba(245,158,11,0.05)' : 'var(--bg-subtle)',
+                    }}
+                  >
+                    <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-[14px]" style={{ background: 'var(--bg-subtle)' }}>
+                      <Camera size={20} style={{ color: photoDragOver ? '#F59E0B' : '#94a3b8' }} />
+                    </div>
+                    <p className="text-[13px] font-[640] text-slate-500">
+                      {photoDragOver ? 'Drop here' : 'Drag & drop, browse, or use your camera'}
+                    </p>
+                    <p className="text-[11.5px] mt-1 text-slate-400">JPG or PNG — optional</p>
+                  </div>
+                )}
+              </div>
             </div>
           </Section>
 
