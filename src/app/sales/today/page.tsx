@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  IndianRupee, TrendingUp, ArrowUpRight, Smartphone, CreditCard,
+  TrendingUp, ArrowUpRight, Smartphone, CreditCard,
   Banknote, Wallet, Plus, RefreshCw, Receipt, User, Clock,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -87,19 +87,9 @@ function Inner() {
   }, [payments]);
 
   return (
-    <AppShell headerLeft={
-      <>
-        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 shadow-[0_4px_12px_rgba(236,72,153,0.35)]">
-          <IndianRupee size={16} strokeWidth={2} className="text-white" />
-          <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-        </div>
-        <h1 className="text-[15px] font-extrabold tracking-[-0.02em] bg-gradient-to-r from-pink-400 via-rose-400 to-orange-400 bg-clip-text text-transparent leading-none whitespace-nowrap">
-          Today's Sale
-        </h1>
-      </>
-    }>
+    <AppShell>
       <PullToRefresh onRefresh={refresh}>
-      <div className="relative z-10 mt-4 space-y-6 max-w-[1600px] mx-auto pb-6">
+      <div className="relative z-10 mt-1 space-y-6 max-w-[1600px] mx-auto pb-6">
         {/* Hero revenue card */}
         <m.div
           initial={{ opacity: 0, y: 12 }}
