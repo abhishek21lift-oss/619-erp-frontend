@@ -229,7 +229,7 @@ export type PtClientBase = {
 // "server-computed" are never sent by the client — the backend computes
 // and returns them; any value the client sends for those is ignored.
 
-export type ParqAnswerValue = 'yes' | 'no' | 'not_sure';
+export type ParqAnswerValue = 'yes' | 'no';
 
 export interface ParqAnswer {
   question_id: number;

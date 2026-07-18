@@ -17,7 +17,6 @@ interface StepParqQuestionnaireProps {
 const ANSWER_OPTIONS: { value: ParqAnswerForm['answer']; label: string }[] = [
   { value: 'yes', label: 'Yes' },
   { value: 'no', label: 'No' },
-  { value: 'not_sure', label: 'Not Sure' },
 ];
 
 export function StepParqQuestionnaire({ form, set, error }: StepParqQuestionnaireProps) {
@@ -72,7 +71,7 @@ export function StepParqQuestionnaire({ form, set, error }: StepParqQuestionnair
                   <div className="flex flex-wrap gap-2 ml-9">
                     {ANSWER_OPTIONS.map((opt) => {
                       const selected = a.answer === opt.value;
-                      const color = opt.value === 'yes' ? '#dc2626' : opt.value === 'not_sure' ? '#d97706' : '#059669';
+                      const color = opt.value === 'yes' ? '#dc2626' : '#059669';
                       return (
                         <button
                           key={opt.value} type="button"

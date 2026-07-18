@@ -3,7 +3,7 @@
 // `workout_gate_status` fields. This is a live UX preview only; the backend
 // independently recomputes and owns the source of truth.
 
-export type ParqAnswerValue = 'yes' | 'no' | 'not_sure';
+export type ParqAnswerValue = 'yes' | 'no';
 
 export interface ParqAnswerLike {
   question_id: number;
@@ -74,14 +74,14 @@ export function computeParqRisk(answers: ParqAnswerLike[]): ParqRiskResult {
 }
 
 export const PARQ_QUESTIONS: { id: number; text: string }[] = [
-  { id: 1, text: 'Has your doctor ever said that you have a heart condition and that you should only do physical activity recommended by a doctor?' },
+  { id: 1, text: 'Has your doctor ever said that you have a heart condition and that you should only do physical activity/exercise recommended by a doctor?' },
   { id: 2, text: 'Is there any history of heart disease in your family?' },
-  { id: 3, text: 'Do you feel pain in your chest during physical activity?' },
-  { id: 4, text: 'Have you experienced chest pain during the last month while not exercising?' },
-  { id: 5, text: 'Do you lose balance because of dizziness or have you lost consciousness?' },
-  { id: 6, text: 'Do you have any bone or joint problem that could worsen with exercise?' },
-  { id: 7, text: 'Do you have asthma, diabetes, epilepsy or high blood pressure?' },
-  { id: 8, text: 'Do you have any other medical condition like cancer or osteoporosis?' },
-  { id: 9, text: 'Are you currently being treated by a doctor or physiotherapist?' },
-  { id: 10, text: 'Is there any other reason why you should not exercise?' },
+  { id: 3, text: 'Do you feel pain in your chest when you do physical activity/exercise?' },
+  { id: 4, text: 'In the past month, have you had chest pain when you were not doing physical activity/exercise?' },
+  { id: 5, text: 'Do you lose your balance because of dizziness or do you ever lose consciousness?' },
+  { id: 6, text: 'Do you have a bone or joint problem (for example back, knee, or hip) that could be made worse by a change in your physical activity?' },
+  { id: 7, text: 'Do you suffer from any of the following: asthma; diabetes; epilepsy; or high blood pressure?' },
+  { id: 8, text: 'Do you have any other medical or physical condition (such as cancer or osteoporosis)?' },
+  { id: 9, text: 'Do you have any current injuries or conditions, and if so are they being treated by a doctor or other health professional such as a physiotherapist?' },
+  { id: 10, text: 'Do you know of any other reason why you should not do physical activity/exercise?' },
 ];
