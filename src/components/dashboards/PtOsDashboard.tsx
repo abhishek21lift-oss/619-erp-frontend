@@ -21,10 +21,10 @@ import { PremiumBarChart, PullToRefresh } from '@/components/ui';
 import {
   Users, TrendingUp, Wallet, Percent, RefreshCw,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
-  UserPlus, CreditCard, CalendarPlus, FileBarChart, Dumbbell, Receipt,
+  UserPlus, CalendarPlus, Receipt,
   Trophy, ShieldCheck, Target, Gauge, Crown,
   CalendarClock, AlertCircle, CheckCircle2, XCircle, PhoneCall,
-  FileSignature,
+  FileSignature, HeartPulse, Apple, PersonStanding,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -289,13 +289,13 @@ function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRef
 function MobileQuickActions() {
   const router = useRouter();
   const actions = [
-    { label: 'Add Client',  icon: <UserPlus size={16} />,     href: '/pt-os/new-client',       color: C.purple },
-    { label: 'Schedule',    icon: <CalendarPlus size={16} />, href: '/pt-os/schedule-session', color: C.blue },
-    { label: 'New Package', icon: <Dumbbell size={16} />,     href: '/pt-os/plans',            color: C.emerald },
-    { label: 'Payment',     icon: <CreditCard size={16} />,   href: '/pt-os/balance-sheet',    color: C.amber },
-    { label: 'Sessions',    icon: <CalendarClock size={16} />, href: '/pt-os/sessions',        color: C.crimson },
-    { label: 'Reports',     icon: <FileBarChart size={16} />, href: '/pt-os/reports',          color: C.cyan },
-    { label: 'Workouts',    icon: <Activity size={16} />,     href: '/pt-os/workout-plans',    color: C.rose },
+    { label: 'Add Client',           icon: <UserPlus size={16} />,       href: '/pt-os/new-client',           color: C.purple },
+    { label: 'Consent',              icon: <FileSignature size={16} />,  href: '/pt-os/informed-consent',     color: C.blue },
+    { label: 'PAR-Q',                icon: <ShieldCheck size={16} />,    href: '/pt-os/parq',                 color: C.emerald },
+    { label: 'Fitness Testing',      icon: <Gauge size={16} />,          href: '/pt-os/assessment',           color: C.amber },
+    { label: 'Lifestyle',            icon: <HeartPulse size={16} />,     href: '/pt-os/lifestyle-assessment', color: C.crimson },
+    { label: 'Nutrition Assessment', icon: <Apple size={16} />,          href: '/pt-os/nutrition-assessment', color: C.cyan },
+    { label: 'Mobility Assessment',  icon: <PersonStanding size={16} />, href: '/pt-os/mobility-assessment',  color: C.rose },
   ];
   return (
     <div className="lg:hidden -mx-3 px-3">
@@ -1006,12 +1006,13 @@ function TrainerLeaderboard({ trainers, onRefetch, loading }: {
 function QuickDock() {
   const router = useRouter();
   const actions = [
-    { label: 'Add Client',  icon: <UserPlus size={17} />,     href: '/pt-os/new-client',       color: C.purple },
-    { label: 'Package',     icon: <Dumbbell size={17} />,     href: '/pt-os/plans',            color: C.blue },
-    { label: 'Payment',     icon: <CreditCard size={17} />,   href: '/pt-os/balance-sheet',    color: C.emerald },
-    { label: 'Schedule',    icon: <CalendarPlus size={17} />, href: '/pt-os/schedule-session', color: C.amber },
-    { label: 'Reports',     icon: <FileBarChart size={17} />, href: '/pt-os/reports',          color: C.crimson },
-    { label: 'Workouts',    icon: <Activity size={17} />,     href: '/pt-os/workout-plans',    color: C.cyan },
+    { label: 'Add Client',           icon: <UserPlus size={17} />,       href: '/pt-os/new-client',           color: C.purple },
+    { label: 'Consent',              icon: <FileSignature size={17} />,  href: '/pt-os/informed-consent',     color: C.blue },
+    { label: 'PAR-Q',                icon: <ShieldCheck size={17} />,    href: '/pt-os/parq',                 color: C.emerald },
+    { label: 'Fitness Testing',      icon: <Gauge size={17} />,          href: '/pt-os/assessment',           color: C.amber },
+    { label: 'Lifestyle',            icon: <HeartPulse size={17} />,     href: '/pt-os/lifestyle-assessment', color: C.crimson },
+    { label: 'Nutrition Assessment', icon: <Apple size={17} />,          href: '/pt-os/nutrition-assessment', color: C.cyan },
+    { label: 'Mobility Assessment',  icon: <PersonStanding size={17} />, href: '/pt-os/mobility-assessment',  color: C.rose },
   ];
   return (
     <m.div
