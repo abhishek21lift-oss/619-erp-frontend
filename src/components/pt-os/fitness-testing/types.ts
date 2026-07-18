@@ -19,7 +19,7 @@ export interface AssessmentFormData {
   bpSystolic: string; bpDiastolic: string; restingHeartRate: string; restingSpo2: string;
 
   // Step 2 — Anthropometric
-  weight: string; heightCm: string; waistCm: string; hipsCm: string; neckCm: string; chestCm: string;
+  weight: string; heightCm: string; waistCm: string; waistIliacCm: string; hipsCm: string; neckCm: string; chestCm: string;
   armRightCm: string; armLeftCm: string; thighRightCm: string; thighLeftCm: string; calfRightCm: string; calfLeftCm: string;
 
   // Step 3 — Body Composition
@@ -80,7 +80,7 @@ export function initAssessmentForm(): AssessmentFormData {
     assessmentNotes: '',
     trainerId: '', trainerName: '',
     bpSystolic: '', bpDiastolic: '', restingHeartRate: '', restingSpo2: '',
-    weight: '', heightCm: '', waistCm: '', hipsCm: '', neckCm: '', chestCm: '',
+    weight: '', heightCm: '', waistCm: '', waistIliacCm: '', hipsCm: '', neckCm: '', chestCm: '',
     armRightCm: '', armLeftCm: '', thighRightCm: '', thighLeftCm: '', calfRightCm: '', calfLeftCm: '',
     bodyCompMethod: '', bodyFatPct: '', muscleMassPct: '', visceralFat: '', subcutaneousFatPct: '',
     bodyWaterPct: '', boneMassKg: '', bmr: '', metabolicAge: '',

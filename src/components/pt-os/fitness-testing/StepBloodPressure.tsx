@@ -29,46 +29,43 @@ export function StepBloodPressure({ form, set, error }: StepBloodPressureProps) 
   const badge = category ? BADGE_STYLE[category] : null;
 
   return (
-    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-      <div className="p-7 sm:p-10">
-        <div className="flex items-start gap-4 mb-7">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <HeartPulse size={20} color="#F59E0B" />
-          </div>
-          <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Blood Pressure</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 7 — resting cardiovascular baseline.</p>
-          </div>
+    <div>
+      <div className="flex items-start gap-4 mb-7">
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
+          <HeartPulse size={20} color="#F59E0B" />
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Systolic (mmHg)" type="number" value={form.bpSystolic} onChange={(v) => set('bpSystolic', v)} />
-          <FloatInput label="Diastolic (mmHg)" type="number" value={form.bpDiastolic} onChange={(v) => set('bpDiastolic', v)} />
-          <FloatInput label="Resting Heart Rate (bpm)" type="number" value={form.restingHeartRate} onChange={(v) => set('restingHeartRate', v)} />
-          <FloatInput label="Resting SpO₂ (%)" type="number" value={form.restingSpo2} onChange={(v) => set('restingSpo2', v)} />
+        <div>
+          <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Blood Pressure</h2>
+          <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 7 — resting cardiovascular baseline.</p>
         </div>
-
-        {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
-
-        {category && badge && (
-          <div className="mt-6 flex items-center gap-2">
-            <span className="text-[11px] font-[700] uppercase tracking-wider text-slate-400">Classification</span>
-            <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: badge.bg, color: badge.color }}>
-              {category}
-            </span>
-          </div>
-        )}
-
-        {isUnsafe && (
-          <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
-            <AlertTriangle size={18} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
-            <p className="text-[13px] font-[640]" style={{ color: '#991b1b' }}>
-              Exercise not recommended. Medical clearance required.
-            </p>
-          </div>
-        )}
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FloatInput label="Systolic (mmHg)" type="number" value={form.bpSystolic} onChange={(v) => set('bpSystolic', v)} />
+        <FloatInput label="Diastolic (mmHg)" type="number" value={form.bpDiastolic} onChange={(v) => set('bpDiastolic', v)} />
+        <FloatInput label="Resting Heart Rate (bpm)" type="number" value={form.restingHeartRate} onChange={(v) => set('restingHeartRate', v)} />
+        <FloatInput label="Resting SpO₂ (%)" type="number" value={form.restingSpo2} onChange={(v) => set('restingSpo2', v)} />
+      </div>
+
+      {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
+
+      {category && badge && (
+        <div className="mt-6 flex items-center gap-2">
+          <span className="text-[11px] font-[700] uppercase tracking-wider text-slate-400">Classification</span>
+          <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: badge.bg, color: badge.color }}>
+            {category}
+          </span>
+        </div>
+      )}
+
+      {isUnsafe && (
+        <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+          <AlertTriangle size={18} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
+          <p className="text-[13px] font-[640]" style={{ color: '#991b1b' }}>
+            Exercise not recommended. Medical clearance required.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

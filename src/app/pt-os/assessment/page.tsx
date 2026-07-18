@@ -12,7 +12,6 @@ import AppShell from '@/components/AppShell';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, EmptyState } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { downloadAssessmentPdf } from '@/lib/assessment-pdf';
 import {
@@ -108,12 +107,10 @@ function AssessmentContent() {
   const router = useRouter();
   const sp = useSearchParams();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
   const clientId = sp.get('client_id') || '';
 
   if (!clientId) return <ClientPicker />;
-  return <AssessmentWizard key={clientId} clientId={clientId} isAdmin={isAdmin} router={router} toast={toast} />;
+  return <AssessmentWizard key={clientId} clientId={clientId} router={router} toast={toast} />;
 }
 
 /* ─────────────────────────────────────────────────────── CLIENT PICKER */
@@ -249,16 +246,14 @@ function ClientPicker() {
 /* ─────────────────────────────────────────────────────── WIZARD */
 interface AssessmentWizardProps {
   clientId: string;
-  isAdmin: boolean;
   router: ReturnType<typeof useRouter>;
   toast: ReturnType<typeof useToast>['toast'];
 }
 
-function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizardProps) {
+function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const [clientName, setClientName] = useState('');
   const [age, setAge] = useState<number | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);
-  const [trainers, setTrainers] = useState<TrainerOption[]>([]);
   const [history, setHistory] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -293,7 +288,6 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
       setGender(g === 'Male' || g === 'Female' || g === 'Other' ? g : null);
 
       const list = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
-      setTrainers(list);
       const hist = Array.isArray(historyRes?.data) ? historyRes.data : [];
       setHistory(hist);
 
@@ -332,11 +326,6 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
   const set = useCallback(<K extends keyof AssessmentFormData>(key: K, val: AssessmentFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: val }));
   }, []);
-
-  const handleTrainerChange = (trainerId: string) => {
-    const t = trainers.find((tr) => tr.id === trainerId);
-    setForm((prev) => ({ ...prev, trainerId, trainerName: t?.name || '' }));
-  };
 
   const liveScores = useMemo<FitnessScores>(() => {
     const bmi = calcBmi(n(form.weight), n(form.heightCm));
@@ -416,7 +405,7 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
         resting_heart_rate: n(form.restingHeartRate) ?? undefined, resting_spo2: n(form.restingSpo2) ?? undefined,
 
         weight: n(form.weight) ?? undefined, height_cm: n(form.heightCm) ?? undefined,
-        waist_cm: n(form.waistCm) ?? undefined, hips_cm: n(form.hipsCm) ?? undefined,
+        waist_cm: n(form.waistCm) ?? undefined, waist_iliac_cm: n(form.waistIliacCm) ?? undefined, hips_cm: n(form.hipsCm) ?? undefined,
         neck_cm: n(form.neckCm) ?? undefined, chest_cm: n(form.chestCm) ?? undefined,
         arm_right_cm: n(form.armRightCm) ?? undefined, arm_left_cm: n(form.armLeftCm) ?? undefined,
         thigh_right_cm: n(form.thighRightCm) ?? undefined, thigh_left_cm: n(form.thighLeftCm) ?? undefined,
@@ -576,7 +565,7 @@ function AssessmentWizard({ clientId, isAdmin, router, toast }: AssessmentWizard
           </m.div>
         ) : !reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-            {step === 1 && <AssessmentInfoCard form={form} set={set} clientName={clientName} nextAssessmentNumber={nextAssessmentNumber} isAdmin={isAdmin} trainers={trainers} onTrainerChange={handleTrainerChange} />}
+            {step === 1 && <AssessmentInfoCard form={form} set={set} clientName={clientName} nextAssessmentNumber={nextAssessmentNumber} />}
             {step === 1 && <StepBloodPressure form={form} set={set} error={errors.bp} />}
             {step === 2 && <StepAnthropometric form={form} set={set} error={errors.anthropometric} />}
             {step === 3 && <StepBodyComposition form={form} set={set} age={age} gender={gender} error={errors.bodyComposition} />}
