@@ -15,10 +15,6 @@ export interface InformedConsentFormData {
   address: string;
   occupation: string;
   acknowledgements: InformedConsentAcknowledgements;
-  physicianAdvisedAgainst: boolean | null;
-  physicianName: string;
-  hospital: string;
-  medicalCondition: string;
   exerciseConsentChecked: boolean;
   exerciseConsentDate: string;
   exerciseConsentSignature: string;
@@ -37,7 +33,6 @@ export function initInformedConsentForm(): InformedConsentFormData {
     fullName: '', gender: '', dob: '', mobile: '', email: '',
     emergencyContact: '', emergencyPhone: '', address: '', occupation: '',
     acknowledgements: {},
-    physicianAdvisedAgainst: null, physicianName: '', hospital: '', medicalCondition: '',
     exerciseConsentChecked: false, exerciseConsentDate: todayStr(), exerciseConsentSignature: '',
     clientSignature: '', trainerSignature: '', witnessSignature: '', witnessName: '',
   };
@@ -55,10 +50,6 @@ export function formFromRecord(r: InformedConsent): InformedConsentFormData {
     address: r.address || '',
     occupation: r.occupation || '',
     acknowledgements: r.acknowledgements || {},
-    physicianAdvisedAgainst: r.physician_advised_against ?? null,
-    physicianName: r.physician_name || '',
-    hospital: r.hospital || '',
-    medicalCondition: r.medical_condition || '',
     exerciseConsentChecked: r.exercise_consent_checked ?? false,
     exerciseConsentDate: r.exercise_consent_date ? String(r.exercise_consent_date).slice(0, 10) : todayStr(),
     exerciseConsentSignature: r.exercise_consent_signature || '',
@@ -69,18 +60,15 @@ export function formFromRecord(r: InformedConsent): InformedConsentFormData {
   };
 }
 
-export type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type StepId = 1 | 2 | 3 | 4;
 
 export interface StepDef { id: StepId; key: string; label: string; }
 
 export const STEPS: StepDef[] = [
   { id: 1, key: 'clientInfo', label: 'Client Info' },
-  { id: 2, key: 'overview', label: 'Program Overview' },
-  { id: 3, key: 'risks', label: 'Risks & Responsibilities' },
-  { id: 4, key: 'clearance', label: 'Medical Clearance' },
-  { id: 5, key: 'agreements', label: 'Agreements' },
-  { id: 6, key: 'exerciseConsent', label: 'Exercise Programme Consent' },
-  { id: 7, key: 'signatures', label: 'Signatures' },
+  { id: 2, key: 'exerciseConsent', label: 'Consent' },
+  { id: 3, key: 'agreements', label: 'Agreement' },
+  { id: 4, key: 'signatures', label: 'Signature' },
 ];
 
 // ── Exercise Programme Consent — verbatim text, reproduced exactly as
@@ -115,20 +103,8 @@ export function prevStepId(current: StepId): StepId | null {
   return idx > 0 ? STEPS[idx - 1].id : null;
 }
 
-// Section 4 (client responsibilities) + Section 2 (risk acknowledgement) —
-// shown together on the Risks & Responsibilities step.
-export const RISK_ACK_FIELDS: { key: keyof InformedConsentAcknowledgements; label: string }[] = [
-  { key: 'understands_risk', label: 'I understand the possible risks of personal training (muscle soreness/strain, joint discomfort, elevated heart rate/blood pressure, fatigue, dizziness, falls, injury).' },
-  { key: 'accurate_medical_history', label: 'I provided accurate medical history.' },
-  { key: 'will_inform_pain', label: 'I will immediately inform my trainer if I feel pain.' },
-  { key: 'will_stop_if_dizzy', label: 'I understand I should stop exercise if I experience dizziness.' },
-  { key: 'will_stop_if_chest_pain', label: 'I understand I should stop if I have chest pain.' },
-  { key: 'will_communicate_changes', label: 'I understand I must communicate any health changes.' },
-  { key: 'will_follow_instructions', label: 'I agree to follow trainer instructions.' },
-];
-
 // Section 6 (confidentiality) + Section 7 (voluntary participation) +
-// Section 8 (final declaration) — shown together on the Agreements step.
+// Section 8 (final declaration) — shown together on the Agreement step.
 export const FINAL_ACK_FIELDS: { key: keyof InformedConsentAcknowledgements; label: string }[] = [
   { key: 'understands_confidentiality', label: 'I understand my personal and medical information will remain confidential and will only be used for designing, monitoring and improving my personal training program.' },
   { key: 'voluntary_participation', label: 'I understand my participation is voluntary and I can withdraw at any time.' },
@@ -137,8 +113,6 @@ export const FINAL_ACK_FIELDS: { key: keyof InformedConsentAcknowledgements; lab
     label: 'I confirm that: I have read this entire informed consent document; I understand the risks; I understand the benefits; I have asked all my questions; my questions have been answered; I voluntarily agree to participate.',
   },
 ];
-
-export const ALL_ACK_FIELDS = [...RISK_ACK_FIELDS, ...FINAL_ACK_FIELDS];
 
 export function buildCreatePayload(form: InformedConsentFormData, clientId: string): Record<string, unknown> {
   return {
@@ -167,10 +141,6 @@ export function buildUpdatePayload(form: InformedConsentFormData): Record<string
     address: form.address || null,
     occupation: form.occupation || null,
     acknowledgements: form.acknowledgements,
-    physician_advised_against: form.physicianAdvisedAgainst,
-    physician_name: form.physicianName || null,
-    hospital: form.hospital || null,
-    medical_condition: form.medicalCondition || null,
     // Sent verbatim so the backend stores exactly what was shown/signed,
     // independent of future edits to the canonical text in this file.
     exercise_consent_text: EXERCISE_PROGRAMME_CONSENT_TEXT,

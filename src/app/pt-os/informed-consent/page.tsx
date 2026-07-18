@@ -18,13 +18,10 @@ import StepperTimeline from '@/components/pt-os/shared/StepperTimeline';
 import {
   STEPS, type StepId, type InformedConsentFormData,
   initInformedConsentForm, formFromRecord, nextStepId, prevStepId,
-  RISK_ACK_FIELDS, FINAL_ACK_FIELDS, buildCreatePayload, buildUpdatePayload,
+  FINAL_ACK_FIELDS, buildCreatePayload, buildUpdatePayload,
 } from '@/components/pt-os/informed-consent/types';
 import { statusStyle } from '@/components/pt-os/informed-consent/statusConfig';
 import StepClientInfo from '@/components/pt-os/informed-consent/StepClientInfo';
-import StepProgramOverview from '@/components/pt-os/informed-consent/StepProgramOverview';
-import StepRisksResponsibilities from '@/components/pt-os/informed-consent/StepRisksResponsibilities';
-import StepMedicalClearance from '@/components/pt-os/informed-consent/StepMedicalClearance';
 import StepAgreements from '@/components/pt-os/informed-consent/StepAgreements';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
 import StepSignatures from '@/components/pt-os/informed-consent/StepSignatures';
@@ -40,23 +37,16 @@ function validateStep(step: StepId, form: InformedConsentFormData): string | und
     if (!form.dob) return 'Date of birth is required.';
     if (!form.mobile.trim()) return 'Mobile number is required.';
   }
-  if (step === 3) {
-    const missing = RISK_ACK_FIELDS.some((f) => !form.acknowledgements[f.key]);
-    if (missing) return 'All risk & responsibility items must be checked.';
-  }
-  if (step === 4 && form.physicianAdvisedAgainst) {
-    if (!form.physicianName.trim() || !form.hospital.trim()) return 'Physician name and hospital are required.';
-  }
-  if (step === 5) {
-    const missing = FINAL_ACK_FIELDS.some((f) => !form.acknowledgements[f.key]);
-    if (missing) return 'All agreement items must be checked.';
-  }
-  if (step === 6) {
+  if (step === 2) {
     if (!form.exerciseConsentChecked) return 'Please check the consent acknowledgement to continue.';
     if (!form.exerciseConsentSignature) return 'Client signature is required.';
     if (!form.exerciseConsentDate) return 'Date is required.';
   }
-  if (step === 7) {
+  if (step === 3) {
+    const missing = FINAL_ACK_FIELDS.some((f) => !form.acknowledgements[f.key]);
+    if (missing) return 'All agreement items must be checked.';
+  }
+  if (step === 4) {
     if (!form.clientSignature) return 'Client signature is required.';
     if (!form.trainerSignature) return 'Trainer signature is required.';
   }
@@ -370,7 +360,6 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   const [creatingDraft, setCreatingDraft] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(isResume && record ? record.id : null);
-  const [clearanceFileUrl, setClearanceFileUrl] = useState<string | null>(record?.medical_clearance_file_url ?? null);
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const initFormRef = useRef<InformedConsentFormData>(form);
   const restoredRef = useRef(false);
@@ -549,18 +538,9 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
       <div className="mx-auto max-w-3xl px-5 sm:px-8 py-5 space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
           {step === 1 && <StepClientInfo form={form} set={set} error={errors.step1} />}
-          {step === 2 && <StepProgramOverview />}
-          {step === 3 && <StepRisksResponsibilities form={form} set={set} error={errors.step3} />}
-          {step === 4 && (
-            <StepMedicalClearance
-              form={form} set={set} error={errors.step4}
-              recordId={currentId} fileUrl={clearanceFileUrl}
-              onFileUploaded={(url) => setClearanceFileUrl(url)}
-            />
-          )}
-          {step === 5 && <StepAgreements form={form} set={set} error={errors.step5} />}
-          {step === 6 && <StepExerciseProgrammeConsent form={form} set={set} error={errors.step6} />}
-          {step === 7 && <StepSignatures form={form} set={set} error={errors.step7} />}
+          {step === 2 && <StepExerciseProgrammeConsent form={form} set={set} error={errors.step2} />}
+          {step === 3 && <StepAgreements form={form} set={set} error={errors.step3} />}
+          {step === 4 && <StepSignatures form={form} set={set} error={errors.step4} />}
         </m.div>
       </div>
 

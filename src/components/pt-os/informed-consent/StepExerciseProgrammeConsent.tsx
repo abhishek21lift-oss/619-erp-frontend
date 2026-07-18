@@ -24,8 +24,8 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
             <FileSignature size={20} color="#fff" />
           </div>
           <div>
-            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Exercise Programme Consent</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 6 of 7</p>
+            <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Consent</h2>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 4</p>
           </div>
         </div>
 

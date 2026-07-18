@@ -22,7 +22,7 @@ export function StepSignatures({ form, set, error }: StepSignaturesProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Digital Signatures</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 7 of 7 — client and trainer signatures are required.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 4 of 4 — client and trainer signatures are required.</p>
           </div>
         </div>
 
