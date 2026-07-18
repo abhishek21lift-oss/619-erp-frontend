@@ -39,7 +39,6 @@ export function ParqReview({ form, onEditStep }: ParqReviewProps) {
   const bmi = calcBMI(parseFloat(form.heightCm) || null, parseFloat(form.weightKg) || null);
   const risk = computeParqRisk(form.parqAnswers);
   const yesAnswers = form.parqAnswers.filter((a) => a.answer === 'yes');
-  const flaggedFamily = form.familyHistory.filter((r) => r.relation);
   const clearanceFilled = Boolean(form.medicalClearance.doctor_name || form.medicalClearance.hospital);
 
   return (
@@ -53,7 +52,7 @@ export function ParqReview({ form, onEditStep }: ParqReviewProps) {
             </div>
             <div>
               <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Review &amp; Submit</h2>
-              <p className="text-[13px] text-slate-400 mt-1.5">Step 9 of 9 — confirm everything below, then submit.</p>
+              <p className="text-[13px] text-slate-400 mt-1.5">Step 8 of 8 — confirm everything below, then submit.</p>
             </div>
           </div>
         </div>
@@ -67,13 +66,15 @@ export function ParqReview({ form, onEditStep }: ParqReviewProps) {
           <Field label="Gender" value={form.gender} />
           <Field label="Age" value={age != null ? `${age} yrs` : null} />
           <Field label="Mobile" value={form.mobile} />
-          <Field label="Blood Group" value={form.bloodGroup} />
           <Field label="BMI" value={bmi} />
         </div>
       </SectionCard>
 
       <SectionCard title="Current Health" stepId={2} onEdit={onEditStep}>
         <div className="flex flex-wrap gap-2">
+          <span className="rounded-full px-3 py-1 text-[11.5px] font-[700]" style={{ background: 'rgba(15,23,42,0.06)', color: '#334155' }}>
+            Blood Group: {form.bloodGroup || '—'}
+          </span>
           {[
             form.currentHealth.known_disease && 'Known Disease', form.currentHealth.smoking && 'Smoking',
             form.currentHealth.alcohol && 'Alcohol', form.currentHealth.medications && 'On Medications',
@@ -81,9 +82,6 @@ export function ParqReview({ form, onEditStep }: ParqReviewProps) {
           ].filter(Boolean).map((label) => (
             <span key={String(label)} className="rounded-full px-3 py-1 text-[11.5px] font-[700]" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>{label}</span>
           ))}
-          {![form.currentHealth.known_disease, form.currentHealth.smoking, form.currentHealth.alcohol, form.currentHealth.medications, form.currentHealth.has_pain].some(Boolean) && (
-            <span className="text-[12.5px] font-[600] text-slate-400">No flagged current-health items.</span>
-          )}
         </div>
       </SectionCard>
 
@@ -98,19 +96,7 @@ export function ParqReview({ form, onEditStep }: ParqReviewProps) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Family Medical History" stepId={4} onEdit={onEditStep}>
-        {flaggedFamily.length === 0 ? (
-          <span className="text-[12.5px] font-[600] text-slate-400">No family history added.</span>
-        ) : (
-          <div className="space-y-1.5">
-            {flaggedFamily.map((r) => (
-              <p key={r._key} className="text-[12.5px] font-[600] capitalize" style={{ color: '#334155' }}>{r.relation}</p>
-            ))}
-          </div>
-        )}
-      </SectionCard>
-
-      <SectionCard title="PAR-Q Questionnaire" stepId={5} onEdit={onEditStep}>
+      <SectionCard title="PAR-Q Questionnaire" stepId={4} onEdit={onEditStep}>
         {yesAnswers.length === 0 ? (
           <span className="text-[12.5px] font-[600] text-slate-400">No YES answers.</span>
         ) : (
@@ -125,7 +111,7 @@ export function ParqReview({ form, onEditStep }: ParqReviewProps) {
       </SectionCard>
 
       {risk.riskLevel === 'high' && (
-        <SectionCard title="Medical Clearance" stepId={6} onEdit={onEditStep}>
+        <SectionCard title="Medical Clearance" stepId={5} onEdit={onEditStep}>
           {clearanceFilled ? (
             <div className="grid grid-cols-2 gap-4">
               <Field label="Doctor" value={form.medicalClearance.doctor_name} />
@@ -139,11 +125,11 @@ export function ParqReview({ form, onEditStep }: ParqReviewProps) {
         </SectionCard>
       )}
 
-      <SectionCard title="Trainer Notes" stepId={7} onEdit={onEditStep}>
+      <SectionCard title="Trainer Notes" stepId={6} onEdit={onEditStep}>
         <p className="text-[12.5px] font-[600]" style={{ color: '#334155' }}>{form.trainerNotes.summary || 'No summary added.'}</p>
       </SectionCard>
 
-      <SectionCard title="Digital Consent" stepId={8} onEdit={onEditStep}>
+      <SectionCard title="Digital Consent" stepId={7} onEdit={onEditStep}>
         <div className="grid grid-cols-2 gap-4">
           <Field label="All Boxes Checked" value={Object.values(form.consentCheckboxes).every(Boolean) ? 'Yes' : 'No'} />
           <Field label="Client Signature" value={form.clientSignature ? 'Captured' : 'Missing'} />

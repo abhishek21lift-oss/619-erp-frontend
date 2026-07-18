@@ -2,11 +2,11 @@
 // ParqForm(Detail) API contract (src/lib/api.ts).
 
 import type {
-  ParqFormDetail, ParqAnswerValue, FamilyRelation, ParqStatus, ClearanceApprovalStatus,
+  ParqFormDetail, ParqAnswerValue, ParqStatus, ClearanceApprovalStatus,
 } from '@/lib/api';
 import {
-  type ParqFormData, type FamilyHistoryRowForm, type ParqAnswerForm,
-  initParqForm, initParqAnswers, initFamilyHistoryRow, PARQ_QUESTIONS, n,
+  type ParqFormData, type ParqAnswerForm,
+  initParqForm, initParqAnswers, PARQ_QUESTIONS, n,
 } from './types';
 
 function s(v: unknown): string {
@@ -37,15 +37,6 @@ export function formFromRow(row: ParqFormDetail): ParqFormData {
     });
   });
   const parqAnswers = PARQ_QUESTIONS.map((q) => answersByQ.get(q.id) ?? initParqAnswers().find((a) => a.question_id === q.id)!);
-
-  const familyHistory: FamilyHistoryRowForm[] = (row.family_history ?? []).map((fh) => ({
-    ...initFamilyHistoryRow(fh.relation as FamilyRelation),
-    heart_disease: b(fh.heart_disease), diabetes: b(fh.diabetes), stroke: b(fh.stroke),
-    hypertension: b(fh.hypertension), cancer: b(fh.cancer), hyperlipidemia: b(fh.hyperlipidemia),
-    kidney_disease: b(fh.kidney_disease), sudden_death: b(fh.sudden_death),
-    age_of_onset: fh.age_of_onset != null ? String(fh.age_of_onset) : '',
-    notes: s(fh.notes),
-  }));
 
   return {
     ...fresh,
@@ -87,7 +78,6 @@ export function formFromRow(row: ParqFormDetail): ParqFormData {
       previous_physiotherapy: b(ph.previous_physiotherapy), previous_trainer: b(ph.previous_trainer),
       exercise_experience: s(ph.exercise_experience),
     },
-    familyHistory,
     parqAnswers,
     medicalClearance: mc ? {
       doctor_name: s(mc.doctor_name), hospital: s(mc.hospital),
@@ -161,16 +151,6 @@ export function buildFormPayload(form: ParqFormData, clientId: string): Record<s
       previous_physiotherapy: ph.previous_physiotherapy, previous_trainer: ph.previous_trainer,
       exercise_experience: ph.exercise_experience || undefined,
     },
-    family_history: form.familyHistory
-      .filter((fh) => fh.relation)
-      .map((fh) => ({
-        relation: fh.relation,
-        heart_disease: fh.heart_disease, diabetes: fh.diabetes, stroke: fh.stroke,
-        hypertension: fh.hypertension, cancer: fh.cancer, hyperlipidemia: fh.hyperlipidemia,
-        kidney_disease: fh.kidney_disease, sudden_death: fh.sudden_death,
-        age_of_onset: n(fh.age_of_onset) ?? undefined,
-        notes: fh.notes || undefined,
-      })),
     parq_answers: form.parqAnswers
       .filter((a) => a.answer)
       .map((a) => ({

@@ -22,6 +22,8 @@ const DIETARY_HABITS: { value: string; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
+
 interface StepCurrentHealthProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
@@ -44,7 +46,29 @@ export function StepCurrentHealth({ form, set, error }: StepCurrentHealthProps) 
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Current Health</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 9 — toggle YES for anything that applies.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 8 — toggle YES for anything that applies.</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Blood Group</p>
+          <div className="flex flex-wrap gap-2">
+            {BLOOD_GROUPS.map((bg) => {
+              const selected = form.bloodGroup === bg;
+              return (
+                <button
+                  key={bg} type="button" onClick={() => set('bloodGroup', bg)}
+                  className="rounded-[11px] px-3.5 py-2 text-[12.5px] font-[700] transition-all"
+                  style={{
+                    background: selected ? '#0f172a' : '#f8fafc',
+                    color: selected ? '#fff' : '#64748b',
+                    border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
+                  }}
+                >
+                  {bg}
+                </button>
+              );
+            })}
           </div>
         </div>
 

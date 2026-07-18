@@ -32,7 +32,7 @@ export function StepConsent({ form, set, error }: StepConsentProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Digital Consent</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 8 of 9 — all boxes must be checked, both signatures required.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 7 of 8 — all boxes must be checked, both signatures required.</p>
           </div>
         </div>
 

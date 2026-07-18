@@ -25,7 +25,6 @@ import { formFromRow, buildFormPayload, buildClearancePayload, buildConsentPaylo
 import StepClientDetails from '@/components/pt-os/parq/StepClientDetails';
 import StepCurrentHealth from '@/components/pt-os/parq/StepCurrentHealth';
 import StepPastHistory from '@/components/pt-os/parq/StepPastHistory';
-import StepFamilyHistory from '@/components/pt-os/parq/StepFamilyHistory';
 import StepParqQuestionnaire from '@/components/pt-os/parq/StepParqQuestionnaire';
 import StepMedicalClearance from '@/components/pt-os/parq/StepMedicalClearance';
 import StepTrainerNotes from '@/components/pt-os/parq/StepTrainerNotes';
@@ -43,16 +42,16 @@ function validateStep(step: StepId, form: ParqFormData, riskLevel: 'low' | 'medi
     if (!form.dob) return 'Date of birth is required.';
     if (!form.mobile.trim()) return 'Mobile number is required.';
   }
-  if (step === 5) {
+  if (step === 4) {
     const unanswered = form.parqAnswers.filter((a) => !a.answer).length;
     if (unanswered > 0) return `Please answer all ${PARQ_QUESTIONS.length} PAR-Q questions (${unanswered} remaining).`;
   }
-  if (step === 6 && riskLevel === 'high') {
+  if (step === 5 && riskLevel === 'high') {
     if (!form.medicalClearance.doctor_name.trim() || !form.medicalClearance.hospital.trim() || !form.medicalClearance.clearance_date) {
       return 'Doctor name, hospital, and clearance date are required for high-risk clients.';
     }
   }
-  if (step === 8) {
+  if (step === 7) {
     const allChecked = CONSENT_CHECKBOX_FIELDS.every((f) => form.consentCheckboxes[f.key]);
     if (!allChecked) return 'All 7 consent checkboxes must be checked.';
     if (!form.clientSignature) return 'Client signature is required.';
@@ -384,6 +383,7 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
               heightCm: c.height != null ? String(c.height) : '',
               weightKg: c.weight != null ? String(c.weight) : '',
               trainerName: String(c.trainer_name ?? ''),
+              pastHistory: { ...base.pastHistory, occupation: String(c.occupation ?? '') },
             };
           }
         } catch { /* non-fatal — leave fields blank for manual entry */ }
@@ -549,18 +549,17 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
           {step === 1 && <StepClientDetails form={form} set={set} error={errors.clientDetails} />}
           {step === 2 && <StepCurrentHealth form={form} set={set} error={errors.currentHealth} />}
           {step === 3 && <StepPastHistory form={form} set={set} error={errors.pastHistory} />}
-          {step === 4 && <StepFamilyHistory form={form} set={set} error={errors.familyHistory} />}
-          {step === 5 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} />}
-          {step === 6 && riskLevel === 'high' && (
+          {step === 4 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} />}
+          {step === 5 && riskLevel === 'high' && (
             <StepMedicalClearance
               form={form} set={set} error={errors.medicalClearance}
               formId={currentFormId} documents={documents}
               onDocumentUploaded={(doc) => setDocuments((d) => [...d, doc])}
             />
           )}
-          {step === 7 && <StepTrainerNotes form={form} set={set} />}
-          {step === 8 && <StepConsent form={form} set={set} error={errors.consent} />}
-          {step === 9 && <ParqReview form={form} onEditStep={setStep} />}
+          {step === 6 && <StepTrainerNotes form={form} set={set} />}
+          {step === 7 && <StepConsent form={form} set={set} error={errors.consent} />}
+          {step === 8 && <ParqReview form={form} onEditStep={setStep} />}
         </m.div>
       </div>
 

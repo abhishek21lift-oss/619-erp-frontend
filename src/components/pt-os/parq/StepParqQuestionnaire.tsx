@@ -41,7 +41,7 @@ export function StepParqQuestionnaire({ form, set, error }: StepParqQuestionnair
             </div>
             <div>
               <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">PAR-Q Questionnaire</h2>
-              <p className="text-[13px] text-slate-400 mt-1.5">Step 5 of 9 — {answeredCount}/{PARQ_QUESTIONS.length} answered. YES expands follow-up details.</p>
+              <p className="text-[13px] text-slate-400 mt-1.5">Step 4 of 8 — {answeredCount}/{PARQ_QUESTIONS.length} answered. YES expands follow-up details.</p>
             </div>
           </div>
 

@@ -20,7 +20,7 @@ export function StepTrainerNotes({ form, set }: StepTrainerNotesProps) {
       notes={form.trainerNotes as unknown as Record<string, string>}
       onChange={onChange}
       title="Trainer Notes"
-      subtitle="Step 7 of 9 — observations & programming guidance for this client."
+      subtitle="Step 6 of 8 — observations & programming guidance for this client."
     />
   );
 }

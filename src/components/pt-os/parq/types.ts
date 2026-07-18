@@ -5,7 +5,7 @@
 // form/API boundary via `toPayload()` / `formFromRow()`.
 
 import type {
-  ParqAnswerValue, FamilyRelation, ParqStatus, ClearanceApprovalStatus,
+  ParqAnswerValue, ParqStatus, ClearanceApprovalStatus,
 } from '@/lib/api';
 import { n, PARQ_QUESTIONS } from '@/lib/parq-calculations';
 
@@ -79,21 +79,6 @@ export interface ParqAnswerForm {
   notes: string;
 }
 
-export interface FamilyHistoryRowForm {
-  _key: string; // client-only stable key for React lists / add-remove
-  relation: FamilyRelation | '';
-  heart_disease: boolean;
-  diabetes: boolean;
-  stroke: boolean;
-  hypertension: boolean;
-  cancer: boolean;
-  hyperlipidemia: boolean;
-  kidney_disease: boolean;
-  sudden_death: boolean;
-  age_of_onset: string;
-  notes: string;
-}
-
 export interface ConsentCheckboxesForm {
   info_true: boolean;
   understands_risk: boolean;
@@ -130,7 +115,6 @@ export interface ParqFormData {
 
   currentHealth: CurrentHealthForm;
   pastHistory: PastHistoryForm;
-  familyHistory: FamilyHistoryRowForm[];
   parqAnswers: ParqAnswerForm[];
   medicalClearance: MedicalClearanceForm;
   trainerNotes: TrainerNotesForm;
@@ -147,7 +131,6 @@ export interface FormErrors {
   clientDetails?: string;
   currentHealth?: string;
   pastHistory?: string;
-  familyHistory?: string;
   parqQuestionnaire?: string;
   medicalClearance?: string;
   trainerNotes?: string;
@@ -158,12 +141,11 @@ export const STEPS = [
   { id: 1, key: 'clientDetails', label: 'Client Details' },
   { id: 2, key: 'currentHealth', label: 'Current Health' },
   { id: 3, key: 'pastHistory', label: 'Past History' },
-  { id: 4, key: 'familyHistory', label: 'Family History' },
-  { id: 5, key: 'parqQuestionnaire', label: 'PAR-Q' },
-  { id: 6, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
-  { id: 7, key: 'trainerNotes', label: 'Trainer Notes' },
-  { id: 8, key: 'consent', label: 'Digital Consent' },
-  { id: 9, key: 'review', label: 'Review' },
+  { id: 4, key: 'parqQuestionnaire', label: 'PAR-Q' },
+  { id: 5, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
+  { id: 6, key: 'trainerNotes', label: 'Trainer Notes' },
+  { id: 7, key: 'consent', label: 'Digital Consent' },
+  { id: 8, key: 'review', label: 'Review' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];
@@ -188,25 +170,6 @@ export function prevStepId(current: StepId, riskLevel: 'low' | 'medium' | 'high'
   return vis[idx - 1].id;
 }
 
-export const FAMILY_RELATIONS: { value: FamilyRelation; label: string }[] = [
-  { value: 'father', label: 'Father' },
-  { value: 'mother', label: 'Mother' },
-  { value: 'brother', label: 'Brother' },
-  { value: 'sister', label: 'Sister' },
-  { value: 'grandparent', label: 'Grandparent' },
-];
-
-export const FAMILY_CONDITION_FIELDS: { key: keyof FamilyHistoryRowForm; label: string }[] = [
-  { key: 'heart_disease', label: 'Heart Disease' },
-  { key: 'diabetes', label: 'Diabetes' },
-  { key: 'stroke', label: 'Stroke' },
-  { key: 'hypertension', label: 'Hypertension' },
-  { key: 'cancer', label: 'Cancer' },
-  { key: 'hyperlipidemia', label: 'Hyperlipidemia' },
-  { key: 'kidney_disease', label: 'Kidney Disease' },
-  { key: 'sudden_death', label: 'Sudden Death' },
-];
-
 export const CONSENT_CHECKBOX_FIELDS: { key: keyof ConsentCheckboxesForm; label: string }[] = [
   { key: 'info_true', label: 'All information provided above is true and accurate to the best of my knowledge.' },
   { key: 'understands_risk', label: 'I understand that physical activity carries inherent risks, including injury.' },
@@ -226,10 +189,6 @@ export const TRAINER_NOTES_FIELDS: { key: keyof TrainerNotesForm; label: string 
   { key: 'precautions', label: 'Precautions' },
   { key: 'summary', label: 'Summary' },
 ];
-
-function newFamilyKey(): string {
-  return `fh_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
 
 export function initCurrentHealth(): CurrentHealthForm {
   return {
@@ -267,15 +226,6 @@ export function initTrainerNotes(): TrainerNotesForm {
   };
 }
 
-export function initFamilyHistoryRow(relation: FamilyRelation | '' = ''): FamilyHistoryRowForm {
-  return {
-    _key: newFamilyKey(), relation,
-    heart_disease: false, diabetes: false, stroke: false, hypertension: false,
-    cancer: false, hyperlipidemia: false, kidney_disease: false, sudden_death: false,
-    age_of_onset: '', notes: '',
-  };
-}
-
 export function initParqAnswers(): ParqAnswerForm[] {
   return PARQ_QUESTIONS.map((q) => ({
     question_id: q.id, answer: '', explanation: '', diagnosis_date: '', treatment: '', doctor_name: '', hospital: '', notes: '',
@@ -302,7 +252,6 @@ export function initParqForm(): ParqFormData {
     heightCm: '', weightKg: '', trainerName: '',
     currentHealth: initCurrentHealth(),
     pastHistory: initPastHistory(),
-    familyHistory: [],
     parqAnswers: initParqAnswers(),
     medicalClearance: initMedicalClearance(),
     trainerNotes: initTrainerNotes(),
