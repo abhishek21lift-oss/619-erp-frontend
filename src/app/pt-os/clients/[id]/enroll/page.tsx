@@ -21,8 +21,6 @@ import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 interface EnrollFormData {
   startDate: string;
   duration: string; // '1'..'12'
-  goal: string;
-  customGoal: string;
   trainerId: string;
   trainerName: string;
   trainingMode: 'Offline' | 'Online' | 'Hybrid' | '';
@@ -41,31 +39,13 @@ interface EnrollFormData {
 }
 
 interface FormErrors {
-  startDate?: string; duration?: string; goal?: string; trainingMode?: string;
+  startDate?: string; duration?: string; trainingMode?: string;
   workoutTime?: string; trainingDays?: string; sessionsPerWeek?: string;
   finalAmount?: string; amountPaid?: string;
 }
 
 /* ─────────────────────────────────────────────────────── CONSTANTS */
 const DURATIONS = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} Month${i > 0 ? 's' : ''}` }));
-
-const GOALS = [
-  { value: 'Fat Loss', label: 'Fat Loss', icon: '🏋️' },
-  { value: 'Muscle Gain', label: 'Muscle Gain', icon: '💪' },
-  { value: 'Body Recomposition', label: 'Body Recomposition', icon: '⚖️' },
-  { value: 'Strength', label: 'Strength', icon: '🔥' },
-  { value: 'Powerlifting', label: 'Powerlifting', icon: '🏆' },
-  { value: 'Endurance', label: 'Endurance', icon: '🏃' },
-  { value: 'General Fitness', label: 'General Fitness', icon: '❤️' },
-  { value: 'Mobility', label: 'Mobility', icon: '🤸' },
-  { value: 'Athletic Performance', label: 'Athletic Performance', icon: '⚡' },
-  { value: 'Wedding Transformation', label: 'Wedding Transformation', icon: '👰' },
-  { value: 'Medical Fitness', label: 'Medical Fitness', icon: '🩺' },
-  { value: 'Senior Fitness', label: 'Senior Fitness', icon: '👴' },
-  { value: "Women's Fitness", label: "Women's Fitness", icon: '👩' },
-  { value: 'Marathon Preparation', label: 'Marathon Preparation', icon: '🏃' },
-  { value: 'Custom Goal', label: 'Custom Goal', icon: '🎯' },
-];
 
 const TRAINING_MODES = [
   { value: 'Offline', label: 'Offline — In-person at the studio', icon: '🏢' },
@@ -135,11 +115,6 @@ function validateStartDate(v: string): string | undefined {
 function validateDuration(v: string): string | undefined {
   return v ? undefined : 'Please select a duration.';
 }
-function validateGoal(form: EnrollFormData): string | undefined {
-  if (!form.goal) return 'Please select a goal.';
-  if (form.goal === 'Custom Goal' && !form.customGoal.trim()) return 'Please describe the custom goal.';
-  return undefined;
-}
 function validateTrainingMode(v: string): string | undefined {
   return v ? undefined : 'Please select a training mode.';
 }
@@ -180,7 +155,6 @@ function validateAll(form: EnrollFormData, canEditPayment: boolean): FormErrors 
   return {
     startDate: validateStartDate(form.startDate),
     duration: validateDuration(form.duration),
-    goal: validateGoal(form),
     trainingMode: validateTrainingMode(form.trainingMode),
     workoutTime: validateWorkoutTime(form),
     trainingDays: validateTrainingDays(form.trainingDays),
@@ -195,7 +169,7 @@ function hasErrors(errors: FormErrors): boolean {
 
 function initForm(): EnrollFormData {
   return {
-    startDate: todayStr(), duration: '', goal: '', customGoal: '',
+    startDate: todayStr(), duration: '',
     trainerId: '', trainerName: '', trainingMode: '', workoutTime: '',
     customTime: '', useCustomTime: false, trainingDays: [], sessionsPerWeek: '',
     finalAmount: '', amountPaid: '',
@@ -243,8 +217,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
       const loaded: EnrollFormData = {
         startDate: String(c.pt_start_date ?? '').slice(0, 10) || todayStr(),
         duration: c.duration_months ? String(c.duration_months) : '',
-        goal: String(c.goal ?? ''),
-        customGoal: '',
         trainerId: String(c.trainer_id ?? ''),
         trainerName: String(c.trainer_name ?? ''),
         trainingMode: (String(c.training_mode ?? '') as EnrollFormData['trainingMode']) || '',
@@ -253,8 +225,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
         useCustomTime: false,
         trainingDays: days,
         sessionsPerWeek: c.sessions_per_week ? String(c.sessions_per_week) : '',
-        finalAmount: c.final_amount != null ? String(c.final_amount) : '',
-        amountPaid: c.paid_amount != null ? String(c.paid_amount) : '',
+        // pt_clients.final_amount / paid_amount default to 0 (NOT NULL) in the
+        // database, so a freshly created client would otherwise pre-fill these
+        // money fields with "0" before any real price has been entered.
+        // Treat 0 as "not set yet" here so the fields start blank.
+        finalAmount: c.final_amount ? String(c.final_amount) : '',
+        amountPaid: c.paid_amount ? String(c.paid_amount) : '',
       };
 
       const draft = restore();
@@ -331,7 +307,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
         pt_start_date: form.startDate,
         pt_end_date: endDate,
         duration_months: Number(form.duration),
-        goal: form.goal === 'Custom Goal' ? form.customGoal.trim() : form.goal,
         trainer_id: form.trainerId || undefined,
         trainer_name: form.trainerName || undefined,
         training_mode: form.trainingMode,
@@ -523,29 +498,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 </div>
               </div>
 
-              {/* Goal */}
-              <div>
-                <SearchableSelect
-                  label="PT Goal" required allowCustom={false}
-                  value={form.goal}
-                  onChange={(v) => { set('goal', v); setErrors((e) => ({ ...e, goal: undefined })); }}
-                  options={GOALS}
-                  error={errors.goal}
-                />
-                <AnimatePresence>
-                  {form.goal === 'Custom Goal' && (
-                    <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                      <FloatInput
-                        label="Describe Goal" required multiline autoGrow
-                        value={form.customGoal}
-                        onChange={(v) => set('customGoal', v)}
-                        onBlur={() => setErrors((e) => ({ ...e, goal: validateGoal(form) }))}
-                      />
-                    </m.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
               {/* Training Mode */}
               <SearchableSelect
                 label="Training Mode" required allowCustom={false}
@@ -675,7 +627,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   { label: 'Balance Due', val: form.finalAmount ? fmtINR(balanceDue) : '—', success: Boolean(form.finalAmount) && isPaidInFull },
                   { label: 'Sessions / Week', val: form.sessionsPerWeek || '—' },
                   { label: 'Estimated Sessions', val: estimatedSessions || '—' },
-                  { label: 'Coach', val: form.trainerName || 'Coach Abhishek' },
                   { label: 'Training Mode', val: form.trainingMode || '—' },
                 ].map((r) => (
                   <div key={r.label}>
