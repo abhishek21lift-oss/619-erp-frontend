@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Calendar, Clock, Award,
-  Check, Sparkles, AlertCircle, Loader2,
+  Check, Sparkles, AlertCircle, Loader2, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { api } from '@/lib/api';
+import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth-context';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
@@ -195,6 +196,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const [form, setForm] = useState<EnrollFormData>(initForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
+  // Persistent (not auto-dismissing) save-failure banner. A toast alone was
+  // reported as "click Finish, nothing happens" — whatever the underlying
+  // cause, a transient toast is too easy to miss entirely on a fast failure.
+  // This stays on screen with the raw error text until the user dismisses
+  // it or a save succeeds.
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const initFormRef = useRef<EnrollFormData>(initForm());
 
   // Scroll-to-error targets: a validation failure that only shows a toast +
@@ -303,7 +310,65 @@ function EnrollForm({ clientId }: { clientId: string }) {
     toast[ok ? 'success' : 'error'](ok ? 'Draft saved.' : 'Could not save draft — storage unavailable.');
   };
 
-  const handleSubmit = async () => {
+  // The backend (Render free tier) spins down after ~15 min idle and can take
+  // 30-60s to wake on the next request; the production API path also goes
+  // through Next.js's rewrite proxy (next.config.js), which has its own
+  // timeout shorter than that cold-start window. A save attempt that lands
+  // during a cold start fails with a 5xx/timeout or a raw network error —
+  // easy to mistake for "nothing happening" since it's otherwise identical
+  // to a fast failure. Retry once automatically with an explanatory message
+  // before surfacing a real error, so the (very likely) second attempt —
+  // which lands on an already-warm backend — just works.
+  const savePayload = () => api.pt.updateClient(clientId, {
+    pt_start_date: form.startDate,
+    pt_end_date: endDate,
+    duration_months: Number(form.duration),
+    trainer_id: form.trainerId || undefined,
+    trainer_name: form.trainerName || undefined,
+    training_mode: form.trainingMode,
+    preferred_workout_time: form.useCustomTime ? form.customTime : form.workoutTime,
+    preferred_training_days: form.trainingDays.join(', '),
+    sessions_per_week: Number(form.sessionsPerWeek),
+    // Payment fields are admin/manager-only (matches the backend's RBAC
+    // boundary on PATCH /clients/:id, which silently ignores these for
+    // the trainer role) - only send them when they were actually
+    // editable, so a read-only display value never overwrites data.
+    ...(isAdmin ? {
+      final_amount: Number(form.finalAmount),
+      paid_amount: Number(form.amountPaid),
+    } : {}),
+  });
+
+  const attemptSave = async (isRetry: boolean) => {
+    try {
+      await savePayload();
+      clear();
+      setSubmitError(null);
+      toast.success('Client enrolled in PT.');
+      router.push(`/pt-os/clients/${clientId}`);
+    } catch (err: unknown) {
+      // No HTTP response at all (err isn't an ApiError) or a 5xx — both are
+      // consistent with a proxy timeout / backend cold start. A 4xx is a
+      // real validation/logic error from the server — never retried.
+      const isTransient = !(err instanceof ApiError) || err.isServer;
+      console.error('[enroll] save failed', err);
+      const detail = err instanceof ApiError
+        ? `HTTP ${err.status}${err.code ? ` · ${err.code}` : ''} — ${err.message}`
+        : err instanceof Error
+        ? `${err.name}: ${err.message}`
+        : String(err);
+
+      if (isTransient && !isRetry) {
+        toast.info('Save failed — retrying once…', { duration: 6000 });
+        setTimeout(() => { attemptSave(true); }, 3000);
+        return; // keep the button in its saving state through the retry
+      }
+      setSubmitError(detail);
+      setSaving(false);
+    }
+  };
+
+  const handleSubmit = () => {
     const allErrors = validateAll(form, isAdmin);
     setErrors(allErrors);
     if (hasErrors(allErrors)) {
@@ -318,35 +383,9 @@ function EnrollForm({ clientId }: { clientId: string }) {
       if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
+    setSubmitError(null);
     setSaving(true);
-    try {
-      await api.pt.updateClient(clientId, {
-        pt_start_date: form.startDate,
-        pt_end_date: endDate,
-        duration_months: Number(form.duration),
-        trainer_id: form.trainerId || undefined,
-        trainer_name: form.trainerName || undefined,
-        training_mode: form.trainingMode,
-        preferred_workout_time: form.useCustomTime ? form.customTime : form.workoutTime,
-        preferred_training_days: form.trainingDays.join(', '),
-        sessions_per_week: Number(form.sessionsPerWeek),
-        // Payment fields are admin/manager-only (matches the backend's RBAC
-        // boundary on PATCH /clients/:id, which silently ignores these for
-        // the trainer role) - only send them when they were actually
-        // editable, so a read-only display value never overwrites data.
-        ...(isAdmin ? {
-          final_amount: Number(form.finalAmount),
-          paid_amount: Number(form.amountPaid),
-        } : {}),
-      });
-      clear();
-      toast.success('Client enrolled in PT.');
-      router.push(`/pt-os/clients/${clientId}`);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save enrollment.');
-    } finally {
-      setSaving(false);
-    }
+    attemptSave(false);
   };
 
   if (loading) {
@@ -667,6 +706,31 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   </div>
                 ))}
               </div>
+            </m.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── SAVE FAILURE (persistent — a toast alone was reported as
+             invisible; this stays put right above Finish, where the user's
+             attention already is, until dismissed or a save succeeds) ── */}
+        <AnimatePresence>
+          {submitError && (
+            <m.div
+              initial={{ opacity: 0, y: 8, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              className="flex items-start gap-3 rounded-[14px] px-4 py-3"
+              style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
+            >
+              <AlertCircle size={15} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12.5px] font-[700]" style={{ color: '#991b1b' }}>Could not save enrollment</p>
+                <p className="mt-0.5 text-[11.5px] font-[560] break-words" style={{ color: '#b91c1c' }}>{submitError}</p>
+                <button type="button" onClick={handleSubmit} className="mt-2 text-[11.5px] font-[700]" style={{ color: '#dc2626' }}>
+                  Try Again
+                </button>
+              </div>
+              <button type="button" onClick={() => setSubmitError(null)} className="opacity-60 hover:opacity-100 transition-opacity">
+                <X size={13} style={{ color: '#991b1b' }} />
+              </button>
             </m.div>
           )}
         </AnimatePresence>
