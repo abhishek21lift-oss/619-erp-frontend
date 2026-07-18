@@ -197,6 +197,15 @@ function EnrollForm({ clientId }: { clientId: string }) {
   const [saving, setSaving] = useState(false);
   const initFormRef = useRef<EnrollFormData>(initForm());
 
+  // Scroll-to-error targets: a validation failure that only shows a toast +
+  // an inline error message is easy to miss when the offending field is
+  // scrolled off-screen (e.g. the user is down at the sticky Finish button).
+  // handleSubmit scrolls the first invalid field into view on block.
+  const fieldRefs = useRef<Partial<Record<keyof FormErrors, HTMLDivElement | null>>>({});
+  const bindFieldRef = (key: keyof FormErrors) => (el: HTMLDivElement | null) => {
+    fieldRefs.current[key] = el;
+  };
+
   const draftKey = `pt-os.enroll.${clientId}.draft.v1`;
   const isDirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(initFormRef.current), [form]);
   const { restore, clear, saveNow } = useAutoSaveDraft({ key: draftKey, data: form, isDirty });
@@ -298,7 +307,15 @@ function EnrollForm({ clientId }: { clientId: string }) {
     const allErrors = validateAll(form, isAdmin);
     setErrors(allErrors);
     if (hasErrors(allErrors)) {
-      toast.error('Please fix the highlighted fields.');
+      // Order matches on-screen top-to-bottom position so the first hit is
+      // the first invalid field the user would actually see when scrolled up.
+      const order: (keyof FormErrors)[] = [
+        'startDate', 'duration', 'finalAmount', 'amountPaid',
+        'trainingMode', 'workoutTime', 'trainingDays', 'sessionsPerWeek',
+      ];
+      const firstKey = order.find((k) => allErrors[k]);
+      toast.error((firstKey && allErrors[firstKey]) || 'Please fix the highlighted fields.');
+      if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     setSaving(true);
@@ -402,7 +419,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
 
               {/* Start / Duration / End */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div ref={bindFieldRef('startDate')}>
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
                       PT Start Date <span style={{ color: '#F59E0B' }}>*</span>
@@ -419,13 +436,15 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   />
                 </div>
 
-                <SearchableSelect
-                  label="PT Duration" required allowCustom={false}
-                  value={form.duration}
-                  onChange={(v) => { set('duration', v); setErrors((e) => ({ ...e, duration: undefined })); }}
-                  options={DURATIONS}
-                  error={errors.duration}
-                />
+                <div ref={bindFieldRef('duration')}>
+                  <SearchableSelect
+                    label="PT Duration" required allowCustom={false}
+                    value={form.duration}
+                    onChange={(v) => { set('duration', v); setErrors((e) => ({ ...e, duration: undefined })); }}
+                    options={DURATIONS}
+                    error={errors.duration}
+                  />
+                </div>
               </div>
 
               <div>
@@ -439,7 +458,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   Payment Details
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
+                  <div ref={bindFieldRef('finalAmount')}>
                     <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
                       Final / Selling Price {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
                     </p>
@@ -454,7 +473,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                       disabled={!isAdmin}
                     />
                   </div>
-                  <div>
+                  <div ref={bindFieldRef('amountPaid')}>
                     <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
                       Amount Paid {isAdmin && <span style={{ color: '#F59E0B' }}>*</span>}
                     </p>
@@ -499,16 +518,18 @@ function EnrollForm({ clientId }: { clientId: string }) {
               </div>
 
               {/* Training Mode */}
-              <SearchableSelect
-                label="Training Mode" required allowCustom={false}
-                value={form.trainingMode}
-                onChange={(v) => { set('trainingMode', v as EnrollFormData['trainingMode']); setErrors((e) => ({ ...e, trainingMode: undefined })); }}
-                options={TRAINING_MODES}
-                error={errors.trainingMode}
-              />
+              <div ref={bindFieldRef('trainingMode')}>
+                <SearchableSelect
+                  label="Training Mode" required allowCustom={false}
+                  value={form.trainingMode}
+                  onChange={(v) => { set('trainingMode', v as EnrollFormData['trainingMode']); setErrors((e) => ({ ...e, trainingMode: undefined })); }}
+                  options={TRAINING_MODES}
+                  error={errors.trainingMode}
+                />
+              </div>
 
               {/* Preferred Workout Time */}
-              <div>
+              <div ref={bindFieldRef('workoutTime')}>
                 <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
                   Preferred Workout Time <span style={{ color: '#F59E0B' }}>*</span>
                 </p>
@@ -558,7 +579,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
               </div>
 
               {/* Preferred Training Days */}
-              <div>
+              <div ref={bindFieldRef('trainingDays')}>
                 <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
                   Preferred Training Days <span style={{ color: '#F59E0B' }}>*</span>
                 </p>
@@ -592,13 +613,15 @@ function EnrollForm({ clientId }: { clientId: string }) {
               </div>
 
               {/* Sessions Per Week */}
-              <SearchableSelect
-                label="Sessions Per Week" required allowCustom={false}
-                value={form.sessionsPerWeek}
-                onChange={(v) => { set('sessionsPerWeek', v); setErrors((e) => ({ ...e, sessionsPerWeek: undefined })); }}
-                options={SESSIONS_OPTIONS}
-                error={errors.sessionsPerWeek}
-              />
+              <div ref={bindFieldRef('sessionsPerWeek')}>
+                <SearchableSelect
+                  label="Sessions Per Week" required allowCustom={false}
+                  value={form.sessionsPerWeek}
+                  onChange={(v) => { set('sessionsPerWeek', v); setErrors((e) => ({ ...e, sessionsPerWeek: undefined })); }}
+                  options={SESSIONS_OPTIONS}
+                  error={errors.sessionsPerWeek}
+                />
+              </div>
 
             </div>
           </div>
