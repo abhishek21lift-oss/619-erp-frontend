@@ -29,10 +29,8 @@ interface StepAdditionalFactorsProps {
 
 export function StepAdditionalFactors({ form, set }: StepAdditionalFactorsProps) {
   return (
-    <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-      <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#0f172a,#334155)' }} />
-      <div className="p-7 sm:p-10 space-y-7">
-        <div className="flex items-start gap-4">
+    <div className="space-y-7">
+      <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
             <Sparkles size={20} color="#F59E0B" />
           </div>
@@ -72,7 +70,6 @@ export function StepAdditionalFactors({ form, set }: StepAdditionalFactorsProps)
             })}
           </div>
         </div>
-      </div>
     </div>
   );
 }
