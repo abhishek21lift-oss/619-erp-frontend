@@ -373,12 +373,6 @@ function NewClientForm() {
             >
               Enroll in PT
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/pt-os/progress-tracking-setup?client_id=${createdId}`)}
-            >
-              Set Up Baseline
-            </Button>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button variant="outline" onClick={() => router.push(`/pt-os/clients/${createdId}`)}>
                 View Client Profile
