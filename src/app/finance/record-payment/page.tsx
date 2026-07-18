@@ -5,13 +5,29 @@ import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { ChevronLeft, Search, Check } from 'lucide-react';
+import { ArrowLeft, Search, Check, Smartphone, Banknote, CreditCard, Wallet, Delete } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Client } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
 type Method = 'Cash' | 'UPI' | 'Card' | 'Bank';
 const METHODS: Method[] = ['Cash', 'UPI', 'Card', 'Bank'];
+
+const METHOD_ICONS: Record<Method, React.ReactNode> = {
+  Cash: <Banknote size={14} />,
+  UPI: <Smartphone size={14} />,
+  Card: <CreditCard size={14} />,
+  Bank: <Wallet size={14} />,
+};
+
+// Same method → gradient mapping as /sales/today, so a payment method reads
+// as the same colour everywhere it appears in the app.
+const METHOD_COLORS: Record<Method, string> = {
+  Cash: 'from-emerald-500 to-green-500',
+  UPI: 'from-violet-500 to-purple-500',
+  Card: 'from-blue-500 to-cyan-500',
+  Bank: 'from-amber-500 to-orange-500',
+};
 
 const AVATAR_COLORS = ['#FF3B30', '#FF9500', '#34C759', '#007AFF', '#AF52DE', '#FF2D55'];
 function initials(name: string) {
@@ -122,183 +138,196 @@ export default function RecordPaymentPage() {
   return (
     <Guard role="admin">
       <AppShell>
-        <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <div className="relative z-10 mt-1 max-w-[560px] mx-auto pb-8">
 
-          {/* ── Nav bar ── */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px 8px', maxWidth: 480, margin: '0 auto', width: '100%' }}>
+          {/* ── Nav row ── */}
+          <div className="flex items-center gap-2.5 pt-2 pb-4">
             <button onClick={() => router.back()} aria-label="Back"
-              style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)', flexShrink: 0 }}>
-              <ChevronLeft size={17} />
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-muted)] transition-all duration-200 hover:bg-gradient-to-br hover:from-indigo-500/10 hover:to-violet-500/10 hover:text-indigo-400">
+              <ArrowLeft size={16} />
             </button>
-            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Record Payment</span>
+            <span className="text-[13px] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              Record Payment
+            </span>
           </div>
 
-          <div style={{ flex: 1, padding: '4px 20px 32px', maxWidth: 480, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <AnimatePresence mode="wait">
-              {done ? (
-                /* ── Success state ── */
-                <m.div key="done"
-                  initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, paddingTop: 40 }}>
-                  <m.div
-                    initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 20, delay: 0.05 }}
-                    style={{ width: 64, height: 64, borderRadius: '50%', background: '#34C759', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </m.div>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-                      ₹{done.amount.toLocaleString('en-IN')}
-                    </div>
-                    <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Recorded for {done.name}</div>
-                  </div>
+          <AnimatePresence mode="wait">
+            {done ? (
+              /* ── Success state ── */
+              <m.div key="done"
+                initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 p-10 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center gap-3 text-center"
+              >
+                <m.div
+                  initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 20, delay: 0.05 }}
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg"
+                >
+                  <Check size={28} strokeWidth={2.5} className="text-white" />
                 </m.div>
-              ) : (
-                <m.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-                  {/* ── Amount display ── */}
-                  <div style={{ paddingTop: 24, paddingBottom: 8, textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: 52,
-                      fontWeight: 700,
-                      letterSpacing: '-0.04em',
-                      color: amount ? '#111827' : '#d1d5db',
-                      lineHeight: 1,
-                      transition: 'color 0.15s',
-                    }}>
-                      {displayAmount}
-                    </div>
-                    {amountError && (
-                      <div style={{ fontSize: 12, color: '#FF3B30', marginTop: 6 }}>Enter an amount</div>
-                    )}
+                <div>
+                  <div className="text-[32px] font-extrabold tracking-[-0.03em] bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent tabular-nums leading-none">
+                    ₹{done.amount.toLocaleString('en-IN')}
                   </div>
+                  <div className="mt-2 text-[13px] text-[var(--text-muted)]">Recorded for {done.name}</div>
+                </div>
+              </m.div>
+            ) : (
+              <m.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4">
 
-                  {/* ── Grouped card: client + method ── */}
-                  <div style={{ borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', overflow: 'visible' }} ref={pickerRef}>
+                {/* ── Amount hero ── */}
+                <div className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-purple-500/10 p-6 sm:p-8 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] text-center">
+                  <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-indigo-400/20 to-violet-400/20 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-gradient-to-br from-purple-400/20 to-violet-400/20 blur-3xl" />
+                  <p className="relative text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    Amount
+                  </p>
+                  <div
+                    className="relative mt-2 text-[48px] sm:text-[56px] font-extrabold tracking-[-0.03em] leading-none tabular-nums"
+                    style={amount
+                      ? undefined
+                      : { color: 'var(--text-disabled)' }}
+                  >
+                    <span className={amount ? 'bg-gradient-to-br from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent' : ''}>
+                      {displayAmount}
+                    </span>
+                  </div>
+                  {amountError && (
+                    <div className="relative mt-2 text-[12px] font-semibold text-rose-500">Enter an amount</div>
+                  )}
+                </div>
 
-                    {/* Client row */}
-                    <button onClick={() => { setPickerOpen(v => !v); setClientError(false); setTimeout(() => searchRef.current?.focus(), 50); }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderBottom: '1px solid var(--border)' }}>
-                      {selected ? (
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarColor(selected.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                          {initials(selected.name)}
-                        </div>
-                      ) : (
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: clientError ? 'rgba(255,59,48,0.12)' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Search size={14} color={clientError ? '#FF3B30' : '#9ca3af'} />
-                        </div>
-                      )}
-                      <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginBottom: 1 }}>To</div>
-                        <div style={{ fontSize: 15, fontWeight: 600, color: selected ? '#111827' : (clientError ? '#FF3B30' : '#9ca3af'), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {selected ? selected.name : 'Select client'}
-                        </div>
+                {/* ── Client + method card ── */}
+                <div ref={pickerRef} className="relative overflow-visible rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] divide-y divide-[var(--border)]">
+
+                  {/* Client row */}
+                  <button onClick={() => { setPickerOpen(v => !v); setClientError(false); setTimeout(() => searchRef.current?.focus(), 50); }}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--bg-hover)] rounded-t-3xl">
+                    {selected ? (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white"
+                        style={{ background: avatarColor(selected.name) }}>
+                        {initials(selected.name)}
                       </div>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                        style={{ transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
+                    ) : (
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${clientError ? 'bg-rose-500/12' : 'bg-[var(--bg-subtle)]'}`}>
+                        <Search size={14} className={clientError ? 'text-rose-500' : 'text-[var(--text-muted)]'} />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12.5px] font-medium text-[var(--text-muted)]">To</div>
+                      <div className={`truncate text-[15px] font-semibold ${selected ? 'text-[var(--text-primary)]' : clientError ? 'text-rose-500' : 'text-[var(--text-disabled)]'}`}>
+                        {selected ? selected.name : 'Select client'}
+                      </div>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      className={`shrink-0 text-[var(--text-muted)] transition-transform duration-200 ${pickerOpen ? 'rotate-180' : ''}`}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
 
-                    {/* Selected client's balance — the whole reason this page exists is
-                        to clear a due, so surface it immediately on selection instead of
-                        making the trainer go check the client profile first. */}
-                    {selected && selectedBalance !== null && (
-                      <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-                        style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderBottom: '1px solid var(--border)', background: selectedBalance > 0 ? 'rgba(255,59,48,0.06)' : 'rgba(52,199,89,0.06)' }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 600, color: selectedBalance > 0 ? '#FF3B30' : '#34C759' }}>
-                          {selectedBalance > 0 ? `Balance Due: ₹${selectedBalance.toLocaleString('en-IN')}` : 'Fully Paid — no balance due'}
-                        </span>
-                        {selectedBalance > 0 && (
-                          <button onClick={() => { setAmount(String(selectedBalance)); setAmountError(false); }}
-                            style={{ fontSize: 11.5, fontWeight: 700, color: '#FF3B30', background: 'rgba(255,59,48,0.12)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                            Fill
-                          </button>
-                        )}
+                  {/* Selected client's balance — the whole reason this page exists is
+                      to clear a due, so surface it immediately on selection instead of
+                      making the trainer go check the client profile first. */}
+                  {selected && selectedBalance !== null && (
+                    <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                      className={`flex items-center justify-between gap-2.5 px-4 py-2.5 ${selectedBalance > 0 ? 'bg-rose-500/6' : 'bg-emerald-500/6'}`}>
+                      <span className={`text-[12.5px] font-semibold ${selectedBalance > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                        {selectedBalance > 0 ? `Balance Due: ₹${selectedBalance.toLocaleString('en-IN')}` : 'Fully Paid — no balance due'}
+                      </span>
+                      {selectedBalance > 0 && (
+                        <button onClick={() => { setAmount(String(selectedBalance)); setAmountError(false); }}
+                          className="shrink-0 rounded-lg bg-rose-500/12 px-2.5 py-1 text-[11.5px] font-bold text-rose-500 transition-colors hover:bg-rose-500/20">
+                          Fill
+                        </button>
+                      )}
+                    </m.div>
+                  )}
+
+                  {/* Client dropdown */}
+                  <AnimatePresence>
+                    {pickerOpen && (
+                      <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-4 right-4 z-40 mt-1 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]">
+                        <div className="flex items-center gap-2 border-b border-[var(--border)] px-3.5 py-2.5">
+                          <Search size={13} className="text-[var(--text-muted)]" />
+                          <input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)}
+                            placeholder="Search name or phone"
+                            className="flex-1 border-none bg-transparent text-[14px] text-[var(--text-primary)] outline-none" />
+                        </div>
+                        <div className="max-h-[240px] overflow-y-auto">
+                          {loadingClients ? (
+                            <div className="px-4 py-5 text-center text-[13px] text-[var(--text-muted)]">Loading…</div>
+                          ) : filtered.length === 0 ? (
+                            <div className="px-4 py-5 text-center text-[13px] text-[var(--text-muted)]">No clients found</div>
+                          ) : filtered.slice(0, 50).map(c => (
+                            <button key={c.id} onClick={() => { setSelected(c); setPickerOpen(false); setQuery(''); }}
+                              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-[var(--bg-hover)]">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                                style={{ background: avatarColor(c.name) }}>
+                                {initials(c.name)}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{c.name}</div>
+                                {c.mobile && <div className="text-[12px] text-[var(--text-muted)]">{c.mobile}</div>}
+                              </div>
+                              {selected?.id === c.id && <Check size={14} className="text-indigo-500" />}
+                            </button>
+                          ))}
+                        </div>
                       </m.div>
                     )}
+                  </AnimatePresence>
 
-                    {/* Client dropdown */}
-                    <AnimatePresence>
-                      {pickerOpen && (
-                        <m.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-                          transition={{ duration: 0.15 }}
-                          style={{ position: 'absolute', left: 20, right: 20, borderRadius: 16, background: 'var(--bg-elevated)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', border: '1px solid var(--border)', zIndex: 40, overflow: 'hidden', marginTop: 4 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid var(--border)' }}>
-                            <Search size={13} color="#9ca3af" />
-                            <input ref={searchRef} value={query} onChange={e => setQuery(e.target.value)}
-                              placeholder="Search name or phone"
-                              style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'inherit' }} />
-                          </div>
-                          <div style={{ maxHeight: 240, overflowY: 'auto' }}>
-                            {loadingClients ? (
-                              <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Loading…</div>
-                            ) : filtered.length === 0 ? (
-                              <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>No clients found</div>
-                            ) : filtered.slice(0, 50).map(c => (
-                              <button key={c.id} onClick={() => { setSelected(c); setPickerOpen(false); setQuery(''); }}
-                                style={{ width: '100%', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-                                onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
-                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarColor(c.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                                  {initials(c.name)}
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
-                                  {c.mobile && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.mobile}</div>}
-                                </div>
-                                {selected?.id === c.id && <Check size={14} color="#007AFF" />}
-                              </button>
-                            ))}
-                          </div>
-                        </m.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Method row */}
-                    <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>Via</div>
-                      <div style={{ flex: 1, display: 'flex', gap: 6 }}>
-                        {METHODS.map(m => (
-                          <button key={m} onClick={() => setMethod(m)}
-                            style={{ flex: 1, padding: '7px 0', borderRadius: 10, border: '1.5px solid', borderColor: method === m ? '#007AFF' : '#e5e7eb', background: method === m ? 'rgba(0,122,255,0.08)' : 'transparent', fontSize: 13, fontWeight: method === m ? 700 : 500, color: method === m ? '#007AFF' : '#374151', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.12s' }}>
-                            {m}
-                          </button>
-                        ))}
-                      </div>
+                  {/* Method row */}
+                  <div className="flex items-center gap-2 px-4 py-3">
+                    <div className="w-7 shrink-0 text-[12.5px] font-medium text-[var(--text-muted)]">Via</div>
+                    <div className="flex flex-1 gap-1.5">
+                      {METHODS.map(m => (
+                        <button key={m} onClick={() => setMethod(m)}
+                          className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2 text-[12.5px] font-semibold transition-all ${
+                            method === m
+                              ? `border-transparent bg-gradient-to-r ${METHOD_COLORS[m]} text-white shadow-md`
+                              : 'border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'
+                          }`}>
+                          {METHOD_ICONS[m]}
+                          {m}
+                        </button>
+                      ))}
                     </div>
                   </div>
+                </div>
 
-                  {/* ── Number pad ── */}
-                  <div style={{ borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', padding: '12px 16px 4px', overflow: 'hidden' }}>
-                    {[['1','2','3'],['4','5','6'],['7','8','9'],['.','0','⌫']].map((row, ri) => (
-                      <div key={ri} style={{ display: 'flex', gap: 0 }}>
-                        {row.map(d => (
-                          <button key={d} onClick={() => pad(d)}
-                            style={{ flex: 1, height: 56, border: 'none', background: 'transparent', fontSize: d === '⌫' ? 18 : 22, fontWeight: d === '⌫' ? 400 : 500, color: d === '⌫' ? '#6b7280' : '#111827', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 12, transition: 'background 0.1s', letterSpacing: '-0.01em' }}
-                            onMouseDown={e => (e.currentTarget.style.background = '#F3F4F6')}
-                            onMouseUp={e => (e.currentTarget.style.background = 'transparent')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                            {d}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+                {/* ── Number pad ── */}
+                <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] p-2">
+                  {[['1','2','3'],['4','5','6'],['7','8','9'],['.','0','⌫']].map((row, ri) => (
+                    <div key={ri} className="flex">
+                      {row.map(d => (
+                        <button key={d} onClick={() => pad(d)}
+                          className="flex flex-1 items-center justify-center rounded-2xl text-[22px] font-medium tracking-[-0.01em] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-hover)] active:bg-[var(--bg-subtle)]"
+                          style={{ height: 56 }}>
+                          {d === '⌫' ? <Delete size={18} className="text-[var(--text-muted)]" /> : d}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
 
-                  {/* ── Submit ── */}
-                  <m.button onClick={handleSubmit} whileTap={{ scale: 0.98 }} disabled={saving}
-                    style={{ width: '100%', height: 54, borderRadius: 16, border: 'none', cursor: saving ? 'wait' : 'pointer', background: amount && selected ? '#007AFF' : '#F3F4F6', color: amount && selected ? '#fff' : '#9ca3af', fontSize: 16, fontWeight: 600, fontFamily: 'inherit', transition: 'background 0.2s, color 0.2s', letterSpacing: '-0.01em' }}>
-                    {saving ? 'Recording…' : amount ? `Record ₹${parseFloat(amount).toLocaleString('en-IN')}` : 'Record Payment'}
-                  </m.button>
+                {/* ── Submit ── */}
+                <m.button onClick={handleSubmit} whileTap={{ scale: 0.98 }} disabled={saving}
+                  className={`w-full rounded-2xl text-[16px] font-bold tracking-[-0.01em] transition-all duration-200 ${
+                    amount && selected
+                      ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-[0_4px_16px_rgba(99,102,241,0.35)] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(99,102,241,0.45)]'
+                      : 'bg-[var(--bg-subtle)] text-[var(--text-disabled)]'
+                  } ${saving ? 'cursor-wait' : 'cursor-pointer'}`}
+                  style={{ height: 54 }}>
+                  {saving ? 'Recording…' : amount ? `Record ₹${parseFloat(amount).toLocaleString('en-IN')}` : 'Record Payment'}
+                </m.button>
 
-                </m.div>
-              )}
-            </AnimatePresence>
-          </div>
+              </m.div>
+            )}
+          </AnimatePresence>
         </div>
       </AppShell>
     </Guard>
