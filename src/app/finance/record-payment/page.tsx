@@ -114,6 +114,11 @@ export default function RecordPaymentPage() {
     ? '₹' + parseFloat(amount).toLocaleString('en-IN', { minimumFractionDigits: amount.includes('.') ? (amount.split('.')[1]?.length || 0) : 0 })
     : '₹0';
 
+  // pt_clients carries balance_amount directly — already present on every
+  // row returned by api.clients.list(), no extra fetch needed once a
+  // client is picked.
+  const selectedBalance = selected ? Number(selected.balance_amount ?? selected.balance_due ?? 0) : null;
+
   return (
     <Guard role="admin">
       <AppShell>
@@ -197,6 +202,24 @@ export default function RecordPaymentPage() {
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     </button>
+
+                    {/* Selected client's balance — the whole reason this page exists is
+                        to clear a due, so surface it immediately on selection instead of
+                        making the trainer go check the client profile first. */}
+                    {selected && selectedBalance !== null && (
+                      <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                        style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderBottom: '1px solid var(--border)', background: selectedBalance > 0 ? 'rgba(255,59,48,0.06)' : 'rgba(52,199,89,0.06)' }}>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: selectedBalance > 0 ? '#FF3B30' : '#34C759' }}>
+                          {selectedBalance > 0 ? `Balance Due: ₹${selectedBalance.toLocaleString('en-IN')}` : 'Fully Paid — no balance due'}
+                        </span>
+                        {selectedBalance > 0 && (
+                          <button onClick={() => { setAmount(String(selectedBalance)); setAmountError(false); }}
+                            style={{ fontSize: 11.5, fontWeight: 700, color: '#FF3B30', background: 'rgba(255,59,48,0.12)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                            Fill
+                          </button>
+                        )}
+                      </m.div>
+                    )}
 
                     {/* Client dropdown */}
                     <AnimatePresence>
