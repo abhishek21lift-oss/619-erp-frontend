@@ -11,6 +11,8 @@ import {
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button, PremiumAreaChart, PremiumBarChart, PullToRefresh } from '@/components/ui';
+import { SpotlightCard } from '@/components/fitness/SpotlightCard';
+import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { api } from '@/lib/api';
 import type { WorkoutSession, WorkoutProgressPoint, WorkoutVolumePoint, WorkoutAssignment, WorkoutAssignmentDetail } from '@/lib/api';
 import { ApiError } from '@/lib/http';
@@ -22,6 +24,15 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satur
 type ViewMode = 'list' | 'calendar' | 'timeline';
 
 const QUICK_EXERCISES = ['Bench Press', 'Squat', 'Deadlift'];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const } },
+};
 
 function statusStyle(status: string) {
   return status === 'completed'
@@ -157,6 +168,20 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
     return Array.from(set);
   }, [sessions]);
 
+  const stats = useMemo(() => {
+    const now = new Date();
+    const thisMonth = sessions.filter((s) => {
+      const d = new Date(s.session_date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+    return {
+      total: sessions.length,
+      completed: sessions.filter((s) => s.status === 'completed').length,
+      thisMonth,
+      progress: activeAssignment?.progress_pct ?? 0,
+    };
+  }, [sessions, activeAssignment]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return sessions.filter((s) => {
@@ -194,7 +219,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="mx-auto w-full max-w-4xl px-5 sm:px-8 py-6 space-y-5 pb-24">
+      <div className="mx-auto w-full max-w-4xl px-4 sm:px-8 py-6 space-y-5 pb-24">
         <button onClick={() => router.push(`/pt-os/clients/${clientId}`)}
           className="flex items-center gap-2 text-[12px] font-[600] text-slate-500 transition-colors hover:text-slate-700">
           <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
@@ -203,23 +228,60 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
           {clientName}
         </button>
 
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2.5 mb-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-                <Dumbbell size={16} style={{ color: 'var(--text-muted)' }} />
+        {/* ── Gradient Hero ── */}
+        <m.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-rose-500/10 p-5 sm:p-7 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)]"
+        >
+          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-gradient-to-br from-rose-400/20 to-orange-400/20 blur-3xl" />
+
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <m.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-[0_4px_20px_rgba(245,158,11,0.35)]"
+              >
+                <Dumbbell size={22} />
+              </m.span>
+              <div className="min-w-0">
+                <span className="text-[11px] font-[700] uppercase tracking-[0.1em]" style={{ color: 'var(--text-disabled)' }}>Workout Log</span>
+                <h1 className="truncate text-[22px] sm:text-[28px] font-extrabold tracking-[-0.02em] leading-tight text-[var(--text-primary)]">{clientName}</h1>
               </div>
-              <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>Workout Log</span>
             </div>
-            <h1 className="text-[26px] sm:text-[30px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              {clientName}
-            </h1>
+            <Button iconLeft={<Plus size={14} />} loading={creating} disabled={creating} onClick={handleNewSession}
+              className="shrink-0"
+              style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+              New Session
+            </Button>
           </div>
-          <Button iconLeft={<Plus size={14} />} loading={creating} disabled={creating} onClick={handleNewSession}
-            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
-            New Session
-          </Button>
-        </div>
+
+          {/* ── KPI cards ── */}
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
+            className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: 'Total Sessions', value: stats.total, icon: <Dumbbell size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
+              { label: 'Completed', value: stats.completed, icon: <CheckCircle2 size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
+              { label: 'This Month', value: stats.thisMonth, icon: <CalendarIcon size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
+              { label: 'Plan Progress', value: stats.progress, suffix: '%', icon: <TrendingUp size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)' },
+            ].map((s) => (
+              <m.div key={s.label} variants={itemVariants}>
+                <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '14px 16px', cursor: 'default' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-disabled)', lineHeight: 1.3 }}>{s.label}</span>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                    <AnimatedCounter value={s.value} suffix={s.suffix} />
+                  </div>
+                </SpotlightCard>
+              </m.div>
+            ))}
+          </m.div>
+        </m.div>
 
         {/* ── Active Plan ── */}
         {activeAssignment && (
@@ -382,11 +444,11 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
                   <X size={13} />
                 </button>
               </div>
-              <p className="mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>Which day's exercises will you log?</p>
-              <div className="flex flex-wrap gap-2 mb-4">
+              <p className="mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>Which day&apos;s exercises will you log?</p>
+              <div className="grid grid-cols-2 gap-2 mb-4">
                 {planDays.map((day) => (
                   <button key={day} onClick={() => createSession({ workout_day: day })} disabled={creating}
-                    className="rounded-full px-3.5 py-2 text-[12.5px] font-[700] transition"
+                    className="rounded-[12px] px-3 py-2.5 text-[12.5px] font-[700] transition hover:-translate-y-0.5"
                     style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.25)' }}>
                     {day}
                   </button>
