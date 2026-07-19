@@ -256,65 +256,72 @@ function Inner() {
 
   return (
     <div style={{ minHeight: '100%', position: 'relative' }}>
-      {/* ── Hero ── */}
-      <div style={{ padding: '28px 32px 24px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <m.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #6366f1, #ec4899)', boxShadow: '0 4px 20px rgba(99,102,241,0.35)', flexShrink: 0 }}
-            >
-              <Dumbbell size={22} color="#fff" />
-            </m.div>
-            <div>
-              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Workout Plans</h1>
-              <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--text-muted)' }}>Build and manage personalized training programs</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ display: 'flex', background: 'var(--bg-subtle)', borderRadius: 9, padding: 3, gap: 2 }}>
-              {(['grid', 'list'] as const).map((v) => (
-                <button key={v} onClick={() => setView(v)}
-                  style={{ padding: '6px 9px', borderRadius: 7, border: 'none', cursor: 'pointer', transition: 'all 0.18s', background: view === v ? 'var(--bg-card)' : 'transparent', color: view === v ? '#6366f1' : 'var(--text-muted)', boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
-                  {v === 'grid' ? <LayoutGrid size={14} /> : <List size={14} />}
-                </button>
-              ))}
-            </div>
-            <Button variant="primary" size="sm" onClick={() => { resetBuilder(); setActiveTab('builder'); }}>
-              <Plus size={14} style={{ marginRight: 5 }} />New Plan
-            </Button>
-          </div>
-        </div>
+      <div className="relative z-10 mt-1 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pb-24">
+        {/* ── Gradient Hero ── */}
+        <m.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-pink-500/10 p-5 sm:p-7 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] mt-2"
+        >
+          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-gradient-to-br from-indigo-400/20 to-violet-400/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-gradient-to-br from-pink-400/20 to-violet-400/20 blur-3xl" />
 
-        {/* ── KPI cards ── */}
-        <m.div variants={containerVariants} initial="hidden" animate="visible"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-          {[
-            { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
-            { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
-            { label: 'Clients', value: clients.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
-            { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
-          ].map((s) => (
-            <m.div key={s.label} variants={itemVariants}>
-              <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '16px 18px', cursor: 'default' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-disabled)' }}>{s.label}</span>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
-                </div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-                  {dataLoading ? '—' : <AnimatedCounter value={s.value} suffix={s.suffix} />}
-                </div>
-              </SpotlightCard>
-            </m.div>
-          ))}
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3.5">
+              <m.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-pink-500 text-white shadow-[0_4px_20px_rgba(99,102,241,0.35)]"
+              >
+                <Dumbbell size={22} />
+              </m.span>
+              <div className="min-w-0">
+                <h1 className="text-[22px] sm:text-[26px] font-extrabold tracking-[-0.02em] leading-tight text-[var(--text-primary)]">Workout Plans</h1>
+                <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">Build and manage personalized training programs</p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <div style={{ display: 'flex', background: 'var(--bg-card)', borderRadius: 9, padding: 3, gap: 2 }}>
+                {(['grid', 'list'] as const).map((v) => (
+                  <button key={v} onClick={() => setView(v)}
+                    style={{ padding: '6px 9px', borderRadius: 7, border: 'none', cursor: 'pointer', transition: 'all 0.18s', background: view === v ? 'var(--bg-subtle)' : 'transparent', color: view === v ? '#6366f1' : 'var(--text-muted)', boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+                    {v === 'grid' ? <LayoutGrid size={14} /> : <List size={14} />}
+                  </button>
+                ))}
+              </div>
+              <Button variant="primary" size="sm" onClick={() => { resetBuilder(); setActiveTab('builder'); }}>
+                <Plus size={14} style={{ marginRight: 5 }} />New Plan
+              </Button>
+            </div>
+          </div>
+
+          {/* ── KPI cards ── */}
+          <m.div variants={containerVariants} initial="hidden" animate="visible"
+            className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
+              { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
+              { label: 'Clients', value: clients.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
+              { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
+            ].map((s) => (
+              <m.div key={s.label} variants={itemVariants}>
+                <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '14px 16px', cursor: 'default' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-disabled)', lineHeight: 1.3 }}>{s.label}</span>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: `${s.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>{s.icon}</div>
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+                    {dataLoading ? '—' : <AnimatedCounter value={s.value} suffix={s.suffix} />}
+                  </div>
+                </SpotlightCard>
+              </m.div>
+            ))}
+          </m.div>
         </m.div>
-      </div>
 
-      <div style={{ padding: '20px 32px 60px', maxWidth: 1400, margin: '0 auto' }}>
-        {/* ── Tabs ── */}
-        <div style={{ display: 'flex', gap: 3, marginBottom: 20, background: 'var(--bg-subtle)', borderRadius: 11, padding: 3 }}>
+        {/* ── Tabs (horizontally scrollable on mobile) ── */}
+        <div className="mt-5 mb-5 flex gap-1 overflow-x-auto" style={{ background: 'var(--bg-subtle)', borderRadius: 11, padding: 3, scrollbarWidth: 'none' }}>
           {[
             { key: 'plans', label: 'Active Plans', count: plans.length, color: '#6366f1' },
             { key: 'library', label: 'Exercise Library', count: filteredExercises.length, color: '#10b981' },
@@ -324,7 +331,8 @@ function Inner() {
             <button key={tab.key}
               onClick={() => { setActiveTab(tab.key as typeof activeTab); if (tab.key === 'builder' && builderExercises.length === 0 && !selectedClient) setBuilderStep(0); }}
               style={{
-                padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                flexShrink: 0, whiteSpace: 'nowrap',
+                padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
                 background: activeTab === tab.key ? 'var(--bg-card)' : 'transparent',
                 color: activeTab === tab.key ? tab.color : 'var(--text-muted)',
@@ -383,32 +391,34 @@ function Inner() {
           {/* ── Library Tab ── */}
           {activeTab === 'library' && (
             <m.div key="library" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              {/* Filter bar */}
-              <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-                {(['All', ...bodyParts.slice(0, 10)]).map((bp) => (
-                  <button key={bp}
-                    onClick={() => setActiveBodyPart(bp)}
-                    style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textTransform: 'capitalize', transition: 'all 0.18s', background: activeBodyPart === bp ? 'rgba(99,102,241,0.1)' : 'transparent', color: activeBodyPart === bp ? '#6366f1' : 'var(--text-muted)', borderColor: activeBodyPart === bp ? 'rgba(99,102,241,0.3)' : 'var(--border)' }}>
-                    {bp}
-                  </button>
-                ))}
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '5px 12px', border: '1px solid var(--border)' }}>
+              {/* Filter bar — search goes full-width above the chips on mobile */}
+              <div className="mb-4 flex flex-col gap-3">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)', borderRadius: 8, padding: '8px 12px', border: '1px solid var(--border)' }}>
                   <Search size={13} color="var(--text-disabled)" />
                   <input placeholder="Search exercises…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, outline: 'none', width: 180 }} />
-                  {searchQuery && <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-disabled)', padding: 0, display: 'flex' }}><X size={12} /></button>}
+                    style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, outline: 'none' }} />
+                  {searchQuery && <button onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-disabled)', padding: 0, display: 'flex' }}><X size={13} /></button>}
+                </div>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                  {(['All', ...bodyParts.slice(0, 12)]).map((bp) => (
+                    <button key={bp}
+                      onClick={() => setActiveBodyPart(bp)}
+                      style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '5px 14px', borderRadius: 20, border: '1px solid', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit', textTransform: 'capitalize', transition: 'all 0.18s', background: activeBodyPart === bp ? 'rgba(99,102,241,0.1)' : 'transparent', color: activeBodyPart === bp ? '#6366f1' : 'var(--text-muted)', borderColor: activeBodyPart === bp ? 'rgba(99,102,241,0.3)' : 'var(--border)' }}>
+                      {bp}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {dataLoading ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} style={{ height: 220, borderRadius: 18, background: 'var(--bg-subtle)', opacity: 0.6 }} />
                   ))}
                 </div>
               ) : (
                 <m.div variants={containerVariants} initial="hidden" animate="visible"
-                  style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+                  className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {filteredExercises.slice(0, 24).map((ex) => (
                     <m.div key={ex.id} variants={itemVariants}>
                       <ExerciseCard
@@ -455,7 +465,7 @@ function Inner() {
                 </div>
 
                 {/* Step content */}
-                <div style={{ borderRadius: 18, padding: 28, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                <div className="p-5 sm:p-7" style={{ borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                   {builderStep === 0 && (
                     <div>
                       <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Choose a Client</h3>
@@ -605,7 +615,7 @@ function Inner() {
                   <Sparkles size={16} />Open AI Coach
                 </button>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 32, textAlign: 'left' }}>
+                <div className="mt-8 grid grid-cols-1 gap-3.5 text-left sm:grid-cols-3">
                   {[
                     { title: 'Personalized Plans', desc: 'Tailored to age, weight, goal, and experience level', color: '#6366f1' },
                     { title: 'Weekly Schedule', desc: 'Complete day-by-day training schedule with exercises', color: '#10b981' },
