@@ -13,7 +13,7 @@
 //     hard-navigating via window.location.href. AuthProvider listens to this
 //     event, clears state, and uses the Next.js router for a soft redirect.
 
-function apiBase(): string {
+export function apiBase(): string {
   if (typeof window === 'undefined') {
     // SSR: use the configured URL directly (server-to-server, no proxy needed)
     const raw = (process.env.NEXT_PUBLIC_API_URL ?? '').trim().replace(/\/+$/, '');

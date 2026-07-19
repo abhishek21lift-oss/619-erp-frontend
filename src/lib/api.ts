@@ -41,6 +41,81 @@ export type User = {
   is_active?: boolean;
 };
 
+// Types matching the /api/profile/* contract exactly (src/routes/profile.js).
+export interface ProfileMe {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  location: string;
+  bio: string;
+  avatarUrl: string | null;
+  createdAt: string;
+  lastLoginAt: string | null;
+  mfaEnabled: boolean;
+}
+
+export interface NotificationPreferences {
+  email_logins: boolean;
+  email_payments: boolean;
+  email_reports: boolean;
+  email_marketing: boolean;
+  push_logins: boolean;
+  push_tasks: boolean;
+  push_mentions: boolean;
+  whatsapp_alerts: boolean;
+  frequency: string;
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  timezone: string;
+  dateFormat: string;
+  timeFormat: string;
+  compactMode: boolean;
+}
+
+export interface ProfileDevice {
+  id: string;
+  name: string;
+  type: 'desktop' | 'mobile' | 'tablet';
+  browser: string;
+  os: string;
+  ip: string;
+  location: string;
+  lastSeen: string;
+  isCurrent: boolean;
+}
+
+export interface ProfileSession {
+  id: string;
+  ip: string;
+  location: string;
+  device: string;
+  browser: string;
+  createdAt: string;
+  lastActive: string;
+  isCurrent: boolean;
+}
+
+export interface ActivityEvent {
+  id: string;
+  type: string;
+  description: string;
+  ip: string;
+  location: string;
+  createdAt: string;
+  category: string;
+}
+
+export interface ActivityFeed {
+  events: ActivityEvent[];
+  hasMore: boolean;
+  total: number;
+}
+
 export type Client = {
   id: string;
   name: string;
@@ -1720,9 +1795,38 @@ export const api = {
   // ── Activity Logs (Profile) ─────────────────────────────────────
   activity: {
     list: (params?: Record<string, string | number>) =>
-      http<unknown[]>(`/api/profile/activity${buildQs(params)}`),
-    sessions: () => http<unknown[]>('/api/profile/sessions'),
-    devices: () => http<unknown[]>('/api/profile/devices'),
+      http<ActivityFeed>(`/api/profile/activity${buildQs(params)}`),
+    sessions: () => http<ProfileSession[]>('/api/profile/sessions'),
+    devices: () => http<ProfileDevice[]>('/api/profile/devices'),
+  },
+
+  // ── Profile (My Profile page) ────────────────────────────────────
+  profile: {
+    me: () => http<ProfileMe>('/api/profile/me'),
+    updateMe: (data: { name: string; email: string; phone?: string; location?: string; bio?: string }) =>
+      http<ProfileMe>('/api/profile/me', { method: 'PUT', body: JSON.stringify(data) }),
+    uploadAvatar: (file: File) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      return http<{ avatarUrl: string }>('/api/profile/avatar', { method: 'POST', body: formData });
+    },
+    mfa: {
+      setup: () => http<{ secret: string; qrUrl: string }>('/api/profile/mfa/setup', { method: 'POST' }),
+      verify: (code: string) =>
+        http<{ recoveryCodes: string[] }>('/api/profile/mfa/verify', { method: 'POST', body: JSON.stringify({ code }) }),
+      disable: () => http<{ message: string }>('/api/profile/mfa', { method: 'DELETE' }),
+    },
+    notifications: {
+      get: () => http<NotificationPreferences>('/api/profile/notifications'),
+      update: (data: NotificationPreferences) =>
+        http<NotificationPreferences>('/api/profile/notifications', { method: 'PUT', body: JSON.stringify(data) }),
+    },
+    preferences: {
+      get: () => http<UserPreferences>('/api/profile/preferences'),
+      update: (data: UserPreferences) =>
+        http<UserPreferences>('/api/profile/preferences', { method: 'PUT', body: JSON.stringify(data) }),
+    },
+    revokeAllSessions: () => http<{ message: string }>('/api/profile/sessions/revoke-all', { method: 'POST' }),
   },
 
   // ── Branches ───────────────────────────────────────────────────
