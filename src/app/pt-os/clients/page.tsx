@@ -422,19 +422,13 @@ export default function PtClientsPage() {
               ))}
             </m.div>
 
-            {/* ── CLIENT LIST CARD ── */}
+            {/* ── CLIENT LIST ── */}
             <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden rounded-[24px]"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                boxShadow: 'var(--shadow-sm)',
-              }}>
+              className="space-y-4">
 
               {/* ── TOOLBAR ── */}
-              <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5 sm:py-4"
-                style={{ borderColor: 'var(--border)' }}>
+              <div className="flex flex-wrap items-center gap-3">
 
                 {/* Search */}
                 <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-sm">
@@ -495,43 +489,46 @@ export default function PtClientsPage() {
 
               {/* ── GRID VIEW ── */}
               {viewMode === 'grid' && (
-                <div className="p-5">
-                  {filtered.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                      {filtered.map((c, i) => <ClientCard key={c.id} client={c} index={i} />)}
-                    </div>
-                  ) : !clients.loading && (
+                filtered.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {filtered.map((c, i) => <ClientCard key={c.id} client={c} index={i} />)}
+                  </div>
+                ) : !clients.loading && (
+                  <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
                     <EmptyState search={search} statusFilter={statusFilter} onNew={() => router.push('/pt-os/new-client')} />
-                  )}
-                </div>
+                  </div>
+                )
               )}
 
               {/* ── TABLE VIEW ── */}
               {viewMode === 'table' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
-                        {[
-                          { label: 'Client', cls: '' },
-                          { label: 'Trainer', cls: 'hidden sm:table-cell' },
-                          { label: 'Package', cls: 'hidden md:table-cell' },
-                          { label: 'Status', cls: '' },
-                          { label: 'Amount', cls: '' },
-                          { label: 'Balance', cls: 'hidden lg:table-cell' },
-                          { label: 'Commission', cls: 'hidden xl:table-cell' },
-                          { label: 'Days', cls: '' },
-                        ].map(col => (
-                          <th key={col.label} className={`px-4 py-3.5 text-[9px] font-[700] uppercase tracking-[0.12em] text-slate-500 ${col.cls}`}>
-                            {col.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map((c, i) => <ClientTableRow key={c.id} client={c} index={i} />)}
-                    </tbody>
-                  </table>
+                <div className="overflow-hidden rounded-[20px]"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+                          {[
+                            { label: 'Client', cls: '' },
+                            { label: 'Trainer', cls: 'hidden sm:table-cell' },
+                            { label: 'Package', cls: 'hidden md:table-cell' },
+                            { label: 'Status', cls: '' },
+                            { label: 'Amount', cls: '' },
+                            { label: 'Balance', cls: 'hidden lg:table-cell' },
+                            { label: 'Commission', cls: 'hidden xl:table-cell' },
+                            { label: 'Days', cls: '' },
+                          ].map(col => (
+                            <th key={col.label} className={`px-4 py-3.5 text-[9px] font-[700] uppercase tracking-[0.12em] text-slate-500 ${col.cls}`}>
+                              {col.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map((c, i) => <ClientTableRow key={c.id} client={c} index={i} />)}
+                      </tbody>
+                    </table>
+                  </div>
                   {filtered.length === 0 && !clients.loading && (
                     <div className="p-6">
                       <EmptyState search={search} statusFilter={statusFilter} onNew={() => router.push('/pt-os/new-client')} />
