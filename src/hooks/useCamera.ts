@@ -2,15 +2,17 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 
 export type CameraStatus = 'idle' | 'starting' | 'active' | 'denied' | 'error';
+export type FacingMode = 'user' | 'environment';
 
 interface UseCameraReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   status: CameraStatus;
   error: string;
-  start: () => Promise<boolean>;
+  start: (facing?: FacingMode) => Promise<boolean>;
   stop: () => void;
   dimensions: { width: number; height: number };
   isMobile: boolean;
+  facingMode: FacingMode;
 }
 
 function detectMobile() {
@@ -22,10 +24,12 @@ function detectMobile() {
 export function useCamera(): UseCameraReturn {
   const videoRef   = useRef<HTMLVideoElement>(null);
   const streamRef  = useRef<MediaStream | null>(null);
+  const currentFacingRef = useRef<FacingMode>('user');
   const [status, setStatus]   = useState<CameraStatus>('idle');
   const [error,  setError]    = useState('');
   const [dimensions, setDimensions] = useState({ width: 640, height: 480 });
   const [isMobile, setIsMobile] = useState(false);
+  const [facingMode, setFacingMode] = useState<FacingMode>('user');
 
   useEffect(() => { setIsMobile(detectMobile()); }, []);
 
@@ -44,8 +48,8 @@ export function useCamera(): UseCameraReturn {
     return navigator.mediaDevices.getUserMedia(constraints);
   }, []);
 
-  const start = useCallback(async (): Promise<boolean> => {
-    if (status === 'active') return true;
+  const start = useCallback(async (facing: FacingMode = 'user'): Promise<boolean> => {
+    if (status === 'active' && currentFacingRef.current === facing) return true;
     setStatus('starting');
     setError('');
 
@@ -62,20 +66,20 @@ export function useCamera(): UseCameraReturn {
       const mobile = detectMobile();
 
       // Progressive constraint fallback:
-      // 1. Ideal resolution + front camera
-      // 2. Just front camera (no resolution hints — avoids OverconstrainedError on many Androids)
-      // 3. Any video (last resort for old devices)
+      // 1. Ideal resolution + requested camera (front for face scan, rear for QR)
+      // 2. Just the requested camera (no resolution hints — avoids OverconstrainedError on many Androids)
+      // 3. Any video (last resort for old devices / desktops with one camera)
       const constraintOptions: MediaStreamConstraints[] = [
         {
           video: {
-            facingMode: 'user',
+            facingMode: facing,
             width:  { ideal: mobile ? 480 : 640 },
             height: { ideal: mobile ? 640 : 480 },
             frameRate: { ideal: mobile ? 15 : 24, max: mobile ? 20 : 30 },
           },
           audio: false,
         },
-        { video: { facingMode: 'user' }, audio: false },
+        { video: { facingMode: facing }, audio: false },
         { video: true, audio: false },
       ];
 
@@ -128,6 +132,8 @@ export function useCamera(): UseCameraReturn {
         console.warn('[camera] play() suppressed (Safari):', e?.name);
       }
 
+      currentFacingRef.current = facing;
+      setFacingMode(facing);
       setStatus('active');
       return true;
     } catch (err: any) {
@@ -170,5 +176,5 @@ export function useCamera(): UseCameraReturn {
     return () => window.removeEventListener('orientationchange', handler);
   }, [status]);
 
-  return { videoRef, status, error, start, stop, dimensions, isMobile };
+  return { videoRef, status, error, start, stop, dimensions, isMobile, facingMode };
 }

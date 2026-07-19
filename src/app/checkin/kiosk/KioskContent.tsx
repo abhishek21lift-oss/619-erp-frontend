@@ -11,8 +11,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  ScanFace, QrCode, CheckCircle2, XCircle, AlertTriangle,
-  Loader2, RefreshCw, Clock,
+  ScanFace, QrCode, CheckCircle2, XCircle,
+  Loader2, Clock, SwitchCamera,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -215,23 +215,30 @@ export default function KioskContent() {
     if (newMode === 'face') {
       const modOk = await detection.loadModels();
       if (!modOk) { setMsg(detection.modelError || 'Could not load face models'); setKState('error'); return; }
-      const camOk = await camera.start();
+      const camOk = await camera.start('user');
       if (!camOk) { setMsg('Camera unavailable.'); setKState('scanning'); return; }
       setKState('scanning');
       setMsg('Position your face in the guide');
     } else {
-      // QR mode
+      // QR mode — rear/environment camera, same as scanning any barcode
       if (!jsQR) {
         const mod = await import('jsqr');
         jsQR = (mod.default || mod) as unknown as typeof jsQR;
       }
-      const camOk = await camera.start();
+      const camOk = await camera.start('environment');
       if (!camOk) { setMsg('Camera unavailable.'); setKState('scanning'); return; }
       setKState('scanning');
       setMsg('Hold your QR code up to the camera');
       startQrLoop();
     }
   }, [detection, antiSpoof, camera, startQrLoop]);
+
+  // ── Flip camera — manual override if the auto-picked camera is wrong ─────
+  const flipCamera = useCallback(async () => {
+    if (kstate === 'processing') return;
+    const next = camera.facingMode === 'user' ? 'environment' : 'user';
+    await camera.start(next);
+  }, [camera, kstate]);
 
   // ── Init: start face mode by default ─────────────────────────────────────
   useEffect(() => {
@@ -242,7 +249,7 @@ export default function KioskContent() {
       const modOk = await detection.loadModels();
       if (cancelled) return;
       if (!modOk) { setMsg(detection.modelError || 'Could not load models'); setKState('error'); return; }
-      const camOk = await camera.start();
+      const camOk = await camera.start('user');
       if (cancelled) return;
       if (!camOk) { setMsg('Camera unavailable.'); return; }
       setKState('scanning');
@@ -275,46 +282,90 @@ export default function KioskContent() {
   const isError   = kstate === 'error' || kstate === 'expired';
   const isDup     = kstate === 'duplicate';
 
+  const mirrored = mode === 'face' && camera.facingMode === 'user';
+
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--bg-subtle)', display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none' }}>
+    <div
+      className="kk-root"
+      style={{
+        minHeight: '100dvh',
+        background: 'var(--bg-subtle)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto',
+        overscrollBehaviorY: 'contain',
+        WebkitOverflowScrolling: 'touch',
+        userSelect: 'none',
+      }}
+    >
       <style>{`
         @keyframes kk-scan { 0% { top: 8%; } 100% { top: 88%; } }
         @keyframes kk-pulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
         @keyframes kk-spin { to { transform: rotate(360deg); } }
         @keyframes kk-bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         button, [role=button] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .kk-video, .kk-canvas { aspect-ratio: 4/3; }
+        .kk-topbar { padding: 16px 24px; padding-top: max(16px, env(safe-area-inset-top)); }
+        .kk-bottombar { padding: 12px 24px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+        .kk-main { padding: 24px 16px; gap: 20px; }
+        .kk-flip-btn { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; }
+        .kk-subtitle { display: block; }
         @media (max-width: 480px) {
           .kk-msg { font-size: 16px !important; }
           .kk-viewport { max-width: 100% !important; }
-          .kk-face-ring { width: 160px !important; height: 160px !important; }
+          .kk-video, .kk-canvas { aspect-ratio: 3/4 !important; }
+          .kk-face-ring { width: 140px !important; height: 140px !important; }
           .kk-btn { min-height: 48px !important; font-size: 15px !important; padding: 12px 20px !important; }
+          .kk-topbar { padding-left: 14px !important; padding-right: 14px !important; }
+          .kk-topbar-title { font-size: 14px !important; }
+          .kk-subtitle { display: none; }
+          .kk-clock { font-size: 16px !important; }
+          .kk-main { padding: 14px 12px !important; gap: 14px !important; }
+          .kk-bottombar { flex-direction: column !important; gap: 4px !important; text-align: center; }
         }
       `}</style>
 
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="kk-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ScanFace size={18} color="#fff" />
           </div>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>COACH ABHISHEK</div>
-            <div style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Self Check-In Kiosk</div>
+          <div style={{ minWidth: 0 }}>
+            <div className="kk-topbar-title" style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>COACH ABHISHEK</div>
+            <div className="kk-subtitle" style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Self Check-In Kiosk</div>
           </div>
         </div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+        <div className="kk-clock" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
           <Clock2 />
         </div>
       </div>
 
       {/* Main area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', gap: 20 }}>
+      <div className="kk-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
 
         {/* Camera viewport */}
         <div className="kk-viewport" style={{ position: 'relative', width: '100%', maxWidth: 520, borderRadius: 24, overflow: 'hidden', border: `2px solid ${color}40`, boxShadow: `0 0 40px ${color}20` }}>
-          <video ref={camera.videoRef} autoPlay playsInline muted style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', transform: mode === 'face' ? 'scaleX(-1)' : 'none', display: 'block' }} />
-          <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: mode === 'face' ? 'scaleX(-1)' : 'none', display: mode === 'face' ? 'block' : 'none' }} />
+          <video ref={camera.videoRef} autoPlay playsInline muted className="kk-video" style={{ width: '100%', objectFit: 'cover', transform: mirrored ? 'scaleX(-1)' : 'none', display: 'block' }} />
+          <canvas ref={canvasRef} className="kk-canvas" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: mirrored ? 'scaleX(-1)' : 'none', display: mode === 'face' ? 'block' : 'none' }} />
           <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
+
+          {/* Camera flip — auto-picks front for face, rear for QR; manual override */}
+          {camera.status === 'active' && (
+            <button
+              className="kk-flip-btn"
+              onClick={flipCamera}
+              disabled={kstate === 'processing'}
+              aria-label="Switch camera"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 12, border: 'none', background: 'rgba(0,0,0,0.45)',
+                backdropFilter: 'blur(4px)', color: '#fff', cursor: 'pointer', zIndex: 2,
+              }}
+            >
+              <SwitchCamera size={18} />
+            </button>
+          )}
 
           {/* Face guide ring */}
           {mode === 'face' && (kstate === 'scanning' || kstate === 'liveness') && (
@@ -366,14 +417,15 @@ export default function KioskContent() {
         </m.div>
 
         {/* Mode toggle tabs */}
-        <div style={{ display: 'flex', gap: 8, background: 'var(--bg-subtle)', borderRadius: 16, padding: 6, border: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', gap: 8, width: '100%', maxWidth: 420, background: 'var(--bg-subtle)', borderRadius: 16, padding: 6, border: '1px solid var(--border)' }}>
           {(['face', 'qr'] as Mode[]).map((m) => (
             <button
               key={m}
+              className="kk-btn"
               onClick={() => switchMode(m)}
               disabled={kstate === 'processing' || mode === m}
               style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, border: 'none', cursor: mode === m ? 'default' : 'pointer', fontSize: 14, fontWeight: 700, transition: 'all 0.2s', minHeight: 48, touchAction: 'manipulation',
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, border: 'none', cursor: mode === m ? 'default' : 'pointer', fontSize: 14, fontWeight: 700, transition: 'all 0.2s', minHeight: 48, touchAction: 'manipulation',
                 background: mode === m ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent',
                 color: mode === m ? '#fff' : '#6b7280',
                 boxShadow: mode === m ? '0 4px 16px rgba(99,102,241,0.3)' : 'none',
@@ -400,7 +452,7 @@ export default function KioskContent() {
       </div>
 
       {/* Bottom bar */}
-      <div style={{ padding: '12px 24px', background: 'var(--bg-card)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="kk-bottombar" style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Coach Abhishek · Kiosk Mode</span>
         <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Face descriptors are never stored on this device</span>
       </div>
