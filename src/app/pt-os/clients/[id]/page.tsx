@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CopyId } from '@/components/ui/CopyId';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, User, Calendar, Target,
+  User, Calendar, Target,
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
   CheckCircle, AlertTriangle, Clock, IndianRupee,
   Camera, Ruler, Zap, Repeat, ChevronRight,
@@ -58,20 +58,6 @@ const fmtDate = (d?: string) => {
   return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const AVATAR_PALETTES = [
-  { from: '#7c3aed', to: '#5b21b6' },
-  { from: '#0891b2', to: '#0e7490' },
-  { from: '#059669', to: '#047857' },
-  { from: '#d97706', to: '#b45309' },
-  { from: '#db2777', to: '#be185d' },
-  { from: '#4f46e5', to: '#3730a3' },
-];
-function getAvatarPalette(name: string) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
-  return AVATAR_PALETTES[Math.abs(h) % AVATAR_PALETTES.length];
-}
-
 function getStatusConfig(status: string, days_left: number | null, pt_end_date?: string) {
   const endPassed = pt_end_date ? new Date(pt_end_date) < new Date() : (days_left !== null && days_left <= 0);
   if (endPassed) return { label: 'Inactive', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
@@ -85,7 +71,7 @@ function getStatusConfig(status: string, days_left: number | null, pt_end_date?:
 // Thick, colorful ring chart — replaces the old linear progress bars for
 // Payment Progress / PT Duration. Percent fills clockwise from the top.
 function CircularProgress({
-  percent, size = 92, strokeWidth = 11, colorFrom, colorTo, colorVia, children,
+  percent, size = 108, strokeWidth = 17, colorFrom, colorTo, colorVia, children,
 }: {
   percent: number; size?: number; strokeWidth?: number;
   colorFrom: string; colorTo: string; colorVia?: string; children?: React.ReactNode;
@@ -231,7 +217,6 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'Enroll in PT', icon: <Award size={16} />, href: (id) => `/pt-os/clients/${id}/enroll`, from: '#F59E0B', to: '#D97706' },
   { label: 'Baseline Setup', icon: <Flag size={16} />, href: (id) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155' },
   { label: 'Payments', icon: <Wallet size={16} />, href: (id) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
   { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
@@ -395,14 +380,13 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     : 0;
 
   const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date) : null;
-  const palette = client ? getAvatarPalette(client.name) : { from: '#7c3aed', to: '#5b21b6' };
 
   return (
     <Guard>
       <AppShell>
         <div className="min-h-screen">
 
-          <div className="relative mx-auto max-w-screen-lg px-4 pt-2 pb-6 sm:px-6">
+          <div className="relative mx-auto max-w-screen-lg px-4 pb-6 sm:px-6">
 
             {/* ── LOADING ── */}
             {loading && (
@@ -433,13 +417,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
             {!loading && !error && client && (
               <>
-                {/* Back nav */}
-                <button onClick={() => router.back()} aria-label="Back"
-                  className="mb-3 flex h-8 w-8 items-center justify-center rounded-[9px] transition-colors hover:opacity-75"
-                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                  <ArrowLeft size={14} />
-                </button>
-
                 {/* ── HERO ── */}
                 <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -794,7 +771,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* PT Assignment */}
                     <DarkCard title="PT Assignment" icon={<Dumbbell size={14} />} from="#7c3aed">
-                      <InfoRow label="Trainer" value={client.trainer_name || '—'} valueColor={palette.from} />
                       <InfoRow label="Plan" value={client.package_type || '—'} />
                       <InfoRow label="Start" value={fmtDate(client.pt_start_date)} />
                       <InfoRow label="End" value={fmtDate(client.pt_end_date)} />
@@ -809,7 +785,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* Financial Details */}
                     <DarkCard title="Financials" icon={<Wallet size={14} />} from="#10b981">
-                      <InfoRow label="Base Amount" value={fmtINR(client.base_amount)} />
                       {client.discount > 0 && (
                         <InfoRow label="Discount" value={`-${fmtINR(client.discount)}`} valueColor="#ef4444" />
                       )}
