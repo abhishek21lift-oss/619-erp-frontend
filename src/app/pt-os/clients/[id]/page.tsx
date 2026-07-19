@@ -12,6 +12,7 @@ import {
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
+  QrCode, Printer,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -178,6 +179,61 @@ function DocumentsCard({ clientId }: { clientId: string }) {
           onClick={() => router.push(`/pt-os/informed-consent?client_id=${clientId}`)}
         />
       </div>
+    </DarkCard>
+  );
+}
+
+// ── QR Check-in card: printable scannable code for the kiosk/scanner ──
+function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName: string }) {
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    api.qr.generateFor('client', clientId)
+      .then((res) => { if (!cancelled) setDataUrl(res.dataUrl); })
+      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to generate QR code'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [clientId]);
+
+  const handlePrint = () => {
+    if (!dataUrl) return;
+    const w = window.open('', '_blank', 'width=420,height=560');
+    if (!w) return;
+    w.document.write(
+      `<html><head><title>${clientName} — Check-in QR</title></head>` +
+      `<body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;">` +
+      `<img src="${dataUrl}" width="280" height="280" alt="Check-in QR code" />` +
+      `<p style="margin-top:12px;font-size:16px;font-weight:700;">${clientName}</p>` +
+      `<p style="margin-top:2px;font-size:12px;color:#666;">Scan at check-in kiosk</p>` +
+      `</body></html>`
+    );
+    w.document.close();
+    w.focus();
+    w.print();
+  };
+
+  return (
+    <DarkCard title="Check-in QR Code" icon={<QrCode size={14} />} from="#0891b2">
+      {loading && <p className="text-[12px] text-gray-400">Generating…</p>}
+      {error && <p className="text-[12px] text-red-500">{error}</p>}
+      {dataUrl && !loading && (
+        <div className="flex flex-col items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={dataUrl} alt="Check-in QR code" className="h-40 w-40 rounded-lg border border-zinc-100" />
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[700] transition hover:opacity-80"
+            style={{ background: 'rgba(8,145,178,0.10)', color: '#0891b2', border: '1px solid rgba(8,145,178,0.20)' }}
+          >
+            <Printer size={13} /> Print Card
+          </button>
+        </div>
+      )}
     </DarkCard>
   );
 }
@@ -782,6 +838,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* Documents */}
                     <DocumentsCard clientId={client.id} />
+
+                    {/* Check-in QR */}
+                    <QrCheckinCard clientId={client.id} clientName={client.name} />
 
                     {/* Financial Details */}
                     <DarkCard title="Financials" icon={<Wallet size={14} />} from="#10b981">
