@@ -2,15 +2,15 @@
 
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { m, AnimatePresence } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   ArrowLeft, Plus, Search, List as ListIcon, Calendar as CalendarIcon,
   History, Loader2, AlertCircle, ChevronLeft, ChevronRight, Dumbbell,
-  TrendingUp, Flame, CheckCircle2, Clock, Sparkles, X,
+  TrendingUp, Flame, CheckCircle2, Clock, Sparkles,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { Button, PremiumAreaChart, PremiumBarChart, PullToRefresh } from '@/components/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, PremiumAreaChart, PremiumBarChart, PullToRefresh } from '@/components/ui';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { api } from '@/lib/api';
@@ -429,39 +429,27 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
         </div>
       </div>
 
-      <AnimatePresence>
-        {dayPickerOpen && (
-          <>
-            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[8999]" style={{ background: 'rgba(0,0,0,0.35)' }}
-              onClick={() => setDayPickerOpen(false)} />
-            <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
-              className="fixed left-1/2 top-1/2 z-[9000] w-[92%] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-[20px] p-5"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>Log a session for {activeAssignment?.plan_name}</p>
-                <button onClick={() => setDayPickerOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
-                  <X size={13} />
-                </button>
-              </div>
-              <p className="mb-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>Which day&apos;s exercises will you log?</p>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {planDays.map((day) => (
-                  <button key={day} onClick={() => createSession({ workout_day: day })} disabled={creating}
-                    className="rounded-[12px] px-3 py-2.5 text-[12.5px] font-[700] transition hover:-translate-y-0.5"
-                    style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.25)' }}>
-                    {day}
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => createSession({ freestyle: true })} disabled={creating}
-                className="w-full rounded-[12px] py-2.5 text-[12.5px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                Or start a freestyle session instead
+      <Dialog open={dayPickerOpen} onOpenChange={setDayPickerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Log a session for {activeAssignment?.plan_name}</DialogTitle>
+          </DialogHeader>
+          <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Which day&apos;s exercises will you log?</p>
+          <div className="grid grid-cols-2 gap-2">
+            {planDays.map((day) => (
+              <button key={day} onClick={() => createSession({ workout_day: day })} disabled={creating}
+                className="rounded-[12px] px-3 py-2.5 text-[12.5px] font-[700] transition hover:-translate-y-0.5"
+                style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.25)' }}>
+                {day}
               </button>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+            ))}
+          </div>
+          <button onClick={() => createSession({ freestyle: true })} disabled={creating}
+            className="w-full rounded-[12px] py-2.5 text-[12.5px] font-[650]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+            Or start a freestyle session instead
+          </button>
+        </DialogContent>
+      </Dialog>
     </PullToRefresh>
   );
 }
