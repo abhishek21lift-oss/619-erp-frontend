@@ -133,6 +133,7 @@ export type Client = {
   dob?: string;
   anniversary?: string;
   weight?: number;
+  height?: number;
   reference_no?: string;
   aadhaar_no?: string;
   pan_no?: string;

@@ -10,8 +10,10 @@ import {
   Dumbbell,
   Salad,
   Send,
+  User,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import type { Client } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +46,14 @@ function getCannedResponse(): string {
   return CANNED_RESPONSES[Math.floor(Math.random() * CANNED_RESPONSES.length)];
 }
 
+function computeAge(dob?: string): number | undefined {
+  if (!dob) return undefined;
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000));
+  return age > 0 && age < 120 ? age : undefined;
+}
+
 // ─── Workout Goals / Diet Goals ──────────────────────────────────────────────
 
 const WORKOUT_GOALS = ['Muscle Gain', 'Fat Loss', 'Strength', 'Endurance'];
@@ -54,6 +64,13 @@ const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
   const [mode, setMode] = useState<Mode>('generate');
+
+  // Client selection state
+  const [clientList, setClientList] = useState<Client[]>([]);
+  const [clientQuery, setClientQuery] = useState('');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [clientLocked, setClientLocked] = useState(false);
 
   // Generate plan state
   const [goal, setGoal] = useState('');
@@ -84,25 +101,49 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
     }
   }, [messages, isTyping, mode]);
 
+  // ── Client selection ───────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!clientId) return;
+    api.clients.get(clientId)
+      .then(c => { setSelectedClient(c); setClientLocked(true); })
+      .catch(() => {});
+  }, [clientId]);
+
+  useEffect(() => {
+    if (clientLocked) return;
+    const load = clientQuery ? api.clients.search(clientQuery) : api.clients.list({ limit: 20 });
+    load.then(setClientList).catch(() => {});
+  }, [clientQuery, clientLocked]);
+
+  const filteredClients = clientList.filter(c =>
+    c.name.toLowerCase().includes(clientQuery.toLowerCase())
+  );
+
   // ── Generate plan ──────────────────────────────────────────────────────────
 
   async function handleGenerate() {
-    if (!goal) return;
+    if (!goal || !selectedClient) return;
     setIsGenerating(true);
     setGenerationResult(null);
     setGenerationError(null);
 
+    const age = computeAge(selectedClient.dob) ?? 30;
+    const gender = selectedClient.gender || 'male';
+    const weight_kg = selectedClient.weight ?? 75;
+    const height_cm = selectedClient.height ?? 175;
+
     try {
       if (type === 'workout') {
         const res = await api.ai.generateWorkout({
-          age: 30,
-          gender: 'male',
-          weight_kg: 75,
-          height_cm: 175,
+          age,
+          gender,
+          weight_kg,
+          height_cm,
           goal: goal.toLowerCase().replace(/ /g, '_'),
           experience_level: experience.toLowerCase() || 'beginner',
           training_days: parseInt(trainingDays, 10) || 4,
-          client_id: clientId,
+          client_id: selectedClient.id,
         });
         const plan = res.data;
         const summary = [
@@ -119,15 +160,15 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
         setGenerationResult(summary);
       } else {
         const res = await api.ai.generateDiet({
-          age: 30,
-          gender: 'male',
-          weight_kg: 75,
-          height_cm: 175,
+          age,
+          gender,
+          weight_kg,
+          height_cm,
           activity_level: 'moderate',
           goal: goal.toLowerCase().replace(/ /g, '_'),
           dietary_preferences: dietaryPrefs || undefined,
           allergies: allergies || undefined,
-          client_id: clientId,
+          client_id: selectedClient.id,
         });
         const plan = res.data;
         const summary = [
@@ -363,6 +404,73 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
                   gap: 14,
                 }}
               >
+                {/* Client select */}
+                <FieldLabel label="Client" />
+                {clientLocked && selectedClient ? (
+                  <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <User size={14} color="rgba(255,255,255,0.45)" />
+                    <span>{selectedClient.name}</span>
+                  </div>
+                ) : (
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      value={selectedClient ? selectedClient.name : clientQuery}
+                      onFocus={() => {
+                        setShowClientDropdown(true);
+                        if (selectedClient) { setSelectedClient(null); setClientQuery(''); }
+                      }}
+                      onChange={e => {
+                        setClientQuery(e.target.value);
+                        setSelectedClient(null);
+                        setShowClientDropdown(true);
+                      }}
+                      onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
+                      placeholder="Search clients..."
+                      style={inputStyle}
+                    />
+                    {showClientDropdown && filteredClients.length > 0 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          zIndex: 10,
+                          width: '100%',
+                          marginTop: 4,
+                          background: 'rgba(20,16,34,0.98)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 10,
+                          maxHeight: 180,
+                          overflowY: 'auto',
+                        }}
+                      >
+                        {filteredClients.map(c => (
+                          <button
+                            key={c.id}
+                            onMouseDown={() => {
+                              setSelectedClient(c);
+                              setClientQuery(c.name);
+                              setShowClientDropdown(false);
+                            }}
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              textAlign: 'left',
+                              padding: '9px 12px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'rgba(255,255,255,0.85)',
+                              fontSize: 13,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {c.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Goal select */}
                 <FieldLabel label="Goal" />
                 <select
@@ -426,22 +534,22 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
                 {/* Generate button */}
                 <m.button
                   onClick={handleGenerate}
-                  disabled={isGenerating || !goal}
-                  whileHover={!isGenerating && goal ? { scale: 1.02 } : {}}
-                  whileTap={!isGenerating && goal ? { scale: 0.98 } : {}}
+                  disabled={isGenerating || !goal || !selectedClient}
+                  whileHover={!isGenerating && goal && selectedClient ? { scale: 1.02 } : {}}
+                  whileTap={!isGenerating && goal && selectedClient ? { scale: 0.98 } : {}}
                   style={{
                     marginTop: 4,
                     padding: '11px 0',
                     borderRadius: 10,
                     border: 'none',
                     background:
-                      !goal || isGenerating
+                      !goal || !selectedClient || isGenerating
                         ? 'rgba(99,102,241,0.25)'
                         : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                    color: !goal || isGenerating ? 'rgba(255,255,255,0.35)' : '#fff',
+                    color: !goal || !selectedClient || isGenerating ? 'rgba(255,255,255,0.35)' : '#fff',
                     fontSize: 13,
                     fontWeight: 700,
-                    cursor: !goal || isGenerating ? 'not-allowed' : 'pointer',
+                    cursor: !goal || !selectedClient || isGenerating ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
