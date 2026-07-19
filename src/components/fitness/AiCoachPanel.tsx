@@ -203,7 +203,7 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
           top: 0,
           bottom: 0,
           width: 380,
-          zIndex: 60,
+          zIndex: 9000,
           background: 'rgba(7,5,15,0.97)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
