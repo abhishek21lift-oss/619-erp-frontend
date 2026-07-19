@@ -9,11 +9,9 @@ import { getModuleConfig } from '@/lib/module-config';
 // C-03 fix: guard against unknown settings tab values.
 // /settings/[anything-invalid] now returns 404 instead of a blank workspace.
 const VALID_SETTINGS_TABS = [
-  'studio',
   'profile',
   'branches',
   'biometric',
-  'billing',
   'integrations',
 ] as const;
 type SettingsTab = typeof VALID_SETTINGS_TABS[number];

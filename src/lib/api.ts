@@ -1046,10 +1046,6 @@ export const api = {
     getAll: () =>
       http<{ settings: Record<string, unknown> }>('/api/settings'),
 
-    /** Full studio config + branches */
-    getStudio: () =>
-      http<{ settings: Record<string, unknown>; branches: unknown[] }>('/api/settings/studio'),
-
     /** List branches */
     getBranches: () =>
       http<{ id: string; name: string; location: string; status: string; member_count: number }[]>('/api/settings/branches'),
