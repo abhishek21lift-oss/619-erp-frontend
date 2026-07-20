@@ -225,60 +225,138 @@ function HealthRing({ score, color, size = 64 }: { score: number; color: string;
 }
 
 // ─── Section 1 — Hero Welcome Header ───────────────────────────────────────────
-function HeroHeader({ d: _d, coach: _coach, loading: _loading, onRefresh: _onRefresh }: {
+function HeroStat({ icon, label, value, accent, trend }: {
+  icon: React.ReactNode; label: string; value: string; accent: string; trend?: number | null;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3.5"
+      style={{
+        background: 'rgba(255,255,255,0.055)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 14px rgba(0,0,0,0.20)',
+      }}
+    >
+      <span className="flex h-7 w-7 items-center justify-center rounded-full"
+        style={{ background: `${accent}26`, color: accent, boxShadow: `inset 0 0 0 1px ${accent}33` }}>
+        {icon}
+      </span>
+      <div className="flex flex-col items-start leading-none">
+        <span className="flex items-center gap-1 text-[13.5px] font-[840] tabular-nums text-white">
+          {value}
+          {trend != null && (
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-[760] tabular-nums"
+              style={{ color: trend >= 0 ? '#34d399' : '#fb7185' }}>
+              {trend >= 0 ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}{Math.abs(trend).toFixed(0)}%
+            </span>
+          )}
+        </span>
+        <span className="mt-1 text-[8px] font-[700] uppercase tracking-[0.14em] text-white/45">{label}</span>
+      </div>
+    </div>
+  );
+}
+
+function HeroHeader({ d, coach, loading: _loading, onRefresh: _onRefresh }: {
   d: DashData; coach: string; loading: boolean; onRefresh: () => void;
 }) {
   const now = new Date();
-  const dayStr  = now.toLocaleDateString('en-IN', { weekday: 'long' }).toUpperCase();
-  const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const hs = healthScore(d);
+  const trend = momPct(d.revenueTrend, 'revenue');
 
   return (
     <m.div
       initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-hidden rounded-[22px] sm:rounded-[28px]"
+      className="relative overflow-hidden rounded-[24px] sm:rounded-[30px]"
       style={{
-        background: 'linear-gradient(135deg, #0C0A1E 0%, #1A1040 35%, #0F0825 65%, #140C30 100%)',
-        boxShadow: '0 16px 50px rgba(12,10,30,0.55), 0 4px 16px rgba(245,158,11,0.15), inset 0 1px 0 rgba(255,255,255,0.10)',
+        background:
+          'radial-gradient(130% 150% at 50% -25%, #2A1A5E 0%, transparent 55%),' +
+          'linear-gradient(158deg, #0B0918 0%, #170D38 42%, #0C0722 72%, #12092C 100%)',
+        boxShadow:
+          '0 24px 64px -14px rgba(9,7,22,0.78), 0 8px 26px rgba(124,58,237,0.22),' +
+          'inset 0 1px 0 rgba(255,255,255,0.10), inset 0 0 0 1px rgba(251,191,36,0.10)',
       }}
     >
-      {/* Decorative orbs */}
+      {/* Decorative layers */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-16 -right-12 h-56 w-56 rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(40px)' }} />
-        <div className="absolute -bottom-16 -left-12 h-56 w-56 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #c084fc 0%, transparent 70%)', filter: 'blur(50px)' }} />
-        <svg className="absolute inset-0 w-full h-full opacity-[0.05]" xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="hh-g" width="36" height="36" patternUnits="userSpaceOnUse">
-            <path d="M 36 0 L 0 0 0 36" fill="none" stroke="white" strokeWidth="0.6" />
+        <div className="absolute -top-20 -right-14 h-60 w-60 rounded-full opacity-35"
+          style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)', filter: 'blur(46px)' }} />
+        <div className="absolute -bottom-20 -left-14 h-60 w-60 rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #c084fc 0%, transparent 70%)', filter: 'blur(54px)' }} />
+        <svg className="absolute inset-0 w-full h-full opacity-[0.055]" xmlns="http://www.w3.org/2000/svg">
+          <defs><pattern id="hh-g" width="34" height="34" patternUnits="userSpaceOnUse">
+            <path d="M 34 0 L 0 0 0 34" fill="none" stroke="white" strokeWidth="0.6" />
           </pattern></defs>
           <rect width="100%" height="100%" fill="url(#hh-g)" />
         </svg>
+        {/* Sheen sweep */}
+        <m.div
+          aria-hidden className="absolute top-0 bottom-0 w-1/3"
+          style={{ background: 'linear-gradient(105deg, transparent, rgba(255,255,255,0.09), transparent)', transform: 'skewX(-18deg)' }}
+          initial={{ x: '-170%' }} animate={{ x: '280%' }}
+          transition={{ duration: 4, repeat: Infinity, repeatDelay: 3.5, ease: 'easeInOut' }}
+        />
+        {/* Spotlight vignette */}
+        <div className="absolute inset-0"
+          style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(6,4,16,0.55) 100%)' }} />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center py-6 sm:py-8 px-6 text-center">
-        <h1
-          className="text-[34px] sm:text-[46px] font-[900] tracking-[0.18em] leading-none uppercase"
+      <div className="relative z-10 flex flex-col items-center justify-center py-6 sm:py-7 px-6 text-center">
+        {/* Crest */}
+        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full"
           style={{
-            background: 'linear-gradient(90deg, #ffffff 0%, #FCD34D 35%, #F59E0B 65%, #ffffff 100%)',
+            background: 'radial-gradient(circle at 30% 25%, #211648, #0B0720)',
+            border: '1px solid rgba(251,191,36,0.45)',
+            boxShadow: '0 0 0 4px rgba(251,191,36,0.06), 0 6px 18px rgba(245,158,11,0.30)',
+          }}>
+          <Crown size={18} style={{ color: '#FCD34D' }} />
+        </div>
+
+        {/* Greeting eyebrow */}
+        <p className="mb-2 text-[9.5px] sm:text-[10.5px] font-[700] uppercase tracking-[0.28em]"
+          style={{ color: 'rgba(252,211,77,0.66)' }}>
+          {greeting()} · {coach}
+        </p>
+
+        <h1
+          className="text-[32px] sm:text-[44px] font-[900] tracking-[0.14em] leading-[0.98] uppercase"
+          style={{
+            background: 'linear-gradient(92deg, #ffffff 0%, #FCD34D 34%, #F59E0B 62%, #FDE68A 82%, #ffffff 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            filter: 'drop-shadow(0 2px 16px rgba(245,158,11,0.50))',
+            filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.40)) drop-shadow(0 3px 20px rgba(245,158,11,0.48))',
           }}
         >
           ABHISHEK PT STUDIO
         </h1>
 
-        <div className="mt-3 h-px w-24 sm:w-32"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.8), rgba(192,132,252,0.6), transparent)' }} />
+        {/* Flourish divider */}
+        <div className="mt-3.5 flex items-center gap-2">
+          <span className="h-px w-10 sm:w-16" style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7))' }} />
+          <span className="h-[7px] w-[7px] rotate-45"
+            style={{ background: 'linear-gradient(135deg,#FDE68A,#F59E0B)', boxShadow: '0 0 8px rgba(245,158,11,0.7)' }} />
+          <span className="h-px w-10 sm:w-16" style={{ background: 'linear-gradient(90deg, rgba(251,191,36,0.7), transparent)' }} />
+        </div>
 
-        <p className="mt-3 text-[11px] sm:text-[12px] font-[600] tracking-[0.18em] uppercase"
-          style={{ color: 'rgba(255,255,255,0.45)' }}>
-          {dayStr} · {dateStr}
+        <p className="mt-3 text-[10.5px] sm:text-[12px] font-[600] uppercase tracking-[0.22em]"
+          style={{ color: 'rgba(255,255,255,0.46)' }}>
+          {dateStr}
         </p>
+
+        {/* Live stat pills */}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <HeroStat icon={<Users size={13} />} label="Active" value={String(d.active_pt_clients)} accent="#c084fc" />
+          <HeroStat icon={<Wallet size={13} />} label="This Month" value={fmtCompact(d.total_monthly_pt_revenue)} accent="#34d399" trend={trend} />
+          <HeroStat icon={<Gauge size={13} />} label={hs.label} value={String(hs.score)} accent={hs.color} />
+        </div>
       </div>
 
+      <div className="absolute top-0 inset-x-0 h-px"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent)' }} />
       <div className="absolute bottom-0 inset-x-0 h-px"
         style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.7), rgba(192,132,252,0.5), transparent)' }} />
     </m.div>
