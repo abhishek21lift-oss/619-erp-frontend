@@ -45,8 +45,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
 
   const [form, setForm] = useState({
     packageType: '',
-    baseAmount: '',
-    discount: '0',
     finalAmount: '',
     paidNow: '',
     startDate: '',
@@ -54,9 +52,7 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
     notes: '',
   });
 
-  const base = Number(form.baseAmount) || 0;
-  const disc = Number(form.discount) || 0;
-  const final = form.finalAmount !== '' ? Number(form.finalAmount) : Math.max(base - disc, 0);
+  const final = Number(form.finalAmount) || 0;
   const paidNow = Number(form.paidNow) || 0;
   const balance = Math.max(final - paidNow, 0);
 
@@ -75,7 +71,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
         setForm(f => ({
           ...f,
           packageType: c?.package_type || '',
-          baseAmount: String(c?.base_amount || ''),
           finalAmount: String(c?.final_amount || ''),
           startDate: new Date().toISOString().slice(0, 10),
         }));
@@ -92,8 +87,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
     try {
       await api.clients.renewPt(id, {
         package_type: form.packageType || undefined,
-        base_amount: base,
-        discount: disc,
         final_amount: final,
         paid_amount: paidNow,
         monthly_pt_amount: form.durationMonths ? Math.round(final / Number(form.durationMonths)) : 0,
@@ -189,12 +182,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
                 <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Financial Details</h2>
               </div>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <FloatInput label="Base Amount (₹)" type="number" value={form.baseAmount}
-                    onChange={v => setForm(f => ({ ...f, baseAmount: v, finalAmount: String(Math.max(Number(v) - disc, 0)) }))} />
-                  <FloatInput label="Discount (₹)" type="number" value={form.discount}
-                    onChange={v => setForm(f => ({ ...f, discount: v, finalAmount: String(Math.max(base - Number(v), 0)) }))} />
-                </div>
                 <FloatInput label="Final Amount (₹) *" type="number" value={form.finalAmount}
                   onChange={v => setForm(f => ({ ...f, finalAmount: v }))} />
                 <FloatInput label="Amount Paid Now (₹)" type="number" value={form.paidNow}
