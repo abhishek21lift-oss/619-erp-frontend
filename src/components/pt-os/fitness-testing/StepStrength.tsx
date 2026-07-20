@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Info } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
 import { calc1RM, classifyStrength, scoreCategory } from '@/lib/fitness-calculations';
@@ -16,9 +16,12 @@ interface StepStrengthProps {
   set: <K extends keyof AssessmentFormData>(key: K, val: AssessmentFormData[K]) => void;
   gender: Gender | null;
   error?: string;
+  /** True when the client's workout experience is 'beginner' — a 1RM test
+   *  isn't expected at that stage, so this step becomes optional. */
+  isBeginner?: boolean;
 }
 
-export function StepStrength({ form, set, gender, error }: StepStrengthProps) {
+export function StepStrength({ form, set, gender, error, isBeginner }: StepStrengthProps) {
   const estimated1RM = useMemo(
     () => calc1RM(n(form.strengthWeightKg), n(form.strengthReps), form.strengthFormula),
     [form.strengthWeightKg, form.strengthReps, form.strengthFormula],
@@ -38,13 +41,24 @@ export function StepStrength({ form, set, gender, error }: StepStrengthProps) {
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Muscular Strength</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 5 of 7 — one-rep max test.</p>
+          <p className="text-[13px] text-slate-400 mt-1.5">
+            Step 5 of 7 — {isBeginner ? 'optional one-rep max test.' : 'one-rep max test.'}
+          </p>
         </div>
       </div>
 
+      {isBeginner && (
+        <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)' }}>
+          <Info size={15} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
+          <p className="text-[12.5px] leading-relaxed" style={{ color: '#92400e' }}>
+            This client&apos;s workout experience is set to <strong>Beginner</strong> — a 1RM strength test isn&apos;t required at this stage. Skip ahead with Next, or record a baseline anyway if you&apos;d like one.
+          </p>
+        </div>
+      )}
+
       <div className="mb-5">
         <SearchableSelect
-          label="Exercise" required allowCustom={false}
+          label="Exercise" required={!isBeginner} allowCustom={false}
           value={form.strengthExercise}
           onChange={(v) => set('strengthExercise', v as StrengthExercise)}
           options={EXERCISES}

@@ -83,9 +83,10 @@ function scoresFromRow(row: Record<string, unknown>): FitnessScores {
   };
 }
 
-function validateStep(id: StepId, form: AssessmentFormData): string | undefined {
+function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean): string | undefined {
   if (id === 4) return form.cardioTestType ? undefined : 'Please select a cardiorespiratory test.';
-  if (id === 5) return form.strengthExercise ? undefined : 'Please select an exercise.';
+  // Muscular strength (1RM) testing isn't expected for beginner clients — optional for them.
+  if (id === 5) return (!isBeginner && !form.strengthExercise) ? 'Please select an exercise.' : undefined;
   if (id === 6) return form.enduranceTestType ? undefined : 'Please select an endurance test.';
   if (id === 7) return form.flexibilityTestType ? undefined : 'Please select a flexibility test.';
   return undefined;
@@ -254,6 +255,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
   const [clientName, setClientName] = useState('');
   const [age, setAge] = useState<number | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);
+  const [experienceLevel, setExperienceLevel] = useState('');
   const [history, setHistory] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -275,10 +277,11 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     setLoading(true);
     setLoadError('');
     try {
-      const [clientRes, trainersRes, historyRes] = await Promise.all([
+      const [clientRes, trainersRes, historyRes, lifestyleRes] = await Promise.all([
         api.pt.client(clientId) as Promise<{ data?: Record<string, unknown> }>,
         api.pt.trainers() as Promise<{ data?: TrainerOption[] }>,
         api.progress.assessments.list({ client_id: clientId, limit: 50 }) as Promise<{ data?: Record<string, unknown>[] }>,
+        api.progress.lifestyleAssessments.list({ client_id: clientId }) as Promise<{ data?: Record<string, unknown>[] }>,
       ]);
       const c = clientRes?.data;
       if (!c) { setLoadError('Client not found.'); setLoading(false); return; }
@@ -290,6 +293,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       const list = Array.isArray(trainersRes?.data) ? trainersRes.data : [];
       const hist = Array.isArray(historyRes?.data) ? historyRes.data : [];
       setHistory(hist);
+
+      const lifestyleRows = Array.isArray(lifestyleRes?.data) ? lifestyleRes.data : [];
+      setExperienceLevel(String(lifestyleRows[0]?.workout_experience_level ?? ''));
 
       const existingTrainerId = String(c.trainer_id ?? '');
       const existingTrainerName = String(c.trainer_name ?? '');
@@ -369,9 +375,11 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     return { cardioScore, strengthScore, enduranceScore, mobilityScore, bodyCompositionScore, healthRiskScore, overallScore };
   }, [form, age, gender]);
 
+  const isBeginner = experienceLevel === 'beginner';
+
   const handleNext = () => {
     const stepDef = STEPS.find((s) => s.id === step)!;
-    const err = validateStep(step, form);
+    const err = validateStep(step, form, isBeginner);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
     if (step === 7) { setReviewMode(true); return; }
@@ -570,7 +578,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             {step === 2 && <StepAnthropometric form={form} set={set} error={errors.anthropometric} />}
             {step === 3 && <StepBodyComposition form={form} set={set} age={age} gender={gender} error={errors.bodyComposition} />}
             {step === 4 && <StepCardio form={form} set={set} age={age} gender={gender} error={errors.cardio} />}
-            {step === 5 && <StepStrength form={form} set={set} gender={gender} error={errors.strength} />}
+            {step === 5 && <StepStrength form={form} set={set} gender={gender} error={errors.strength} isBeginner={isBeginner} />}
             {step === 6 && <StepEndurance form={form} set={set} gender={gender} error={errors.endurance} />}
             {step === 7 && <StepFlexibility form={form} set={set} error={errors.flexibility} />}
           </m.div>
