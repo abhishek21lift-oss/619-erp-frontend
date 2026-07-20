@@ -48,11 +48,12 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         </span>
         <span className="text-[13px] font-[600] leading-snug" style={{ color: form.exerciseConsentChecked ? '#0f172a' : '#475569' }}>
           {EXERCISE_PROGRAMME_CHECKBOX_LABEL}
+          <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>
         </span>
       </button>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-        <SignaturePad label="Client signature" onChange={(v) => set('exerciseConsentSignature', v)} />
+        <SignaturePad label="Client signature" onChange={(v) => set('exerciseConsentSignature', v)} required />
         <FloatInput label="Date" type="date" value={form.exerciseConsentDate} onChange={(v) => set('exerciseConsentDate', v)} required />
       </div>
 

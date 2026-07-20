@@ -25,8 +25,8 @@ export function StepSignatures({ form, set, error }: StepSignaturesProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <SignaturePad label="Client Signature" onChange={(v) => set('clientSignature', v)} />
-        <SignaturePad label="Trainer Signature" onChange={(v) => set('trainerSignature', v)} />
+        <SignaturePad label="Client Signature" onChange={(v) => set('clientSignature', v)} required />
+        <SignaturePad label="Trainer Signature" onChange={(v) => set('trainerSignature', v)} required />
       </div>
 
       <div className="space-y-3">

@@ -40,7 +40,10 @@ export function StepAgreements({ form, set, error }: StepAgreementsProps) {
               <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#F59E0B' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}>
                 {checked && <Check size={13} color="#fff" strokeWidth={3} />}
               </span>
-              <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? '#0f172a' : '#475569' }}>{f.label}</span>
+              <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? '#0f172a' : '#475569' }}>
+                {f.label}
+                <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>
+              </span>
             </button>
           );
         })}

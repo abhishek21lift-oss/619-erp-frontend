@@ -11,13 +11,14 @@ interface SignaturePadProps {
   aspectRatio?: number;
   disabled?: boolean;
   error?: string;
+  required?: boolean;
 }
 
 /** Hand-rolled HTML5 canvas signature pad — no signature library exists
  *  anywhere in the repo, and this is a genuinely small (~100 line) capture
  *  surface, so a new npm dependency isn't warranted. Uses Pointer Events,
  *  which unify mouse/touch/pen input in one listener set. */
-export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabled, error }: SignaturePadProps) {
+export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabled, error, required }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const drawingRef = useRef(false);
@@ -124,7 +125,10 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
   return (
     <div>
       {label && (
-        <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>{label}</p>
+        <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+          {label}
+          {required && <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>}
+        </p>
       )}
       <div
         ref={containerRef}
