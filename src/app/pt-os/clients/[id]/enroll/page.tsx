@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Calendar, Clock, Award,
+  ArrowLeft, Calendar, Award,
   Check, Sparkles, AlertCircle, Loader2, X,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -25,6 +25,7 @@ interface EnrollFormData {
   trainerId: string;
   trainerName: string;
   trainingMode: 'Offline' | 'Online' | 'Hybrid' | '';
+  workoutExperienceLevel: string;
   workoutTime: string;
   customTime: string;
   useCustomTime: boolean;
@@ -52,6 +53,14 @@ const TRAINING_MODES = [
   { value: 'Offline', label: 'Offline — In-person at the studio', icon: '🏢' },
   { value: 'Online', label: 'Online — Remote video sessions', icon: '💻' },
   { value: 'Hybrid', label: 'Hybrid — A mix of both', icon: '🔄' },
+];
+
+// Same value set as pt_lifestyle_assessments.workout_experience_level.
+const WORKOUT_EXPERIENCE_OPTIONS = [
+  { value: 'beginner', label: 'Beginner', icon: '🚫' },
+  { value: 'intermediate', label: 'Intermediate', icon: '🏋️' },
+  { value: 'advanced', label: 'Advanced', icon: '🔥' },
+  { value: 'athlete', label: 'Athlete', icon: '🏆' },
 ];
 
 const TIME_SLOTS = [
@@ -171,7 +180,7 @@ function hasErrors(errors: FormErrors): boolean {
 function initForm(): EnrollFormData {
   return {
     startDate: todayStr(), duration: '',
-    trainerId: '', trainerName: '', trainingMode: '', workoutTime: '',
+    trainerId: '', trainerName: '', trainingMode: '', workoutExperienceLevel: '', workoutTime: '',
     customTime: '', useCustomTime: false, trainingDays: [], sessionsPerWeek: '',
     finalAmount: '', amountPaid: '',
   };
@@ -236,6 +245,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         trainerId: String(c.trainer_id ?? ''),
         trainerName: String(c.trainer_name ?? ''),
         trainingMode: (String(c.training_mode ?? '') as EnrollFormData['trainingMode']) || '',
+        workoutExperienceLevel: String(c.workout_experience_level ?? ''),
         workoutTime: String(c.preferred_workout_time ?? ''),
         customTime: '',
         useCustomTime: false,
@@ -326,6 +336,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
     trainer_id: form.trainerId || undefined,
     trainer_name: form.trainerName || undefined,
     training_mode: form.trainingMode,
+    workout_experience_level: form.workoutExperienceLevel || undefined,
     preferred_workout_time: form.useCustomTime ? form.customTime : form.workoutTime,
     preferred_training_days: form.trainingDays.join(', '),
     sessions_per_week: Number(form.sessionsPerWeek),
@@ -567,42 +578,32 @@ function EnrollForm({ clientId }: { clientId: string }) {
                 />
               </div>
 
+              {/* Workout Experience */}
+              <div>
+                <SearchableSelect
+                  label="Workout Experience" allowCustom={false}
+                  value={form.workoutExperienceLevel}
+                  onChange={(v) => set('workoutExperienceLevel', v)}
+                  options={WORKOUT_EXPERIENCE_OPTIONS}
+                />
+              </div>
+
               {/* Preferred Workout Time */}
               <div ref={bindFieldRef('workoutTime')}>
-                <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
-                  Preferred Workout Time <span style={{ color: '#F59E0B' }}>*</span>
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {TIME_SLOTS.map((slot) => {
-                    const selected = !form.useCustomTime && form.workoutTime === slot;
-                    return (
-                      <button
-                        key={slot} type="button"
-                        onClick={() => { setForm((p) => ({ ...p, workoutTime: slot, useCustomTime: false })); setErrors((e) => ({ ...e, workoutTime: undefined })); }}
-                        className="rounded-[10px] px-3 py-2 text-[12px] font-[640] transition-all"
-                        style={{
-                          background: selected ? '#0f172a' : '#f8fafc',
-                          color: selected ? '#fff' : '#64748b',
-                          border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0',
-                        }}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() => { setForm((p) => ({ ...p, useCustomTime: true })); setErrors((e) => ({ ...e, workoutTime: undefined })); }}
-                    className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[640] transition-all"
-                    style={{
-                      background: form.useCustomTime ? '#F59E0B' : '#f8fafc',
-                      color: form.useCustomTime ? '#fff' : '#64748b',
-                      border: form.useCustomTime ? '1.5px solid #F59E0B' : '1.5px solid #e2e8f0',
-                    }}
-                  >
-                    <Clock size={12} /> Custom
-                  </button>
-                </div>
+                <SearchableSelect
+                  label="Preferred Workout Time" required allowCustom={false}
+                  value={form.useCustomTime ? 'Custom' : form.workoutTime}
+                  onChange={(v) => {
+                    if (v === 'Custom') {
+                      setForm((p) => ({ ...p, useCustomTime: true, workoutTime: '' }));
+                    } else {
+                      setForm((p) => ({ ...p, workoutTime: v, useCustomTime: false }));
+                    }
+                    setErrors((e) => ({ ...e, workoutTime: undefined }));
+                  }}
+                  options={[...TIME_SLOTS, 'Custom']}
+                  error={errors.workoutTime}
+                />
                 <AnimatePresence>
                   {form.useCustomTime && (
                     <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden max-w-[200px]">
@@ -614,7 +615,6 @@ function EnrollForm({ clientId }: { clientId: string }) {
                     </m.div>
                   )}
                 </AnimatePresence>
-                {errors.workoutTime && <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{errors.workoutTime}</p>}
               </div>
 
               {/* Preferred Training Days */}
@@ -690,6 +690,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   { label: 'Sessions / Week', val: form.sessionsPerWeek || '—' },
                   { label: 'Estimated Sessions', val: estimatedSessions || '—' },
                   { label: 'Training Mode', val: form.trainingMode || '—' },
+                  { label: 'Workout Experience', val: WORKOUT_EXPERIENCE_OPTIONS.find((o) => o.value === form.workoutExperienceLevel)?.label || '—' },
                 ].map((r) => (
                   <div key={r.label}>
                     <p className="text-[10.5px] text-white/40 font-[600]">{r.label}</p>
