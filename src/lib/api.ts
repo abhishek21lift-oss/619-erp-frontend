@@ -1955,7 +1955,45 @@ export const api = {
         body: JSON.stringify(params || {}),
       }),
   },
+
+  // ── Platform Super Admin (multi-tenant SaaS) ──────────────────────────────
+  // Backed by /api/super-admin/* — reachable only by role='super_admin'.
+  superAdmin: {
+    listOrgs: () =>
+      http<{ data: Organization[] }>('/api/super-admin/organizations'),
+    getOrg: (id: string) =>
+      http<{ data: OrganizationDetail }>(`/api/super-admin/organizations/${id}`),
+    createOrg: (data: { name: string; trainer_name?: string; email: string; password: string }) =>
+      http<{ data: { organization: Organization; owner: OrgUser } }>('/api/super-admin/organizations', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    updateOrg: (id: string, data: { name?: string; status?: 'active' | 'suspended' }) =>
+      http<{ data: Organization }>(`/api/super-admin/organizations/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+    setUserActive: (id: string, is_active: boolean) =>
+      http<{ data: OrgUser }>(`/api/super-admin/users/${id}`, {
+        method: 'PATCH', body: JSON.stringify({ is_active }),
+      }),
+    resetPassword: (id: string, password: string) =>
+      http<{ data: { id: string; message: string } }>(`/api/super-admin/users/${id}/reset-password`, {
+        method: 'POST', body: JSON.stringify({ password }),
+      }),
+  },
 };
+
+// ── Platform Super Admin types ────────────────────────────────────────────────
+export type Organization = {
+  id: string; name: string; slug: string;
+  status: 'active' | 'suspended'; created_at: string;
+  user_count?: number; trainer_count?: number; client_count?: number;
+};
+export type OrgUser = {
+  id: string; name: string; email: string; role: string;
+  trainer_id: string | null; is_active: boolean;
+  last_login?: string | null; created_at?: string; organization_id?: string;
+};
+export type OrganizationDetail = Organization & { users: OrgUser[] };
 
 // ── AI types ────────────────────────────────────────────────────────────────
 

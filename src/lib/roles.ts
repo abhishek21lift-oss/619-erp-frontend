@@ -1,6 +1,7 @@
-export type Role = 'admin' | 'manager' | 'staff' | 'trainer' | 'reception' | 'receptionist' | 'member';
+export type Role = 'super_admin' | 'admin' | 'manager' | 'staff' | 'trainer' | 'reception' | 'receptionist' | 'member';
 
 export const ROLES: readonly Role[] = [
+  'super_admin',
   'admin',
   'manager',
   'staff',
@@ -25,8 +26,12 @@ export function hasRole(
 ): boolean {
   const role = normaliseRole(userRole);
   if (!required) return false;
-  if (role === 'admin') return true;
   const list = Array.isArray(required) ? required : [required];
+  // Platform super_admin (multi-tenant SaaS) satisfies any requirement.
+  if (role === 'super_admin') return true;
+  // Tenant admin is a superuser within their own workspace, but is NOT the
+  // platform operator — it must never pass a super_admin-only gate.
+  if (role === 'admin') return !(list as string[]).includes('super_admin');
   return !!role && (list as string[]).includes(role);
 }
 
