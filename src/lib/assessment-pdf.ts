@@ -6,6 +6,7 @@
 // just plain HTML/CSS tables, which print reliably.
 
 import type { AiFitnessTestAnalysis } from './api';
+import { printWindowCloseButtonHtml } from './printWindowChrome';
 
 type Row = Record<string, unknown>;
 
@@ -153,6 +154,7 @@ p{font-size:14px;font-weight:600;margin:4px 0}
 .ai ul{margin:4px 0 0;padding-left:18px;font-size:13px;line-height:1.6}
 @media print{@page{margin:16mm}}
 </style></head><body>
+${printWindowCloseButtonHtml()}
 <h1>Fitness Testing Report</h1>
 <p style="color:#64748b;font-weight:500;margin-bottom:24px">${clientName}</p>
 <div class="top">

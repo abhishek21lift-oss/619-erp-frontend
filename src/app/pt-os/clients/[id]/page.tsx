@@ -20,6 +20,7 @@ import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { Button, PremiumAreaChart } from '@/components/ui';
+import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 
 interface PtClientDetail {
   id: string; unique_id?: string; client_id?: string; name: string;
@@ -207,6 +208,7 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
     w.document.write(
       `<html><head><title>${clientName} — Check-in QR</title></head>` +
       `<body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;">` +
+      printWindowCloseButtonHtml() +
       `<img src="${dataUrl}" width="280" height="280" alt="Check-in QR code" />` +
       `<p style="margin-top:12px;font-size:16px;font-weight:700;">${clientName}</p>` +
       `<p style="margin-top:2px;font-size:12px;color:#666;">Scan at check-in kiosk</p>` +
