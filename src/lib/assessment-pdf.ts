@@ -88,8 +88,11 @@ function generateAssessmentReportHTML(assessment: Row, clientName: string, aiAna
   ].join(''));
 
   const endurance = section('Muscular Endurance', [
-    field('Classification', v(assessment.endurance_category)),
-    field('Endurance Score', scoreLabel(assessment.endurance_score_computed)),
+    field('Test 1', v(assessment.endurance_test_type)),
+    field('Test 1 Classification', v(assessment.endurance_category)),
+    field('Test 2', v(assessment.endurance_test_type_2)),
+    field('Test 2 Classification', v(assessment.endurance_category_2)),
+    field('Combined Endurance Score', scoreLabel(assessment.endurance_score_computed)),
   ].join(''));
 
   const flexibility = section('Flexibility &amp; Mobility', [

@@ -243,6 +243,14 @@ export function scoreHealthRisk(bpCategory: BpCategory | null, bmi: number | nul
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
 
+// Combined Muscular Endurance score: average of the two required tests'
+// sub-scores (same averaging pattern as scoreHealthRisk above).
+export function scoreEnduranceBattery(score1: number | null, score2: number | null): number | null {
+  const scores = [score1, score2].filter((s): s is number => s != null);
+  if (!scores.length) return null;
+  return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+}
+
 export function computeOverallScore(scores: Record<string, number | null>): number | null {
   const vals = Object.values(scores).filter((v): v is number => v != null);
   if (!vals.length) return null;

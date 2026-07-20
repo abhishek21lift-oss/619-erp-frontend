@@ -37,10 +37,13 @@ export interface AssessmentFormData {
   strengthMode: 'direct' | 'estimated';
   strengthWeightKg: string; strengthReps: string; strengthFormula: 'brzycki' | 'epley'; strengthDirect1RM: string;
 
-  // Step 6 — Muscular Endurance
+  // Step 6 — Muscular Endurance (two distinct tests required)
   enduranceTestType: EnduranceTestType | '';
   enduranceValueType: 'reps' | 'time';
   enduranceReps: string; enduranceDurationSec: string;
+  enduranceTestType2: EnduranceTestType | '';
+  enduranceValueType2: 'reps' | 'time';
+  enduranceReps2: string; enduranceDurationSec2: string;
 
   // Step 7 — Flexibility
   flexibilityTestType: FlexibilityTestType | '';
@@ -91,6 +94,7 @@ export function initAssessmentForm(): AssessmentFormData {
     strengthMode: 'estimated',
     strengthWeightKg: '', strengthReps: '', strengthFormula: 'epley', strengthDirect1RM: '',
     enduranceTestType: '', enduranceValueType: 'reps', enduranceReps: '', enduranceDurationSec: '',
+    enduranceTestType2: '', enduranceValueType2: 'reps', enduranceReps2: '', enduranceDurationSec2: '',
     flexibilityTestType: '', flexibilityCustomTest: '',
     flexibilityLeft: '', flexibilityRight: '', flexibilityScore: '',
     flexibilityLimitationNotes: '', flexibilityRom: '',

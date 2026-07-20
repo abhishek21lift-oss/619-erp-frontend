@@ -18,7 +18,7 @@ import {
   computeAge, calcBmi, classifyBp, calcVo2MaxRockport, calcVo2MaxCooper,
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
   calc1RM, classifyStrength, classifyEndurance, classifyFlexibilityScore,
-  scoreCategory, scoreBodyComposition, scoreHealthRisk, computeOverallScore,
+  scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreEnduranceBattery, computeOverallScore,
 } from '@/lib/fitness-calculations';
 import type { FitnessCategory, Gender } from '@/lib/fitness-calculations';
 import { STEPS, initAssessmentForm, n } from '@/components/pt-os/fitness-testing/types';
@@ -87,7 +87,7 @@ function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean)
   if (id === 4) return form.cardioTestType ? undefined : 'Please select a cardiorespiratory test.';
   // Muscular strength (1RM) testing isn't expected for beginner clients — optional for them.
   if (id === 5) return (!isBeginner && !form.strengthExercise) ? 'Please select an exercise.' : undefined;
-  if (id === 6) return form.enduranceTestType ? undefined : 'Please select an endurance test.';
+  if (id === 6) return (form.enduranceTestType && form.enduranceTestType2) ? undefined : 'Please select both endurance tests.';
   if (id === 7) return form.flexibilityTestType ? undefined : 'Please select a flexibility test.';
   return undefined;
 }
@@ -362,7 +362,9 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
 
     const enduranceValue = form.enduranceValueType === 'reps' ? n(form.enduranceReps) : n(form.enduranceDurationSec);
     const enduranceCategory = classifyEndurance(form.enduranceTestType || null, enduranceValue, gender);
-    const enduranceScore = scoreCategory(enduranceCategory);
+    const enduranceValue2 = form.enduranceValueType2 === 'reps' ? n(form.enduranceReps2) : n(form.enduranceDurationSec2);
+    const enduranceCategory2 = classifyEndurance(form.enduranceTestType2 || null, enduranceValue2, gender);
+    const enduranceScore = scoreEnduranceBattery(scoreCategory(enduranceCategory), scoreCategory(enduranceCategory2));
 
     const flexCategory = classifyFlexibilityScore(n(form.flexibilityScore));
     const mobilityScore = scoreCategory(flexCategory);
@@ -436,7 +438,11 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         strength_is_direct: form.strengthMode === 'direct',
 
         endurance_test_type: form.enduranceTestType || undefined,
-        endurance_test_data: { reps: n(form.enduranceReps) ?? undefined, durationSec: n(form.enduranceDurationSec) ?? undefined },
+        endurance_test_type_2: form.enduranceTestType2 || undefined,
+        endurance_test_data: {
+          test1: { reps: n(form.enduranceReps) ?? undefined, durationSec: n(form.enduranceDurationSec) ?? undefined },
+          test2: { reps: n(form.enduranceReps2) ?? undefined, durationSec: n(form.enduranceDurationSec2) ?? undefined },
+        },
 
         flexibility_test_data: {
           testType: form.flexibilityTestType || undefined,
