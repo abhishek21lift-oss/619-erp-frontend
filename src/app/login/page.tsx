@@ -371,10 +371,30 @@ export default function LoginPage() {
   const pwRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
+  // Google's button takes a fixed pixel width, so we measure the card's inner
+  // width and pass it through — otherwise its default (or a hard-coded width)
+  // overflows narrow phones and blows out the whole document width.
+  const googleWrapRef = useRef<HTMLDivElement>(null);
+  const [googleW, setGoogleW] = useState(300);
+
   // Device passkey capability
   useEffect(() => {
     if (isWebAuthnSupported()) isBiometricAvailable().then(setPasskeyReady);
   }, []);
+
+  // Keep the Google button sized to its container
+  useEffect(() => {
+    const el = googleWrapRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = Math.floor(el.clientWidth);
+      if (w > 0) setGoogleW(Math.max(200, Math.min(w, 400)));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [passkeyReady]);
 
   // Restore remembered account
   useEffect(() => {
@@ -491,7 +511,15 @@ export default function LoginPage() {
       <LeftPanel />
 
       {/* ── RIGHT: auth card ── */}
-      <div className="relative flex flex-1 items-center justify-center px-5 py-8 sm:px-8">
+      <div
+        className="relative flex flex-1 items-center justify-center"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top) + 1.75rem)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.75rem)',
+          paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
+          paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
+        }}
+      >
         {/* mobile ambient wash */}
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden lg:hidden">
           <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}20, transparent 68%)` }} />
@@ -505,9 +533,9 @@ export default function LoginPage() {
           className="relative z-10 w-full max-w-[420px]"
         >
           {/* mobile brand + home */}
-          <div className="mb-8 flex items-center justify-between lg:hidden">
-            <Wordmark size={34} />
-            <Link href="/" className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-[600]" style={{ color: MUTE, border: `1px solid ${LINE}` }}>
+          <div className="mb-7 flex items-center justify-between gap-3 lg:hidden">
+            <span className="min-w-0"><Wordmark size={30} /></span>
+            <Link href="/" className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-[600]" style={{ color: MUTE, border: `1px solid ${LINE}` }}>
               <ArrowLeft size={13} /> Home
             </Link>
           </div>
@@ -704,8 +732,8 @@ export default function LoginPage() {
 
               {/* Google */}
               {GOOGLE_CLIENT_ID && (
-                <div className="flex justify-center [color-scheme:light]">
-                  <GoogleLogin onSuccess={handleGoogle} onError={() => fail('Google sign-in was cancelled or failed.')} theme="outline" size="large" shape="rectangular" text="signin_with" logo_alignment="left" width="356" />
+                <div ref={googleWrapRef} className="flex justify-center overflow-hidden [color-scheme:light]">
+                  <GoogleLogin onSuccess={handleGoogle} onError={() => fail('Google sign-in was cancelled or failed.')} theme="outline" size="large" shape="rectangular" text="signin_with" logo_alignment="left" width={String(googleW)} />
                 </div>
               )}
 
@@ -727,11 +755,11 @@ export default function LoginPage() {
           </m.div>
 
           {/* trust strip */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11.5px] font-[600]" style={{ color: MUTE }}>
-            <span className="inline-flex items-center gap-1.5"><Lock size={12} style={{ color: MAROON }} /> 256-bit encryption</span>
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck size={12} style={{ color: MAROON }} /> Session protection</span>
-            {passkeyReady && <span className="inline-flex items-center gap-1.5"><Fingerprint size={12} style={{ color: MAROON }} /> Biometric ready</span>}
-            <span className="inline-flex items-center gap-1.5"><Building2 size={12} style={{ color: MAROON }} /> Multi-tenant isolation</span>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 px-2 text-[11px] font-[600]" style={{ color: MUTE }}>
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Lock size={12} style={{ color: MAROON }} /> 256-bit encryption</span>
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><ShieldCheck size={12} style={{ color: MAROON }} /> Session protection</span>
+            {passkeyReady && <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Fingerprint size={12} style={{ color: MAROON }} /> Biometric ready</span>}
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><Building2 size={12} style={{ color: MAROON }} /> Multi-tenant isolation</span>
           </div>
 
           <p className="mt-5 text-center text-[11.5px]" style={{ color: MUTE }}>
