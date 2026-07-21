@@ -51,6 +51,32 @@ const STATUS_CFG: Record<Status, { label: string; color: string; bg: string; dot
   suspended: { label: 'Suspended', color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
 };
 
+// Display-only configs for roles that aren't assignable staff roles (so they
+// don't appear in the RoleSelector, which maps over ROLES). Combined with a
+// safe fallback, a badge never crashes on an unmapped role/status.
+const ROLE_BADGE_EXTRA: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
+  super_admin: { label: 'Super Admin', color: '#8b5cf6', bg: 'rgba(139,92,246,0.10)', icon: <Crown size={14} /> },
+  trainer:     { label: 'Trainer',     color: '#10b981', bg: 'rgba(16,185,129,0.10)', icon: <Zap size={14} /> },
+  staff:       { label: 'Staff',       color: '#0ea5e9', bg: 'rgba(14,165,233,0.10)', icon: <Briefcase size={14} /> },
+  reception:   { label: 'Reception',   color: '#f59e0b', bg: 'rgba(245,158,11,0.10)', icon: <Headphones size={14} /> },
+  member:      { label: 'Member',      color: '#6366f1', bg: 'rgba(99,102,241,0.10)', icon: <User size={14} /> },
+};
+
+function roleBadgeCfg(role: string) {
+  return (
+    ROLES[role as Role] ??
+    ROLE_BADGE_EXTRA[role] ??
+    { label: role || 'User', color: '#6b7280', bg: 'rgba(107,114,128,0.10)', icon: <User size={14} /> }
+  );
+}
+
+function statusBadgeCfg(status: string) {
+  return (
+    STATUS_CFG[status as Status] ??
+    { label: status || '—', color: '#6b7280', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' }
+  );
+}
+
 /* ────────────────────────────────────────────────────────────────────
    HELPERS
 ──────────────────────────────────────────────────────────────────── */
@@ -96,7 +122,7 @@ function Avatar({ name, id, size = 40 }: { name: string; id: string; size?: numb
    ROLE BADGE
 ──────────────────────────────────────────────────────────────────── */
 function RoleBadge({ role }: { role: Role }) {
-  const cfg = ROLES[role];
+  const cfg = roleBadgeCfg(role);
   return (
     <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-[660]"
       style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}20` }}>
@@ -109,7 +135,7 @@ function RoleBadge({ role }: { role: Role }) {
    STATUS BADGE
 ──────────────────────────────────────────────────────────────────── */
 function StatusBadge({ status }: { status: Status }) {
-  const cfg = STATUS_CFG[status];
+  const cfg = statusBadgeCfg(status);
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[600]"
       style={{ background: cfg.bg, color: cfg.color }}>
