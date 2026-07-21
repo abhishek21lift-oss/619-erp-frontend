@@ -369,7 +369,7 @@ function NewClientForm() {
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex flex-col gap-3 justify-center mt-6">
             <Button
               style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
-              onClick={() => router.push(`/pt-os/parq?client_id=${createdId}`)}
+              onClick={() => router.push(`/pt-os/informed-consent?client_id=${createdId}`)}
             >
               <ClipboardCheck size={17} className="mr-2" />
               Start Client Screening
