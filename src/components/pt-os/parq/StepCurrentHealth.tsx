@@ -107,9 +107,11 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Water Intake (liters/day)" type="number" value={ch.water_intake} onChange={(v) => setCh('water_intake', v)} />
-        </div>
+        <Slider
+          label="Water Intake (liters/day)" value={parseFloat(ch.water_intake) || 2} min={0} max={8} step={0.25}
+          onChange={(v) => setCh('water_intake', String(v))}
+          formatValue={(v) => `${v}L`}
+        />
 
         <Slider
           label="Sleep Hours / Night" value={parseFloat(ch.sleep_hours) || 7} min={3} max={12} step={0.5}
