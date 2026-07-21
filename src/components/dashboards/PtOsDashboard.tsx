@@ -263,8 +263,6 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
 }) {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const hs = healthScore(d);
-  const trend = momPct(d.revenueTrend, 'revenue');
 
   return (
     <m.div
@@ -304,9 +302,9 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
           style={{ background: 'radial-gradient(120% 120% at 50% 38%, transparent 52%, rgba(6,4,16,0.55) 100%)' }} />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center py-6 sm:py-7 px-6 text-center">
+      <div className="relative z-10 flex flex-col items-center justify-center py-4 sm:py-5 px-6 text-center">
         {/* Crest */}
-        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full"
+        <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-full"
           style={{
             background: 'radial-gradient(circle at 30% 25%, #211648, #0B0720)',
             border: '1px solid rgba(251,191,36,0.45)',
@@ -346,13 +344,6 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
           style={{ color: 'rgba(255,255,255,0.46)' }}>
           {dateStr}
         </p>
-
-        {/* Live stat pills */}
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-          <HeroStat icon={<Users size={13} />} label="Active" value={String(d.active_pt_clients)} accent="#c084fc" />
-          <HeroStat icon={<Wallet size={13} />} label="This Month" value={fmtCompact(d.total_monthly_pt_revenue)} accent="#34d399" trend={trend} />
-          <HeroStat icon={<Gauge size={13} />} label={hs.label} value={String(hs.score)} accent={hs.color} />
-        </div>
       </div>
 
       <div className="absolute top-0 inset-x-0 h-px"
