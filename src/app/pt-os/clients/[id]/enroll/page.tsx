@@ -254,9 +254,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
         // pt_clients.final_amount / paid_amount default to 0 (NOT NULL) in the
         // database, so a freshly created client would otherwise pre-fill these
         // money fields with "0" before any real price has been entered.
-        // Treat 0 as "not set yet" here so the fields start blank.
-        finalAmount: c.final_amount ? String(c.final_amount) : '',
-        amountPaid: c.paid_amount ? String(c.paid_amount) : '',
+        // Treat 0 as "not set yet" here so the fields start blank. Note the
+        // numeric coercion: Postgres returns numeric columns as strings, so a
+        // zero comes back as "0.00" — which is truthy and would slip through a
+        // plain `c.final_amount ?` check.
+        finalAmount: Number(c.final_amount) > 0 ? String(c.final_amount) : '',
+        amountPaid: Number(c.paid_amount) > 0 ? String(c.paid_amount) : '',
       };
 
       const draft = restore();
