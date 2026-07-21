@@ -292,7 +292,13 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  /* `clip` (not `hidden`) suppresses horizontal overflow WITHOUT turning the
+     element into a scroll container. `overflow-x: hidden` forces overflow-y to
+     compute to `auto`, which on Android/Chrome/desktop hijacks the viewport's
+     vertical scroll (iOS's momentum layer masks it) — that broke document
+     scrolling on the landing page, the one surface that scrolls the document
+     rather than an inner `.app-main`. */
+  overflow-x: clip;
   /* Custom PullToRefresh owns the top-of-page drag gesture; this stops the
      browser's own native pull-to-refresh/rubber-band from firing alongside
      it (Chrome/Android in particular double-triggers without this). */
@@ -302,7 +308,7 @@ body {
   min-height: 100dvh;
   color: var(--text-primary);
   background: var(--bg-canvas);
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
   overscroll-behavior-y: contain;
 }

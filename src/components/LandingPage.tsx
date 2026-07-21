@@ -254,9 +254,13 @@ export default function LandingPage() {
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden" style={{ background: '#fff', color: INK }}>
-      {/* ambient background */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
+    <div className="relative min-h-screen" style={{ background: '#fff', color: INK }}>
+      {/* ambient background — clipped so the decorative orbs never create
+          horizontal document overflow. (We deliberately avoid overflow-x on the
+          page wrapper itself: it forces overflow-y to `auto`, turning the
+          wrapper into a nested scroll container that breaks document scrolling
+          on Android/desktop while iOS's momentum layer papers over it.) */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full" style={{ background: `radial-gradient(circle, ${MAROON}18, transparent 68%)` }} />
         <div className="absolute -right-40 top-24 h-[560px] w-[560px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}22, transparent 68%)` }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% -8%, rgba(110,18,48,0.06), transparent 60%)' }} />
