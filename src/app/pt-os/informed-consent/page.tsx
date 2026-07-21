@@ -141,7 +141,8 @@ function ClientPicker() {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 pt-3 pb-6 sm:px-6">
       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        className="mb-5 flex items-center gap-3">
+        className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
+        style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
         <div
           className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
           style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
