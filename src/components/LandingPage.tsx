@@ -74,7 +74,7 @@ const NAV = ['Solutions', 'Features', 'Pricing', 'Resources', 'About'];
 function Nav() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="fixed inset-x-0 top-0 z-50">
+    <header className="fixed inset-x-0 top-0 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="mx-auto mt-3 max-w-6xl px-4">
         <nav
           className="flex items-center justify-between rounded-2xl px-4 py-2.5"
