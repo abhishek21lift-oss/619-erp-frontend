@@ -153,25 +153,24 @@ function ClientPicker() {
         </h1>
       </m.div>
 
-      <div className="rounded-[22px] p-5 sm:p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="relative min-w-[220px] flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-            <input
-              type="text" placeholder="Search clients..." value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            />
-          </div>
-          {!loading && !loadError && (
-            <span className="flex-shrink-0 text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
-              {filtered.length} {filtered.length === 1 ? 'client' : 'clients'}
-            </span>
-          )}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          <input
+            type="text" placeholder="Search clients..." value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          />
         </div>
+        {!loading && !loadError && (
+          <span className="flex-shrink-0 text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
+            {filtered.length} {filtered.length === 1 ? 'client' : 'clients'}
+          </span>
+        )}
+      </div>
 
-        {loading && (
+      {loading && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex animate-pulse items-center gap-3 rounded-[16px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
@@ -199,7 +198,7 @@ function ClientPicker() {
         )}
 
         {!loading && !loadError && filtered.length > 0 && (
-          <div className="grid max-h-[440px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => (
               <button
                 key={c.id}
@@ -214,7 +213,6 @@ function ClientPicker() {
             ))}
           </div>
         )}
-      </div>
     </div>
   );
 }
