@@ -19,6 +19,7 @@
 import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Eye, EyeOff, Mail, ArrowRight, ArrowLeft, Fingerprint, Loader2, Lock,
@@ -52,16 +53,15 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function Wordmark({ light = false, size = 34 }: { light?: boolean; size?: number }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span
-        className="grid place-items-center rounded-[10px] font-black text-white"
-        style={{
-          height: size, width: size, fontSize: size * 0.44,
-          background: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 60%, ${GOLD} 200%)`,
-          boxShadow: `0 6px 18px ${MAROON}55`,
-        }}
-      >
-        M
-      </span>
+      <Image
+        src="/mypt-logo.jpg"
+        alt="MY PT STUDIO"
+        width={size}
+        height={size}
+        priority
+        className="shrink-0 rounded-full object-cover"
+        style={{ height: size, width: size, boxShadow: light ? '0 4px 16px rgba(0,0,0,0.30)' : `0 4px 14px ${MAROON}22` }}
+      />
       <span className="text-[16px] font-[750] tracking-[-0.01em]" style={{ color: light ? '#fff' : INK }}>
         MY&nbsp;PT&nbsp;<span style={{ color: GOLD }}>STUDIO</span>
       </span>

@@ -12,6 +12,7 @@
 
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight, Check, Menu, X, Sparkles, Star, ChevronDown,
@@ -55,12 +56,15 @@ function Reveal({ children, delay = 0, y = 22, className = '' }: { children: Rea
 function Wordmark({ light = false }: { light?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span
-        className="grid h-8 w-8 place-items-center rounded-[10px] text-[15px] font-black text-white"
-        style={{ background: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 60%, ${GOLD} 190%)`, boxShadow: `0 6px 18px ${MAROON}44` }}
-      >
-        M
-      </span>
+      <Image
+        src="/mypt-logo.jpg"
+        alt="MY PT STUDIO"
+        width={36}
+        height={36}
+        priority
+        className="h-9 w-9 shrink-0 rounded-full object-cover"
+        style={light ? { boxShadow: '0 4px 14px rgba(0,0,0,0.28)' } : undefined}
+      />
       <span className={`text-[15.5px] font-[750] tracking-[-0.01em] ${light ? 'text-white' : ''}`} style={light ? undefined : { color: INK }}>
         MY&nbsp;PT&nbsp;<span style={{ color: GOLD }}>STUDIO</span>
       </span>
