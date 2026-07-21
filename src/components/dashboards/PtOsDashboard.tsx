@@ -258,8 +258,8 @@ function HeroStat({ icon, label, value, accent, trend }: {
   );
 }
 
-function HeroHeader({ d, coach, loading: _loading, onRefresh: _onRefresh }: {
-  d: DashData; coach: string; loading: boolean; onRefresh: () => void;
+function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRefresh }: {
+  d: DashData; coach: string; studioName: string; loading: boolean; onRefresh: () => void;
 }) {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -331,7 +331,7 @@ function HeroHeader({ d, coach, loading: _loading, onRefresh: _onRefresh }: {
             filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.40)) drop-shadow(0 3px 20px rgba(245,158,11,0.48))',
           }}
         >
-          ABHISHEK PT STUDIO
+          {studioName}
         </h1>
 
         {/* Flourish divider */}
@@ -1152,6 +1152,7 @@ export default function PtOsDashboard() {
   const d = dash.data;
   const o = ops.data;
   const coach = user?.name?.split(' ')[0] || 'Coach';
+  const studioName = user?.organization_name || 'PT Studio';
 
   const refreshAll = useCallback(async () => {
     await Promise.all([dash.refetch(), ops.refetch(), consents.refetch()]);
@@ -1193,7 +1194,7 @@ export default function PtOsDashboard() {
         {d && (
           <>
             {/* 1 — Hero header */}
-            <HeroHeader d={d} coach={coach} loading={dash.loading} onRefresh={dash.refetch} />
+            <HeroHeader d={d} coach={coach} studioName={studioName} loading={dash.loading} onRefresh={dash.refetch} />
 
             {/* 2 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />

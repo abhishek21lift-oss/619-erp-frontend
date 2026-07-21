@@ -74,8 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
-        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string };
-        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '' };
+        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null };
+        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null };
       } catch { ssDel(SESSION_USER_KEY); }
     }
     if (cachedUser) setUser(cachedUser);
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (res?.user) {
           const u = res.user as User;
           setUser(u);
-          ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
+          ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name }));
         } else {
           setUser(null);
           ssDel(SESSION_USER_KEY);
@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name }));
     setLoading(false);
   }, []);
 
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name }));
     setLoading(false);
   }, []);
 
@@ -186,9 +186,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
     resetRedirectLock();
     loggedInRef.current = true;
-    const u = data.user;
-    setUser(u as User);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role }));
+    const u = data.user as User;
+    setUser(u);
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name }));
     setLoading(false);
   }, []);
 

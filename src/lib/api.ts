@@ -39,6 +39,8 @@ export type User = {
   trainer_id?: string;
   member_id?: string;
   is_active?: boolean;
+  organization_id?: string | null;
+  organization_name?: string | null;
 };
 
 // Types matching the /api/profile/* contract exactly (src/routes/profile.js).
