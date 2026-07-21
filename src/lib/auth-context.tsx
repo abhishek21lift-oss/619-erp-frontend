@@ -74,8 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cachedUser: User | null = null;
     if (cachedRaw) {
       try {
-        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null };
-        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null };
+        const partial = JSON.parse(cachedRaw) as { id: string; name: string; role: string; organization_name?: string | null; organization_logo_url?: string | null };
+        cachedUser = { id: partial.id, name: partial.name, role: partial.role as any, email: '', organization_name: partial.organization_name ?? null, organization_logo_url: partial.organization_logo_url ?? null };
       } catch { ssDel(SESSION_USER_KEY); }
     }
     if (cachedUser) setUser(cachedUser);
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (res?.user) {
           const u = res.user as User;
           setUser(u);
-          ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name }));
+          ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url }));
         } else {
           setUser(null);
           ssDel(SESSION_USER_KEY);
@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name }));
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url }));
     setLoading(false);
   }, []);
 
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name }));
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url }));
     setLoading(false);
   }, []);
 
@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loggedInRef.current = true;
     const u = data.user as User;
     setUser(u);
-    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name }));
+    ssSet(SESSION_USER_KEY, JSON.stringify({ id: u.id, name: u.name, role: u.role, organization_name: u.organization_name, organization_logo_url: u.organization_logo_url }));
     setLoading(false);
   }, []);
 

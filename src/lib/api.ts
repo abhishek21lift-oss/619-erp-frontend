@@ -41,6 +41,7 @@ export type User = {
   is_active?: boolean;
   organization_id?: string | null;
   organization_name?: string | null;
+  organization_logo_url?: string | null;
 };
 
 // Types matching the /api/profile/* contract exactly (src/routes/profile.js).
@@ -1981,6 +1982,13 @@ export const api = {
       http<{ data: { id: string; message: string } }>(`/api/super-admin/users/${id}/reset-password`, {
         method: 'POST', body: JSON.stringify({ password }),
       }),
+    uploadOrgLogo: (id: string, file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return http<{ data: Organization }>(`/api/super-admin/organizations/${id}/logo`, {
+        method: 'POST', body: formData,
+      });
+    },
   },
 };
 
@@ -1988,6 +1996,7 @@ export const api = {
 export type Organization = {
   id: string; name: string; slug: string;
   status: 'active' | 'suspended'; created_at: string;
+  logo_url?: string | null;
   user_count?: number; trainer_count?: number; client_count?: number;
 };
 export type OrgUser = {

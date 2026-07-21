@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import {
   Search, LogOut, Bell, Settings, Fingerprint,
   Zap, User, HelpCircle, ChevronDown,
@@ -13,6 +12,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/components/ui/cn';
 import Sidebar from '@/components/sidebar';
+import StudioMark from '@/components/StudioMark';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
 import { allNavItems } from '@/lib/nav-config';
@@ -132,6 +132,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   };
 
   const { user, logout } = useAuth();
+  const studioName = user?.organization_name || 'PT Studio';
   const router = useRouter();
   const pathname = usePathname();
   const searchRef = useRef<HTMLDivElement>(null);
@@ -635,15 +636,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                 <button onClick={() => setProfileOpen(s => !s)}
                   className="flex items-center gap-2.5 pl-3 transition-all duration-200 hover:opacity-80"
                   style={{ borderLeft: darkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg overflow-hidden"
-                    style={{
-                      background: '#fff',
-                      boxShadow: '0 0 0 1.5px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.15)',
-                    }}>
-                    <Image src="/logo.png" alt="Coach Abhishek" width={20} height={20} className="h-5 w-5 object-contain" />
-                  </div>
+                  <StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={28} radius={8} />
                   <div className="hidden sm:block text-left">
-                    <p className={cn('text-[12px] font-semibold leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>COACH ABHISHEK</p>
+                    <p className={cn('max-w-[150px] truncate text-[12px] font-semibold uppercase leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>{studioName}</p>
                     <p className={cn('text-[10px] leading-tight capitalize', darkMode ? 'text-slate-400' : 'text-slate-500')}>{user?.role || '—'}</p>
                   </div>
                   <ChevronDown size={12} strokeWidth={1.5} className={cn('shrink-0', darkMode ? 'text-slate-500' : 'text-slate-400')} />

@@ -5,13 +5,14 @@
 // requireSuperAdmin, and client-side by Guard role="super_admin"). Manages
 // tenants (organizations) and their login accounts.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Building2, Plus, Loader2, ShieldAlert, Users, Dumbbell, UserCircle,
-  KeyRound, Power, X, Copy, RefreshCw, ChevronDown,
+  KeyRound, Power, X, Copy, RefreshCw, ChevronDown, ImagePlus,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import StudioMark from '@/components/StudioMark';
 import { Button, Badge, EmptyState } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { Organization, OrganizationDetail, OrgUser } from '@/lib/api';
@@ -153,6 +154,24 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onChanged }: {
   const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState<OrganizationDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const onLogoPick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      await api.superAdmin.uploadOrgLogo(org.id, file);
+      toast.success('Logo updated.');
+      onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Logo upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const loadDetail = useCallback(() => {
     setLoadingDetail(true);
@@ -184,9 +203,14 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onChanged }: {
   return (
     <div className="rounded-[18px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       <div className="flex flex-wrap items-center gap-3 p-4">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px]"
-          style={{ background: suspended ? 'rgba(239,68,68,0.10)' : 'rgba(99,102,241,0.10)' }}>
-          <Building2 size={18} style={{ color: suspended ? '#ef4444' : '#6366f1' }} />
+        <div className="relative flex-shrink-0">
+          <StudioMark name={org.name} logoUrl={org.logo_url} size={40} />
+          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onLogoPick} />
+          <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Upload / change logo"
+            className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            {uploading ? <Loader2 size={11} className="animate-spin" /> : <ImagePlus size={11} />}
+          </button>
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

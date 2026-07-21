@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Image from 'next/image';
 import {
   ChevronDown, X, LogOut, User, Settings,
   PanelLeft, PanelLeftClose,
@@ -11,6 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { m, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
+import StudioMark from '@/components/StudioMark';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
 import { usePermissions } from '@/lib/permissions-context';
 import {
@@ -494,6 +494,9 @@ export default function Sidebar({
 }: SidebarProps) {
   const isMobile = variant === 'mobile';
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { user } = useAuth();
+  const studioName = user?.organization_name || 'PT Studio';
+  const studioOwner = user?.name || '';
 
   // Pin: when true, sidebar stays expanded permanently
   const [isPinned, setIsPinned] = useState(false);
@@ -573,23 +576,7 @@ export default function Sidebar({
         <div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between')}>
           <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}>
             <div className="relative shrink-0">
-              <div
-                className="h-9 w-9 rounded-xl p-[2px] transition-all duration-300"
-                style={{
-                  background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #7C3AED 100%)',
-                  boxShadow: '0 2px 12px rgba(245,158,11,0.30)',
-                }}
-              >
-                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[var(--bg-white)]">
-                  <Image
-                    src="/logo.png"
-                    alt="Coach Abhishek"
-                    width={collapsed ? 24 : 28}
-                    height={collapsed ? 24 : 28}
-                    className={cn('rounded-lg object-cover', collapsed ? 'h-6 w-6' : 'h-7 w-7')}
-                  />
-                </div>
-              </div>
+              <StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={collapsed ? 32 : 38} />
             </div>
             <AnimatePresence initial={false}>
               {!collapsed && (
@@ -600,17 +587,14 @@ export default function Sidebar({
                   exit={{ opacity: 0, transition: { duration: 0.08 } }}
                   className="overflow-hidden"
                 >
-                  <h2 className="text-[15px] font-extrabold tracking-tight leading-none whitespace-nowrap">
-                    <span
-                      className="bg-clip-text text-transparent"
-                      style={{ backgroundImage: 'linear-gradient(135deg, #FCD34D, #F59E0B, #D97706)' }}
-                    >COACH</span>
-                    {' '}
-                    <span className="text-[var(--text-primary)] tracking-[0.05em] text-[12.5px]">ABHISHEK</span>
+                  <h2 className="max-w-[160px] truncate text-[13px] font-extrabold uppercase tracking-tight leading-none text-[var(--text-primary)]">
+                    {studioName}
                   </h2>
-                  <p className="mt-[2px] text-[9px] font-semibold text-[var(--text-muted)] tracking-[0.12em] uppercase whitespace-nowrap">
-                    Strength · Motivation · Trust
-                  </p>
+                  {studioOwner && (
+                    <p className="mt-[3px] max-w-[160px] truncate text-[9.5px] font-semibold text-[var(--text-muted)] tracking-[0.06em]">
+                      {studioOwner}
+                    </p>
+                  )}
                 </m.div>
               )}
             </AnimatePresence>
