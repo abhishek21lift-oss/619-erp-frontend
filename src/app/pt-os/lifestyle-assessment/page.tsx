@@ -149,45 +149,37 @@ function ClientPicker() {
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[28px] p-8 sm:p-10 mb-6"
+    <div className="mx-auto w-full max-w-4xl px-4 pt-3 pb-6 sm:px-6">
+      <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
         style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="relative flex items-center gap-4">
-          <div
-            className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-[16px]"
-            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
-          >
-            <HeartPulse size={24} color="#fff" />
-          </div>
-          <div>
-            <h1 className="text-[30px] sm:text-[38px] font-[860] tracking-[-0.03em] leading-tight" style={{ color: 'var(--text-primary)' }}>
-              Daily Habits &amp; Recovery Analysis
-            </h1>
-            <p className="mt-1.5 max-w-xl text-[14px]" style={{ color: 'var(--text-muted)' }}>
-              Select a client to begin or review their lifestyle assessment.
-            </p>
-          </div>
+        <div
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
+          style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
+        >
+          <HeartPulse size={20} color="#fff" />
         </div>
+        <h1 className="text-[20px] sm:text-[26px] font-[860] tracking-[-0.03em] leading-[1.08]" style={{ color: 'var(--text-primary)' }}>
+          Daily Habits &amp; Recovery Analysis
+        </h1>
       </m.div>
 
-      <div className="rounded-[22px] p-5 sm:p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="relative min-w-[220px] flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-            <input
-              type="text" placeholder="Search clients..." value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            />
-          </div>
-          {!loading && !loadError && (
-            <span className="flex-shrink-0 text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
-              {filtered.length} {filtered.length === 1 ? 'client' : 'clients'}
-            </span>
-          )}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          <input
+            type="text" placeholder="Search clients..." value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          />
         </div>
+        {!loading && !loadError && (
+          <span className="flex-shrink-0 text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
+            {filtered.length} {filtered.length === 1 ? 'client' : 'clients'}
+          </span>
+        )}
+      </div>
 
         {loading && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -217,7 +209,7 @@ function ClientPicker() {
         )}
 
         {!loading && !loadError && filtered.length > 0 && (
-          <div className="grid max-h-[440px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((c) => (
               <button
                 key={c.id}
@@ -232,7 +224,6 @@ function ClientPicker() {
             ))}
           </div>
         )}
-      </div>
     </div>
   );
 }
