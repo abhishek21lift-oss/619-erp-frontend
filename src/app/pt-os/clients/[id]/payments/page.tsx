@@ -584,7 +584,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                 )}
               </m.div>
 
-              {/* ── Record Payment Slide-in Panel (Apple Style) ── */}
+              {/* ── Record Payment — bottom sheet on mobile, centered modal on desktop ── */}
               <AnimatePresence>
                 {showPaymentPanel && (
                   <>
@@ -592,60 +592,72 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="fixed inset-0 z-40"
-                      style={{ background: 'rgba(0,0,0,0.40)', backdropFilter: 'blur(6px)' }}
+                      className="fixed inset-0 z-[65]"
+                      style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)' }}
                       onClick={() => setShowPaymentPanel(false)}
                     />
                     <m.div
                       ref={formRef}
-                      initial={{ x: '100%' }}
-                      animate={{ x: 0 }}
-                      exit={{ x: '100%' }}
-                      transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                      className="fixed right-0 top-0 bottom-0 w-full max-w-sm z-50 overflow-y-auto"
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 40 }}
+                      transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+                      role="dialog"
+                      aria-modal="true"
+                      aria-label="Record payment"
+                      className="fixed z-[70] flex flex-col overflow-hidden
+                                 inset-x-0 bottom-0 max-h-[94dvh] rounded-t-[26px]
+                                 sm:inset-0 sm:m-auto sm:h-fit sm:max-h-[88vh] sm:max-w-md sm:rounded-[24px]"
                       style={{
                         background: 'var(--bg-card)',
-                        borderLeft: '1px solid #e5e7eb',
-                        boxShadow: '-20px 0 60px rgba(0,0,0,0.10)',
+                        border: '1px solid var(--border)',
+                        boxShadow: '0 -12px 48px rgba(0,0,0,0.20)',
                       }}
                     >
-                      {/* Header */}
-                      <div className="flex items-center justify-between px-5 pt-6 pb-4">
-                        <div>
+                      {/* Grab handle (mobile only) */}
+                      <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
+                        <span className="h-1.5 w-11 rounded-full" style={{ background: 'var(--border)' }} />
+                      </div>
+
+                      {/* Header (fixed) */}
+                      <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-3 pb-3">
+                        <div className="min-w-0">
                           <p className="text-[10px] font-[700] uppercase tracking-[0.12em]" style={{ color: 'var(--text-disabled)' }}>Record Payment</p>
-                          <p className="text-[20px] font-[800] tracking-[-0.025em] mt-0.5" style={{ color: 'var(--text-primary)' }}>{client.name}</p>
+                          <p className="truncate text-[19px] font-[800] tracking-[-0.025em] mt-0.5" style={{ color: 'var(--text-primary)' }}>{client.name}</p>
                         </div>
                         <button
                           onClick={() => setShowPaymentPanel(false)}
-                          className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-zinc-100"
+                          aria-label="Close"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-zinc-100"
                           style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
                         >
                           <X size={16} />
                         </button>
                       </div>
 
-                      {/* Balance chip */}
-                      <div className="px-5 mb-1">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-[600]"
-                          style={{
-                            background: client.balance_amount > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
-                            color: client.balance_amount > 0 ? '#f59e0b' : '#10b981',
-                          }}>
-                          <Wallet size={12} />
-                          {client.balance_amount > 0 ? `Balance due: ${fmtINR(client.balance_amount)}` : 'Fully paid'}
+                      {/* Scrollable body */}
+                      <div className="flex-1 overflow-y-auto px-5 pb-4">
+                        {/* Balance chip */}
+                        <div className="mb-3">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-[600]"
+                            style={{
+                              background: client.balance_amount > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
+                              color: client.balance_amount > 0 ? '#f59e0b' : '#10b981',
+                            }}>
+                            <Wallet size={12} />
+                            {client.balance_amount > 0 ? `Balance due: ${fmtINR(client.balance_amount)}` : 'Fully paid'}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Hero amount display */}
-                      <div className="text-center px-5 pt-6 pb-5" style={{ borderBottom: '1px solid var(--border)' }}>
-                        <p className="text-[60px] font-[800] tracking-[-0.04em] tabular-nums leading-none" style={{
-                          color: form.amount && Number(form.amount) > 0 ? '#111827' : '#d1d5db',
-                        }}>
-                          ₹{form.amount || '0'}
-                        </p>
-                      </div>
+                        {/* Hero amount display */}
+                        <div className="text-center pb-4 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                          <p className="text-[44px] sm:text-[54px] font-[800] tracking-[-0.04em] tabular-nums leading-none" style={{
+                            color: form.amount && Number(form.amount) > 0 ? 'var(--text-primary)' : 'var(--text-disabled)',
+                          }}>
+                            ₹{form.amount || '0'}
+                          </p>
+                        </div>
 
-                      <div className="px-5 pt-5 pb-8 space-y-4">
                         {/* Payment method pills */}
                         <div className="flex gap-2">
                           {[
@@ -662,8 +674,8 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                 onClick={() => setForm(f => ({ ...f, payment_method: m.value }))}
                                 className="flex-1 flex items-center justify-center gap-1 py-2.5 rounded-full text-[11px] font-[700] transition-all"
                                 style={{
-                                  background: sel ? m.color : '#F3F4F6',
-                                  color: sel ? '#fff' : '#6b7280',
+                                  background: sel ? m.color : 'var(--bg-subtle)',
+                                  color: sel ? '#fff' : 'var(--text-muted)',
                                   boxShadow: sel ? `0 4px 16px ${m.color}40` : 'none',
                                 }}
                               >
@@ -675,7 +687,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                         </div>
 
                         {/* Number pad */}
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-2 mt-4">
                           {['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(key => (
                             <button
                               key={key}
@@ -688,10 +700,10 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                                   return { ...f, amount: next };
                                 });
                               }}
-                              className="h-[62px] rounded-[16px] font-[500] transition-all active:scale-90 select-none"
+                              className="h-[54px] sm:h-[58px] rounded-[16px] font-[500] transition-all active:scale-90 select-none"
                               style={{
-                                background: key === '⌫' ? 'rgba(239,68,68,0.08)' : '#F3F4F6',
-                                color: key === '⌫' ? '#ef4444' : '#111827',
+                                background: key === '⌫' ? 'rgba(239,68,68,0.08)' : 'var(--bg-subtle)',
+                                color: key === '⌫' ? '#ef4444' : 'var(--text-primary)',
                                 fontSize: key === '⌫' ? '18px' : '22px',
                               }}
                             >
@@ -703,7 +715,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                         {/* Optional details toggle */}
                         <button
                           onClick={() => setShowOptional(v => !v)}
-                          className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-[12px] text-[11px] font-[600] transition-colors hover:bg-zinc-50"
+                          className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-[12px] text-[11px] font-[600] transition-colors hover:bg-zinc-50 mt-4"
                           style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
                         >
                           <span>Reference / Date / Notes</span>
@@ -717,7 +729,7 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.2 }}
                               style={{ overflow: 'hidden' }}
-                              className="space-y-3"
+                              className="space-y-3 mt-3"
                             >
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
@@ -750,18 +762,18 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                         </AnimatePresence>
 
                         {/* Summary */}
-                        <div className="rounded-[14px] p-4 space-y-2.5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                        <div className="rounded-[14px] p-4 space-y-2.5 mt-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
                           <div className="flex justify-between text-[12px]">
                             <span style={{ color: 'var(--text-muted)' }}>Already paid</span>
                             <span className="font-[600] tabular-nums" style={{ color: '#10b981' }}>{fmtINR(client.paid_amount)}</span>
                           </div>
                           <div className="flex justify-between text-[12px]">
                             <span style={{ color: 'var(--text-muted)' }}>This payment</span>
-                            <span className="font-[700] tabular-nums" style={{ color: form.amount && Number(form.amount) > 0 ? '#111827' : '#d1d5db' }}>
+                            <span className="font-[700] tabular-nums" style={{ color: form.amount && Number(form.amount) > 0 ? 'var(--text-primary)' : 'var(--text-disabled)' }}>
                               {form.amount && Number(form.amount) > 0 ? fmtINR(form.amount) : '—'}
                             </span>
                           </div>
-                          <div className="h-px" style={{ background: '#e5e7eb' }} />
+                          <div className="h-px" style={{ background: 'var(--border)' }} />
                           <div className="flex justify-between">
                             <span className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>New balance</span>
                             <span className="text-[15px] font-[800] tabular-nums" style={{
@@ -771,18 +783,27 @@ export default function PtClientPaymentsPage({ params }: { params: Promise<{ id:
                             </span>
                           </div>
                         </div>
+                      </div>
 
-                        {/* Submit */}
+                      {/* Sticky footer — always visible above the tab bar / home indicator */}
+                      <div
+                        className="shrink-0 px-5 pt-3"
+                        style={{
+                          borderTop: '1px solid var(--border)',
+                          background: 'var(--bg-card)',
+                          paddingBottom: 'calc(env(safe-area-inset-bottom) + 14px)',
+                        }}
+                      >
                         <button
                           onClick={handleCreatePayment}
                           disabled={!form.amount || Number(form.amount) <= 0 || submitting}
                           className="w-full py-4 rounded-[18px] text-[16px] font-[800] tracking-[-0.01em] transition-all select-none"
                           style={{
                             background: !form.amount || Number(form.amount) <= 0 || submitting
-                              ? '#F3F4F6'
+                              ? 'var(--bg-subtle)'
                               : 'linear-gradient(135deg, #10b981, #059669)',
                             color: !form.amount || Number(form.amount) <= 0 || submitting
-                              ? '#9ca3af'
+                              ? 'var(--text-disabled)'
                               : '#ffffff',
                             boxShadow: !form.amount || Number(form.amount) <= 0 || submitting
                               ? 'none'
