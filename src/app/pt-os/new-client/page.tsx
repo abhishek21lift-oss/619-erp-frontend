@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Check, Camera, CheckCircle2, Award, FileSpreadsheet, X,
+  Check, Camera, CheckCircle2, Award, FileSpreadsheet, X, ClipboardCheck,
 } from 'lucide-react';
 import { getSheetCacheSync, lookupByMobile } from '@/lib/sheet-import';
 import { useRouter } from 'next/navigation';
@@ -369,6 +369,13 @@ function NewClientForm() {
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex flex-col gap-3 justify-center mt-6">
             <Button
               style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              onClick={() => router.push(`/pt-os/parq?client_id=${createdId}`)}
+            >
+              <ClipboardCheck size={17} className="mr-2" />
+              Start Client Screening
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => router.push(`/pt-os/clients/${createdId}/enroll`)}
             >
               Enroll in PT
