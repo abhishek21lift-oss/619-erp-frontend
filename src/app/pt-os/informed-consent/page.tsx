@@ -53,6 +53,28 @@ function validateStep(step: StepId, form: InformedConsentFormData): string | und
   return undefined;
 }
 
+/** Force a real download of the generated PDF (rather than an inline preview,
+ *  which on mobile Safari offers no save option). Fetches the file as a blob
+ *  and saves it with a friendly filename; falls back to opening inline if the
+ *  blob fetch is blocked (e.g. a cross-origin storage URL). */
+async function downloadPdf(url: string, filename: string) {
+  try {
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) throw new Error(String(res.status));
+    const blob = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objUrl;
+    a.download = filename.replace(/[/\\?%*:|"<>]/g, '-');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objUrl), 1500);
+  } catch {
+    window.open(url, '_blank', 'noopener');
+  }
+}
+
 export default function InformedConsentPage() {
   return (
     <Guard>
@@ -318,7 +340,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 size="sm" iconLeft={<Download size={13} />} disabled={!record.pdf_url}
-                onClick={() => { if (record.pdf_url) window.open(record.pdf_url, '_blank', 'noopener'); }}
+                onClick={() => { if (record.pdf_url) downloadPdf(record.pdf_url, `Informed Consent - ${clientName || 'client'}.pdf`); }}
               >
                 Download PDF
               </Button>
@@ -583,7 +605,7 @@ function SubmitSuccess({ clientName, result, onDone }: { clientName: string; res
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
         <Button
           iconLeft={<Download size={14} />} disabled={!result.pdfUrl}
-          onClick={() => { if (result.pdfUrl) window.open(result.pdfUrl, '_blank', 'noopener'); }}
+          onClick={() => { if (result.pdfUrl) downloadPdf(result.pdfUrl, `Informed Consent - ${clientName || 'client'}.pdf`); }}
         >
           Download PDF
         </Button>
