@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, Search, Users, AlertCircle,
+  ArrowLeft, ArrowRight, Check, Loader2, Search, AlertCircle,
   Salad, Plus, X, History,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -122,6 +122,28 @@ function NutritionContent() {
 }
 
 /* ─────────────────────────────────────────────────────── CLIENT PICKER */
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  'linear-gradient(135deg, #10b981, #34d399)',
+  'linear-gradient(135deg, #f59e0b, #fbbf24)',
+  'linear-gradient(135deg, #ec4899, #f472b6)',
+  'linear-gradient(135deg, #06b6d4, #22d3ee)',
+  'linear-gradient(135deg, #ef4444, #f87171)',
+];
+
+function ClientAvatar({ name }: { name: string }) {
+  const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_GRADIENTS.length;
+  const initials = name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  return (
+    <div
+      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-[700] text-white"
+      style={{ background: AVATAR_GRADIENTS[idx] }}
+    >
+      {initials || '?'}
+    </div>
+  );
+}
+
 function ClientPicker() {
   const router = useRouter();
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -156,30 +178,42 @@ function ClientPicker() {
         </h1>
       </m.div>
 
-      <div className="relative mb-3">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-        <input
-          type="text" placeholder="Search clients..." value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-3 py-2.5 rounded-[10px] text-[13px] outline-none"
-          style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
-        />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          <input
+            type="text" placeholder="Search clients..." value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          />
+        </div>
+        {!loading && !loadError && (
+          <span className="flex-shrink-0 text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
+            {filtered.length} {filtered.length === 1 ? 'client' : 'clients'}
+          </span>
+        )}
       </div>
+
       {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" /></div>}
       {loadError && <p className="text-center py-8 text-[13px]" style={{ color: 'var(--text-muted)' }}>Could not load clients.</p>}
-      {!loading && !loadError && (
-        <div className="flex flex-wrap gap-2">
+      {!loading && !loadError && filtered.length === 0 && (
+        <p className="py-8 text-center text-[13px]" style={{ color: 'var(--text-disabled)' }}>No clients found.</p>
+      )}
+      {!loading && !loadError && filtered.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((c) => (
             <button
               key={c.id}
               onClick={() => router.push(`/pt-os/nutrition-assessment?client_id=${c.id}`)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-[13px] font-[600] transition-all"
-              style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#334155' }}
+              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >
-              <Users size={13} /> {c.name}
+              <ClientAvatar name={c.name} />
+              <span className="flex-1 truncate text-[13.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+              <ArrowRight size={14} className="flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: 'var(--text-disabled)' }} />
             </button>
           ))}
-          {filtered.length === 0 && <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>No clients found.</p>}
         </div>
       )}
     </div>
