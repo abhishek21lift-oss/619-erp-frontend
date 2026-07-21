@@ -54,13 +54,13 @@ function Wordmark({ light = false, size = 34 }: { light?: boolean; size?: number
   return (
     <span className="inline-flex items-center gap-2.5">
       <Image
-        src="/mypt-logo.jpg"
+        src="/mypt-logo.png"
         alt="MY PT STUDIO"
         width={size}
         height={size}
         priority
-        className="shrink-0 rounded-full object-cover"
-        style={{ height: size, width: size, boxShadow: light ? '0 4px 16px rgba(0,0,0,0.30)' : `0 4px 14px ${MAROON}22` }}
+        className="shrink-0 object-contain"
+        style={{ height: size, width: size, filter: light ? 'drop-shadow(0 3px 10px rgba(0,0,0,0.35))' : 'none' }}
       />
       <span className="text-[16px] font-[750] tracking-[-0.01em]" style={{ color: light ? '#fff' : INK }}>
         MY&nbsp;PT&nbsp;<span style={{ color: GOLD }}>STUDIO</span>
