@@ -11,7 +11,6 @@ const QUESTIONS: { key: keyof LifestyleAnswers; label: string }[] = [
   { key: 'sleep_7_8_hours', label: 'Sleep 7–8 hours' },
   { key: 'drink_enough_water', label: 'Drink enough water' },
   { key: 'family_support', label: 'Family support' },
-  { key: 'medical_restrictions', label: 'Medical restrictions' },
 ];
 
 function scoreColor(score: number): string {

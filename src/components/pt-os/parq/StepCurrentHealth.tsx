@@ -14,14 +14,6 @@ const ACTIVITY_LEVELS: { value: string; label: string }[] = [
   { value: 'extremely_active', label: 'Extremely Active' },
 ];
 
-const DIETARY_HABITS: { value: string; label: string }[] = [
-  { value: 'vegetarian', label: 'Vegetarian' },
-  { value: 'non_vegetarian', label: 'Non-Vegetarian' },
-  { value: 'vegan', label: 'Vegan' },
-  { value: 'eggetarian', label: 'Eggetarian' },
-  { value: 'other', label: 'Other' },
-];
-
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
 
 interface StepCurrentHealthProps {
@@ -89,30 +81,6 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
           </div>
         </div>
 
-        <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Dietary Habits</p>
-          <div className="flex flex-wrap gap-2">
-            {DIETARY_HABITS.map((d) => {
-              const selected = ch.dietary_habits === d.value;
-              return (
-                <button
-                  key={d.value} type="button" onClick={() => setCh('dietary_habits', d.value)}
-                  className="rounded-[11px] px-3.5 py-2 text-[12.5px] font-[700] transition-all"
-                  style={{ background: selected ? '#0f172a' : '#f8fafc', color: selected ? '#fff' : '#64748b', border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0' }}
-                >
-                  {d.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <Slider
-          label="Water Intake (liters/day)" value={parseFloat(ch.water_intake) || 2} min={0} max={8} step={0.25}
-          onChange={(v) => setCh('water_intake', String(v))}
-          formatValue={(v) => `${v}L`}
-        />
-
         <Slider
           label="Sleep Hours / Night" value={parseFloat(ch.sleep_hours) || 7} min={3} max={12} step={0.5}
           onChange={(v) => setCh('sleep_hours', String(v))}
@@ -122,7 +90,6 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
         <div className="space-y-2.5">
           <ToggleDetailCard label="Known Disease" checked={ch.known_disease} onToggle={(v) => setCh('known_disease', v)} details={ch.known_disease_details} onDetailsChange={(v) => setCh('known_disease_details', v)} detailsLabel="Which condition(s)?" />
           <ToggleDetailCard label="Caffeine" checked={ch.caffeine} onToggle={(v) => setCh('caffeine', v)} details={ch.caffeine_details} onDetailsChange={(v) => setCh('caffeine_details', v)} detailsLabel="How much / how often?" />
-          <ToggleDetailCard label="Alcohol" checked={ch.alcohol} onToggle={(v) => setCh('alcohol', v)} details={ch.alcohol_details} onDetailsChange={(v) => setCh('alcohol_details', v)} detailsLabel="How much / how often?" />
           <ToggleDetailCard label="Smoking" checked={ch.smoking} onToggle={(v) => setCh('smoking', v)} details={ch.smoking_details} onDetailsChange={(v) => setCh('smoking_details', v)} detailsLabel="How much / how often?" />
           <ToggleDetailCard label="Tobacco" checked={ch.tobacco} onToggle={(v) => setCh('tobacco', v)} details={ch.tobacco_details} onDetailsChange={(v) => setCh('tobacco_details', v)} detailsLabel="How much / how often?" />
           <ToggleDetailCard label="Nicotine (vaping etc.)" checked={ch.nicotine} onToggle={(v) => setCh('nicotine', v)} details={ch.nicotine_details} onDetailsChange={(v) => setCh('nicotine_details', v)} detailsLabel="How much / how often?" />
