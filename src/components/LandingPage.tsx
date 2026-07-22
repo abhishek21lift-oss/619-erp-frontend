@@ -83,8 +83,9 @@ function Nav() {
       style={{
         // Solid, full-bleed bar that fills the notch / notification area so
         // page content scrolling underneath can never bleed into the status
-        // bar. paddingTop reserves exactly the notch height (no extra).
-        paddingTop: 'env(safe-area-inset-top)',
+        // bar. Floor the notch reserve at 2.75rem so the nav still clears the
+        // status bar even when env(safe-area-inset-top) resolves to 0.
+        paddingTop: 'max(env(safe-area-inset-top), 2.75rem)',
         background: 'rgba(255,255,255,0.88)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
@@ -285,7 +286,7 @@ export default function LandingPage() {
           Top padding adds exactly the notch height on top of the base
           clearance so the logo always sits below the fixed topbar +
           notification area, never cramped under it on notched phones. */}
-      <Section id="solutions" className="pb-16 text-center pt-[calc(env(safe-area-inset-top)+6.5rem)] sm:pt-[calc(env(safe-area-inset-top)+7.5rem)]">
+      <Section id="solutions" className="pb-16 text-center pt-[calc(max(env(safe-area-inset-top),2.75rem)+6.5rem)] sm:pt-[calc(max(env(safe-area-inset-top),2.75rem)+7.5rem)]">
         <Reveal>
           <Image
             src="/mypt-logo.png"
