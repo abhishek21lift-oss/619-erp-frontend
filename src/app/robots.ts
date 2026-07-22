@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/finance', '/members', '/sales', '/settings', '/clients'],
       },
     ],
-    sitemap: 'https://619fitness.in/sitemap.xml',
+    sitemap: 'https://619fitnessstudio.com/sitemap.xml',
   };
 }
