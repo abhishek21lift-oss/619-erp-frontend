@@ -191,7 +191,6 @@ export const CONSENT_CHECKBOX_FIELDS: { key: keyof ConsentCheckboxesForm; label:
 
 export const TRAINER_NOTES_FIELDS: { key: keyof TrainerNotesForm; label: string }[] = [
   { key: 'observations', label: 'Observations' },
-  { key: 'posture', label: 'Posture' },
   { key: 'movement_limitations', label: 'Movement Limitations' },
   { key: 'recommendations', label: 'Recommendations' },
   { key: 'contraindications', label: 'Contraindications' },

@@ -9,7 +9,7 @@ import type { AssessmentFormData, FlexibilityTestType } from './types';
 import { n } from './types';
 
 const FLEXIBILITY_TESTS: FlexibilityTestType[] = [
-  'Sit and Reach', 'Shoulder Reach', 'Hamstring', 'Hip Flexor', 'Ankle Mobility', 'Overhead Squat Mobility', 'Custom',
+  'Sit and Reach', 'Hamstring', 'Hip Flexor', 'Custom',
 ];
 
 interface StepFlexibilityProps {
