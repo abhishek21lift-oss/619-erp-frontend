@@ -9,8 +9,10 @@ type Props = {
 };
 
 /**
- * BrandLogo — COACH ABHISHEK mark.
- * Falls back to a gradient "CA" tile if logo file not found.
+ * BrandLogo — MY PT STUDIO mark.
+ * Renders the transparent logo with a soft drop-shadow (matching the landing
+ * and login treatment). Falls back to a maroon "PT" tile if the file is
+ * missing.
  */
 export default function BrandLogo({
   size = 40,
@@ -23,7 +25,7 @@ export default function BrandLogo({
 
   const Mark = failed ? (
     <div
-      aria-label="COACH ABHISHEK"
+      aria-label="MY PT STUDIO"
       style={{
         width: size,
         height: size,
@@ -31,48 +33,34 @@ export default function BrandLogo({
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background:
-          'linear-gradient(135deg, var(--brand-hi) 0%, var(--brand-lo) 100%)',
+        background: 'linear-gradient(135deg, #6E1230 0%, #4A0A1E 100%)',
         color: '#ffffff',
         fontWeight: 800,
-        fontSize: Math.round(size * 0.34),
+        fontSize: Math.round(size * 0.32),
         letterSpacing: '-0.02em',
-        boxShadow:
-          '0 6px 20px var(--brand-glow), inset 0 1px 0 rgba(255,255,255,0.40)',
+        boxShadow: '0 6px 20px rgba(74,10,30,0.28), inset 0 1px 0 rgba(255,255,255,0.30)',
         flexShrink: 0,
-        fontFeatureSettings: '"tnum"',
       }}
     >
-      CA
+      PT
     </div>
   ) : (
-    <div
+    <Image
+      src="/mypt-logo.png"
+      alt="MY PT STUDIO"
+      width={size}
+      height={size}
+      priority
+      className="object-contain"
+      onError={() => setFailed(true)}
       style={{
         width: size,
         height: size,
-        borderRadius: radius,
-        padding: Math.round(size * 0.10),
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--bg-white)',
-        border: '2px solid color-mix(in srgb, var(--danger) 35%, transparent)',
-        boxShadow:
-          '0 0 16px var(--brand-glow), 0 2px 8px var(--border)',
+        objectFit: 'contain',
+        filter: 'drop-shadow(0 12px 26px rgba(74,10,30,0.20))',
         flexShrink: 0,
-        overflow: 'hidden',
-        position: 'relative',
       }}
-    >
-      <Image
-        src="/logo.png"
-        alt="COACH ABHISHEK"
-        fill
-        className="object-contain"
-        onError={() => setFailed(true)}
-        sizes={`${size}px`}
-      />
-    </div>
+    />
   );
 
   if (!showText) return Mark;
@@ -88,10 +76,10 @@ export default function BrandLogo({
       }}
     >
       <div className="brand-619-name">
-        COACH ABHISHEK
+        MY PT STUDIO
       </div>
       <div className="brand-619-tag">
-        Strength · Motivation · Trust
+        The operating system for fitness professionals
       </div>
     </div>
   );
