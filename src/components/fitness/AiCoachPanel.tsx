@@ -1,18 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles,
-  X,
-  Brain,
-  Zap,
-  Dumbbell,
-  Salad,
-  Send,
-  User,
+  Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { apiBase } from '@/lib/http';
 import type { Client } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -30,20 +24,16 @@ interface Message {
   role: 'user' | 'coach';
   content: string;
   timestamp: Date;
+  error?: boolean;
 }
 
-// ─── Canned coach responses ───────────────────────────────────────────────────
+// ─── SSE stream event shape (from POST /api/ai/chat) ──────────────────────────
 
-const CANNED_RESPONSES: string[] = [
-  "Great question! Based on your current plan, I'd recommend focusing on progressive overload — gradually increasing the weight or reps each session. Consistency is the key to long-term results.",
-  "Your nutrition is the foundation. Aim for a protein intake of 1.6–2.2g per kg of bodyweight, spread across 3–5 meals. This supports muscle repair and keeps you satiated.",
-  "Recovery is just as important as training. Aim for 7–9 hours of sleep, and consider adding an active recovery day with light walking or yoga to reduce soreness.",
-  "Hydration matters more than most people realise. Shoot for at least 35ml per kg of bodyweight daily, and increase that on training days. Even mild dehydration impacts performance.",
-  "Mind-muscle connection is underrated. Try slowing down the eccentric (lowering) phase of each lift to 3–4 seconds — this increases time under tension and muscle recruitment.",
-];
-
-function getCannedResponse(): string {
-  return CANNED_RESPONSES[Math.floor(Math.random() * CANNED_RESPONSES.length)];
+interface ChatEvent {
+  type: 'start' | 'chunk' | 'done' | 'error';
+  content?: string;
+  message?: string;
+  conversation_id?: string;
 }
 
 function computeAge(dob?: string): number | undefined {
@@ -59,6 +49,11 @@ function computeAge(dob?: string): number | undefined {
 const WORKOUT_GOALS = ['Muscle Gain', 'Fat Loss', 'Strength', 'Endurance'];
 const DIET_GOALS = ['Muscle Gain', 'Fat Loss', 'Maintenance', 'Performance'];
 const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+
+// ─── Palette ──────────────────────────────────────────────────────────────────
+
+const ACCENT = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+const VIOLET = '#a78bfa';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -87,19 +82,30 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
     {
       id: 'welcome',
       role: 'coach',
-      content: `Hi! I'm your AI ${type === 'workout' ? 'workout' : 'nutrition'} coach. Ask me anything about your ${type === 'workout' ? 'training' : 'diet'} plan!`,
+      content: `Hi! I'm your AI ${type === 'workout' ? 'workout' : 'nutrition'} coach. Ask me anything about ${type === 'workout' ? 'training, programming, or recovery' : 'nutrition, macros, or meal planning'} — I'll factor in the selected client's profile when one is set.`,
       timestamp: new Date(),
     },
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (mode === 'chat') {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (mode === 'chat') chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping, mode]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!onClose) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  // Abort any in-flight stream on unmount
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   // ── Client selection ───────────────────────────────────────────────────────
 
@@ -136,10 +142,7 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
     try {
       if (type === 'workout') {
         const res = await api.ai.generateWorkout({
-          age,
-          gender,
-          weight_kg,
-          height_cm,
+          age, gender, weight_kg, height_cm,
           goal: goal.toLowerCase().replace(/ /g, '_'),
           experience_level: experience.toLowerCase() || 'beginner',
           training_days: parseInt(trainingDays, 10) || 4,
@@ -160,10 +163,7 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
         setGenerationResult(summary);
       } else {
         const res = await api.ai.generateDiet({
-          age,
-          gender,
-          weight_kg,
-          height_cm,
+          age, gender, weight_kg, height_cm,
           activity_level: 'moderate',
           goal: goal.toLowerCase().replace(/ /g, '_'),
           dietary_preferences: dietaryPrefs || undefined,
@@ -175,211 +175,211 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
           `📋 ${plan.name}`,
           `🔥 ${plan.total_calories} kcal | 💪 ${plan.macros?.protein_g}g P | 🍚 ${plan.macros?.carbs_g}g C | 🧈 ${plan.macros?.fat_g}g F`,
           '',
-          ...plan.meals?.slice(0, 5).map(m =>
-            `${m.name} (${m.time}) — ${m.calories} kcal`
-          ) ?? [],
+          ...plan.meals?.slice(0, 5).map(mm => `${mm.name} (${mm.time}) — ${mm.calories} kcal`) ?? [],
           '',
           plan.notes ?? '',
         ].filter(Boolean).join('\n');
         setGenerationResult(summary);
       }
     } catch (err) {
-      setGenerationError(
-        err instanceof Error ? err.message : 'Failed to generate plan. Please try again.'
-      );
+      setGenerationError(err instanceof Error ? err.message : 'Failed to generate plan. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   }
 
-  // ── Chat send ──────────────────────────────────────────────────────────────
+  // ── Chat send (real SSE streaming to /api/ai/chat) ──────────────────────────
 
-  function handleSend() {
+  const handleSend = useCallback(async () => {
     const text = chatInput.trim();
     if (!text || isTyping) return;
 
-    const userMsg: Message = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: text,
-      timestamp: new Date(),
-    };
-
+    const userMsg: Message = { id: `user-${Date.now()}`, role: 'user', content: text, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setChatInput('');
     setIsTyping(true);
 
-    const delay = 1200 + Math.random() * 800;
-    setTimeout(() => {
-      const coachMsg: Message = {
-        id: `coach-${Date.now()}`,
-        role: 'coach',
-        content: getCannedResponse(),
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, coachMsg]);
+    const coachId = `coach-${Date.now()}`;
+    let acc = '';
+    let started = false;
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const pushCoach = (content: string, error = false) =>
+      setMessages(prev => [...prev, { id: coachId, role: 'coach', content, timestamp: new Date(), error }]);
+    const updateCoach = (content: string) =>
+      setMessages(prev => prev.map(m2 => (m2.id === coachId ? { ...m2, content } : m2)));
+
+    try {
+      const res = await fetch(`${apiBase()}/api/ai/chat`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          message: text,
+          conversation_id: conversationId ?? undefined,
+          client_id: selectedClient?.id,
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error(res.status === 401 ? 'Your session has expired. Please sign in again.' : `Request failed (${res.status}).`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+          let evt: ChatEvent;
+          try { evt = JSON.parse(jsonStr) as ChatEvent; } catch { continue; }
+
+          if (evt.type === 'start' && evt.conversation_id) {
+            setConversationId(evt.conversation_id);
+          } else if (evt.type === 'chunk') {
+            acc += evt.content ?? '';
+            if (!started) { started = true; setIsTyping(false); pushCoach(acc); }
+            else updateCoach(acc);
+          } else if (evt.type === 'done') {
+            if (evt.conversation_id) setConversationId(evt.conversation_id);
+          } else if (evt.type === 'error') {
+            throw new Error(evt.message || 'The AI coach ran into a problem.');
+          }
+        }
+      }
+
+      if (!started) pushCoach('I couldn\'t generate a reply just now — please try again.', true);
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      if (!started) { setIsTyping(false); pushCoach(`⚠️ ${msg}`, true); }
+      else updateCoach(`${acc}\n\n⚠️ ${msg}`);
+    } finally {
       setIsTyping(false);
-    }, delay);
-  }
+      abortRef.current = null;
+    }
+  }, [chatInput, isTyping, conversationId, selectedClient]);
 
   function handleChatKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   }
+
+  const canGenerate = Boolean(goal && selectedClient) && !isGenerating;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <AnimatePresence>
+    <>
+      {/* Backdrop scrim */}
+      {onClose && (
+        <m.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          onClick={onClose}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 8999,
+            background: 'rgba(4,2,10,0.55)',
+            backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+          }}
+        />
+      )}
+
       <m.div
-        initial={{ x: 380, opacity: 0 }}
+        initial={{ x: '100%', opacity: 0.6 }}
         animate={{ x: 0, opacity: 1 }}
-        exit={{ x: 380, opacity: 0 }}
-        transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+        exit={{ x: '100%', opacity: 0.6 }}
+        transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
+        role="dialog"
+        aria-label="AI Coach"
         style={{
-          position: 'fixed',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: 380,
+          position: 'fixed', right: 0, top: 0, bottom: 0,
+          width: 'min(420px, 100vw)',
           zIndex: 9000,
-          background: 'rgba(7,5,15,0.97)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          background: 'rgba(9,7,18,0.98)',
+          backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
           borderLeft: '1px solid rgba(167,139,250,0.20)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
+          boxShadow: '-24px 0 60px rgba(0,0,0,0.45)',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
       >
-        {/* Header */}
+        {/* Header — padded for the notch / status bar via safe-area insets */}
         <div
           style={{
-            padding: '18px 20px 14px',
+            padding: 'calc(16px + env(safe-area-inset-top)) 18px 14px',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background: 'linear-gradient(180deg, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0) 100%)',
             flexShrink: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-            {/* Icon */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
             <div
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, rgba(99,102,241,0.3) 0%, rgba(139,92,246,0.3) 100%)',
-                border: '1px solid rgba(167,139,250,0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
+                width: 38, height: 38, borderRadius: 11,
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.35) 0%, rgba(139,92,246,0.35) 100%)',
+                border: '1px solid rgba(167,139,250,0.30)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}
             >
-              <Sparkles
-                size={18}
-                style={{
-                  background: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  color: '#a78bfa',
-                }}
-              />
+              <Sparkles size={19} color={VIOLET} />
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p
-                style={{
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: 'rgba(255,255,255,0.88)',
-                  margin: 0,
-                  lineHeight: 1.2,
-                }}
-              >
+              <p style={{ fontSize: 15.5, fontWeight: 700, color: 'rgba(255,255,255,0.92)', margin: 0, lineHeight: 1.2 }}>
                 AI Coach
               </p>
-              <p
-                style={{
-                  fontSize: 11,
-                  color: 'rgba(255,255,255,0.40)',
-                  margin: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  marginTop: 1,
-                }}
-              >
-                {type === 'workout' ? (
-                  <><Dumbbell size={10} /> Workout Specialist</>
-                ) : (
-                  <><Salad size={10} /> Nutrition Specialist</>
-                )}
+              <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.42)', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                {type === 'workout'
+                  ? <><Dumbbell size={11} /> Workout Specialist</>
+                  : <><Salad size={11} /> Nutrition Specialist</>}
               </p>
             </div>
 
-            {/* Close */}
             {onClose && (
               <m.button
                 onClick={onClose}
-                whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.10)' }}
+                aria-label="Close"
+                whileHover={{ scale: 1.08, background: 'rgba(255,255,255,0.12)' }}
                 whileTap={{ scale: 0.95 }}
                 style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  border: 'none',
-                  background: 'rgba(255,255,255,0.06)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'rgba(255,255,255,0.50)',
-                  flexShrink: 0,
+                  width: 32, height: 32, borderRadius: 9, border: 'none',
+                  background: 'rgba(255,255,255,0.06)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'rgba(255,255,255,0.55)', flexShrink: 0,
                 }}
               >
-                <X size={16} />
+                <X size={17} />
               </m.button>
             )}
           </div>
 
-          {/* Mode toggle */}
-          <div
-            style={{
-              display: 'flex',
-              background: 'rgba(255,255,255,0.05)',
-              borderRadius: 10,
-              padding: 3,
-              gap: 2,
-            }}
-          >
+          {/* Segmented mode toggle */}
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 11, padding: 3, gap: 2 }}>
             {(['generate', 'chat'] as const).map(m_ => (
               <button
                 key={m_}
                 onClick={() => setMode(m_)}
                 style={{
-                  flex: 1,
-                  padding: '6px 0',
-                  borderRadius: 8,
-                  border: 'none',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  background: mode === m_ ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' : 'transparent',
-                  color: mode === m_ ? '#fff' : 'rgba(255,255,255,0.50)',
+                  flex: 1, padding: '8px 0', borderRadius: 8, border: 'none',
+                  fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+                  background: mode === m_ ? ACCENT : 'transparent',
+                  color: mode === m_ ? '#fff' : 'rgba(255,255,255,0.52)',
+                  boxShadow: mode === m_ ? '0 4px 14px rgba(124,92,246,0.35)' : 'none',
                   transition: 'all 0.18s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 5,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >
-                {m_ === 'generate' ? (
-                  <><Zap size={12} /> Generate Plan</>
-                ) : (
-                  <><Brain size={12} /> Chat</>
-                )}
+                {m_ === 'generate' ? <><Zap size={13} /> Generate Plan</> : <><Brain size={13} /> Chat</>}
               </button>
             ))}
           </div>
@@ -391,257 +391,175 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
             {mode === 'generate' ? (
               <m.div
                 key="generate"
-                initial={{ opacity: 0, x: -16 }}
+                initial={{ opacity: 0, x: -14 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
+                exit={{ opacity: 0, x: -14 }}
                 transition={{ duration: 0.2 }}
                 style={{
-                  height: '100%',
-                  overflowY: 'auto',
-                  padding: '20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 14,
+                  height: '100%', overflowY: 'auto',
+                  padding: '20px 18px calc(24px + env(safe-area-inset-bottom))',
+                  display: 'flex', flexDirection: 'column', gap: 16,
                 }}
               >
                 {/* Client select */}
-                <FieldLabel label="Client" />
-                {clientLocked && selectedClient ? (
-                  <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <User size={14} color="rgba(255,255,255,0.45)" />
-                    <span>{selectedClient.name}</span>
-                  </div>
-                ) : (
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="text"
-                      value={selectedClient ? selectedClient.name : clientQuery}
-                      onFocus={() => {
-                        setShowClientDropdown(true);
-                        if (selectedClient) { setSelectedClient(null); setClientQuery(''); }
-                      }}
-                      onChange={e => {
-                        setClientQuery(e.target.value);
-                        setSelectedClient(null);
-                        setShowClientDropdown(true);
-                      }}
-                      onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
-                      placeholder="Search clients..."
-                      style={inputStyle}
-                    />
-                    {showClientDropdown && filteredClients.length > 0 && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          zIndex: 10,
-                          width: '100%',
-                          marginTop: 4,
-                          background: 'rgba(20,16,34,0.98)',
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          borderRadius: 10,
-                          maxHeight: 180,
-                          overflowY: 'auto',
-                        }}
-                      >
-                        {filteredClients.map(c => (
-                          <button
-                            key={c.id}
-                            onMouseDown={() => {
-                              setSelectedClient(c);
-                              setClientQuery(c.name);
-                              setShowClientDropdown(false);
-                            }}
-                            style={{
-                              display: 'block',
-                              width: '100%',
-                              textAlign: 'left',
-                              padding: '9px 12px',
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'rgba(255,255,255,0.85)',
-                              fontSize: 13,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {c.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <Field label="Client">
+                  {clientLocked && selectedClient ? (
+                    <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <User size={14} color="rgba(255,255,255,0.45)" />
+                      <span>{selectedClient.name}</span>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={selectedClient ? selectedClient.name : clientQuery}
+                        onFocus={() => { setShowClientDropdown(true); if (selectedClient) { setSelectedClient(null); setClientQuery(''); } }}
+                        onChange={e => { setClientQuery(e.target.value); setSelectedClient(null); setShowClientDropdown(true); }}
+                        onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
+                        placeholder="Search clients..."
+                        style={inputStyle}
+                      />
+                      {showClientDropdown && filteredClients.length > 0 && (
+                        <div
+                          style={{
+                            position: 'absolute', zIndex: 10, width: '100%', marginTop: 4,
+                            background: 'rgba(20,16,34,0.99)', border: '1px solid rgba(255,255,255,0.12)',
+                            borderRadius: 10, maxHeight: 190, overflowY: 'auto',
+                            boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
+                          }}
+                        >
+                          {filteredClients.map(c => (
+                            <button
+                              key={c.id}
+                              onMouseDown={() => { setSelectedClient(c); setClientQuery(c.name); setShowClientDropdown(false); }}
+                              style={{
+                                display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px',
+                                background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.85)',
+                                fontSize: 13, cursor: 'pointer',
+                              }}
+                            >
+                              {c.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Field>
 
                 {/* Goal select */}
-                <FieldLabel label="Goal" />
-                <select
-                  value={goal}
-                  onChange={e => setGoal(e.target.value)}
-                  style={inputStyle}
-                >
-                  <option value="">Select goal...</option>
-                  {(type === 'workout' ? WORKOUT_GOALS : DIET_GOALS).map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+                <Field label="Goal">
+                  <SelectInput value={goal} onChange={setGoal} placeholder="Select goal...">
+                    {(type === 'workout' ? WORKOUT_GOALS : DIET_GOALS).map(g => <option key={g} value={g}>{g}</option>)}
+                  </SelectInput>
+                </Field>
 
                 {type === 'workout' ? (
                   <>
-                    <FieldLabel label="Experience Level" />
-                    <select
-                      value={experience}
-                      onChange={e => setExperience(e.target.value)}
-                      style={inputStyle}
-                    >
-                      <option value="">Select level...</option>
-                      {EXPERIENCE_LEVELS.map(l => (
-                        <option key={l} value={l}>{l}</option>
-                      ))}
-                    </select>
+                    <Field label="Experience Level">
+                      <SelectInput value={experience} onChange={setExperience} placeholder="Select level...">
+                        {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                      </SelectInput>
+                    </Field>
 
-                    <FieldLabel label="Training Days per Week" />
-                    <input
-                      type="number"
-                      min={1}
-                      max={7}
-                      value={trainingDays}
-                      onChange={e => setTrainingDays(e.target.value)}
-                      style={inputStyle}
-                      placeholder="e.g. 4"
-                    />
+                    <Field label="Training Days per Week">
+                      <input
+                        type="number" min={1} max={7} value={trainingDays}
+                        onChange={e => setTrainingDays(e.target.value)}
+                        style={inputStyle} placeholder="e.g. 4"
+                      />
+                    </Field>
                   </>
                 ) : (
                   <>
-                    <FieldLabel label="Dietary Preferences" />
-                    <input
-                      type="text"
-                      value={dietaryPrefs}
-                      onChange={e => setDietaryPrefs(e.target.value)}
-                      style={inputStyle}
-                      placeholder="e.g. Vegetarian, High protein..."
-                    />
-
-                    <FieldLabel label="Allergies / Intolerances" />
-                    <input
-                      type="text"
-                      value={allergies}
-                      onChange={e => setAllergies(e.target.value)}
-                      style={inputStyle}
-                      placeholder="e.g. Nuts, Gluten..."
-                    />
+                    <Field label="Dietary Preferences">
+                      <input
+                        type="text" value={dietaryPrefs} onChange={e => setDietaryPrefs(e.target.value)}
+                        style={inputStyle} placeholder="e.g. Vegetarian, High protein..."
+                      />
+                    </Field>
+                    <Field label="Allergies / Intolerances">
+                      <input
+                        type="text" value={allergies} onChange={e => setAllergies(e.target.value)}
+                        style={inputStyle} placeholder="e.g. Nuts, Gluten..."
+                      />
+                    </Field>
                   </>
+                )}
+
+                {!selectedClient && (
+                  <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.35)', margin: '-4px 0 0' }}>
+                    Select a client and a goal to generate a plan.
+                  </p>
                 )}
 
                 {/* Generate button */}
                 <m.button
                   onClick={handleGenerate}
-                  disabled={isGenerating || !goal || !selectedClient}
-                  whileHover={!isGenerating && goal && selectedClient ? { scale: 1.02 } : {}}
-                  whileTap={!isGenerating && goal && selectedClient ? { scale: 0.98 } : {}}
+                  disabled={!canGenerate}
+                  whileHover={canGenerate ? { scale: 1.02 } : {}}
+                  whileTap={canGenerate ? { scale: 0.98 } : {}}
                   style={{
-                    marginTop: 4,
-                    padding: '11px 0',
-                    borderRadius: 10,
-                    border: 'none',
-                    background:
-                      !goal || !selectedClient || isGenerating
-                        ? 'rgba(99,102,241,0.25)'
-                        : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                    color: !goal || !selectedClient || isGenerating ? 'rgba(255,255,255,0.35)' : '#fff',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: !goal || !selectedClient || isGenerating ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
+                    marginTop: 2, padding: '13px 0', borderRadius: 11, border: 'none',
+                    background: canGenerate ? ACCENT : 'rgba(99,102,241,0.22)',
+                    color: canGenerate ? '#fff' : 'rgba(255,255,255,0.35)',
+                    fontSize: 13.5, fontWeight: 700,
+                    cursor: canGenerate ? 'pointer' : 'not-allowed',
+                    boxShadow: canGenerate ? '0 8px 22px rgba(124,92,246,0.35)' : 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                     transition: 'all 0.18s',
                   }}
                 >
-                  {isGenerating ? (
-                    <>
-                      <span>Generating your plan</span>
-                      <AnimatedDots />
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={14} />
-                      Generate
-                    </>
-                  )}
+                  {isGenerating
+                    ? <><span>Generating your plan</span><AnimatedDots /></>
+                    : <><Sparkles size={15} /> Generate Plan</>}
                 </m.button>
 
-                {/* Generating status */}
                 <AnimatePresence>
                   {isGenerating && (
                     <m.p
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      style={{
-                        fontSize: 12,
-                        color: 'rgba(167,139,250,0.80)',
-                        textAlign: 'center',
-                        margin: 0,
-                      }}
+                      initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                      style={{ fontSize: 12, color: 'rgba(167,139,250,0.80)', textAlign: 'center', margin: 0 }}
                     >
-                      Your AI coach is crafting a personalised plan...
+                      Your AI coach is crafting a personalised plan…
                     </m.p>
                   )}
                 </AnimatePresence>
 
-                {/* Error state */}
                 <AnimatePresence>
                   {generationError && (
                     <m.div
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.96 }}
-                      style={{
-                        padding: '12px 14px',
-                        borderRadius: 10,
-                        background: 'rgba(239,68,68,0.12)',
-                        border: '1px solid rgba(239,68,68,0.25)',
-                      }}
+                      initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
+                      style={{ padding: '12px 14px', borderRadius: 11, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}
                     >
-                      <p style={{ fontSize: 12, color: '#f87171', margin: 0 }}>
-                        {generationError}
-                      </p>
+                      <p style={{ fontSize: 12, color: '#f87171', margin: 0 }}>{generationError}</p>
                     </m.div>
                   )}
                 </AnimatePresence>
 
-                {/* Result card */}
                 <AnimatePresence>
                   {generationResult && (
                     <m.div
-                      initial={{ opacity: 0, y: 10, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.97 }}
+                      initial={{ opacity: 0, y: 10, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.97 }}
                       transition={{ duration: 0.25, ease: 'easeOut' }}
                       style={{
-                        padding: '14px 16px',
-                        borderRadius: 12,
-                        background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.12) 100%)',
+                        padding: '14px 16px', borderRadius: 13,
+                        background: 'linear-gradient(135deg, rgba(99,102,241,0.14) 0%, rgba(139,92,246,0.14) 100%)',
                         border: '1px solid rgba(167,139,250,0.25)',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                        <Sparkles size={13} color="#a78bfa" />
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa' }}>
-                          Plan Generated
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 8 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: VIOLET }}>
+                          <Sparkles size={13} /> Plan Generated &amp; Saved
                         </span>
+                        <button
+                          onClick={() => { setGenerationResult(null); setGoal(''); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 11.5, cursor: 'pointer' }}
+                        >
+                          <RotateCcw size={11} /> New
+                        </button>
                       </div>
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: 'rgba(255,255,255,0.75)',
-                          margin: 0,
-                          lineHeight: 1.6,
-                          whiteSpace: 'pre-wrap',
-                          maxHeight: 220,
-                          overflowY: 'auto',
-                        }}
-                      >
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 240, overflowY: 'auto' }}>
                         {generationResult}
                       </p>
                     </m.div>
@@ -651,69 +569,42 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
             ) : (
               <m.div
                 key="chat"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 16 }}
+                initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }}
                 transition={{ duration: 0.2 }}
-                style={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
+                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
               >
+                {/* Client context chip */}
+                {selectedClient && (
+                  <div style={{ padding: '10px 16px 0' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: VIOLET, background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.22)', borderRadius: 999, padding: '4px 10px' }}>
+                      <User size={11} /> Coaching about {selectedClient.name}
+                    </span>
+                  </div>
+                )}
+
                 {/* Messages */}
-                <div
-                  style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    padding: '16px 16px 8px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                  }}
-                >
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <AnimatePresence initial={false}>
                     {messages.map(msg => (
                       <m.div
                         key={msg.id}
-                        initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.97 }}
+                        initial={{ opacity: 0, y: 8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
-                        style={{
-                          display: 'flex',
-                          justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                        }}
+                        style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}
                       >
                         <div
                           style={{
-                            maxWidth: '82%',
-                            padding: '10px 13px',
-                            borderRadius:
-                              msg.role === 'user'
-                                ? '14px 14px 4px 14px'
-                                : '14px 14px 14px 4px',
-                            background:
-                              msg.role === 'user'
-                                ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-                                : 'rgba(255,255,255,0.07)',
-                            border:
-                              msg.role === 'coach'
-                                ? '1px solid rgba(255,255,255,0.08)'
-                                : 'none',
+                            maxWidth: '84%', padding: '10px 13px',
+                            borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                            background: msg.role === 'user'
+                              ? ACCENT
+                              : msg.error ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.07)',
+                            border: msg.role === 'coach'
+                              ? `1px solid ${msg.error ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.08)'}`
+                              : 'none',
                           }}
                         >
-                          <p
-                            style={{
-                              fontSize: 13,
-                              color:
-                                msg.role === 'user'
-                                  ? '#fff'
-                                  : 'rgba(255,255,255,0.85)',
-                              margin: 0,
-                              lineHeight: 1.5,
-                            }}
-                          >
+                          <p style={{ fontSize: 13, color: msg.role === 'user' ? '#fff' : msg.error ? '#fca5a5' : 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                             {msg.content}
                           </p>
                         </div>
@@ -721,42 +612,19 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
                     ))}
                   </AnimatePresence>
 
-                  {/* Typing indicator */}
                   <AnimatePresence>
                     {isTyping && (
                       <m.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 8 }}
+                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
                         style={{ display: 'flex', justifyContent: 'flex-start' }}
                       >
-                        <div
-                          style={{
-                            padding: '10px 14px',
-                            borderRadius: '14px 14px 14px 4px',
-                            background: 'rgba(255,255,255,0.07)',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            display: 'flex',
-                            gap: 4,
-                            alignItems: 'center',
-                          }}
-                        >
+                        <div style={{ padding: '10px 14px', borderRadius: '14px 14px 14px 4px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 4, alignItems: 'center' }}>
                           {[0, 1, 2].map(i => (
                             <m.div
                               key={i}
                               animate={{ y: [0, -4, 0] }}
-                              transition={{
-                                repeat: Infinity,
-                                duration: 0.8,
-                                delay: i * 0.15,
-                                ease: 'easeInOut',
-                              }}
-                              style={{
-                                width: 6,
-                                height: 6,
-                                borderRadius: '50%',
-                                background: 'rgba(167,139,250,0.70)',
-                              }}
+                              transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15, ease: 'easeInOut' }}
+                              style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(167,139,250,0.70)' }}
                             />
                           ))}
                         </div>
@@ -770,12 +638,9 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
                 {/* Input */}
                 <div
                   style={{
-                    padding: '10px 14px 14px',
+                    padding: '10px 14px calc(14px + env(safe-area-inset-bottom))',
                     borderTop: '1px solid rgba(255,255,255,0.06)',
-                    display: 'flex',
-                    gap: 8,
-                    alignItems: 'flex-end',
-                    flexShrink: 0,
+                    display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0,
                   }}
                 >
                   <textarea
@@ -783,21 +648,12 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={handleChatKeyDown}
                     rows={1}
-                    placeholder="Ask your AI coach anything..."
+                    placeholder="Ask your AI coach anything…"
                     style={{
-                      flex: 1,
-                      resize: 'none',
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: 10,
-                      padding: '9px 12px',
-                      fontSize: 13,
-                      color: '#fff',
-                      outline: 'none',
-                      fontFamily: 'inherit',
-                      lineHeight: 1.4,
-                      maxHeight: 100,
-                      overflowY: 'auto',
+                      flex: 1, resize: 'none', background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px',
+                      fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
+                      lineHeight: 1.4, maxHeight: 100, overflowY: 'auto',
                     }}
                   />
                   <m.button
@@ -806,27 +662,15 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
                     whileHover={chatInput.trim() && !isTyping ? { scale: 1.08 } : {}}
                     whileTap={chatInput.trim() && !isTyping ? { scale: 0.95 } : {}}
                     style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 10,
-                      border: 'none',
-                      background:
-                        chatInput.trim() && !isTyping
-                          ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-                          : 'rgba(255,255,255,0.08)',
-                      color:
-                        chatInput.trim() && !isTyping
-                          ? '#fff'
-                          : 'rgba(255,255,255,0.25)',
+                      width: 38, height: 38, borderRadius: 11, border: 'none',
+                      background: chatInput.trim() && !isTyping ? ACCENT : 'rgba(255,255,255,0.08)',
+                      color: chatInput.trim() && !isTyping ? '#fff' : 'rgba(255,255,255,0.25)',
                       cursor: chatInput.trim() && !isTyping ? 'pointer' : 'not-allowed',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                       transition: 'all 0.18s',
                     }}
                   >
-                    <Send size={15} />
+                    <Send size={16} />
                   </m.button>
                 </div>
               </m.div>
@@ -834,27 +678,41 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
           </AnimatePresence>
         </div>
       </m.div>
-    </AnimatePresence>
+    </>
   );
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function FieldLabel({ label }: { label: string }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label
-      style={{
-        fontSize: 11,
-        fontWeight: 700,
-        color: 'rgba(255,255,255,0.50)',
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
-        display: 'block',
-        marginBottom: -8,
-      }}
-    >
-      {label}
-    </label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.50)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function SelectInput({
+  value, onChange, placeholder, children,
+}: { value: string; onChange: (v: string) => void; placeholder: string; children: React.ReactNode }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{ ...inputStyle, paddingRight: 34, cursor: 'pointer', color: value ? '#fff' : 'rgba(255,255,255,0.45)' }}
+      >
+        <option value="">{placeholder}</option>
+        {children}
+      </select>
+      <ChevronDown
+        size={15}
+        style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none' }}
+      />
+    </div>
   );
 }
 
@@ -866,13 +724,7 @@ function AnimatedDots() {
           key={i}
           animate={{ opacity: [0.3, 1, 0.3] }}
           transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2, ease: 'easeInOut' }}
-          style={{
-            width: 4,
-            height: 4,
-            borderRadius: '50%',
-            background: 'currentColor',
-            display: 'inline-block',
-          }}
+          style={{ width: 4, height: 4, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }}
         />
       ))}
     </span>
@@ -886,7 +738,7 @@ const inputStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.06)',
   border: '1px solid rgba(255,255,255,0.12)',
   borderRadius: 10,
-  padding: '9px 12px',
+  padding: '10px 12px',
   fontSize: 13,
   color: '#fff',
   outline: 'none',
