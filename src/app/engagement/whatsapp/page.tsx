@@ -9,10 +9,10 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
 const TEMPLATES = [
-  { id:'renewal', name:'Renewal Reminder', body:`Hi {name}! 👋 Your membership with Coach Abhishek expires on {date}. Renew today and keep your fitness streak going! Call us: ${process.env.NEXT_PUBLIC_SUPPORT_PHONE || '8756562188'}` },
-  { id:'birthday', name:'Birthday Wish', body:'Happy Birthday {name}! 🎂🎉 Coach Abhishek wishes you a fantastic year ahead. Come in today for a special birthday session on us! 💪' },
-  { id:'due', name:'Due Reminder', body:'Hi {name}, you have a pending balance of ₹{amount} with Coach Abhishek. Please clear it at your earliest convenience. Thank you! 🙏' },
-  { id:'welcome', name:'New Member Welcome', body:'Welcome to Coach Abhishek, {name}! 🏋️ We are thrilled to have you. Your fitness journey starts today. Here to help you reach your goals. See you soon! 💪' },
+  { id:'renewal', name:'Renewal Reminder', body:`Hi {name}! 👋 Your membership with MY PT STUDIO expires on {date}. Renew today and keep your fitness streak going! Call us: ${process.env.NEXT_PUBLIC_SUPPORT_PHONE || '8756562188'}` },
+  { id:'birthday', name:'Birthday Wish', body:'Happy Birthday {name}! 🎂🎉 MY PT STUDIO wishes you a fantastic year ahead. Come in today for a special birthday session on us! 💪' },
+  { id:'due', name:'Due Reminder', body:'Hi {name}, you have a pending balance of ₹{amount} with MY PT STUDIO. Please clear it at your earliest convenience. Thank you! 🙏' },
+  { id:'welcome', name:'New Member Welcome', body:'Welcome to MY PT STUDIO, {name}! 🏋️ We are thrilled to have you. Your fitness journey starts today. Here to help you reach your goals. See you soon! 💪' },
   { id:'custom', name:'Custom Message', body:'' },
 ];
 

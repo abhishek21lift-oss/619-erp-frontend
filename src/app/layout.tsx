@@ -26,11 +26,11 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://619fitness.in'),
   title: {
-    default: 'COACH ABHISHEK — Operating System',
-    template: '%s | COACH ABHISHEK',
+    default: 'MY PT STUDIO — Operating System',
+    template: '%s | MY PT STUDIO',
   },
   description:
-    'COACH ABHISHEK — Strength. Motivation. Trust. The classy operating system for personal training.',
+    'MY PT STUDIO — the operating system for fitness professionals. Clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
   alternates: { canonical: '/' },
   icons: {
     icon: [
@@ -40,16 +40,16 @@ export const metadata: Metadata = {
   },
   openGraph: {
     url: 'https://619fitness.in',
-    siteName: 'COACH ABHISHEK',
+    siteName: 'MY PT STUDIO',
     type: 'website',
-    title: 'COACH ABHISHEK — Operating System',
-    description: 'Strength. Motivation. Trust. The classy operating system for personal training.',
+    title: 'MY PT STUDIO — Operating System',
+    description: 'The operating system for fitness professionals — clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.',
     images: [
       {
         url: '/619-logo.png',
         width: 1200,
         height: 630,
-        alt: 'COACH ABHISHEK',
+        alt: 'MY PT STUDIO',
       },
     ],
   },
@@ -92,7 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 JavaScript Required
               </strong>
               <p style={{ color: 'var(--text-muted)', maxWidth: 400 }}>
-                COACH ABHISHEK requires JavaScript for authentication and
+                MY PT STUDIO requires JavaScript for authentication and
                 face-recognition check-in. Please enable JavaScript in your browser
                 settings and reload the page.
               </p>

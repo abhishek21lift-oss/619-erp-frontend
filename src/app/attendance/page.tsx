@@ -539,7 +539,7 @@ function AttendanceHero({ date, setDate, today, attendanceRate, summary, onMarkA
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-[0.26em] text-gray-500">Coach Abhishek</p>
+            <p className="text-xs uppercase tracking-[0.26em] text-gray-500">MY PT STUDIO</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#111827] sm:text-4xl lg:text-[3rem] lg:leading-[1.06]">Member Attendance</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
               Real-time biometric attendance and member check-in management across all sessions.
