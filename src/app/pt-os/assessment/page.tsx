@@ -451,9 +451,6 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
           score: n(form.flexibilityScore) ?? undefined, rom: n(form.flexibilityRom) ?? undefined,
           limitationNotes: form.flexibilityLimitationNotes || undefined,
         },
-
-        posture_notes: form.postureNotes || undefined,
-        health_notes: form.healthNotes || undefined,
       };
 
       const res = await api.progress.assessments.create(payload) as { data?: Record<string, unknown> };

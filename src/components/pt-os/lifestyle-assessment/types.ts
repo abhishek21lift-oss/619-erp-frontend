@@ -70,7 +70,6 @@ export interface FormErrors {
   occupationActivity?: string;
   workoutExperience?: string;
   foodPreference?: string;
-  mealFrequency?: string;
   smokingAlcohol?: string;
   additionalFactors?: string;
 }
@@ -80,9 +79,8 @@ export const STEPS = [
   { id: 2, key: 'stress', label: 'Stress' },
   { id: 3, key: 'occupationActivity', label: 'Occupation & Activity' },
   { id: 4, key: 'workoutExperience', label: 'Workout Experience' },
-  { id: 5, key: 'mealFrequency', label: 'Meal Frequency' },
-  { id: 6, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
-  { id: 7, key: 'additionalFactors', label: 'Additional Factors' },
+  { id: 5, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
+  { id: 6, key: 'additionalFactors', label: 'Additional Factors' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];

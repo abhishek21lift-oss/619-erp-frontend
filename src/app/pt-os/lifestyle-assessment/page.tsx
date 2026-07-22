@@ -26,7 +26,6 @@ import StepStress from '@/components/pt-os/lifestyle-assessment/StepStress';
 import StepOccupationActivity from '@/components/pt-os/lifestyle-assessment/StepOccupationActivity';
 import StepWorkoutExperience from '@/components/pt-os/lifestyle-assessment/StepWorkoutExperience';
 import { FOOD_PREFERENCE_OPTIONS } from '@/components/pt-os/lifestyle-assessment/StepFoodPreference';
-import StepMealFrequency from '@/components/pt-os/lifestyle-assessment/StepMealFrequency';
 import StepSmokingAlcohol from '@/components/pt-os/lifestyle-assessment/StepSmokingAlcohol';
 import StepAdditionalFactors from '@/components/pt-os/lifestyle-assessment/StepAdditionalFactors';
 import LifestyleDashboard from '@/components/pt-os/lifestyle-assessment/LifestyleDashboard';
@@ -42,8 +41,8 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 function validateStep(id: StepId, form: LifestyleFormData): string | undefined {
   if (id === 3 && !form.occupationType) return 'Please select an occupation type.';
-  if (id === 6 && !form.smokingStatus) return 'Please select a smoking status.';
-  if (id === 6 && !form.alcoholStatus) return 'Please select an alcohol status.';
+  if (id === 5 && !form.smokingStatus) return 'Please select a smoking status.';
+  if (id === 5 && !form.alcoholStatus) return 'Please select an alcohol status.';
   return undefined;
 }
 
@@ -411,7 +410,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
     const err = validateStep(step, form);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
-    if (step === 7) { setReviewMode(true); return; }
+    if (step === 6) { setReviewMode(true); return; }
     setStep((s) => (s + 1) as StepId);
   };
 
@@ -511,9 +510,8 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
             {step === 2 && <StepStress form={form} set={set} />}
             {step === 3 && <StepOccupationActivity form={form} set={set} error={errors.occupationActivity} />}
             {step === 4 && <StepWorkoutExperience form={form} set={set} error={errors.workoutExperience} />}
-            {step === 5 && <StepMealFrequency form={form} set={set} error={errors.mealFrequency} />}
-            {step === 6 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
-            {step === 7 && <StepAdditionalFactors form={form} set={set} />}
+            {step === 5 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
+            {step === 6 && <StepAdditionalFactors form={form} set={set} />}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
@@ -542,7 +540,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
                 onClick={handleNext}
                 style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
               >
-                {step === 7 ? 'Review' : 'Next'}
+                {step === 6 ? 'Review' : 'Next'}
               </Button>
             ) : (
               <Button

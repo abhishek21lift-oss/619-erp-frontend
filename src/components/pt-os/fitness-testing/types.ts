@@ -4,7 +4,7 @@
 export type AssessmentType = 'initial' | 'week_4' | 'week_8' | 'week_12' | 'monthly' | 'quarterly' | 'follow_up' | 'custom';
 export type CardioTestType = 'YMCA 3-Minute Step Test' | 'Rockport 1-Mile Walk' | 'Cooper 12-Minute Run' | 'Bruce Protocol' | 'Harvard Step Test' | 'Custom';
 export type EnduranceTestType = 'Push Up Test' | 'Curl Up Test' | 'Wall Sit' | 'Plank' | 'Bodyweight Squat' | 'Custom';
-export type FlexibilityTestType = 'Sit and Reach' | 'Shoulder Reach' | 'Hamstring' | 'Hip Flexor' | 'Ankle Mobility' | 'Overhead Squat Mobility' | 'Custom';
+export type FlexibilityTestType = 'Sit and Reach' | 'Hamstring' | 'Hip Flexor' | 'Custom';
 export type StrengthExercise = 'Bench Press' | 'Leg Press' | 'Squat' | 'Deadlift' | 'Shoulder Press' | 'Custom Exercise';
 
 export interface AssessmentFormData {
@@ -50,8 +50,6 @@ export interface AssessmentFormData {
   flexibilityCustomTest: string;
   flexibilityLeft: string; flexibilityRight: string; flexibilityScore: string;
   flexibilityLimitationNotes: string; flexibilityRom: string;
-
-  postureNotes: string; healthNotes: string;
 }
 
 export interface FormErrors {
@@ -98,7 +96,6 @@ export function initAssessmentForm(): AssessmentFormData {
     flexibilityTestType: '', flexibilityCustomTest: '',
     flexibilityLeft: '', flexibilityRight: '', flexibilityScore: '',
     flexibilityLimitationNotes: '', flexibilityRom: '',
-    postureNotes: '', healthNotes: '',
   };
 }
 
