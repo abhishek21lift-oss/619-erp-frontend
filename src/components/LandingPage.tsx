@@ -78,12 +78,21 @@ const NAV = ['Solutions', 'Features', 'Pricing', 'Resources', 'About'];
 function Nav() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="fixed inset-x-0 top-0 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <div className="mx-auto mt-3 max-w-6xl px-4">
-        <nav
-          className="flex items-center justify-between rounded-2xl px-4 py-2.5"
-          style={{ background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', border: '1px solid rgba(110,18,48,0.08)', boxShadow: '0 8px 30px rgba(74,10,30,0.06)' }}
-        >
+    <header
+      className="fixed inset-x-0 top-0 z-50"
+      style={{
+        // Solid, full-bleed bar that fills the notch / notification area so
+        // page content scrolling underneath can never bleed into the status
+        // bar. paddingTop reserves exactly the notch height (no extra).
+        paddingTop: 'env(safe-area-inset-top)',
+        background: 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(110,18,48,0.07)',
+      }}
+    >
+      <div className="mx-auto max-w-6xl px-4">
+        <nav className="flex items-center justify-between py-3">
           <Link href="/"><Wordmark /></Link>
           <div className="hidden items-center gap-7 md:flex">
             {NAV.map((n) => (
@@ -276,7 +285,7 @@ export default function LandingPage() {
           Top padding adds exactly the notch height on top of the base
           clearance so the logo always sits below the fixed topbar +
           notification area, never cramped under it on notched phones. */}
-      <Section id="solutions" className="pb-16 text-center pt-[calc(env(safe-area-inset-top)+8rem)] sm:pt-[calc(env(safe-area-inset-top)+9rem)]">
+      <Section id="solutions" className="pb-16 text-center pt-[calc(env(safe-area-inset-top)+6.5rem)] sm:pt-[calc(env(safe-area-inset-top)+7.5rem)]">
         <Reveal>
           <Image
             src="/mypt-logo.png"
