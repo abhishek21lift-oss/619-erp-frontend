@@ -322,7 +322,10 @@ export default function LoginPage() {
         background: 'radial-gradient(120% 78% at 50% -8%, #FBF6F2 0%, #ffffff 48%)',
         color: INK,
         fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
-        paddingTop: 'calc(env(safe-area-inset-top) + 3.25rem)',
+        // Guarantee the logo clears the status bar / notch even when
+        // env(safe-area-inset-top) resolves to 0 (some in-app browsers /
+        // non-cover viewports): floor the notch reserve at 2.75rem.
+        paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 1.25rem)',
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)',
         paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
         paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
@@ -338,7 +341,7 @@ export default function LoginPage() {
       <Link
         href="/"
         className="absolute left-4 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[12.5px] font-[600] backdrop-blur transition-colors hover:bg-white"
-        style={{ color: MUTE, border: `1px solid ${LINE}`, top: 'calc(env(safe-area-inset-top) + 1rem)' }}
+        style={{ color: MUTE, border: `1px solid ${LINE}`, top: 'calc(max(env(safe-area-inset-top), 2.75rem) + 0.5rem)' }}
       >
         <ArrowLeft size={13} /> Home
       </Link>
