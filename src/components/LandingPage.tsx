@@ -272,31 +272,42 @@ export default function LandingPage() {
 
       <Nav />
 
-      {/* ── HERO ── */}
-      <Section id="solutions" className="pt-36 pb-16 text-center sm:pt-40">
+      {/* ── HERO (Apple-style: centered logo, big type, pill CTAs) ── */}
+      <Section id="solutions" className="pt-32 pb-16 text-center sm:pt-36">
         <Reveal>
+          <Image
+            src="/mypt-logo.png"
+            alt="MY PT STUDIO"
+            width={148}
+            height={148}
+            priority
+            className="mx-auto mb-7 h-28 w-28 object-contain sm:h-36 sm:w-36"
+            style={{ filter: 'drop-shadow(0 16px 34px rgba(74,10,30,0.20))' }}
+          />
+        </Reveal>
+        <Reveal delay={0.04}>
           <Eyebrow><Sparkles size={13} /> The operating system for fitness professionals</Eyebrow>
         </Reveal>
-        <Reveal delay={0.05}>
-          <h1 className="mx-auto mt-6 max-w-4xl text-[38px] font-[850] leading-[1.04] tracking-[-0.03em] sm:text-[62px]">
-            Run your entire fitness business
+        <Reveal delay={0.08}>
+          <h1 className="mx-auto mt-6 max-w-4xl text-[40px] font-[860] leading-[1.03] tracking-[-0.035em] sm:text-[68px]">
+            Run your entire<br className="hidden sm:block" /> fitness business
             <br className="hidden sm:block" /> <span style={gradText}>from one platform.</span>
           </h1>
         </Reveal>
-        <Reveal delay={0.1}>
-          <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-relaxed sm:text-[18.5px]" style={{ color: MUTE }}>
+        <Reveal delay={0.12}>
+          <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-relaxed sm:text-[19px]" style={{ color: MUTE }}>
             MY PT STUDIO is the software that runs modern personal trainers, coaches and studios —
             clients, workouts, nutrition, attendance, payments and analytics, beautifully unified.
           </p>
         </Reveal>
-        <Reveal delay={0.15}>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/login" className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[15px] font-[720] text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
+        <Reveal delay={0.16}>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link href="/login" className="group inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-[720] text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
               style={{ background: `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`, boxShadow: `0 14px 34px ${MAROON}44` }}>
               Start free <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <a href="mailto:hello@myptstudio.app?subject=Book%20a%20demo" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[15px] font-[700] transition-colors hover:bg-black/[0.03] sm:w-auto"
-              style={{ color: INK, border: '1px solid rgba(0,0,0,0.12)' }}>
+            <a href="mailto:hello@myptstudio.app?subject=Book%20a%20demo" className="inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-[700] transition-colors hover:bg-black/[0.03] sm:w-auto"
+              style={{ color: INK, border: '1px solid rgba(0,0,0,0.14)' }}>
               <PhoneCall size={16} /> Book a demo
             </a>
           </div>

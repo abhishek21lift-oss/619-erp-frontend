@@ -507,53 +507,63 @@ export default function LoginPage() {
   const showDivider = !!GOOGLE_CLIENT_ID || passkeyReady;
 
   return (
-    <div className="flex min-h-[100dvh]" style={{ background: '#fff', color: INK, fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif" }}>
-      <LeftPanel />
+    <div
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center"
+      style={{
+        background: 'radial-gradient(120% 78% at 50% -8%, #FBF6F2 0%, #ffffff 48%)',
+        color: INK,
+        fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
+        paddingTop: 'calc(env(safe-area-inset-top) + 3.25rem)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)',
+        paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
+        paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
+      }}
+    >
+      {/* ambient wash */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}18, transparent 68%)` }} />
+        <div className="absolute -bottom-28 -left-20 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${MAROON}10, transparent 68%)` }} />
+      </div>
 
-      {/* ── RIGHT: auth card ── */}
-      <div
-        className="relative flex flex-1 items-center justify-center"
-        style={{
-          paddingTop: 'calc(env(safe-area-inset-top) + 1.75rem)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.75rem)',
-          paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
-          paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
-        }}
+      {/* Back to home */}
+      <Link
+        href="/"
+        className="absolute left-4 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[12.5px] font-[600] backdrop-blur transition-colors hover:bg-white"
+        style={{ color: MUTE, border: `1px solid ${LINE}`, top: 'calc(env(safe-area-inset-top) + 1rem)' }}
       >
-        {/* mobile ambient wash */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden lg:hidden">
-          <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}20, transparent 68%)` }} />
-          <div className="absolute -bottom-28 -left-20 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${MAROON}12, transparent 68%)` }} />
+        <ArrowLeft size={13} /> Home
+      </Link>
+
+      <m.div
+        initial={reduce ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-[400px]"
+      >
+        {/* Centered logo + heading (Apple style) */}
+        <div className="mb-6 flex flex-col items-center text-center">
+          <Image
+            src="/mypt-logo.png"
+            alt="MY PT STUDIO"
+            width={92}
+            height={92}
+            priority
+            className="h-[76px] w-[76px] object-contain"
+            style={{ filter: 'drop-shadow(0 12px 26px rgba(74,10,30,0.18))' }}
+          />
+          <h1 className="mt-4 text-[27px] font-[840] tracking-[-0.025em]" style={{ color: INK }}>Sign in</h1>
+          <p className="mt-1.5 text-[14px]" style={{ color: MUTE }}>
+            Welcome back to MY PT STUDIO{lastOrg ? <> · <span className="font-[650]" style={{ color: MAROON }}>{lastOrg}</span></> : ''}.
+          </p>
         </div>
 
         <m.div
-          initial={reduce ? false : { opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 w-full max-w-[420px]"
+          key={shakeKey}
+          animate={shakeKey > 0 && !reduce ? { x: [0, -9, 8, -6, 4, 0] } : undefined}
+          transition={{ duration: 0.42 }}
+          className="rounded-3xl bg-white p-7 sm:p-8"
+          style={{ border: `1px solid ${LINE}`, boxShadow: '0 30px 70px -34px rgba(74,10,30,0.28), 0 4px 14px rgba(26,20,32,0.04)' }}
         >
-          {/* mobile brand + home */}
-          <div className="mb-7 flex items-center justify-between gap-3 lg:hidden">
-            <span className="min-w-0"><Wordmark size={30} /></span>
-            <Link href="/" className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-[600]" style={{ color: MUTE, border: `1px solid ${LINE}` }}>
-              <ArrowLeft size={13} /> Home
-            </Link>
-          </div>
-
-          <m.div
-            key={shakeKey}
-            animate={shakeKey > 0 && !reduce ? { x: [0, -9, 8, -6, 4, 0] } : undefined}
-            transition={{ duration: 0.42 }}
-            className="rounded-3xl bg-white p-7 sm:p-9"
-            style={{ border: `1px solid ${LINE}`, boxShadow: '0 30px 70px -34px rgba(74,10,30,0.30), 0 4px 14px rgba(26,20,32,0.04)' }}
-          >
-            {/* heading */}
-            <div>
-              <h1 className="text-[25px] font-[820] tracking-[-0.02em]" style={{ color: INK }}>Welcome back</h1>
-              <p className="mt-1.5 text-[14px]" style={{ color: MUTE }}>
-                Sign in to your workspace{lastOrg ? <> · <span className="font-[650]" style={{ color: MAROON }}>{lastOrg}</span></> : ''}.
-              </p>
-            </div>
 
             {/* remembered-account chip */}
             {rememberedEmail && (
@@ -695,7 +705,7 @@ export default function LoginPage() {
                 disabled={busy || ok}
                 whileHover={!busy && !ok && !reduce ? { y: -1.5 } : undefined}
                 whileTap={!busy && !ok && !reduce ? { scale: 0.99 } : undefined}
-                className="relative mt-6 flex h-[54px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[15px] font-[720] text-white"
+                className="relative mt-6 flex h-[54px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-full text-[15px] font-[720] text-white"
                 style={{
                   background: ok ? 'linear-gradient(135deg, #0E9F6E, #067a55)' : `linear-gradient(135deg, ${MAROON} 0%, ${MAROON_DEEP} 100%)`,
                   boxShadow: busy || ok ? 'none' : `0 16px 36px ${MAROON}44`,
@@ -745,7 +755,7 @@ export default function LoginPage() {
                   disabled={passkeyBusy || busy || ok}
                   whileHover={!passkeyBusy && !reduce ? { y: -1 } : undefined}
                   whileTap={!passkeyBusy && !reduce ? { scale: 0.99 } : undefined}
-                  className="mt-3 flex h-[50px] w-full items-center justify-center gap-2.5 rounded-2xl text-[14px] font-[700] transition-colors"
+                  className="mt-3 flex h-[50px] w-full items-center justify-center gap-2.5 rounded-full text-[14px] font-[700] transition-colors"
                   style={{ color: MAROON, background: `${MAROON}08`, border: `1px solid ${MAROON}2E`, cursor: passkeyBusy ? 'default' : 'pointer' }}
                 >
                   {passkeyBusy ? <><Loader2 size={17} className="animate-spin" /> Waiting for biometric…</> : <><Fingerprint size={18} /> Sign in with Face ID / Fingerprint</>}
@@ -766,8 +776,7 @@ export default function LoginPage() {
             © {new Date().getFullYear()} MY PT STUDIO · Need help?{' '}
             <a href={`mailto:${SUPPORT_EMAIL}`} className="font-[650] hover:underline" style={{ color: MAROON }}>Contact support</a>
           </p>
-        </m.div>
-      </div>
+      </m.div>
 
       <ForgotModal open={forgotOpen} onClose={() => setForgotOpen(false)} prefillEmail={email.trim()} />
     </div>
