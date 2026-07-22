@@ -27,7 +27,12 @@ export default function Root() {
 
   if (loading && !timedOut) {
     return (
-      <div className="login-shell" aria-busy="true" role="status">
+      <div
+        className="login-shell"
+        aria-busy="true"
+        role="status"
+        style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+      >
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }} className="fade-up">
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1.5rem' }}>
             <div
@@ -55,7 +60,11 @@ export default function Root() {
 
   if (timedOut) {
     return (
-      <div className="login-shell" role="alert">
+      <div
+        className="login-shell"
+        role="alert"
+        style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+      >
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 380, padding: '0 24px' }} className="fade-up">
           <BrandLogo size={64} />
           <div className="display" style={{ fontSize: 20, marginTop: '1.5rem', marginBottom: 8 }}>
