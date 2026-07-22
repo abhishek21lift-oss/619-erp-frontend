@@ -24,7 +24,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://619fitness.in'),
+  metadataBase: new URL('https://619fitnessstudio.com'),
   title: {
     default: 'MY PT STUDIO — Operating System',
     template: '%s | MY PT STUDIO',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     apple: '/logo.png',
   },
   openGraph: {
-    url: 'https://619fitness.in',
+    url: 'https://619fitnessstudio.com',
     siteName: 'MY PT STUDIO',
     type: 'website',
     title: 'MY PT STUDIO — Operating System',
