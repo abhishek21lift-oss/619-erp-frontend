@@ -18,7 +18,7 @@ import { api } from '@/lib/api';
 import { allNavItems } from '@/lib/nav-config';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
-import PullToRefresh from '@/components/ui/PullToRefresh';
+import PullToRefresh from '@/components/common/PullToRefresh';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -145,9 +145,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const globalRefresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
-    // Keep the spinner up briefly while the remounted page kicks off its
-    // own fetches; the page then shows its normal loading state.
-    return new Promise<void>((resolve) => setTimeout(resolve, 650));
+    // Hold the refreshing stage briefly while the remounted page kicks off
+    // its own fetches; the indicator then plays its success + retract.
+    return new Promise<void>((resolve) => setTimeout(resolve, 450));
   }, []);
 
   const searchRef = useRef<HTMLDivElement>(null);
