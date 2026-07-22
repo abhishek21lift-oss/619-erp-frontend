@@ -6,14 +6,6 @@ import { Slider } from '@/components/ui';
 import ToggleDetailCard from './ToggleDetailCard';
 import type { ParqFormData, CurrentHealthForm } from './types';
 
-const ACTIVITY_LEVELS: { value: string; label: string }[] = [
-  { value: 'sedentary', label: 'Sedentary' },
-  { value: 'lightly_active', label: 'Lightly Active' },
-  { value: 'moderately_active', label: 'Moderately Active' },
-  { value: 'very_active', label: 'Very Active' },
-  { value: 'extremely_active', label: 'Extremely Active' },
-];
-
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
 
 interface StepCurrentHealthProps {
@@ -63,38 +55,9 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
           </div>
         </div>
 
-        <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Activity Level</p>
-          <div className="flex flex-wrap gap-2">
-            {ACTIVITY_LEVELS.map((a) => {
-              const selected = ch.activity_level === a.value;
-              return (
-                <button
-                  key={a.value} type="button" onClick={() => setCh('activity_level', a.value)}
-                  className="rounded-[11px] px-3.5 py-2 text-[12.5px] font-[700] transition-all"
-                  style={{ background: selected ? '#0f172a' : '#f8fafc', color: selected ? '#fff' : '#64748b', border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0' }}
-                >
-                  {a.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <Slider
-          label="Sleep Hours / Night" value={parseFloat(ch.sleep_hours) || 7} min={3} max={12} step={0.5}
-          onChange={(v) => setCh('sleep_hours', String(v))}
-          formatValue={(v) => `${v}h`}
-        />
-
         <div className="space-y-2.5">
           <ToggleDetailCard label="Known Disease" checked={ch.known_disease} onToggle={(v) => setCh('known_disease', v)} details={ch.known_disease_details} onDetailsChange={(v) => setCh('known_disease_details', v)} detailsLabel="Which condition(s)?" />
-          <ToggleDetailCard label="Caffeine" checked={ch.caffeine} onToggle={(v) => setCh('caffeine', v)} details={ch.caffeine_details} onDetailsChange={(v) => setCh('caffeine_details', v)} detailsLabel="How much / how often?" />
-          <ToggleDetailCard label="Smoking" checked={ch.smoking} onToggle={(v) => setCh('smoking', v)} details={ch.smoking_details} onDetailsChange={(v) => setCh('smoking_details', v)} detailsLabel="How much / how often?" />
-          <ToggleDetailCard label="Tobacco" checked={ch.tobacco} onToggle={(v) => setCh('tobacco', v)} details={ch.tobacco_details} onDetailsChange={(v) => setCh('tobacco_details', v)} detailsLabel="How much / how often?" />
-          <ToggleDetailCard label="Nicotine (vaping etc.)" checked={ch.nicotine} onToggle={(v) => setCh('nicotine', v)} details={ch.nicotine_details} onDetailsChange={(v) => setCh('nicotine_details', v)} detailsLabel="How much / how often?" />
           <ToggleDetailCard label="Medications" checked={ch.medications} onToggle={(v) => setCh('medications', v)} details={ch.medications_details} onDetailsChange={(v) => setCh('medications_details', v)} detailsLabel="List medications" />
-          <ToggleDetailCard label="Supplements" checked={ch.supplements} onToggle={(v) => setCh('supplements', v)} details={ch.supplements_details} onDetailsChange={(v) => setCh('supplements_details', v)} detailsLabel="List supplements" />
           <ToggleDetailCard label="Steroids / PEDs" checked={ch.steroids_ped} onToggle={(v) => setCh('steroids_ped', v)} details={ch.steroids_ped_details} onDetailsChange={(v) => setCh('steroids_ped_details', v)} detailsLabel="Details" />
           <ToggleDetailCard label="Recreational Drugs" checked={ch.recreational_drugs} onToggle={(v) => setCh('recreational_drugs', v)} details={ch.recreational_drugs_details} onDetailsChange={(v) => setCh('recreational_drugs_details', v)} detailsLabel="Details" />
           <ToggleDetailCard label="Currently Under Treatment" checked={ch.current_treatment} onToggle={(v) => setCh('current_treatment', v)} details={ch.current_treatment_details} onDetailsChange={(v) => setCh('current_treatment_details', v)} detailsLabel="Treatment details" />

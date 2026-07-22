@@ -2,7 +2,7 @@
 
 import { Pencil, ClipboardCheck } from 'lucide-react';
 import RiskLevelBanner from '@/components/pt-os/shared/RiskLevelBanner';
-import { calcAge, calcBMI, computeParqRisk } from '@/lib/parq-calculations';
+import { computeParqRisk } from '@/lib/parq-calculations';
 import type { ParqFormData, StepId } from './types';
 import { PARQ_QUESTIONS } from './types';
 
@@ -36,8 +36,6 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
-  const age = calcAge(form.dob);
-  const bmi = calcBMI(parseFloat(form.heightCm) || null, parseFloat(form.weightKg) || null);
   const risk = computeParqRisk(form.parqAnswers);
   const yesAnswers = form.parqAnswers.filter((a) => a.answer === 'yes');
   const clearanceFilled = Boolean(form.medicalClearance.doctor_name || form.medicalClearance.hospital);
@@ -56,24 +54,14 @@ export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
 
       <RiskLevelBanner level={risk.riskLevel} stat={`${risk.yesCount} of ${PARQ_QUESTIONS.length} PAR-Q questions flagged YES`} />
 
-      <SectionCard title="Client Details" stepId={1} onEdit={onEditStep}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <Field label="Full Name" value={form.fullName} />
-          <Field label="Gender" value={form.gender} />
-          <Field label="Age" value={age != null ? `${age} yrs` : null} />
-          <Field label="Mobile" value={form.mobile} />
-          <Field label="BMI" value={bmi} />
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Current Health" stepId={2} onEdit={onEditStep}>
+      <SectionCard title="Current Health" stepId={1} onEdit={onEditStep}>
         <div className="flex flex-wrap gap-2">
           <span className="rounded-full px-3 py-1 text-[11.5px] font-[700]" style={{ background: 'rgba(15,23,42,0.06)', color: '#334155' }}>
             Blood Group: {form.bloodGroup || '—'}
           </span>
           {[
-            form.currentHealth.known_disease && 'Known Disease', form.currentHealth.smoking && 'Smoking',
-            form.currentHealth.alcohol && 'Alcohol', form.currentHealth.medications && 'On Medications',
+            form.currentHealth.known_disease && 'Known Disease',
+            form.currentHealth.medications && 'On Medications',
             form.currentHealth.has_pain && 'Currently in Pain',
           ].filter(Boolean).map((label) => (
             <span key={String(label)} className="rounded-full px-3 py-1 text-[11.5px] font-[700]" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>{label}</span>
@@ -81,7 +69,7 @@ export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Past Medical History" stepId={3} onEdit={onEditStep}>
+      <SectionCard title="Past Medical History" stepId={2} onEdit={onEditStep}>
         <div className="flex flex-wrap gap-2">
           {Object.entries(form.pastHistory).filter(([, v]) => v === true).map(([k]) => (
             <span key={k} className="rounded-full px-3 py-1 text-[11.5px] font-[700]" style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706' }}>{k.replace(/_/g, ' ')}</span>
@@ -92,7 +80,7 @@ export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
         </div>
       </SectionCard>
 
-      <SectionCard title="PAR-Q Questionnaire" stepId={4} onEdit={onEditStep}>
+      <SectionCard title="PAR-Q Questionnaire" stepId={3} onEdit={onEditStep}>
         {yesAnswers.length === 0 ? (
           <span className="text-[12.5px] font-[600] text-slate-400">No YES answers.</span>
         ) : (
@@ -107,7 +95,7 @@ export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
       </SectionCard>
 
       {risk.riskLevel === 'high' && (
-        <SectionCard title="Medical Clearance" stepId={5} onEdit={onEditStep}>
+        <SectionCard title="Medical Clearance" stepId={4} onEdit={onEditStep}>
           {clearanceFilled ? (
             <div className="grid grid-cols-2 gap-4">
               <Field label="Doctor" value={form.medicalClearance.doctor_name} />
@@ -121,11 +109,11 @@ export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
         </SectionCard>
       )}
 
-      <SectionCard title="Trainer Notes" stepId={6} onEdit={onEditStep}>
+      <SectionCard title="Trainer Notes" stepId={5} onEdit={onEditStep}>
         <p className="text-[12.5px] font-[600]" style={{ color: '#334155' }}>{form.trainerNotes.summary || 'No summary added.'}</p>
       </SectionCard>
 
-      <SectionCard title="Digital Consent" stepId={7} onEdit={onEditStep}>
+      <SectionCard title="Digital Consent" stepId={6} onEdit={onEditStep}>
         <div className="grid grid-cols-2 gap-4">
           <Field label="All Boxes Checked" value={Object.values(form.consentCheckboxes).every(Boolean) ? 'Yes' : 'No'} />
           <Field label="Client Signature" value={form.clientSignature ? 'Captured' : 'Missing'} />

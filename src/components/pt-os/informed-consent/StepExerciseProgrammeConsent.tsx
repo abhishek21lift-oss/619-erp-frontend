@@ -23,7 +23,7 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Consent</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 4</p>
+          <p className="text-[13px] text-slate-400 mt-1.5">Step 1 of 3</p>
         </div>
       </div>
 
