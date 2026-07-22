@@ -32,16 +32,9 @@ export function StepTargetWeight({ form, set, currentWeight, error }: StepTarget
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Current Weight (kg)" value={currentWeight != null ? String(currentWeight) : ''} onChange={() => {}} disabled
-            placeholder={currentWeight == null ? 'No assessment on file' : undefined} />
-          {currentWeight == null ? (
-            <FloatInput label="Enter Current Weight Manually (kg)" type="number" value={form.startingWeightManual} onChange={(v) => set('startingWeightManual', v)} />
-          ) : (
-            <FloatInput label="Target Weight (kg)" type="number" value={form.targetWeight} onChange={(v) => set('targetWeight', v)} />
-          )}
-          {currentWeight == null && (
-            <FloatInput label="Target Weight (kg)" type="number" value={form.targetWeight} onChange={(v) => set('targetWeight', v)} />
-          )}
+          <FloatInput label="Current Weight (from assessment)" value={currentWeight != null ? String(currentWeight) : ''} onChange={() => {}} disabled
+            placeholder={currentWeight == null ? 'Add in Fitness Testing' : undefined} />
+          <FloatInput label="Target Weight (kg)" type="number" value={form.targetWeight} onChange={(v) => set('targetWeight', v)} />
         </div>
 
         {error && <p className="mt-3 text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
@@ -51,7 +44,7 @@ export function StepTargetWeight({ form, set, currentWeight, error }: StepTarget
             <div className="flex flex-wrap items-center justify-center gap-4 text-center">
               <div>
                 <p className="text-[10px] text-white/40 font-[600] uppercase tracking-wider">Current</p>
-                <p className="text-[20px] font-[800] text-white">{currentWeight ?? n(form.startingWeightManual)} kg</p>
+                <p className="text-[20px] font-[800] text-white">{currentWeight} kg</p>
               </div>
               {gap < 0 ? <ArrowDown size={18} color="#F59E0B" /> : gap > 0 ? <ArrowUp size={18} color="#F59E0B" /> : null}
               <div>

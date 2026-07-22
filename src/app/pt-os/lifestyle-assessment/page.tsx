@@ -23,10 +23,9 @@ import type { LifestyleFormData, FormErrors, StepId, CoachNotes } from '@/compon
 import LifestyleProgressTimeline from '@/components/pt-os/lifestyle-assessment/LifestyleProgressTimeline';
 import StepSleep from '@/components/pt-os/lifestyle-assessment/StepSleep';
 import StepStress from '@/components/pt-os/lifestyle-assessment/StepStress';
-import StepWater from '@/components/pt-os/lifestyle-assessment/StepWater';
 import StepOccupationActivity from '@/components/pt-os/lifestyle-assessment/StepOccupationActivity';
 import StepWorkoutExperience from '@/components/pt-os/lifestyle-assessment/StepWorkoutExperience';
-import StepFoodPreference, { FOOD_PREFERENCE_OPTIONS } from '@/components/pt-os/lifestyle-assessment/StepFoodPreference';
+import { FOOD_PREFERENCE_OPTIONS } from '@/components/pt-os/lifestyle-assessment/StepFoodPreference';
 import StepMealFrequency from '@/components/pt-os/lifestyle-assessment/StepMealFrequency';
 import StepSmokingAlcohol from '@/components/pt-os/lifestyle-assessment/StepSmokingAlcohol';
 import StepAdditionalFactors from '@/components/pt-os/lifestyle-assessment/StepAdditionalFactors';
@@ -42,9 +41,9 @@ interface ClientOption { id: string; name: string; }
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function validateStep(id: StepId, form: LifestyleFormData): string | undefined {
-  if (id === 4 && !form.occupationType) return 'Please select an occupation type.';
-  if (id === 8 && !form.smokingStatus) return 'Please select a smoking status.';
-  if (id === 8 && !form.alcoholStatus) return 'Please select an alcohol status.';
+  if (id === 3 && !form.occupationType) return 'Please select an occupation type.';
+  if (id === 6 && !form.smokingStatus) return 'Please select a smoking status.';
+  if (id === 6 && !form.alcoholStatus) return 'Please select an alcohol status.';
   return undefined;
 }
 
@@ -381,7 +380,10 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
   const analysis = useMemo(() => {
     const sleep = classifySleep(n(form.sleepDurationHours), n(form.sleepQuality));
     const stressScore = calcStressScore(n(form.stressLevel));
-    const hydration = classifyHydration(n(form.waterIntakeLiters));
+    // Water intake now lives in the Nutrition assessment, not here. When it's
+    // absent, treat hydration as neutral (~3 L) so it neither penalises the
+    // lifestyle score nor raises a false "low hydration" risk.
+    const hydration = classifyHydration(n(form.waterIntakeLiters) || 3);
     const activity = classifyActivity(form.dailyStepsBracket || null, form.occupationType || null);
     const nutritionScore = calcNutritionScore(n(form.mealFrequency), form.breakfastHabit || null, form.lateNightEating);
     const recoveryScore = calcRecoveryScore(sleep.score, stressScore, n(form.energyLevel), form.recoveryQuality || null);
@@ -409,7 +411,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
     const err = validateStep(step, form);
     setErrors((e) => ({ ...e, [stepDef.key]: err }));
     if (err) { toast.error(err); return; }
-    if (step === 9) { setReviewMode(true); return; }
+    if (step === 7) { setReviewMode(true); return; }
     setStep((s) => (s + 1) as StepId);
   };
 
@@ -507,13 +509,11 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepSleep form={form} set={set} error={errors.sleep} />}
             {step === 2 && <StepStress form={form} set={set} />}
-            {step === 3 && <StepWater form={form} set={set} />}
-            {step === 4 && <StepOccupationActivity form={form} set={set} error={errors.occupationActivity} />}
-            {step === 5 && <StepWorkoutExperience form={form} set={set} error={errors.workoutExperience} />}
-            {step === 6 && <StepFoodPreference form={form} set={set} error={errors.foodPreference} />}
-            {step === 7 && <StepMealFrequency form={form} set={set} error={errors.mealFrequency} />}
-            {step === 8 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
-            {step === 9 && <StepAdditionalFactors form={form} set={set} />}
+            {step === 3 && <StepOccupationActivity form={form} set={set} error={errors.occupationActivity} />}
+            {step === 4 && <StepWorkoutExperience form={form} set={set} error={errors.workoutExperience} />}
+            {step === 5 && <StepMealFrequency form={form} set={set} error={errors.mealFrequency} />}
+            {step === 6 && <StepSmokingAlcohol form={form} set={set} error={errors.smokingAlcohol} />}
+            {step === 7 && <StepAdditionalFactors form={form} set={set} />}
           </m.div>
         ) : (
           <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} className="space-y-5">
@@ -521,7 +521,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
             <HabitRiskBadges riskFactors={analysis.riskFactors} />
             <WeeklyHabitGoals
               sleepDurationHours={n(form.sleepDurationHours)}
-              waterIntakeLiters={n(form.waterIntakeLiters)}
+              waterIntakeLiters={null}
               dailyStepsBracket={form.dailyStepsBracket || null}
               stressLevel={n(form.stressLevel)}
               mealFrequency={n(form.mealFrequency)}
@@ -542,7 +542,7 @@ function LifestyleWizard({ clientId, clientName, editing, toast, onDone }: Lifes
                 onClick={handleNext}
                 style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
               >
-                {step === 9 ? 'Review' : 'Next'}
+                {step === 7 ? 'Review' : 'Next'}
               </Button>
             ) : (
               <Button

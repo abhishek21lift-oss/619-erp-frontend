@@ -78,13 +78,11 @@ export interface FormErrors {
 export const STEPS = [
   { id: 1, key: 'sleep', label: 'Sleep' },
   { id: 2, key: 'stress', label: 'Stress' },
-  { id: 3, key: 'water', label: 'Water' },
-  { id: 4, key: 'occupationActivity', label: 'Occupation & Activity' },
-  { id: 5, key: 'workoutExperience', label: 'Workout Experience' },
-  { id: 6, key: 'foodPreference', label: 'Food Preference' },
-  { id: 7, key: 'mealFrequency', label: 'Meal Frequency' },
-  { id: 8, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
-  { id: 9, key: 'additionalFactors', label: 'Additional Factors' },
+  { id: 3, key: 'occupationActivity', label: 'Occupation & Activity' },
+  { id: 4, key: 'workoutExperience', label: 'Workout Experience' },
+  { id: 5, key: 'mealFrequency', label: 'Meal Frequency' },
+  { id: 6, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
+  { id: 7, key: 'additionalFactors', label: 'Additional Factors' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];

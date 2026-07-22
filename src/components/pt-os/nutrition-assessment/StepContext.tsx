@@ -1,8 +1,6 @@
 'use client';
 
 import { Wallet } from 'lucide-react';
-import FloatInput from '@/components/ui/FloatInput';
-import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
 import type { NutritionFormData } from './types';
 import type { MealPreparer, NutritionBudget } from '@/lib/nutrition-calculations';
 
@@ -22,19 +20,12 @@ const BUDGET_OPTIONS: { value: NutritionBudget; label: string }[] = [
   { value: 'high', label: 'High' }, { value: 'premium', label: 'Premium' },
 ];
 
-const MEDICAL_CONDITION_OPTIONS = [
-  'None', 'Diabetes', 'Hypertension', 'Thyroid', 'PCOS/PCOD', 'High Cholesterol',
-  'Heart Disease', 'Kidney Disease', 'Digestive Disorder', 'Food Intolerance',
-];
-
 interface StepContextProps {
   form: NutritionFormData;
   set: <K extends keyof NutritionFormData>(key: K, val: NutritionFormData[K]) => void;
 }
 
 export function StepContext({ form, set }: StepContextProps) {
-  const hasMedicalCondition = form.medicalConditions.some((c) => c !== 'None');
-
   return (
     <div className="space-y-8">
       <div className="flex items-start gap-4">
@@ -43,7 +34,7 @@ export function StepContext({ form, set }: StepContextProps) {
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Context</h2>
-            <p className="text-[13px] text-slate-400 mt-1.5">Step 8 of 8 — cooking, budget, and medical nutrition notes.</p>
+            <p className="text-[13px] text-slate-400 mt-1.5">Step 8 of 8 — cooking and budget.</p>
           </div>
         </div>
 
@@ -93,14 +84,6 @@ export function StepContext({ form, set }: StepContextProps) {
           </div>
         </div>
 
-        <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Medical Conditions</p>
-          <MultiSelectChips value={form.medicalConditions} onChange={(v) => set('medicalConditions', v)} options={MEDICAL_CONDITION_OPTIONS} />
-        </div>
-
-      {hasMedicalCondition && (
-        <FloatInput label="Medical Notes" multiline autoGrow value={form.medicalNotes} onChange={(v) => set('medicalNotes', v)} />
-      )}
     </div>
   );
 }

@@ -3,17 +3,10 @@
 import { useMemo } from 'react';
 import { UserRound } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
-import { calcAge, calcBMI, classifyBMI } from '@/lib/parq-calculations';
+import { calcAge } from '@/lib/parq-calculations';
 import type { ParqFormData } from './types';
 
 const GENDERS = ['Male', 'Female', 'Other'];
-
-const BMI_STYLE: Record<string, { bg: string; color: string }> = {
-  Underweight: { bg: 'rgba(245,158,11,0.12)', color: '#d97706' },
-  Normal: { bg: 'rgba(16,185,129,0.12)', color: '#059669' },
-  Overweight: { bg: 'rgba(249,115,22,0.14)', color: '#ea580c' },
-  Obese: { bg: 'rgba(239,68,68,0.14)', color: '#dc2626' },
-};
 
 interface StepClientDetailsProps {
   form: ParqFormData;
@@ -24,8 +17,6 @@ interface StepClientDetailsProps {
 
 export function StepClientDetails({ form, set, error, stepLabel }: StepClientDetailsProps) {
   const age = useMemo(() => calcAge(form.dob), [form.dob]);
-  const bmi = useMemo(() => calcBMI(parseFloat(form.heightCm) || null, parseFloat(form.weightKg) || null), [form.heightCm, form.weightKg]);
-  const bmiCategory = useMemo(() => classifyBMI(bmi), [bmi]);
 
   return (
     <div className="space-y-7">
@@ -84,15 +75,6 @@ export function StepClientDetails({ form, set, error, stepLabel }: StepClientDet
       </div>
 
       {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
-
-      {bmi != null && bmiCategory && (
-        <div className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
-          <span className="rounded-full px-3 py-1 text-[12px] font-[700]" style={{ background: BMI_STYLE[bmiCategory]?.bg, color: BMI_STYLE[bmiCategory]?.color }}>
-            BMI {bmi}
-          </span>
-          <span className="text-[12.5px] font-[600] text-slate-400">{bmiCategory} · computed live, backend recomputes on save</span>
-        </div>
-      )}
     </div>
   );
 }

@@ -93,10 +93,6 @@ export function StepHydrationCravings({ form, set, error }: StepHydrationCraving
           <FloatInput label="Juices/day" type="number" value={form.juicesPerDay} onChange={(v) => set('juicesPerDay', v)} />
         </div>
 
-        <div className="max-w-[220px]">
-          <FloatInput label="Alcoholic Drinks/week" type="number" value={form.alcoholicDrinksPerWeek} onChange={(v) => set('alcoholicDrinksPerWeek', v)} />
-        </div>
-
         {(dailyFluidIntake != null || label) && (
           <div className="flex flex-wrap items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--bg-subtle)' }}>
             {dailyFluidIntake != null && <span className="text-[12.5px] font-[600] text-slate-400">Daily Fluid Intake ≈ <strong className="text-slate-700">{dailyFluidIntake} L</strong></span>}
