@@ -272,8 +272,11 @@ export default function LandingPage() {
 
       <Nav />
 
-      {/* ── HERO (Apple-style: centered logo, big type, pill CTAs) ── */}
-      <Section id="solutions" className="pt-32 pb-16 text-center sm:pt-36">
+      {/* ── HERO (Apple-style: centered logo, big type, pill CTAs) ──
+          Top padding adds exactly the notch height on top of the base
+          clearance so the logo always sits below the fixed topbar +
+          notification area, never cramped under it on notched phones. */}
+      <Section id="solutions" className="pb-16 text-center pt-[calc(env(safe-area-inset-top)+8rem)] sm:pt-[calc(env(safe-area-inset-top)+9rem)]">
         <Reveal>
           <Image
             src="/mypt-logo.png"
