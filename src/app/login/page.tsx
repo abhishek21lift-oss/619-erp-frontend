@@ -23,8 +23,7 @@ import Image from 'next/image';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Eye, EyeOff, Mail, ArrowRight, ArrowLeft, Fingerprint, Loader2, Lock,
-  ShieldCheck, Check, X, KeyRound, TrendingUp, Users, CalendarCheck,
-  AlertTriangle, Sparkles, Star, Building2, Copy,
+  ShieldCheck, Check, X, KeyRound, AlertTriangle, Building2, Copy,
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '@/lib/auth-context';
@@ -33,9 +32,7 @@ import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hook
 // ── Palette (mirrors the marketing site) ─────────────────────────────────────
 const MAROON = '#6E1230';
 const MAROON_DEEP = '#4A0A1E';
-const MAROON_HI = '#8E1B41';
 const GOLD = '#C8A24B';
-const GOLD_HI = '#E4C877';
 const INK = '#1A1420';
 const MUTE = '#6B6470';
 const LINE = 'rgba(26,20,32,0.10)';
@@ -66,194 +63,6 @@ function Wordmark({ light = false, size = 34 }: { light?: boolean; size?: number
         MY&nbsp;PT&nbsp;<span style={{ color: GOLD }}>STUDIO</span>
       </span>
     </span>
-  );
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-//  LEFT PANEL — brand showcase (desktop only)
-// ══════════════════════════════════════════════════════════════════════════
-
-const TESTIMONIALS = [
-  { quote: 'We replaced five tools with MY PT STUDIO. Onboarding, billing and programming now live in one place.', name: 'Aarav Mehta', role: 'Founder · Iron Republic', initials: 'AM' },
-  { quote: 'Attendance, payments and client progress — finally under one roof. Our admin time dropped by half.', name: 'Deeksha Tomar', role: 'Owner · Adventure PT Studio', initials: 'DT' },
-  { quote: 'It genuinely feels like enterprise software built for coaches. My clients think we\'re a much bigger brand.', name: 'Rohan Kapoor', role: 'Head Coach · Apex Performance', initials: 'RK' },
-];
-
-const STATS = [
-  { value: '2,400+', label: 'Studios & coaches' },
-  { value: '1.8M+', label: 'Sessions logged' },
-  { value: '99.98%', label: 'Uptime' },
-];
-
-function FloatCard({
-  reduce, delay, className, children,
-}: { reduce: boolean; delay: number; className?: string; children: React.ReactNode }) {
-  return (
-    <m.div
-      className={className}
-      initial={reduce ? false : { opacity: 0, y: 16, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
-      style={{
-        background: 'rgba(255,255,255,0.10)',
-        backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-        border: '1px solid rgba(255,255,255,0.16)',
-        boxShadow: '0 24px 60px -28px rgba(0,0,0,0.55)',
-      }}
-    >
-      {children}
-    </m.div>
-  );
-}
-
-function LeftPanel() {
-  const reduce = useReducedMotion();
-  const [t, setT] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setT((p) => (p + 1) % TESTIMONIALS.length), 5200);
-    return () => clearInterval(id);
-  }, []);
-
-  const active = TESTIMONIALS[t];
-
-  return (
-    <div
-      className="relative hidden overflow-hidden lg:flex lg:w-[52%] xl:w-[55%]"
-      style={{ background: `linear-gradient(150deg, ${MAROON_DEEP} 0%, ${MAROON} 52%, ${MAROON_HI} 100%)` }}
-    >
-      {/* ambient light */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-32 -top-32 h-[460px] w-[460px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}30, transparent 66%)` }} />
-        <div className="absolute -bottom-40 -right-24 h-[520px] w-[520px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.10), transparent 66%)' }} />
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-      </div>
-
-      <div className="relative z-10 flex w-full flex-col justify-between px-12 py-12 xl:px-16">
-        {/* brand + home */}
-        <div className="flex items-center justify-between">
-          <Wordmark light size={38} />
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-[600] text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-            style={{ border: '1px solid rgba(255,255,255,0.16)' }}
-          >
-            <ArrowLeft size={14} /> Home
-          </Link>
-        </div>
-
-        {/* headline + product preview */}
-        <div className="my-10">
-          <m.div
-            initial={reduce ? false : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-[650] text-white"
-              style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}
-            >
-              <Sparkles size={12} style={{ color: GOLD_HI }} /> The operating system for fitness businesses
-            </span>
-            <h1 className="mt-6 max-w-xl text-[40px] font-[820] leading-[1.06] tracking-[-0.03em] text-white xl:text-[46px]">
-              Run your entire<br />studio from one<br /><span style={{ color: GOLD_HI }}>beautiful platform.</span>
-            </h1>
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/70">
-              Clients, workouts, nutrition, attendance, payments and analytics — unified in the
-              software modern trainers and studios run on.
-            </p>
-          </m.div>
-
-          {/* glass dashboard preview */}
-          <div className="relative mt-11 max-w-lg">
-            <FloatCard reduce={!!reduce} delay={0.15} className="rounded-2xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[11px] font-[600] uppercase tracking-[0.14em] text-white/55">Monthly revenue</div>
-                  <div className="mt-1 text-[26px] font-[800] text-white">₹8,42,000</div>
-                </div>
-                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-[700]" style={{ background: 'rgba(14,159,110,0.18)', color: '#5EEAD4' }}>
-                  <TrendingUp size={12} /> +18.4%
-                </span>
-              </div>
-              {/* mini bar chart */}
-              <div className="mt-5 flex h-20 items-end gap-2">
-                {[42, 58, 49, 71, 63, 88, 76, 94].map((h, i) => (
-                  <m.div
-                    key={i}
-                    initial={reduce ? false : { height: 0 }}
-                    animate={{ height: `${h}%` }}
-                    transition={{ duration: 0.7, delay: 0.3 + i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex-1 rounded-t-[5px]"
-                    style={{ background: i >= 6 ? `linear-gradient(${GOLD_HI}, ${GOLD})` : 'rgba(255,255,255,0.24)' }}
-                  />
-                ))}
-              </div>
-            </FloatCard>
-
-            {/* floating stat card — active clients */}
-            <FloatCard reduce={!!reduce} delay={0.4} className="absolute -right-6 -top-8 hidden rounded-2xl p-3.5 xl:block">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl" style={{ background: 'rgba(255,255,255,0.14)' }}><Users size={16} className="text-white" /></span>
-                <div>
-                  <div className="text-[17px] font-[800] leading-none text-white">312</div>
-                  <div className="mt-1 text-[10.5px] font-[600] text-white/55">Active clients</div>
-                </div>
-              </div>
-            </FloatCard>
-
-            {/* floating stat card — check-in */}
-            <FloatCard reduce={!!reduce} delay={0.55} className="absolute -bottom-7 -left-5 rounded-2xl p-3.5">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl" style={{ background: 'rgba(14,159,110,0.20)' }}><Check size={16} style={{ color: '#5EEAD4' }} /></span>
-                <div>
-                  <div className="text-[12px] font-[800] leading-none text-white">Priya checked in</div>
-                  <div className="mt-1 text-[10.5px] font-[600] text-white/55">Just now · Studio floor</div>
-                </div>
-              </div>
-            </FloatCard>
-          </div>
-        </div>
-
-        {/* testimonial + stats + trust */}
-        <div>
-          <div className="min-h-[92px]">
-            <AnimatePresence mode="wait">
-              <m.figure
-                key={t}
-                initial={reduce ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? undefined : { opacity: 0, y: -10 }}
-                transition={{ duration: 0.45 }}
-              >
-                <div className="mb-2 flex gap-0.5" aria-hidden>
-                  {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={13} style={{ color: GOLD_HI }} fill={GOLD_HI} />)}
-                </div>
-                <blockquote className="text-[14.5px] leading-relaxed text-white/85">“{active.quote}”</blockquote>
-                <figcaption className="mt-3 flex items-center gap-2.5">
-                  <span className="grid h-8 w-8 place-items-center rounded-full text-[11px] font-[800] text-white" style={{ background: 'rgba(255,255,255,0.16)' }}>{active.initials}</span>
-                  <span className="text-[12.5px] text-white/70"><span className="font-[700] text-white">{active.name}</span> · {active.role}</span>
-                </figcaption>
-              </m.figure>
-            </AnimatePresence>
-          </div>
-
-          <div className="mt-7 grid grid-cols-3 gap-4 border-t pt-6" style={{ borderColor: 'rgba(255,255,255,0.14)' }}>
-            {STATS.map((s) => (
-              <div key={s.label}>
-                <div className="text-[19px] font-[800] text-white">{s.value}</div>
-                <div className="mt-0.5 text-[11px] font-[600] text-white/55">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 flex items-center gap-2 text-[11.5px] font-[600] text-white/55">
-            <ShieldCheck size={14} style={{ color: GOLD_HI }} />
-            256-bit TLS · Encrypted at rest · SOC 2-aligned practices
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 
