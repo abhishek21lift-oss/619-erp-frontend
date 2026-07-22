@@ -17,6 +17,8 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
 import { allNavItems } from '@/lib/nav-config';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
+import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
+import PullToRefresh from '@/components/ui/PullToRefresh';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -135,6 +137,19 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const studioName = user?.organization_name || 'PT Studio';
   const router = useRouter();
   const pathname = usePathname();
+
+  // App-wide pull-to-refresh: bumping this key remounts the current page's
+  // subtree, so its data-loading effects re-run. Pages that wrap themselves
+  // in their own PullToRefresh take over the gesture (via the registry) and
+  // this global fallback stays disabled for them.
+  const [refreshKey, setRefreshKey] = useState(0);
+  const globalRefresh = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+    // Keep the spinner up briefly while the remounted page kicks off its
+    // own fetches; the page then shows its normal loading state.
+    return new Promise<void>((resolve) => setTimeout(resolve, 650));
+  }, []);
+
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -725,7 +740,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                     {title}
                   </h1>
                 )}
-                {children}
+                <PullToRefresh global onRefresh={globalRefresh}>
+                  <div key={refreshKey}>{children}</div>
+                </PullToRefresh>
               </m.div>
             </AnimatePresence>
           </main>
@@ -745,7 +762,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 export default function AppShell(props: AppShellProps) {
   return (
     <NavScrollProvider>
-      <AppShellContent {...props} />
+      <PullRefreshRegistryProvider>
+        <AppShellContent {...props} />
+      </PullRefreshRegistryProvider>
     </NavScrollProvider>
   );
 }

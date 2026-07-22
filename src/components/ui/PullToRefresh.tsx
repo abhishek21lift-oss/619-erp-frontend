@@ -20,10 +20,11 @@
  * `data-no-pull-refresh`.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
+import { usePullRefreshRegistry } from '@/contexts/pull-refresh-context';
 import { useToast } from '@/lib/toast';
 
 export interface PullToRefreshProps {
@@ -34,6 +35,9 @@ export interface PullToRefreshProps {
   className?: string;
   /** Override the default "toast on failure" error handling. */
   onError?: (err: unknown) => void;
+  /** The single app-wide instance mounted in AppShell. It steps aside on
+   *  any route whose page mounts its own (local) PullToRefresh. */
+  global?: boolean;
 }
 
 export default function PullToRefresh({
@@ -42,9 +46,18 @@ export default function PullToRefresh({
   threshold = 80,
   className,
   onError,
+  global = false,
 }: PullToRefreshProps) {
   const { toast } = useToast();
   const { reducedMotion } = useNavScroll();
+  const { localActive, registerLocal } = usePullRefreshRegistry();
+
+  // A page-level (non-global) instance announces itself so the global shell
+  // instance disables and lets this one own the gesture on its route.
+  useEffect(() => {
+    if (global) return;
+    return registerLocal();
+  }, [global, registerLocal]);
 
   const handleError = useCallback((err: unknown) => {
     if (onError) { onError(err); return; }
@@ -58,7 +71,7 @@ export default function PullToRefresh({
     onRefresh,
     onError: handleError,
     threshold,
-    disabled: !onRefresh,
+    disabled: !onRefresh || (global && localActive),
   });
 
   const dragging = phase === 'pulling' || phase === 'ready';
