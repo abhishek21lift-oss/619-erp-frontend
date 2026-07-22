@@ -19,6 +19,7 @@ import { allNavItems } from '@/lib/nav-config';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
+import OrgSwitcher from '@/components/OrgSwitcher';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -465,6 +466,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
               {/* Spacer */}
               <div className="hidden lg:block flex-1" />
+
+              {/* ── Platform org-switcher (super_admin only; renders null otherwise) ── */}
+              <OrgSwitcher />
 
               {/* ── Dark / Light toggle ── */}
               <m.button
