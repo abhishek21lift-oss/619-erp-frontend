@@ -60,15 +60,14 @@ export function formFromRecord(r: InformedConsent): InformedConsentFormData {
   };
 }
 
-export type StepId = 1 | 2 | 3 | 4;
+export type StepId = 1 | 2 | 3;
 
 export interface StepDef { id: StepId; key: string; label: string; }
 
 export const STEPS: StepDef[] = [
-  { id: 1, key: 'clientInfo', label: 'Client Info' },
-  { id: 2, key: 'exerciseConsent', label: 'Consent' },
-  { id: 3, key: 'agreements', label: 'Agreement' },
-  { id: 4, key: 'signatures', label: 'Signature' },
+  { id: 1, key: 'exerciseConsent', label: 'Consent' },
+  { id: 2, key: 'agreements', label: 'Agreement' },
+  { id: 3, key: 'signatures', label: 'Signature' },
 ];
 
 // ── Exercise Programme Consent — verbatim text, reproduced exactly as

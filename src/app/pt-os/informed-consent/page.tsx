@@ -21,7 +21,6 @@ import {
   FINAL_ACK_FIELDS, buildCreatePayload, buildUpdatePayload,
 } from '@/components/pt-os/informed-consent/types';
 import { statusStyle } from '@/components/pt-os/informed-consent/statusConfig';
-import StepClientInfo from '@/components/pt-os/informed-consent/StepClientInfo';
 import StepAgreements from '@/components/pt-os/informed-consent/StepAgreements';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
 import StepSignatures from '@/components/pt-os/informed-consent/StepSignatures';
@@ -33,20 +32,15 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 function validateStep(step: StepId, form: InformedConsentFormData): string | undefined {
   if (step === 1) {
-    if (!form.fullName.trim()) return 'Full name is required.';
-    if (!form.dob) return 'Date of birth is required.';
-    if (!form.mobile.trim()) return 'Mobile number is required.';
-  }
-  if (step === 2) {
     if (!form.exerciseConsentChecked) return 'Please check the consent acknowledgement to continue.';
     if (!form.exerciseConsentSignature) return 'Client signature is required.';
     if (!form.exerciseConsentDate) return 'Date is required.';
   }
-  if (step === 3) {
+  if (step === 2) {
     const missing = FINAL_ACK_FIELDS.some((f) => !form.acknowledgements[f.key]);
     if (missing) return 'All agreement items must be checked.';
   }
-  if (step === 4) {
+  if (step === 3) {
     if (!form.clientSignature) return 'Client signature is required.';
     if (!form.trainerSignature) return 'Trainer signature is required.';
   }
@@ -550,10 +544,9 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
 
       <div className="mx-auto max-w-3xl px-5 sm:px-8 py-5 space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-          {step === 1 && <StepClientInfo form={form} set={set} error={errors.step1} />}
-          {step === 2 && <StepExerciseProgrammeConsent form={form} set={set} error={errors.step2} />}
-          {step === 3 && <StepAgreements form={form} set={set} error={errors.step3} />}
-          {step === 4 && <StepSignatures form={form} set={set} error={errors.step4} />}
+          {step === 1 && <StepExerciseProgrammeConsent form={form} set={set} error={errors.step1} />}
+          {step === 2 && <StepAgreements form={form} set={set} error={errors.step2} />}
+          {step === 3 && <StepSignatures form={form} set={set} error={errors.step3} />}
         </m.div>
       </div>
 

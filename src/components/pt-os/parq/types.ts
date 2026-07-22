@@ -128,7 +128,6 @@ export interface ParqFormData {
 }
 
 export interface FormErrors {
-  clientDetails?: string;
   currentHealth?: string;
   pastHistory?: string;
   parqQuestionnaire?: string;
@@ -138,14 +137,13 @@ export interface FormErrors {
 }
 
 export const STEPS = [
-  { id: 1, key: 'clientDetails', label: 'Client Details' },
-  { id: 2, key: 'currentHealth', label: 'Current Health' },
-  { id: 3, key: 'pastHistory', label: 'Past History' },
-  { id: 4, key: 'parqQuestionnaire', label: 'PAR-Q' },
-  { id: 5, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
-  { id: 6, key: 'trainerNotes', label: 'Trainer Notes' },
-  { id: 7, key: 'consent', label: 'Digital Consent' },
-  { id: 8, key: 'review', label: 'Review' },
+  { id: 1, key: 'currentHealth', label: 'Current Health' },
+  { id: 2, key: 'pastHistory', label: 'Past History' },
+  { id: 3, key: 'parqQuestionnaire', label: 'PAR-Q' },
+  { id: 4, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
+  { id: 5, key: 'trainerNotes', label: 'Trainer Notes' },
+  { id: 6, key: 'consent', label: 'Digital Consent' },
+  { id: 7, key: 'review', label: 'Review' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];

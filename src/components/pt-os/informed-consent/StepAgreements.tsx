@@ -24,7 +24,7 @@ export function StepAgreements({ form, set, error }: StepAgreementsProps) {
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Confidentiality, Participation & Declaration</h2>
-          <p className="text-[13px] text-slate-400 mt-1.5">Step 3 of 4 — all items must be checked to continue.</p>
+          <p className="text-[13px] text-slate-400 mt-1.5">Step 2 of 3 — all items must be checked to continue.</p>
         </div>
       </div>
 

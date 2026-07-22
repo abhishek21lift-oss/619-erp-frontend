@@ -26,8 +26,6 @@ const CONDITIONS: { key: PastHistoryBoolKey; label: string }[] = [
   { key: 'hospitalization', label: 'Hospitalization' },
 ];
 
-const EXPERIENCE_LEVELS = ['beginner', 'intermediate', 'advanced', 'athlete'];
-
 interface StepPastHistoryProps {
   form: ParqFormData;
   set: <K extends keyof ParqFormData>(key: K, val: ParqFormData[K]) => void;
@@ -72,30 +70,8 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
           })}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatInput label="Work Posture" value={ph.work_posture} onChange={(v) => setPh('work_posture', v)} placeholder="e.g. Standing, Sitting, Mixed" />
-          <FloatInput label="Daily Sitting Hours" type="number" value={ph.daily_sitting_hours} onChange={(v) => setPh('daily_sitting_hours', v)} />
-        </div>
+        <FloatInput label="Work Posture" value={ph.work_posture} onChange={(v) => setPh('work_posture', v)} placeholder="e.g. Standing, Sitting, Mixed" />
 
-        <div>
-          <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Exercise Experience</p>
-          <div className="flex flex-wrap gap-2">
-            {EXPERIENCE_LEVELS.map((lvl) => {
-              const selected = ph.exercise_experience === lvl;
-              return (
-                <button
-                  key={lvl} type="button" onClick={() => setPh('exercise_experience', lvl)}
-                  className="rounded-[11px] px-3.5 py-2 text-[12.5px] font-[700] capitalize transition-all"
-                  style={{ background: selected ? '#0f172a' : '#f8fafc', color: selected ? '#fff' : '#64748b', border: selected ? '1.5px solid #0f172a' : '1.5px solid #e2e8f0' }}
-                >
-                  {lvl}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <FloatInput label="Exercise History" multiline autoGrow value={ph.exercise_history} onChange={(v) => setPh('exercise_history', v)} />
         <FloatInput label="Previous Injuries" multiline autoGrow value={ph.previous_injuries} onChange={(v) => setPh('previous_injuries', v)} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
