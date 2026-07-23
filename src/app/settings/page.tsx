@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 import {
   Users, UserPlus, Shield, Key, Search, Filter, MoreHorizontal,
@@ -832,6 +833,10 @@ function ChangePasswordPanel() {
 ──────────────────────────────────────────────────────────────────── */
 function AccountManagementPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  // Managing login accounts is a platform-operator power — only the super admin
+  // can see/use it. Studio admins get just their own "Change Password" tab.
+  const isSuperAdmin = user?.role === 'super_admin';
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [accountsError, setAccountsError] = useState('');
@@ -866,7 +871,10 @@ function AccountManagementPage() {
     }
   }, []);
 
-  useEffect(() => { fetchAccounts(); }, [fetchAccounts]);
+  useEffect(() => {
+    if (isSuperAdmin) fetchAccounts();
+    else { setAccountsLoading(false); setTab('password'); }
+  }, [fetchAccounts, isSuperAdmin]);
 
   const filtered = useMemo(() => {
     return accounts
@@ -919,9 +927,9 @@ function AccountManagementPage() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.10)' }}>
                   <Users size={16} style={{ color: '#6366f1' }} />
                 </div>
-                <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>Account Management</h1>
+                <h1 className="text-[22px] font-[860] tracking-[-0.03em]" style={{ color: 'rgb(15,23,42)' }}>{isSuperAdmin ? 'Account Management' : 'Security'}</h1>
               </div>
-              <p className="mt-1.5 ml-0 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>Manage staff login access, permissions, and security settings.</p>
+              <p className="mt-1.5 ml-0 text-[13px]" style={{ color: 'rgb(148,163,184)' }}>{isSuperAdmin ? 'Manage staff login access, permissions, and security settings.' : 'Change your password and set up Face ID / passkeys.'}</p>
             </div>
 
             {/* Action buttons */}
@@ -933,23 +941,27 @@ function AccountManagementPage() {
               >
                 <Fingerprint size={14} /> Set Up Face ID / Passkey
               </Link>
-              <button
-                onClick={() => setTab('accounts')}
-                className="flex items-center gap-2 rounded-[13px] px-4 py-2.5 text-[13px] font-[740] text-white transition-all hover:brightness-105 active:scale-95"
-                style={{ background: 'linear-gradient(135deg,#3730a3,#6366f1)', boxShadow: '0 4px 16px rgba(99,102,241,0.28)' }}
-              >
-                <UserPlus size={14} /> New Account
-              </button>
+              {isSuperAdmin && (
+                <button
+                  onClick={() => setTab('accounts')}
+                  className="flex items-center gap-2 rounded-[13px] px-4 py-2.5 text-[13px] font-[740] text-white transition-all hover:brightness-105 active:scale-95"
+                  style={{ background: 'linear-gradient(135deg,#3730a3,#6366f1)', boxShadow: '0 4px 16px rgba(99,102,241,0.28)' }}
+                >
+                  <UserPlus size={14} /> New Account
+                </button>
+              )}
             </div>
           </div>
 
-          {/* KPI chips */}
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-            <KpiChip label="Total Accounts"     value={stats.total}   icon={<Users size={13} />}       color="#6366f1" />
-            <KpiChip label="Active Users"       value={stats.active}  icon={<Activity size={13} />}    color="#10b981" />
-            <KpiChip label="Admin Accounts"     value={stats.admins}  icon={<Crown size={13} />}       color="#f59e0b" />
-            <KpiChip label="Pending Invitations" value={stats.pending} icon={<Sparkles size={13} />}   color="#8b5cf6" />
-          </div>
+          {/* KPI chips — account stats are only meaningful to the platform admin */}
+          {isSuperAdmin && (
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+              <KpiChip label="Total Accounts"     value={stats.total}   icon={<Users size={13} />}       color="#6366f1" />
+              <KpiChip label="Active Users"       value={stats.active}  icon={<Activity size={13} />}    color="#10b981" />
+              <KpiChip label="Admin Accounts"     value={stats.admins}  icon={<Crown size={13} />}       color="#f59e0b" />
+              <KpiChip label="Pending Invitations" value={stats.pending} icon={<Sparkles size={13} />}   color="#8b5cf6" />
+            </div>
+          )}
         </div>
       </div>
 
@@ -961,7 +973,7 @@ function AccountManagementPage() {
           {([
             { id: 'accounts', label: 'Login Accounts', icon: <LogIn size={13} /> },
             { id: 'password', label: 'Change Password', icon: <Key size={13} /> },
-          ] as const).map((t) => (
+          ] as const).filter((t) => t.id !== 'accounts' || isSuperAdmin).map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -979,7 +991,7 @@ function AccountManagementPage() {
 
         {/* ── LOGIN ACCOUNTS TAB ── */}
         <AnimatePresence mode="wait">
-          {tab === 'accounts' ? (
+          {tab === 'accounts' && isSuperAdmin ? (
             <m.div key="accounts" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="grid grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
 
