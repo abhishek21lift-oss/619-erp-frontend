@@ -1155,8 +1155,12 @@ function AccountManagementPage() {
 }
 
 export default function SettingsPage() {
+  // Account Management is a platform-operator power. Only the super admin can
+  // reach it; studio admins are redirected home (they manage their own login
+  // from My Profile). Server-side, the account endpoints are already
+  // super-admin-only, so this is the matching client-side gate.
   return (
-    <Guard>
+    <Guard role="super_admin">
       <AppShell>
         <AccountManagementPage />
       </AppShell>
