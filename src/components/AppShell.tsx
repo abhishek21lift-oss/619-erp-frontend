@@ -109,7 +109,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  // Desktop sidebar starts expanded; the user's manual collapse/expand choice
+  // is restored from localStorage by the Sidebar on mount. No hover auto-toggle.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
