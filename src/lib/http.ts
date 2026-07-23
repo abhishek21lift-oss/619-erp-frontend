@@ -98,6 +98,44 @@ function activeOrgHeader(): Record<string, string> {
   } catch { return {}; }
 }
 
+// ──────────────────────────────────────────────────────────────────────
+//  Impersonation: a super_admin can enter a studio as its admin. The
+//  platform mints a short-lived READ-ONLY access token; we send it as a
+//  Bearer header (which the backend reads BEFORE the cookie), so the
+//  operator's own super-admin cookie session stays intact underneath.
+//  Exiting is just clearing the token — no re-login. Stored in
+//  sessionStorage so it never outlives the tab.
+// ──────────────────────────────────────────────────────────────────────
+export const IMPERSONATION_KEY = '619_impersonation';
+
+export type StoredImpersonation = {
+  token: string;
+  readonly: boolean;
+  adminId: string;
+  adminName: string;
+  orgId: string;
+  orgName: string;
+  orgLogo?: string | null;
+};
+
+export function getImpersonation(): StoredImpersonation | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(IMPERSONATION_KEY);
+    return raw ? (JSON.parse(raw) as StoredImpersonation) : null;
+  } catch { return null; }
+}
+
+export function setImpersonation(s: StoredImpersonation): void {
+  try { sessionStorage.setItem(IMPERSONATION_KEY, JSON.stringify(s)); } catch { /* noop */ }
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('impersonation-changed'));
+}
+
+export function clearImpersonation(): void {
+  try { sessionStorage.removeItem(IMPERSONATION_KEY); } catch { /* noop */ }
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('impersonation-changed'));
+}
+
 function isFormDataBody(body: unknown): body is FormData {
   return typeof FormData !== 'undefined' && body instanceof FormData;
 }
@@ -215,15 +253,19 @@ export async function http<T = unknown>(
 
   const body = serializeBody(options.body);
   const isMultipart = isFormDataBody(options.body);
+  // While impersonating, the Bearer token IS the identity (that studio's admin),
+  // so the operator's org-switcher header is suppressed — the org is implicit.
+  const imp = getImpersonation();
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...activeOrgHeader(),
+    ...(imp ? { Authorization: `Bearer ${imp.token}` } : activeOrgHeader()),
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  // The active-org selection scopes results, so it must be part of the GET
-  // cache key — otherwise switching orgs would serve the previous org's cache.
-  const cacheKey = method === 'GET' ? `${headers['x-org-id'] ?? ''}|${url}` : '';
+  // The active-org selection (or impersonated identity) scopes results, so it
+  // must be part of the GET cache key — otherwise switching orgs, or exiting
+  // impersonation, would serve the previous identity's cached data.
+  const cacheKey = method === 'GET' ? `${imp ? `imp:${imp.adminId}` : headers['x-org-id'] ?? ''}|${url}` : '';
 
   if (cacheKey && ttl) {
     const hit = cache.get(cacheKey);
@@ -273,6 +315,17 @@ export async function http<T = unknown>(
       return await doFetch();
     } catch (err) {
       if (!(err instanceof ApiError) || err.status !== 401) throw err;
+
+      // An impersonation token can't be refreshed via the operator's cookie
+      // (that would refresh the super-admin, not the studio admin). A 401 here
+      // means the read-only session expired — exit impersonation cleanly and
+      // let the UI drop back to the platform.
+      if (getImpersonation()) {
+        clearImpersonation();
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('impersonation-expired'));
+        throw err;
+      }
+
       if (options.skipAuth) { handleUnauthorized(); throw err; }
 
       const refreshed = await tryRefreshToken();
@@ -312,9 +365,10 @@ export async function httpSSE<T = unknown>(
 
   const body = serializeBody(options.body);
   const isMultipart = isFormDataBody(options.body);
+  const impSSE = getImpersonation();
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...activeOrgHeader(),
+    ...(impSSE ? { Authorization: `Bearer ${impSSE.token}` } : activeOrgHeader()),
     ...(options.headers as Record<string, string> | undefined),
   };
 

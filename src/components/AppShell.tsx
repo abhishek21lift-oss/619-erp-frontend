@@ -20,6 +20,7 @@ import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
 import OrgSwitcher from '@/components/OrgSwitcher';
+import ImpersonationBanner from '@/components/ImpersonationBanner';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -306,6 +307,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
   return (
     <LazyMotion features={domAnimation} strict>
+      <ImpersonationBanner />
       <div className="flex min-h-dvh bg-[var(--bg-canvas)]">
         {/* Sidebar — desktop */}
         <Sidebar collapsed={sidebarCollapsed} onExpand={() => setSidebarCollapsed(false)} onCollapse={() => setSidebarCollapsed(true)} />
