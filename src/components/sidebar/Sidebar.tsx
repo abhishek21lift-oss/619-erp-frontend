@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   ChevronDown, X, LogOut, User, Settings,
   PanelLeft, PanelLeftClose,
@@ -493,54 +493,33 @@ export default function Sidebar({
   variant = 'desktop',
 }: SidebarProps) {
   const isMobile = variant === 'mobile';
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useAuth();
   const studioName = user?.organization_name || 'PT Studio';
   const studioOwner = user?.name || '';
 
-  // Pin: when true, sidebar stays expanded permanently
-  const [isPinned, setIsPinned] = useState(false);
+  // Restore the user's manual expanded/collapsed preference on mount. There is
+  // NO hover auto-expand/auto-collapse — the desktop sidebar only changes width
+  // when the user clicks the toggle. Defaults to expanded.
   useEffect(() => {
-    try { setIsPinned(localStorage.getItem('sidebar-pinned') === 'true'); } catch {}
-  }, []);
-
-  // Expand on mount if user had pinned it
-  useEffect(() => {
-    if (!isMobile) {
-      try {
-        if (localStorage.getItem('sidebar-pinned') === 'true') onExpand?.();
-      } catch {}
-    }
+    if (isMobile) return;
+    try {
+      if (localStorage.getItem('sidebar-collapsed') === 'true') onCollapse?.();
+      else onExpand?.();
+    } catch { onExpand?.(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const togglePin = useCallback(() => {
-    const next = !isPinned;
-    setIsPinned(next);
-    try { localStorage.setItem('sidebar-pinned', String(next)); } catch {}
-    if (next) onExpand?.();
-    else onCollapse?.();
-  }, [isPinned, onExpand, onCollapse]);
-
-  const handleMouseEnter = useCallback(() => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    if (collapsed) onExpand?.();
-  }, [collapsed, onExpand]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (isPinned) return;
-    hoverTimer.current = setTimeout(() => {
-      if (!collapsed) onCollapse?.();
-    }, 300);
-  }, [collapsed, onCollapse, isPinned]);
+  const toggleCollapsed = useCallback(() => {
+    const next = !collapsed;
+    try { localStorage.setItem('sidebar-collapsed', String(next)); } catch { /* noop */ }
+    if (next) onCollapse?.(); else onExpand?.();
+  }, [collapsed, onExpand, onCollapse]);
 
   return (
     <aside
       data-sidebar={variant}
       data-theme="dark"
       data-no-pull-refresh
-      onMouseEnter={!isMobile ? handleMouseEnter : undefined}
-      onMouseLeave={!isMobile ? handleMouseLeave : undefined}
       className={cn(
         !isMobile && [
           'fixed inset-y-0 left-0 z-40 hidden flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
@@ -573,7 +552,7 @@ export default function Sidebar({
         {!collapsed && (
           <div className="absolute top-0 left-3 right-3 h-[1.5px] rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent opacity-40" />
         )}
-        <div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between')}>
+        <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'justify-between')}>
           <Link href="/" className={cn('flex items-center group', collapsed ? 'justify-center' : 'gap-2.5')}>
             <div className="relative shrink-0">
               <StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={collapsed ? 32 : 38} />
@@ -600,20 +579,21 @@ export default function Sidebar({
             </AnimatePresence>
           </Link>
 
-          {/* Pin toggle (desktop expanded only) */}
-          {!collapsed && !isMobile && (
+          {/* Manual collapse/expand toggle (desktop — both states, no hover auto behavior) */}
+          {!isMobile && (
             <button
               type="button"
-              onClick={togglePin}
-              title={isPinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              onClick={toggleCollapsed}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className="flex h-6 w-6 items-center justify-center rounded-md transition-all duration-150"
-              style={{ color: isPinned ? BRAND : 'rgba(255,255,255,0.28)' }}
+              style={{ color: 'rgba(255,255,255,0.40)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(167,139,250,0.12)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
             >
-              {isPinned
-                ? <PanelLeftClose size={13} strokeWidth={2} />
-                : <PanelLeft size={13} strokeWidth={1.5} />
+              {collapsed
+                ? <PanelLeft size={13} strokeWidth={1.5} />
+                : <PanelLeftClose size={13} strokeWidth={2} />
               }
             </button>
           )}
