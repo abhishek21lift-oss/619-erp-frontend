@@ -843,10 +843,10 @@ function normalisePayment(raw: Record<string, unknown>): Payment {
 
 export const api = {
   auth: {
-    login: (email: string, password: string) =>
+    login: (email: string, password: string, mfaCode?: string) =>
       http<{ user: User }>('/api/auth/login', {
         method: 'POST',
-        body: { email, password },
+        body: mfaCode ? { email, password, mfa_code: mfaCode } : { email, password },
       }),
     googleLogin: (credential: string) =>
       http<{ user: User }>('/api/auth/google-login', {

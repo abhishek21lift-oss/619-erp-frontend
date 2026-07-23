@@ -167,6 +167,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [ok, setOk] = useState(false);
+  // Second factor: shown after the server challenges a 2FA-enabled account.
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
   const [shakeKey, setShakeKey] = useState(0);
   const [capsOn, setCapsOn] = useState(false);
 
@@ -260,13 +263,23 @@ export default function LoginPage() {
     if (!email.trim()) { emailRef.current?.focus(); return fail('Email is required.'); }
     if (!emailValid) { emailRef.current?.focus(); return fail('Enter a valid email address.'); }
     if (!password) { pwRef.current?.focus(); return fail('Password is required.'); }
+    if (mfaRequired && !/^\d{6}$/.test(mfaCode.trim())) return fail('Enter the 6-digit code from your authenticator app.');
     if (busy) return;
     setBusy(true);
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, mfaRequired ? mfaCode.trim() : undefined);
       persistRemember({ email: email.trim(), organization_name: lastOrg });
       setOk(true); // brief success flash before redirect fires
     } catch (err: unknown) {
+      // The server challenges 2FA-enabled accounts with { mfaRequired: true }.
+      const payload = (err && typeof err === 'object' && 'payload' in err)
+        ? (err as { payload?: { mfaRequired?: boolean } }).payload : undefined;
+      if (payload?.mfaRequired) {
+        setMfaRequired(true);
+        setBusy(false);
+        fail(mfaCode.trim() ? 'That code was incorrect. Try again.' : '');
+        return;
+      }
       fail(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
     }
   }
@@ -496,6 +509,38 @@ export default function LoginPage() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Two-factor code — appears when the server challenges a 2FA account */}
+              <AnimatePresence>
+                {mfaRequired && (
+                  <m.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4"
+                  >
+                    <label htmlFor="mfa" className="mb-1.5 block text-[13px] font-[600]" style={{ color: INK }}>
+                      Authentication code
+                    </label>
+                    <input
+                      id="mfa"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="123456"
+                      autoFocus
+                      className="w-full rounded-xl bg-white text-center text-[20px] font-[700] tracking-[0.4em] outline-none transition-all"
+                      style={{ height: 52, color: INK, border: `1px solid ${MAROON}`, boxShadow: `0 0 0 3px ${MAROON}1A` }}
+                    />
+                    <p className="mt-1.5 text-[12px]" style={{ color: MUTE }}>
+                      Enter the 6-digit code from your authenticator app.
+                    </p>
+                  </m.div>
+                )}
+              </AnimatePresence>
 
               {/* remember me */}
               <label className="mt-4 flex cursor-pointer select-none items-center gap-2.5">
