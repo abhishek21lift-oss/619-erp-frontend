@@ -120,8 +120,12 @@ function PlatformContent() {
       {error && !loading && (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <ShieldAlert size={28} style={{ color: '#ef4444' }} />
-          <p className="text-[14px] font-[600] text-slate-600">{error}</p>
-          <Button variant="outline" iconLeft={<RefreshCw size={14} />} onClick={load}>Retry</Button>
+          <p className="max-w-[420px] text-[14px] font-[600] text-slate-600">{error}</p>
+          {/two-factor|2fa/i.test(error) ? (
+            <Button onClick={() => { window.location.href = '/settings/profile'; }}>Set up two-factor authentication</Button>
+          ) : (
+            <Button variant="outline" iconLeft={<RefreshCw size={14} />} onClick={load}>Retry</Button>
+          )}
         </div>
       )}
       {!loading && !error && orgs.length === 0 && (

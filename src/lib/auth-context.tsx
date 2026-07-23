@@ -9,7 +9,7 @@ export type { Role } from './roles';
 interface Ctx {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, mfaCode?: string) => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<void>;
   loginWithPasskey: (email?: string) => Promise<void>;
   logout: () => void;
@@ -155,8 +155,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user, _clearSession, router]);
 
-  const login = useCallback(async function (email: string, password: string): Promise<void> {
-    const data = await api.auth.login(email, password);
+  const login = useCallback(async function (email: string, password: string, mfaCode?: string): Promise<void> {
+    const data = await api.auth.login(email, password, mfaCode);
     resetRedirectLock();
     loggedInRef.current = true;
     const u = data.user;
