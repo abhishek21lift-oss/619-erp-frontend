@@ -80,6 +80,24 @@ export interface FetchOptions extends Omit<RequestInit, 'body'> {
   skipAuth?:    boolean;
 }
 
+// ──────────────────────────────────────────────────────────────────────
+//  Platform org-switcher: a super_admin can pin requests to one tenant org
+//  by selecting it in the OrgSwitcher (persisted under ACTIVE_ORG_KEY). We
+//  forward it as the `x-org-id` header the backend's tenantScope() reads.
+//  The backend IGNORES this header for every non-super_admin, so a tenant
+//  user setting it cannot escape their own org — it is purely an operator
+//  convenience. Read lazily per request so a switch takes effect immediately.
+// ──────────────────────────────────────────────────────────────────────
+export const ACTIVE_ORG_KEY = '619_active_org';
+
+function activeOrgHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const id = localStorage.getItem(ACTIVE_ORG_KEY);
+    return id ? { 'x-org-id': id } : {};
+  } catch { return {}; }
+}
+
 function isFormDataBody(body: unknown): body is FormData {
   return typeof FormData !== 'undefined' && body instanceof FormData;
 }
@@ -183,10 +201,13 @@ export async function http<T = unknown>(
   const isMultipart = isFormDataBody(options.body);
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    ...activeOrgHeader(),
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  const cacheKey = method === 'GET' ? url : '';
+  // The active-org selection scopes results, so it must be part of the GET
+  // cache key — otherwise switching orgs would serve the previous org's cache.
+  const cacheKey = method === 'GET' ? `${headers['x-org-id'] ?? ''}|${url}` : '';
 
   if (cacheKey && ttl) {
     const hit = cache.get(cacheKey);
@@ -277,6 +298,7 @@ export async function httpSSE<T = unknown>(
   const isMultipart = isFormDataBody(options.body);
   const headers: Record<string, string> = {
     ...(!isMultipart && body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    ...activeOrgHeader(),
     ...(options.headers as Record<string, string> | undefined),
   };
 
