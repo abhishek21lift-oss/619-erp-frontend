@@ -50,6 +50,8 @@ const CLIENT_PALETTES = [
 ];
 
 function getStatusInfo(status: string, days_left: number | null) {
+  // Not yet enrolled in a package — added to the roster but no active PT program.
+  if (status === 'pending') return { label: 'Not Enrolled', color: '#a78bfa', bg: 'rgba(167,139,250,0.14)', dot: '#8b5cf6' };
   if (status === 'frozen') return { label: 'Frozen', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', dot: '#3b82f6' };
   if (!days_left || days_left <= 0) return { label: 'Expired', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
   if (days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
@@ -103,6 +105,7 @@ function DaysArc({ days_left }: { days_left: number | null }) {
 const STATUS_FILTERS = [
   { value: 'all',     label: 'All',     from: '#7c3aed', to: '#5b21b6' },
   { value: 'active',  label: 'Active',  from: '#10b981', to: '#059669' },
+  { value: 'pending', label: 'Not Enrolled', from: '#8b5cf6', to: '#7c3aed' },
   { value: 'frozen',  label: 'Frozen',  from: '#3b82f6', to: '#2563eb' },
   { value: 'expired', label: 'Expired', from: '#64748b', to: '#475569' },
 ];
@@ -319,7 +322,7 @@ export default function PtClientsPage() {
     { total: 0, revenue: 0, paid: 0, balance: 0 },
   ), [clients.data]);
 
-  const activeCount = useMemo(() => (clients.data?.data ?? []).filter(c => c.status === 'active' && (c.days_left ?? 1) > 0).length, [clients.data]);
+  const activeCount = useMemo(() => (clients.data?.data ?? []).filter(c => c.status === 'active' && (c.days_left ?? 0) > 0).length, [clients.data]);
 
   return (
     <Guard>
