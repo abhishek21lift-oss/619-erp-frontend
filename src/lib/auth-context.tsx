@@ -2,7 +2,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, type User, http } from './api';
-import { resetRedirectLock } from './http';
+import { resetRedirectLock, refreshSession } from './http';
 import type { Role } from './roles';
 export type { Role } from './roles';
 
@@ -135,6 +135,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('session-expired', onSessionExpired);
   }, [_clearSession, router]);
 
+  // Proactive session keep-alive. The access token lives ~15 min; renew it
+  // every 12 min while logged in so a long-open tab never starts failing, and
+  // renew immediately when the tab is brought back to the foreground (covers
+  // laptop sleep / backgrounded tabs where timers are throttled). This also
+  // keeps a free-tier backend warm, avoiding cold-start logouts. Background
+  // 401s here are harmless — the reactive path already handles a dead session.
+  useEffect(() => {
+    if (!user) return;
+    const id = setInterval(() => { refreshSession().catch(() => {}); }, 12 * 60 * 1000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refreshSession().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [user]);
+
   // Idle session timeout
   useEffect(() => {
     if (!user) return;
@@ -146,8 +165,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/login');
       }, SESSION_TIMEOUT_MS);
     }
-    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'];
-    events.forEach(e => window.addEventListener(e, resetIdleTimer));
+    // Include mousemove so simply using the app (not just clicking) counts as
+    // activity — avoids surprise logouts while reading or watching a client.
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'mousemove'];
+    events.forEach(e => window.addEventListener(e, resetIdleTimer, { passive: true }));
     resetIdleTimer();
     return () => {
       clearTimeout(idleTimer);

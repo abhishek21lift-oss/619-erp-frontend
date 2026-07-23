@@ -140,17 +140,33 @@ function handleUnauthorized(): void {
 // In-flight refresh promise — deduplicates concurrent 401 retries
 let _refreshPromise: Promise<boolean> | null = null;
 
+// Renew the access token via the rotating refresh-token cookie. Resilient to
+// transient failures: a 401 means the refresh token is genuinely gone (give up
+// → the caller logs out), but a network error or 5xx is treated as transient
+// — e.g. a free-tier backend cold-starting after idle — and retried with
+// backoff so a momentary blip doesn't force a full re-login.
 function tryRefreshToken(): Promise<boolean> {
   if (_refreshPromise) return _refreshPromise;
   const BASE = (() => { try { return apiBase(); } catch { return ''; } })();
-  _refreshPromise = fetch(`${BASE}/api/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include',
-  })
-    .then(r => r.ok)
-    .catch(() => false)
-    .finally(() => { _refreshPromise = null; });
+  _refreshPromise = (async () => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch(`${BASE}/api/auth/refresh`, { method: 'POST', credentials: 'include' });
+        if (r.ok) return true;
+        if (r.status === 401 || r.status === 403) return false; // truly unauthenticated
+        // 5xx / other → transient, fall through to retry
+      } catch { /* network error (e.g. cold start) → retry */ }
+      if (attempt < 2) await new Promise((res) => setTimeout(res, 600 * 2 ** attempt));
+    }
+    return false;
+  })().finally(() => { _refreshPromise = null; });
   return _refreshPromise;
+}
+
+/** Proactively renew the session (access token) — called on an interval and on
+ *  tab re-focus by the auth provider so long-open sessions never lapse. */
+export function refreshSession(): Promise<boolean> {
+  return tryRefreshToken();
 }
 
 // ──────────────────────────────────────────────────────────────────────
