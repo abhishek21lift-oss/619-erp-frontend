@@ -25,6 +25,12 @@ const nextConfig = {
 
   images: {
     formats: ['image/avif', 'image/webp'],
+    // Never optimize/serve SVGs through the image optimizer (SVG DoS + stored
+    // XSS surface — GHSA-q8wf-6r8g-63ch). Force any served image to download
+    // rather than render inline, under a locked-down CSP.
+    dangerouslyAllowSVG: false,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'none'; sandbox;",
     // M-02: explicit allowlist — wildcard '**' allows SSRF via Next.js image optimizer
     remotePatterns: [
       // Supabase storage (replace <project-ref> with your actual project ref via env)
