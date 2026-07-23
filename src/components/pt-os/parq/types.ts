@@ -141,7 +141,6 @@ export const STEPS = [
   { id: 2, key: 'pastHistory', label: 'Past History' },
   { id: 3, key: 'parqQuestionnaire', label: 'PAR-Q' },
   { id: 4, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
-  { id: 5, key: 'trainerNotes', label: 'Trainer Notes' },
   { id: 6, key: 'consent', label: 'Digital Consent' },
   { id: 7, key: 'review', label: 'Review' },
 ] as const;
