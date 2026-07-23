@@ -109,10 +109,6 @@ export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
         </SectionCard>
       )}
 
-      <SectionCard title="Trainer Notes" stepId={5} onEdit={onEditStep}>
-        <p className="text-[12.5px] font-[600]" style={{ color: '#334155' }}>{form.trainerNotes.summary || 'No summary added.'}</p>
-      </SectionCard>
-
       <SectionCard title="Digital Consent" stepId={6} onEdit={onEditStep}>
         <div className="grid grid-cols-2 gap-4">
           <Field label="All Boxes Checked" value={Object.values(form.consentCheckboxes).every(Boolean) ? 'Yes' : 'No'} />

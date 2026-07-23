@@ -26,7 +26,6 @@ import StepCurrentHealth from '@/components/pt-os/parq/StepCurrentHealth';
 import StepPastHistory from '@/components/pt-os/parq/StepPastHistory';
 import StepParqQuestionnaire from '@/components/pt-os/parq/StepParqQuestionnaire';
 import StepMedicalClearance from '@/components/pt-os/parq/StepMedicalClearance';
-import StepTrainerNotes from '@/components/pt-os/parq/StepTrainerNotes';
 import StepConsent from '@/components/pt-os/parq/StepConsent';
 import ParqReview from '@/components/pt-os/parq/ParqReview';
 import ParqCard from '@/components/pt-os/parq/ParqCard';
@@ -542,7 +541,6 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
               stepLabel={stepPositionLabel('medicalClearance', riskLevel)}
             />
           )}
-          {step === 5 && <StepTrainerNotes form={form} set={set} stepLabel={stepPositionLabel('trainerNotes', riskLevel)} />}
           {step === 6 && <StepConsent form={form} set={set} error={errors.consent} stepLabel={stepPositionLabel('consent', riskLevel)} />}
           {step === 7 && <ParqReview form={form} onEditStep={setStep} stepLabel={stepPositionLabel('review', riskLevel)} />}
         </m.div>
