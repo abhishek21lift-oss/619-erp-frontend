@@ -558,17 +558,22 @@ export default function PtClientsPage() {
 }
 
 function EmptyState({ search, statusFilter, onNew }: { search: string; statusFilter: string; onNew: () => void }) {
+  const isFiltered = !!search || statusFilter !== 'all';
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-20">
       <div className="flex h-20 w-20 items-center justify-center rounded-[24px]"
         style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.15)' }}>
         <Users size={32} style={{ color: '#7c3aed' }} />
       </div>
-      <p className="text-[17px] font-[760] tracking-[-0.01em] text-gray-900">No PT clients found</p>
-      <p className="text-[13px] text-slate-500">
-        {search || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Get started by adding a new client'}
+      <p className="text-[17px] font-[760] tracking-[-0.01em] text-gray-900">
+        {isFiltered ? 'No PT clients found' : 'Add your first client'}
       </p>
-      {!search && statusFilter === 'all' && (
+      <p className="max-w-[320px] text-center text-[13px] text-slate-500">
+        {isFiltered
+          ? 'Try adjusting your search or filters'
+          : 'Your client roster is private to your studio — enrol your first PT client to get started.'}
+      </p>
+      {!isFiltered && (
         <button onClick={onNew}
           className="mt-2 inline-flex items-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-[700] text-white transition-all hover:-translate-y-0.5"
           style={{ background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', boxShadow: '0 6px 24px rgba(124,58,237,0.35)' }}>
