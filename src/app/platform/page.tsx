@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } f
 import {
   Building2, Plus, Loader2, ShieldAlert, Users, Dumbbell, UserCircle,
   KeyRound, Power, X, Copy, RefreshCw, ChevronDown, ImagePlus,
-  LayoutDashboard, Activity, LogIn, Pencil, Trash2, UserPlus, IndianRupee, Clock,
+  LayoutDashboard, Activity, LogIn, Pencil, Trash2, UserPlus, IndianRupee, Clock, Eye,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -323,10 +323,14 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onEditUser, onAddUser, 
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Delete failed'); }
   };
 
-  const impersonate = async (userId?: string) => {
-    setImpLoading(userId || 'primary');
+  const impersonate = async (mode: 'read_only' | 'full', userId?: string) => {
+    if (mode === 'full' && !window.confirm(
+      `Enter ${org.name} with FULL ACCESS?\n\nYou will be able to make changes to this studio's live data as its admin. Every change is recorded against you in the activity log.`
+    )) return;
+    const key = `${mode}:${userId || 'primary'}`;
+    setImpLoading(key);
     try {
-      const r = await api.superAdmin.impersonate(org.id, userId);
+      const r = await api.superAdmin.impersonate(org.id, { userId, mode });
       const d = r.data;
       setImpersonation({
         token: d.token, readonly: d.readonly,
@@ -367,10 +371,10 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onEditUser, onAddUser, 
           <span className="flex items-center gap-1"><Users size={13} /> {org.client_count ?? 0}</span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => impersonate()} disabled={suspended || impLoading === 'primary'} title="Log in as this studio's admin (read-only)"
+          <button onClick={() => impersonate('read_only')} disabled={suspended || impLoading === 'read_only:primary'} title="View this studio as its admin (read-only)"
             className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80 disabled:opacity-40"
             style={{ background: 'rgba(99,102,241,0.10)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.25)' }}>
-            {impLoading === 'primary' ? <Loader2 size={13} className="animate-spin" /> : <LogIn size={13} />} Log in as
+            {impLoading === 'read_only:primary' ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} View as
           </button>
           <button onClick={onToggleStatus} title={suspended ? 'Reactivate' : 'Suspend'}
             className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
@@ -403,9 +407,14 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onEditUser, onAddUser, 
               </div>
               {!u.is_active && <Badge tone="danger">disabled</Badge>}
               {u.is_active && (
-                <IconBtn title="Log in as (read-only)" onClick={() => impersonate(u.id)} busy={impLoading === u.id}>
-                  <LogIn size={12} /> Log in as
-                </IconBtn>
+                <>
+                  <IconBtn title="View as (read-only)" onClick={() => impersonate('read_only', u.id)} busy={impLoading === `read_only:${u.id}`}>
+                    <Eye size={12} /> View
+                  </IconBtn>
+                  <IconBtn title="Act as (full access — changes are live, recorded against you)" onClick={() => impersonate('full', u.id)} busy={impLoading === `full:${u.id}`} tone="danger">
+                    <LogIn size={12} /> Act as
+                  </IconBtn>
+                </>
               )}
               <IconBtn title="Edit" onClick={() => onEditUser(u)}><Pencil size={12} /> Edit</IconBtn>
               <IconBtn title="Reset password" onClick={() => onResetPassword(u)}><KeyRound size={12} /> Reset</IconBtn>

@@ -2015,9 +2015,13 @@ export const api = {
         `/api/super-admin/activity${q ? `?${q}` : ''}`,
       );
     },
-    impersonate: (orgId: string, userId?: string) =>
+    impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
-        method: 'POST', body: JSON.stringify(userId ? { user_id: userId } : {}),
+        method: 'POST',
+        body: JSON.stringify({
+          ...(opts.userId ? { user_id: opts.userId } : {}),
+          ...(opts.mode ? { mode: opts.mode } : {}),
+        }),
       }),
   },
 };
