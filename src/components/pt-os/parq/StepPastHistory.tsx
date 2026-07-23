@@ -1,7 +1,6 @@
 'use client';
 
 import { ClipboardList, Check } from 'lucide-react';
-import FloatInput from '@/components/ui/FloatInput';
 import type { ParqFormData, PastHistoryForm } from './types';
 
 type PastHistoryBoolKey =
@@ -69,10 +68,6 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
             );
           })}
         </div>
-
-        <FloatInput label="Work Posture" value={ph.work_posture} onChange={(v) => setPh('work_posture', v)} placeholder="e.g. Standing, Sitting, Mixed" />
-
-        <FloatInput label="Previous Injuries" multiline autoGrow value={ph.previous_injuries} onChange={(v) => setPh('previous_injuries', v)} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {(['previous_physiotherapy', 'previous_trainer'] as const).map((key) => {
