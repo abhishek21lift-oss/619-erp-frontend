@@ -1989,6 +1989,36 @@ export const api = {
         method: 'POST', body: formData,
       });
     },
+    overview: () =>
+      http<{ data: PlatformOverview }>('/api/super-admin/overview'),
+    updateUser: (id: string, data: { name?: string; email?: string; role?: string; is_active?: boolean }) =>
+      http<{ data: OrgUser }>(`/api/super-admin/users/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+    addUser: (orgId: string, data: { name: string; email: string; password: string; role?: string }) =>
+      http<{ data: OrgUser }>(`/api/super-admin/organizations/${orgId}/users`, {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    deleteUser: (id: string) =>
+      http<{ data: { id: string; message: string } }>(`/api/super-admin/users/${id}`, {
+        method: 'DELETE',
+      }),
+    listActivity: (params: { org_id?: string; user_id?: string; action?: string; limit?: number; offset?: number } = {}) => {
+      const qs = new URLSearchParams();
+      if (params.org_id) qs.set('org_id', params.org_id);
+      if (params.user_id) qs.set('user_id', params.user_id);
+      if (params.action) qs.set('action', params.action);
+      if (params.limit != null) qs.set('limit', String(params.limit));
+      if (params.offset != null) qs.set('offset', String(params.offset));
+      const q = qs.toString();
+      return http<{ data: ActivityEntry[]; paging: { limit: number; offset: number; count: number } }>(
+        `/api/super-admin/activity${q ? `?${q}` : ''}`,
+      );
+    },
+    impersonate: (orgId: string, userId?: string) =>
+      http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
+        method: 'POST', body: JSON.stringify(userId ? { user_id: userId } : {}),
+      }),
   },
 };
 
@@ -2005,6 +2035,34 @@ export type OrgUser = {
   last_login?: string | null; created_at?: string; organization_id?: string;
 };
 export type OrganizationDetail = Organization & { users: OrgUser[] };
+
+export type StudioOverview = {
+  id: string; name: string; slug: string;
+  status: 'active' | 'suspended'; logo_url?: string | null; created_at: string;
+  admin_count: number; last_login: string | null;
+  total_clients: number; active_clients: number;
+  revenue: number | string; outstanding: number | string;
+  sessions_this_month: number;
+};
+export type PlatformTotals = {
+  studios: number; active_studios: number; suspended_studios: number;
+  total_clients: number; active_clients: number;
+  revenue: number; outstanding: number; sessions_this_month: number;
+};
+export type PlatformOverview = { totals: PlatformTotals; studios: StudioOverview[] };
+
+export type ActivityEntry = {
+  id: string | number; user_id: string | null; user_name: string | null;
+  action: string; entity_type: string | null; entity_id: string | null;
+  new_data?: unknown; ip_address?: string | null; created_at: string;
+  organization_id: string | null; organization_name: string | null;
+};
+
+export type ImpersonationSession = {
+  token: string; readonly: boolean;
+  admin: { id: string; name: string; email: string; role: string };
+  organization: { id: string; name: string; slug: string; logo_url?: string | null };
+};
 
 // ── AI types ────────────────────────────────────────────────────────────────
 
