@@ -21,6 +21,7 @@ import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
 import OrgSwitcher from '@/components/OrgSwitcher';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
+import TrialBanner from '@/components/TrialBanner';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -738,6 +739,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               globals.css always won, so they never actually took effect. */}
           <main id="main-content" className="flex-1 min-w-0 overflow-x-hidden shell-main"
           >
+            <TrialBanner />
             <AnimatePresence mode="popLayout" initial={false}>
               <m.div
                 key={pathname}
