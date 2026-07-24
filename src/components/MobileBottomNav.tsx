@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Users, ScanFace, Dumbbell, IndianRupee, LayoutGrid, Layers, CreditCard, Activity } from 'lucide-react';
 import { m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
+import { getImpersonation } from '@/lib/http';
 import { normaliseRole } from '@/lib/nav-config';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 
@@ -40,7 +41,9 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   const pathname = usePathname();
   const { user } = useAuth();
   const role             = normaliseRole(user?.role);
-  const isSuperAdmin     = role === 'super_admin';
+  // While impersonating, the operator acts as the studio admin — show studio
+  // tabs, not the platform control plane.
+  const isSuperAdmin     = role === 'super_admin' && !getImpersonation();
   const isAdminOrManager = role === 'admin' || role === 'manager';
   const items            = isSuperAdmin ? PLATFORM_ITEMS
                           : isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
