@@ -2048,6 +2048,10 @@ export const api = {
     plans: () => http<{ data: { plans: SubPlan[]; founder_slots_remaining: number; founder_limit: number } }>('/api/subscription/plans'),
     invoices: () => http<{ data: SubInvoice[] }>('/api/subscription/invoices'),
     payments: () => http<{ data: SubPayment[] }>('/api/subscription/payments'),
+    requestActivation: (plan_code?: string) =>
+      http<{ data: { requested: boolean; message: string } }>('/api/subscription/request-activation', {
+        method: 'POST', body: JSON.stringify(plan_code ? { plan_code } : {}),
+      }),
   },
 };
 
@@ -2106,6 +2110,7 @@ export type SubStudio = {
   plan_code: string | null; plan_name: string | null; client_limit: number | null; client_count: number;
   is_founder: boolean; founder_number: number | null; locked_price_inr: number | null;
   trial_days_left: number | null; period_days_left: number | null; renewal_due: boolean;
+  requested_at?: string | null;
 };
 export type SubKpis = {
   studios: number; trial: number; active: number; frozen: number; founders: number;
