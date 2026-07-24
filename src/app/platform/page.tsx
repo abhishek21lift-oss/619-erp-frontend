@@ -8,7 +8,8 @@
 //              suspend / impersonate)
 //   Activity — platform-wide audit feed
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Building2, Plus, Loader2, ShieldAlert, Users, Dumbbell, UserCircle,
   KeyRound, Power, X, Copy, RefreshCw, ChevronDown, ImagePlus,
@@ -65,17 +66,28 @@ const ROLE_OPTIONS = ['admin', 'manager', 'trainer', 'member'];
 export default function PlatformAdminPage() {
   return (
     <Guard role="super_admin">
-      <AppShell title="Platform Admin">
-        <PlatformContent />
+      <AppShell>
+        <Suspense fallback={<div className="flex justify-center py-24"><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></div>}>
+          <PlatformContent />
+        </Suspense>
       </AppShell>
     </Guard>
   );
 }
 
 type Tab = 'overview' | 'studios' | 'billing' | 'activity';
+const TAB_IDS: Tab[] = ['overview', 'studios', 'billing', 'activity'];
 
 function PlatformContent() {
-  const [tab, setTab] = useState<Tab>('overview');
+  const sp = useSearchParams();
+  const paramTab = sp.get('tab');
+  const [tab, setTab] = useState<Tab>(TAB_IDS.includes(paramTab as Tab) ? (paramTab as Tab) : 'overview');
+
+  // Keep the active tab in sync with the ?tab= query so the sidebar / bottom-nav
+  // deep-links land on the right section.
+  useEffect(() => {
+    if (paramTab && TAB_IDS.includes(paramTab as Tab)) setTab(paramTab as Tab);
+  }, [paramTab]);
 
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },

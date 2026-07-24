@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, ScanFace, Dumbbell, IndianRupee } from 'lucide-react';
+import { Home, Users, ScanFace, Dumbbell, IndianRupee, LayoutGrid, Layers, CreditCard, Activity } from 'lucide-react';
 import { m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { normaliseRole } from '@/lib/nav-config';
@@ -21,6 +21,14 @@ const FINANCE_ITEM = {
   label: 'Finance',
 };
 
+// Platform operators get control-plane tabs instead of studio tabs.
+const PLATFORM_ITEMS = [
+  { href: '/platform',              icon: LayoutGrid, label: 'Overview'  },
+  { href: '/platform?tab=studios',  icon: Layers,     label: 'Studios'   },
+  { href: '/platform?tab=billing',  icon: CreditCard, label: 'Billing'   },
+  { href: '/platform?tab=activity', icon: Activity,   label: 'Activity'  },
+];
+
 interface MobileBottomNavProps {
   sidebarOpen?: boolean;
 }
@@ -32,8 +40,10 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   const pathname = usePathname();
   const { user } = useAuth();
   const role             = normaliseRole(user?.role);
+  const isSuperAdmin     = role === 'super_admin';
   const isAdminOrManager = role === 'admin' || role === 'manager';
-  const items            = isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
+  const items            = isSuperAdmin ? PLATFORM_ITEMS
+                          : isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
 
   const { reducedMotion } = useNavScroll();
   const dur = reducedMotion ? 0 : 0.28;
