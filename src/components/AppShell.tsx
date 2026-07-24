@@ -170,8 +170,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   const transConfig = { duration: dur, ease: EASE };
 
 
+  // My Profile intentionally lives only in the profile dropdown (avatar menu),
+  // not here in the settings (gear) menu.
   const settingsLinks = [
-    { href: '/settings/profile',         label: 'My Profile',            icon: User },
     { href: '/settings/biometric',       label: 'Biometric & Face',      icon: Fingerprint },
     { href: '/settings/passkeys',        label: 'Passkeys / Face ID Login', icon: KeyRound },
     { href: '/settings/integrations',    label: 'Integrations',          icon: Zap },
