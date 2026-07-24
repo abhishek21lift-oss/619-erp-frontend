@@ -13,6 +13,7 @@ import {
   Building2, Plus, Loader2, ShieldAlert, Users, Dumbbell, UserCircle,
   KeyRound, Power, X, Copy, RefreshCw, ChevronDown, ImagePlus,
   LayoutDashboard, Activity, LogIn, Pencil, Trash2, UserPlus, IndianRupee, Clock, Eye,
+  CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -22,6 +23,7 @@ import { api } from '@/lib/api';
 import type {
   Organization, OrganizationDetail, OrgUser,
   PlatformOverview, StudioOverview, ActivityEntry,
+  SubStudio, SubKpis, SubDetail, SubPlan,
 } from '@/lib/api';
 import { setImpersonation } from '@/lib/http';
 import { useToast } from '@/lib/toast';
@@ -70,7 +72,7 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'activity';
+type Tab = 'overview' | 'studios' | 'billing' | 'activity';
 
 function PlatformContent() {
   const [tab, setTab] = useState<Tab>('overview');
@@ -78,6 +80,7 @@ function PlatformContent() {
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
+    { id: 'billing', label: 'Billing', icon: <CreditCard size={15} /> },
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
   ];
 
@@ -110,8 +113,270 @@ function PlatformContent() {
 
       {tab === 'overview' && <OverviewTab />}
       {tab === 'studios' && <StudiosTab />}
+      {tab === 'billing' && <BillingTab />}
       {tab === 'activity' && <ActivityTab />}
     </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────── BILLING */
+const SUB_STATE: Record<string, { label: string; tone: 'success' | 'danger' | 'warning' | 'neutral' }> = {
+  active: { label: 'Active', tone: 'success' },
+  trial: { label: 'Trial', tone: 'warning' },
+  trial_expired: { label: 'Trial expired', tone: 'danger' },
+  expired: { label: 'Expired', tone: 'danger' },
+  frozen: { label: 'Frozen', tone: 'danger' },
+  cancelled: { label: 'Cancelled', tone: 'neutral' },
+  suspended: { label: 'Suspended', tone: 'danger' },
+};
+
+function BillingTab() {
+  const { toast } = useToast();
+  const [studios, setStudios] = useState<SubStudio[]>([]);
+  const [kpis, setKpis] = useState<SubKpis | null>(null);
+  const [plans, setPlans] = useState<SubPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [payTarget, setPayTarget] = useState<SubStudio | null>(null);
+  const [detailTarget, setDetailTarget] = useState<SubStudio | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true); setError('');
+    api.superAdmin.subscriptions()
+      .then((r) => { setStudios(r.data.studios ?? []); setKpis(r.data.kpis ?? null); })
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load subscriptions'))
+      .finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { api.subscription.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
+
+  const quickFreeze = async (s: SubStudio, freeze: boolean) => {
+    if (freeze && !window.confirm(`Freeze ${s.name}? Their team is signed out of protected features until they pay. No data is deleted.`)) return;
+    try {
+      if (freeze) await api.superAdmin.freezeSubscription(s.id);
+      else await api.superAdmin.reactivateSubscription(s.id);
+      toast.success(freeze ? 'Studio frozen.' : 'Studio reactivated.');
+      load();
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
+  };
+
+  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
+  if (error) return <ErrorState error={error} onRetry={load} />;
+
+  const kpiCards = kpis ? [
+    { label: 'Revenue', value: fmtINR(kpis.total_revenue), sub: `${fmtINR(kpis.revenue_this_month)} this month`, color: '#10b981', icon: <IndianRupee size={18} /> },
+    { label: 'Active', value: String(kpis.active), sub: `${kpis.trial} on trial`, color: '#6366f1', icon: <CreditCard size={18} /> },
+    { label: 'Frozen', value: String(kpis.frozen), sub: 'need payment', color: '#ef4444', icon: <Snowflake size={18} /> },
+    { label: 'Founders', value: `${kpis.founders}/50`, sub: `${kpis.founder_slots_remaining} slots left`, color: '#f59e0b', icon: <Crown size={18} /> },
+  ] : [];
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {kpiCards.map((k) => (
+          <div key={k.label} className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <div className="mb-2 flex items-center gap-2" style={{ color: k.color }}>{k.icon}
+              <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{k.label}</span>
+            </div>
+            <p className="text-[22px] font-[840] tabular-nums" style={{ color: 'var(--text-primary)' }}>{k.value}</p>
+            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        {studios.map((s) => {
+          const st = SUB_STATE[s.effective_state] || { label: s.effective_state, tone: 'neutral' as const };
+          const frozen = !s.allowed;
+          const expiry = s.effective_state === 'trial' ? s.trial_ends_at : s.current_period_end;
+          const daysLeft = s.effective_state === 'trial' ? s.trial_days_left : s.period_days_left;
+          return (
+            <div key={s.id} className="rounded-[18px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <div className="flex flex-wrap items-center gap-3">
+                <StudioMark name={s.name} logoUrl={s.logo_url} size={40} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-[14.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
+                    <Badge tone={st.tone}>{st.label}</Badge>
+                    {s.is_founder && (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
+                        style={{ background: 'rgba(245,158,11,0.12)', color: '#b45309' }}>
+                        <Crown size={10} /> Founder #{s.founder_number}
+                      </span>
+                    )}
+                    {s.renewal_due && <Badge tone="neutral">renewal due</Badge>}
+                  </div>
+                  <p className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                    {s.plan_name || 'No plan'}
+                    {expiry ? ` · ${daysLeft != null ? `${daysLeft}d left · ` : ''}ends ${fmtDate(expiry)}` : ' · no expiry'}
+                    {' · '}{s.client_count}{s.client_limit != null ? `/${s.client_limit}` : ''} clients
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button onClick={() => setPayTarget(s)}
+                    className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] text-white transition hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
+                    <IndianRupee size={13} /> Record Payment
+                  </button>
+                  {frozen
+                    ? <IconBtn title="Reactivate (comp)" onClick={() => quickFreeze(s, false)} tone="success"><RotateCcw size={12} /> Reactivate</IconBtn>
+                    : <IconBtn title="Freeze" onClick={() => quickFreeze(s, true)} tone="danger"><Snowflake size={12} /> Freeze</IconBtn>}
+                  <IconBtn title="Details & history" onClick={() => setDetailTarget(s)}><Receipt size={12} /> Details</IconBtn>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {studios.length === 0 && <EmptyState icon={<CreditCard size={20} />} title="No studios" description="Studios will appear here once created." />}
+      </div>
+
+      {payTarget && <RecordPaymentModal studio={payTarget} plans={plans} onClose={() => setPayTarget(null)} onDone={() => { setPayTarget(null); load(); }} />}
+      {detailTarget && <SubDetailModal studio={detailTarget} onClose={() => setDetailTarget(null)} onChanged={load} />}
+    </div>
+  );
+}
+
+// ── Record Payment (activate / renew) modal ──────────────────────────────────────
+function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio: SubStudio; plans: SubPlan[]; onClose: () => void; onDone: () => void }) {
+  const { toast } = useToast();
+  const [planCode, setPlanCode] = useState(studio.plan_code || (plans[0]?.code ?? 'starter'));
+  const selected = plans.find((p) => p.code === planCode);
+  const defaultAmount = studio.is_founder && studio.locked_price_inr != null ? studio.locked_price_inr : (selected?.effective_price_inr ?? selected?.price_inr ?? 0);
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState('upi');
+  const [reference, setReference] = useState('');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setAmount(String(defaultAmount || '')); }, [defaultAmount]);
+
+  const submit = async () => {
+    setSaving(true);
+    try {
+      await api.superAdmin.activateSubscription(studio.id, {
+        plan_code: planCode,
+        amount_inr: amount ? Number(amount) : undefined,
+        method, reference: reference.trim() || undefined, notes: notes.trim() || undefined,
+      });
+      toast.success('Payment recorded — subscription activated.');
+      onDone();
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Activation failed'); setSaving(false); }
+  };
+
+  return (
+    <Modal title={`Record payment · ${studio.name}`} onClose={onClose}>
+      <div className="space-y-4">
+        <Field label="Plan">
+          <select className={inputCls} style={inputStyle} value={planCode} onChange={(e) => setPlanCode(e.target.value)}>
+            {plans.map((p) => (
+              <option key={p.code} value={p.code}>
+                {p.name} — ₹{(p.effective_price_inr ?? p.price_inr).toLocaleString('en-IN')}{p.is_launch ? ' (launch)' : ''} / {p.duration_months}mo
+                {p.client_limit != null ? ` · ${p.client_limit} clients` : ' · unlimited'}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Amount received (₹)">
+          <input className={inputCls} style={inputStyle} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          {studio.is_founder && <p className="mt-1 text-[11px]" style={{ color: '#b45309' }}>Founder — lifetime-locked price ₹{studio.locked_price_inr?.toLocaleString('en-IN')}.</p>}
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Method">
+            <select className={inputCls} style={inputStyle} value={method} onChange={(e) => setMethod(e.target.value)}>
+              {['upi', 'bank', 'cash', 'razorpay', 'comp'].map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </Field>
+          <Field label="Reference / UTR">
+            <input className={inputCls} style={inputStyle} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="optional" />
+          </Field>
+        </div>
+        <Field label="Notes">
+          <input className={inputCls} style={inputStyle} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="optional" />
+        </Field>
+        {!studio.is_founder && <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>If founder slots remain, this studio becomes a Founder Member with this price locked for life.</p>}
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#059669,#10b981)', color: '#fff' }}>Activate</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Subscription detail + history + overrides modal ──────────────────────────────
+function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStudio; onClose: () => void; onChanged: () => void }) {
+  const { toast } = useToast();
+  const [detail, setDetail] = useState<SubDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [newExpiry, setNewExpiry] = useState('');
+
+  const load = useCallback(() => {
+    setLoading(true);
+    api.superAdmin.getSubscription(studio.id).then((r) => setDetail(r.data)).catch(() => {}).finally(() => setLoading(false));
+  }, [studio.id]);
+  useEffect(() => { load(); }, [load]);
+
+  const act = async (fn: () => Promise<unknown>, ok: string) => {
+    try { await fn(); toast.success(ok); load(); onChanged(); }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Action failed'); }
+  };
+
+  const o = detail?.organization;
+  const onTrial = o?.subscription_status === 'trial';
+
+  return (
+    <Modal title={`Billing · ${studio.name}`} onClose={onClose}>
+      {loading || !o ? (
+        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#6366f1' }} /></div>
+      ) : (
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+            <div className="flex justify-between"><span>Status</span><b>{(SUB_STATE[o.effective_state]?.label) || o.effective_state}</b></div>
+            <div className="flex justify-between"><span>Plan</span><b>{o.plan_name || '—'}</b></div>
+            <div className="flex justify-between"><span>{onTrial ? 'Trial ends' : 'Renews'}</span><b>{fmtDate(onTrial ? o.trial_ends_at : o.current_period_end)}</b></div>
+            {o.is_founder && <div className="flex justify-between" style={{ color: '#b45309' }}><span>Founder</span><b>#{o.founder_number} · ₹{o.locked_price_inr?.toLocaleString('en-IN')} locked</b></div>}
+          </div>
+
+          {/* Quick overrides */}
+          <div className="flex flex-wrap gap-2">
+            {!o.is_founder && <IconBtn title="Grant founder" onClick={() => act(() => api.superAdmin.grantFounder(studio.id), 'Founder granted.')} tone="success"><Gift size={12} /> Grant founder</IconBtn>}
+            {o.subscription_status !== 'cancelled' && <IconBtn title="Cancel subscription" onClick={() => { if (window.confirm('Cancel this subscription? The studio will be blocked until they subscribe again.')) act(() => api.superAdmin.cancelSubscription(studio.id), 'Subscription cancelled.'); }} tone="danger"><X size={12} /> Cancel</IconBtn>}
+          </div>
+          <div className="flex items-end gap-2">
+            <Field label={onTrial ? 'Extend trial to' : 'Change renewal date'}>
+              <input className={inputCls} style={inputStyle} type="date" value={newExpiry} onChange={(e) => setNewExpiry(e.target.value)} />
+            </Field>
+            <Button variant="outline" disabled={!newExpiry} onClick={() => act(
+              () => api.superAdmin.changeExpiry(studio.id, onTrial ? { trial_ends_at: newExpiry } : { current_period_end: newExpiry }),
+              'Expiry updated.')}>Apply</Button>
+          </div>
+
+          {/* Invoices */}
+          <div>
+            <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Invoices</p>
+            {detail.invoices.length === 0 && <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>None yet.</p>}
+            {detail.invoices.map((inv) => (
+              <div key={inv.id} className="flex items-center justify-between py-1.5 text-[12px]" style={{ borderTop: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>{inv.invoice_number} · {fmtDate(inv.issued_at)}</span>
+                <span className="tabular-nums font-[650]" style={{ color: inv.status === 'refunded' ? '#94a3b8' : 'var(--text-primary)', textDecoration: inv.status === 'refunded' ? 'line-through' : 'none' }}>{fmtINR(inv.amount_inr)}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Payments (with refund) */}
+          <div>
+            <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Payments</p>
+            {detail.payments.length === 0 && <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>None yet.</p>}
+            {detail.payments.map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-2 py-1.5 text-[12px]" style={{ borderTop: '1px solid var(--border)' }}>
+                <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>{fmtDate(p.created_at)} · {p.method || '—'} · {fmtINR(p.amount_inr)}{p.status === 'refunded' ? ' (refunded)' : ''}</span>
+                {p.status === 'paid' && <button onClick={() => { if (window.confirm('Refund this payment?')) act(() => api.superAdmin.refundPayment(p.id), 'Payment refunded.'); }} className="flex-shrink-0 text-[11px] font-[650]" style={{ color: '#dc2626' }}>Refund</button>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 

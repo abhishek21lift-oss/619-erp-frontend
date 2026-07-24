@@ -2023,6 +2023,29 @@ export const api = {
           ...(opts.mode ? { mode: opts.mode } : {}),
         }),
       }),
+    // ── Subscription / billing management ──
+    subscriptions: () =>
+      http<{ data: { studios: SubStudio[]; kpis: SubKpis } }>('/api/super-admin/subscriptions'),
+    getSubscription: (orgId: string) =>
+      http<{ data: SubDetail }>(`/api/super-admin/organizations/${orgId}/subscription`),
+    activateSubscription: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string; period_months?: number }) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/activate`, { method: 'POST', body: JSON.stringify(body) }),
+    freezeSubscription: (orgId: string, reason?: string) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/freeze`, { method: 'POST', body: JSON.stringify({ reason }) }),
+    reactivateSubscription: (orgId: string) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/reactivate`, { method: 'POST', body: JSON.stringify({}) }),
+    cancelSubscription: (orgId: string) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/cancel`, { method: 'POST', body: JSON.stringify({}) }),
+    changeExpiry: (orgId: string, body: { trial_ends_at?: string | null; current_period_end?: string | null }) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/expiry`, { method: 'PATCH', body: JSON.stringify(body) }),
+    grantFounder: (orgId: string) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/founder`, { method: 'POST', body: JSON.stringify({}) }),
+    refundPayment: (paymentId: string) =>
+      http<{ data: unknown }>(`/api/super-admin/subscription-payments/${paymentId}/refund`, { method: 'POST', body: JSON.stringify({}) }),
+  },
+  subscription: {
+    status: () => http<{ data: SubscriptionStatus }>('/api/subscription/status'),
+    plans: () => http<{ data: { plans: SubPlan[]; founder_slots_remaining: number; founder_limit: number } }>('/api/subscription/plans'),
   },
 };
 
@@ -2066,6 +2089,54 @@ export type ImpersonationSession = {
   token: string; readonly: boolean;
   admin: { id: string; name: string; email: string; role: string };
   organization: { id: string; name: string; slug: string; logo_url?: string | null };
+};
+
+// ── Subscription / billing types ──────────────────────────────────────────────
+export type SubPlan = {
+  code: string; name: string; price_inr: number; launch_price_inr: number | null;
+  duration_months: number; client_limit: number | null; best_for: string | null;
+  effective_price_inr: number; is_launch: boolean;
+};
+export type SubStudio = {
+  id: string; name: string; slug: string; logo_url?: string | null;
+  status: string; subscription_status: string; effective_state: string; allowed: boolean;
+  trial_ends_at: string | null; current_period_end: string | null;
+  plan_code: string | null; plan_name: string | null; client_limit: number | null; client_count: number;
+  is_founder: boolean; founder_number: number | null; locked_price_inr: number | null;
+  trial_days_left: number | null; period_days_left: number | null; renewal_due: boolean;
+};
+export type SubKpis = {
+  studios: number; trial: number; active: number; frozen: number; founders: number;
+  total_revenue: number; revenue_this_month: number; founder_slots_remaining: number;
+};
+export type SubPayment = {
+  id: string; plan_code: string | null; amount_inr: number; method: string | null;
+  reference: string | null; status: string; period_start: string | null; period_end: string | null;
+  recorded_by_name: string | null; refunded_at: string | null; notes: string | null; created_at: string;
+};
+export type SubInvoice = {
+  id: string; invoice_number: string; plan_code: string | null; amount_inr: number;
+  period_start: string | null; period_end: string | null; status: string; issued_at: string;
+};
+export type SubEvent = { id: string; event: string; data: unknown; actor_name: string | null; created_at: string };
+export type SubDetail = {
+  organization: {
+    id: string; name: string; slug: string; status: string; subscription_status: string;
+    effective_state: string; allowed: boolean; trial_ends_at: string | null;
+    current_period_start: string | null; current_period_end: string | null;
+    plan_code: string | null; plan_name: string | null; client_limit: number | null;
+    is_founder: boolean; founder_number: number | null; locked_price_inr: number | null;
+    trial_days_left: number | null; period_days_left: number | null;
+  };
+  payments: SubPayment[]; invoices: SubInvoice[]; events: SubEvent[];
+};
+export type SubscriptionStatus = {
+  subscription_status: string | null; state: string; allowed: boolean; reason: string | null;
+  trial_ends_at?: string | null; current_period_start?: string | null; current_period_end?: string | null;
+  trial_days_left?: number | null; period_days_left?: number | null; renewal_due?: boolean;
+  plan?: { code: string; name: string; duration_months: number; price_inr: number } | null;
+  client_limit?: number | null; client_count?: number;
+  is_founder?: boolean; founder_number?: number | null; locked_price_inr?: number | null;
 };
 
 // ── AI types ────────────────────────────────────────────────────────────────
