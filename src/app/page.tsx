@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -11,7 +12,14 @@ const INIT_TIMEOUT_MS = 10_000;
 
 export default function Root() {
   const { user, loading } = useAuth();
+  const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
+
+  // Platform operators (super_admin) get the command centre as their home, not a
+  // studio dashboard. Redirect as soon as the session resolves.
+  useEffect(() => {
+    if (!loading && user?.role === 'super_admin') router.replace('/platform');
+  }, [loading, user, router]);
 
   // 10-second safety net: if auth never resolves, bail out with an error screen
   // instead of spinning forever.
@@ -92,6 +100,12 @@ export default function Root() {
 
   if (!user) {
     return <LandingPage />;
+  }
+
+  // super_admin is being redirected to /platform (effect above) — render nothing
+  // rather than flashing the studio dashboard.
+  if (user.role === 'super_admin') {
+    return <div style={{ minHeight: '100dvh', background: 'var(--bg-canvas)' }} />;
   }
 
   return (

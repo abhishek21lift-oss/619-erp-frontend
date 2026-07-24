@@ -32,6 +32,22 @@ export type NavGroup = {
 };
 
 export const NAV_GROUPS: NavGroup[] = [
+  // Platform operator (super_admin) navigation. Shown ONLY to super_admins (see
+  // isGroupVisibleForRole) and hidden from every tenant role. Studio nav groups
+  // below are, conversely, hidden from super_admins — so a platform operator
+  // gets a dedicated control-plane interface, not a studio dashboard.
+  {
+    id: 'platform',
+    label: 'Platform',
+    icon: 'ShieldCheck',
+    roles: ['super_admin'],
+    items: [
+      { href: '/platform',              label: 'Command Centre', icon: 'LayoutGrid' },
+      { href: '/platform?tab=studios',  label: 'Studios',        icon: 'Layers' },
+      { href: '/platform?tab=billing',  label: 'Billing',        icon: 'CreditCard' },
+      { href: '/platform?tab=activity', label: 'Activity',       icon: 'Activity' },
+    ],
+  },
   {
     id: 'attendance',
     label: 'Attendance',
@@ -218,6 +234,9 @@ export function isVisibleForRole(item: NavItem, userRole?: string): boolean {
 
 export function isGroupVisibleForRole(group: NavGroup, userRole?: string): boolean {
   const role = normaliseRole(userRole);
+  // Platform operators get ONLY platform-scoped groups (the control plane), not
+  // studio groups — so they see a dedicated interface instead of a studio's nav.
+  if (role === 'super_admin') return !!group.roles?.includes('super_admin');
   if (group.roles?.length) return !!role && (group.roles as string[]).includes(role);
   return true;
 }
