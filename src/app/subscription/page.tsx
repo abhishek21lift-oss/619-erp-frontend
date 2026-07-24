@@ -15,6 +15,7 @@ import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import type { SubscriptionStatus, SubPlan, SubInvoice } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/lib/toast';
 
 const FROZEN_STATES = ['frozen', 'trial_expired', 'expired', 'cancelled', 'suspended'];
 const fmtINR = (n: number) => '₹' + Number(n || 0).toLocaleString('en-IN');
@@ -31,11 +32,25 @@ export default function SubscriptionPage() {
 
 function SubscriptionScreen() {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [plans, setPlans] = useState<SubPlan[]>([]);
   const [slots, setSlots] = useState<number | null>(null);
   const [invoices, setInvoices] = useState<SubInvoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requesting, setRequesting] = useState('');
+  const [requested, setRequested] = useState(false);
+
+  const requestActivation = async (planCode?: string) => {
+    setRequesting(planCode || 'general');
+    try {
+      const r = await api.subscription.requestActivation(planCode);
+      setRequested(true);
+      toast.success(r.data.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not send request');
+    } finally { setRequesting(''); }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -129,8 +144,9 @@ function SubscriptionScreen() {
                   )}
                 </div>
                 <p className="mt-1 text-[12.5px]" style={{ color: '#cbd5e1' }}>
-                  {status.renewal_due ? 'Renews soon — ' : ''}Renews on {fmtDate(status.current_period_end)}
-                  {status.period_days_left != null ? ` · ${status.period_days_left} days left` : ''}
+                  {status.current_period_end
+                    ? `${status.renewal_due ? 'Renews soon — ' : ''}Renews on ${fmtDate(status.current_period_end)}${status.period_days_left != null ? ` · ${status.period_days_left} days left` : ''}`
+                    : 'Active · no expiry'}
                   {status.client_limit != null ? ` · ${status.client_count ?? 0}/${status.client_limit} clients` : ` · ${status.client_count ?? 0} clients (unlimited)`}
                 </p>
               </div>
@@ -168,24 +184,41 @@ function SubscriptionScreen() {
                   <p className="flex items-center gap-2"><Check size={13} style={{ color: '#34d399' }} /> {p.duration_months >= 12 ? 'Priority support' : 'Standard support'}</p>
                 </div>
                 <div className="mt-auto pt-4">
-                  {isCurrent
-                    ? <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>Current plan</div>
-                    : <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'rgba(255,255,255,0.06)', color: '#e2e8f0' }}>Contact to subscribe</div>}
+                  {isCurrent ? (
+                    <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>Current plan</div>
+                  ) : requested ? (
+                    <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#fbbf24' }}>Request sent ✓</div>
+                  ) : (
+                    <button onClick={() => requestActivation(p.code)} disabled={!!requesting}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-[12px] py-2 text-[12px] font-[750] text-white transition hover:opacity-90 disabled:opacity-50"
+                      style={{ background: p.code === 'elite' ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'rgba(255,255,255,0.10)' }}>
+                      {requesting === p.code ? <Loader2 size={13} className="animate-spin" /> : null}
+                      Choose {p.name}
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Contact CTA */}
+        {/* Request / status CTA */}
         <div className="mt-8 flex flex-col items-center gap-3 rounded-[18px] p-6 text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <p className="text-[14px] font-[750] text-white">Ready to {frozen ? 'reactivate' : active ? 'renew or upgrade' : 'subscribe'}?</p>
           <p className="max-w-[460px] text-[12.5px]" style={{ color: '#94a3b8' }}>
-            Contact your MY PT STUDIO account manager to activate your plan. Your subscription is switched on instantly once payment is confirmed — no data is lost.
+            {requested
+              ? 'Thanks! Your request has reached the MY PT STUDIO team — we’ll confirm your payment and switch on your subscription shortly. No data is lost.'
+              : 'Pick a plan above (or tap below) to request activation. Our team confirms your payment and switches on your subscription — usually within a few hours.'}
           </p>
-          <Button onClick={() => load()} iconLeft={<ArrowRight size={14} />} style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>
-            Refresh status
-          </Button>
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            {!requested && (
+              <Button onClick={() => requestActivation()} loading={requesting === 'general'} disabled={!!requesting}
+                style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>
+                Request activation
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => load()} iconLeft={<ArrowRight size={14} />}>Refresh status</Button>
+          </div>
         </div>
 
         {/* Invoices */}

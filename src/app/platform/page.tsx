@@ -205,6 +205,12 @@ function BillingTab() {
                       </span>
                     )}
                     {s.renewal_due && <Badge tone="neutral">renewal due</Badge>}
+                    {s.requested_at && (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
+                        style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
+                        ● Activation requested
+                      </span>
+                    )}
                   </div>
                   <p className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
                     {s.plan_name || 'No plan'}
