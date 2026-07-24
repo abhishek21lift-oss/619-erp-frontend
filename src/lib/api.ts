@@ -2046,6 +2046,8 @@ export const api = {
   subscription: {
     status: () => http<{ data: SubscriptionStatus }>('/api/subscription/status'),
     plans: () => http<{ data: { plans: SubPlan[]; founder_slots_remaining: number; founder_limit: number } }>('/api/subscription/plans'),
+    invoices: () => http<{ data: SubInvoice[] }>('/api/subscription/invoices'),
+    payments: () => http<{ data: SubPayment[] }>('/api/subscription/payments'),
   },
 };
 

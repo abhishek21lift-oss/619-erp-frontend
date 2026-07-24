@@ -175,6 +175,14 @@ function handleUnauthorized(): void {
   window.dispatchEvent(new CustomEvent('session-expired'));
 }
 
+// A frozen/expired studio (HTTP 402 SUBSCRIPTION_INACTIVE) is sent to the
+// subscription screen. Guarded so it never loops while already there.
+function handleSubscriptionInactive(): void {
+  if (typeof window === 'undefined') return;
+  if (window.location.pathname.startsWith('/subscription')) return;
+  window.location.href = '/subscription';
+}
+
 // In-flight refresh promise — deduplicates concurrent 401 retries
 let _refreshPromise: Promise<boolean> | null = null;
 
@@ -232,6 +240,10 @@ async function fetchOnce<T>(url: string, init: RequestInit): Promise<T> {
         }
       }
     } catch { /* ignore parse error */ }
+
+    // 402 = the studio's subscription/trial has lapsed — bounce to the
+    // subscription screen (which stays reachable via the backend allowlist).
+    if (res.status === 402 && code === 'SUBSCRIPTION_INACTIVE') handleSubscriptionInactive();
 
     // 401 handling is done by http() after attempting a token refresh — not here
     throw new ApiError(msg, res.status, code, payload);
