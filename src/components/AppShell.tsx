@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Search, LogOut, Bell, Settings, Fingerprint,
-  Zap, User, HelpCircle, ChevronDown,
+  Zap, User, HelpCircle, ChevronDown, CreditCard,
   Menu, X, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
@@ -694,6 +694,12 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                           <Link href="/settings" onClick={() => setProfileOpen(false)}
                             className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                             <Settings size={14} strokeWidth={1.5} /> Account Settings
+                          </Link>
+                        )}
+                        {user?.role !== 'super_admin' && user?.organization_name && (
+                          <Link href="/subscription" onClick={() => setProfileOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                            <CreditCard size={14} strokeWidth={1.5} /> Subscription &amp; Billing
                           </Link>
                         )}
                         <Link href="/help" onClick={() => setProfileOpen(false)}
