@@ -41,6 +41,14 @@ function ssDel(key: string): void {
   try { sessionStorage.removeItem(key); } catch { /* noop */ }
 }
 
+// Drop the cached minimal user so the next full-page load re-resolves identity
+// from /api/auth/me instead of flashing the previous (e.g. super-admin) user.
+// Used when starting/exiting impersonation so the operator is re-identified as
+// the studio admin (and vice-versa) without a stale-role flash.
+export function clearCachedAuthUser(): void {
+  ssDel(SESSION_USER_KEY);
+}
+
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes idle timeout
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

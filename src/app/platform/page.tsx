@@ -26,7 +26,8 @@ import type {
   PlatformOverview, StudioOverview, ActivityEntry,
   SubStudio, SubKpis, SubDetail, SubPlan,
 } from '@/lib/api';
-import { setImpersonation } from '@/lib/http';
+import { setImpersonation, getImpersonation } from '@/lib/http';
+import { clearCachedAuthUser } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 
 function genPassword(len = 14): string {
@@ -81,6 +82,13 @@ const TAB_IDS: Tab[] = ['overview', 'studios', 'billing', 'activity'];
 function PlatformContent() {
   const sp = useSearchParams();
   const paramTab = sp.get('tab');
+
+  // The command centre is a super-admin surface. While impersonating a studio,
+  // the operator IS that studio's admin (the backend rejects super-admin calls),
+  // so bounce to the studio view — exit impersonation to return here.
+  useEffect(() => {
+    if (getImpersonation()) window.location.replace('/');
+  }, []);
   const [tab, setTab] = useState<Tab>(TAB_IDS.includes(paramTab as Tab) ? (paramTab as Tab) : 'overview');
 
   // Keep the active tab in sync with the ?tab= query so the sidebar / bottom-nav
@@ -620,6 +628,9 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onEditUser, onAddUser, 
         adminId: d.admin.id, adminName: d.admin.name,
         orgId: d.organization.id, orgName: d.organization.name, orgLogo: d.organization.logo_url,
       });
+      // Drop the cached super-admin identity so the reload re-resolves as the
+      // studio admin (studio nav + studio home), not the platform UI.
+      clearCachedAuthUser();
       window.location.href = '/';
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not start impersonation');

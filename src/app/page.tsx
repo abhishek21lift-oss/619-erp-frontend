@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { getImpersonation } from '@/lib/http';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
@@ -16,10 +17,12 @@ export default function Root() {
   const [timedOut, setTimedOut] = useState(false);
 
   // Platform operators (super_admin) get the command centre as their home, not a
-  // studio dashboard. Redirect as soon as the session resolves.
+  // studio dashboard — UNLESS they're impersonating a studio, in which case they
+  // are acting as that studio's admin and belong on the studio home.
+  const impersonating = typeof window !== 'undefined' && !!getImpersonation();
   useEffect(() => {
-    if (!loading && user?.role === 'super_admin') router.replace('/platform');
-  }, [loading, user, router]);
+    if (!loading && user?.role === 'super_admin' && !impersonating) router.replace('/platform');
+  }, [loading, user, impersonating, router]);
 
   // 10-second safety net: if auth never resolves, bail out with an error screen
   // instead of spinning forever.
@@ -102,9 +105,10 @@ export default function Root() {
     return <LandingPage />;
   }
 
-  // super_admin is being redirected to /platform (effect above) — render nothing
-  // rather than flashing the studio dashboard.
-  if (user.role === 'super_admin') {
+  // super_admin (not impersonating) is being redirected to /platform (effect
+  // above) — render nothing rather than flashing the studio dashboard. While
+  // impersonating, fall through and render the studio home as that admin.
+  if (user.role === 'super_admin' && !impersonating) {
     return <div style={{ minHeight: '100dvh', background: 'var(--bg-canvas)' }} />;
   }
 
