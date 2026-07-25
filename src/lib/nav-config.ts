@@ -70,8 +70,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/new-client',       label: 'New Client',         icon: 'UserPlus' },
       { href: '/pt-os/clients',          label: 'All Clients',        icon: 'Users' },
       { href: '/pt-os/balance-sheet',    label: 'Balance Sheet',      icon: 'Wallet' },
-      { href: '/pt-os/goals',            label: 'Goal Setting',       icon: 'Target' },
-      { href: '/pt-os/assessment',       label: 'Fitness Testing',    icon: 'ClipboardCheck' },
     ],
   },
   {
@@ -104,6 +102,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/pt-os/informed-consent',  label: 'Consent',              icon: 'FileSignature',  isNew: true },
       { href: '/pt-os/parq',              label: 'PAR-Q',                icon: 'ShieldCheck',    isNew: true },
+      { href: '/pt-os/goals',             label: 'Goal Setting',         icon: 'Target' },
       { href: '/pt-os/assessment',        label: 'Fitness Testing',      icon: 'ClipboardCheck', isNew: true },
       { href: '/pt-os/lifestyle-assessment', label: 'Lifestyle',         icon: 'HeartPulse',     isNew: true },
       { href: '/pt-os/nutrition-assessment', label: 'Nutrition Assessment', icon: 'Salad',       isNew: true },
