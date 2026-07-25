@@ -124,7 +124,11 @@ export function DonutChart({
             innerRadius={thin ? '70%' : '60%'}
             outerRadius="90%"
             paddingAngle={cleaned.length > 1 ? 2 : 0}
-            stroke="#fff"
+            // The separator ring must be the SURFACE colour, not literal white:
+            // hardcoded #fff is invisible on a light card but draws a glaring
+            // white outline around every segment in dark mode. --bg-elevated is
+            // the solid surface token (#FFFFFF light / #1E293B dark).
+            stroke="var(--bg-elevated)"
             strokeWidth={2}
             isAnimationActive={false}
           >
@@ -155,6 +159,13 @@ export function DonutChart({
               iconType="circle"
               iconSize={8}
               wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+              // Recharts tints legend text with the series colour by default.
+              // Identity is already carried by the coloured icon beside it, and
+              // series-coloured text fails contrast at small sizes, so the label
+              // wears a text token instead.
+              formatter={(value: string) => (
+                <span style={{ color: 'var(--text-secondary)' }}>{value}</span>
+              )}
             />
           )}
         </PieChart>
