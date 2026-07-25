@@ -505,54 +505,6 @@ function RevenueChart({ data }: { data: DashData['revenueTrend'] }) {
   );
 }
 
-// ─── Section 4b — Revenue Composition Donut ────────────────────────────────────
-function RevenueDonut({ net, commission, outstanding }: { net: number; commission: number; outstanding: number }) {
-  const segs = [
-    { label: 'Net', value: Math.max(0, net),         color: C.emerald },
-    { label: 'Comm', value: Math.max(0, commission),  color: C.rose },
-    { label: 'Owed', value: Math.max(0, outstanding), color: C.amber },
-  ];
-  const total = segs.reduce((s, x) => s + x.value, 0) || 1;
-  const R = 44, CIRC = 2 * Math.PI * R;
-  let offset = 0;
-  return (
-    <Glass className="p-4 sm:p-5">
-      <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em] mb-1" style={{ color: C.ink }}>Breakdown</h3>
-      <p className="text-[10.5px] font-[500] mb-4" style={{ color: C.muted }}>This month</p>
-      <div className="flex items-center gap-4">
-        <div className="relative shrink-0" style={{ width: 108, height: 108 }}>
-          <svg width={108} height={108} className="-rotate-90">
-            <circle cx={54} cy={54} r={R} fill="none" stroke="rgba(15,23,42,0.05)" strokeWidth="13" />
-            {segs.map((s, i) => {
-              const len = (s.value / total) * CIRC;
-              const el = (
-                <m.circle key={i} cx={54} cy={54} r={R} fill="none" stroke={s.color} strokeWidth="13"
-                  strokeDasharray={`${len} ${CIRC - len}`} strokeDashoffset={-offset} strokeLinecap="butt"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 + i*0.1, duration: 0.4 }} />
-              );
-              offset += len;
-              return el;
-            })}
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[7.5px] font-[700] uppercase tracking-[0.1em]" style={{ color: C.muted }}>Total</span>
-            <span className="text-[13px] font-[860] tracking-[-0.02em]" style={{ color: C.ink }}>{fmtCompact(total)}</span>
-          </div>
-        </div>
-        <div className="flex-1 space-y-2.5 min-w-0">
-          {segs.map(s => (
-            <div key={s.label} className="flex items-center gap-2 min-w-0">
-              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: s.color }} />
-              <span className="text-[10.5px] font-[600] flex-1 min-w-0 truncate" style={{ color: C.ink }}>{s.label}</span>
-              <span className="text-[11px] font-[820] tabular-nums shrink-0" style={{ color: s.color }}>{fmtCompact(s.value)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Glass>
-  );
-}
-
 // ─── Section 5 — Revenue Intelligence ──────────────────────────────────────────
 function ForecastPanel({ d }: { d: DashData }) {
   const revVals = d.revenueTrend.map(x => Number(x.revenue));
@@ -1157,13 +1109,10 @@ export default function PtOsDashboard() {
             {/* 5 — AI copilot */}
             <AICopilot d={d} />
 
-            {/* 6 — Revenue chart + donut (stacked mobile, 2-col lg+) */}
+            {/* 6 — Revenue chart */}
             <div>
               <SectionLabel>Revenue</SectionLabel>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
-                <div className="lg:col-span-2"><RevenueChart data={d.revenueTrend} /></div>
-                <RevenueDonut net={netRevenue} commission={d.total_monthly_commission} outstanding={d.total_outstanding} />
-              </div>
+              <RevenueChart data={d.revenueTrend} />
             </div>
 
             {/* 7 — Revenue forecast */}
