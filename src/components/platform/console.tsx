@@ -40,18 +40,30 @@ export const EASE_EXPO = [0.16, 1, 0.3, 1] as const;
 export function AmbientField() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+      {/* A tinted canvas. Without this the page is white, the cards are white,
+          and "layered glass" reads as nothing at all on a phone — which is
+          exactly how the first pass failed. The wash gives the surfaces
+          something to sit ON so they read as objects. */}
       <div
-        className="absolute -top-[18%] left-[8%] h-[46vh] w-[46vh] rounded-full"
+        className="absolute inset-0"
         style={{
-          background: 'radial-gradient(circle, var(--brand) 0%, transparent 68%)',
-          opacity: 0.10, filter: 'blur(90px)',
+          background:
+            'linear-gradient(180deg, color-mix(in srgb, var(--brand) 7%, transparent) 0%, transparent 38%),'
+            + 'radial-gradient(120% 70% at 100% 0%, color-mix(in srgb, #8B5CF6 9%, transparent) 0%, transparent 55%)',
         }}
       />
       <div
-        className="absolute bottom-[-14%] right-[4%] h-[40vh] w-[40vh] rounded-full"
+        className="absolute -top-[16%] left-[4%] h-[42vh] w-[42vh] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, var(--brand) 0%, transparent 68%)',
+          opacity: 0.16, filter: 'blur(80px)',
+        }}
+      />
+      <div
+        className="absolute bottom-[-12%] right-[-6%] h-[38vh] w-[38vh] rounded-full"
         style={{
           background: 'radial-gradient(circle, #8B5CF6 0%, transparent 68%)',
-          opacity: 0.09, filter: 'blur(100px)',
+          opacity: 0.14, filter: 'blur(90px)',
         }}
       />
     </div>
@@ -79,13 +91,14 @@ export function Panel({
 }) {
   return (
     <div
-      className={`relative rounded-[18px] ${padded ? 'p-4 sm:p-5' : ''} ${interactive ? 'transition-transform duration-200 hover:-translate-y-0.5' : ''} ${className}`}
+      className={`relative rounded-[16px] sm:rounded-[18px] ${padded ? 'p-3.5 sm:p-5' : ''} ${interactive ? 'transition-transform duration-200 hover:-translate-y-0.5' : ''} ${className}`}
       style={{
-        background: 'var(--bg-card)',
+        // --bg-elevated (solid) rather than --bg-card (translucent): on a
+        // tinted canvas a translucent surface picks up the wash and stops
+        // reading as a distinct object, which is what flattened the first pass.
+        background: 'var(--bg-elevated)',
         border: '1px solid var(--border)',
         boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.06)',
-        backdropFilter: 'blur(18px)',
-        WebkitBackdropFilter: 'blur(18px)',
         ...style,
       }}
     >
@@ -187,11 +200,17 @@ export function SegmentedTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(t.id)}
-            className="relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-[10px] py-2 text-[12.5px] font-[680] transition-colors duration-200"
-            style={{ color: active ? 'var(--text-primary)' : 'var(--text-muted)', minHeight: 40 }}
+            /* Icon stacks above the label on phones and sits beside it from sm
+               up. The label is ALWAYS rendered: an icon-only tab bar is a
+               discoverability regression, and five unlabelled glyphs are not
+               identifiable. */
+            className="relative z-10 flex flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-1 py-1.5 transition-colors duration-200 sm:flex-row sm:gap-1.5 sm:py-2"
+            style={{ color: active ? 'var(--text-primary)' : 'var(--text-muted)', minHeight: 44 }}
           >
             {t.icon}
-            <span className="hidden sm:inline">{t.label}</span>
+            <span className="text-[9.5px] font-[700] leading-tight sm:text-[12.5px] sm:font-[680]">
+              {t.label}
+            </span>
           </button>
         );
       })}
@@ -255,16 +274,16 @@ export function StatTile({
             )}
           </div>
           <p
-            className="tabular-nums"
+            className="tabular-nums text-[23px] sm:text-[26px]"
             style={{
               color: 'var(--text-primary)',
-              fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05,
+              fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05,
             }}
           >
             {value}
           </p>
           {sub && (
-            <p className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>{sub}</p>
+            <p className="mt-1 text-[10.5px] leading-snug sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>{sub}</p>
           )}
         </div>
       </Panel>
@@ -296,13 +315,17 @@ export function ConsoleHeader({
           )}
           <div className="min-w-0">
             <h1
-              className="truncate"
-              style={{ color: 'var(--text-primary)', fontSize: 21, fontWeight: 830, letterSpacing: '-0.022em' }}
+              className="truncate text-[19px] sm:text-[21px]"
+              style={{ color: 'var(--text-primary)', fontWeight: 830, letterSpacing: '-0.022em' }}
             >
               {title}
             </h1>
+            {/* Wraps to two lines on a phone instead of truncating mid-sentence
+                to "…account across …", which told the reader nothing. */}
             {subtitle && (
-              <p className="mt-0.5 truncate text-[12px]" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
+              <p className="mt-0.5 text-[11.5px] leading-snug sm:text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                {subtitle}
+              </p>
             )}
           </div>
         </div>

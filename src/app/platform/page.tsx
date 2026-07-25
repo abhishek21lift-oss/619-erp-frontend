@@ -115,7 +115,13 @@ function PlatformContent() {
       <AmbientField />
       {/* zIndex keeps content above the ambient field without creating a
           stacking context that would trap the app's dropdowns. */}
-      <div className="relative mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8" style={{ zIndex: 1 }}>
+      {/* Bottom padding clears the fixed MobileBottomNav (h-16) plus the home
+          indicator — without it the last row of every tab sat underneath the
+          nav bar and could not be reached. Matches the dashboard's pattern. */}
+      <div
+        className="relative mx-auto w-full max-w-5xl px-4 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-8 lg:pb-10"
+        style={{ zIndex: 1 }}
+      >
         <ConsoleHeader
           icon={<Building2 size={20} />}
           title="Command Centre"
@@ -225,8 +231,11 @@ function BillingTab() {
               <div className="flex flex-wrap items-center gap-3">
                 <StudioMark name={s.name} logoUrl={s.logo_url} size={40} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-[14.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
+                  {/* Wraps rather than truncating: the studio name and its
+                      status badges are the row's identity, and on a phone the
+                      name was being cut to "Abhishek PT …". */}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p className="text-[14.5px] font-[750] leading-tight" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
                     <Badge tone={st.tone}>{st.label}</Badge>
                     {s.is_founder && (
                       <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
@@ -242,7 +251,7 @@ function BillingTab() {
                       </span>
                     )}
                   </div>
-                  <p className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                  <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
                     {s.plan_name || 'No plan'}
                     {expiry ? ` · ${daysLeft != null ? `${daysLeft}d left · ` : ''}ends ${fmtDate(expiry)}` : ' · no expiry'}
                     {' · '}{s.client_count}{s.client_limit != null ? `/${s.client_limit}` : ''} clients
@@ -437,64 +446,108 @@ function OverviewTab() {
 
   const t = data.totals;
   const kpis = [
-    { label: 'Studios', value: String(t.studios), sub: `${t.active_studios} active · ${t.suspended_studios} suspended`, color: '#6366f1', icon: <Building2 size={18} /> },
-    { label: 'Total Revenue', value: fmtINR(t.revenue), sub: `${fmtINR(t.outstanding)} outstanding`, color: '#10b981', icon: <IndianRupee size={18} /> },
-    { label: 'Active Clients', value: String(t.active_clients), sub: `${t.total_clients} total`, color: '#f59e0b', icon: <Users size={18} /> },
-    { label: 'Sessions (mo)', value: String(t.sessions_this_month), sub: 'this month', color: '#ec4899', icon: <Clock size={18} /> },
+    { label: 'Studios', value: String(t.studios), sub: `${t.active_studios} active · ${t.suspended_studios} suspended`, tone: 'brand' as const, icon: <Building2 size={15} /> },
+    { label: 'Total Revenue', value: fmtINR(t.revenue), sub: `${fmtINR(t.outstanding)} outstanding`, tone: 'positive' as const, icon: <IndianRupee size={15} /> },
+    { label: 'Active Clients', value: String(t.active_clients), sub: `${t.total_clients} total`, tone: 'caution' as const, icon: <Users size={15} /> },
+    { label: 'Sessions (mo)', value: String(t.sessions_this_month), sub: 'this month', tone: 'neutral' as const, icon: <Clock size={15} /> },
   ];
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {kpis.map((k) => (
-          <div key={k.label} className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div className="mb-2 flex items-center gap-2" style={{ color: k.color }}>{k.icon}
-              <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{k.label}</span>
-            </div>
-            <p className="text-[24px] font-[840] tabular-nums" style={{ color: 'var(--text-primary)' }}>{k.value}</p>
-            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
-          </div>
-        ))}
+      <div>
+        <SectionLabel>Platform</SectionLabel>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {kpis.map((k, i) => (
+            <StatTile key={k.label} label={k.label} value={k.value} sub={k.sub}
+              icon={k.icon} tone={k.tone} delay={i * 0.04} />
+          ))}
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-[16px]" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
-          <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>Studios at a glance</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[12.5px]">
-            <thead>
-              <tr style={{ color: 'var(--text-muted)' }}>
-                <th className="px-4 py-2.5 font-[650]">Studio</th>
-                <th className="px-3 py-2.5 text-right font-[650]">Revenue</th>
-                <th className="px-3 py-2.5 text-right font-[650]">Clients</th>
-                <th className="px-3 py-2.5 text-right font-[650]">Sessions</th>
-                <th className="px-3 py-2.5 font-[650]">Last active</th>
-                <th className="px-4 py-2.5 font-[650]">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.studios.map((s: StudioOverview) => (
-                <tr key={s.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <StudioMark name={s.name} logoUrl={s.logo_url} size={28} />
-                      <span className="font-[650]" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
+      <div>
+        <SectionLabel hint={`${data.studios.length} total`}>Studios</SectionLabel>
+
+        {data.studios.length === 0 ? (
+          <Panel><p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No studios yet.</p></Panel>
+        ) : (
+          <>
+            {/* Phones get cards, not a table. The six-column table overflowed
+                its container on a 390pt screen — the Sessions and Status
+                columns were simply cut off with no scroll affordance. */}
+            <div className="space-y-2.5 lg:hidden">
+              {data.studios.map((s: StudioOverview, i: number) => (
+                <Reveal key={s.id} delay={0.04 + i * 0.03}>
+                  <Panel>
+                    <div className="flex items-start gap-3">
+                      <StudioMark name={s.name} logoUrl={s.logo_url} size={34} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          {/* Wraps rather than truncating — a studio name is
+                              the row's identity and must stay readable. */}
+                          <span className="text-[13px] font-[720] leading-tight" style={{ color: 'var(--text-primary)' }}>
+                            {s.name}
+                          </span>
+                          <Badge tone={s.status === 'suspended' ? 'danger' : 'success'}>{s.status}</Badge>
+                        </div>
+                        <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                          {fmtWhen(s.last_login)}
+                        </p>
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-3 py-3 text-right tabular-nums font-[650]" style={{ color: 'var(--text-primary)' }}>{fmtINR(s.revenue)}</td>
-                  <td className="px-3 py-3 text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>{s.active_clients}<span style={{ color: 'var(--text-disabled)' }}>/{s.total_clients}</span></td>
-                  <td className="px-3 py-3 text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>{s.sessions_this_month}</td>
-                  <td className="px-3 py-3" style={{ color: 'var(--text-muted)' }}>{fmtWhen(s.last_login)}</td>
-                  <td className="px-4 py-3"><Badge tone={s.status === 'suspended' ? 'danger' : 'success'}>{s.status}</Badge></td>
-                </tr>
+                    <div className="mt-3 grid grid-cols-3 gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                      {[
+                        { k: 'Revenue', v: fmtINR(s.revenue) },
+                        { k: 'Clients', v: `${s.active_clients}/${s.total_clients}` },
+                        { k: 'Sessions', v: String(s.sessions_this_month) },
+                      ].map((c) => (
+                        <div key={c.k}>
+                          <p className="text-[9px] font-[750] uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{c.k}</p>
+                          <p className="mt-0.5 text-[13.5px] font-[780] tabular-nums" style={{ color: 'var(--text-primary)' }}>{c.v}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </Panel>
+                </Reveal>
               ))}
-              {data.studios.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>No studios yet.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            {/* Desktop keeps the dense table — it is the better tool when the
+                width is actually there. */}
+            <Reveal delay={0.06} className="hidden lg:block">
+              <Panel padded={false} className="overflow-hidden">
+                <table className="w-full text-left text-[12.5px]">
+                  <thead>
+                    <tr style={{ color: 'var(--text-muted)' }}>
+                      <th className="px-4 py-3 font-[700]">Studio</th>
+                      <th className="px-3 py-3 text-right font-[700]">Revenue</th>
+                      <th className="px-3 py-3 text-right font-[700]">Clients</th>
+                      <th className="px-3 py-3 text-right font-[700]">Sessions</th>
+                      <th className="px-3 py-3 font-[700]">Last active</th>
+                      <th className="px-4 py-3 font-[700]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.studios.map((s: StudioOverview) => (
+                      <tr key={s.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <StudioMark name={s.name} logoUrl={s.logo_url} size={28} />
+                            <span className="font-[680]" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-right tabular-nums font-[680]" style={{ color: 'var(--text-primary)' }}>{fmtINR(s.revenue)}</td>
+                        <td className="px-3 py-3 text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>{s.active_clients}<span style={{ color: 'var(--text-disabled)' }}>/{s.total_clients}</span></td>
+                        <td className="px-3 py-3 text-right tabular-nums" style={{ color: 'var(--text-secondary)' }}>{s.sessions_this_month}</td>
+                        <td className="px-3 py-3" style={{ color: 'var(--text-muted)' }}>{fmtWhen(s.last_login)}</td>
+                        <td className="px-4 py-3"><Badge tone={s.status === 'suspended' ? 'danger' : 'success'}>{s.status}</Badge></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Panel>
+            </Reveal>
+          </>
+        )}
       </div>
     </div>
   );
@@ -882,14 +935,17 @@ function CouponsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      {/* Wraps on narrow screens — the action previously sat on the same row as
+          a long paragraph and was clipped to "New coup…" on a phone. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1" style={{ minWidth: 220 }}>
           <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>Discount coupons</p>
           <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
             Applied at activation. Redemption counts come from the ledger, so they always reconcile with payments.
           </p>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)} iconLeft={<Plus size={14} />}>
+        <Button className="w-full shrink-0 sm:w-auto"
+          onClick={() => setShowForm((v) => !v)} iconLeft={<Plus size={14} />}>
           {showForm ? 'Close' : 'New coupon'}
         </Button>
       </div>
