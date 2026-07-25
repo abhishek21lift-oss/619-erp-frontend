@@ -21,21 +21,22 @@ export function useTheme() {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Starts 'light' on both server and first client render so hydration matches,
+  // then syncs below. This is only the CONTEXT value — the actual class on
+  // <html> is already correct before first paint, applied by the blocking
+  // script in layout.tsx, so there is no visual flash while this catches up.
   const [theme, setThemeState] = useState<Theme>('light');
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    const initial = stored || preferred;
-    setThemeState(initial);
-    document.documentElement.classList.toggle('dark', initial === 'dark');
-    setMounted(true);
+    // Read back what the pre-paint script resolved rather than resolving again,
+    // so the context can never disagree with what is actually on screen.
+    const applied: Theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    setThemeState(applied);
   }, []);
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
-    localStorage.setItem('theme', t);
+    try { localStorage.setItem('theme', t); } catch { /* private mode */ }
     document.documentElement.classList.toggle('dark', t === 'dark');
   }, []);
 
@@ -43,10 +44,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme(theme === 'light' ? 'dark' : 'light');
   }, [theme, setTheme]);
 
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
+  // Always render the Provider. Previously this returned a bare fragment until
+  // mounted, which changed the tree shape between the server render and the
+  // client, and left every useTheme() consumer reading the default context
+  // (always 'light') during that window.
   return (
     <ThemeContext.Provider value={{ theme, toggle, setTheme }}>
       {children}
