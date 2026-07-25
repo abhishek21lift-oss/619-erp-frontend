@@ -10,7 +10,7 @@
  * (disabled under prefers-reduced-motion).
  */
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -247,12 +247,31 @@ const TESTIMONIALS = [
   { q: 'For the first time I can see my whole business at a glance. Revenue, attendance, dues — it is all just there.', n: 'Founder', r: 'Strength & Conditioning Gym' },
 ];
 
-const PRICING = [
-  { name: 'Starter', price: '₹999', per: '/mo', tag: 'For solo trainers getting started', feats: ['Up to 30 clients', 'Client CRM & profiles', 'Workout & nutrition builder', 'Payments & invoices', 'Mobile app access'], cta: 'Start free', highlight: false },
-  { name: 'Professional', price: '₹2,499', per: '/mo', tag: 'For growing independent coaches', feats: ['Up to 150 clients', 'Everything in Starter', 'Progress & body composition', 'Automation & reminders', 'Reports & analytics', 'Priority support'], cta: 'Start free', highlight: true },
-  { name: 'Studio', price: '₹5,999', per: '/mo', tag: 'For multi-trainer studios & gyms', feats: ['Unlimited clients', 'Everything in Professional', 'Multi-trainer & permissions', 'Attendance & check-in', 'Commission tracking', 'AI assistant'], cta: 'Start free', highlight: false },
-  { name: 'Enterprise', price: 'Custom', per: '', tag: 'For chains & academies', feats: ['Multiple studios', 'Multi-tenant isolation', 'Custom onboarding', 'Dedicated success manager', 'SLA & security review'], cta: 'Book a demo', highlight: false },
-];
+/**
+ * Feature bullets per plan. These are marketing copy and stay hardcoded, but
+ * the NAME, PRICE, TERM and CLIENT LIMIT all come from the live plan catalogue —
+ * they are commercial promises and must match what checkout actually charges.
+ *
+ * This page previously hardcoded its own price list, which had drifted badly:
+ * it advertised ₹999/mo for 30 clients while the system charges ₹1,499/mo with
+ * a 5-client cap, and listed two plans ("Studio", "Enterprise") that do not
+ * exist. Anyone signing up was being quoted a price the product could not
+ * honour, so pricing is now read from the same source of truth as billing.
+ */
+const PLAN_FEATURES: Record<string, string[]> = {
+  starter: ['Client CRM & profiles', 'Workout & nutrition builder', 'Payments & invoices', 'Mobile app access'],
+  growth: ['Everything in Starter', 'Progress & body composition', 'Automation & reminders', 'Reports & analytics'],
+  professional: ['Everything in Growth', 'Attendance & check-in', 'Commission tracking', 'Priority support'],
+  elite: ['Everything in Professional', 'Multi-trainer & permissions', 'AI assistant', 'Dedicated onboarding'],
+};
+
+const HIGHLIGHT_PLAN = 'professional';
+
+function planTerm(months: number): string {
+  if (months === 1) return '/mo';
+  if (months === 12) return '/yr';
+  return `/${months} mo`;
+}
 
 const FAQ = [
   { q: 'What is MY PT STUDIO?', a: 'A complete operating system for fitness professionals — CRM, workout and nutrition builders, attendance, progress tracking, payments and analytics in one platform, so you can run your entire business from a single place.' },
@@ -264,8 +283,58 @@ const FAQ = [
 ];
 
 // ── Page ────────────────────────────────────────────────────────────────────
+type PublicPlan = {
+  code: string; name: string; price_inr: number; effective_price_inr: number;
+  is_launch: boolean; duration_months: number; client_limit: number | null; best_for: string | null;
+};
+type PublicStats = { studios: number; trainers: number; active_clients: number; sessions_completed: number };
+
 export default function LandingPage() {
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
+  const [plans, setPlans] = useState<PublicPlan[]>([]);
+  const [founderSlots, setFounderSlots] = useState<number | null>(null);
+  const [trialDays, setTrialDays] = useState(7);
+  const [stats, setStats] = useState<PublicStats | null>(null);
+
+  // Public, unauthenticated endpoints. Failures are swallowed on purpose: the
+  // marketing page must still render if the API is cold or unreachable, it just
+  // renders without live figures rather than with invented ones.
+  useEffect(() => {
+    const base = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
+    const url = (p: string) =>
+      (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
+        ? p : `${base}${p}`;
+
+    fetch(url('/api/public/plans'))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!j?.data) return;
+        setPlans(j.data.plans ?? []);
+        setFounderSlots(j.data.founder_slots_remaining ?? null);
+        if (j.data.trial_days) setTrialDays(j.data.trial_days);
+      })
+      .catch(() => {});
+
+    fetch(url('/api/public/stats'))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.data) setStats(j.data); })
+      .catch(() => {});
+  }, []);
+
+  // Only state a number once it actually says something. The previous band
+  // claimed 12k+ coaches / 1.4M clients / 9M sessions / 40+ countries against a
+  // real platform of 3 studios — publishing "0 sessions tracked" instead would
+  // be honest but no better, so the band simply hides until the figures earn
+  // their place.
+  const statBand = stats
+    ? ([
+      ['Studios', stats.studios],
+      ['Coaches', stats.trainers],
+      ['Clients managed', stats.active_clients],
+      ['Sessions delivered', stats.sessions_completed],
+    ] as const).filter(([, v]) => v > 0)
+    : [];
+  const showStats = stats != null && stats.studios >= 25;
 
   return (
     <div className="relative min-h-screen" style={{ background: '#fff', color: INK }}>
@@ -368,14 +437,23 @@ export default function LandingPage() {
               <span key={b} className="text-[15px] font-[820] tracking-tight" style={{ color: INK, opacity: 0.42 }}>{b}</span>
             ))}
           </div>
-          <div className="mx-auto mt-10 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
-            {[['12k+', 'Active coaches'], ['1.4M+', 'Clients managed'], ['9M+', 'Sessions tracked'], ['40+', 'Countries']].map(([v, l]) => (
-              <div key={l} className="text-center">
-                <div className="text-[28px] font-[850] tracking-tight" style={gradText}>{v}</div>
-                <div className="text-[12px] font-[600]" style={{ color: MUTE }}>{l}</div>
-              </div>
-            ))}
-          </div>
+          {/* Live platform figures, shown only once they are worth stating.
+              This band previously read "12k+ active coaches · 1.4M+ clients
+              managed · 9M+ sessions tracked · 40+ countries" against a platform
+              of three studios — none of it measured, and "countries" is not
+              even a field the schema records. */}
+          {showStats && statBand.length > 0 && (
+            <div className="mx-auto mt-10 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+              {statBand.map(([l, v]) => (
+                <div key={l} className="text-center">
+                  <div className="text-[28px] font-[850] tracking-tight tabular-nums" style={gradText}>
+                    {v.toLocaleString('en-IN')}
+                  </div>
+                  <div className="text-[12px] font-[600]" style={{ color: MUTE }}>{l}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </Reveal>
       </Section>
 
@@ -548,40 +626,81 @@ export default function LandingPage() {
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>Simple, scalable pricing</Eyebrow>
           <h2 className="mt-5 text-[30px] font-[820] leading-tight tracking-[-0.02em] sm:text-[42px]">Pricing that grows <span style={gradText}>with your studio.</span></h2>
-          <p className="mt-4 text-[16px]" style={{ color: MUTE }}>Start free. Upgrade when you're ready. No lock-in.</p>
+          <p className="mt-4 text-[16px]" style={{ color: MUTE }}>
+            Every plan starts with a {trialDays}-day free trial. No card required, no lock-in.
+          </p>
+          {founderSlots != null && founderSlots > 0 && (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-[700]"
+              style={{ background: `${GOLD}22`, color: MAROON_DEEP }}>
+              <Star size={13} /> Founder&apos;s Club — {founderSlots} lifetime-locked {founderSlots === 1 ? 'place' : 'places'} left
+            </p>
+          )}
         </Reveal>
-        <div className="mt-12 grid gap-5 lg:grid-cols-4">
-          {PRICING.map((p, i) => (
-            <Reveal key={p.name} delay={i * 0.05}>
-              <div className="relative flex h-full flex-col rounded-3xl p-6"
-                style={p.highlight
-                  ? { background: `linear-gradient(160deg, ${MAROON} 0%, ${MAROON_DEEP} 92%)`, color: '#fff', boxShadow: `0 30px 60px -26px ${MAROON}99`, border: '1px solid transparent' }
-                  : { background: '#fff', border: '1px solid rgba(0,0,0,0.08)' }}>
-                {p.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10.5px] font-[800] uppercase tracking-wide" style={{ background: GOLD, color: MAROON_DEEP }}>Most popular</span>
-                )}
-                <div className="text-[15px] font-[780]" style={{ color: p.highlight ? '#fff' : INK }}>{p.name}</div>
-                <div className="mt-1 text-[12px]" style={{ color: p.highlight ? 'rgba(255,255,255,0.7)' : MUTE }}>{p.tag}</div>
-                <div className="mt-4 flex items-end gap-1">
-                  <span className="text-[32px] font-[860] tracking-tight" style={{ color: p.highlight ? '#fff' : INK }}>{p.price}</span>
-                  <span className="pb-1.5 text-[13px]" style={{ color: p.highlight ? 'rgba(255,255,255,0.7)' : MUTE }}>{p.per}</span>
-                </div>
-                <Link href="/login" className="mt-5 inline-flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13.5px] font-[720] transition-transform hover:-translate-y-0.5"
-                  style={p.highlight ? { background: GOLD, color: MAROON_DEEP } : { background: MAROON, color: '#fff' }}>
-                  {p.cta} <ArrowRight size={15} />
-                </Link>
-                <ul className="mt-6 space-y-2.5">
-                  {p.feats.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[13px]" style={{ color: p.highlight ? 'rgba(255,255,255,0.92)' : INK }}>
-                      <Check size={15} className="mt-0.5 shrink-0" style={{ color: p.highlight ? GOLD_HI : '#0E9F6E' }} />
-                      <span style={{ opacity: p.highlight ? 1 : 0.82 }}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+
+        {/* Rendered from the live catalogue. If it cannot be reached the section
+            shows nothing rather than falling back to stale hardcoded prices. */}
+        {plans.length === 0 ? (
+          <p className="mt-12 text-center text-[14px]" style={{ color: MUTE }}>
+            Plan pricing is loading — or <Link href="/login" className="underline" style={{ color: MAROON }}>sign in</Link> to see your options.
+          </p>
+        ) : (
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {plans.map((p, i) => {
+              const highlight = p.code === HIGHLIGHT_PLAN;
+              const limit = p.client_limit == null ? 'Unlimited active clients' : `Up to ${p.client_limit} active clients`;
+              const feats = [limit, ...(PLAN_FEATURES[p.code] ?? [])];
+              return (
+                <Reveal key={p.code} delay={i * 0.05}>
+                  <div className="relative flex h-full flex-col rounded-3xl p-6"
+                    style={highlight
+                      ? { background: `linear-gradient(160deg, ${MAROON} 0%, ${MAROON_DEEP} 92%)`, color: '#fff', boxShadow: `0 30px 60px -26px ${MAROON}99`, border: '1px solid transparent' }
+                      : { background: '#fff', border: '1px solid rgba(0,0,0,0.08)' }}>
+                    {highlight && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10.5px] font-[800] uppercase tracking-wide" style={{ background: GOLD, color: MAROON_DEEP }}>Most popular</span>
+                    )}
+                    {p.is_launch && !highlight && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10.5px] font-[800] uppercase tracking-wide" style={{ background: GOLD, color: MAROON_DEEP }}>Launch offer</span>
+                    )}
+                    <div className="text-[15px] font-[780]" style={{ color: highlight ? '#fff' : INK }}>{p.name}</div>
+                    <div className="mt-1 text-[12px]" style={{ color: highlight ? 'rgba(255,255,255,0.7)' : MUTE }}>{p.best_for}</div>
+                    <div className="mt-4 flex items-end gap-1.5">
+                      <span className="text-[32px] font-[860] tracking-tight" style={{ color: highlight ? '#fff' : INK }}>
+                        ₹{p.effective_price_inr.toLocaleString('en-IN')}
+                      </span>
+                      <span className="pb-1.5 text-[13px]" style={{ color: highlight ? 'rgba(255,255,255,0.7)' : MUTE }}>
+                        {planTerm(p.duration_months)}
+                      </span>
+                    </div>
+                    {/* Struck-through list price only when a launch discount is
+                        genuinely active — never as a permanent fake anchor. */}
+                    {p.is_launch && p.effective_price_inr < p.price_inr && (
+                      <div className="mt-0.5 text-[12.5px]">
+                        <span className="line-through" style={{ color: highlight ? 'rgba(255,255,255,0.6)' : MUTE }}>
+                          ₹{p.price_inr.toLocaleString('en-IN')}
+                        </span>
+                        <span className="ml-1.5 font-[700]" style={{ color: highlight ? GOLD_HI : '#0E9F6E' }}>
+                          save ₹{(p.price_inr - p.effective_price_inr).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+                    <Link href="/login" className="mt-5 inline-flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[13.5px] font-[720] transition-transform hover:-translate-y-0.5"
+                      style={highlight ? { background: GOLD, color: MAROON_DEEP } : { background: MAROON, color: '#fff' }}>
+                      Start {trialDays}-day trial <ArrowRight size={15} />
+                    </Link>
+                    <ul className="mt-6 space-y-2.5">
+                      {feats.map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-[13px]" style={{ color: highlight ? 'rgba(255,255,255,0.92)' : INK }}>
+                          <Check size={15} className="mt-0.5 shrink-0" style={{ color: highlight ? GOLD_HI : '#0E9F6E' }} />
+                          <span style={{ opacity: highlight ? 1 : 0.82 }}>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+        )}
       </Section>
 
       {/* ── FAQ ── */}
