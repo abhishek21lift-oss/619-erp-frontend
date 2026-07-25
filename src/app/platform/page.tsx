@@ -9,6 +9,8 @@
 //   Activity — platform-wide audit feed
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+// `m`, not `motion` — AppShell mounts LazyMotion in strict mode.
+import { m } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import {
   Building2, Plus, Loader2, ShieldAlert, Users, Dumbbell, UserCircle,
@@ -26,6 +28,9 @@ import type {
   PlatformOverview, StudioOverview, ActivityEntry,
   SubStudio, SubKpis, SubDetail, SubPlan, SubscriptionMetrics, Coupon,
 } from '@/lib/api';
+import {
+  AmbientField, ConsoleHeader, SegmentedTabs, Panel, StatTile, Reveal, SectionLabel,
+} from '@/components/platform/console';
 import { setImpersonation, getImpersonation } from '@/lib/http';
 import { clearCachedAuthUser } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -106,38 +111,34 @@ function PlatformContent() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-      {/* Header */}
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-[14px]"
-          style={{ background: 'linear-gradient(135deg,#0f172a,#334155)' }}>
-          <Building2 size={20} color="#fff" />
-        </div>
-        <div>
-          <h1 className="text-[20px] font-[840] tracking-tight" style={{ color: 'var(--text-primary)' }}>Command Centre</h1>
-          <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>Manage every studio, admin, and account across the platform</p>
+    <>
+      <AmbientField />
+      {/* zIndex keeps content above the ambient field without creating a
+          stacking context that would trap the app's dropdowns. */}
+      <div className="relative mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8" style={{ zIndex: 1 }}>
+        <ConsoleHeader
+          icon={<Building2 size={20} />}
+          title="Command Centre"
+          subtitle="Manage every studio, admin, and account across the platform"
+        />
+
+        <Reveal delay={0.06}>
+          <div className="mb-6">
+            <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} />
+          </div>
+        </Reveal>
+
+        {/* Keyed so switching tabs replays the stagger — it reads as the panel
+            being assembled rather than content silently swapping underneath. */}
+        <div key={tab}>
+          {tab === 'overview' && <OverviewTab />}
+          {tab === 'studios' && <StudiosTab />}
+          {tab === 'billing' && <BillingTab />}
+          {tab === 'coupons' && <CouponsTab />}
+          {tab === 'activity' && <ActivityTab />}
         </div>
       </div>
-
-      {/* Tabs */}
-      <div className="mb-6 flex gap-1.5 rounded-[14px] p-1" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] py-2 text-[12.5px] font-[700] transition"
-            style={tab === t.id
-              ? { background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }
-              : { color: 'var(--text-muted)' }}>
-            {t.icon} {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'overview' && <OverviewTab />}
-      {tab === 'studios' && <StudiosTab />}
-      {tab === 'billing' && <BillingTab />}
-      {tab === 'coupons' && <CouponsTab />}
-      {tab === 'activity' && <ActivityTab />}
-    </div>
+    </>
   );
 }
 
@@ -192,28 +193,26 @@ function BillingTab() {
   if (error) return <ErrorState error={error} onRetry={load} />;
 
   const kpiCards = kpis ? [
-    { label: 'Revenue', value: fmtINR(kpis.total_revenue), sub: `${fmtINR(kpis.revenue_this_month)} this month`, color: '#10b981', icon: <IndianRupee size={18} /> },
-    { label: 'Active', value: String(kpis.active), sub: `${kpis.trial} on trial`, color: '#6366f1', icon: <CreditCard size={18} /> },
-    { label: 'Frozen', value: String(kpis.frozen), sub: 'need payment', color: '#ef4444', icon: <Snowflake size={18} /> },
+    { label: 'Revenue', value: fmtINR(kpis.total_revenue), sub: `${fmtINR(kpis.revenue_this_month)} this month`, tone: 'positive' as const, icon: <IndianRupee size={15} /> },
+    { label: 'Active', value: String(kpis.active), sub: `${kpis.trial} on trial`, tone: 'brand' as const, icon: <CreditCard size={15} /> },
+    { label: 'Frozen', value: String(kpis.frozen), sub: 'need payment', tone: 'critical' as const, icon: <Snowflake size={15} /> },
     // Founder cap comes from the API — it used to be hardcoded to 50 and is now 20.
-    { label: 'Founders', value: `${kpis.founders}${metrics ? `/${metrics.founders.limit}` : ''}`, sub: `${kpis.founder_slots_remaining} slots left`, color: '#f59e0b', icon: <Crown size={18} /> },
+    { label: 'Founders', value: `${kpis.founders}${metrics ? `/${metrics.founders.limit}` : ''}`, sub: `${kpis.founder_slots_remaining} slots left`, tone: 'caution' as const, icon: <Crown size={15} /> },
   ] : [];
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {kpiCards.map((k) => (
-          <div key={k.label} className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div className="mb-2 flex items-center gap-2" style={{ color: k.color }}>{k.icon}
-              <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{k.label}</span>
-            </div>
-            <p className="text-[22px] font-[840] tabular-nums" style={{ color: 'var(--text-primary)' }}>{k.value}</p>
-            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{k.sub}</p>
-          </div>
-        ))}
+      <div>
+        <SectionLabel>Platform</SectionLabel>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {kpiCards.map((k, i) => (
+            <StatTile key={k.label} label={k.label} value={k.value} sub={k.sub}
+              icon={k.icon} tone={k.tone} delay={i * 0.04} />
+          ))}
+        </div>
       </div>
 
-      {metrics && <SaasMetrics m={metrics} />}
+      {metrics && <SaasMetrics data={metrics} />}
 
       <div className="space-y-3">
         {studios.map((s) => {
@@ -1126,99 +1125,114 @@ function CouponForm({ plans, onCreated }: { plans: SubPlan[]; onCreated: () => v
 // MRR/ARR are a RUN-RATE (recurring price normalised to one month), not cash
 // collected — the revenue trend below is the cash side. Labelling both clearly
 // matters: conflating them is the classic SaaS reporting mistake.
-function SaasMetrics({ m }: { m: SubscriptionMetrics }) {
-  const maxRevenue = Math.max(1, ...m.revenue_trend.map((r) => r.revenue_inr));
-  const planned = m.plan_distribution.filter((p) => p.studios > 0);
+function SaasMetrics({ data }: { data: SubscriptionMetrics }) {
+  const maxRevenue = Math.max(1, ...data.revenue_trend.map((r) => r.revenue_inr));
+  const planned = data.plan_distribution.filter((p) => p.studios > 0);
   const totalPlanned = planned.reduce((s, p) => s + p.studios, 0);
 
   const tiles = [
-    { label: 'MRR', value: fmtINR(m.mrr_inr), sub: 'recurring run-rate', color: '#10b981' },
-    { label: 'ARR', value: fmtINR(m.arr_inr), sub: 'MRR × 12', color: '#6366f1' },
-    { label: 'ARPU', value: fmtINR(m.arpu_inr), sub: `${m.paying_studios} paying`, color: '#0ea5e9' },
+    { label: 'MRR', value: fmtINR(data.mrr_inr), sub: 'recurring run-rate', tone: 'positive' as const },
+    { label: 'ARR', value: fmtINR(data.arr_inr), sub: 'MRR × 12', tone: 'brand' as const },
+    { label: 'ARPU', value: fmtINR(data.arpu_inr), sub: `${data.paying_studios} paying`, tone: 'neutral' as const },
     {
       label: 'Trial → paid',
-      value: m.trial_conversion.rate_pct == null ? '—' : `${m.trial_conversion.rate_pct}%`,
-      sub: m.trial_conversion.started > 0
-        ? `${m.trial_conversion.converted} of ${m.trial_conversion.started} trials`
+      value: data.trial_conversion.rate_pct == null ? '—' : `${data.trial_conversion.rate_pct}%`,
+      sub: data.trial_conversion.started > 0
+        ? `${data.trial_conversion.converted} of ${data.trial_conversion.started} trials`
         : 'no trials yet',
-      color: '#f59e0b',
+      tone: 'caution' as const,
     },
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {tiles.map((t) => (
-          <div key={t.label} className="rounded-[16px] p-4"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t.label}</span>
-            <p className="mt-1.5 text-[22px] font-[840] tabular-nums" style={{ color: t.color }}>{t.value}</p>
-            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{t.sub}</p>
-          </div>
-        ))}
+    <div className="space-y-5">
+      <div>
+        <SectionLabel hint="run-rate, not cash">Recurring</SectionLabel>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {tiles.map((t, i) => (
+            <StatTile key={t.label} label={t.label} value={t.value} sub={t.sub} tone={t.tone} delay={i * 0.04} />
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Cash collected — distinct from the run-rate above. */}
-        <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <p className="text-[12px] font-[750]" style={{ color: 'var(--text-primary)' }}>Revenue collected</p>
-          <p className="mb-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>Cash in, last 12 months</p>
-          {m.revenue_trend.length === 0 ? (
-            <p className="py-6 text-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No payments recorded yet</p>
-          ) : (
-            <div className="flex items-end gap-1.5" style={{ height: 120 }}>
-              {m.revenue_trend.map((r) => (
-                <div key={r.month} className="flex flex-1 flex-col items-center gap-1.5" title={`${r.label}: ${fmtINR(r.revenue_inr)} (${r.payments} payments)`}>
-                  <div className="w-full rounded-t-[4px]"
-                    style={{ height: `${Math.max((r.revenue_inr / maxRevenue) * 96, 2)}px`, background: '#10b981' }} />
-                  <span className="text-[8.5px]" style={{ color: 'var(--text-muted)' }}>{r.label.slice(0, 3)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <Reveal delay={0.08}>
+          <Panel className="h-full">
+            <p className="text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>Revenue collected</p>
+            <p className="mb-3.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>Cash in, last 12 months</p>
+            {data.revenue_trend.length === 0 ? (
+              <p className="py-8 text-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No payments recorded yet</p>
+            ) : (
+              <div className="flex items-end gap-1.5" style={{ height: 124 }}>
+                {data.revenue_trend.map((r, i) => (
+                  <div key={r.month} className="group flex flex-1 flex-col items-center gap-1.5"
+                    title={`${r.label}: ${fmtINR(r.revenue_inr)} (${r.payments} payments)`}>
+                    <m.div
+                      className="w-full rounded-t-[4px]"
+                      style={{
+                        background: 'linear-gradient(180deg, #34D399 0%, #10B981 100%)',
+                        transformOrigin: 'bottom',
+                      }}
+                      initial={{ height: 2 }}
+                      animate={{ height: `${Math.max((r.revenue_inr / maxRevenue) * 96, 2)}px` }}
+                      transition={{ duration: 0.5, delay: 0.12 + i * 0.03, ease: [0.16, 1, 0.3, 1] }}
+                    />
+                    <span className="text-[8.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.label.slice(0, 3)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+        </Reveal>
 
         {/* Where the run-rate actually comes from. */}
-        <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <p className="text-[12px] font-[750]" style={{ color: 'var(--text-primary)' }}>Plan distribution</p>
-          <p className="mb-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>Paying studios by plan</p>
-          {planned.length === 0 ? (
-            <p className="py-6 text-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No studios on a paid plan yet</p>
-          ) : (
-            <div className="space-y-2.5">
-              {planned.map((p) => (
-                <div key={p.code}>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>{p.name}</span>
-                    <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                      {p.studios} · {fmtINR(p.mrr_inr)}/mo
-                    </span>
+        <Reveal delay={0.12}>
+          <Panel className="h-full">
+            <p className="text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>Plan distribution</p>
+            <p className="mb-3.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>Paying studios by plan</p>
+            {planned.length === 0 ? (
+              <p className="py-8 text-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No studios on a paid plan yet</p>
+            ) : (
+              <div className="space-y-3">
+                {planned.map((p, i) => (
+                  <div key={p.code}>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-[12px] font-[680]" style={{ color: 'var(--text-primary)' }}>{p.name}</span>
+                      <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                        {p.studios} · {fmtINR(p.mrr_inr)}/mo
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
+                      <m.div className="h-full rounded-full"
+                        style={{ background: 'linear-gradient(90deg, var(--brand), #8B5CF6)' }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${totalPlanned > 0 ? (p.studios / totalPlanned) * 100 : 0}%` }}
+                        transition={{ duration: 0.55, delay: 0.16 + i * 0.05, ease: [0.16, 1, 0.3, 1] }} />
+                    </div>
                   </div>
-                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
-                    <div className="h-full rounded-full"
-                      style={{ width: `${totalPlanned > 0 ? (p.studios / totalPlanned) * 100 : 0}%`, background: '#6366f1' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+        </Reveal>
       </div>
 
       {/* Lifecycle spread — timestamp-aware, so a lapsed row the worker has not
           swept yet still reports as lapsed rather than active. */}
-      <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        <p className="mb-3 text-[12px] font-[750]" style={{ color: 'var(--text-primary)' }}>Lifecycle</p>
+      <Reveal delay={0.16}>
+      <Panel>
+        <p className="mb-3 text-[12.5px] font-[760]" style={{ color: 'var(--text-primary)' }}>Lifecycle</p>
         <div className="flex flex-wrap gap-2">
           {([
-            ['Active', m.states.active, '#10b981'],
-            ['On trial', m.states.on_trial, '#f59e0b'],
-            ['Trial lapsed', m.states.trial_lapsed, '#f97316'],
-            ['Lapsed', m.states.lapsed, '#ef4444'],
-            ['Frozen', m.states.frozen, '#ef4444'],
-            ['Expired', m.states.expired, '#94a3b8'],
-            ['Cancelled', m.states.cancelled, '#94a3b8'],
-            ['Suspended', m.states.suspended, '#7c3aed'],
+            ['Active', data.states.active, '#10b981'],
+            ['On trial', data.states.on_trial, '#f59e0b'],
+            ['Trial lapsed', data.states.trial_lapsed, '#f97316'],
+            ['Lapsed', data.states.lapsed, '#ef4444'],
+            ['Frozen', data.states.frozen, '#ef4444'],
+            ['Expired', data.states.expired, '#94a3b8'],
+            ['Cancelled', data.states.cancelled, '#94a3b8'],
+            ['Suspended', data.states.suspended, '#7c3aed'],
           ] as const).filter(([, n]) => n > 0).map(([label, n, colour]) => (
             <span key={label} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
               style={{ background: `${colour}18`, color: colour }}>
@@ -1227,10 +1241,11 @@ function SaasMetrics({ m }: { m: SubscriptionMetrics }) {
           ))}
           <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
             style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-            Founders <strong className="tabular-nums">{m.founders.granted}/{m.founders.limit}</strong>
+            Founders <strong className="tabular-nums">{data.founders.granted}/{data.founders.limit}</strong>
           </span>
         </div>
-      </div>
+      </Panel>
+      </Reveal>
     </div>
   );
 }
