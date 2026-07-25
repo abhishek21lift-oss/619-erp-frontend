@@ -14,7 +14,7 @@ import {
   Building2, Plus, Loader2, ShieldAlert, Users, Dumbbell, UserCircle,
   KeyRound, Power, X, Copy, RefreshCw, ChevronDown, ImagePlus,
   LayoutDashboard, Activity, LogIn, Pencil, Trash2, UserPlus, IndianRupee, Clock, Eye,
-  CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt,
+  CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket, Percent, Ban, CheckCircle2,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -24,7 +24,7 @@ import { api } from '@/lib/api';
 import type {
   Organization, OrganizationDetail, OrgUser,
   PlatformOverview, StudioOverview, ActivityEntry,
-  SubStudio, SubKpis, SubDetail, SubPlan, SubscriptionMetrics,
+  SubStudio, SubKpis, SubDetail, SubPlan, SubscriptionMetrics, Coupon,
 } from '@/lib/api';
 import { setImpersonation, getImpersonation } from '@/lib/http';
 import { clearCachedAuthUser } from '@/lib/auth-context';
@@ -76,8 +76,8 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'billing' | 'activity';
-const TAB_IDS: Tab[] = ['overview', 'studios', 'billing', 'activity'];
+type Tab = 'overview' | 'studios' | 'billing' | 'coupons' | 'activity';
+const TAB_IDS: Tab[] = ['overview', 'studios', 'billing', 'coupons', 'activity'];
 
 function PlatformContent() {
   const sp = useSearchParams();
@@ -101,6 +101,7 @@ function PlatformContent() {
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
     { id: 'billing', label: 'Billing', icon: <CreditCard size={15} /> },
+    { id: 'coupons', label: 'Coupons', icon: <Ticket size={15} /> },
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
   ];
 
@@ -134,6 +135,7 @@ function PlatformContent() {
       {tab === 'overview' && <OverviewTab />}
       {tab === 'studios' && <StudiosTab />}
       {tab === 'billing' && <BillingTab />}
+      {tab === 'coupons' && <CouponsTab />}
       {tab === 'activity' && <ActivityTab />}
     </div>
   );
@@ -820,6 +822,306 @@ function ActivityTab() {
 }
 
 /* ─────────────────────────────────────────────────────── SHARED UI */
+// ── Coupons ───────────────────────────────────────────────────────────────────
+// Operator surface for the discount catalogue. A redeemed coupon can be
+// deactivated but never deleted — it is part of the billing record — so the UI
+// offers Deactivate for used coupons and Delete only for unused ones.
+function CouponsTab() {
+  const { toast } = useToast();
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [plans, setPlans] = useState<SubPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [busy, setBusy] = useState('');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [redemptions, setRedemptions] = useState<Record<string, { id: string; organization_name: string | null; gross_amount_inr: number; discount_inr: number; net_amount_inr: number; redeemed_at: string }[]>>({});
+
+  const load = useCallback(() => {
+    setLoading(true); setError('');
+    api.superAdmin.listCoupons()
+      .then((r) => setCoupons(r.data ?? []))
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load coupons'))
+      .finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { api.subscription.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
+
+  const toggleActive = async (c: Coupon) => {
+    setBusy(c.id);
+    try {
+      await api.superAdmin.updateCoupon(c.id, { is_active: !c.is_active });
+      toast.success(c.is_active ? `${c.code} deactivated.` : `${c.code} reactivated.`);
+      load();
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
+    finally { setBusy(''); }
+  };
+
+  const remove = async (c: Coupon) => {
+    if (!window.confirm(`Delete ${c.code}? This is only possible because it has never been redeemed.`)) return;
+    setBusy(c.id);
+    try {
+      await api.superAdmin.deleteCoupon(c.id);
+      toast.success(`${c.code} deleted.`);
+      load();
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Delete failed'); }
+    finally { setBusy(''); }
+  };
+
+  const openRedemptions = async (c: Coupon) => {
+    if (expanded === c.id) { setExpanded(null); return; }
+    setExpanded(c.id);
+    if (redemptions[c.id]) return;
+    try {
+      const r = await api.superAdmin.couponRedemptions(c.id);
+      setRedemptions((prev) => ({ ...prev, [c.id]: r.data ?? [] }));
+    } catch { /* the row still renders without its history */ }
+  };
+
+  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
+  if (error) return <ErrorState error={error} onRetry={load} />;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[13px] font-[780]" style={{ color: 'var(--text-primary)' }}>Discount coupons</p>
+          <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+            Applied at activation. Redemption counts come from the ledger, so they always reconcile with payments.
+          </p>
+        </div>
+        <Button onClick={() => setShowForm((v) => !v)} iconLeft={<Plus size={14} />}>
+          {showForm ? 'Close' : 'New coupon'}
+        </Button>
+      </div>
+
+      {showForm && (
+        <CouponForm
+          plans={plans}
+          onCreated={() => { setShowForm(false); load(); }}
+        />
+      )}
+
+      {coupons.length === 0 ? (
+        <EmptyState icon={<Ticket size={22} />} title="No coupons yet"
+          description="Create one to offer a launch discount or win back a lapsed studio." />
+      ) : (
+        <div className="space-y-3">
+          {coupons.map((c) => {
+            const used = c.times_redeemed > 0;
+            const exhausted = c.max_redemptions != null && c.times_redeemed >= c.max_redemptions;
+            const expired = c.valid_until ? new Date(c.valid_until) < new Date() : false;
+            const live = c.is_active && !exhausted && !expired;
+            return (
+              <div key={c.id} className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-[11px]"
+                    style={{ background: live ? 'rgba(16,185,129,0.12)' : 'var(--bg-subtle)', color: live ? '#10b981' : 'var(--text-muted)' }}>
+                    {c.discount_type === 'percent' ? <Percent size={15} /> : <Ticket size={15} />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-[13px] font-[820]" style={{ color: 'var(--text-primary)' }}>{c.code}</span>
+                      <Badge tone={live ? 'success' : 'neutral'}>
+                        {!c.is_active ? 'Inactive' : exhausted ? 'Fully redeemed' : expired ? 'Expired' : 'Live'}
+                      </Badge>
+                      <span className="text-[11.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>
+                        {c.discount_type === 'percent' ? `${c.discount_value}% off` : `${fmtINR(c.discount_value)} off`}
+                        {c.max_discount_inr != null ? ` (max ${fmtINR(c.max_discount_inr)})` : ''}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                      {c.description ? `${c.description} · ` : ''}
+                      {c.times_redeemed}
+                      {c.max_redemptions != null ? `/${c.max_redemptions}` : ''} redeemed
+                      {c.total_discount_inr > 0 ? ` · ${fmtINR(c.total_discount_inr)} given away` : ''}
+                      {c.applies_to_plans?.length ? ` · ${c.applies_to_plans.join(', ')} only` : ''}
+                      {c.valid_until ? ` · until ${fmtDate(c.valid_until)}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {used && (
+                      <IconBtn title="Redemptions" onClick={() => openRedemptions(c)}>
+                        <Receipt size={12} /> {expanded === c.id ? 'Hide' : 'History'}
+                      </IconBtn>
+                    )}
+                    <IconBtn title={c.is_active ? 'Deactivate' : 'Reactivate'} onClick={() => toggleActive(c)}
+                      busy={busy === c.id} tone={c.is_active ? 'danger' : 'success'}>
+                      {c.is_active ? <><Ban size={12} /> Deactivate</> : <><CheckCircle2 size={12} /> Reactivate</>}
+                    </IconBtn>
+                    {/* Deleting a redeemed coupon would tear a hole in the
+                        billing record, so the option is only offered when it
+                        has never been used — the API rejects it regardless. */}
+                    {!used && (
+                      <IconBtn title="Delete" onClick={() => remove(c)} busy={busy === c.id} tone="danger">
+                        <Trash2 size={12} /> Delete
+                      </IconBtn>
+                    )}
+                  </div>
+                </div>
+
+                {expanded === c.id && (
+                  <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                    {!redemptions[c.id] ? (
+                      <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>Loading…</p>
+                    ) : redemptions[c.id].length === 0 ? (
+                      <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>No redemptions recorded.</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {redemptions[c.id].map((r) => (
+                          <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 text-[11.5px]">
+                            <span style={{ color: 'var(--text-secondary)' }}>
+                              {r.organization_name || 'Unknown studio'} · {fmtDate(r.redeemed_at)}
+                            </span>
+                            <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                              {fmtINR(r.gross_amount_inr)} − {fmtINR(r.discount_inr)} = <strong style={{ color: 'var(--text-primary)' }}>{fmtINR(r.net_amount_inr)}</strong>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CouponForm({ plans, onCreated }: { plans: SubPlan[]; onCreated: () => void }) {
+  const { toast } = useToast();
+  const [code, setCode] = useState('');
+  const [description, setDescription] = useState('');
+  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
+  const [discountValue, setDiscountValue] = useState('');
+  const [maxDiscount, setMaxDiscount] = useState('');
+  const [maxRedemptions, setMaxRedemptions] = useState('');
+  const [maxPerOrg, setMaxPerOrg] = useState('1');
+  const [validUntil, setValidUntil] = useState('');
+  const [appliesTo, setAppliesTo] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  const value = Number(discountValue);
+  const percentOutOfRange = discountType === 'percent' && (value > 100 || value <= 0);
+
+  const submit = async () => {
+    if (!code.trim() || !Number.isFinite(value) || value <= 0) {
+      toast.error('A code and a discount above zero are required.');
+      return;
+    }
+    if (percentOutOfRange) { toast.error('A percentage discount must be between 1 and 100.'); return; }
+    setSaving(true);
+    try {
+      await api.superAdmin.createCoupon({
+        code: code.trim().toUpperCase(),
+        description: description.trim() || undefined,
+        discount_type: discountType,
+        discount_value: value,
+        max_discount_inr: discountType === 'percent' && maxDiscount ? Number(maxDiscount) : null,
+        max_redemptions: maxRedemptions ? Number(maxRedemptions) : null,
+        max_per_org: maxPerOrg ? Number(maxPerOrg) : 1,
+        valid_until: validUntil || null,
+        applies_to_plans: appliesTo.length ? appliesTo : null,
+      });
+      toast.success('Coupon created.');
+      onCreated();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not create coupon');
+    } finally { setSaving(false); }
+  };
+
+  const field = {
+    background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+    color: 'var(--text-primary)',
+  } as const;
+
+  return (
+    <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Code</span>
+          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="LAUNCH20"
+            className="h-9 rounded-[10px] px-2.5 text-[12.5px] font-[700] uppercase outline-none" style={field} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Description</span>
+          <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Launch promotion"
+            className="h-9 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={field} />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Type</span>
+          <select value={discountType} onChange={(e) => setDiscountType(e.target.value as 'percent' | 'fixed')}
+            className="h-9 rounded-[10px] px-2 text-[12.5px] font-[650] outline-none" style={field}>
+            <option value="percent">Percentage off</option>
+            <option value="fixed">Fixed rupees off</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            {discountType === 'percent' ? 'Percent (1–100)' : 'Rupees off'}
+          </span>
+          <input value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} inputMode="numeric"
+            placeholder={discountType === 'percent' ? '20' : '500'}
+            className="h-9 rounded-[10px] px-2.5 text-[12.5px] font-[650] tabular-nums outline-none"
+            style={{ ...field, borderColor: percentOutOfRange && discountValue ? '#ef4444' : 'var(--border)' }} />
+        </label>
+
+        {discountType === 'percent' && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Max discount (₹, optional)</span>
+            <input value={maxDiscount} onChange={(e) => setMaxDiscount(e.target.value)} inputMode="numeric" placeholder="2000"
+              className="h-9 rounded-[10px] px-2.5 text-[12.5px] tabular-nums outline-none" style={field} />
+          </label>
+        )}
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Total uses (blank = unlimited)</span>
+          <input value={maxRedemptions} onChange={(e) => setMaxRedemptions(e.target.value)} inputMode="numeric" placeholder="20"
+            className="h-9 rounded-[10px] px-2.5 text-[12.5px] tabular-nums outline-none" style={field} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Uses per studio</span>
+          <input value={maxPerOrg} onChange={(e) => setMaxPerOrg(e.target.value)} inputMode="numeric"
+            className="h-9 rounded-[10px] px-2.5 text-[12.5px] tabular-nums outline-none" style={field} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Valid until (optional)</span>
+          <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)}
+            className="h-9 rounded-[10px] px-2.5 text-[12.5px] outline-none" style={field} />
+        </label>
+      </div>
+
+      <div className="mt-3">
+        <span className="text-[10.5px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+          Limit to plans (none selected = all plans)
+        </span>
+        <div className="mt-1.5 flex flex-wrap gap-2">
+          {plans.map((p) => {
+            const on = appliesTo.includes(p.code);
+            return (
+              <button key={p.code} type="button"
+                onClick={() => setAppliesTo((prev) => on ? prev.filter((x) => x !== p.code) : [...prev, p.code])}
+                className="rounded-full px-3 py-1.5 text-[11.5px] font-[650] transition"
+                style={on
+                  ? { background: 'rgba(99,102,241,0.15)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.4)' }
+                  : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                {p.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <Button onClick={submit} loading={saving} disabled={saving}>Create coupon</Button>
+      </div>
+    </div>
+  );
+}
+
 // ── SaaS run-rate metrics ─────────────────────────────────────────────────────
 // MRR/ARR are a RUN-RATE (recurring price normalised to one month), not cash
 // collected — the revenue trend below is the cash side. Labelling both clearly
