@@ -2052,6 +2052,32 @@ export const api = {
       http<{ data: { requested: boolean; message: string } }>('/api/subscription/request-activation', {
         method: 'POST', body: JSON.stringify(plan_code ? { plan_code } : {}),
       }),
+
+    /** Price a plan change without committing to it. Read-only. */
+    changeQuote: (plan_code: string) =>
+      http<{ data: PlanChangeQuote }>(`/api/subscription/change-quote?plan_code=${encodeURIComponent(plan_code)}`),
+
+    /**
+     * Ask to move plans. A downgrade is scheduled immediately for period end
+     * (costs nothing); an upgrade is queued for the operator to activate
+     * against payment, since billing is admin-activated.
+     */
+    requestChange: (plan_code: string) =>
+      http<{
+        data: {
+          requested?: boolean; scheduled?: boolean;
+          direction: PlanChangeQuote['direction'];
+          effective_at?: string | null;
+          amount_due_inr?: number; proration_credit_inr?: number;
+          warning?: string | null; message: string;
+        };
+      }>('/api/subscription/request-change', {
+        method: 'POST', body: JSON.stringify({ plan_code }),
+      }),
+
+    /** Drop a pending downgrade so the studio stays on its current plan. */
+    cancelScheduledChange: () =>
+      http<{ data: { cancelled: boolean } }>('/api/subscription/cancel-scheduled-change', { method: 'POST' }),
   },
 };
 
@@ -2142,8 +2168,36 @@ export type SubscriptionStatus = {
   trial_ends_at?: string | null; current_period_start?: string | null; current_period_end?: string | null;
   trial_days_left?: number | null; period_days_left?: number | null; renewal_due?: boolean;
   plan?: { code: string; name: string; duration_months: number; price_inr: number } | null;
+  /** Seat usage. Counts ACTIVE clients only — archiving frees a slot. */
   client_limit?: number | null; client_count?: number;
+  client_remaining?: number | null; at_client_limit?: boolean;
+  /** A downgrade queued for the end of the current period; null when none. */
+  pending_change?: {
+    plan_code: string; plan_name: string;
+    client_limit: number | null; effective_at: string;
+  } | null;
   is_founder?: boolean; founder_number?: number | null; locked_price_inr?: number | null;
+};
+
+/** Priced preview of a plan change, before anything is charged or scheduled. */
+export type PlanChangeQuote = {
+  direction: 'upgrade' | 'downgrade' | 'renewal' | 'activation';
+  /** Upgrades apply now; downgrades wait for the period to end. */
+  immediate: boolean;
+  current_plan: { code: string; name: string; client_limit: number | null } | null;
+  new_plan: { code: string; name: string; client_limit: number | null; duration_months: number };
+  new_plan_price_inr: number;
+  /** Unused value of the current period, credited against an upgrade. */
+  proration_credit_inr: number;
+  amount_due_inr: number;
+  is_launch_price: boolean;
+  founder_locked: boolean;
+  effective_at: string | null;
+  active_clients: number;
+  new_client_limit: number | null;
+  /** How many active clients exceed the target plan's limit (0 when fine). */
+  over_limit_by: number;
+  warning: string | null;
 };
 
 // ── AI types ────────────────────────────────────────────────────────────────
