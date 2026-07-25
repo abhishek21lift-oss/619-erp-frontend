@@ -290,6 +290,15 @@ export default function PtClientsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
 
+  // "Search all records" in the global search box lands here with ?q=…, so the
+  // query survives the jump instead of dropping the user into an unfiltered
+  // list. Read from location rather than useSearchParams to avoid forcing this
+  // page behind a Suspense boundary for one optional param.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearch(q);
+  }, []);
+
   // Default to grid/card view on mobile screens
   useEffect(() => {
     if (window.matchMedia('(max-width: 767px)').matches) {
@@ -304,8 +313,12 @@ export default function PtClientsPage() {
   const filtered = useMemo(() => (clients.data?.data ?? []).filter(c => {
     if (search) {
       const q = search.toLowerCase();
+      // Mobile and email are matched too: the global search finds people by
+      // phone number, and handing that query over to a filter that ignores
+      // phone numbers would show "no results" for a client that plainly exists.
       if (!(c.name?.toLowerCase().includes(q) || c.trainer_name?.toLowerCase().includes(q)
-        || (c.unique_id || '').toLowerCase().includes(q) || (c.client_id || '').toLowerCase().includes(q)))
+        || (c.unique_id || '').toLowerCase().includes(q) || (c.client_id || '').toLowerCase().includes(q)
+        || (c.mobile || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q)))
         return false;
     }
     if (statusFilter !== 'all' && c.status !== statusFilter) return false;

@@ -821,6 +821,50 @@ export interface WorkoutAssignmentDetail extends WorkoutAssignment {
   exercises: WorkoutPlanExercise[];
 }
 
+// ── Global search ────────────────────────────────────────────────────────────
+// One shape for every searchable entity. The generic fields (title, subtitle,
+// meta, href, badges) are what the dropdown renders for ANY type, so a new
+// backend provider needs no frontend change to become searchable. `fields` is
+// the escape hatch for a renderer that wants richer, type-specific detail —
+// today only the client card uses it.
+
+export type SearchBadgeTone = 'positive' | 'neutral' | 'muted' | 'warning';
+
+export interface SearchBadge {
+  label: string;
+  tone: SearchBadgeTone;
+}
+
+export interface SearchItem {
+  id: string;
+  /** Entity type, e.g. 'client'. Drives which renderer the dropdown picks. */
+  type: string;
+  title: string;
+  subtitle?: string | null;
+  meta?: string | null;
+  /** Where clicking the result goes. */
+  href: string;
+  avatar_url?: string | null;
+  badges?: SearchBadge[];
+  fields?: Record<string, unknown>;
+}
+
+export interface SearchGroup {
+  /** Stable machine name, e.g. 'clients' | 'archived_clients'. */
+  type: string;
+  /** Human heading rendered above the group. */
+  label: string;
+  total: number;
+  items: SearchItem[];
+}
+
+export interface SearchResponse {
+  query: string;
+  /** Server-ordered: the order groups arrive in is the order they render. */
+  groups: SearchGroup[];
+  took_ms: number;
+}
+
 // Core fetch is handled by http() from ./http
 // This file provides the typed `api` namespace facade over http()
 
@@ -940,6 +984,26 @@ export const api = {
     adminAuditLogs: (limit = 100) =>
       http<{ logs: Array<{ id: string; event: string; detail: Record<string, unknown>; ip: string | null; created_at: string; user_name: string | null; user_email: string | null; role: string | null }> }>(
         `/api/auth/webauthn/admin/audit-logs?limit=${limit}`
+      ),
+  },
+
+  /**
+   * Global search behind the top-bar box.
+   *
+   * The response is deliberately generic: the backend owns a registry of
+   * searchable entity types and returns them as labelled groups of identically
+   * shaped items. Adding workouts, invoices or files server-side makes them
+   * appear here with no change to this client or to the UI that renders it.
+   */
+  search: {
+    global: (q: string, opts?: { limit?: number; types?: string[]; signal?: AbortSignal }) =>
+      http<{ data: SearchResponse }>(
+        `/api/search${buildQs({
+          q,
+          ...(opts?.limit ? { limit: opts.limit } : {}),
+          ...(opts?.types?.length ? { types: opts.types.join(',') } : {}),
+        })}`,
+        { signal: opts?.signal, retries: 0 },
       ),
   },
 

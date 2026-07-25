@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Search, LogOut, Bell, Settings, Fingerprint,
+  LogOut, Bell, Settings, Fingerprint,
   Zap, User, HelpCircle, ChevronDown, CreditCard,
-  Menu, X, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
+  Menu, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
 } from 'lucide-react';
 import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -22,6 +22,8 @@ import PullToRefresh from '@/components/common/PullToRefresh';
 import OrgSwitcher from '@/components/OrgSwitcher';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
 import TrialBanner from '@/components/TrialBanner';
+import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
+import { clearSearchHistory } from '@/components/search/recent';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -63,35 +65,25 @@ const NAV_KEYWORDS: Record<string, string> = {
   '/attendance':                 'attendance check-in sign-in records',
 };
 
-const EXTRA_SEARCH_PAGES = [
-  { label: 'QR Scanner',          href: '/checkin/qr-scanner', keywords: 'qr scanner checkin scan code attendance',               category: 'feature' },
-  { label: 'Attendance Dashboard', href: '/checkin/dashboard',  keywords: 'attendance dashboard live stats today visitors inside',  category: 'report'  },
+const EXTRA_SEARCH_PAGES: PageEntry[] = [
+  { label: 'QR Scanner',           href: '/checkin/qr-scanner', keywords: 'qr scanner checkin scan code attendance' },
+  { label: 'Attendance Dashboard', href: '/checkin/dashboard',  keywords: 'attendance dashboard live stats today visitors inside' },
 ];
 
-function navSearchCategory(groupId: string): string {
-  if (groupId === 'settings') return 'nav';
-  if (groupId === 'insights' || groupId === 'reports') return 'report';
-  if (groupId === 'attendance') return 'nav';
-  return 'feature';
-}
-
-const SEARCH_PAGES = [
+// The page index. This used to BE the search: the box filtered this array in
+// the browser and nothing else. It is now a secondary group inside
+// GlobalSearch — typing "reports" still jumps you there — while the primary
+// answer comes from the server. Built once at module scope; the nav is static.
+const SEARCH_PAGES: PageEntry[] = [
   ...allNavItems()
     .filter(item => !item.hidden)
     .map(item => ({
       label: item.label,
       href: item.href,
       keywords: NAV_KEYWORDS[item.href] ?? item.label.toLowerCase(),
-      category: navSearchCategory(item.groupId),
     })),
   ...EXTRA_SEARCH_PAGES,
 ];
-
-const CATEGORY_LABELS: Record<string, string> = {
-  nav: 'Navigation',
-  feature: 'Features',
-  report: 'Reports & Analytics',
-};
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -104,10 +96,6 @@ function timeAgo(dateStr: string): string {
 }
 
 function AppShellContent({ children, title, headerLeft }: AppShellProps) {
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<typeof SEARCH_PAGES>([]);
-  const [searchFocusIdx, setSearchFocusIdx] = useState(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -155,8 +143,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
     return new Promise<void>((resolve) => setTimeout(resolve, 450));
   }, []);
 
-  const searchRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -181,6 +167,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
 
   const handleLogout = async () => {
+    // Search history is one person's names and phone numbers. On a shared
+    // studio machine it must not greet the next person who signs in.
+    clearSearchHistory();
     await logout();
     router.push('/login');
   };
@@ -227,10 +216,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setSearchOpen(false);
-        setSearchFocusIdx(-1);
-      }
       if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false);
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
@@ -238,74 +223,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Ctrl+K / Cmd+K to open search
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        setSearchOpen(searchResults.length > 0);
-      }
-      if (e.key === 'Escape') {
-        setSearchOpen(false);
-        setSearchFocusIdx(-1);
-        searchInputRef.current?.blur();
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [searchResults.length]);
-
-  useEffect(() => {
-    setSearchOpen(false);
-    setSearchQuery('');
-    setSearchResults([]);
-    setSearchFocusIdx(-1);
-  }, [pathname]);
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setSearchFocusIdx(-1);
-    if (!query.trim()) { setSearchResults([]); setSearchOpen(false); return; }
-    const q = query.toLowerCase();
-    const results = SEARCH_PAGES.filter(
-      p => p.label.toLowerCase().includes(q) || p.keywords.toLowerCase().includes(q) || p.href.toLowerCase().includes(q)
-    );
-    setSearchResults(results);
-    setSearchOpen(results.length > 0);
-  };
-
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!searchOpen) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSearchFocusIdx(i => Math.min(i + 1, searchResults.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSearchFocusIdx(i => Math.max(i - 1, -1));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const target = searchFocusIdx >= 0 ? searchResults[searchFocusIdx] : searchResults[0];
-      if (target) navigateTo(target.href);
-    }
-  };
-
-  const navigateTo = (href: string) => {
-    setSearchOpen(false);
-    setSearchQuery('');
-    setSearchResults([]);
-    setSearchFocusIdx(-1);
-    router.push(href);
-  };
-
-  // Group search results by category, preserving flat index for keyboard nav
-  const indexedResults = searchResults.map((r, i) => ({ ...r, flatIdx: i }));
-  const groupedResults: Record<string, typeof indexedResults> = {};
-  for (const r of indexedResults) {
-    if (!groupedResults[r.category]) groupedResults[r.category] = [];
-    groupedResults[r.category].push(r);
-  }
 
   return (
     <LazyMotion features={domAnimation} strict>
@@ -382,96 +299,16 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                 <Menu size={17} strokeWidth={1.5} />
               </button>
 
-              {/* ── Search ── */}
-              <div ref={searchRef} className="relative flex-1 max-w-[360px] lg:max-w-[420px]">
-                <div className="group relative">
-                  <div className="relative flex items-center">
-                    <Search size={14} strokeWidth={2}
-                      className={cn('absolute left-3 z-10 transition-colors duration-200', darkMode ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600')} />
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      onFocus={() => { if (searchQuery.trim()) setSearchOpen(searchResults.length > 0); }}
-                      onKeyDown={handleSearchKeyDown}
-                      placeholder="Search pages… (Ctrl K)"
-                      className={cn(
-                        'relative w-full rounded-2xl py-[7px] pl-9 pr-8 text-[13px] outline-none transition-all duration-300',
-                        darkMode
-                          ? 'border border-white/10 bg-white/8 text-slate-100 placeholder:text-slate-500 focus:border-white/25 focus:bg-white/12 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]'
-                          : 'border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]',
-                      )}
-                    />
-                    {searchQuery && (
-                      <button onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchOpen(false); }}
-                        className="absolute right-2.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300 hover:text-slate-700 transition-all duration-200">
-                        <X size={9} />
-                      </button>
-                    )}
-                  </div>
-                </div>
+              {/* ── Global search ──
+                  Owns its own state, requests and keyboard handling. Renders as
+                  an inline combobox from sm up and as a full-screen sheet on a
+                  phone, where an inline field would be ~140px wide. */}
+              <GlobalSearch pages={SEARCH_PAGES} darkMode={darkMode} />
 
-                <AnimatePresence>
-                  {searchOpen && searchResults.length > 0 && (
-                    <m.div
-                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
-                      className="absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] shadow-[0_16px_48px_rgba(0,0,0,0.15)]"
-                    >
-                      <div className="max-h-[340px] overflow-y-auto py-2">
-                        {Object.entries(groupedResults).map(([cat, items]) => (
-                          <div key={cat}>
-                            <div className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">
-                              {CATEGORY_LABELS[cat] || cat}
-                            </div>
-                            {items.map((r) => {
-                              const isActive = r.flatIdx === searchFocusIdx;
-                              return (
-                                <button
-                                  key={r.href + r.label}
-                                  onClick={() => navigateTo(r.href)}
-                                  className={cn(
-                                    'flex w-full items-center gap-3 px-4 py-2 text-left text-[13px] transition-all duration-100',
-                                    isActive
-                                      ? 'bg-[rgba(212,175,55,0.08)] pl-5'
-                                      : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:pl-5',
-                                  )}
-                                  style={isActive ? { color: '#D4AF37' } : undefined}
-                                >
-                                  <span
-                                    className={cn(
-                                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold shadow-sm',
-                                      isActive ? 'text-[#050816]' : 'text-white',
-                                    )}
-                                    style={isActive
-                                      ? { background: 'linear-gradient(135deg, #D4AF37 0%, #F7E7A1 100%)' }
-                                      : { background: 'linear-gradient(135deg, var(--brand-lo), var(--brand))' }
-                                    }
-                                  >
-                                    {r.label.charAt(0)}
-                                  </span>
-                                  <span className="font-medium flex-1">{r.label}</span>
-                                  {isActive && <ChevronRight size={12} style={{ color: '#D4AF37', opacity: 0.8 }} />}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ))}
-                        <div className="border-t border-[var(--border)] mt-1 px-4 py-2 flex items-center gap-1.5">
-                          <span className="text-[10px] text-[var(--text-disabled)]">{searchResults.length} result{searchResults.length !== 1 ? 's' : ''}</span>
-                          <span className="ml-auto text-[10px] text-[var(--text-disabled)]">↑↓ navigate · ↵ open</span>
-                        </div>
-                      </div>
-                    </m.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Spacer */}
-              <div className="hidden lg:block flex-1" />
+              {/* Spacer — pushes the icon cluster right. Needed at every width
+                  now: on a phone the search is a 36px button, so nothing else
+                  in the row grows to fill the space. */}
+              <div className="flex-1" />
 
               {/* ── Platform org-switcher (super_admin only; renders null otherwise) ── */}
               <OrgSwitcher />
