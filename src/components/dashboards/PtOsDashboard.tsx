@@ -23,7 +23,7 @@ import {
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
   UserPlus, CalendarPlus, Receipt,
   Trophy, ShieldCheck, Target, Gauge, Crown,
-  CalendarClock, AlertCircle, CheckCircle2, XCircle, PhoneCall,
+  CalendarClock, AlertCircle, CheckCircle2, XCircle,
   FileSignature, HeartPulse, Apple, PersonStanding,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -838,73 +838,6 @@ function RenewalsDue({ ops, loading }: { ops: OpsData | null | undefined; loadin
   );
 }
 
-// ─── Section 9 — Top Outstanding ───────────────────────────────────────────────
-function TopDues({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
-  const router = useRouter();
-  const dues = ops?.top_dues ?? [];
-  return (
-    <Glass className="p-4 sm:p-5 flex flex-col">
-      <div className="flex items-center justify-between mb-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${C.rose}, ${C.crimson})`, boxShadow: `0 5px 12px ${C.rose}40` }}>
-            <Receipt size={14} />
-          </span>
-          <div>
-            <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Top Outstanding</h3>
-            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>Highest balances</p>
-          </div>
-        </div>
-        <button onClick={() => router.push('/pt-os/balance-sheet')}
-          className="h-8 px-3 rounded-full text-[10.5px] font-[650] transition active:scale-95"
-          style={{ background: `${C.rose}12`, color: C.rose }}>All</button>
-      </div>
-
-      {loading && !ops && <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="rounded-[13px] p-2.5" style={{ background: 'rgba(15,23,42,0.03)' }}><Skel h="h-3" w="w-28" /></div>)}</div>}
-
-      {!loading && dues.length === 0 && (
-        <div className="flex flex-col items-center py-7 text-center">
-          <CheckCircle2 size={24} style={{ color: `${C.emerald}88` }} />
-          <p className="mt-2 text-[12px] font-[640]" style={{ color: C.ink }}>All accounts settled</p>
-        </div>
-      )}
-
-      {dues.length > 0 && (
-        <div className="space-y-2">
-          {dues.map((due, i) => {
-            const color = due.due_status === 'overdue' ? C.crimson : C.rose;
-            return (
-              <m.div key={due.id}
-                initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                onClick={() => router.push(`/pt-os/clients/${due.id}`)}
-                className="flex items-center gap-2.5 rounded-[13px] p-2.5 cursor-pointer transition active:scale-[0.985]"
-                style={{ background: `${color}09`, border: `1px solid ${color}1f` }}>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11.5px] font-[720] truncate" style={{ color: C.ink }}>{due.name}</p>
-                  <p className="text-[9.5px] font-[500]" style={{ color: C.muted }}>
-                    {due.trainer_name ?? '—'}{due.due_status === 'overdue' ? ' · Overdue' : ''}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {due.mobile && (
-                    <a href={`tel:${due.mobile}`} onClick={e => e.stopPropagation()}
-                      className="flex h-8 w-8 items-center justify-center rounded-full transition"
-                      style={{ background: `${C.emerald}15` }}>
-                      <PhoneCall size={11} style={{ color: C.emerald }} />
-                    </a>
-                  )}
-                  <span className="text-[12.5px] font-[820] tabular-nums" style={{ color }}>{fmtCompact(due.balance_amount)}</span>
-                </div>
-              </m.div>
-            );
-          })}
-        </div>
-      )}
-    </Glass>
-  );
-}
-
 // ─── Section 10 — Session Activity ─────────────────────────────────────────────
 function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
   const stats = ops?.session_stats;
@@ -1221,11 +1154,8 @@ export default function PtOsDashboard() {
               </div>
             </div>
 
-            {/* 5 — Outstanding + AI copilot (stacked on mobile, 2-col on md+) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              <TopDues ops={o} loading={ops.loading} />
-              <AICopilot d={d} />
-            </div>
+            {/* 5 — AI copilot */}
+            <AICopilot d={d} />
 
             {/* 6 — Revenue chart + donut (stacked mobile, 2-col lg+) */}
             <div>
