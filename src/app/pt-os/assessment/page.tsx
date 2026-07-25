@@ -18,7 +18,7 @@ import {
   computeAge, calcBmi, classifyBp, calcVo2MaxRockport, calcVo2MaxCooper,
   calcVo2MaxBruce, calcHarvardPei, classifyHarvardPei, classifyVo2Max, classifyStepTestRecovery,
   calc1RM, classifyStrength, classifyEndurance, classifyFlexibilityScore,
-  scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreEnduranceBattery, computeOverallScore,
+  scoreCategory, scoreBodyComposition, scoreHealthRisk, scoreTestBattery, computeOverallScore,
 } from '@/lib/fitness-calculations';
 import type { FitnessCategory, Gender } from '@/lib/fitness-calculations';
 import { STEPS, initAssessmentForm, n } from '@/components/pt-os/fitness-testing/types';
@@ -56,14 +56,22 @@ function buildCardioTestData(form: AssessmentFormData): Record<string, unknown> 
   }
 }
 
-function strengthExerciseName(form: AssessmentFormData): string {
-  return (form.strengthExercise === 'Custom Exercise' ? form.strengthCustomExercise : form.strengthExercise) || '';
+// Strength is a 2-test battery (same pattern as Endurance/Flexibility below),
+// so every helper that used to read the single strengthXxx field now takes
+// which of the two tests it means.
+function strengthExerciseName(form: AssessmentFormData, testNum: 1 | 2 = 1): string {
+  const exercise = testNum === 1 ? form.strengthExercise : form.strengthExercise2;
+  const custom = testNum === 1 ? form.strengthCustomExercise : form.strengthCustomExercise2;
+  return (exercise === 'Custom Exercise' ? custom : exercise) || '';
 }
 
-function estimateOneRM(form: AssessmentFormData): number | null {
-  return form.strengthMode === 'direct'
-    ? n(form.strengthDirect1RM)
-    : calc1RM(n(form.strengthWeightKg), n(form.strengthReps), form.strengthFormula);
+function estimateOneRM(form: AssessmentFormData, testNum: 1 | 2 = 1): number | null {
+  const mode = testNum === 1 ? form.strengthMode : form.strengthMode2;
+  const direct1RM = testNum === 1 ? form.strengthDirect1RM : form.strengthDirect1RM2;
+  const weightKg = testNum === 1 ? form.strengthWeightKg : form.strengthWeightKg2;
+  const reps = testNum === 1 ? form.strengthReps : form.strengthReps2;
+  const formula = testNum === 1 ? form.strengthFormula : form.strengthFormula2;
+  return mode === 'direct' ? n(direct1RM) : calc1RM(n(weightKg), n(reps), formula);
 }
 
 function scoreNum(v: unknown): number | null {
@@ -86,9 +94,11 @@ function scoresFromRow(row: Record<string, unknown>): FitnessScores {
 function validateStep(id: StepId, form: AssessmentFormData, isBeginner: boolean): string | undefined {
   if (id === 4) return form.cardioTestType ? undefined : 'Please select a cardiorespiratory test.';
   // Muscular strength (1RM) testing isn't expected for beginner clients — optional for them.
-  if (id === 5) return (!isBeginner && !form.strengthExercise) ? 'Please select an exercise.' : undefined;
+  // Any exercise may be tested, but exactly 2 are required to complete the step.
+  if (id === 5) return (isBeginner || (form.strengthExercise && form.strengthExercise2)) ? undefined : 'Please select both strength tests.';
   if (id === 6) return (form.enduranceTestType && form.enduranceTestType2) ? undefined : 'Please select both endurance tests.';
-  if (id === 7) return form.flexibilityTestType ? undefined : 'Please select a flexibility test.';
+  // Same battery pattern — any flexibility test may be performed, 2 are required.
+  if (id === 7) return (form.flexibilityTestType && form.flexibilityTestType2) ? undefined : 'Please select both flexibility tests.';
   return undefined;
 }
 
@@ -347,18 +357,21 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
     if (vo2 != null && !cardioCategory) cardioCategory = classifyVo2Max(vo2, age, gender);
     const cardioScore = scoreCategory(cardioCategory);
 
-    const oneRM = estimateOneRM(form);
+    const oneRM = estimateOneRM(form, 1);
     const strengthCategory = classifyStrength(oneRM, n(form.weight), form.strengthExercise || null, gender);
-    const strengthScore = scoreCategory(strengthCategory);
+    const oneRM2 = estimateOneRM(form, 2);
+    const strengthCategory2 = classifyStrength(oneRM2, n(form.weight), form.strengthExercise2 || null, gender);
+    const strengthScore = scoreTestBattery(scoreCategory(strengthCategory), scoreCategory(strengthCategory2));
 
     const enduranceValue = form.enduranceValueType === 'reps' ? n(form.enduranceReps) : n(form.enduranceDurationSec);
     const enduranceCategory = classifyEndurance(form.enduranceTestType || null, enduranceValue, gender);
     const enduranceValue2 = form.enduranceValueType2 === 'reps' ? n(form.enduranceReps2) : n(form.enduranceDurationSec2);
     const enduranceCategory2 = classifyEndurance(form.enduranceTestType2 || null, enduranceValue2, gender);
-    const enduranceScore = scoreEnduranceBattery(scoreCategory(enduranceCategory), scoreCategory(enduranceCategory2));
+    const enduranceScore = scoreTestBattery(scoreCategory(enduranceCategory), scoreCategory(enduranceCategory2));
 
     const flexCategory = classifyFlexibilityScore(n(form.flexibilityScore));
-    const mobilityScore = scoreCategory(flexCategory);
+    const flexCategory2 = classifyFlexibilityScore(n(form.flexibilityScore2));
+    const mobilityScore = scoreTestBattery(scoreCategory(flexCategory), scoreCategory(flexCategory2));
 
     const overallScore = computeOverallScore({
       bodyComposition: bodyCompositionScore, endurance: enduranceScore,
@@ -421,12 +434,20 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         cardio_test_type: form.cardioTestType || undefined,
         cardio_test_data: buildCardioTestData(form),
 
-        strength_exercise: strengthExerciseName(form) || undefined,
-        strength_weight_kg: n(form.strengthWeightKg) ?? undefined,
-        strength_reps: n(form.strengthReps) ?? undefined,
-        strength_formula: form.strengthFormula,
-        strength_direct_1rm: n(form.strengthDirect1RM) ?? undefined,
-        strength_is_direct: form.strengthMode === 'direct',
+        strength_exercise: strengthExerciseName(form, 1) || undefined,
+        strength_exercise_2: strengthExerciseName(form, 2) || undefined,
+        strength_test_data: {
+          test1: {
+            weightKg: n(form.strengthWeightKg) ?? undefined, reps: n(form.strengthReps) ?? undefined,
+            formula: form.strengthFormula, direct1RM: n(form.strengthDirect1RM) ?? undefined,
+            isDirect: form.strengthMode === 'direct',
+          },
+          test2: {
+            weightKg: n(form.strengthWeightKg2) ?? undefined, reps: n(form.strengthReps2) ?? undefined,
+            formula: form.strengthFormula2, direct1RM: n(form.strengthDirect1RM2) ?? undefined,
+            isDirect: form.strengthMode2 === 'direct',
+          },
+        },
 
         endurance_test_type: form.enduranceTestType || undefined,
         endurance_test_type_2: form.enduranceTestType2 || undefined,
@@ -436,28 +457,53 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
         },
 
         flexibility_test_data: {
-          testType: form.flexibilityTestType || undefined,
-          customTestType: form.flexibilityTestType === 'Custom' ? (form.flexibilityCustomTest || undefined) : undefined,
-          left: n(form.flexibilityLeft) ?? undefined, right: n(form.flexibilityRight) ?? undefined,
-          score: n(form.flexibilityScore) ?? undefined, rom: n(form.flexibilityRom) ?? undefined,
-          limitationNotes: form.flexibilityLimitationNotes || undefined,
+          test1: {
+            testType: form.flexibilityTestType || undefined,
+            customTestType: form.flexibilityTestType === 'Custom' ? (form.flexibilityCustomTest || undefined) : undefined,
+            left: n(form.flexibilityLeft) ?? undefined, right: n(form.flexibilityRight) ?? undefined,
+            score: n(form.flexibilityScore) ?? undefined, rom: n(form.flexibilityRom) ?? undefined,
+            limitationNotes: form.flexibilityLimitationNotes || undefined,
+          },
+          test2: {
+            testType: form.flexibilityTestType2 || undefined,
+            customTestType: form.flexibilityTestType2 === 'Custom' ? (form.flexibilityCustomTest2 || undefined) : undefined,
+            left: n(form.flexibilityLeft2) ?? undefined, right: n(form.flexibilityRight2) ?? undefined,
+            score: n(form.flexibilityScore2) ?? undefined, rom: n(form.flexibilityRom2) ?? undefined,
+            limitationNotes: form.flexibilityLimitationNotes2 || undefined,
+          },
         },
       };
 
       const res = await api.progress.assessments.create(payload) as { data?: Record<string, unknown> };
       const created = res?.data;
 
-      const oneRM = estimateOneRM(form);
+      // Both strength tests get their own progress-log entry now that the
+      // step is a 2-test battery — each is an independent lift worth
+      // tracking over time on the Strength Tracking page.
+      const oneRM = estimateOneRM(form, 1);
       if (oneRM != null && created?.id) {
         await api.progress.strengthLogs.create({
           client_id: clientId,
-          exercise_name: strengthExerciseName(form) || 'Bench Press',
+          exercise_name: strengthExerciseName(form, 1) || 'Bench Press',
           weight_kg: n(form.strengthWeightKg) ?? undefined,
           reps_done: n(form.strengthReps) ?? undefined,
           assessment_id: created.id,
           one_rm_formula: form.strengthFormula,
           is_direct_1rm: form.strengthMode === 'direct',
           one_rm_estimate: oneRM,
+        });
+      }
+      const oneRM2 = estimateOneRM(form, 2);
+      if (oneRM2 != null && created?.id) {
+        await api.progress.strengthLogs.create({
+          client_id: clientId,
+          exercise_name: strengthExerciseName(form, 2) || 'Bench Press',
+          weight_kg: n(form.strengthWeightKg2) ?? undefined,
+          reps_done: n(form.strengthReps2) ?? undefined,
+          assessment_id: created.id,
+          one_rm_formula: form.strengthFormula2,
+          is_direct_1rm: form.strengthMode2 === 'direct',
+          one_rm_estimate: oneRM2,
         });
       }
 
@@ -519,7 +565,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
             </div>
             <div>
               <h1 className="text-[19px] font-[860] tracking-[-0.03em] text-slate-900 leading-none sm:text-[22px]">Fitness Testing</h1>
-              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName || 'Client'} · Assessment #{nextAssessmentNumber}</p>
+              <p className="text-[12px] font-[600] text-slate-400 mt-1">{clientName || 'Client'} · Assessment {nextAssessmentNumber}</p>
             </div>
           </div>
           <button
@@ -544,7 +590,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
               <div>
                 <p className="text-[14px] font-[760] text-slate-900">Assessment Saved</p>
                 <p className="text-[12.5px] text-slate-500">
-                  Assessment #{String(lastSaved.assessment_number ?? '')} recorded for {clientName}.
+                  Assessment {String(lastSaved.assessment_number ?? '')} recorded for {clientName}.
                 </p>
               </div>
             </div>

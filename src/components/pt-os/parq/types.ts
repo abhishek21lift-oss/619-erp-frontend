@@ -136,13 +136,16 @@ export interface FormErrors {
   consent?: string;
 }
 
+// Order: PAR-Q leads (it's the gatekeeper), Medical Clearance immediately
+// follows it since clearance is only ever needed because of what PAR-Q
+// found — then Past History, Current Health, Digital Consent, Review.
 export const STEPS = [
-  { id: 1, key: 'currentHealth', label: 'Current Health' },
-  { id: 2, key: 'pastHistory', label: 'Past History' },
-  { id: 3, key: 'parqQuestionnaire', label: 'PAR-Q' },
-  { id: 4, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
-  { id: 6, key: 'consent', label: 'Digital Consent' },
-  { id: 7, key: 'review', label: 'Review' },
+  { id: 1, key: 'parqQuestionnaire', label: 'PAR-Q' },
+  { id: 2, key: 'medicalClearance', label: 'Medical Clearance', conditional: true },
+  { id: 3, key: 'pastHistory', label: 'Past History' },
+  { id: 4, key: 'currentHealth', label: 'Current Health' },
+  { id: 5, key: 'consent', label: 'Digital Consent' },
+  { id: 6, key: 'review', label: 'Review' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];

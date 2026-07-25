@@ -8,18 +8,17 @@ type PastHistoryBoolKey =
   | 'joint_problems' | 'back_pain' | 'neck_pain' | 'knee_pain' | 'shoulder_pain' | 'hip_pain'
   | 'previous_fractures' | 'surgeries' | 'hospitalization' | 'previous_physiotherapy' | 'previous_trainer';
 
+// Heart Disease, Asthma, Joint Problems, Back/Neck/Knee/Shoulder/Hip Pain
+// were dropped from this checklist — they're already covered by the PAR-Q
+// gatekeeper questions and the client's pain/injury notes elsewhere in the
+// form, so listing them again here was redundant. The underlying boolean
+// fields still exist on PastHistoryForm (and in the saved API payload) so
+// older submitted forms keep rendering correctly; they just default to
+// false and are no longer collected here.
 const CONDITIONS: { key: PastHistoryBoolKey; label: string }[] = [
-  { key: 'heart_disease', label: 'Heart Disease' },
   { key: 'respiratory_disease', label: 'Respiratory Disease' },
-  { key: 'asthma', label: 'Asthma' },
   { key: 'copd', label: 'COPD' },
   { key: 'tuberculosis', label: 'Tuberculosis' },
-  { key: 'joint_problems', label: 'Joint Problems' },
-  { key: 'back_pain', label: 'Back Pain' },
-  { key: 'neck_pain', label: 'Neck Pain' },
-  { key: 'knee_pain', label: 'Knee Pain' },
-  { key: 'shoulder_pain', label: 'Shoulder Pain' },
-  { key: 'hip_pain', label: 'Hip Pain' },
   { key: 'previous_fractures', label: 'Previous Fractures' },
   { key: 'surgeries', label: 'Surgeries' },
   { key: 'hospitalization', label: 'Hospitalization' },

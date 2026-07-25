@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Repeat } from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import SearchableSelect from '@/components/pt-os/SearchableSelect';
-import { classifyEndurance, scoreCategory, scoreEnduranceBattery } from '@/lib/fitness-calculations';
+import { classifyEndurance, scoreCategory, scoreTestBattery } from '@/lib/fitness-calculations';
 import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
 import type { AssessmentFormData, EnduranceTestType } from './types';
 import { n } from './types';
@@ -34,7 +34,7 @@ export function StepEndurance({ form, set, gender, error }: StepEnduranceProps) 
   const t1 = useTestResult(form.enduranceTestType, form.enduranceValueType, form.enduranceReps, form.enduranceDurationSec, gender);
   const t2 = useTestResult(form.enduranceTestType2, form.enduranceValueType2, form.enduranceReps2, form.enduranceDurationSec2, gender);
   const combinedScore = useMemo(
-    () => scoreEnduranceBattery(scoreCategory(t1.category), scoreCategory(t2.category)),
+    () => scoreTestBattery(scoreCategory(t1.category), scoreCategory(t2.category)),
     [t1.category, t2.category],
   );
 

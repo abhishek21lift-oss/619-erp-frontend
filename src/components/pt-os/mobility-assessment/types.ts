@@ -18,6 +18,9 @@ export interface MobilityFormData {
   mobilityTests: MobilityTestScore[];
 
   // Step 3 — Performance Metrics
+
+  // Sit & Reach is no longer collected here (removed from the step's UI),
+  // but the field stays so older submitted assessments keep displaying it.
   gripStrengthKg: string;
   verticalJumpCm: string;
   sitReachCm: string;

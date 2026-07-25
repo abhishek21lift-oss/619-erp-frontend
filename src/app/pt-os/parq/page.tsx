@@ -35,16 +35,16 @@ interface ClientOption { id: string; name: string; }
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function validateStep(step: StepId, form: ParqFormData, riskLevel: 'low' | 'medium' | 'high'): string | undefined {
-  if (step === 3) {
+  if (step === 1) {
     const unanswered = form.parqAnswers.filter((a) => !a.answer).length;
     if (unanswered > 0) return `Please answer all ${PARQ_QUESTIONS.length} PAR-Q questions (${unanswered} remaining).`;
   }
-  if (step === 4 && riskLevel === 'high') {
+  if (step === 2 && riskLevel === 'high') {
     if (!form.medicalClearance.doctor_name.trim() || !form.medicalClearance.hospital.trim() || !form.medicalClearance.clearance_date) {
       return 'Doctor name, hospital, and clearance date are required for high-risk clients.';
     }
   }
-  if (step === 6) {
+  if (step === 5) {
     const allChecked = CONSENT_CHECKBOX_FIELDS.every((f) => form.consentCheckboxes[f.key]);
     if (!allChecked) return 'All 7 consent checkboxes must be checked.';
     if (!form.clientSignature) return 'Client signature is required.';
@@ -530,10 +530,8 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
 
       <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-          {step === 1 && <StepCurrentHealth form={form} set={set} error={errors.currentHealth} stepLabel={stepPositionLabel('currentHealth', riskLevel)} />}
-          {step === 2 && <StepPastHistory form={form} set={set} error={errors.pastHistory} stepLabel={stepPositionLabel('pastHistory', riskLevel)} />}
-          {step === 3 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} stepLabel={stepPositionLabel('parqQuestionnaire', riskLevel)} />}
-          {step === 4 && riskLevel === 'high' && (
+          {step === 1 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} stepLabel={stepPositionLabel('parqQuestionnaire', riskLevel)} />}
+          {step === 2 && riskLevel === 'high' && (
             <StepMedicalClearance
               form={form} set={set} error={errors.medicalClearance}
               formId={currentFormId} documents={documents}
@@ -541,8 +539,10 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
               stepLabel={stepPositionLabel('medicalClearance', riskLevel)}
             />
           )}
-          {step === 6 && <StepConsent form={form} set={set} error={errors.consent} stepLabel={stepPositionLabel('consent', riskLevel)} />}
-          {step === 7 && <ParqReview form={form} onEditStep={setStep} stepLabel={stepPositionLabel('review', riskLevel)} />}
+          {step === 3 && <StepPastHistory form={form} set={set} error={errors.pastHistory} stepLabel={stepPositionLabel('pastHistory', riskLevel)} />}
+          {step === 4 && <StepCurrentHealth form={form} set={set} error={errors.currentHealth} stepLabel={stepPositionLabel('currentHealth', riskLevel)} />}
+          {step === 5 && <StepConsent form={form} set={set} error={errors.consent} stepLabel={stepPositionLabel('consent', riskLevel)} />}
+          {step === 6 && <ParqReview form={form} onEditStep={setStep} stepLabel={stepPositionLabel('review', riskLevel)} />}
         </m.div>
       </div>
 

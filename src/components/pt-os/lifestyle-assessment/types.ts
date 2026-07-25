@@ -33,7 +33,11 @@ export interface LifestyleFormData {
   occupationType: OccupationType | '';
   dailyStepsBracket: DailyStepsBracket | '';
 
-  // Step 5 — Workout Experience
+  // Workout Experience is no longer a step in this wizard (it's collected on
+  // the client Enrollment page instead), but the fields stay here so older
+  // submitted assessments — and the Fitness Testing "skip 1RM for beginners"
+  // convenience, which reads workoutExperienceLevel off the most recent
+  // lifestyle assessment — keep working. Nothing sets them anymore.
   workoutExperienceLevel: 'beginner' | 'intermediate' | 'advanced' | 'athlete' | '';
   yearsOfExperience: string;
 
@@ -68,7 +72,6 @@ export interface FormErrors {
   stress?: string;
   water?: string;
   occupationActivity?: string;
-  workoutExperience?: string;
   foodPreference?: string;
   smokingAlcohol?: string;
   additionalFactors?: string;
@@ -78,9 +81,8 @@ export const STEPS = [
   { id: 1, key: 'sleep', label: 'Sleep' },
   { id: 2, key: 'stress', label: 'Stress' },
   { id: 3, key: 'occupationActivity', label: 'Occupation & Activity' },
-  { id: 4, key: 'workoutExperience', label: 'Workout Experience' },
-  { id: 5, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
-  { id: 6, key: 'additionalFactors', label: 'Additional Factors' },
+  { id: 4, key: 'smokingAlcohol', label: 'Smoking & Alcohol' },
+  { id: 5, key: 'additionalFactors', label: 'Additional Factors' },
 ] as const;
 
 export type StepId = typeof STEPS[number]['id'];

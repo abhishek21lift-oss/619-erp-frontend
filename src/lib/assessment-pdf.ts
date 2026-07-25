@@ -38,7 +38,7 @@ function list(items: string[]): string {
 function generateAssessmentReportHTML(assessment: Row, clientName: string, aiAnalysis?: AiFitnessTestAnalysis | null): string {
   const date = String(assessment.assessment_date ?? '').slice(0, 10) || '—';
   const type = String(assessment.assessment_type ?? '').replace(/_/g, ' ') || '—';
-  const number = assessment.assessment_number != null ? `#${assessment.assessment_number}` : '—';
+  const number = assessment.assessment_number != null ? String(assessment.assessment_number) : '—';
   const coach = String(assessment.trainer_name ?? '') || '—';
 
   const vitals = section('Blood Pressure', [
@@ -85,7 +85,11 @@ function generateAssessmentReportHTML(assessment: Row, clientName: string, aiAna
   ].join(''));
 
   const strength = section('Muscular Strength', [
-    field('Strength Score', scoreLabel(assessment.strength_score_computed)),
+    field('Test 1', v(assessment.strength_exercise)),
+    field('Test 1 Classification', v(assessment.strength_category)),
+    field('Test 2', v(assessment.strength_exercise_2)),
+    field('Test 2 Classification', v(assessment.strength_category_2)),
+    field('Combined Strength Score', scoreLabel(assessment.strength_score_computed)),
   ].join(''));
 
   const endurance = section('Muscular Endurance', [
@@ -97,9 +101,10 @@ function generateAssessmentReportHTML(assessment: Row, clientName: string, aiAna
   ].join(''));
 
   const flexibility = section('Flexibility &amp; Mobility', [
-    field('Classification', v(assessment.flexibility_category)),
+    field('Test 1 Classification', v(assessment.flexibility_category)),
+    field('Test 2 Classification', v(assessment.flexibility_category_2)),
     field('Asymmetry Detected', assessment.has_asymmetry ? 'Yes' : 'No'),
-    field('Mobility Score', scoreLabel(assessment.mobility_score_computed)),
+    field('Combined Mobility Score', scoreLabel(assessment.mobility_score_computed)),
   ].join(''));
 
   const dashboard = `<div class="dashboard">

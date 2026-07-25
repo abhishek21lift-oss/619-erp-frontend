@@ -31,11 +31,17 @@ export interface AssessmentFormData {
   cardioTimeMin: string; cardioHeartRate: string; cardioDistanceMeters: string; cardioTreadmillMinutes: string;
   cardioDurationSec: string; cardioPulse1: string; cardioPulse2: string; cardioPulse3: string; cardioRecoveryHr: string;
 
-  // Step 5 — Muscular Strength
+  // Step 5 — Muscular Strength (two distinct tests required — any exercise
+  // may be tested, but exactly 2 are needed to complete the step, same
+  // battery pattern as Muscular Endurance below)
   strengthExercise: StrengthExercise | '';
   strengthCustomExercise: string;
   strengthMode: 'direct' | 'estimated';
   strengthWeightKg: string; strengthReps: string; strengthFormula: 'brzycki' | 'epley'; strengthDirect1RM: string;
+  strengthExercise2: StrengthExercise | '';
+  strengthCustomExercise2: string;
+  strengthMode2: 'direct' | 'estimated';
+  strengthWeightKg2: string; strengthReps2: string; strengthFormula2: 'brzycki' | 'epley'; strengthDirect1RM2: string;
 
   // Step 6 — Muscular Endurance (two distinct tests required)
   enduranceTestType: EnduranceTestType | '';
@@ -45,11 +51,17 @@ export interface AssessmentFormData {
   enduranceValueType2: 'reps' | 'time';
   enduranceReps2: string; enduranceDurationSec2: string;
 
-  // Step 7 — Flexibility
+  // Step 7 — Flexibility (two distinct tests required — same battery
+  // pattern as Muscular Endurance/Strength: trainer can perform any of the
+  // available tests, but exactly 2 are needed to complete the step)
   flexibilityTestType: FlexibilityTestType | '';
   flexibilityCustomTest: string;
   flexibilityLeft: string; flexibilityRight: string; flexibilityScore: string;
   flexibilityLimitationNotes: string; flexibilityRom: string;
+  flexibilityTestType2: FlexibilityTestType | '';
+  flexibilityCustomTest2: string;
+  flexibilityLeft2: string; flexibilityRight2: string; flexibilityScore2: string;
+  flexibilityLimitationNotes2: string; flexibilityRom2: string;
 }
 
 export interface FormErrors {
@@ -91,11 +103,17 @@ export function initAssessmentForm(): AssessmentFormData {
     strengthExercise: '', strengthCustomExercise: '',
     strengthMode: 'estimated',
     strengthWeightKg: '', strengthReps: '', strengthFormula: 'epley', strengthDirect1RM: '',
+    strengthExercise2: '', strengthCustomExercise2: '',
+    strengthMode2: 'estimated',
+    strengthWeightKg2: '', strengthReps2: '', strengthFormula2: 'epley', strengthDirect1RM2: '',
     enduranceTestType: '', enduranceValueType: 'reps', enduranceReps: '', enduranceDurationSec: '',
     enduranceTestType2: '', enduranceValueType2: 'reps', enduranceReps2: '', enduranceDurationSec2: '',
     flexibilityTestType: '', flexibilityCustomTest: '',
     flexibilityLeft: '', flexibilityRight: '', flexibilityScore: '',
     flexibilityLimitationNotes: '', flexibilityRom: '',
+    flexibilityTestType2: '', flexibilityCustomTest2: '',
+    flexibilityLeft2: '', flexibilityRight2: '', flexibilityScore2: '',
+    flexibilityLimitationNotes2: '', flexibilityRom2: '',
   };
 }
 

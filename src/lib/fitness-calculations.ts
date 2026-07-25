@@ -243,13 +243,20 @@ export function scoreHealthRisk(bpCategory: BpCategory | null, bmi: number | nul
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
 
-// Combined Muscular Endurance score: average of the two required tests'
-// sub-scores (same averaging pattern as scoreHealthRisk above).
-export function scoreEnduranceBattery(score1: number | null, score2: number | null): number | null {
+// Combined score for a two-test battery: average of both tests' sub-scores
+// (same averaging pattern as scoreHealthRisk above). Originally written for
+// Muscular Endurance, then reused as-is for Muscular Strength and
+// Flexibility once they adopted the same "2 distinct tests required"
+// pattern — the maths has never been endurance-specific, just an average of
+// up to two numbers, so `scoreTestBattery` is the name every module
+// should reach for. `scoreEnduranceBattery` stays as an alias so existing
+// call sites don't need to change.
+export function scoreTestBattery(score1: number | null, score2: number | null): number | null {
   const scores = [score1, score2].filter((s): s is number => s != null);
   if (!scores.length) return null;
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
+export const scoreEnduranceBattery = scoreTestBattery;
 
 export function computeOverallScore(scores: Record<string, number | null>): number | null {
   const vals = Object.values(scores).filter((v): v is number => v != null);

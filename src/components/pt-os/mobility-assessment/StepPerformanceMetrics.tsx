@@ -25,7 +25,6 @@ export function StepPerformanceMetrics({ form, set }: StepPerformanceMetricsProp
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FloatInput label="Grip Strength (kg)" type="number" value={form.gripStrengthKg} onChange={(v) => set('gripStrengthKg', v)} />
         <FloatInput label="Vertical Jump (cm)" type="number" value={form.verticalJumpCm} onChange={(v) => set('verticalJumpCm', v)} />
-        <FloatInput label="Sit & Reach (cm)" type="number" value={form.sitReachCm} onChange={(v) => set('sitReachCm', v)} />
         <FloatInput label="Balance Test (seconds)" type="number" value={form.balanceTestSeconds} onChange={(v) => set('balanceTestSeconds', v)} />
         <FloatInput label="Reaction Time (ms)" type="number" value={form.reactionTimeMs} onChange={(v) => set('reactionTimeMs', v)} />
       </div>

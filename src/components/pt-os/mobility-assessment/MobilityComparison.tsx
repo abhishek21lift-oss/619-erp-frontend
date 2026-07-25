@@ -16,7 +16,6 @@ const METRICS: { key: string; label: string }[] = [
   { key: 'mobility_score', label: 'Mobility Score' },
   { key: 'grip_strength_kg', label: 'Grip Strength (kg)' },
   { key: 'vertical_jump_cm', label: 'Vertical Jump (cm)' },
-  { key: 'sit_reach_cm', label: 'Sit & Reach (cm)' },
   { key: 'balance_test_seconds', label: 'Balance Test (s)' },
 ];
 
