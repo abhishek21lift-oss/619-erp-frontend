@@ -585,7 +585,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               globals.css always won, so they never actually took effect. */}
           <main id="main-content" className="flex-1 min-w-0 overflow-x-hidden shell-main"
           >
-            <TrialBanner />
+            {pathname === '/' && <TrialBanner />}
             <AnimatePresence mode="popLayout" initial={false}>
               <m.div
                 key={pathname}
