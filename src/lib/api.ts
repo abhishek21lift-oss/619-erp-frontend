@@ -2029,6 +2029,25 @@ export const api = {
     /** SaaS run-rate metrics: MRR/ARR, plan mix, conversion, founders, trends. */
     subscriptionMetrics: () =>
       http<{ data: SubscriptionMetrics }>('/api/super-admin/subscription-metrics'),
+
+    // ── Coupons ──────────────────────────────────────────────────────────────
+    listCoupons: () => http<{ data: Coupon[] }>('/api/super-admin/coupons'),
+    couponRedemptions: (id: string) =>
+      http<{ data: { id: string; organization_name: string | null; gross_amount_inr: number; discount_inr: number; net_amount_inr: number; redeemed_at: string }[] }>(
+        `/api/super-admin/coupons/${id}/redemptions`),
+    createCoupon: (data: {
+      code: string; description?: string;
+      discount_type: 'percent' | 'fixed'; discount_value: number;
+      max_discount_inr?: number | null; min_amount_inr?: number | null;
+      applies_to_plans?: string[] | null;
+      max_redemptions?: number | null; max_per_org?: number | null;
+      valid_from?: string | null; valid_until?: string | null;
+    }) => http<{ data: Coupon }>('/api/super-admin/coupons', { method: 'POST', body: JSON.stringify(data) }),
+    updateCoupon: (id: string, data: Partial<Pick<Coupon, 'description' | 'is_active' | 'max_redemptions' | 'max_per_org' | 'valid_from' | 'valid_until' | 'min_amount_inr' | 'max_discount_inr'>>) =>
+      http<{ data: Coupon }>(`/api/super-admin/coupons/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    /** Only possible while unused — a redeemed coupon is deactivated, not deleted. */
+    deleteCoupon: (id: string) =>
+      http<{ data: { deleted: boolean } }>(`/api/super-admin/coupons/${id}`, { method: 'DELETE' }),
     getSubscription: (orgId: string) =>
       http<{ data: SubDetail }>(`/api/super-admin/organizations/${orgId}/subscription`),
     activateSubscription: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string; period_months?: number }) =>
@@ -2051,9 +2070,13 @@ export const api = {
     plans: () => http<{ data: { plans: SubPlan[]; founder_slots_remaining: number; founder_limit: number } }>('/api/subscription/plans'),
     invoices: () => http<{ data: SubInvoice[] }>('/api/subscription/invoices'),
     payments: () => http<{ data: SubPayment[] }>('/api/subscription/payments'),
-    requestActivation: (plan_code?: string) =>
+    requestActivation: (plan_code?: string, coupon_code?: string) =>
       http<{ data: { requested: boolean; message: string } }>('/api/subscription/request-activation', {
-        method: 'POST', body: JSON.stringify(plan_code ? { plan_code } : {}),
+        method: 'POST',
+        body: JSON.stringify({
+          ...(plan_code ? { plan_code } : {}),
+          ...(coupon_code ? { coupon_code } : {}),
+        }),
       }),
 
     /** Price a plan change without committing to it. Read-only. */
@@ -2081,6 +2104,17 @@ export const api = {
     /** Drop a pending downgrade so the studio stays on its current plan. */
     cancelScheduledChange: () =>
       http<{ data: { cancelled: boolean } }>('/api/subscription/cancel-scheduled-change', { method: 'POST' }),
+
+    /**
+     * Preview a coupon discount. Read-only — nothing is reserved, so a code
+     * that validates here can still be exhausted by someone else before
+     * activation. The binding check happens server-side under a row lock.
+     */
+    validateCoupon: (code: string, planCode?: string) =>
+      http<{ data: CouponValidation }>(
+        `/api/subscription/validate-coupon?code=${encodeURIComponent(code)}`
+        + (planCode ? `&plan_code=${encodeURIComponent(planCode)}` : ''),
+      ),
   },
 };
 
@@ -2211,6 +2245,35 @@ export type SubscriptionStatus = {
     client_limit: number | null; effective_at: string;
   } | null;
   is_founder?: boolean; founder_number?: number | null; locked_price_inr?: number | null;
+};
+
+/**
+ * Result of previewing a coupon. `reason` is a ready-to-display rejection
+ * message when `valid` is false.
+ */
+export type CouponValidation = {
+  valid: boolean;
+  reason: string | null;
+  coupon?: {
+    id: string; code: string; description: string | null;
+    discount_type: 'percent' | 'fixed'; discount_value: number;
+  };
+  discount_inr?: number;
+  net_amount_inr?: number;
+  gross_amount_inr: number;
+};
+
+/** A coupon as managed by the platform operator. */
+export type Coupon = {
+  id: string; code: string; description: string | null;
+  discount_type: 'percent' | 'fixed'; discount_value: number;
+  max_discount_inr: number | null; min_amount_inr: number | null;
+  applies_to_plans: string[] | null;
+  max_redemptions: number | null; max_per_org: number;
+  valid_from: string | null; valid_until: string | null;
+  is_active: boolean; created_by_name: string | null; created_at: string;
+  /** Derived from the redemption ledger, never a stored counter. */
+  times_redeemed: number; total_discount_inr: number;
 };
 
 /** Priced preview of a plan change, before anything is charged or scheduled. */

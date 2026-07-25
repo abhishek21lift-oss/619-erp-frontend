@@ -14,7 +14,7 @@ import {
 import Guard from '@/components/Guard';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { SubscriptionStatus, SubPlan, SubInvoice, PlanChangeQuote } from '@/lib/api';
+import type { SubscriptionStatus, SubPlan, SubInvoice, PlanChangeQuote, CouponValidation } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
 
@@ -184,16 +184,38 @@ function SubscriptionScreen() {
   const [quoting, setQuoting] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [cancellingPending, setCancellingPending] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [coupon, setCoupon] = useState<CouponValidation | null>(null);
+  const [couponChecking, setCouponChecking] = useState(false);
 
   const requestActivation = async (planCode?: string) => {
     setRequesting(planCode || 'general');
     try {
-      const r = await api.subscription.requestActivation(planCode);
+      // Only send a coupon that actually validated — an unchecked string would
+      // just fail later at redemption.
+      const r = await api.subscription.requestActivation(
+        planCode,
+        coupon?.valid ? couponCode.trim().toUpperCase() : undefined,
+      );
       setRequested(true);
       toast.success(r.data.message);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not send request');
     } finally { setRequesting(''); }
+  };
+
+  const applyCoupon = async (planCode?: string) => {
+    const code = couponCode.trim();
+    if (!code) return;
+    setCouponChecking(true);
+    try {
+      const r = await api.subscription.validateCoupon(code, planCode ?? status?.plan?.code);
+      setCoupon(r.data);
+      if (r.data.valid) toast.success(`Coupon applied — ${fmtINR(r.data.discount_inr ?? 0)} off.`);
+    } catch (e) {
+      setCoupon(null);
+      toast.error(e instanceof Error ? e.message : 'Could not check that coupon');
+    } finally { setCouponChecking(false); }
   };
 
   const load = useCallback(async () => {
@@ -459,6 +481,40 @@ function SubscriptionScreen() {
               ? 'Thanks! Your request has reached the MY PT STUDIO team — we’ll confirm your payment and switch on your subscription shortly. No data is lost.'
               : 'Pick a plan above (or tap below) to request activation. Our team confirms your payment and switches on your subscription — usually within a few hours.'}
           </p>
+          {/* Coupon. Validating is a preview only — the binding check happens
+              server-side under a lock when the operator activates, so a code
+              exhausted in the meantime is still caught. */}
+          {!requested && (
+            <div className="w-full max-w-[420px]">
+              <div className="flex gap-2">
+                <input
+                  value={couponCode}
+                  onChange={(e) => { setCouponCode(e.target.value); setCoupon(null); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
+                  placeholder="Coupon code"
+                  aria-label="Coupon code"
+                  className="h-9 flex-1 rounded-[10px] px-3 text-[12.5px] font-[650] uppercase tracking-wide outline-none"
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${coupon ? (coupon.valid ? 'rgba(52,211,153,0.5)' : 'rgba(248,113,113,0.5)') : 'rgba(255,255,255,0.12)'}`,
+                    color: '#fff',
+                  }}
+                />
+                <Button variant="outline" onClick={() => applyCoupon()}
+                  loading={couponChecking} disabled={couponChecking || !couponCode.trim()}>
+                  Apply
+                </Button>
+              </div>
+              {coupon && (
+                <p className="mt-2 text-[11.5px]" style={{ color: coupon.valid ? '#34d399' : '#fca5a5' }}>
+                  {coupon.valid
+                    ? `${fmtINR(coupon.discount_inr ?? 0)} off${coupon.net_amount_inr != null && coupon.gross_amount_inr > 0 ? ` — ${fmtINR(coupon.net_amount_inr)} due instead of ${fmtINR(coupon.gross_amount_inr)}` : ''}. It will be applied when your subscription is activated.`
+                    : coupon.reason}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-center gap-2.5">
             {!requested && (
               <Button onClick={() => requestActivation()} loading={requesting === 'general'} disabled={!!requesting}
