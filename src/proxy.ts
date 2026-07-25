@@ -49,12 +49,19 @@ const SUPABASE_HOST = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
   : '*.supabase.co';
 
-const API_HOST = process.env.NEXT_PUBLIC_API_URL
-  ? (() => { try { return new URL(process.env.NEXT_PUBLIC_API_URL!).hostname; } catch { return ''; } })()
+// Full ORIGIN (scheme + host + port), not just the hostname. This previously
+// took .hostname and re-prefixed it with a hardcoded `https://`, which dropped
+// the port and forced the scheme — so a local backend on http://localhost:5000
+// produced `https://localhost` in connect-src and every API call in local
+// development was blocked by CSP. Production was unaffected (the browser talks
+// same-origin through the Vercel rewrite, covered by 'self'), which is why it
+// went unnoticed. Using .origin is correct in both.
+const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL
+  ? (() => { try { return new URL(process.env.NEXT_PUBLIC_API_URL!).origin; } catch { return ''; } })()
   : '';
 
 function buildCsp(): string {
-  const apiConnect = API_HOST ? ` https://${API_HOST}` : '';
+  const apiConnect = API_ORIGIN ? ` ${API_ORIGIN}` : '';
   return [
     "default-src 'self'",
     // cdnjs.cloudflare.com serves SheetJS, which lib/sheet-import.ts injects as
