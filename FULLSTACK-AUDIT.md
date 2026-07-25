@@ -7,6 +7,30 @@ Every finding below was verified against a primary source — live SQL against t
 
 ---
 
+## Remediation status (updated 2026-07-25)
+
+Fixes were applied after the audit. Current state of each finding:
+
+| # | Finding | Status |
+|---|---|---|
+| C1 | RLS disabled + anon write grants on 5 tables | **Fixed & verified live** — migration `100`, RLS enabled, deny-all policy added, anon/authenticated grants revoked. Supabase linter now reports **zero** `rls_disabled_in_public` errors (was 5). Row counts unchanged. |
+| H2 | `/uploads/*` unauthenticated | **Fixed in code** — two-tier access control in `routes/uploads.js`; sensitive categories require a session plus a tenant-ownership check. Needs deploy. |
+| H3 | Silent data loss when R2 unconfigured | **Fixed in code** — `server.js` now exits on partial R2 config (any env) and on absent R2 config in production. Needs deploy. |
+| M1 | CSP blocked SheetJS | **Fixed in code** — `cdnjs.cloudflare.com` added to `script-src`; stale `cdn.jsdelivr.net` removed from `connect-src`. Needs deploy. |
+| M3 | Unused `SUPABASE_SERVICE_KEY` requested | **Fixed in code** — removed from `RECOMMENDED_ENV`. |
+| M4 | `trust proxy` possibly wrong | **Made configurable** — `TRUST_PROXY` env var, default 1 (unchanged behaviour). **Still needs operational verification** of the real hop count. |
+| M5 | DB performance hygiene | **Migration written, NOT applied** — see below. |
+| M2 | `xlsx@0.18.5` CVEs | **Not fixed** — documented in code. See below. |
+| LOW | Extensions in `public` schema | **Not fixed** — deliberate. See below. |
+
+**Three items were deliberately not completed:**
+
+1. **M5 (performance migration)** — `101_perf_fk_indexes_and_rls_initplan.sql` is written and committed, but applying it to the live database was **blocked by a tooling permission check**. It is safe and idempotent; it will apply on the next deploy via `src/db/migrate.js`, or can be applied manually. Nothing about it is urgent — it is index and query-plan hygiene, not a security fix.
+2. **M2 (`xlsx` CVEs)** — cannot be fixed from this environment. SheetJS left public npm after 0.18.5, so the patched release must come from `cdn.sheetjs.com`, and pinning it requires computing a fresh SRI hash from the downloaded file. Outbound network is blocked here, so any change would have meant dropping SRI — a net loss in supply-chain safety. The CVEs and the exact upgrade path are now documented at the pin site in `lib/sheet-import.ts`.
+3. **Extensions in `public`** — moving `pg_trgm` / `vector` / `unaccent` out of `public` breaks every unqualified reference to their operators and functions, and would need a coordinated `search_path` change across the codebase. A linter WARN does not justify that risk without a dedicated, tested migration.
+
+---
+
 ## Executive summary
 
 The application layer is in better shape than most codebases this size: 125 of 130 public tables carry deny-all RLS policies, auth uses httpOnly cookies with rotating refresh tokens, rate limiting is layered (IP + per-user + per-endpoint), CORS is an explicit allowlist, and no secrets are tracked in git. The serious problems are concentrated at the **infrastructure seams** — where the app's own migration runner diverges from Supabase's, where uploaded files cross into Cloudflare R2, and where a newly-added feature skipped an established convention.

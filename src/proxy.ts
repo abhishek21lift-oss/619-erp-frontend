@@ -57,10 +57,17 @@ function buildCsp(): string {
   const apiConnect = API_HOST ? ` https://${API_HOST}` : '';
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/",
+    // cdnjs.cloudflare.com serves SheetJS, which lib/sheet-import.ts injects as
+    // a <script> tag (with SRI + crossorigin) on first use of the spreadsheet
+    // importer. Without this origin the browser blocks the load and member
+    // import fails outright wherever the CSP applies — i.e. in production.
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/",
     `img-src 'self' data: blob: https://${SUPABASE_HOST} https://lh3.googleusercontent.com`,
-    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://cdn.jsdelivr.net https://accounts.google.com`,
+    // cdn.jsdelivr.net was dropped: nothing fetches from it any more (the
+    // SheetJS load moved to cdnjs and is a script tag, which connect-src does
+    // not govern), so keeping it only widened the policy for no reason.
+    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://accounts.google.com`,
     "font-src 'self' https://fonts.gstatic.com",
     "media-src 'self' blob:",
     "worker-src 'self' blob:",

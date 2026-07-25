@@ -14,6 +14,17 @@
 // -------------------------------------------------------------
 
 const STORAGE_KEY = '619erp.sheetData.v1';
+
+// SECURITY / KNOWN ISSUE — pinned version carries unpatched CVEs.
+// 0.18.5 is affected by prototype pollution (CVE-2023-30533, fixed in 0.19.3)
+// and ReDoS (CVE-2024-22363, fixed in 0.20.2). Both are reachable from exactly
+// what this module does: parsing a user-supplied spreadsheet in the browser.
+//
+// It cannot simply be bumped here: SheetJS left the public npm registry after
+// 0.18.5, so cdnjs hosts no fixed release. The fix is to pull >= 0.20.2 from
+// the vendor registry (https://cdn.sheetjs.com/) and self-host the asset —
+// which also lets the CSP drop the third-party script origin entirely.
+// Doing so requires recomputing the SRI hash below for the new file.
 const SHEETJS_CDN =
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 

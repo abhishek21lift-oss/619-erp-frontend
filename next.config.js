@@ -2,7 +2,8 @@
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-// CSP is now set dynamically in src/middleware.ts with per-request nonces.
+// CSP and the other security headers are set per-request in src/proxy.ts
+// (Next.js 16 renamed the middleware convention to proxy.ts).
 
 const nextConfig = {
   output: 'standalone',
