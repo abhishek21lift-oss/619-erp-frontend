@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useSeededSearch } from '@/lib/use-seeded-search';
 import { m, AnimatePresence } from 'framer-motion';
 import {
   Search, Users, TrendingUp, Wallet,
@@ -286,18 +287,10 @@ function ClientTableRow({ client, index }: { client: PtClient; index: number }) 
 
 export default function PtClientsPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
+  // Seeded from ?q= so a handoff from the global search arrives filtered.
+  const [search, setSearch] = useSeededSearch();
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
-
-  // "Search all records" in the global search box lands here with ?q=…, so the
-  // query survives the jump instead of dropping the user into an unfiltered
-  // list. Read from location rather than useSearchParams to avoid forcing this
-  // page behind a Suspense boundary for one optional param.
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('q');
-    if (q) setSearch(q);
-  }, []);
 
   // Default to grid/card view on mobile screens
   useEffect(() => {

@@ -34,6 +34,7 @@ import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Search, X, ArrowRight, UserPlus, CalendarPlus, IndianRupee,
   Clock, CornerDownLeft, Users, FileText, Loader2,
+  Dumbbell, ClipboardList, Salad, Activity, MessageSquare, Sparkles,
 } from 'lucide-react';
 import { api, SearchItem, SearchResponse } from '@/lib/api';
 import { cn } from '@/components/ui/cn';
@@ -165,19 +166,39 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 // ── Result avatar ────────────────────────────────────────────────────────────
 
+/**
+ * What a result looks like at a glance.
+ *
+ * People get a face: a photo, or initials on a colour derived from the name, so
+ * the same person is the same colour every time. Everything else gets an icon
+ * tile, because initials for "Squat Jerk" or "Invoice INV-0042" are noise —
+ * two letters that mean nothing and read as a person who is not there.
+ *
+ * A type with no entry here falls back to the icon tile with a neutral glyph,
+ * so a new backend provider renders sensibly before anyone touches this file.
+ */
+const TYPE_ICON: Record<string, { icon: React.ComponentType<{ size?: number; strokeWidth?: number }>; colour: string }> = {
+  exercise: { icon: Dumbbell, colour: '#8B5CF6' },
+  workout_plan: { icon: ClipboardList, colour: '#3B82F6' },
+  diet_plan: { icon: Salad, colour: '#10B981' },
+  assessment: { icon: Activity, colour: '#06B6D4' },
+  invoice: { icon: FileText, colour: '#F59E0B' },
+  payment: { icon: IndianRupee, colour: '#10B981' },
+  message: { icon: MessageSquare, colour: '#0EA5E9' },
+  ai_conversation: { icon: Sparkles, colour: '#A855F7' },
+};
+
 function ResultAvatar({ item }: { item: { title: string; avatar_url?: string | null; type: string } }) {
   const [failed, setFailed] = React.useState(false);
-  const showPhoto = item.avatar_url && !failed;
 
-  if (showPhoto) {
+  if (item.avatar_url && !failed) {
     return (
       // Plain <img>: these are user-uploaded photos on a storage host that is
       // not in the next/image allowlist, and an optimiser round trip buys
-      // nothing at 36px. onError falls back to initials rather than a broken
-      // image icon.
+      // nothing at 36px. onError falls back rather than showing a broken image.
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={item.avatar_url as string}
+        src={item.avatar_url}
         alt=""
         onError={() => setFailed(true)}
         className="h-9 w-9 shrink-0 rounded-full object-cover"
@@ -186,13 +207,30 @@ function ResultAvatar({ item }: { item: { title: string; avatar_url?: string | n
     );
   }
 
+  if (item.type === 'client') {
+    return (
+      <span
+        aria-hidden
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+        style={{ background: avatarGradient(item.title || '?') }}
+      >
+        {initialsAvatar(item.title)}
+      </span>
+    );
+  }
+
+  const spec = TYPE_ICON[item.type];
+  const Icon = spec?.icon ?? FileText;
+  const colour = spec?.colour ?? 'var(--text-muted)';
   return (
     <span
       aria-hidden
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-      style={{ background: avatarGradient(item.title || '?') }}
+      // Rounded square, not a circle: the shape itself says "not a person"
+      // before the icon inside it is even read.
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+      style={{ background: `color-mix(in srgb, ${colour} 15%, transparent)`, color: colour }}
     >
-      {initialsAvatar(item.title)}
+      <Icon size={16} strokeWidth={1.8} />
     </span>
   );
 }

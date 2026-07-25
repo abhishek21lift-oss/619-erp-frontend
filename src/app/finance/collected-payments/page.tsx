@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useSeededSearch } from '@/lib/use-seeded-search';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import Guard from '@/components/Guard';
@@ -40,24 +41,24 @@ function Inner() {
   const router = useRouter();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  // Two values, not one: `query` is what is in the box right now (so the input
+  // stays responsive and can be seeded from ?q= by the global search), `search`
+  // is the debounced value the fetch actually uses. The previous version kept
+  // the live value in a ref and left the input uncontrolled, which meant a
+  // seeded query would filter the list while the box still looked empty.
+  const [query, setQuery] = useSeededSearch();
   const [search, setSearch] = useState('');
-  const searchRef = useRef('');
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<'date' | 'amount'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
 
-  const handleSearch = useCallback((val: string) => {
-    searchRef.current = val;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setSearch(searchRef.current);
-      setPage(0);
-    }, 250);
-  }, []);
-
-  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+  // Debounce query → search. The cleanup cancels the pending timer on every
+  // keystroke and on unmount, so the previous manual ref bookkeeping is gone.
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(query); setPage(0); }, 250);
+    return () => clearTimeout(t);
+  }, [query]);
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -173,7 +174,8 @@ function Inner() {
               <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)', pointerEvents: 'none' }} />
               <input
                 placeholder="Search by client, receipt, notes..."
-                onChange={(e) => handleSearch(e.target.value)}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 className="w-full h-11 rounded-xl outline-none transition-all focus:border-blue-300 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.06)]"
                 style={{ padding: '10px 14px 10px 36px', border: '1.5px solid var(--border)', fontSize: 14, background: 'var(--bg-card)', color: 'var(--text-primary)' }}
               />

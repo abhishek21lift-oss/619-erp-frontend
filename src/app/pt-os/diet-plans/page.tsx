@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import { useSeededSearch } from '@/lib/use-seeded-search';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
@@ -125,7 +126,8 @@ function Inner() {
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeMealType, setActiveMealType] = useState<MealType | null>(null);
-  const [search, setSearch] = useState('');
+  // Seeded from ?q= so a hit from the global search lands on that template.
+  const [search, setSearch] = useSeededSearch();
   const [goalFilter, setGoalFilter] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'meals' | 'templates' | 'grocery' | 'supplements' | 'analytics'>('meals');
   const [aiPanelOpen, setAiPanelOpen] = useState(false);

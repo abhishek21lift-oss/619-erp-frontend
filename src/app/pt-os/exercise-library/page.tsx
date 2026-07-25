@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSeededSearch } from '@/lib/use-seeded-search';
 import {
   Dumbbell, Search, Plus, X, ChevronDown, Filter, Image as ImageIcon,
   Edit3, Trash2, Check, RefreshCw, Info, ChevronLeft, ChevronRight,
@@ -354,7 +355,8 @@ export default function ExerciseLibraryPage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  // Seeded from ?q= so a hit from the global search lands on that exercise.
+  const [search, setSearch] = useSeededSearch();
   const [bodyPart, setBodyPart] = useState('');
   const [equipment, setEquipment] = useState('');
   const [exerciseType, setExerciseType] = useState('');

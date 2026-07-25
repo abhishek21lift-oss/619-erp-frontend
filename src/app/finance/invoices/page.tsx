@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useSeededSearch } from '@/lib/use-seeded-search';
 import { m, AnimatePresence } from 'framer-motion';
 import { api } from '@/lib/api';
 import Guard from '@/components/Guard';
@@ -185,7 +186,8 @@ ${invoice.paymentMethod?`<p style="color:#64748b;font-size:13px;margin-top:8px">
 
 export default function InvoicesPage() {
   const [statusTab, setStatusTab] = React.useState<InvoiceStatus | 'all'>('all');
-  const [search, setSearch] = React.useState('');
+  // Seeded from ?q= so a hit from the global search lands on that invoice.
+  const [search, setSearch] = useSeededSearch();
   const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null);
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
   const [stats, setStats] = React.useState<InvoiceStats>({ total: 0, paid: 0, pending: 0, overdue: 0 });
