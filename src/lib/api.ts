@@ -2026,6 +2026,9 @@ export const api = {
     // ── Subscription / billing management ──
     subscriptions: () =>
       http<{ data: { studios: SubStudio[]; kpis: SubKpis } }>('/api/super-admin/subscriptions'),
+    /** SaaS run-rate metrics: MRR/ARR, plan mix, conversion, founders, trends. */
+    subscriptionMetrics: () =>
+      http<{ data: SubscriptionMetrics }>('/api/super-admin/subscription-metrics'),
     getSubscription: (orgId: string) =>
       http<{ data: SubDetail }>(`/api/super-admin/organizations/${orgId}/subscription`),
     activateSubscription: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string; period_months?: number }) =>
@@ -2141,6 +2144,37 @@ export type SubStudio = {
 export type SubKpis = {
   studios: number; trial: number; active: number; frozen: number; founders: number;
   total_revenue: number; revenue_this_month: number; founder_slots_remaining: number;
+};
+
+/**
+ * SaaS run-rate metrics for the command centre.
+ *
+ * MRR is a run-rate (each active subscription's recurring price normalised to
+ * one month), NOT cash collected — proration credits and one-offs move cash but
+ * not the run-rate. `revenue_trend` is the cash side.
+ */
+export type SubscriptionMetrics = {
+  mrr_inr: number;
+  arr_inr: number;
+  arpu_inr: number;
+  paying_studios: number;
+  states: {
+    suspended: number; on_trial: number; trial_lapsed: number;
+    active: number; lapsed: number; frozen: number;
+    expired: number; cancelled: number; total: number;
+  };
+  plan_distribution: {
+    code: string; name: string; price_inr: number; duration_months: number;
+    studios: number; mrr_inr: number;
+  }[];
+  /** rate_pct is null when no trial has started yet — not 0%. */
+  trial_conversion: { started: number; converted: number; rate_pct: number | null };
+  founders: {
+    granted: number; limit: number; slots_remaining: number;
+    locked_value_inr: number; highest_number: number | null;
+  };
+  revenue_trend: { label: string; month: string; revenue_inr: number; payments: number; refunded_inr: number }[];
+  growth: { label: string; month: string; new_studios: number }[];
 };
 export type SubPayment = {
   id: string; plan_code: string | null; amount_inr: number; method: string | null;

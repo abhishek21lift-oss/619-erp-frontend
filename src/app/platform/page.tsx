@@ -24,7 +24,7 @@ import { api } from '@/lib/api';
 import type {
   Organization, OrganizationDetail, OrgUser,
   PlatformOverview, StudioOverview, ActivityEntry,
-  SubStudio, SubKpis, SubDetail, SubPlan,
+  SubStudio, SubKpis, SubDetail, SubPlan, SubscriptionMetrics,
 } from '@/lib/api';
 import { setImpersonation, getImpersonation } from '@/lib/http';
 import { clearCachedAuthUser } from '@/lib/auth-context';
@@ -159,6 +159,7 @@ function BillingTab() {
   const [error, setError] = useState('');
   const [payTarget, setPayTarget] = useState<SubStudio | null>(null);
   const [detailTarget, setDetailTarget] = useState<SubStudio | null>(null);
+  const [metrics, setMetrics] = useState<SubscriptionMetrics | null>(null);
 
   const load = useCallback(() => {
     setLoading(true); setError('');
@@ -168,6 +169,11 @@ function BillingTab() {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
+  // Run-rate metrics load independently: they are a bonus panel, so a failure
+  // here must not take down the studio list the operator actually works from.
+  useEffect(() => {
+    api.superAdmin.subscriptionMetrics().then((r) => setMetrics(r.data)).catch(() => setMetrics(null));
+  }, []);
   useEffect(() => { api.subscription.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
 
   const quickFreeze = async (s: SubStudio, freeze: boolean) => {
@@ -187,7 +193,8 @@ function BillingTab() {
     { label: 'Revenue', value: fmtINR(kpis.total_revenue), sub: `${fmtINR(kpis.revenue_this_month)} this month`, color: '#10b981', icon: <IndianRupee size={18} /> },
     { label: 'Active', value: String(kpis.active), sub: `${kpis.trial} on trial`, color: '#6366f1', icon: <CreditCard size={18} /> },
     { label: 'Frozen', value: String(kpis.frozen), sub: 'need payment', color: '#ef4444', icon: <Snowflake size={18} /> },
-    { label: 'Founders', value: `${kpis.founders}/50`, sub: `${kpis.founder_slots_remaining} slots left`, color: '#f59e0b', icon: <Crown size={18} /> },
+    // Founder cap comes from the API — it used to be hardcoded to 50 and is now 20.
+    { label: 'Founders', value: `${kpis.founders}${metrics ? `/${metrics.founders.limit}` : ''}`, sub: `${kpis.founder_slots_remaining} slots left`, color: '#f59e0b', icon: <Crown size={18} /> },
   ] : [];
 
   return (
@@ -203,6 +210,8 @@ function BillingTab() {
           </div>
         ))}
       </div>
+
+      {metrics && <SaasMetrics m={metrics} />}
 
       <div className="space-y-3">
         {studios.map((s) => {
@@ -811,6 +820,119 @@ function ActivityTab() {
 }
 
 /* ─────────────────────────────────────────────────────── SHARED UI */
+// ── SaaS run-rate metrics ─────────────────────────────────────────────────────
+// MRR/ARR are a RUN-RATE (recurring price normalised to one month), not cash
+// collected — the revenue trend below is the cash side. Labelling both clearly
+// matters: conflating them is the classic SaaS reporting mistake.
+function SaasMetrics({ m }: { m: SubscriptionMetrics }) {
+  const maxRevenue = Math.max(1, ...m.revenue_trend.map((r) => r.revenue_inr));
+  const planned = m.plan_distribution.filter((p) => p.studios > 0);
+  const totalPlanned = planned.reduce((s, p) => s + p.studios, 0);
+
+  const tiles = [
+    { label: 'MRR', value: fmtINR(m.mrr_inr), sub: 'recurring run-rate', color: '#10b981' },
+    { label: 'ARR', value: fmtINR(m.arr_inr), sub: 'MRR × 12', color: '#6366f1' },
+    { label: 'ARPU', value: fmtINR(m.arpu_inr), sub: `${m.paying_studios} paying`, color: '#0ea5e9' },
+    {
+      label: 'Trial → paid',
+      value: m.trial_conversion.rate_pct == null ? '—' : `${m.trial_conversion.rate_pct}%`,
+      sub: m.trial_conversion.started > 0
+        ? `${m.trial_conversion.converted} of ${m.trial_conversion.started} trials`
+        : 'no trials yet',
+      color: '#f59e0b',
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tiles.map((t) => (
+          <div key={t.label} className="rounded-[16px] p-4"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <span className="text-[10px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t.label}</span>
+            <p className="mt-1.5 text-[22px] font-[840] tabular-nums" style={{ color: t.color }}>{t.value}</p>
+            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{t.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Cash collected — distinct from the run-rate above. */}
+        <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <p className="text-[12px] font-[750]" style={{ color: 'var(--text-primary)' }}>Revenue collected</p>
+          <p className="mb-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>Cash in, last 12 months</p>
+          {m.revenue_trend.length === 0 ? (
+            <p className="py-6 text-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No payments recorded yet</p>
+          ) : (
+            <div className="flex items-end gap-1.5" style={{ height: 120 }}>
+              {m.revenue_trend.map((r) => (
+                <div key={r.month} className="flex flex-1 flex-col items-center gap-1.5" title={`${r.label}: ${fmtINR(r.revenue_inr)} (${r.payments} payments)`}>
+                  <div className="w-full rounded-t-[4px]"
+                    style={{ height: `${Math.max((r.revenue_inr / maxRevenue) * 96, 2)}px`, background: '#10b981' }} />
+                  <span className="text-[8.5px]" style={{ color: 'var(--text-muted)' }}>{r.label.slice(0, 3)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Where the run-rate actually comes from. */}
+        <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <p className="text-[12px] font-[750]" style={{ color: 'var(--text-primary)' }}>Plan distribution</p>
+          <p className="mb-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>Paying studios by plan</p>
+          {planned.length === 0 ? (
+            <p className="py-6 text-center text-[12px]" style={{ color: 'var(--text-muted)' }}>No studios on a paid plan yet</p>
+          ) : (
+            <div className="space-y-2.5">
+              {planned.map((p) => (
+                <div key={p.code}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>{p.name}</span>
+                    <span className="text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                      {p.studios} · {fmtINR(p.mrr_inr)}/mo
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
+                    <div className="h-full rounded-full"
+                      style={{ width: `${totalPlanned > 0 ? (p.studios / totalPlanned) * 100 : 0}%`, background: '#6366f1' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Lifecycle spread — timestamp-aware, so a lapsed row the worker has not
+          swept yet still reports as lapsed rather than active. */}
+      <div className="rounded-[16px] p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <p className="mb-3 text-[12px] font-[750]" style={{ color: 'var(--text-primary)' }}>Lifecycle</p>
+        <div className="flex flex-wrap gap-2">
+          {([
+            ['Active', m.states.active, '#10b981'],
+            ['On trial', m.states.on_trial, '#f59e0b'],
+            ['Trial lapsed', m.states.trial_lapsed, '#f97316'],
+            ['Lapsed', m.states.lapsed, '#ef4444'],
+            ['Frozen', m.states.frozen, '#ef4444'],
+            ['Expired', m.states.expired, '#94a3b8'],
+            ['Cancelled', m.states.cancelled, '#94a3b8'],
+            ['Suspended', m.states.suspended, '#7c3aed'],
+          ] as const).filter(([, n]) => n > 0).map(([label, n, colour]) => (
+            <span key={label} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
+              style={{ background: `${colour}18`, color: colour }}>
+              {label} <strong className="tabular-nums">{n}</strong>
+            </span>
+          ))}
+          <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[650]"
+            style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+            Founders <strong className="tabular-nums">{m.founders.granted}/{m.founders.limit}</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Center({ children }: { children: React.ReactNode }) {
   return <div className="flex justify-center py-20">{children}</div>;
 }
