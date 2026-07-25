@@ -2,28 +2,24 @@
 /**
  * KioskContent — the actual kiosk UI loaded client-side only.
  *
- * Dual-mode check-in:
- *   FACE MODE  — uses face-api.js + blink anti-spoof, same hooks as CheckInContent
- *   QR MODE    — uses jsQR to decode camera frames
+ * QR-only check-in: uses jsQR to decode camera frames of a member's QR code.
+ * (This used to also support a face-recognition mode; that system has been
+ * removed from the app, so the kiosk is QR-only now.)
  *
- * State machine: idle → [face|qr]_scan → processing → result → (7s) → idle
+ * State machine: idle → scanning → processing → result → (7s) → idle
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  ScanFace, QrCode, CheckCircle2, XCircle,
+  QrCode, CheckCircle2, XCircle,
   Loader2, Clock, SwitchCamera,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { useCamera } from '@/hooks/useCamera';
-import { useFaceDetection } from '@/hooks/useFaceDetection';
-import { useAntiSpoof } from '@/hooks/useAntiSpoof';
-import type { DetectionResult } from '@/types/checkin';
 
-type Mode   = 'face' | 'qr';
-type KState = 'welcome' | 'loading' | 'scanning' | 'liveness' | 'processing' | 'success' | 'error' | 'expired' | 'duplicate';
+type KState = 'welcome' | 'loading' | 'scanning' | 'processing' | 'success' | 'error' | 'expired' | 'duplicate';
 
 type KResult = { name: string; message: string; photo?: string; memberCode?: string; success: boolean };
 
@@ -33,7 +29,6 @@ const COLORS: Record<KState, string> = {
   welcome:    '#6366f1',
   loading:    '#8b5cf6',
   scanning:   '#06b6d4',
-  liveness:   '#f59e0b',
   processing: '#8b5cf6',
   success:    '#10b981',
   error:      '#ef4444',
@@ -55,17 +50,13 @@ function Clock2() {
 const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5-minute idle timeout for kiosk security
 
 export default function KioskContent() {
-  const [mode,   setMode]   = useState<Mode>('face');
   const [kstate, setKState] = useState<KState>('welcome');
   const [result, setResult] = useState<KResult | null>(null);
-  const [msg,    setMsg]    = useState('Welcome! Please scan your face or QR code.');
+  const [msg,    setMsg]    = useState('Welcome! Please hold your QR code up to the camera.');
 
   const { logout } = useAuth();
   const router = useRouter();
-  const camera    = useCamera();
-  const detection = useFaceDetection();
-  const antiSpoof = useAntiSpoof();
-  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const camera = useCamera();
   const qrCanvasRef  = useRef<HTMLCanvasElement>(null);
   const rafRef       = useRef<number>(0);
   const cooldownRef  = useRef<number>(0);
@@ -108,11 +99,10 @@ export default function KioskContent() {
     resetTimer.current = setTimeout(() => {
       setResult(null);
       setKState('scanning');
-      setMsg(mode === 'face' ? 'Position your face in the guide' : 'Hold your QR code up to the camera');
-      antiSpoof.reset();
+      setMsg('Hold your QR code up to the camera');
       cooldownRef.current = 0;
     }, 7000);
-  }, [mode, antiSpoof]);
+  }, []);
 
   const handleResult = useCallback((res: KResult) => {
     setResult(res);
@@ -121,47 +111,6 @@ export default function KioskContent() {
     speak(res.message);
     scheduleReset();
   }, [speak, scheduleReset]);
-
-  // ── Face recognition ──────────────────────────────────────────────────────
-  const runFaceRecognition = useCallback(async (descriptor: Float32Array) => {
-    if (Date.now() < cooldownRef.current) return;
-    cooldownRef.current = Date.now() + 8000;
-    setKState('processing');
-    setMsg('Verifying identity…');
-    try {
-      const data = await api.checkin.face(Array.from(descriptor));
-      if (!data.success) {
-        handleResult({ success: false, name: 'Unknown', message: 'Face not recognized. Please try QR check-in.' });
-      } else {
-        const ok = (data.member?.status || 'active') === 'active';
-        handleResult({
-          success: ok,
-          name: data.member?.name || '',
-          message: ok ? `Welcome, ${data.member?.name}!` : `Membership ${data.member?.status}`,
-          photo: data.member?.photo_url,
-          memberCode: data.member?.member_code,
-        });
-      }
-    } catch {
-      handleResult({ success: false, name: '', message: 'Network error. Please try again.' });
-    }
-  }, [handleResult]);
-
-  const handleFaceDetection = useCallback((d: DetectionResult) => {
-    if (Date.now() < cooldownRef.current) return;
-    if (!d.detected) { setMsg('Position your face in the guide'); return; }
-    if (d.multipleFaces) { setMsg('One person at a time please'); return; }
-    if (d.landmarks) antiSpoof.processFaceLandmarks(d.landmarks);
-    if (!antiSpoof.blinkDetected) {
-      setKState('liveness');
-      setMsg('Please blink once to verify');
-      return;
-    }
-    if (kstate !== 'processing' && d.descriptor) {
-      setKState('processing');
-      void runFaceRecognition(d.descriptor);
-    }
-  }, [kstate, antiSpoof, runFaceRecognition]);
 
   // ── QR scanning ───────────────────────────────────────────────────────────
   const startQrLoop = useCallback(() => {
@@ -201,88 +150,50 @@ export default function KioskContent() {
     rafRef.current = requestAnimationFrame(tick);
   }, [camera.videoRef, handleResult, scheduleReset]);
 
-  // ── Mode switch ───────────────────────────────────────────────────────────
-  const switchMode = useCallback(async (newMode: Mode) => {
-    cancelAnimationFrame(rafRef.current);
-    detection.stopDetectionLoop();
-    antiSpoof.reset();
-    cooldownRef.current = 0;
-    setResult(null);
-    setKState('loading');
-    setMode(newMode);
-    setMsg('Starting camera…');
-
-    if (newMode === 'face') {
-      const modOk = await detection.loadModels();
-      if (!modOk) { setMsg(detection.modelError || 'Could not load face models'); setKState('error'); return; }
-      const camOk = await camera.start('user');
-      if (!camOk) { setMsg('Camera unavailable.'); setKState('scanning'); return; }
-      setKState('scanning');
-      setMsg('Position your face in the guide');
-    } else {
-      // QR mode — rear/environment camera, same as scanning any barcode
-      if (!jsQR) {
-        const mod = await import('jsqr');
-        jsQR = (mod.default || mod) as unknown as typeof jsQR;
-      }
-      const camOk = await camera.start('environment');
-      if (!camOk) { setMsg('Camera unavailable.'); setKState('scanning'); return; }
-      setKState('scanning');
-      setMsg('Hold your QR code up to the camera');
-      startQrLoop();
-    }
-  }, [detection, antiSpoof, camera, startQrLoop]);
-
-  // ── Flip camera — manual override if the auto-picked camera is wrong ─────
+  // ── Flip camera — manual override for kiosk hardware with only one usable
+  //    camera facing the wrong way ──────────────────────────────────────────
   const flipCamera = useCallback(async () => {
     if (kstate === 'processing') return;
     const next = camera.facingMode === 'user' ? 'environment' : 'user';
     await camera.start(next);
   }, [camera, kstate]);
 
-  // ── Init: start face mode by default ─────────────────────────────────────
+  // ── Init: rear camera, start scanning ─────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setKState('loading');
-      setMsg('Loading face recognition…');
-      const modOk = await detection.loadModels();
+      setMsg('Starting camera…');
+      if (!jsQR) {
+        const mod = await import('jsqr');
+        jsQR = (mod.default || mod) as unknown as typeof jsQR;
+      }
+      const camOk = await camera.start('environment');
       if (cancelled) return;
-      if (!modOk) { setMsg(detection.modelError || 'Could not load models'); setKState('error'); return; }
-      const camOk = await camera.start('user');
-      if (cancelled) return;
-      if (!camOk) { setMsg('Camera unavailable.'); return; }
+      if (!camOk) { setMsg('Camera unavailable.'); setKState('error'); return; }
       setKState('scanning');
-      setMsg('Position your face in the guide');
+      setMsg('Hold your QR code up to the camera');
     })();
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafRef.current);
-      detection.stopDetectionLoop();
       camera.stop();
       if (resetTimer.current) clearTimeout(resetTimer.current);
       window.speechSynthesis?.cancel();
     };
   }, []); // eslint-disable-line
 
-  // ── Start detection loop when face mode is ready ──────────────────────────
-  // Destructure stable references to avoid the whole `detection` object
-  // (new plain object every render) triggering a loop restart on every render.
-  const { modelStatus: detModelStatus, startDetectionLoop, stopDetectionLoop } = detection;
+  // ── Start the QR scan loop once the camera is live ────────────────────────
   useEffect(() => {
-    if (mode !== 'face') return;
-    if (camera.status !== 'active' || detModelStatus !== 'ready') return;
-    if (!camera.videoRef.current || !canvasRef.current) return;
-    startDetectionLoop(camera.videoRef.current, canvasRef.current, handleFaceDetection);
-    return () => stopDetectionLoop();
-  }, [mode, camera.status, camera.videoRef, detModelStatus, startDetectionLoop, stopDetectionLoop, handleFaceDetection]);
+    if (camera.status !== 'active') return;
+    startQrLoop();
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [camera.status, startQrLoop]);
 
   const color = COLORS[kstate];
   const isSuccess = kstate === 'success';
   const isError   = kstate === 'error' || kstate === 'expired';
   const isDup     = kstate === 'duplicate';
-
-  const mirrored = mode === 'face' && camera.facingMode === 'user';
 
   return (
     <div
@@ -314,7 +225,6 @@ export default function KioskContent() {
           .kk-msg { font-size: 16px !important; }
           .kk-viewport { max-width: 100% !important; }
           .kk-video, .kk-canvas { aspect-ratio: 3/4 !important; }
-          .kk-face-ring { width: 140px !important; height: 140px !important; }
           .kk-btn { min-height: 48px !important; font-size: 15px !important; padding: 12px 20px !important; }
           .kk-topbar { padding-left: 14px !important; padding-right: 14px !important; }
           .kk-topbar-title { font-size: 14px !important; }
@@ -329,7 +239,7 @@ export default function KioskContent() {
       <div className="kk-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
           <div style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ScanFace size={18} color="#fff" />
+            <QrCode size={18} color="#fff" />
           </div>
           <div style={{ minWidth: 0 }}>
             <div className="kk-topbar-title" style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>MY PT STUDIO</div>
@@ -346,11 +256,10 @@ export default function KioskContent() {
 
         {/* Camera viewport */}
         <div className="kk-viewport" style={{ position: 'relative', width: '100%', maxWidth: 520, borderRadius: 24, overflow: 'hidden', border: `2px solid ${color}40`, boxShadow: `0 0 40px ${color}20` }}>
-          <video ref={camera.videoRef} autoPlay playsInline muted className="kk-video" style={{ width: '100%', objectFit: 'cover', transform: mirrored ? 'scaleX(-1)' : 'none', display: 'block' }} />
-          <canvas ref={canvasRef} className="kk-canvas" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', transform: mirrored ? 'scaleX(-1)' : 'none', display: mode === 'face' ? 'block' : 'none' }} />
+          <video ref={camera.videoRef} autoPlay playsInline muted className="kk-video" style={{ width: '100%', objectFit: 'cover', display: 'block' }} />
           <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
 
-          {/* Camera flip — auto-picks front for face, rear for QR; manual override */}
+          {/* Camera flip — kiosk hardware sometimes has only one usable camera */}
           {camera.status === 'active' && (
             <button
               className="kk-flip-btn"
@@ -367,13 +276,8 @@ export default function KioskContent() {
             </button>
           )}
 
-          {/* Face guide ring */}
-          {mode === 'face' && (kstate === 'scanning' || kstate === 'liveness') && (
-            <div className="kk-face-ring" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 200, height: 200, borderRadius: '50%', border: `2px solid ${color}`, pointerEvents: 'none', animation: 'kk-pulse 2s ease-in-out infinite', boxShadow: `0 0 30px ${color}30` }} />
-          )}
-
           {/* QR scan frame */}
-          {mode === 'qr' && kstate === 'scanning' && (
+          {kstate === 'scanning' && (
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 200, height: 200 }}>
               {[0,1,2,3].map((i) => {
                 const isRight = i === 1 || i === 3;
@@ -407,35 +311,8 @@ export default function KioskContent() {
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           style={{ textAlign: 'center', maxWidth: 400 }}
         >
-          <div className="kk-msg" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{kstate === 'loading' && detection.loadingModel ? detection.loadingModel : msg}</div>
-          {kstate === 'liveness' && (
-            <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>This confirms you are a real person</div>
-          )}
-          {kstate === 'scanning' && mode === 'face' && (
-            <div style={{ fontSize: 14, color: 'var(--text-disabled)' }}>Blink once when prompted</div>
-          )}
+          <div className="kk-msg" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{msg}</div>
         </m.div>
-
-        {/* Mode toggle tabs */}
-        <div style={{ display: 'flex', gap: 8, width: '100%', maxWidth: 420, background: 'var(--bg-subtle)', borderRadius: 16, padding: 6, border: '1px solid var(--border)' }}>
-          {(['face', 'qr'] as Mode[]).map((m) => (
-            <button
-              key={m}
-              className="kk-btn"
-              onClick={() => switchMode(m)}
-              disabled={kstate === 'processing' || mode === m}
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 24px', borderRadius: 12, border: 'none', cursor: mode === m ? 'default' : 'pointer', fontSize: 14, fontWeight: 700, transition: 'all 0.2s', minHeight: 48, touchAction: 'manipulation',
-                background: mode === m ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent',
-                color: mode === m ? '#fff' : '#6b7280',
-                boxShadow: mode === m ? '0 4px 16px rgba(99,102,241,0.3)' : 'none',
-              }}
-            >
-              {m === 'face' ? <ScanFace size={18} /> : <QrCode size={18} />}
-              {m === 'face' ? 'Face Scan' : 'QR Code'}
-            </button>
-          ))}
-        </div>
 
         {/* State indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 20, background: `${color}15`, border: `1px solid ${color}30`, color }}>
@@ -446,7 +323,7 @@ export default function KioskContent() {
           {kstate === 'error' && <XCircle size={12} />}
           {!['loading','processing','success','error'].includes(kstate) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, animation: kstate === 'scanning' ? 'kk-pulse 1.5s ease-in-out infinite' : 'none' }} />}
           <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            {kstate === 'welcome' ? 'Ready' : kstate === 'loading' ? 'Loading…' : kstate === 'scanning' ? 'Scanning' : kstate === 'liveness' ? 'Blink to verify' : kstate === 'processing' ? 'Verifying…' : kstate === 'success' ? 'Checked In' : kstate === 'duplicate' ? 'Already In' : 'Failed'}
+            {kstate === 'welcome' ? 'Ready' : kstate === 'loading' ? 'Loading…' : kstate === 'scanning' ? 'Scanning' : kstate === 'processing' ? 'Verifying…' : kstate === 'success' ? 'Checked In' : kstate === 'duplicate' ? 'Already In' : 'Failed'}
           </span>
         </div>
       </div>
@@ -454,7 +331,7 @@ export default function KioskContent() {
       {/* Bottom bar */}
       <div className="kk-bottombar" style={{ background: 'var(--bg-card)', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>MY PT STUDIO · Kiosk Mode</span>
-        <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>Face descriptors are never stored on this device</span>
+        <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>QR check-in</span>
       </div>
     </div>
   );

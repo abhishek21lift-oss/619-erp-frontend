@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  LogOut, Bell, Settings, Fingerprint,
+  LogOut, Bell, Settings,
   Zap, User, HelpCircle, ChevronDown, CreditCard,
   Menu, CheckCheck, ExternalLink, ChevronRight, KeyRound, Sun, Moon,
 } from 'lucide-react';
@@ -42,8 +42,8 @@ interface Notification {
 }
 
 const NAV_KEYWORDS: Record<string, string> = {
-  '/checkin':                    'walk-in walkin drop-in checkin daily visit attendance',
-  '/checkin/kiosk':              'kiosk self service qr face biometric',
+  '/checkin/qr-scanner':         'walk-in walkin drop-in checkin daily visit attendance qr scanner scan code',
+  '/checkin/kiosk':              'kiosk self service qr code attendance',
 '/ai-coach':                   'ai coach chatbot gpt workout nutrition fitness assistant 619',
   '/ai/workout-generator':       'ai workout plan generator create programme training',
   '/ai/diet-generator':          'ai diet nutrition plan generator meal food macros calories',
@@ -65,8 +65,12 @@ const NAV_KEYWORDS: Record<string, string> = {
   '/attendance':                 'attendance check-in sign-in records',
 };
 
+// 'QR Scanner' used to live here as its own entry, pointing at the same route
+// the Attendance group's 'Check In' item now also points to — since removing
+// the face check-in hub, they'd otherwise show as two identical search
+// results. Its keywords were folded into NAV_KEYWORDS['/checkin/qr-scanner']
+// above instead.
 const EXTRA_SEARCH_PAGES: PageEntry[] = [
-  { label: 'QR Scanner',           href: '/checkin/qr-scanner', keywords: 'qr scanner checkin scan code attendance' },
   { label: 'Attendance Dashboard', href: '/checkin/dashboard',  keywords: 'attendance dashboard live stats today visitors inside' },
 ];
 
@@ -160,7 +164,6 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   // My Profile intentionally lives only in the profile dropdown (avatar menu),
   // not here in the settings (gear) menu.
   const settingsLinks = [
-    { href: '/settings/biometric',       label: 'Biometric & Face',      icon: Fingerprint },
     { href: '/settings/passkeys',        label: 'Passkeys / Face ID Login', icon: KeyRound },
     { href: '/settings/integrations',    label: 'Integrations',          icon: Zap },
   ];

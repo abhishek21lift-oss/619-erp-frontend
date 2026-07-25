@@ -54,9 +54,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Attendance',
     icon: 'ScanFace',
     items: [
-      { href: '/checkin',             label: 'Check In',            icon: 'ScanFace' },
-      { href: '/checkin/enroll',     label: 'Enroll Member',       icon: 'UserCheck',      roles: ['admin', 'manager'] },
-      { href: '/checkin/enroll/face', label: 'Face Enrollment',    icon: 'Camera',         roles: ['admin', 'manager'], hidden: true, matchPrefix: '/checkin/enroll/face' },
+      { href: '/checkin/qr-scanner', label: 'Check In',            icon: 'ScanFace' },
       { href: '/checkin/kiosk',      label: 'Kiosk Mode',          icon: 'Monitor',        roles: ['admin', 'manager'] },
       { href: '/attendance',         label: 'Attendance Records',  icon: 'ClipboardList',  roles: ['admin', 'manager', 'trainer'] },
       { href: '/attendance/reports', label: 'Reports & Dashboard', icon: 'BarChart3',      roles: ['admin'] },
@@ -185,7 +183,6 @@ export const SETTINGS_GROUP: NavGroup = {
     { href: '/settings/profile',          label: 'My Profile',           icon: 'User' },
     { href: '/subscription',              label: 'Subscription & Billing', icon: 'CreditCard',  roles: ['admin'] },
     { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['admin'] },
-    { href: '/settings/biometric',        label: 'Biometric & Face',     icon: 'Fingerprint',    roles: ['admin'] },
     { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['admin'] },
     { href: '/settings/integrations',     label: 'Integrations',         icon: 'Zap',            roles: ['admin'], isNew: true },
     { href: '/settings/merge-duplicates', label: 'Merge Duplicates',     icon: 'Merge',          roles: ['admin'], isNew: true },
@@ -195,7 +192,7 @@ export const SETTINGS_GROUP: NavGroup = {
 export const QUICK_ACTIONS = [
   { id: 'qa-record-pay',   label: 'Record payment',  icon: 'Wallet',       href: '/finance/record-payment',    roles: ['admin'] as Role[] },
   { id: 'qa-book-session', label: 'Book PT session', icon: 'CalendarPlus', href: '/pt-os/schedule-session' },
-  { id: 'qa-face-checkin', label: 'Check In',         icon: 'ScanFace',     href: '/checkin' },
+  { id: 'qa-checkin',      label: 'Check In',         icon: 'ScanFace',     href: '/checkin/qr-scanner' },
 ];
 
 export function allNavItems(): Array<NavItem & { groupId: string; groupLabel: string }> {

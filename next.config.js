@@ -10,11 +10,6 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
-  serverExternalPackages: [
-    '@vladmandic/face-api',
-    'canvas',
-  ],
-
   experimental: {
     optimizePackageImports: [
       'lucide-react',
@@ -54,41 +49,17 @@ const nextConfig = {
         crypto: false,
       };
     }
-    if (isServer) {
-      const existing = Array.isArray(config.externals)
-        ? config.externals
-        : config.externals
-        ? [config.externals]
-        : [];
-      config.externals = [
-        ...existing,
-        '@vladmandic/face-api',
-        'canvas',
-      ];
-    }
     return config;
   },
 
-  async headers() {
-    // Security headers (CSP, X-Frame-Options, X-Content-Type-Options,
-    // Referrer-Policy, Permissions-Policy) are set dynamically per-request
-    // in src/proxy.ts (nonce-based CSP) — that is the single source of
-    // truth. Do not duplicate them here; proxy.ts runs on every request
-    // and its headers.set() calls would silently override anything
-    // declared in this file, leaving a second copy to bit-rot.
-    return [
-      // Versioned path (/models/v2/…) gets long-lived immutable caching.
-      {
-        source: '/models/v:version/(.*)',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
-      },
-      // Unversioned path (/models/…) gets a 24-hour TTL.
-      {
-        source: '/models/(.*)',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400' }],
-      },
-    ];
-  },
+  // Security headers (CSP, X-Frame-Options, X-Content-Type-Options,
+  // Referrer-Policy, Permissions-Policy) are set dynamically per-request
+  // in src/proxy.ts (nonce-based CSP) — that is the single source of
+  // truth. Do not duplicate them here; proxy.ts runs on every request
+  // and its headers.set() calls would silently override anything
+  // declared in this file, leaving a second copy to bit-rot.
+  // (The face-api.js model cache-control rules that used to live here were
+  // removed along with the face recognition check-in system — see /models.)
 
   async redirects() {
     return [
@@ -99,16 +70,18 @@ const nextConfig = {
       { source: '/operations',         destination: '/operations/leaderboard',   permanent: true },
       { source: '/checkin/reports',    destination: '/attendance/reports',       permanent: true },
       { source: '/pt-os/plans',        destination: '/subscription/packages',    permanent: true },
+      // The check-in hub (face / QR / passkey method picker) is gone — the
+      // route now goes straight to the QR scanner, which is the only
+      // in-app check-in method left. permanent:false because this may
+      // change again as the product settles; a 307 doesn't get cached
+      // the way a 308 would.
+      { source: '/checkin',            destination: '/checkin/qr-scanner',       permanent: false },
     ];
   },
 
   async rewrites() {
-    const passThrough = [
-      { source: '/models/:path*', destination: '/models/:path*' },
-    ];
-
     if (!IS_PROD) {
-      return passThrough;
+      return [];
     }
 
     const backendUrl = (
@@ -122,7 +95,6 @@ const nextConfig = {
     }
 
     return [
-      ...passThrough,
       { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
       { source: '/uploads/:path*', destination: `${backendUrl}/uploads/:path*` },
     ];

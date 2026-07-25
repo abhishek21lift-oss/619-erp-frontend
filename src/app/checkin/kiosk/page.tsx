@@ -2,12 +2,11 @@
 /**
  * Kiosk Mode — Full-screen self check-in terminal.
  *
- * Dual-mode: Face Recognition + QR Code scanning.
- * Designed for a tablet/touchscreen placed at gym entrance.
+ * QR code scanning only. Designed for a tablet/touchscreen placed at the
+ * gym entrance.
  *
  * Features:
  * - Full-screen, no nav chrome
- * - Auto-cycling between face and QR modes
  * - Large touch-friendly UI
  * - Voice announcements
  * - Auto-reset after 7s
@@ -17,7 +16,7 @@
  */
 import dynamic from 'next/dynamic';
 
-// SSR must be disabled — face-api.js + jsQR both need browser APIs
+// SSR must be disabled — jsQR needs browser APIs (camera, canvas)
 const KioskContent = dynamic(() => import('./KioskContent'), {
   ssr: false,
   loading: () => (

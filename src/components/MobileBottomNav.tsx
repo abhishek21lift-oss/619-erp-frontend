@@ -12,7 +12,7 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 const BASE_ITEMS = [
   { href: '/',               icon: Home,        label: 'Home'     },
   { href: '/pt-os/clients',  icon: Users,       label: 'Clients'  },
-  { href: '/checkin',        icon: ScanFace,    label: 'Check-in' },
+  { href: '/checkin/qr-scanner', icon: ScanFace, label: 'Check-in' },
   { href: '/pt-os/sessions', icon: Dumbbell,    label: 'Sessions' },
 ];
 

@@ -1143,19 +1143,6 @@ export const api = {
       http(`/api/attendance/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   },
 
-  checkin: {
-    face: (descriptor: number[]) =>
-      http<{ success: boolean; error?: string; member?: { id: string; name: string; status: string; photo_url?: string; member_code?: string } }>(
-        '/api/checkin/face', { method: 'POST', body: JSON.stringify({ descriptor }) }
-      ),
-    enroll: (client_id: string, descriptor: number[]) =>
-      http<{ message: string; client_id: string; descriptor_id: string }>(
-        '/api/checkin/enroll', { method: 'POST', body: JSON.stringify({ client_id, descriptor }) }
-      ),
-    revokeEnrollment: (clientId: string) =>
-      http<{ message: string }>(`/api/checkin/enroll/${clientId}`, { method: 'DELETE' }),
-  },
-
   notifications: {
     list: (params?: Record<string, string>) =>
       http<unknown[]>(`/api/v1/notifications${buildQs(params)}`),
