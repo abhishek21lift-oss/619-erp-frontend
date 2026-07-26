@@ -18,7 +18,7 @@ import {
   LayoutDashboard, Activity, LogIn, Pencil, Trash2, UserPlus, IndianRupee, Clock, Eye,
   CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket, Percent, Ban, CheckCircle2,
   Search, ArrowRight, TrendingUp, ChevronRight,
-  MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles,
+  MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -33,6 +33,7 @@ import type {
 import {
   AmbientField, ConsoleHeader, SegmentedTabs, Panel, StatTile, Reveal, SectionLabel,
 } from '@/components/platform/console';
+import SubscriptionRequestsTab from '@/components/platform/subscription-requests';
 import { setImpersonation, getImpersonation } from '@/lib/http';
 import { clearCachedAuthUser } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -85,14 +86,22 @@ export default function PlatformAdminPage() {
 
 type Tab = 'overview' | 'studios' | 'finance' | 'activity';
 const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'activity'];
-type FinanceSubTab = 'dashboard' | 'billing' | 'coupons';
+type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
 // Finance as an in-page sub-tab. Old bookmarks/sidebar links still point at
 // ?tab=billing / ?tab=coupons, so both keep working — they just land on
 // Finance with the matching sub-tab pre-selected instead of a blank Overview.
+// ?tab=payments is the deep link the "studio submitted a UTR" notification
+// carries, so clicking the notification lands on the verification queue itself
+// rather than on Finance's dashboard with the operator hunting for it.
+const FINANCE_DEEP_LINKS: Record<string, FinanceSubTab> = {
+  billing: 'billing',
+  coupons: 'coupons',
+  payments: 'payments',
+};
 function normalizeTab(raw: string | null): Tab {
-  if (raw === 'billing' || raw === 'coupons') return 'finance';
+  if (raw && raw in FINANCE_DEEP_LINKS) return 'finance';
   return TAB_IDS.includes(raw as Tab) ? (raw as Tab) : 'overview';
 }
 
@@ -107,7 +116,9 @@ function PlatformContent() {
     if (getImpersonation()) window.location.replace('/');
   }, []);
   const [tab, setTab] = useState<Tab>(() => normalizeTab(paramTab));
-  const [financeSubTab, setFinanceSubTab] = useState<FinanceSubTab>(paramTab === 'coupons' ? 'coupons' : paramTab === 'billing' ? 'billing' : 'dashboard');
+  const [financeSubTab, setFinanceSubTab] = useState<FinanceSubTab>(
+    () => (paramTab && FINANCE_DEEP_LINKS[paramTab]) || 'dashboard',
+  );
   const [commandOpen, setCommandOpen] = useState(false);
 
   // Keep the active tab in sync with the ?tab= query so the sidebar / bottom-nav
@@ -115,8 +126,8 @@ function PlatformContent() {
   useEffect(() => {
     if (paramTab) {
       setTab(normalizeTab(paramTab));
-      if (paramTab === 'coupons') setFinanceSubTab('coupons');
-      else if (paramTab === 'billing') setFinanceSubTab('billing');
+      const sub = FINANCE_DEEP_LINKS[paramTab];
+      if (sub) setFinanceSubTab(sub);
     }
   }, [paramTab]);
 
@@ -367,11 +378,12 @@ function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClose: () 
 function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTabChange: (t: FinanceSubTab) => void }) {
   return (
     <div>
-      <div className="mb-5 max-w-[380px]">
+      <div className="mb-5 max-w-[500px]">
         <SegmentedTabs
           tabs={[
             { id: 'dashboard' as const, label: 'Dashboard', icon: <TrendingUp size={13} /> },
             { id: 'billing' as const, label: 'Billing', icon: <CreditCard size={13} /> },
+            { id: 'payments' as const, label: 'Payments', icon: <Wallet size={13} /> },
             { id: 'coupons' as const, label: 'Coupons', icon: <Ticket size={13} /> },
           ]}
           value={subTab}
@@ -381,6 +393,7 @@ function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTa
       <div key={subTab}>
         {subTab === 'dashboard' && <FinanceDashboardTab onNavigate={onSubTabChange} />}
         {subTab === 'billing' && <BillingTab />}
+        {subTab === 'payments' && <SubscriptionRequestsTab />}
         {subTab === 'coupons' && <CouponsTab />}
       </div>
     </div>

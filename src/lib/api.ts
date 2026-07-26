@@ -2113,6 +2113,32 @@ export const api = {
       http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/expiry`, { method: 'PATCH', body: JSON.stringify(body) }),
     grantFounder: (orgId: string) =>
       http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/founder`, { method: 'POST', body: JSON.stringify({}) }),
+    // ── Subscription self-checkout queue (the command centre) ───────────────
+    platformPaymentSettings: () =>
+      http<{ data: PlatformPaymentSettings | null; configured: boolean; enabled: boolean }>(
+        '/api/super-admin/platform-payment-settings'),
+    savePlatformPaymentSettings: (body: PlatformPaymentSettingsInput) =>
+      http<{ data: PlatformPaymentSettings }>('/api/super-admin/platform-payment-settings', {
+        method: 'PUT', body: JSON.stringify(body),
+      }),
+    subscriptionRequests: (params: { status?: string; q?: string; limit?: number; offset?: number } = {}) => {
+      const qs = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '') qs.set(k, String(v));
+      const q = qs.toString();
+      return http<{
+        data: SubCheckoutQueueRow[]; total: number; stats: SubCheckoutStats;
+        reject_reasons: Record<UpiRejectReason, string>;
+      }>(`/api/super-admin/subscription-requests${q ? `?${q}` : ''}`);
+    },
+    approveSubscriptionRequest: (id: string) =>
+      http<{ data: { request: SubCheckoutQueueRow; activation: unknown } }>(
+        `/api/super-admin/subscription-requests/${id}/approve`, { method: 'POST' }),
+    rejectSubscriptionRequest: (id: string, reason: UpiRejectReason, note?: string) =>
+      http<{ data: { reason: UpiRejectReason; note: string | null } }>(
+        `/api/super-admin/subscription-requests/${id}/reject`, {
+          method: 'POST', body: JSON.stringify({ reason, note }),
+        }),
+
     refundPayment: (paymentId: string) =>
       http<{ data: unknown }>(`/api/super-admin/subscription-payments/${paymentId}/refund`, { method: 'POST', body: JSON.stringify({}) }),
     /** Price a studio's requested plan change before executing it (proration credit, amount due). */
@@ -2159,6 +2185,49 @@ export const api = {
       }>('/api/subscription/request-change', {
         method: 'POST', body: JSON.stringify({ plan_code }),
       }),
+
+    // ── UPI self-checkout: the studio pays the PLATFORM ─────────────────────
+    // Distinct from api.upiPayments, which is the studio collecting from its
+    // own members. Different payer, payee and approver — see the backend note
+    // in lib/subscriptionCheckout.js.
+    checkout: {
+      /** Is self-checkout switched on by the platform operator at all? */
+      settings: () =>
+        http<{ data: { available: boolean; merchant_name: string | null; instructions: string | null } }>(
+          '/api/subscription/checkout/settings'),
+
+      /**
+       * Open (or resume) a payment for a plan. The amount is computed
+       * server-side from the plan, founder pricing and any coupon — nothing
+       * here can influence what is charged.
+       */
+      open: (plan_code: string, coupon_code?: string | null) =>
+        http<{ data: { request: SubCheckoutRequest; payment: UpiPaymentView; reused: boolean } }>(
+          '/api/subscription/checkout', {
+            method: 'POST',
+            body: JSON.stringify({ plan_code, ...(coupon_code ? { coupon_code } : {}) }),
+          }),
+
+      /** Full state of one checkout: QR, intents, status. */
+      get: (id: string) =>
+        http<{
+          data: {
+            request: SubCheckoutRequest & { plan_name: string | null; duration_months: number | null };
+            payment: UpiPaymentView | null;
+            reject_reasons: Record<UpiRejectReason, string>;
+          };
+        }>(`/api/subscription/checkout/${id}`),
+
+      submitUtr: (id: string, utr: string, note?: string | null) =>
+        http<{ data: SubCheckoutRequest }>(`/api/subscription/checkout/${id}/submit-utr`, {
+          method: 'POST', body: JSON.stringify({ utr, note: note || null }),
+        }),
+
+      cancel: (id: string) =>
+        http<{ data: SubCheckoutRequest }>(`/api/subscription/checkout/${id}/cancel`, { method: 'POST' }),
+
+      history: () => http<{ data: SubCheckoutRequest[] }>('/api/subscription/checkout'),
+    },
 
     /** Drop a pending downgrade so the studio stays on its current plan. */
     cancelScheduledChange: () =>
@@ -2295,6 +2364,78 @@ export type MembershipPlan = {
 /** plans.duration is a word; the order needs a count. Mirrors the backend map. */
 export const PLAN_DURATION_MONTHS: Record<string, number> = {
   'Monthly': 1, 'Quarterly': 3, 'Half Yearly': 6, 'Yearly': 12,
+};
+
+// ── Subscription self-checkout types ─────────────────────────────────────────
+//
+// Amounts here are INTEGER whole rupees (matching subscription_plans.price_inr
+// and subscription_payments.amount_inr), NOT the NUMERIC strings the member
+// payment types carry. UPI cannot move paise reliably, and the whole billing
+// chain is integer — so these are numbers, and arithmetic on them is safe.
+
+export type SubCheckoutStatus =
+  | 'AWAITING_PAYMENT' | 'AWAITING_VERIFICATION'
+  | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED';
+
+export type SubCheckoutRequest = {
+  id: string;
+  organization_id: string;
+  request_no: string;
+  plan_code: string;
+  plan_name?: string | null;
+  duration_months?: number | null;
+  list_price_inr: number;
+  discount_inr: number;
+  amount_inr: number;
+  coupon_code: string | null;
+  upi_id: string;
+  merchant_name: string;
+  status: SubCheckoutStatus;
+  expires_at: string;
+  utr: string | null;
+  screenshot_url: string | null;
+  payer_note: string | null;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  rejected_reason: UpiRejectReason | null;
+  rejected_note: string | null;
+  payment_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SubCheckoutQueueRow = SubCheckoutRequest & {
+  organization_name: string;
+  organization_slug: string;
+  subscription_status: string | null;
+  current_period_end: string | null;
+};
+
+export type SubCheckoutStats = {
+  awaiting_count: number;
+  awaiting_amount_inr: number;
+  unpaid_count: number;
+  approved_today: number;
+  approved_today_amount_inr: number;
+  collected_inr: number;
+};
+
+export type PlatformPaymentSettings = {
+  upi_id: string;
+  merchant_name: string;
+  instructions: string | null;
+  is_enabled: boolean;
+  request_ttl_minutes: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PlatformPaymentSettingsInput = {
+  upi_id: string;
+  merchant_name: string;
+  instructions?: string | null;
+  is_enabled?: boolean;
+  request_ttl_minutes?: number;
 };
 
 // ── Manual UTR payment types ──────────────────────────────────────────────────

@@ -296,6 +296,43 @@ function SubscriptionScreen() {
   const [coupon, setCoupon] = useState<CouponValidation | null>(null);
   const [couponChecking, setCouponChecking] = useState(false);
 
+  // Is UPI self-checkout switched on by the platform operator? When it is, a
+  // plan button opens a real payment window; when it is not, it falls back to
+  // the original "request activation" flow so billing never dead-ends.
+  const [checkoutAvailable, setCheckoutAvailable] = useState(false);
+  useEffect(() => {
+    void api.subscription.checkout.settings()
+      .then((r) => setCheckoutAvailable(Boolean(r.data.available)))
+      .catch(() => setCheckoutAvailable(false));
+  }, []);
+
+  /**
+   * Open the payment window for a plan.
+   *
+   * The window is opened SYNCHRONOUSLY on the click and its URL set afterwards:
+   * every mobile browser blocks window.open() called later from inside a
+   * promise, which would silently do nothing on exactly the devices most
+   * likely to be paying.
+   */
+  const startCheckout = async (planCode: string) => {
+    setRequesting(planCode);
+    const win = window.open('', '_blank', 'noopener,noreferrer,width=520,height=860');
+    try {
+      const r = await api.subscription.checkout.open(
+        planCode,
+        coupon?.valid ? couponCode.trim().toUpperCase() : undefined,
+      );
+      const url = `/subscription/checkout/${r.data.request.id}`;
+      // Popup blocked (common on iOS Safari) — fall back to the same tab so the
+      // studio still reaches the payment page rather than clicking into nothing.
+      if (win) win.location.href = url;
+      else window.location.href = url;
+    } catch (e) {
+      win?.close();
+      toast.error(e instanceof Error ? e.message : 'Could not start the payment');
+    } finally { setRequesting(''); }
+  };
+
   const requestActivation = async (planCode?: string) => {
     setRequesting(planCode || 'general');
     try {
@@ -559,13 +596,15 @@ function SubscriptionScreen() {
                     ) : requested ? (
                       <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>Request sent ✓</div>
                     ) : (
-                      <button onClick={() => requestActivation(p.code)} disabled={!!requesting}
+                      <button
+                        onClick={() => (checkoutAvailable ? startCheckout(p.code) : requestActivation(p.code))}
+                        disabled={!!requesting}
                         className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-[12px] py-2 text-[12px] font-[750] transition hover:opacity-90 disabled:opacity-50"
-                        style={isElite
-                          ? { background: GOLD, color: '#fff' }
+                        style={isElite || checkoutAvailable
+                          ? { background: isElite ? GOLD : 'var(--brand)', color: '#fff' }
                           : { background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                         {requesting === p.code ? <Loader2 size={13} className="animate-spin" /> : null}
-                        Choose {p.name}
+                        {checkoutAvailable ? `Pay ${fmtINR(p.effective_price_inr)}` : `Choose ${p.name}`}
                       </button>
                     )}
                   </div>
