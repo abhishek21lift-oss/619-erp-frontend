@@ -78,6 +78,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen' },
       { href: '/pt-os/diet-plans',          label: 'Diet Plans',           icon: 'Apple' },
+      // Studio-wide board list. Client-attached boards are also reachable from
+      // the client's own profile; this is the front door so the feature is not
+      // invisible to anyone who does not already know where it lives.
+      { href: '/whiteboards',               label: 'Whiteboards',          icon: 'PenLine',       matchPrefix: '/whiteboards' },
       { href: '/training/transformations',  label: 'Transformations',      icon: 'Sparkles',    roles: ['admin', 'manager'], comingSoon: true },
       { href: '/trainers/[id]',             label: 'Trainer Profile',      icon: 'UserCog',     hidden: true, matchPrefix: '/trainers/' },
     ],
