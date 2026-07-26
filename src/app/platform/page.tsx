@@ -26,7 +26,7 @@ import { api } from '@/lib/api';
 import type {
   Organization, OrganizationDetail, OrgUser,
   PlatformOverview, StudioOverview, ActivityEntry,
-  SubStudio, SubKpis, SubDetail, SubPlan, SubscriptionMetrics, Coupon,
+  SubStudio, SubKpis, SubDetail, SubPlan, SubEvent, SubscriptionMetrics, Coupon, PlanChangeQuote,
 } from '@/lib/api';
 import {
   AmbientField, ConsoleHeader, SegmentedTabs, Panel, StatTile, Reveal, SectionLabel,
@@ -247,7 +247,12 @@ function BillingTab() {
                     {s.requested_at && (
                       <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
                         style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
-                        ● Activation requested
+                        ● {s.requested_plan_name
+                          ? s.requested_direction === 'downgrade' ? `Switch to ${s.requested_plan_name} requested`
+                            : s.requested_direction === 'renewal' ? `Renewal (${s.requested_plan_name}) requested`
+                            : s.requested_direction === 'upgrade' ? `Upgrade to ${s.requested_plan_name} requested`
+                            : `Activate ${s.requested_plan_name} requested`
+                          : 'Activation requested'}
                       </span>
                     )}
                   </div>
@@ -348,12 +353,95 @@ function RecordPaymentModal({ studio, plans, onClose, onDone }: { studio: SubStu
   );
 }
 
+// ── Execute a studio's requested plan change ──────────────────────────────────────
+// Distinct from RecordPaymentModal on purpose: this calls changePlan(), which
+// credits the unused value of the current period and restarts it from now —
+// matching the priced quote the studio already confirmed. RecordPaymentModal's
+// activateSubscription() stacks the new period on top of whatever time is
+// left instead, which would double-grant days on top of a prorated charge.
+function ExecuteChangeModal({ studio, planCode, onClose, onDone }: { studio: SubStudio; planCode: string; onClose: () => void; onDone: () => void }) {
+  const { toast } = useToast();
+  const [quote, setQuote] = useState<PlanChangeQuote | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState('upi');
+  const [reference, setReference] = useState('');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.superAdmin.changeQuote(studio.id, planCode)
+      .then((r) => { if (!cancelled) { setQuote(r.data); setAmount(String(r.data.amount_due_inr || '')); } })
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'Could not price this change'))
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studio.id, planCode]);
+
+  const submit = async () => {
+    setSaving(true);
+    try {
+      await api.superAdmin.changePlan(studio.id, {
+        plan_code: planCode,
+        amount_inr: amount ? Number(amount) : undefined,
+        method, reference: reference.trim() || undefined, notes: notes.trim() || undefined,
+      });
+      toast.success(`Switched ${studio.name} to ${quote?.new_plan.name || planCode}.`);
+      onDone();
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not execute this change'); setSaving(false); }
+  };
+
+  return (
+    <Modal title={`Execute plan change · ${studio.name}`} onClose={onClose}>
+      {loading || !quote ? (
+        <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#6366f1' }} /></div>
+      ) : (
+        <div className="space-y-4">
+          <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
+            <div className="flex justify-between"><span>{quote.current_plan?.name || 'No plan'} → {quote.new_plan.name}</span><b style={{ textTransform: 'capitalize' }}>{quote.direction}</b></div>
+            <div className="flex justify-between"><span>{quote.new_plan.name} plan</span><span>{fmtINR(quote.new_plan_price_inr)}</span></div>
+            {quote.proration_credit_inr > 0 && (
+              <div className="flex justify-between" style={{ color: '#10b981' }}><span>Unused time credited</span><span>−{fmtINR(quote.proration_credit_inr)}</span></div>
+            )}
+            <div className="flex justify-between" style={{ color: 'var(--text-primary)' }}><span>Quoted amount due</span><b>{fmtINR(quote.amount_due_inr)}</b></div>
+          </div>
+          {quote.warning && (
+            <p className="rounded-[10px] p-2.5 text-[11.5px]" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)', color: '#b45309' }}>{quote.warning}</p>
+          )}
+          <Field label="Amount received (₹)">
+            <input className={inputCls} style={inputStyle} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Method">
+              <select className={inputCls} style={inputStyle} value={method} onChange={(e) => setMethod(e.target.value)}>
+                {['upi', 'bank', 'cash', 'razorpay', 'comp'].map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </Field>
+            <Field label="Reference / UTR">
+              <input className={inputCls} style={inputStyle} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="optional" />
+            </Field>
+          </div>
+          <Field label="Notes">
+            <input className={inputCls} style={inputStyle} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="optional" />
+          </Field>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>Confirm change</Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ── Subscription detail + history + overrides modal ──────────────────────────────
 function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStudio; onClose: () => void; onChanged: () => void }) {
   const { toast } = useToast();
   const [detail, setDetail] = useState<SubDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [newExpiry, setNewExpiry] = useState('');
+  const [showExecute, setShowExecute] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -381,6 +469,24 @@ function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStudio; onC
             <div className="flex justify-between"><span>{onTrial ? 'Trial ends' : 'Renews'}</span><b>{fmtDate(onTrial ? o.trial_ends_at : o.current_period_end)}</b></div>
             {o.is_founder && <div className="flex justify-between" style={{ color: '#b45309' }}><span>Founder</span><b>#{o.founder_number} · ₹{o.locked_price_inr?.toLocaleString('en-IN')} locked</b></div>}
           </div>
+
+          {/* Pending request — the studio asked for this via "Request this upgrade" /
+              "Request activation". Execute here, NOT via Record Payment: that tool
+              stacks the new period on top of remaining time, while this credits the
+              unused time back (matching the quote the studio already saw). */}
+          {studio.requested_at && studio.requested_plan_code && (
+            <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)' }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span style={{ color: '#b45309' }}>
+                  <b>{studio.requested_plan_name}</b> requested {fmtWhen(studio.requested_at)}
+                  {studio.requested_direction ? ` (${studio.requested_direction})` : ''}
+                </span>
+                <Button onClick={() => setShowExecute(true)} style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>
+                  Review &amp; execute
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Quick overrides */}
           <div className="flex flex-wrap gap-2">
@@ -419,10 +525,58 @@ function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStudio; onC
               </div>
             ))}
           </div>
+
+          {/* Event history — every request, activation, change and reminder,
+              oldest requests included, so "what did this studio ask for" is
+              never just a notification the operator has to remember. */}
+          <div>
+            <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>History</p>
+            {detail.events.length === 0 && <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>None yet.</p>}
+            {detail.events.map((e) => (
+              <div key={e.id} className="flex items-center justify-between gap-2 py-1.5 text-[12px]" style={{ borderTop: '1px solid var(--border)' }}>
+                <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>{eventLabel(e)}</span>
+                <span className="flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{fmtWhen(e.created_at)}</span>
+              </div>
+            ))}
+          </div>
         </div>
+      )}
+      {showExecute && studio.requested_plan_code && (
+        <ExecuteChangeModal
+          studio={studio}
+          planCode={studio.requested_plan_code}
+          onClose={() => setShowExecute(false)}
+          onDone={() => { setShowExecute(false); onChanged(); onClose(); }}
+        />
       )}
     </Modal>
   );
+}
+
+// Friendly label for a raw subscription_events row — falls back to the bare
+// event name for anything not called out below (e.g. new event types added
+// later), so history is never a blank line.
+function eventLabel(e: SubEvent): string {
+  const d = (e.data || {}) as Record<string, unknown>;
+  switch (e.event) {
+    case 'activation_requested': return `Activation requested${d.plan_code ? ` (${d.plan_code})` : ''}`;
+    case 'change_requested': return `Plan change requested — ${d.direction || 'change'} to ${d.plan_code}${d.amount_due_inr != null ? ` · ${fmtINR(d.amount_due_inr as number)} due` : ''}`;
+    case 'activated': return `Activated ${d.plan_code} · ${fmtINR(d.amount_inr as number)}`;
+    case 'plan_changed': return `Plan changed ${d.from || '—'} → ${d.to} · ${fmtINR(d.charged_inr as number)}`;
+    case 'downgrade_scheduled': return `Downgrade to ${d.to} scheduled for ${fmtDate(d.effective_at as string)}`;
+    case 'downgrade_applied': return `Downgrade applied ${d.from || '—'} → ${d.to}`;
+    case 'downgrade_cancelled': return 'Scheduled downgrade cancelled';
+    case 'founder_granted': return `Founder #${d.founder_number} granted`;
+    case 'frozen': return `Frozen${d.reason ? ` (${d.reason})` : ''}`;
+    case 'reactivated': return 'Reactivated';
+    case 'cancelled': return 'Subscription cancelled';
+    case 'expired': return `Expired${d.reason ? ` (${d.reason})` : ''}`;
+    case 'expiry_changed': return 'Expiry date changed';
+    case 'refunded': return `Refunded ${fmtINR(d.amount_inr as number)}`;
+    case 'reminder_sent': return `Reminder sent (${d.kind} · ${d.days}d)`;
+    case 'trial_started': return `Trial started (${d.days}d)`;
+    default: return e.event;
+  }
 }
 
 /* ─────────────────────────────────────────────────────── OVERVIEW */

@@ -2115,6 +2115,14 @@ export const api = {
       http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/founder`, { method: 'POST', body: JSON.stringify({}) }),
     refundPayment: (paymentId: string) =>
       http<{ data: unknown }>(`/api/super-admin/subscription-payments/${paymentId}/refund`, { method: 'POST', body: JSON.stringify({}) }),
+    /** Price a studio's requested plan change before executing it (proration credit, amount due). */
+    changeQuote: (orgId: string, planCode: string) =>
+      http<{ data: PlanChangeQuote }>(`/api/super-admin/organizations/${orgId}/subscription/change-quote?plan_code=${encodeURIComponent(planCode)}`),
+    /** Execute a studio's requested upgrade/renewal once payment is confirmed — credits unused
+     *  time on the current plan and restarts the period from now (never use activateSubscription
+     *  for this: it stacks time on top instead of crediting it, double-granting days). */
+    changePlan: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string }) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
   },
   subscription: {
     status: () => http<{ data: SubscriptionStatus }>('/api/subscription/status'),
@@ -2225,6 +2233,8 @@ export type SubStudio = {
   is_founder: boolean; founder_number: number | null; locked_price_inr: number | null;
   trial_days_left: number | null; period_days_left: number | null; renewal_due: boolean;
   requested_at?: string | null;
+  requested_plan_code?: string | null; requested_plan_name?: string | null;
+  requested_direction?: string | null;
 };
 export type SubKpis = {
   studios: number; trial: number; active: number; frozen: number; founders: number;
