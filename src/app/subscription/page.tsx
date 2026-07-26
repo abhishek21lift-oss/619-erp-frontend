@@ -1,15 +1,23 @@
 'use client';
 
-// Studio-facing subscription screen. Standalone (no AppShell) so a frozen studio
-// gets a clean, self-contained page instead of a half-broken dashboard. Shows the
-// current trial/subscription state, the plan catalogue with live launch pricing,
-// and the studio's invoice history. Activation is handled by the platform team
-// (admin-activated billing), so the CTA is "contact to subscribe", not a checkout.
+// Studio-facing subscription screen — current plan/trial state, the plan
+// catalogue with live launch pricing, and invoice history. Activation is
+// handled by the platform team (admin-activated billing), so the CTA is
+// "request activation", not a checkout.
 //
-// Visual language: deliberately dark-only, matching the Sidebar's "Premium
-// Obsidian" chrome (see globals.css) rather than the app's light-first
-// theme-adaptive tokens — this screen has no theme toggle to switch it with,
-// and a page that renders half-lit without one reads as broken, not designed.
+// ── Two layouts, one body ────────────────────────────────────────────────────
+// Normally this renders inside AppShell like every other page: app top bar,
+// sidebar, mobile bottom nav. It is a page of the app and should feel like one.
+//
+// The exception is a FROZEN studio (trial expired / subscription lapsed). The
+// backend answers 402 SUBSCRIPTION_INACTIVE on every other endpoint and
+// http.ts redirects straight back here, so the shell's navigation would be
+// entirely dead — every link bounces the user back to this page. That state
+// gets a standalone, full-bleed lockout screen instead, which is honest about
+// there being exactly one thing to do.
+//
+// Both layouts render the SAME body, built on the app's semantic tokens, so it
+// is correct in light and dark without a second set of components.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
@@ -18,6 +26,7 @@ import {
   ArrowUpRight, ArrowDownRight, CalendarClock, AlertTriangle, Users, X, Receipt,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
+import AppShell from '@/components/AppShell';
 import StudioMark from '@/components/StudioMark';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -33,20 +42,23 @@ const fmtDate = (d?: string | null) =>
 const EASE_EXPO = [0.16, 1, 0.3, 1] as const;
 
 // Plan-tier accent — the same mapping the Command Centre uses for studio
-// cards, keyed by plan_code (stable) rather than plan_name (a display
-// string). Gives each tier a distinct, consistent identity across the app.
+// cards, keyed by plan_code (stable) rather than plan_name (a display string),
+// so a studio's own billing screen and the operator's view of it agree on what
+// colour each tier is.
 const PLAN_ACCENT: Record<string, string> = {
   starter: 'linear-gradient(90deg,#64748b,#475569)',
   growth: 'linear-gradient(90deg,#3b82f6,#2563eb)',
   professional: 'linear-gradient(90deg,#8b5cf6,#7c3aed)',
   elite: 'linear-gradient(90deg,#f59e0b,#d97706)',
 };
-const NO_PLAN_ACCENT = 'linear-gradient(90deg,rgba(255,255,255,0.14),rgba(255,255,255,0.14))';
+const NO_PLAN_ACCENT = 'linear-gradient(90deg,var(--border),var(--border))';
+const GOLD = 'linear-gradient(135deg,#F59E0B,#D97706)';
 
 // ── Design primitives ─────────────────────────────────────────────────────────
-// Local, deliberately not imported from components/platform/console — that
-// module is theme-adaptive for the super-admin console; this screen is
-// permanently dark, so it gets its own small set of matching primitives.
+// Same material language as the Command Centre's console primitives (layered
+// surface, hairline border, specular top edge, expo-out entrance) but local to
+// this route, because these carry an accent/glow treatment the shared Panel
+// deliberately does not have.
 
 function Reveal({ children, delay = 0, className = '' }: {
   children: React.ReactNode; delay?: number; className?: string;
@@ -63,29 +75,29 @@ function Reveal({ children, delay = 0, className = '' }: {
   );
 }
 
-function Glass({ children, className = '', accent, glow }: {
+function Panel({ children, className = '', accent, glow }: {
   children: React.ReactNode;
   className?: string;
-  /** Optional coloured hairline border + soft ambient wash — used for the
-      state hero (frozen/trial/active/pending) so its meaning reads before
-      the copy does. */
+  /** Coloured hairline border — used by the state hero so its meaning reads
+      before the copy does. */
   accent?: string;
+  /** Soft ambient wash in the top-right corner. */
   glow?: string;
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-[22px] ${className}`}
+      className={`relative overflow-hidden rounded-[18px] sm:rounded-[20px] ${className}`}
       style={{
-        background: 'rgba(255,255,255,0.035)',
-        border: `1px solid ${accent ?? 'rgba(255,255,255,0.10)'}`,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.06)',
+        background: 'var(--bg-elevated)',
+        border: `1px solid ${accent ?? 'var(--border)'}`,
+        boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.06)',
       }}
     >
       {glow && (
         <div
           aria-hidden
           className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full"
-          style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 70%)`, opacity: 0.22, filter: 'blur(36px)' }}
+          style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 70%)`, opacity: 0.18, filter: 'blur(36px)' }}
         />
       )}
       {children}
@@ -99,7 +111,7 @@ function IconBadge({ icon, colour }: { icon: React.ReactNode; colour: string }) 
       className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[13px]"
       style={{
         background: `linear-gradient(145deg, ${colour} 0%, color-mix(in srgb, ${colour} 60%, #000) 100%)`,
-        boxShadow: `0 6px 16px color-mix(in srgb, ${colour} 40%, transparent), inset 0 1px 0 rgba(255,255,255,0.3)`,
+        boxShadow: `0 6px 16px color-mix(in srgb, ${colour} 38%, transparent), inset 0 1px 0 rgba(255,255,255,0.3)`,
         color: '#fff',
       }}
     >
@@ -112,9 +124,10 @@ function IconBadge({ icon, colour }: { icon: React.ReactNode; colour: string }) 
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-2.5 px-1 text-[10.5px] font-[750] uppercase" style={{ color: 'rgba(148,163,184,0.75)', letterSpacing: '0.14em' }}>
+    <h2 className="mb-2.5 px-1 text-[10.5px] font-[750] uppercase"
+      style={{ color: 'var(--text-muted)', letterSpacing: '0.14em' }}>
       {children}
-    </p>
+    </h2>
   );
 }
 
@@ -126,33 +139,34 @@ function SeatMeter({ used, limit, remaining }: {
 }) {
   if (limit == null) {
     return (
-      <div className="flex items-center gap-2 text-[12.5px]" style={{ color: '#cbd5e1' }}>
-        <Users size={14} style={{ color: '#34d399' }} />
-        <span><strong className="text-white">{used}</strong> active clients · unlimited</span>
+      <div className="flex items-center gap-2 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
+        <Users size={14} style={{ color: 'var(--success)' }} />
+        <span><strong style={{ color: 'var(--text-primary)' }}>{used}</strong> active clients · unlimited</span>
       </div>
     );
   }
   const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
   const full = used >= limit;
   const near = !full && remaining != null && remaining <= 1;
-  const colour = full ? '#f87171' : near ? '#fbbf24' : '#34d399';
+  const colour = full ? 'var(--danger)' : near ? 'var(--warning)' : 'var(--success)';
 
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-[12.5px]" style={{ color: '#cbd5e1' }}>
+        <div className="flex items-center gap-2 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
           <Users size={14} style={{ color: colour }} />
-          <span><strong className="text-white">{used}</strong> of {limit} active clients</span>
+          <span><strong style={{ color: 'var(--text-primary)' }}>{used}</strong> of {limit} active clients</span>
         </div>
         <span className="text-[11.5px] font-[700] tabular-nums" style={{ color: colour }}>
           {full ? 'Limit reached' : `${remaining ?? Math.max(0, limit - used)} left`}
         </span>
       </div>
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.10)' }}>
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: colour }} />
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
+        <m.div className="h-full rounded-full" style={{ background: colour }}
+          initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.7, ease: EASE_EXPO }} />
       </div>
       {full && (
-        <p className="mt-2 text-[11.5px]" style={{ color: '#fca5a5' }}>
+        <p className="mt-2 text-[11.5px]" style={{ color: 'var(--danger)' }}>
           Archive a client to free a slot, or upgrade below. Existing clients keep full access.
         </p>
       )}
@@ -161,13 +175,13 @@ function SeatMeter({ used, limit, remaining }: {
 }
 
 // ── Plan-change preview ───────────────────────────────────────────────────────
-// Rendered inline rather than in a modal: this page is a standalone dark screen
-// and stays readable on a phone without a dialog layer.
+// Rendered inline rather than in a modal — it stays readable on a phone without
+// a dialog layer, and the numbers belong next to the plan that produced them.
 function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
   quote: PlanChangeQuote; busy: boolean; onConfirm: () => void; onDismiss: () => void;
 }) {
   const isDowngrade = quote.direction === 'downgrade';
-  const accent = isDowngrade ? '#38bdf8' : '#34d399';
+  const accent = isDowngrade ? 'var(--info)' : 'var(--success)';
   const Icon = isDowngrade ? ArrowDownRight : ArrowUpRight;
 
   const heading = isDowngrade
@@ -177,14 +191,14 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
       : `Upgrade to ${quote.new_plan.name}`;
 
   return (
-    <Reveal className="mt-6">
-      <Glass accent={`${accent}44`} className="p-5 sm:p-6">
+    <Reveal>
+      <Panel accent={`color-mix(in srgb, ${accent} 45%, transparent)`} className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 min-w-0">
+          <div className="flex min-w-0 items-start gap-3">
             <IconBadge icon={<Icon size={18} />} colour={accent} />
             <div className="min-w-0">
-              <h3 className="text-[16px] font-[820] text-white">{heading}</h3>
-              <p className="mt-0.5 text-[12.5px]" style={{ color: '#94a3b8' }}>
+              <h3 className="text-[16px] font-[820]" style={{ color: 'var(--text-primary)' }}>{heading}</h3>
+              <p className="mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
                 {isDowngrade
                   ? `Takes effect ${fmtDate(quote.effective_at)}, when your current period ends. Nothing changes before then.`
                   : 'Takes effect as soon as your payment is confirmed.'}
@@ -192,31 +206,32 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
             </div>
           </div>
           <button onClick={onDismiss} aria-label="Dismiss"
-            className="shrink-0 rounded-full p-1.5 transition hover:bg-white/10" style={{ color: '#94a3b8' }}>
+            className="shrink-0 rounded-full p-1.5 transition-colors hover:bg-[var(--bg-hover)]"
+            style={{ color: 'var(--text-muted)' }}>
             <X size={15} />
           </button>
         </div>
 
         {/* Money breakdown — only meaningful when something is actually charged. */}
         {!isDowngrade && (
-          <div className="mt-4 space-y-2 rounded-[14px] p-3.5" style={{ background: 'rgba(0,0,0,0.25)' }}>
+          <div className="mt-4 space-y-2 rounded-[14px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
             <div className="flex items-center justify-between text-[12.5px]">
-              <span style={{ color: '#94a3b8' }}>{quote.new_plan.name} plan</span>
-              <span className="tabular-nums text-white">{fmtINR(quote.new_plan_price_inr)}</span>
+              <span style={{ color: 'var(--text-muted)' }}>{quote.new_plan.name} plan</span>
+              <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmtINR(quote.new_plan_price_inr)}</span>
             </div>
             {quote.proration_credit_inr > 0 && (
               <div className="flex items-center justify-between text-[12.5px]">
-                <span style={{ color: '#94a3b8' }}>Unused time on your current plan</span>
-                <span className="tabular-nums" style={{ color: '#34d399' }}>−{fmtINR(quote.proration_credit_inr)}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Unused time on your current plan</span>
+                <span className="tabular-nums" style={{ color: 'var(--success)' }}>−{fmtINR(quote.proration_credit_inr)}</span>
               </div>
             )}
             <div className="flex items-center justify-between border-t pt-2 text-[13.5px] font-[800]"
-              style={{ borderColor: 'rgba(255,255,255,0.10)' }}>
-              <span className="text-white">Due now</span>
-              <span className="tabular-nums text-white">{fmtINR(quote.amount_due_inr)}</span>
+              style={{ borderColor: 'var(--border)' }}>
+              <span style={{ color: 'var(--text-primary)' }}>Due now</span>
+              <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmtINR(quote.amount_due_inr)}</span>
             </div>
             {quote.founder_locked && (
-              <p className="flex items-center gap-1.5 text-[11px]" style={{ color: '#fcd34d' }}>
+              <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--warning)' }}>
                 <Crown size={11} /> Founder pricing locked in
               </p>
             )}
@@ -225,9 +240,9 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
 
         {isDowngrade && (
           <div className="mt-4 flex items-center justify-between rounded-[14px] p-3.5 text-[12.5px]"
-            style={{ background: 'rgba(0,0,0,0.25)' }}>
-            <span style={{ color: '#94a3b8' }}>Due now</span>
-            <span className="tabular-nums font-[800] text-white">₹0</span>
+            style={{ background: 'var(--bg-subtle)' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Due now</span>
+            <span className="tabular-nums font-[800]" style={{ color: 'var(--text-primary)' }}>₹0</span>
           </div>
         )}
 
@@ -235,20 +250,20 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
             archived automatically — but the trainer needs to know. */}
         {quote.warning && (
           <div className="mt-3 flex gap-2.5 rounded-[14px] p-3.5"
-            style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)' }}>
-            <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: '#fbbf24' }} />
-            <p className="text-[12px] leading-relaxed" style={{ color: '#fde68a' }}>{quote.warning}</p>
+            style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}>
+            <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--warning)' }} />
+            <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{quote.warning}</p>
           </div>
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2.5">
           <Button onClick={onConfirm} loading={busy} disabled={busy}
-            style={{ background: isDowngrade ? 'rgba(56,189,248,0.18)' : 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>
+            style={isDowngrade ? undefined : { background: GOLD, color: '#fff' }}>
             {isDowngrade ? 'Schedule this change' : 'Request this upgrade'}
           </Button>
           <Button variant="outline" onClick={onDismiss} disabled={busy}>Not now</Button>
         </div>
-      </Glass>
+      </Panel>
     </Reveal>
   );
 }
@@ -371,29 +386,325 @@ function SubscriptionScreen() {
     return Math.min(1, Math.max(0, (7 - status.trial_days_left) / 7));
   }, [onTrial, status]);
 
+  // ── Page body ───────────────────────────────────────────────────────────────
+  const body = (
+    <div className="space-y-6">
+      {/* Hero — frozen vs trial vs active */}
+      {frozen && (
+        <Reveal>
+          <Panel accent="var(--danger-border)" glow="var(--danger)" className="p-6 text-center sm:p-7">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: 'var(--danger-soft)' }}>
+              <ShieldAlert size={26} style={{ color: 'var(--danger)' }} />
+            </div>
+            <h2 className="text-[22px] font-[860] tracking-[-0.02em] sm:text-[24px]" style={{ color: 'var(--text-primary)' }}>
+              {status?.state === 'trial_expired' || status?.state === 'frozen' ? 'Your trial has expired' : 'Your subscription is inactive'}
+            </h2>
+            <p className="mx-auto mt-2 max-w-[440px] text-[14px]" style={{ color: 'var(--text-secondary)' }}>
+              {status?.reason || 'Please subscribe to continue using MY PT STUDIO.'}
+            </p>
+            <p className="mx-auto mt-3 max-w-[440px] text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+              Your data is safe — clients, workouts, assessments and files are all preserved. Choose a plan below and contact us to reactivate instantly.
+            </p>
+          </Panel>
+        </Reveal>
+      )}
+
+      {onTrial && (
+        <Reveal>
+          <Panel accent="var(--warning-border)" glow="var(--warning)" className="p-5 sm:p-6">
+            <div className="flex items-center gap-3.5">
+              <IconBadge icon={<Clock size={18} />} colour="var(--warning)" />
+              <div className="min-w-0">
+                <h2 className="text-[17px] font-[820] sm:text-[18px]" style={{ color: 'var(--text-primary)' }}>
+                  {status?.trial_days_left ?? 0} {status?.trial_days_left === 1 ? 'day' : 'days'} left in your free trial
+                </h2>
+                <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
+                  All premium features are unlocked. Pick a plan to keep them after your trial ends on {fmtDate(status?.trial_ends_at)}.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 h-2 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}>
+              <m.div className="h-full rounded-full" style={{ background: GOLD }}
+                initial={{ width: 0 }} animate={{ width: `${trialPct * 100}%` }} transition={{ duration: 0.8, ease: EASE_EXPO }} />
+            </div>
+          </Panel>
+        </Reveal>
+      )}
+
+      {active && status && (
+        <Reveal>
+          <Panel accent="var(--success-border)" glow="var(--success)" className="p-5 sm:p-6">
+            <div className="flex items-center gap-3.5">
+              <IconBadge icon={<Crown size={18} />} colour={status.is_founder ? 'var(--warning)' : 'var(--success)'} />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-[17px] font-[820] sm:text-[18px]" style={{ color: 'var(--text-primary)' }}>
+                    {status.plan?.name || 'Active'} plan
+                  </h2>
+                  {status.is_founder && (
+                    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]"
+                      style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
+                      <Crown size={10} /> Founder #{status.founder_number}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
+                  {status.current_period_end
+                    ? `${status.renewal_due ? 'Renews soon — ' : ''}Renews on ${fmtDate(status.current_period_end)}${status.period_days_left != null ? ` · ${status.period_days_left} days left` : ''}`
+                    : 'Active · no expiry'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+              <SeatMeter
+                used={status.client_count ?? 0}
+                limit={status.client_limit ?? null}
+                remaining={status.client_remaining ?? null}
+              />
+            </div>
+          </Panel>
+        </Reveal>
+      )}
+
+      {/* A downgrade queued for period end. Nothing has changed yet. */}
+      {status?.pending_change && (
+        <Reveal>
+          <Panel accent="color-mix(in srgb, var(--info) 40%, transparent)" className="p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-3">
+                <CalendarClock size={18} className="mt-0.5 shrink-0" style={{ color: 'var(--info)' }} />
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>
+                    Switching to {status.pending_change.plan_name} on {fmtDate(status.pending_change.effective_at)}
+                  </p>
+                  <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                    You keep your current plan and limits until then
+                    {status.pending_change.client_limit != null
+                      ? `, after which your limit becomes ${status.pending_change.client_limit} active clients.`
+                      : '.'}
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" onClick={cancelPending} loading={cancellingPending} disabled={cancellingPending}>
+                Keep current plan
+              </Button>
+            </div>
+          </Panel>
+        </Reveal>
+      )}
+
+      {/* Founder banner */}
+      {slots != null && slots > 0 && (
+        <Reveal delay={0.05}>
+          <div className="mx-auto flex w-fit items-center gap-2 rounded-full px-4 py-2 text-center text-[12px] font-[650]"
+            style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', color: 'var(--warning)' }}>
+            🔥 Founder&apos;s Club — only {slots}{founderLimit != null ? ` of ${founderLimit}` : ''} lifetime-locked-price spots left.
+          </div>
+        </Reveal>
+      )}
+
+      {/* Pricing */}
+      <div>
+        <SectionLabel>Plans</SectionLabel>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {plans.map((p, i) => {
+            const isCurrent = status?.plan?.code === p.code;
+            const isPendingTarget = status?.pending_change?.plan_code === p.code;
+            const isQuoted = quote?.new_plan.code === p.code;
+            const isElite = p.code === 'elite';
+            return (
+              <Reveal key={p.code} delay={i * 0.05} className="h-full">
+                <Panel
+                  accent={isQuoted ? 'color-mix(in srgb, var(--success) 55%, transparent)' : undefined}
+                  className="flex h-full flex-col p-5"
+                >
+                  {/* Plan-tier accent strip — the shared identity system, so
+                      "Growth" is the same blue here as in the Command Centre. */}
+                  <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
+                    style={{ background: PLAN_ACCENT[p.code] || NO_PLAN_ACCENT }} />
+
+                  {p.is_launch && (
+                    <span className="absolute right-4 top-3 rounded-full px-2 py-0.5 text-[9px] font-[800] text-white"
+                      style={{ background: GOLD }}>LAUNCH</span>
+                  )}
+                  <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>{p.name}</p>
+                  <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{p.best_for}</p>
+                  <div className="mt-3 flex flex-wrap items-end gap-x-1.5">
+                    <span className="text-[26px] font-[860] tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmtINR(p.effective_price_inr)}</span>
+                    {p.is_launch && <span className="mb-1 text-[13px] line-through" style={{ color: 'var(--text-disabled)' }}>{fmtINR(p.price_inr)}</span>}
+                  </div>
+                  <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>for {p.duration_months} {p.duration_months === 1 ? 'month' : 'months'}</p>
+                  <div className="mt-4 space-y-2 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
+                    <p className="flex items-center gap-2"><Check size={13} className="shrink-0" style={{ color: 'var(--success)' }} /> {p.client_limit != null ? `Up to ${p.client_limit} clients` : 'Unlimited clients'}</p>
+                    <p className="flex items-center gap-2"><Check size={13} className="shrink-0" style={{ color: 'var(--success)' }} /> All premium features</p>
+                    <p className="flex items-center gap-2"><Check size={13} className="shrink-0" style={{ color: 'var(--success)' }} /> {p.duration_months >= 12 ? 'Priority support' : 'Standard support'}</p>
+                  </div>
+                  <div className="mt-auto pt-4">
+                    {isCurrent ? (
+                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Current plan</div>
+                    ) : isPendingTarget ? (
+                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>Scheduled</div>
+                    ) : active ? (
+                      // An active studio switching plans gets a priced preview
+                      // first — proration and the effective date matter here.
+                      <button onClick={() => openQuote(p.code)} disabled={!!quoting || confirming}
+                        className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-[12px] py-2 text-[12px] font-[750] transition hover:opacity-90 disabled:opacity-50"
+                        style={isElite
+                          ? { background: GOLD, color: '#fff' }
+                          : { background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                        {quoting === p.code ? <Loader2 size={13} className="animate-spin" /> : null}
+                        Switch to {p.name}
+                      </button>
+                    ) : requested ? (
+                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>Request sent ✓</div>
+                    ) : (
+                      <button onClick={() => requestActivation(p.code)} disabled={!!requesting}
+                        className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-[12px] py-2 text-[12px] font-[750] transition hover:opacity-90 disabled:opacity-50"
+                        style={isElite
+                          ? { background: GOLD, color: '#fff' }
+                          : { background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                        {requesting === p.code ? <Loader2 size={13} className="animate-spin" /> : null}
+                        Choose {p.name}
+                      </button>
+                    )}
+                  </div>
+                </Panel>
+              </Reveal>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Priced preview of a plan change, shown once a plan is picked. */}
+      {quote && (
+        <ChangePreview
+          quote={quote}
+          busy={confirming}
+          onConfirm={confirmChange}
+          onDismiss={() => setQuote(null)}
+        />
+      )}
+
+      {/* Request / status CTA */}
+      <Reveal delay={0.1}>
+        <Panel className="flex flex-col items-center gap-3 p-5 text-center sm:p-6">
+          <p className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+            Ready to {frozen ? 'reactivate' : active ? 'renew or upgrade' : 'subscribe'}?
+          </p>
+          <p className="max-w-[460px] text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+            {requested
+              ? 'Thanks! Your request has reached the MY PT STUDIO team — we’ll confirm your payment and switch on your subscription shortly. No data is lost.'
+              : 'Pick a plan above (or tap below) to request activation. Our team confirms your payment and switches on your subscription — usually within a few hours.'}
+          </p>
+          {/* Coupon. Validating is a preview only — the binding check happens
+              server-side under a lock when the operator activates, so a code
+              exhausted in the meantime is still caught. */}
+          {!requested && (
+            <div className="w-full max-w-[420px]">
+              <div className="flex gap-2">
+                <input
+                  value={couponCode}
+                  onChange={(e) => { setCouponCode(e.target.value); setCoupon(null); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
+                  placeholder="Coupon code"
+                  aria-label="Coupon code"
+                  className="h-9 min-w-0 flex-1 rounded-[10px] px-3 text-[12.5px] font-[650] uppercase tracking-wide outline-none"
+                  style={{
+                    background: 'var(--bg-subtle)',
+                    border: `1px solid ${coupon ? (coupon.valid ? 'var(--success)' : 'var(--danger)') : 'var(--border)'}`,
+                    color: 'var(--text-primary)',
+                  }}
+                />
+                <Button variant="outline" onClick={() => applyCoupon()}
+                  loading={couponChecking} disabled={couponChecking || !couponCode.trim()}>
+                  Apply
+                </Button>
+              </div>
+              {coupon && (
+                <p className="mt-2 text-[11.5px]" style={{ color: coupon.valid ? 'var(--success)' : 'var(--danger)' }}>
+                  {coupon.valid
+                    ? `${fmtINR(coupon.discount_inr ?? 0)} off${coupon.net_amount_inr != null && coupon.gross_amount_inr > 0 ? ` — ${fmtINR(coupon.net_amount_inr)} due instead of ${fmtINR(coupon.gross_amount_inr)}` : ''}. It will be applied when your subscription is activated.`
+                    : coupon.reason}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            {!requested && (
+              <Button onClick={() => requestActivation()} loading={requesting === 'general'} disabled={!!requesting}
+                style={{ background: GOLD, color: '#fff' }}>
+                Request activation
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => load()} iconLeft={<ArrowRight size={14} />}>Refresh status</Button>
+          </div>
+        </Panel>
+      </Reveal>
+
+      {/* Invoices */}
+      {invoices.length > 0 && (
+        <Reveal delay={0.14}>
+          <SectionLabel>Invoice history</SectionLabel>
+          <Panel>
+            {invoices.map((inv, i) => (
+              <div key={inv.id} className="flex items-center gap-3 px-4 py-3 text-[12.5px] transition-colors hover:bg-[var(--bg-hover)]"
+                style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                  <Receipt size={13} />
+                </span>
+                <span className="min-w-0 flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{inv.invoice_number} · {fmtDate(inv.issued_at)}</span>
+                <span className="shrink-0 tabular-nums font-[650]"
+                  style={{ color: inv.status === 'refunded' ? 'var(--text-disabled)' : 'var(--text-primary)', textDecoration: inv.status === 'refunded' ? 'line-through' : 'none' }}>
+                  {fmtINR(inv.amount_inr)}
+                </span>
+              </div>
+            ))}
+          </Panel>
+        </Reveal>
+      )}
+    </div>
+  );
+
+  // ── Layout selection ────────────────────────────────────────────────────────
+  // The shell is the default, including while loading: a frozen studio is the
+  // rare case, and mounting the shell only after the fetch resolves would make
+  // every normal visit flash a bare screen before the chrome appeared.
   if (loading) {
-    return <div className="flex min-h-dvh items-center justify-center" style={{ background: '#050816' }}>
-      <Loader2 size={30} className="animate-spin" style={{ color: '#F59E0B' }} />
-    </div>;
+    return (
+      <AppShell title="Subscription & billing">
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <Loader2 size={30} className="animate-spin" style={{ color: 'var(--brand)' }} />
+        </div>
+      </AppShell>
+    );
   }
 
+  if (!frozen) {
+    return <AppShell title="Subscription & billing">{body}</AppShell>;
+  }
+
+  // Frozen: standalone lockout. No shell, because every nav target answers 402
+  // and redirects straight back here — see handleSubscriptionInactive in
+  // lib/http.ts. data-theme="dark" scopes the dark tokens to this subtree so
+  // the shared body and design-system children resolve against a dark surface
+  // rather than the light theme's near-black ink on a near-black background.
   return (
-    // data-theme="dark" scopes the dark design tokens to this subtree. The page
-    // paints its own dark background with inline styles, but design-system
-    // children (Button, StudioMark, etc.) read --text-primary / --border-2 /
-    // --bg-white, which would otherwise resolve to the LIGHT theme's near-black
-    // ink and render invisibly here — "Keep current plan" and "Not now"
-    // disappeared entirely before this was scoped.
     <div className="min-h-dvh" data-theme="dark" style={{ background: 'linear-gradient(180deg,#050816 0%,#0b1020 100%)' }}>
-      {/* Top bar — paddingTop clears the phone's own status bar (notch, clock,
-          battery). Without it this row painted flush under the status bar and
-          the title/sign-out button rendered underneath the system icons. */}
-      <div style={{ paddingTop: 'env(safe-area-inset-top, 0px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-4">
+      {/* Floor the notch reserve rather than trusting env() alone: an installed
+          PWA with statusBarStyle 'black-translucent' reports a 0 top inset on
+          iOS while still painting under the status bar, which put the studio
+          name directly behind the clock. Same guard the login screen uses. */}
+      <div style={{
+        paddingTop: 'max(env(safe-area-inset-top), 2.75rem)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+      }}>
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pb-4">
           <div className="flex min-w-0 items-center gap-3">
             <StudioMark name={user?.organization_name || 'PT Studio'} logoUrl={user?.organization_logo_url} size={38} radius={11} />
             <div className="min-w-0">
-              <p className="truncate text-[14.5px] font-[820] tracking-tight text-white">{user?.organization_name || 'Your studio'}</p>
+              <h1 className="truncate text-[14.5px] font-[820] tracking-tight text-white">{user?.organization_name || 'Your studio'}</h1>
               <p className="text-[11px]" style={{ color: '#94a3b8' }}>Subscription &amp; billing</p>
             </div>
           </div>
@@ -404,266 +715,8 @@ function SubscriptionScreen() {
         </div>
       </div>
 
-      {/* pb clears the phone's home-indicator safe area on top of a generous
-          fixed buffer — the plain 4rem this used to be sat close enough to the
-          gesture bar on some devices that the CTA felt clipped. */}
-      <div className="mx-auto max-w-5xl px-5 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] pt-6">
-        {/* Hero — frozen vs trial vs active */}
-        {frozen && (
-          <Reveal>
-            <Glass accent="rgba(239,68,68,0.28)" glow="#EF4444" className="mb-8 p-7 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: 'rgba(239,68,68,0.15)' }}>
-                <ShieldAlert size={26} style={{ color: '#f87171' }} />
-              </div>
-              <h1 className="text-[24px] font-[860] tracking-[-0.02em] text-white">{status?.state === 'trial_expired' || status?.state === 'frozen' ? 'Your trial has expired' : 'Your subscription is inactive'}</h1>
-              <p className="mx-auto mt-2 max-w-[440px] text-[14px]" style={{ color: '#cbd5e1' }}>
-                {status?.reason || 'Please subscribe to continue using MY PT STUDIO.'}
-              </p>
-              <p className="mx-auto mt-3 max-w-[440px] text-[12.5px]" style={{ color: '#94a3b8' }}>
-                Your data is safe — clients, workouts, assessments and files are all preserved. Choose a plan below and contact us to reactivate instantly.
-              </p>
-            </Glass>
-          </Reveal>
-        )}
-
-        {onTrial && (
-          <Reveal>
-            <Glass accent="rgba(245,158,11,0.28)" glow="#F59E0B" className="mb-8 p-6">
-              <div className="flex items-center gap-3.5">
-                <IconBadge icon={<Clock size={18} />} colour="#F59E0B" />
-                <div>
-                  <h1 className="text-[18px] font-[820] text-white">{status?.trial_days_left ?? 0} {status?.trial_days_left === 1 ? 'day' : 'days'} left in your free trial</h1>
-                  <p className="text-[12.5px]" style={{ color: '#cbd5e1' }}>All premium features are unlocked. Pick a plan to keep them after your trial ends on {fmtDate(status?.trial_ends_at)}.</p>
-                </div>
-              </div>
-              <div className="mt-4 h-2 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.10)' }}>
-                <m.div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg,#F59E0B,#fbbf24)' }}
-                  initial={{ width: 0 }} animate={{ width: `${trialPct * 100}%` }} transition={{ duration: 0.8, ease: EASE_EXPO }} />
-              </div>
-            </Glass>
-          </Reveal>
-        )}
-
-        {active && status && (
-          <Reveal>
-            <Glass accent="rgba(16,185,129,0.26)" glow="#10B981" className="mb-8 p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex items-center gap-3.5">
-                  <IconBadge icon={<Crown size={18} />} colour={status.is_founder ? '#F59E0B' : '#10B981'} />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-[18px] font-[820] text-white">{status.plan?.name || 'Active'} plan</h1>
-                      {status.is_founder && (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-[750]" style={{ background: 'rgba(245,158,11,0.18)', color: '#fcd34d' }}>
-                          <Crown size={10} /> Founder #{status.founder_number}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-[12.5px]" style={{ color: '#cbd5e1' }}>
-                      {status.current_period_end
-                        ? `${status.renewal_due ? 'Renews soon — ' : ''}Renews on ${fmtDate(status.current_period_end)}${status.period_days_left != null ? ` · ${status.period_days_left} days left` : ''}`
-                        : 'Active · no expiry'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t pt-4" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                <SeatMeter
-                  used={status.client_count ?? 0}
-                  limit={status.client_limit ?? null}
-                  remaining={status.client_remaining ?? null}
-                />
-              </div>
-            </Glass>
-          </Reveal>
-        )}
-
-        {/* A downgrade queued for period end. Nothing has changed yet. */}
-        {status?.pending_change && (
-          <Reveal>
-            <Glass accent="rgba(56,189,248,0.28)" className="mb-8 p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <CalendarClock size={18} className="mt-0.5 shrink-0" style={{ color: '#38bdf8' }} />
-                  <div className="min-w-0">
-                    <p className="text-[13.5px] font-[780] text-white">
-                      Switching to {status.pending_change.plan_name} on {fmtDate(status.pending_change.effective_at)}
-                    </p>
-                    <p className="mt-0.5 text-[12px]" style={{ color: '#cbd5e1' }}>
-                      You keep your current plan and limits until then
-                      {status.pending_change.client_limit != null
-                        ? `, after which your limit becomes ${status.pending_change.client_limit} active clients.`
-                        : '.'}
-                    </p>
-                  </div>
-                </div>
-                <Button variant="outline" onClick={cancelPending} loading={cancellingPending} disabled={cancellingPending}>
-                  Keep current plan
-                </Button>
-              </div>
-            </Glass>
-          </Reveal>
-        )}
-
-        {/* Founder banner */}
-        {slots != null && slots > 0 && (
-          <Reveal delay={0.05}>
-            <div className="mb-5 flex items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-[12px] font-[650]"
-              style={{ background: 'rgba(245,158,11,0.09)', border: '1px solid rgba(245,158,11,0.22)', color: '#fcd34d', width: 'fit-content', margin: '0 auto 20px' }}>
-              🔥 Founder&apos;s Club — only {slots}{founderLimit != null ? ` of ${founderLimit}` : ''} lifetime-locked-price spots left.
-            </div>
-          </Reveal>
-        )}
-
-        {/* Pricing */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {plans.map((p, i) => {
-            const isCurrent = status?.plan?.code === p.code;
-            const isPendingTarget = status?.pending_change?.plan_code === p.code;
-            const isQuoted = quote?.new_plan.code === p.code;
-            const accent = PLAN_ACCENT[p.code] || NO_PLAN_ACCENT;
-            return (
-              <Reveal key={p.code} delay={i * 0.05}>
-                <Glass
-                  accent={isQuoted ? 'rgba(52,211,153,0.55)' : undefined}
-                  className="flex h-full flex-col p-5"
-                >
-                  {/* Plan-tier accent strip — same identity system the Command
-                      Centre uses for studio cards, so a Growth studio's own
-                      billing screen and the operator's view of it agree on
-                      what colour "Growth" is. */}
-                  <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px]" style={{ background: accent }} />
-
-                  {p.is_launch && (
-                    <span className="absolute -top-2.5 left-5 rounded-full px-2.5 py-0.5 text-[10px] font-[800] text-white" style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)' }}>LAUNCH OFFER</span>
-                  )}
-                  <p className="text-[13px] font-[750] text-white">{p.name}</p>
-                  <p className="mt-0.5 text-[11px]" style={{ color: '#94a3b8' }}>{p.best_for}</p>
-                  <div className="mt-3 flex items-end gap-1.5">
-                    <span className="text-[26px] font-[860] text-white">{fmtINR(p.effective_price_inr)}</span>
-                    {p.is_launch && <span className="mb-1 text-[13px] line-through" style={{ color: '#64748b' }}>{fmtINR(p.price_inr)}</span>}
-                  </div>
-                  <p className="text-[11.5px]" style={{ color: '#94a3b8' }}>for {p.duration_months} {p.duration_months === 1 ? 'month' : 'months'}</p>
-                  <div className="mt-4 space-y-2 text-[12.5px]" style={{ color: '#cbd5e1' }}>
-                    <p className="flex items-center gap-2"><Check size={13} style={{ color: '#34d399' }} /> {p.client_limit != null ? `Up to ${p.client_limit} clients` : 'Unlimited clients'}</p>
-                    <p className="flex items-center gap-2"><Check size={13} style={{ color: '#34d399' }} /> All premium features</p>
-                    <p className="flex items-center gap-2"><Check size={13} style={{ color: '#34d399' }} /> {p.duration_months >= 12 ? 'Priority support' : 'Standard support'}</p>
-                  </div>
-                  <div className="mt-auto pt-4">
-                    {isCurrent ? (
-                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>Current plan</div>
-                    ) : isPendingTarget ? (
-                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'rgba(56,189,248,0.12)', color: '#38bdf8' }}>Scheduled</div>
-                    ) : active ? (
-                      // An active studio switching plans gets a priced preview
-                      // first — proration and the effective date matter here.
-                      <button onClick={() => openQuote(p.code)} disabled={!!quoting || confirming}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-[12px] py-2 text-[12px] font-[750] text-white transition hover:opacity-90 disabled:opacity-50"
-                        style={{ background: p.code === 'elite' ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'rgba(255,255,255,0.10)' }}>
-                        {quoting === p.code ? <Loader2 size={13} className="animate-spin" /> : null}
-                        Switch to {p.name}
-                      </button>
-                    ) : requested ? (
-                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'rgba(245,158,11,0.12)', color: '#fbbf24' }}>Request sent ✓</div>
-                    ) : (
-                      <button onClick={() => requestActivation(p.code)} disabled={!!requesting}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-[12px] py-2 text-[12px] font-[750] text-white transition hover:opacity-90 disabled:opacity-50"
-                        style={{ background: p.code === 'elite' ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'rgba(255,255,255,0.10)' }}>
-                        {requesting === p.code ? <Loader2 size={13} className="animate-spin" /> : null}
-                        Choose {p.name}
-                      </button>
-                    )}
-                  </div>
-                </Glass>
-              </Reveal>
-            );
-          })}
-        </div>
-
-        {/* Priced preview of a plan change, shown once a plan is picked. */}
-        {quote && (
-          <ChangePreview
-            quote={quote}
-            busy={confirming}
-            onConfirm={confirmChange}
-            onDismiss={() => setQuote(null)}
-          />
-        )}
-
-        {/* Request / status CTA */}
-        <Reveal delay={0.1} className="mt-8">
-          <Glass className="flex flex-col items-center gap-3 p-6 text-center">
-            <p className="text-[14px] font-[750] text-white">Ready to {frozen ? 'reactivate' : active ? 'renew or upgrade' : 'subscribe'}?</p>
-            <p className="max-w-[460px] text-[12.5px]" style={{ color: '#94a3b8' }}>
-              {requested
-                ? 'Thanks! Your request has reached the MY PT STUDIO team — we’ll confirm your payment and switch on your subscription shortly. No data is lost.'
-                : 'Pick a plan above (or tap below) to request activation. Our team confirms your payment and switches on your subscription — usually within a few hours.'}
-            </p>
-            {/* Coupon. Validating is a preview only — the binding check happens
-                server-side under a lock when the operator activates, so a code
-                exhausted in the meantime is still caught. */}
-            {!requested && (
-              <div className="w-full max-w-[420px]">
-                <div className="flex gap-2">
-                  <input
-                    value={couponCode}
-                    onChange={(e) => { setCouponCode(e.target.value); setCoupon(null); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') applyCoupon(); }}
-                    placeholder="Coupon code"
-                    aria-label="Coupon code"
-                    className="h-9 flex-1 rounded-[10px] px-3 text-[12.5px] font-[650] uppercase tracking-wide outline-none"
-                    style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: `1px solid ${coupon ? (coupon.valid ? 'rgba(52,211,153,0.5)' : 'rgba(248,113,113,0.5)') : 'rgba(255,255,255,0.12)'}`,
-                      color: '#fff',
-                    }}
-                  />
-                  <Button variant="outline" onClick={() => applyCoupon()}
-                    loading={couponChecking} disabled={couponChecking || !couponCode.trim()}>
-                    Apply
-                  </Button>
-                </div>
-                {coupon && (
-                  <p className="mt-2 text-[11.5px]" style={{ color: coupon.valid ? '#34d399' : '#fca5a5' }}>
-                    {coupon.valid
-                      ? `${fmtINR(coupon.discount_inr ?? 0)} off${coupon.net_amount_inr != null && coupon.gross_amount_inr > 0 ? ` — ${fmtINR(coupon.net_amount_inr)} due instead of ${fmtINR(coupon.gross_amount_inr)}` : ''}. It will be applied when your subscription is activated.`
-                      : coupon.reason}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-center gap-2.5">
-              {!requested && (
-                <Button onClick={() => requestActivation()} loading={requesting === 'general'} disabled={!!requesting}
-                  style={{ background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: '#fff' }}>
-                  Request activation
-                </Button>
-              )}
-              <Button variant="outline" onClick={() => load()} iconLeft={<ArrowRight size={14} />}>Refresh status</Button>
-            </div>
-          </Glass>
-        </Reveal>
-
-        {/* Invoices */}
-        {invoices.length > 0 && (
-          <Reveal delay={0.14} className="mt-8">
-            <SectionLabel>Invoice history</SectionLabel>
-            <Glass className="overflow-hidden">
-              {invoices.map((inv, i) => (
-                <div key={inv.id} className="flex items-center gap-3 px-4 py-3 text-[12.5px] transition-colors hover:bg-white/[0.03]"
-                  style={{ borderTop: i ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]" style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
-                    <Receipt size={13} />
-                  </span>
-                  <span className="flex-1 min-w-0 truncate" style={{ color: '#cbd5e1' }}>{inv.invoice_number} · {fmtDate(inv.issued_at)}</span>
-                  <span className="shrink-0 tabular-nums font-[650]" style={{ color: inv.status === 'refunded' ? '#64748b' : '#fff', textDecoration: inv.status === 'refunded' ? 'line-through' : 'none' }}>{fmtINR(inv.amount_inr)}</span>
-                </div>
-              ))}
-            </Glass>
-          </Reveal>
-        )}
+      <div className="mx-auto max-w-5xl px-5 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] pt-6">
+        {body}
       </div>
     </div>
   );

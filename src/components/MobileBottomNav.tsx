@@ -87,7 +87,10 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
         }}
       />
 
-      <div className="flex h-[52px] items-stretch">
+      {/* Height comes from --bottom-nav-h (globals.css), the same token every
+          "clear the bottom nav" offset is derived from — so changing the nav's
+          height can never leave pages overlapping it. */}
+      <div className="flex items-stretch" style={{ height: 'var(--bottom-nav-h, 52px)' }}>
         {items.map((item) => {
           const { href, icon: Icon, label } = item;
           // Platform tabs all share the /platform pathname and differ only by
