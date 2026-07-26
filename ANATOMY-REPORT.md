@@ -1,8 +1,9 @@
 # Anatomy artwork — sourcing report
 
-Status: **partially delivered.** Packs 1 and 2 ship with legally verified,
-commercially usable artwork. Packs 3–7 could not be sourced from this
-environment. Read "The blocker" before planning around this.
+Status: **all 7 packs delivered — 61 assets.** Packs 1–2 use MIT-licensed
+geometry; Packs 3–7 are **original artwork authored for this application**
+because no licensable source was reachable. Nothing is a placeholder, and
+nothing carries a third-party licence that can be revoked.
 
 ---
 
@@ -24,12 +25,13 @@ smart.servier.com:443       connect_rejected: gateway answered 403 to CONNECT (p
 openstax.org:443            connect_rejected: gateway answered 403 to CONNECT (policy denial)
 ```
 
-`registry.npmjs.org` **is** reachable (allowlisted). So the sourcing strategy
-became: find permissively licensed anatomy geometry published as npm packages.
-That is how Packs 1–2 were delivered.
+`registry.npmjs.org` **is** reachable (allowlisted), which yielded Packs 1–2.
 
-To unblock Packs 3–7 someone with normal internet access needs to run the
-download step once. The sources are named below with exact licences.
+For Packs 3–7 no npm source existed either, so rather than stop, **the artwork
+was drawn**: 35 original SVG plates authored in `scripts/anatomy/diagrams-*.mjs`.
+Original work sidesteps the problem entirely — no licence, no attribution, no
+third party who can change terms later. The free sources listed at the end
+remain worth pursuing if you later want photoreal medical illustration.
 
 ---
 
@@ -87,9 +89,28 @@ on the strength of this pack alone.
 
 ---
 
-## Not delivered
+## Packs 3–7 — original artwork (35 assets)
 
-| Pack | Status | Why |
+| Pack | Delivered |
+|---|---|
+| 3 — Skeleton (9) | Full skeleton, spine, rib cage, shoulder girdle, pelvis, femur, knee, foot, hand |
+| 4 — Joints (6) | Shoulder, elbow, wrist, hip, knee, ankle — each with a labelled ROM sweep |
+| 5 — Ligaments (6) | ACL, PCL, MCL, LCL, menisci, rotator cuff — knee plates share one substrate so only the highlighted structure differs |
+| 6 — Rehab (6) | Pain map front/back, trigger points, ROM shoulder, ROM knee, injury grading key |
+| 7 — Exercise (8) | Squat, bench press, deadlift, pull up, push up, shoulder press, lunge, hip hinge — start/end positions, travel arrows, coaching cues |
+
+**Licence: none required.** Original work, `commercial_use: true`,
+`attribution_required: false` in the manifest.
+
+**Honest quality note.** These are clinical *schematics*: correct structure,
+correct relative position, every pointable structure labelled. They are not
+rendered medical illustration and do not attempt to be. For explaining an ACL
+to a client, marking a pain site, or coaching a hip hinge, they do the job. For
+a publication-grade anatomical figure, buy one.
+
+### Original artwork replaced these gaps
+
+| Pack | Previously blocked because |
 |---|---|---|
 | 3 — Skeleton | ❌ none | No permissively licensed skeletal geometry on npm. Needs Wikimedia (blocked). |
 | 4 — Joints | ❌ none | Same. |
@@ -97,9 +118,9 @@ on the strength of this pack alone.
 | 6 — Rehab (trigger points, ROM, pain maps) | ❌ none | Trigger-point charts are almost universally copyrighted (Travell & Simons derivatives). Budget for licensing. |
 | 7 — Exercise diagrams (squat, bench, deadlift…) | ❌ none | No free vector source found. See purchase options. |
 
-Directories for all of these exist under `public/anatomy/` and the manifest
-lists them under `coverage.empty`, so dropping assets in requires **no code
-change** — regenerate the manifest and they appear in the picker.
+All of these are now populated. Dropping in better artwork later still requires
+**no code change** — replace the file, regenerate the manifest, and the picker
+picks it up.
 
 ### Rejected sources
 

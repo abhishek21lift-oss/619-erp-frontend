@@ -19,6 +19,9 @@
 import { mkdir, writeFile, rm, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { svgDoc } from './draw.mjs';
+import { skeletal, joints, ligaments } from './diagrams-skeletal.mjs';
+import { rehab, exercises } from './diagrams-rehab.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..', '..');
@@ -143,16 +146,47 @@ for (const v of views) {
   }
 }
 
+// ── Packs 3–7: original artwork ─────────────────────────────────────────────
+// Authored for this application (scripts/anatomy/diagrams-*.mjs) because no
+// permissively licensed source was reachable — see ANATOMY-REPORT.md. Original
+// work carries no third-party licence, so nothing here needs attribution and
+// nobody can revoke it.
+const ORIGINAL_LICENCE = {
+  license: 'Proprietary — original work',
+  author: 'Created for this application',
+  source: 'scripts/anatomy/diagrams-skeletal.mjs, scripts/anatomy/diagrams-rehab.mjs',
+  commercial_use: true,
+  attribution_required: false,
+};
+
+for (const collection of [skeletal, joints, ligaments, rehab, exercises]) {
+  for (const [id, d] of Object.entries(collection)) {
+    const file = `${d.category}/${id}.svg`;
+    await writeFile(
+      path.join(OUT, file),
+      svgDoc({
+        viewBox: d.viewBox, width: d.width, height: d.height,
+        title: d.title, body: d.render(),
+      }),
+    );
+    assets.push({
+      id, title: d.title, category: d.category, bodyPart: d.bodyPart,
+      svg: `/anatomy/${file}`, png: null, thumbnail: `/anatomy/${file}`,
+      ...ORIGINAL_LICENCE,
+    });
+  }
+}
+
+const shipped = [...new Set(assets.map((a) => a.category))];
 const manifest = {
   generated_at: new Date().toISOString(),
   generator: 'scripts/anatomy/build-anatomy.mjs',
-  // Named honestly so nobody mistakes the coverage for a full medical library.
   coverage: {
-    shipped: ['body', 'muscles'],
-    empty: ['skeleton', 'joints', 'ligaments', 'injuries', 'exercises'],
-    note: 'Empty categories have no legally-sourced artwork yet. See ANATOMY-REPORT.md. Directories exist so assets drop in without a code change.',
+    shipped,
+    empty: [],
+    note: 'body + muscles are derived from MIT-licensed geometry; skeleton, joints, ligaments, injuries and exercises are original artwork authored for this application. Provenance is per-asset in the entries below.',
   },
-  licenses: [LICENCE],
+  licenses: [LICENCE, ORIGINAL_LICENCE],
   assets,
 };
 await writeFile(path.join(OUT, 'anatomy-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
@@ -189,4 +223,11 @@ generated SVG's \`<metadata>\` element as well as this file. Keep this file
 deployed — do not strip it from the build.
 `);
 
-console.log(`[anatomy] ${assets.length} assets -> public/anatomy (${views.length} bodies, ${assets.length - views.length} muscle overlays)`);
+const byCategory = assets.reduce((acc, a) => {
+  acc[a.category] = (acc[a.category] ?? 0) + 1;
+  return acc;
+}, {});
+console.log(
+  `[anatomy] ${assets.length} assets -> public/anatomy  `
+  + Object.entries(byCategory).map(([k, v]) => `${k}:${v}`).join('  '),
+);
