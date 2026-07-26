@@ -289,7 +289,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
           >
 
             <m.div
-              className="flex items-center gap-3 px-3 sm:px-4 lg:px-6"
+              className="flex items-center gap-1.5 px-3 sm:gap-2.5 sm:px-4 lg:gap-3 lg:px-6"
               animate={{ height: topBar === 'compact' ? 32 : 46 }}
               transition={transConfig}
             >

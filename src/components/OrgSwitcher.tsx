@@ -72,17 +72,21 @@ export default function OrgSwitcher() {
       <button
         type="button"
         onClick={() => setOpen((s) => !s)}
-        aria-label="Switch organization"
+        aria-label={`Switch organization${activeId ? ` (currently ${label})` : ''}`}
         title="Platform: switch organization"
         className={cn(
-          'flex h-8 max-w-[180px] shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-[12px] font-medium transition-all duration-200',
-          'border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]',
+          // Icon-only square below sm — the full pill (with "All organizations"
+          // text) was wide enough on its own to push the profile avatar off a
+          // phone screen. From sm up it grows back into the labelled pill.
+          'flex h-8 w-8 shrink-0 items-center justify-center gap-1.5 rounded-xl transition-all duration-200',
+          'sm:w-auto sm:max-w-[180px] sm:justify-start sm:border sm:px-2.5 sm:text-[12px] sm:font-medium',
+          'sm:border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]',
         )}
-        style={activeId ? { borderColor: '#D4AF37', color: '#D4AF37' } : undefined}
+        style={activeId ? { color: '#D4AF37', borderColor: '#D4AF37' } : undefined}
       >
-        {activeId ? <Building2 size={13} strokeWidth={1.5} /> : <Globe size={13} strokeWidth={1.5} />}
-        <span className="truncate">{label}</span>
-        <ChevronDown size={12} strokeWidth={2} className="shrink-0 opacity-60" />
+        {activeId ? <Building2 size={14} strokeWidth={1.5} /> : <Globe size={14} strokeWidth={1.5} />}
+        <span className="hidden truncate sm:inline">{label}</span>
+        <ChevronDown size={12} strokeWidth={2} className="hidden shrink-0 opacity-60 sm:block" />
       </button>
 
       {open && (

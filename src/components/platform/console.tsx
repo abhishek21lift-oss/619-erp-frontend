@@ -250,11 +250,21 @@ export function StatTile({
   return (
     <Reveal delay={delay}>
       <Panel className="h-full overflow-hidden">
-        {/* Accent wash — identity at a glance, without tinting any text. */}
+        {/* Top accent hairline — the tone reads before anything else loads,
+            same idea as the plan-tier accent strip on studio cards. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[3px] rounded-t-[16px] sm:rounded-t-[18px]"
+          style={{ background: `linear-gradient(90deg, ${colour} 0%, color-mix(in srgb, ${colour} 40%, transparent) 100%)` }}
+        />
+        {/* Accent wash — identity at a glance, without tinting any text.
+            color-mix() (not string-appended alpha) because `colour` is
+            sometimes a CSS var() reference — `var(--brand)22` is not a
+            valid colour and would silently drop the rule for those tones. */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 rounded-[18px]"
-          style={{ background: `radial-gradient(120% 90% at 0% 0%, ${colour}14 0%, transparent 60%)` }}
+          style={{ background: `radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, ${colour} 13%, transparent) 0%, transparent 62%)` }}
         />
         <div className="relative">
           <div className="mb-2.5 flex items-center justify-between gap-2">
@@ -266,8 +276,12 @@ export function StatTile({
             </span>
             {icon && (
               <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
-                style={{ background: `${colour}1a`, color: colour }}
+                className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[10px]"
+                style={{
+                  background: `linear-gradient(145deg, ${colour} 0%, color-mix(in srgb, ${colour} 65%, #000) 100%)`,
+                  boxShadow: `0 4px 12px color-mix(in srgb, ${colour} 45%, transparent), inset 0 1px 0 rgba(255,255,255,0.28)`,
+                  color: '#fff',
+                }}
               >
                 {icon}
               </span>
@@ -292,6 +306,14 @@ export function StatTile({
 }
 
 // ── Console header ────────────────────────────────────────────────────────────
+/**
+ * The page's hero band. A gradient-washed card rather than bare text-on-canvas
+ * — this is the first thing an operator sees on the command centre, so it
+ * carries the "premium console" identity the rest of the page follows. Two
+ * soft colour blobs give it depth without ever competing with the title or
+ * the actions slot, and the icon badge gets the richest treatment on the
+ * page since there is exactly one of it.
+ */
 export function ConsoleHeader({
   title, subtitle, icon, actions,
 }: {
@@ -299,37 +321,75 @@ export function ConsoleHeader({
 }) {
   return (
     <Reveal>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          {icon && (
-            <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
-              style={{
-                background: 'linear-gradient(145deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 62%, #000) 100%)',
-                boxShadow: '0 6px 18px color-mix(in srgb, var(--brand) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.22)',
-                color: '#fff',
-              }}
-            >
-              {icon}
-            </div>
-          )}
-          <div className="min-w-0">
-            <h1
-              className="truncate text-[19px] sm:text-[21px]"
-              style={{ color: 'var(--text-primary)', fontWeight: 830, letterSpacing: '-0.022em' }}
-            >
-              {title}
-            </h1>
-            {/* Wraps to two lines on a phone instead of truncating mid-sentence
-                to "…account across …", which told the reader nothing. */}
-            {subtitle && (
-              <p className="mt-0.5 text-[11.5px] leading-snug sm:text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                {subtitle}
-              </p>
+      <div
+        className="relative mb-6 overflow-hidden rounded-[20px] px-4 py-5 sm:rounded-[22px] sm:px-6 sm:py-6"
+        style={{
+          background:
+            'linear-gradient(135deg, color-mix(in srgb, var(--brand) 16%, var(--bg-elevated)) 0%, '
+            + 'color-mix(in srgb, #8B5CF6 12%, var(--bg-elevated)) 55%, var(--bg-elevated) 100%)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.08)',
+        }}
+      >
+        {/* Ambient colour blobs — decoration only, clipped by the card's own
+            overflow-hidden so they never bleed into surrounding layout. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-8 -top-12 h-36 w-36 rounded-full sm:h-44 sm:w-44"
+          style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)', opacity: 0.28, filter: 'blur(34px)' }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-16 left-12 h-32 w-32 rounded-full sm:h-40 sm:w-40"
+          style={{ background: 'radial-gradient(circle, var(--brand) 0%, transparent 70%)', opacity: 0.20, filter: 'blur(36px)' }}
+        />
+
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3.5">
+            {icon && (
+              <div
+                className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[16px] sm:h-[52px] sm:w-[52px]"
+                style={{
+                  background: 'linear-gradient(145deg, #A78BFA 0%, var(--brand) 45%, #6D28D9 100%)',
+                  boxShadow: '0 8px 22px color-mix(in srgb, var(--brand) 45%, transparent), inset 0 1px 0 rgba(255,255,255,0.32)',
+                  color: '#fff',
+                }}
+              >
+                {/* Specular top-edge sheen — the same "glass" cue as Panel's
+                    inset highlight, scaled up for the one hero badge. */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, transparent 55%)' }}
+                />
+                <span className="relative">{icon}</span>
+              </div>
             )}
+            <div className="min-w-0">
+              <h1
+                className="truncate text-[20px] sm:text-[23px]"
+                style={{
+                  fontWeight: 850,
+                  letterSpacing: '-0.024em',
+                  backgroundImage: 'linear-gradient(90deg, var(--text-primary) 0%, color-mix(in srgb, var(--brand) 65%, var(--text-primary)) 100%)',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  color: 'transparent',
+                }}
+              >
+                {title}
+              </h1>
+              {/* Wraps to two lines on a phone instead of truncating mid-sentence
+                  to "…account across …", which told the reader nothing. */}
+              {subtitle && (
+                <p className="mt-0.5 text-[11.5px] leading-snug sm:text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                  {subtitle}
+                </p>
+              )}
+            </div>
           </div>
+          {actions}
         </div>
-        {actions}
       </div>
     </Reveal>
   );

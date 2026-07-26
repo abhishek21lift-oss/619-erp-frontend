@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Home, Users, ScanFace, Dumbbell, IndianRupee, LayoutGrid, Layers, CreditCard, Activity } from 'lucide-react';
 import { m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
@@ -22,13 +22,22 @@ const FINANCE_ITEM = {
   label: 'Finance',
 };
 
-// Platform operators get control-plane tabs instead of studio tabs.
+// Platform operators get control-plane tabs instead of studio tabs. These all
+// share the /platform pathname and differ only by ?tab=, so each carries an
+// explicit `tab` id — pathname alone can't tell Studios from Finance apart.
 const PLATFORM_ITEMS = [
-  { href: '/platform',              icon: LayoutGrid, label: 'Overview'  },
-  { href: '/platform?tab=studios',  icon: Layers,     label: 'Studios'   },
-  { href: '/platform?tab=finance',  icon: CreditCard, label: 'Finance'   },
-  { href: '/platform?tab=activity', icon: Activity,   label: 'Activity'  },
+  { href: '/platform',              tab: 'overview', icon: LayoutGrid, label: 'Overview'  },
+  { href: '/platform?tab=studios',  tab: 'studios',  icon: Layers,     label: 'Studios'   },
+  { href: '/platform?tab=finance',  tab: 'finance',  icon: CreditCard, label: 'Finance'   },
+  { href: '/platform?tab=activity', tab: 'activity', icon: Activity,   label: 'Activity'  },
 ];
+
+// Mirrors normalizeTab() in app/platform/page.tsx — legacy ?tab=billing/coupons
+// deep-links still land on the Finance tab.
+function normalizePlatformTab(raw: string | null): string {
+  if (raw === 'billing' || raw === 'coupons') return 'finance';
+  return raw ?? 'overview';
+}
 
 interface MobileBottomNavProps {
   sidebarOpen?: boolean;
@@ -39,6 +48,8 @@ const SPRING = { type: 'spring', stiffness: 520, damping: 38, mass: 0.7 } as con
 
 export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNavProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentPlatformTab = normalizePlatformTab(searchParams.get('tab'));
   const { user } = useAuth();
   const role             = normaliseRole(user?.role);
   // While impersonating, the operator acts as the studio admin — show studio
@@ -76,10 +87,14 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
         }}
       />
 
-      <div className="flex h-[60px] items-stretch">
-        {items.map(({ href, icon: Icon, label }) => {
-          const isActive =
-            href === '/'
+      <div className="flex h-[52px] items-stretch">
+        {items.map((item) => {
+          const { href, icon: Icon, label } = item;
+          // Platform tabs all share the /platform pathname and differ only by
+          // ?tab=, so those items match on the normalised tab id instead.
+          const isActive = 'tab' in item
+            ? pathname === '/platform' && currentPlatformTab === item.tab
+            : href === '/'
               ? pathname === '/'
               : pathname === href || pathname.startsWith(href + '/');
 
@@ -89,7 +104,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               href={href}
               className="relative flex flex-1 flex-col items-center justify-center overflow-hidden focus-visible:outline-none"
               aria-current={isActive ? 'page' : undefined}
-              style={{ gap: 3, minHeight: 44 }}
+              style={{ gap: 2, minHeight: 44 }}
             >
               {/* Focus ring for keyboard nav */}
               <span
@@ -103,8 +118,8 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
                   layoutId="bottom-nav-active"
                   className="absolute inset-x-1.5 rounded-xl pointer-events-none"
                   style={{
-                    top:    5,
-                    bottom: 5,
+                    top:    4,
+                    bottom: 4,
                     background: 'linear-gradient(135deg, rgba(167,139,250,0.22) 0%, rgba(109,40,217,0.14) 100%)',
                     border: '1px solid rgba(167,139,250,0.28)',
                     boxShadow: '0 2px 14px rgba(167,139,250,0.18), inset 0 1px 0 rgba(255,255,255,0.07)',
@@ -115,12 +130,12 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
 
               {/* Icon */}
               <m.span
-                className="relative z-10 flex h-[26px] w-[26px] items-center justify-center"
+                className="relative z-10 flex h-[22px] w-[22px] items-center justify-center"
                 whileTap={reducedMotion ? {} : { scale: 0.76 }}
                 transition={{ type: 'spring', stiffness: 700, damping: 22 }}
               >
                 <Icon
-                  size={20}
+                  size={18}
                   strokeWidth={isActive ? 2.3 : 1.7}
                   style={{
                     color: isActive ? '#a78bfa' : 'rgba(255,255,255,0.40)',
