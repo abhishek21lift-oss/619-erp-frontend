@@ -20,6 +20,7 @@ import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import BrandLogoWide from '@/components/BrandLogoWide';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Eye, EyeOff, Mail, ArrowRight, ArrowLeft, Fingerprint, Loader2, Lock,
@@ -367,15 +368,7 @@ export default function LoginPage() {
       >
         {/* Centered logo + heading (Apple style) */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <Image
-            src="/mypt-logo.png"
-            alt="MY PT STUDIO"
-            width={92}
-            height={92}
-            priority
-            className="h-[76px] w-[76px] object-contain"
-            style={{ filter: 'drop-shadow(0 12px 26px rgba(15,23,42,0.18))' }}
-          />
+          <BrandLogoWide width={224} priority />
           <h1 className="mt-4 text-[27px] font-[840] tracking-[-0.025em]" style={{ color: INK }}>Sign in</h1>
           <p className="mt-1.5 text-[14px]" style={{ color: MUTE }}>
             Welcome back to MY PT STUDIO{lastOrg ? <> · <span className="font-[650]" style={{ color: MAROON }}>{lastOrg}</span></> : ''}.

@@ -13,6 +13,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import BrandLogoWide from '@/components/BrandLogoWide';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight, Check, Menu, X, Sparkles, Star, ChevronDown,
@@ -357,15 +358,13 @@ export default function LandingPage() {
           notification area, never cramped under it on notched phones. */}
       <Section id="solutions" className="pb-16 text-center pt-[calc(max(env(safe-area-inset-top),2.75rem)+6.5rem)] sm:pt-[calc(max(env(safe-area-inset-top),2.75rem)+7.5rem)]">
         <Reveal>
-          <Image
-            src="/mypt-logo.png"
-            alt="MY PT STUDIO"
-            width={148}
-            height={148}
-            priority
-            className="mx-auto mb-7 h-28 w-28 object-contain sm:h-36 sm:w-36"
-            style={{ filter: 'drop-shadow(0 16px 34px rgba(15,23,42,0.18))' }}
-          />
+          {/* Wide lockup, sized responsively. The neon is dialled back slightly
+              here because the eyebrow pill sits immediately beneath it and a
+              full-strength halo bleeds into that text. */}
+          <div className="mb-7 flex justify-center">
+            <span className="sm:hidden"><BrandLogoWide width={252} priority intensity={0.85} /></span>
+            <span className="hidden sm:inline"><BrandLogoWide width={340} priority intensity={0.85} /></span>
+          </div>
         </Reveal>
         <Reveal delay={0.04}>
           <Eyebrow><Sparkles size={13} /> The operating system for fitness professionals</Eyebrow>
