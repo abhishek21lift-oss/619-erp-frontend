@@ -333,6 +333,13 @@ function EnrollForm({ clientId }: { clientId: string }) {
   // before surfacing a real error, so the (very likely) second attempt —
   // which lands on an already-warm backend — just works.
   const savePayload = () => api.pt.updateClient(clientId, {
+    // A client stays 'pending' ("Not Enrolled") from creation until
+    // something actually enrolls them — this save IS that enrollment, so it
+    // must promote status itself. PATCH /clients/:id only touches status
+    // when the caller explicitly sends it; omitting it here silently left
+    // every fully-paid, fully-scheduled enrollment stuck showing "Not
+    // Enrolled" forever.
+    status: 'active',
     pt_start_date: form.startDate,
     pt_end_date: endDate,
     duration_months: Number(form.duration),
