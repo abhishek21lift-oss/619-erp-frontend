@@ -17,7 +17,8 @@ import {
   KeyRound, Power, X, Copy, RefreshCw, ChevronDown, ImagePlus,
   LayoutDashboard, Activity, LogIn, Pencil, Trash2, UserPlus, IndianRupee, Clock, Eye,
   CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket, Percent, Ban, CheckCircle2,
-  Search, ArrowRight, AlertTriangle, TrendingUp, TrendingDown, ChevronRight,
+  Search, ArrowRight, TrendingUp, ChevronRight,
+  MoreVertical, Download, ArrowUpDown, CheckSquare, Square,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -1072,9 +1073,55 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
 }
 
 /* ─────────────────────────────────────────────────────── STUDIOS */
+// One row = three existing endpoints merged by org id: listOrgs (accounts,
+// coach/client counts), subscriptions (plan, renewal/request state),
+// overview (revenue, outstanding, last login, active vs total clients).
+// Nothing here is fetched or computed just for this view — it's the same
+// data already shown on Overview and Finance, just joined per studio.
+type StudioRow = {
+  org: Organization;
+  sub: SubStudio | undefined;
+  revenue: number;
+  outstanding: number;
+  lastLogin: string | null;
+  activeClients: number;
+  totalClients: number;
+  sessionsThisMonth: number;
+};
+
+type StudioFilter = 'all' | 'active' | 'suspended' | 'trial' | 'renewal_due' | 'requested';
+type StudioSort = 'name' | 'revenue' | 'clients' | 'created' | 'last_active';
+
+function exportStudiosCsv(rows: StudioRow[]): void {
+  const headers = ['Name', 'Slug', 'Status', 'Plan', 'Revenue', 'Active Clients', 'Total Clients', 'Coaches', 'Accounts', 'Last Active', 'Created'];
+  const escape = (v: unknown) => {
+    const s = String(v ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [
+    headers.join(','),
+    ...rows.map((r) => [
+      r.org.name, r.org.slug, r.org.status, r.sub?.plan_name || '', r.revenue,
+      r.activeClients, r.totalClients, r.org.trainer_count ?? 0, r.org.user_count ?? 0,
+      r.lastLogin ? fmtDate(r.lastLogin) : '', fmtDate(r.org.created_at),
+    ].map(escape).join(',')),
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `studios-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function StudiosTab() {
   const { toast } = useToast();
   const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [subStudios, setSubStudios] = useState<SubStudio[]>([]);
+  const [overviewStudios, setOverviewStudios] = useState<StudioOverview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -1082,14 +1129,61 @@ function StudiosTab() {
   const [editTarget, setEditTarget] = useState<OrgUser | null>(null);
   const [addTarget, setAddTarget] = useState<Organization | null>(null);
 
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<StudioFilter>('all');
+  const [sortBy, setSortBy] = useState<StudioSort>('name');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
   const load = useCallback(() => {
     setLoading(true); setError('');
-    api.superAdmin.listOrgs()
-      .then((r) => setOrgs(r.data ?? []))
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load organizations'))
+    Promise.all([api.superAdmin.listOrgs(), api.superAdmin.subscriptions(), api.superAdmin.overview()])
+      .then(([o, s, ov]) => {
+        setOrgs(o.data ?? []);
+        setSubStudios(s.data.studios ?? []);
+        setOverviewStudios(ov.data.studios ?? []);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load studios'))
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  const rows = useMemo<StudioRow[]>(() => {
+    const subById = new Map(subStudios.map((s) => [s.id, s]));
+    const ovById = new Map(overviewStudios.map((s) => [s.id, s]));
+    return orgs.map((org) => {
+      const sub = subById.get(org.id);
+      const ov = ovById.get(org.id);
+      return {
+        org, sub,
+        revenue: Number(ov?.revenue ?? 0),
+        outstanding: Number(ov?.outstanding ?? 0),
+        lastLogin: ov?.last_login ?? null,
+        activeClients: ov?.active_clients ?? org.client_count ?? 0,
+        totalClients: ov?.total_clients ?? org.client_count ?? 0,
+        sessionsThisMonth: ov?.sessions_this_month ?? 0,
+      };
+    });
+  }, [orgs, subStudios, overviewStudios]);
+
+  const filtered = useMemo(() => {
+    let list = rows;
+    const q = query.trim().toLowerCase();
+    if (q) list = list.filter((r) => r.org.name.toLowerCase().includes(q) || r.org.slug.toLowerCase().includes(q));
+    if (filter === 'active') list = list.filter((r) => r.org.status === 'active');
+    if (filter === 'suspended') list = list.filter((r) => r.org.status === 'suspended');
+    if (filter === 'trial') list = list.filter((r) => r.sub?.effective_state === 'trial');
+    if (filter === 'renewal_due') list = list.filter((r) => r.sub?.renewal_due);
+    if (filter === 'requested') list = list.filter((r) => !!r.sub?.requested_at);
+
+    const sorted = [...list];
+    if (sortBy === 'revenue') sorted.sort((a, b) => b.revenue - a.revenue);
+    else if (sortBy === 'clients') sorted.sort((a, b) => b.activeClients - a.activeClients);
+    else if (sortBy === 'created') sorted.sort((a, b) => new Date(b.org.created_at).getTime() - new Date(a.org.created_at).getTime());
+    else if (sortBy === 'last_active') sorted.sort((a, b) => new Date(b.lastLogin || 0).getTime() - new Date(a.lastLogin || 0).getTime());
+    else sorted.sort((a, b) => a.org.name.localeCompare(b.org.name));
+    return sorted;
+  }, [rows, query, filter, sortBy]);
 
   const toggleStatus = async (o: Organization) => {
     const next = o.status === 'active' ? 'suspended' : 'active';
@@ -1101,29 +1195,138 @@ function StudiosTab() {
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
   };
 
+  const toggleSelect = (id: string) => setSelected((s) => {
+    const n = new Set(s);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
+  const selectAllFiltered = () => setSelected(new Set(filtered.map((r) => r.org.id)));
+  const clearSelection = () => setSelected(new Set());
+
+  const bulkSetStatus = async (status: 'active' | 'suspended') => {
+    if (status === 'suspended' && !window.confirm(`Suspend ${selected.size} studio${selected.size === 1 ? '' : 's'}? All their logins will be signed out and blocked.`)) return;
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    for (const id of selected) {
+      try { await api.superAdmin.updateOrg(id, { status }); ok++; } catch { fail++; }
+    }
+    setBulkBusy(false);
+    if (fail) toast.warning(`${ok} updated, ${fail} failed.`); else toast.success(`${ok} studio${ok === 1 ? '' : 's'} ${status === 'suspended' ? 'suspended' : 'reactivated'}.`);
+    clearSelection();
+    load();
+  };
+
+  const bulkExport = () => {
+    const list = selected.size ? filtered.filter((r) => selected.has(r.org.id)) : filtered;
+    exportStudiosCsv(list);
+    toast.success(`Exported ${list.length} studio${list.length === 1 ? '' : 's'}.`);
+  };
+
+  const FILTERS: { id: StudioFilter; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'active', label: 'Active' },
+    { id: 'suspended', label: 'Suspended' },
+    { id: 'trial', label: 'On trial' },
+    { id: 'renewal_due', label: 'Renewal due' },
+    { id: 'requested', label: 'Requested' },
+  ];
+  const SORTS: { id: StudioSort; label: string }[] = [
+    { id: 'name', label: 'Name' },
+    { id: 'revenue', label: 'Revenue' },
+    { id: 'clients', label: 'Clients' },
+    { id: 'created', label: 'Newest' },
+    { id: 'last_active', label: 'Last active' },
+  ];
+
   return (
     <div>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap items-center gap-2.5">
+        <div className="relative min-w-[160px] flex-1">
+          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          <input
+            value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search studios…"
+            className="h-9 w-full rounded-[10px] pl-8 pr-3 text-[12.5px] outline-none"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          />
+        </div>
+        <div className="relative">
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as StudioSort)}
+            className="h-9 appearance-none rounded-[10px] py-1.5 pl-8 pr-8 text-[12px] font-[650] outline-none"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+            {SORTS.map((s) => <option key={s.id} value={s.id}>Sort · {s.label}</option>)}
+          </select>
+          <ArrowUpDown size={12} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+          <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
+        </div>
         <Button iconLeft={<Plus size={14} />} onClick={() => setCreateOpen(true)}
           style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>New Studio</Button>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-1.5">
+        {FILTERS.map((f) => (
+          <button key={f.id} onClick={() => setFilter(f.id)}
+            className="rounded-full px-3 py-1.5 text-[11.5px] font-[650] transition-colors"
+            style={filter === f.id
+              ? { background: 'var(--brand)', color: '#fff' }
+              : { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Bulk action bar — only takes up space once something is selected. */}
+      {selected.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2.5 rounded-[14px] px-4 py-2.5"
+          style={{ background: 'var(--brand-soft)', border: '1px solid var(--brand)' }}>
+          <span className="text-[12.5px] font-[700]" style={{ color: 'var(--text-primary)' }}>{selected.size} selected</span>
+          <button onClick={() => bulkSetStatus('active')} disabled={bulkBusy}
+            className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
+            style={{ background: 'rgba(16,185,129,0.12)', color: '#059669' }}>
+            <Power size={12} /> Activate
+          </button>
+          <button onClick={() => bulkSetStatus('suspended')} disabled={bulkBusy}
+            className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
+            style={{ background: 'rgba(239,68,68,0.10)', color: '#dc2626' }}>
+            <Power size={12} /> Suspend
+          </button>
+          <button onClick={bulkExport} disabled={bulkBusy}
+            className="flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-[700] transition hover:opacity-80 disabled:opacity-50"
+            style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            <Download size={12} /> Export
+          </button>
+          {bulkBusy && <Loader2 size={13} className="animate-spin" style={{ color: 'var(--text-muted)' }} />}
+          <button onClick={clearSelection} className="ml-auto text-[11.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>Clear</button>
+        </div>
+      )}
+
       {loading && <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>}
       {error && !loading && <ErrorState error={error} onRetry={load} />}
-      {!loading && !error && orgs.length === 0 && (
-        <EmptyState icon={<Building2 size={20} />} title="No studios yet" description="Create the first tenant workspace to onboard a trainer." />
+      {!loading && !error && filtered.length === 0 && (
+        <EmptyState icon={<Building2 size={20} />}
+          title={rows.length === 0 ? 'No studios yet' : 'No studios match'}
+          description={rows.length === 0 ? 'Create the first tenant workspace to onboard a trainer.' : 'Try a different search term or filter.'} />
       )}
-      {!loading && !error && orgs.length > 0 && (
-        <div className="space-y-3">
-          {orgs.map((o) => (
-            <OrgCard key={o.id} org={o}
-              onToggleStatus={() => toggleStatus(o)}
-              onResetPassword={setResetTarget}
-              onEditUser={setEditTarget}
-              onAddUser={() => setAddTarget(o)}
-              onChanged={load} />
-          ))}
-        </div>
+      {!loading && !error && filtered.length > 0 && (
+        <>
+          <button onClick={() => (selected.size === filtered.length ? clearSelection() : selectAllFiltered())}
+            className="mb-2.5 flex items-center gap-1.5 text-[11.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+            {selected.size === filtered.length ? <CheckSquare size={13} /> : <Square size={13} />}
+            Select all {filtered.length}
+          </button>
+          <div className="space-y-3">
+            {filtered.map((row) => (
+              <OrgCard key={row.org.id} row={row}
+                selected={selected.has(row.org.id)}
+                onToggleSelect={() => toggleSelect(row.org.id)}
+                onToggleStatus={() => toggleStatus(row.org)}
+                onResetPassword={setResetTarget}
+                onEditUser={setEditTarget}
+                onAddUser={() => setAddTarget(row.org)}
+                onChanged={load} />
+            ))}
+          </div>
+        </>
       )}
 
       {createOpen && <CreateOrgModal onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); load(); }} />}
@@ -1134,9 +1337,57 @@ function StudiosTab() {
   );
 }
 
+// Small "⋯" menu — Suspend/Activate and Support Access live here per the
+// spec's "More menu" grouping. Archive / Delete / Transfer ownership / Reset
+// usage / Export-this-studio are NOT here: there is no backend support for
+// any of them (no archived state, no org-delete endpoint, no ownership
+// transfer, no per-studio usage reset), and fabricating buttons for actions
+// that silently do nothing — or worse, half-work — is worse than omitting
+// them. Bulk/CSV export of what's already loaded is real and lives in the
+// bulk action bar instead.
+function MoreMenu({ suspended, onToggleStatus, onSupportAccess, supportBusy }: {
+  suspended: boolean; onToggleStatus: () => void; onSupportAccess: () => void; supportBusy: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen((s) => !s)} title="More"
+        className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-black/5"
+        style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+        <MoreVertical size={15} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1.5 w-52 overflow-hidden rounded-[12px] py-1.5"
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', boxShadow: '0 12px 32px rgba(15,23,42,0.18)' }}>
+          <button onClick={() => { setOpen(false); onSupportAccess(); }} disabled={supportBusy}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[12.5px] font-[600] transition hover:bg-black/5 disabled:opacity-50"
+            style={{ color: 'var(--text-secondary)' }}>
+            {supportBusy ? <Loader2 size={13} className="animate-spin" /> : <LogIn size={13} />} Support access
+          </button>
+          <button onClick={() => { setOpen(false); onToggleStatus(); }}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[12.5px] font-[600] transition hover:bg-black/5"
+            style={{ color: suspended ? '#059669' : '#dc2626' }}>
+            <Power size={13} /> {suspended ? 'Activate' : 'Suspend'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Organization card (expandable to manage its users) ──────────────────────────
-function OrgCard({ org, onToggleStatus, onResetPassword, onEditUser, onAddUser, onChanged }: {
-  org: Organization;
+function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPassword, onEditUser, onAddUser, onChanged }: {
+  row: StudioRow;
+  selected: boolean;
+  onToggleSelect: () => void;
   onToggleStatus: () => void;
   onResetPassword: (u: OrgUser) => void;
   onEditUser: (u: OrgUser) => void;
@@ -1144,6 +1395,7 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onEditUser, onAddUser, 
   onChanged: () => void;
 }) {
   const { toast } = useToast();
+  const org = row.org;
   const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState<OrganizationDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -1222,8 +1474,11 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onEditUser, onAddUser, 
   const suspended = org.status === 'suspended';
 
   return (
-    <div className="rounded-[18px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-      <div className="flex flex-wrap items-center gap-3 p-4">
+    <div className="rounded-[18px] overflow-hidden" style={{ background: 'var(--bg-card)', border: selected ? '1.5px solid var(--brand)' : '1px solid var(--border)' }}>
+      <div className="flex flex-wrap items-start gap-3 p-4">
+        <button onClick={onToggleSelect} title="Select" className="mt-2.5 flex-shrink-0" style={{ color: selected ? 'var(--brand)' : 'var(--text-disabled)' }}>
+          {selected ? <CheckSquare size={16} /> : <Square size={16} />}
+        </button>
         <div className="relative flex-shrink-0">
           <StudioMark name={org.name} logoUrl={org.logo_url} size={40} />
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onLogoPick} />
@@ -1234,37 +1489,41 @@ function OrgCard({ org, onToggleStatus, onResetPassword, onEditUser, onAddUser, 
           </button>
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <p className="truncate text-[14.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{org.name}</p>
             <Badge tone={suspended ? 'danger' : 'success'}>{org.status}</Badge>
+            {row.sub?.plan_name && <Badge tone="brand">{row.sub.plan_name}</Badge>}
+            {row.sub?.effective_state === 'trial' && <Badge tone="info">trial</Badge>}
+            {row.sub?.renewal_due && <Badge tone="warning">renewal due</Badge>}
+            {row.sub?.requested_at && <Badge tone="warning">requested</Badge>}
           </div>
-          <p className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>/{org.slug} · created {fmtDate(org.created_at)}</p>
-        </div>
-        <div className="flex items-center gap-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          <span className="flex items-center gap-1"><UserCircle size={13} /> {org.user_count ?? 0}</span>
-          <span className="flex items-center gap-1"><Dumbbell size={13} /> {org.trainer_count ?? 0}</span>
-          <span className="flex items-center gap-1"><Users size={13} /> {org.client_count ?? 0}</span>
+          <p className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+            /{org.slug} · created {fmtDate(org.created_at)} · last active {fmtWhen(row.lastLogin)}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            <span className="flex items-center gap-1"><IndianRupee size={12} /> {fmtINR(row.revenue)}</span>
+            <span className="flex items-center gap-1"><Users size={12} /> {row.activeClients}/{row.totalClients} clients</span>
+            <span className="flex items-center gap-1"><Dumbbell size={12} /> {org.trainer_count ?? 0} coaches</span>
+            <span className="flex items-center gap-1"><UserCircle size={12} /> {org.user_count ?? 0} accounts</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={toggleExpand} title="Open studio — manage accounts"
+            className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
+            style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            Open <ChevronDown size={14} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
           <button onClick={() => impersonate('read_only')} disabled={suspended || impLoading === 'read_only:primary'} title="View this studio as its admin (read-only)"
             className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80 disabled:opacity-40"
             style={{ background: 'rgba(99,102,241,0.10)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.25)' }}>
             {impLoading === 'read_only:primary' ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} View as
           </button>
-          <button onClick={onToggleStatus} title={suspended ? 'Reactivate' : 'Suspend'}
-            className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
-            style={{
-              background: suspended ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.08)',
-              color: suspended ? '#059669' : '#dc2626',
-              border: `1px solid ${suspended ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.20)'}`,
-            }}>
-            <Power size={13} /> {suspended ? 'Reactivate' : 'Suspend'}
-          </button>
-          <button onClick={toggleExpand} title="Manage accounts"
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] transition hover:bg-black/5"
-            style={{ border: '1px solid var(--border)' }}>
-            <ChevronDown size={16} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-muted)' }} />
-          </button>
+          <MoreMenu
+            suspended={suspended}
+            onToggleStatus={onToggleStatus}
+            onSupportAccess={() => impersonate('full')}
+            supportBusy={impLoading === 'full:primary'}
+          />
         </div>
       </div>
 
