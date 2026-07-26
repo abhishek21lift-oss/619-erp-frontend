@@ -30,6 +30,12 @@ const PUBLIC_PREFIXES: string[] = [
   '/api/webauthn',
   '/models',
   '/favicon.ico',
+  // The matcher below exempts image and font extensions but NOT .json, so
+  // without this the PWA manifest 307s to /login for anyone not signed in —
+  // and a manifest the browser can't read means no install prompt and no app
+  // icon. It only describes the app's name, icons and start URL; nothing here
+  // is private.
+  '/manifest.json',
   '/logo.png',
   '/619-logo.png',
   '/sitemap.xml',
