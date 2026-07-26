@@ -42,6 +42,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { KpiCard, DonutChart, PremiumBarChart, PullToRefresh, EmptyState } from '@/components/ui';
 import { useAsync } from '@/lib/use-async';
+import MonthlyTargetHero from '@/components/revenue/MonthlyTargetHero';
 import { fmtMoney } from '@/lib/format';
 import http from '@/lib/http';
 
@@ -339,6 +340,12 @@ function RevenueAnalytics() {
               Refresh
             </button>
           </header>
+
+          {/* ── Monthly target ──────────────────────────────────────────
+              First, and deliberately so: it is the only element on this page
+              that states an intention rather than reporting a fact, and it is
+              what a studio owner opens this page to check. */}
+          <MonthlyTargetHero onTargetSet={refreshAll} />
 
           {/* ── Filters: one row, above every chart ─────────────────────── */}
           <div
