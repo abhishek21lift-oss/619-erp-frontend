@@ -36,6 +36,17 @@
   --rgb-brand:    59 130 246;
   --rgb-brand-hi: 96 165 250;
 
+  /* ── Logo blue ────────────────────────────────────────────────
+     The literal blue sampled from the MY PT STUDIO cube mark. Deliberately
+     separate from --brand (#3B82F6): --brand is the in-product accent scale
+     used across charts, links and states, while this is the artwork's own
+     colour, for the few surfaces that must visibly match the logo. Don't
+     substitute one for the other — they are close enough that mixing them
+     reads as a bug, and far enough apart to notice. */
+  --logo-blue:        #0060E0;
+  --logo-blue-soft:   rgba(0,96,224,0.10);
+  --logo-blue-soft-h: rgba(0,96,224,0.18);
+
   /* ── Gold (amber) ─────────────────────────────────────────── */
   --gold:          #F59E0B;
   --gold-hi:       #FBBF24;
@@ -186,6 +197,12 @@
   --brand-glow-2: rgba(59,130,246,0.10);
   --rgb-brand:    96 165 250;
   --rgb-brand-hi: 147 197 253;
+
+  /* Logo blue — #0060E0 is too dim to read as a glyph on the slate-900
+     canvas, so the foreground lifts while the plate stays the logo hue. */
+  --logo-blue:        #5CB0FF;
+  --logo-blue-soft:   rgba(0,96,224,0.26);
+  --logo-blue-soft-h: rgba(0,96,224,0.38);
 
   /* Gold (amber) */
   --gold:          #FBBF24;
@@ -368,6 +385,19 @@ body {
   min-height: 100dvh;
 }
 .shell-body.sidebar-collapsed { margin-left: var(--sidebar-w-collapsed); }
+
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE MENU TOGGLE  —  the hamburger in the topbar's top-left
+   Written as a class rather than inline styles because the light and dark
+   values live in tokens; the component then needs no darkMode branch and
+   the colour cannot drift between the two themes.
+   ════════════════════════════════════════════════════════════════════ */
+.menu-toggle {
+  background: var(--logo-blue-soft);
+  color: var(--logo-blue);
+}
+.menu-toggle:hover { background: var(--logo-blue-soft-h); }
+.menu-toggle:active { transform: scale(0.94); }
 .shell-main {
   flex: 1;
   padding: 24px;

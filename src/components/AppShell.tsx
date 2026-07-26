@@ -293,13 +293,14 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
               animate={{ height: topBar === 'compact' ? 32 : 46 }}
               transition={transConfig}
             >
-              {/* Mobile menu toggle */}
+              {/* Mobile menu toggle.
+                  Carries the logo's blue rather than the neutral grey of the
+                  other topbar icons — it's the only way into navigation on a
+                  phone, so it earns being the one coloured control up here.
+                  The tokens flip with the theme, so no darkMode branch. */}
               <button type="button" aria-label="Open navigation menu" onClick={() => setMobileMenuOpen(true)}
-                className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 lg:hidden',
-                  darkMode ? 'text-slate-300 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100',
-                )}>
-                <Menu size={17} strokeWidth={1.5} />
+                className="menu-toggle flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 lg:hidden">
+                <Menu size={17} strokeWidth={2} />
               </button>
 
               {/* ── Global search ──
