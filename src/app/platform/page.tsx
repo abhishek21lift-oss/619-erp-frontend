@@ -1455,6 +1455,34 @@ function MoreMenu({ suspended, onToggleStatus, onSupportAccess, supportBusy }: {
   );
 }
 
+// Plan-tier accent — gives each card a colored identity strip at a glance,
+// keyed by plan_code (stable) rather than plan_name (a display string).
+const PLAN_ACCENT: Record<string, string> = {
+  starter: 'linear-gradient(90deg,#64748b,#475569)',
+  growth: 'linear-gradient(90deg,#3b82f6,#2563eb)',
+  professional: 'linear-gradient(90deg,#8b5cf6,#7c3aed)',
+  elite: 'linear-gradient(90deg,#f59e0b,#d97706)',
+};
+const NO_PLAN_ACCENT = 'linear-gradient(90deg,var(--border),var(--border))';
+
+// A compact, colorful stat chip — icon in a tinted circle, value + label
+// stacked beside it. Four of these replace the old plain icon+text list,
+// which had no visual weight and (combined with not having its own row)
+// was wrapping one item per line on a phone.
+function MiniStat({ icon, value, label, color }: { icon: React.ReactNode; value: React.ReactNode; label: string; color: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-[12px] px-2.5 py-2" style={{ background: `${color}12` }}>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]" style={{ background: `${color}22`, color }}>
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[12.5px] font-[800] tabular-nums" style={{ color: 'var(--text-primary)' }}>{value}</p>
+        <p className="truncate text-[9px] font-[750] uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.06em' }}>{label}</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Organization card (expandable to manage its users) ──────────────────────────
 function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPassword, onEditUser, onAddUser, onChanged }: {
   row: StudioRow;
@@ -1544,49 +1572,73 @@ function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPasswor
   };
 
   const suspended = org.status === 'suspended';
+  const planAccent = row.sub?.plan_code ? (PLAN_ACCENT[row.sub.plan_code] || NO_PLAN_ACCENT) : NO_PLAN_ACCENT;
 
   return (
-    <div className="rounded-[18px] overflow-hidden" style={{ background: 'var(--bg-card)', border: selected ? '1.5px solid var(--brand)' : '1px solid var(--border)' }}>
-      <div className="flex flex-wrap items-start gap-3 p-4">
-        <button onClick={onToggleSelect} title="Select" className="mt-2.5 flex-shrink-0" style={{ color: selected ? 'var(--brand)' : 'var(--text-disabled)' }}>
-          {selected ? <CheckSquare size={16} /> : <Square size={16} />}
-        </button>
-        <div className="relative flex-shrink-0">
-          <StudioMark name={org.name} logoUrl={org.logo_url} size={40} />
-          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onLogoPick} />
-          <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Upload / change logo"
-            className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            {uploading ? <Loader2 size={11} className="animate-spin" /> : <ImagePlus size={11} />}
+    <div className="relative overflow-hidden rounded-[18px]"
+      style={{
+        background: 'var(--bg-card)',
+        border: selected ? '1.5px solid var(--brand)' : '1px solid var(--border)',
+        boxShadow: selected ? '0 0 0 4px var(--brand-soft)' : 'none',
+      }}>
+      {/* Plan-tier accent strip — the card's identity at a glance, before
+          reading a single word. Neutral hairline when there's no plan yet. */}
+      <div className="h-[3px] w-full" style={{ background: planAccent }} />
+
+      <div className="p-4">
+        {/* Identity row — ONLY the checkbox, logo, and name/slug live here.
+            The old layout crammed all three action buttons onto this same
+            row too; on a phone that starved the name of width and forced
+            it down to "A..", with every badge and stat wrapping one per
+            line below. Actions now get their own full-width row. */}
+        <div className="flex items-start gap-3">
+          <button onClick={onToggleSelect} title="Select" className="mt-2.5 flex-shrink-0" style={{ color: selected ? 'var(--brand)' : 'var(--text-disabled)' }}>
+            {selected ? <CheckSquare size={16} /> : <Square size={16} />}
           </button>
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="truncate text-[14.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{org.name}</p>
-            <Badge tone={suspended ? 'danger' : 'success'}>{org.status}</Badge>
-            {row.sub?.plan_name && <Badge tone="brand">{row.sub.plan_name}</Badge>}
-            {row.sub?.effective_state === 'trial' && <Badge tone="info">trial</Badge>}
-            {row.sub?.renewal_due && <Badge tone="warning">renewal due</Badge>}
-            {row.sub?.requested_at && <Badge tone="warning">requested</Badge>}
+          <div className="relative flex-shrink-0">
+            <StudioMark name={org.name} logoUrl={org.logo_url} size={44} />
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onLogoPick} />
+            <button onClick={() => fileRef.current?.click()} disabled={uploading} title="Upload / change logo"
+              className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full transition hover:opacity-80"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              {uploading ? <Loader2 size={11} className="animate-spin" /> : <ImagePlus size={11} />}
+            </button>
           </div>
-          <p className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            /{org.slug} · created {fmtDate(org.created_at)} · last active {fmtWhen(row.lastLogin)}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            <span className="flex items-center gap-1"><IndianRupee size={12} /> {fmtINR(row.revenue)}</span>
-            <span className="flex items-center gap-1"><Users size={12} /> {row.activeClients}/{row.totalClients} clients</span>
-            <span className="flex items-center gap-1"><Dumbbell size={12} /> {org.trainer_count ?? 0} coaches</span>
-            <span className="flex items-center gap-1"><UserCircle size={12} /> {org.user_count ?? 0} accounts</span>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <p className="truncate text-[15px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>{org.name}</p>
+            <p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              /{org.slug} · created {fmtDate(org.created_at)} · active {fmtWhen(row.lastLogin)}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Badges — own row, full card width, wraps freely now. */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <Badge tone={suspended ? 'danger' : 'success'} dot>{org.status}</Badge>
+          {row.sub?.plan_name && <Badge tone="purple">{row.sub.plan_name}</Badge>}
+          {row.sub?.effective_state === 'trial' && <Badge tone="info">trial</Badge>}
+          {row.sub?.renewal_due && <Badge tone="warning">renewal due</Badge>}
+          {row.sub?.requested_at && <Badge tone="warning">requested</Badge>}
+        </div>
+
+        {/* Stats — a real 2x2 grid on a phone (4-across from sm), each a
+            colored icon chip rather than plain muted text. */}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <MiniStat icon={<IndianRupee size={14} />} value={fmtINR(row.revenue)} label="Revenue" color="#10b981" />
+          <MiniStat icon={<Users size={14} />} value={`${row.activeClients}/${row.totalClients}`} label="Clients" color="#3b82f6" />
+          <MiniStat icon={<Dumbbell size={14} />} value={org.trainer_count ?? 0} label="Coaches" color="#8b5cf6" />
+          <MiniStat icon={<UserCircle size={14} />} value={org.user_count ?? 0} label="Accounts" color="#f59e0b" />
+        </div>
+
+        {/* Actions — dedicated row, never shares space with the name again. */}
+        <div className="mt-3 flex items-center gap-2">
           <button onClick={toggleExpand} title="Open studio — manage accounts"
-            className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
+            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
             style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
             Open <ChevronDown size={14} style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </button>
           <button onClick={() => impersonate('read_only')} disabled={suspended || impLoading === 'read_only:primary'} title="View this studio as its admin (read-only)"
-            className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80 disabled:opacity-40"
+            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80 disabled:opacity-40"
             style={{ background: 'rgba(99,102,241,0.10)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.25)' }}>
             {impLoading === 'read_only:primary' ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} View as
           </button>
