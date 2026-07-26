@@ -23,7 +23,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import {
   ShieldAlert, Check, Crown, Loader2, LogOut, Clock, ArrowRight,
-  ArrowUpRight, ArrowDownRight, CalendarClock, AlertTriangle, Users, X, Receipt,
+  ArrowUpRight, ArrowDownRight, CalendarClock, AlertTriangle, Users, X, Receipt, Flame,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -192,7 +192,10 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
 
   return (
     <Reveal>
-      <Panel accent={`color-mix(in srgb, ${accent} 45%, transparent)`} className="p-5 sm:p-6">
+      {/* No box — a left accent bar plus top/bottom rules, matching the flat
+          rhythm of the rest of the page. Only the Hero keeps a full container. */}
+      <div className="py-5 pl-4"
+        style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', borderLeft: `3px solid ${accent}` }}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <IconBadge icon={<Icon size={18} />} colour={accent} />
@@ -214,7 +217,7 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
 
         {/* Money breakdown — only meaningful when something is actually charged. */}
         {!isDowngrade && (
-          <div className="mt-4 space-y-2 rounded-[14px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
+          <div className="mt-4 space-y-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
             <div className="flex items-center justify-between text-[12.5px]">
               <span style={{ color: 'var(--text-muted)' }}>{quote.new_plan.name} plan</span>
               <span className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmtINR(quote.new_plan_price_inr)}</span>
@@ -239,8 +242,7 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
         )}
 
         {isDowngrade && (
-          <div className="mt-4 flex items-center justify-between rounded-[14px] p-3.5 text-[12.5px]"
-            style={{ background: 'var(--bg-subtle)' }}>
+          <div className="mt-4 flex items-center justify-between border-t pt-3 text-[12.5px]" style={{ borderColor: 'var(--border)' }}>
             <span style={{ color: 'var(--text-muted)' }}>Due now</span>
             <span className="tabular-nums font-[800]" style={{ color: 'var(--text-primary)' }}>₹0</span>
           </div>
@@ -249,8 +251,7 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
         {/* Over-limit warning. The change still goes through — no client is ever
             archived automatically — but the trainer needs to know. */}
         {quote.warning && (
-          <div className="mt-3 flex gap-2.5 rounded-[14px] p-3.5"
-            style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)' }}>
+          <div className="mt-3 flex gap-2.5 pl-3" style={{ borderLeft: '3px solid var(--warning)' }}>
             <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--warning)' }} />
             <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{quote.warning}</p>
           </div>
@@ -263,7 +264,7 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
           </Button>
           <Button variant="outline" onClick={onDismiss} disabled={busy}>Not now</Button>
         </div>
-      </Panel>
+      </div>
     </Reveal>
   );
 }
@@ -504,89 +505,113 @@ function SubscriptionScreen() {
         </Reveal>
       )}
 
-      {/* A downgrade queued for period end. Nothing has changed yet. */}
+      {/* A downgrade queued for period end. Nothing has changed yet. No box —
+          a left accent bar and hairline rules, same flat language as the rest
+          of the page below the Hero. */}
       {status?.pending_change && (
         <Reveal>
-          <Panel accent="color-mix(in srgb, var(--info) 40%, transparent)" className="p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex min-w-0 items-start gap-3">
-                <CalendarClock size={18} className="mt-0.5 shrink-0" style={{ color: 'var(--info)' }} />
-                <div className="min-w-0">
-                  <p className="text-[13.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>
-                    Switching to {status.pending_change.plan_name} on {fmtDate(status.pending_change.effective_at)}
-                  </p>
-                  <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                    You keep your current plan and limits until then
-                    {status.pending_change.client_limit != null
-                      ? `, after which your limit becomes ${status.pending_change.client_limit} active clients.`
-                      : '.'}
-                  </p>
-                </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 py-4 pl-4"
+            style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', borderLeft: '3px solid var(--info)' }}>
+            <div className="flex min-w-0 items-start gap-3">
+              <CalendarClock size={18} className="mt-0.5 shrink-0" style={{ color: 'var(--info)' }} />
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-[780]" style={{ color: 'var(--text-primary)' }}>
+                  Switching to {status.pending_change.plan_name} on {fmtDate(status.pending_change.effective_at)}
+                </p>
+                <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                  You keep your current plan and limits until then
+                  {status.pending_change.client_limit != null
+                    ? `, after which your limit becomes ${status.pending_change.client_limit} active clients.`
+                    : '.'}
+                </p>
               </div>
-              <Button variant="outline" onClick={cancelPending} loading={cancellingPending} disabled={cancellingPending}>
-                Keep current plan
-              </Button>
             </div>
-          </Panel>
-        </Reveal>
-      )}
-
-      {/* Founder banner */}
-      {slots != null && slots > 0 && (
-        <Reveal delay={0.05}>
-          <div className="mx-auto flex w-fit items-center gap-2 rounded-full px-4 py-2 text-center text-[12px] font-[650]"
-            style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', color: 'var(--warning)' }}>
-            🔥 Founder&apos;s Club — only {slots}{founderLimit != null ? ` of ${founderLimit}` : ''} lifetime-locked-price spots left.
+            <Button variant="outline" onClick={cancelPending} loading={cancellingPending} disabled={cancellingPending}>
+              Keep current plan
+            </Button>
           </div>
         </Reveal>
       )}
 
-      {/* Pricing */}
+      {/* Founder banner — plain text, no pill container. */}
+      {slots != null && slots > 0 && (
+        <Reveal delay={0.05}>
+          <p className="flex items-center justify-center gap-2 text-center text-[12px] font-[700]" style={{ color: 'var(--warning)' }}>
+            <Flame size={13} />
+            Founder&apos;s Club — only {slots}{founderLimit != null ? ` of ${founderLimit}` : ''} lifetime-locked-price spots left.
+          </p>
+        </Reveal>
+      )}
+
+      {/* Pricing — a flat, divided list rather than four boxed cards. Hierarchy
+          comes from typography, the tier dot, and hairline row dividers; a
+          quoted plan gets a full-width tint (no border/shadow/radius) so it
+          reads as a highlighted row, not a card. */}
       <div>
         <SectionLabel>Plans</SectionLabel>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+        {/* Column header, desktop only — mobile stacks each row's own labels. */}
+        <div className="hidden pb-2.5 text-[10.5px] font-[750] uppercase sm:flex"
+          style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
+          <span className="w-[220px] shrink-0">Plan</span>
+          <span className="w-[150px] shrink-0">Price</span>
+          <span className="flex-1">Included</span>
+          <span className="w-[160px] shrink-0 text-right">Action</span>
+        </div>
+
+        <div style={{ borderBottom: '1px solid var(--border)' }}>
           {plans.map((p, i) => {
             const isCurrent = status?.plan?.code === p.code;
             const isPendingTarget = status?.pending_change?.plan_code === p.code;
             const isQuoted = quote?.new_plan.code === p.code;
             const isElite = p.code === 'elite';
             return (
-              <Reveal key={p.code} delay={i * 0.05} className="h-full">
-                <Panel
-                  accent={isQuoted ? 'color-mix(in srgb, var(--success) 55%, transparent)' : undefined}
-                  className="flex h-full flex-col p-5"
+              <Reveal key={p.code} delay={i * 0.04}>
+                <div
+                  className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:gap-4"
+                  style={{
+                    borderTop: i ? '1px solid var(--border)' : 'none',
+                    background: isQuoted ? 'color-mix(in srgb, var(--success) 6%, transparent)' : undefined,
+                  }}
                 >
-                  {/* Plan-tier accent strip — the shared identity system, so
-                      "Growth" is the same blue here as in the Command Centre. */}
-                  <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
-                    style={{ background: PLAN_ACCENT[p.code] || NO_PLAN_ACCENT }} />
+                  <div className="flex items-center gap-3 sm:w-[220px] sm:shrink-0">
+                    <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ background: PLAN_ACCENT[p.code] || NO_PLAN_ACCENT }} />
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="text-[13.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{p.name}</p>
+                        {p.is_launch && (
+                          <span className="rounded-full px-1.5 py-0.5 text-[9px] font-[800] text-white" style={{ background: GOLD }}>LAUNCH</span>
+                        )}
+                      </div>
+                      <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{p.best_for}</p>
+                    </div>
+                  </div>
 
-                  {p.is_launch && (
-                    <span className="absolute right-4 top-3 rounded-full px-2 py-0.5 text-[9px] font-[800] text-white"
-                      style={{ background: GOLD }}>LAUNCH</span>
-                  )}
-                  <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>{p.name}</p>
-                  <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{p.best_for}</p>
-                  <div className="mt-3 flex flex-wrap items-end gap-x-1.5">
-                    <span className="text-[26px] font-[860] tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmtINR(p.effective_price_inr)}</span>
-                    {p.is_launch && <span className="mb-1 text-[13px] line-through" style={{ color: 'var(--text-disabled)' }}>{fmtINR(p.price_inr)}</span>}
+                  <div className="flex items-baseline gap-1.5 sm:w-[150px] sm:shrink-0">
+                    <span className="text-[20px] font-[860] tabular-nums" style={{ color: 'var(--text-primary)' }}>{fmtINR(p.effective_price_inr)}</span>
+                    {p.is_launch && <span className="text-[11.5px] line-through" style={{ color: 'var(--text-disabled)' }}>{fmtINR(p.price_inr)}</span>}
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>/{p.duration_months}mo</span>
                   </div>
-                  <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>for {p.duration_months} {p.duration_months === 1 ? 'month' : 'months'}</p>
-                  <div className="mt-4 space-y-2 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
-                    <p className="flex items-center gap-2"><Check size={13} className="shrink-0" style={{ color: 'var(--success)' }} /> {p.client_limit != null ? `Up to ${p.client_limit} clients` : 'Unlimited clients'}</p>
-                    <p className="flex items-center gap-2"><Check size={13} className="shrink-0" style={{ color: 'var(--success)' }} /> All premium features</p>
-                    <p className="flex items-center gap-2"><Check size={13} className="shrink-0" style={{ color: 'var(--success)' }} /> {p.duration_months >= 12 ? 'Priority support' : 'Standard support'}</p>
+
+                  <div className="flex flex-1 flex-wrap gap-x-4 gap-y-1 text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success)' }} /> {p.client_limit != null ? `Up to ${p.client_limit} clients` : 'Unlimited clients'}</span>
+                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success)' }} /> All premium features</span>
+                    <span className="flex items-center gap-1.5"><Check size={12} className="shrink-0" style={{ color: 'var(--success)' }} /> {p.duration_months >= 12 ? 'Priority support' : 'Standard support'}</span>
                   </div>
-                  <div className="mt-auto pt-4">
+
+                  <div className="sm:w-[160px] sm:shrink-0 sm:text-right">
                     {isCurrent ? (
-                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Current plan</div>
+                      <span className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>
+                        <Check size={12} /> Current plan
+                      </span>
                     ) : isPendingTarget ? (
-                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>Scheduled</div>
+                      <span className="inline-flex items-center rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>Scheduled</span>
                     ) : active ? (
                       // An active studio switching plans gets a priced preview
                       // first — proration and the effective date matter here.
                       <button onClick={() => openQuote(p.code)} disabled={!!quoting || confirming}
-                        className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-[12px] py-2 text-[12px] font-[750] transition hover:opacity-90 disabled:opacity-50"
+                        className="inline-flex min-h-[36px] w-full items-center justify-center gap-1.5 rounded-full px-4 text-[12px] font-[750] transition hover:opacity-90 disabled:opacity-50 sm:w-auto"
                         style={isElite
                           ? { background: GOLD, color: '#fff' }
                           : { background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
@@ -594,12 +619,12 @@ function SubscriptionScreen() {
                         Switch to {p.name}
                       </button>
                     ) : requested ? (
-                      <div className="rounded-[12px] py-2 text-center text-[12px] font-[700]" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>Request sent ✓</div>
+                      <span className="inline-flex items-center rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>Request sent ✓</span>
                     ) : (
                       <button
                         onClick={() => (checkoutAvailable ? startCheckout(p.code) : requestActivation(p.code))}
                         disabled={!!requesting}
-                        className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-[12px] py-2 text-[12px] font-[750] transition hover:opacity-90 disabled:opacity-50"
+                        className="inline-flex min-h-[36px] w-full items-center justify-center gap-1.5 rounded-full px-4 text-[12px] font-[750] transition hover:opacity-90 disabled:opacity-50 sm:w-auto"
                         style={isElite || checkoutAvailable
                           ? { background: isElite ? GOLD : 'var(--brand)', color: '#fff' }
                           : { background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
@@ -608,7 +633,7 @@ function SubscriptionScreen() {
                       </button>
                     )}
                   </div>
-                </Panel>
+                </div>
               </Reveal>
             );
           })}
@@ -632,7 +657,7 @@ function SubscriptionScreen() {
           plan first, then pay or request for that plan — never the other
           way round. */}
       <Reveal delay={0.1}>
-        <Panel className="flex flex-col items-center gap-3 p-5 text-center sm:p-6">
+        <div className="flex flex-col items-center gap-3 py-6 text-center" style={{ borderTop: '1px solid var(--border)' }}>
           <p className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
             Ready to {frozen ? 'reactivate' : active ? 'renew or upgrade' : 'subscribe'}?
           </p>
@@ -676,16 +701,16 @@ function SubscriptionScreen() {
           )}
 
           <Button variant="outline" onClick={() => load()} iconLeft={<ArrowRight size={14} />}>Refresh status</Button>
-        </Panel>
+        </div>
       </Reveal>
 
       {/* Invoices */}
       {invoices.length > 0 && (
         <Reveal delay={0.14}>
           <SectionLabel>Invoice history</SectionLabel>
-          <Panel>
+          <div style={{ borderTop: '1px solid var(--border)' }}>
             {invoices.map((inv, i) => (
-              <div key={inv.id} className="flex items-center gap-3 px-4 py-3 text-[12.5px] transition-colors hover:bg-[var(--bg-hover)]"
+              <div key={inv.id} className="flex items-center gap-3 py-3 text-[12.5px] transition-colors hover:bg-[var(--bg-hover)]"
                 style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
                   <Receipt size={13} />
@@ -697,7 +722,7 @@ function SubscriptionScreen() {
                 </span>
               </div>
             ))}
-          </Panel>
+          </div>
         </Reveal>
       )}
     </div>
