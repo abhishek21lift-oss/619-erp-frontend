@@ -333,8 +333,8 @@ function SubscriptionScreen() {
     } finally { setRequesting(''); }
   };
 
-  const requestActivation = async (planCode?: string) => {
-    setRequesting(planCode || 'general');
+  const requestActivation = async (planCode: string) => {
+    setRequesting(planCode);
     try {
       // Only send a coupon that actually validated — an unchecked string would
       // just fail later at redemption.
@@ -625,7 +625,12 @@ function SubscriptionScreen() {
         />
       )}
 
-      {/* Request / status CTA */}
+      {/* Coupon + status refresh. Activation itself happens on the plan card
+          above — Pay opens the checkout window, or (when self-checkout isn't
+          configured yet) falls back to a plan-specific request. There is no
+          plan-less "request activation" button here: the flow is pick a
+          plan first, then pay or request for that plan — never the other
+          way round. */}
       <Reveal delay={0.1}>
         <Panel className="flex flex-col items-center gap-3 p-5 text-center sm:p-6">
           <p className="text-[14px] font-[750]" style={{ color: 'var(--text-primary)' }}>
@@ -634,7 +639,7 @@ function SubscriptionScreen() {
           <p className="max-w-[460px] text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
             {requested
               ? 'Thanks! Your request has reached the MY PT STUDIO team — we’ll confirm your payment and switch on your subscription shortly. No data is lost.'
-              : 'Pick a plan above (or tap below) to request activation. Our team confirms your payment and switches on your subscription — usually within a few hours.'}
+              : 'Have a coupon? Apply it below, then pick a plan above.'}
           </p>
           {/* Coupon. Validating is a preview only — the binding check happens
               server-side under a lock when the operator activates, so a code
@@ -670,15 +675,7 @@ function SubscriptionScreen() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-center gap-2.5">
-            {!requested && (
-              <Button onClick={() => requestActivation()} loading={requesting === 'general'} disabled={!!requesting}
-                style={{ background: GOLD, color: '#fff' }}>
-                Request activation
-              </Button>
-            )}
-            <Button variant="outline" onClick={() => load()} iconLeft={<ArrowRight size={14} />}>Refresh status</Button>
-          </div>
+          <Button variant="outline" onClick={() => load()} iconLeft={<ArrowRight size={14} />}>Refresh status</Button>
         </Panel>
       </Reveal>
 
