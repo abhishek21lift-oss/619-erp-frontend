@@ -27,9 +27,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Loader2, Check, CloudOff, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Loader2, Check, CloudOff, AlertTriangle, RotateCcw, PersonStanding } from 'lucide-react';
 import { api, type Whiteboard, type WhiteboardDocument } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import AnatomyPicker, { type AnatomyAsset } from './AnatomyPicker';
 
 import '@excalidraw/excalidraw/index.css';
 
@@ -58,6 +59,22 @@ if (typeof window !== 'undefined') {
  *  trainer who closes the tab loses nothing meaningful. */
 const AUTOSAVE_DEBOUNCE_MS = 1500;
 
+/** Excalidraw's imperative handle. Typed structurally rather than imported:
+ *  pulling the real type in statically would defeat the dynamic import that
+ *  keeps the engine out of the server bundle. */
+type ExcalidrawImperativeAPI = {
+  addFiles: (files: unknown[]) => void;
+  updateScene: (scene: Record<string, unknown>) => void;
+  getSceneElements: () => readonly unknown[];
+  scrollToContent: (target?: unknown, opts?: unknown) => void;
+};
+
+/** Anatomy artwork is inserted at a fixed canvas size — big enough to draw on
+ *  accurately, small enough to sit inside the default viewport. The source SVGs
+ *  are 300x600 (1:2), so this preserves their aspect ratio exactly. */
+const ANATOMY_W = 300;
+const ANATOMY_H = 600;
+
 type SaveState =
   | { kind: 'idle' }
   | { kind: 'saving' }
@@ -77,6 +94,10 @@ export default function WhiteboardCanvas({
   const { toast } = useToast();
   const [saveState, setSaveState] = useState<SaveState>({ kind: 'idle' });
   const [isDark, setIsDark] = useState(false);
+  const [anatomyOpen, setAnatomyOpen] = useState(false);
+  // Excalidraw's imperative handle. Needed to inject files + elements; there is
+  // no declarative way to add an image to a live scene.
+  const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
 
   // Refs, not state: these change on every stroke and must not re-render the
   // canvas. Re-rendering Excalidraw mid-stroke drops the stroke.
@@ -168,6 +189,64 @@ export default function WhiteboardCanvas({
     timerRef.current = setTimeout(flush, AUTOSAVE_DEBOUNCE_MS);
   }, [board.can_edit, flush]);
 
+  /**
+   * Drop an anatomy overlay onto the canvas.
+   *
+   * Inserted LOCKED and behind everything else: it is a substrate to annotate,
+   * and an unlocked background is something a trainer drags by accident on the
+   * first stroke. It stays selectable via right-click → unlock if they do want
+   * to move or scale it.
+   */
+  const insertAnatomy = useCallback(async (asset: AnatomyAsset, opacityPct: number) => {
+    const excalidrawAPI = apiRef.current;
+    if (!excalidrawAPI) return;
+
+    try {
+      const [{ convertToExcalidrawElements }, svgText] = await Promise.all([
+        import('@excalidraw/excalidraw'),
+        fetch(asset.svg).then((r) => {
+          if (!r.ok) throw new Error(`artwork ${r.status}`);
+          return r.text();
+        }),
+      ]);
+
+      // Inline as a data URL rather than referencing the file by path: the
+      // board document must stay self-contained so exports and future asset
+      // path changes cannot break an existing board.
+      // unescape(encodeURIComponent(...)) round-trips UTF-8 through btoa,
+      // which otherwise throws on any non-Latin-1 character in the markup.
+      const dataURL = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgText)))}`;
+      const fileId = `anatomy-${asset.id}-${Date.now()}`;
+
+      excalidrawAPI.addFiles([{
+        id: fileId,
+        dataURL,
+        mimeType: 'image/svg+xml',
+        created: Date.now(),
+      }]);
+
+      const [element] = convertToExcalidrawElements([{
+        type: 'image',
+        fileId,
+        x: 0,
+        y: 0,
+        width: ANATOMY_W,
+        height: ANATOMY_H,
+        opacity: opacityPct,
+        locked: true,
+      }] as never) as unknown[];
+
+      // Prepend so the artwork sits beneath existing annotations rather than
+      // covering work already on the board.
+      excalidrawAPI.updateScene({
+        elements: [element, ...excalidrawAPI.getSceneElements()],
+        captureUpdate: 'IMMEDIATELY',
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not insert that artwork');
+    }
+  }, [toast]);
+
   const reloadAfterConflict = useCallback(async () => {
     try {
       const fresh = await api.whiteboards.get(board.id);
@@ -186,12 +265,32 @@ export default function WhiteboardCanvas({
     <div className={`relative flex flex-col overflow-hidden rounded-[16px] ${className}`}
       style={{ border: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
 
-      <SaveIndicator state={saveState} canEdit={board.can_edit} onReload={reloadAfterConflict} />
+      <div className="flex items-stretch">
+        <div className="min-w-0 flex-1">
+          <SaveIndicator state={saveState} canEdit={board.can_edit} onReload={reloadAfterConflict} />
+        </div>
+        {board.can_edit && (
+          <button onClick={() => setAnatomyOpen(true)}
+            className="flex shrink-0 items-center gap-1.5 border-b border-l px-3 text-[11.5px] font-[700] transition-colors hover:bg-[var(--bg-hover)]"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)', color: 'var(--brand)' }}>
+            <PersonStanding size={14} /> Anatomy
+          </button>
+        )}
+      </div>
 
       {/* min-h-0 lets the canvas actually shrink inside a flex column — without
-          it the canvas forces the container taller than the viewport. */}
-      <div className="min-h-0 flex-1">
+          it the canvas forces the container taller than the viewport.
+          `relative` anchors the anatomy picker overlay. */}
+      <div className="relative min-h-0 flex-1">
+        <AnatomyPicker
+          open={anatomyOpen}
+          onClose={() => setAnatomyOpen(false)}
+          onInsert={insertAnatomy}
+        />
         <Excalidraw
+          excalidrawAPI={((apiInstance: unknown) => {
+            apiRef.current = apiInstance as ExcalidrawImperativeAPI;
+          }) as never}
           initialData={{
             elements: (board.document?.elements ?? []) as never,
             appState: {

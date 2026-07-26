@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "knip": "knip",
-    "postinstall": "node scripts/copy-excalidraw-assets.mjs"
+    "postinstall": "node scripts/copy-excalidraw-assets.mjs && node scripts/anatomy/build-anatomy.mjs",
+    "build:anatomy": "node scripts/anatomy/build-anatomy.mjs"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
