@@ -44,8 +44,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/platform',              label: 'Command Centre', icon: 'LayoutGrid' },
       { href: '/platform?tab=studios',  label: 'Studios',        icon: 'Layers' },
-      { href: '/platform?tab=billing',  label: 'Billing',        icon: 'CreditCard' },
-      { href: '/platform?tab=coupons',  label: 'Coupons',        icon: 'Ticket' },
+      { href: '/platform?tab=finance',  label: 'Finance',        icon: 'CreditCard' },
       { href: '/platform?tab=activity', label: 'Activity',       icon: 'Activity' },
     ],
   },

@@ -17,6 +17,7 @@ import {
   KeyRound, Power, X, Copy, RefreshCw, ChevronDown, ImagePlus,
   LayoutDashboard, Activity, LogIn, Pencil, Trash2, UserPlus, IndianRupee, Clock, Eye,
   CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket, Percent, Ban, CheckCircle2,
+  Search, ArrowRight, AlertTriangle, TrendingUp, TrendingDown, ChevronRight,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -81,8 +82,16 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'billing' | 'coupons' | 'activity';
-const TAB_IDS: Tab[] = ['overview', 'studios', 'billing', 'coupons', 'activity'];
+type Tab = 'overview' | 'studios' | 'finance' | 'activity';
+const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'activity'];
+// Billing and Coupons used to be separate top-level tabs; both now live inside
+// Finance as an in-page sub-tab. Old bookmarks/sidebar links still point at
+// ?tab=billing / ?tab=coupons, so both keep working — they just land on
+// Finance with the matching sub-tab pre-selected instead of a blank Overview.
+function normalizeTab(raw: string | null): Tab {
+  if (raw === 'billing' || raw === 'coupons') return 'finance';
+  return TAB_IDS.includes(raw as Tab) ? (raw as Tab) : 'overview';
+}
 
 function PlatformContent() {
   const sp = useSearchParams();
@@ -94,19 +103,36 @@ function PlatformContent() {
   useEffect(() => {
     if (getImpersonation()) window.location.replace('/');
   }, []);
-  const [tab, setTab] = useState<Tab>(TAB_IDS.includes(paramTab as Tab) ? (paramTab as Tab) : 'overview');
+  const [tab, setTab] = useState<Tab>(() => normalizeTab(paramTab));
+  const [financeSubTab, setFinanceSubTab] = useState<'billing' | 'coupons'>(paramTab === 'coupons' ? 'coupons' : 'billing');
+  const [commandOpen, setCommandOpen] = useState(false);
 
   // Keep the active tab in sync with the ?tab= query so the sidebar / bottom-nav
   // deep-links land on the right section.
   useEffect(() => {
-    if (paramTab && TAB_IDS.includes(paramTab as Tab)) setTab(paramTab as Tab);
+    if (paramTab) {
+      setTab(normalizeTab(paramTab));
+      if (paramTab === 'coupons') setFinanceSubTab('coupons');
+      else if (paramTab === 'billing') setFinanceSubTab('billing');
+    }
   }, [paramTab]);
+
+  // Cmd+K / Ctrl+K opens the global command bar from anywhere on the page.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandOpen((s) => !s);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
-    { id: 'billing', label: 'Billing', icon: <CreditCard size={15} /> },
-    { id: 'coupons', label: 'Coupons', icon: <Ticket size={15} /> },
+    { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
   ];
 
@@ -126,6 +152,17 @@ function PlatformContent() {
           icon={<Building2 size={20} />}
           title="Command Centre"
           subtitle="Manage every studio, admin, and account across the platform"
+          actions={
+            <button
+              onClick={() => setCommandOpen(true)}
+              className="flex items-center gap-2 rounded-[11px] px-3 py-2 text-[12px] font-[650] transition-colors"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+            >
+              <Search size={13} />
+              <span className="hidden sm:inline">Search studios, coupons…</span>
+              <kbd className="rounded-[5px] px-1.5 py-0.5 text-[10px] font-[700]" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>⌘K</kbd>
+            </button>
+          }
         />
 
         <Reveal delay={0.06}>
@@ -137,14 +174,210 @@ function PlatformContent() {
         {/* Keyed so switching tabs replays the stagger — it reads as the panel
             being assembled rather than content silently swapping underneath. */}
         <div key={tab}>
-          {tab === 'overview' && <OverviewTab />}
+          {tab === 'overview' && <OverviewTab onNavigate={setTab} />}
           {tab === 'studios' && <StudiosTab />}
-          {tab === 'billing' && <BillingTab />}
-          {tab === 'coupons' && <CouponsTab />}
+          {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
           {tab === 'activity' && <ActivityTab />}
         </div>
       </div>
+
+      <CommandBar
+        open={commandOpen}
+        onClose={() => setCommandOpen(false)}
+        onNavigate={(t, opts) => {
+          if (opts?.financeSubTab) setFinanceSubTab(opts.financeSubTab);
+          setTab(t);
+          setCommandOpen(false);
+        }}
+      />
     </>
+  );
+}
+
+// ── Global command bar (Cmd+K) ──────────────────────────────────────────────
+// Scope is deliberately real: jump to any section, or search the two entity
+// lists this backend can actually answer for (studios, coupons) with a single
+// call each. There is no unified cross-entity search endpoint (users/
+// payments/logs each need their own query with their own filters), so those
+// stay in their own tabs rather than pretending to be searchable from here.
+type NavOpts = { financeSubTab?: 'billing' | 'coupons' };
+const NAV_TARGETS: { tab: Tab; label: string; icon: React.ReactNode; opts?: NavOpts }[] = [
+  { tab: 'overview', label: 'Go to Overview', icon: <LayoutDashboard size={14} /> },
+  { tab: 'studios', label: 'Go to Studios', icon: <Building2 size={14} /> },
+  { tab: 'finance', label: 'Go to Finance · Billing', icon: <CreditCard size={14} />, opts: { financeSubTab: 'billing' } },
+  { tab: 'finance', label: 'Go to Finance · Coupons', icon: <Ticket size={14} />, opts: { financeSubTab: 'coupons' } },
+  { tab: 'activity', label: 'Go to Activity', icon: <Activity size={14} /> },
+];
+
+function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClose: () => void; onNavigate: (tab: Tab, opts?: NavOpts) => void }) {
+  const [query, setQuery] = useState('');
+  const [studios, setStudios] = useState<StudioOverview[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const loadedRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setQuery('');
+    // Loaded once per page visit, not on every open — these lists change
+    // slowly and re-fetching on every ⌘K press would make the palette feel
+    // laggy for no benefit.
+    if (!loadedRef.current) {
+      loadedRef.current = true;
+      api.superAdmin.overview().then((r) => setStudios(r.data.studios ?? [])).catch(() => {});
+      api.superAdmin.listCoupons().then((r) => setCoupons(r.data ?? [])).catch(() => {});
+    }
+    const t = setTimeout(() => inputRef.current?.focus(), 30);
+    return () => clearTimeout(t);
+  }, [open]);
+
+  const q = query.trim().toLowerCase();
+  const navResults = q ? NAV_TARGETS.filter((n) => n.label.toLowerCase().includes(q)) : NAV_TARGETS;
+  const studioResults = q ? studios.filter((s) => s.name.toLowerCase().includes(q)).slice(0, 6) : [];
+  const couponResults = q ? coupons.filter((c) => c.code.toLowerCase().includes(q)).slice(0, 6) : [];
+
+  // One flat, ordered list so Up/Down/Enter can move through every visible
+  // row regardless of which section it's in.
+  type Row =
+    | { kind: 'nav'; item: typeof NAV_TARGETS[number] }
+    | { kind: 'studio'; item: StudioOverview }
+    | { kind: 'coupon'; item: Coupon };
+  const rows: Row[] = [
+    ...navResults.map((item): Row => ({ kind: 'nav', item })),
+    ...studioResults.map((item): Row => ({ kind: 'studio', item })),
+    ...couponResults.map((item): Row => ({ kind: 'coupon', item })),
+  ];
+  const [active, setActive] = useState(0);
+  useEffect(() => { setActive(0); }, [query]);
+
+  const activate = (row: Row) => {
+    if (row.kind === 'nav') onNavigate(row.item.tab, row.item.opts);
+    else if (row.kind === 'studio') onNavigate('studios');
+    else onNavigate('finance', { financeSubTab: 'coupons' });
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { onClose(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min(i + 1, rows.length - 1)); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)); return; }
+    if (e.key === 'Enter') { e.preventDefault(); const row = rows[active]; if (row) activate(row); }
+  };
+
+  if (!open) return null;
+
+  const rowCls = 'flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition-colors';
+  const rowStyle = (i: number): React.CSSProperties =>
+    i === active ? { background: 'var(--bg-hover)' } : {};
+
+  let rowIndex = -1;
+
+  return (
+    <div
+      className="fixed inset-0 z-[9500] flex items-start justify-center px-4 pt-[12vh]"
+      style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(3px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg overflow-hidden rounded-[18px]"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 24px 60px rgba(15,23,42,0.35)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2.5 border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+          <Search size={15} style={{ color: 'var(--text-muted)' }} />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="Search studios, coupons, or jump to a section…"
+            className="flex-1 bg-transparent text-[14px] outline-none"
+            style={{ color: 'var(--text-primary)' }}
+          />
+          <kbd className="rounded-[5px] px-1.5 py-0.5 text-[10px] font-[700]" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>Esc</kbd>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto p-2">
+          {navResults.length > 0 && (
+            <div className="mb-1">
+              <p className="px-3 py-1.5 text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Jump to</p>
+              {navResults.map((n) => {
+                rowIndex++;
+                const i = rowIndex;
+                return (
+                  <button key={n.label} className={rowCls} style={rowStyle(i)} onMouseEnter={() => setActive(i)} onClick={() => activate({ kind: 'nav', item: n })}>
+                    <span style={{ color: 'var(--text-muted)' }}>{n.icon}</span>
+                    <span className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>{n.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {studioResults.length > 0 && (
+            <div className="mb-1">
+              <p className="px-3 py-1.5 text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Studios</p>
+              {studioResults.map((s) => {
+                rowIndex++;
+                const i = rowIndex;
+                return (
+                  <button key={s.id} className={rowCls} style={rowStyle(i)} onMouseEnter={() => setActive(i)} onClick={() => activate({ kind: 'studio', item: s })}>
+                    <StudioMark name={s.name} logoUrl={s.logo_url} size={22} />
+                    <span className="text-[13px] font-[600]" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
+                    <Badge tone={s.status === 'suspended' ? 'danger' : 'success'}>{s.status}</Badge>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {couponResults.length > 0 && (
+            <div className="mb-1">
+              <p className="px-3 py-1.5 text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Coupons</p>
+              {couponResults.map((c) => {
+                rowIndex++;
+                const i = rowIndex;
+                return (
+                  <button key={c.id} className={rowCls} style={rowStyle(i)} onMouseEnter={() => setActive(i)} onClick={() => activate({ kind: 'coupon', item: c })}>
+                    <Ticket size={14} style={{ color: 'var(--text-muted)' }} />
+                    <span className="text-[13px] font-[700] tabular-nums" style={{ color: 'var(--text-primary)' }}>{c.code}</span>
+                    <span className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{c.description || (c.discount_type === 'percent' ? `${c.discount_value}% off` : `₹${c.discount_value} off`)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {q && rows.length === 0 && (
+            <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No matches for &quot;{query}&quot;.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────── FINANCE */
+// Billing (subscriptions, MRR/ARR, per-studio payments) and Coupons used to be
+// separate top-level tabs. Neither's internals changed here — this just nests
+// them under one Finance section with an in-page sub-switch, since they're
+// both "money" and splitting them across the top-level nav buried Coupons.
+function FinanceTab({ subTab, onSubTabChange }: { subTab: 'billing' | 'coupons'; onSubTabChange: (t: 'billing' | 'coupons') => void }) {
+  return (
+    <div>
+      <div className="mb-5 max-w-[280px]">
+        <SegmentedTabs
+          tabs={[
+            { id: 'billing' as const, label: 'Billing', icon: <CreditCard size={13} /> },
+            { id: 'coupons' as const, label: 'Coupons', icon: <Ticket size={13} /> },
+          ]}
+          value={subTab}
+          onChange={onSubTabChange}
+        />
+      </div>
+      <div key={subTab}>
+        {subTab === 'billing' ? <BillingTab /> : <CouponsTab />}
+      </div>
+    </div>
   );
 }
 
@@ -579,35 +812,99 @@ function eventLabel(e: SubEvent): string {
   }
 }
 
+// Generic "action.string" / "action_string" -> "Action string" fallback for
+// anything not called out in ACTION_LABELS below — so the timeline is never a
+// blank row when a new action type ships before this map is updated.
+function prettifyAction(action: string): string {
+  const s = action.replace(/[._]/g, ' ').trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+const ACTION_LABELS: Record<string, string> = {
+  organization_created: 'Studio created',
+  organization_suspended: 'Studio suspended',
+  organization_reactivated: 'Studio reactivated',
+  subscription_activated: 'Subscription activated',
+  subscription_plan_changed: 'Plan changed',
+  user_created: 'Account created',
+  user_deactivated: 'Account deactivated',
+  password_reset: 'Password reset',
+};
+function activityLabel(a: ActivityEntry): string {
+  return ACTION_LABELS[a.action] || prettifyAction(a.action);
+}
+
+const SIGNAL_DOT: Record<'critical' | 'caution' | 'positive' | 'neutral', string> = {
+  critical: '#EF4444', caution: '#F59E0B', positive: '#10B981', neutral: 'var(--text-disabled)',
+};
+
 /* ─────────────────────────────────────────────────────── OVERVIEW */
-function OverviewTab() {
+function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   const [data, setData] = useState<PlatformOverview | null>(null);
+  const [subKpis, setSubKpis] = useState<SubKpis | null>(null);
+  const [subStudios, setSubStudios] = useState<SubStudio[]>([]);
+  const [metrics, setMetrics] = useState<SubscriptionMetrics | null>(null);
+  const [recent, setRecent] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const load = useCallback(() => {
     setLoading(true); setError('');
-    api.superAdmin.overview()
-      .then((r) => setData(r.data))
+    Promise.all([api.superAdmin.overview(), api.superAdmin.subscriptions()])
+      .then(([ov, subs]) => {
+        setData(ov.data);
+        setSubKpis(subs.data.kpis ?? null);
+        setSubStudios(subs.data.studios ?? []);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load overview'))
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
+  // Bonus panels — each loads independently so a failure in one (e.g. the
+  // metrics query) never blanks out the KPIs the operator actually needs.
+  useEffect(() => { api.superAdmin.subscriptionMetrics().then((r) => setMetrics(r.data)).catch(() => setMetrics(null)); }, []);
+  useEffect(() => { api.superAdmin.listActivity({ limit: 20 }).then((r) => setRecent(r.data)).catch(() => setRecent([])); }, []);
 
   if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
   if (!data) return null;
 
   const t = data.totals;
+  const revTrend = metrics?.revenue_trend ?? [];
+  const lastMonth = revTrend[revTrend.length - 1];
+  const prevMonth = revTrend[revTrend.length - 2];
+  const revDeltaPct = lastMonth && prevMonth && prevMonth.revenue_inr > 0
+    ? Math.round(((lastMonth.revenue_inr - prevMonth.revenue_inr) / prevMonth.revenue_inr) * 100)
+    : null;
+
+  const renewalsDue = subStudios.filter((s) => s.renewal_due).length;
+  const pendingRequests = subStudios.filter((s) => s.requested_at).length;
+  const todayActivity = recent.filter((a) => new Date(a.created_at).toDateString() === new Date().toDateString());
+
   const kpis = [
-    { label: 'Studios', value: String(t.studios), sub: `${t.active_studios} active · ${t.suspended_studios} suspended`, tone: 'brand' as const, icon: <Building2 size={15} /> },
-    { label: 'Total Revenue', value: fmtINR(t.revenue), sub: `${fmtINR(t.outstanding)} outstanding`, tone: 'positive' as const, icon: <IndianRupee size={15} /> },
+    { label: 'Total Studios', value: String(t.studios), sub: `${t.active_studios} active · ${t.suspended_studios} suspended`, tone: 'brand' as const, icon: <Building2 size={15} /> },
     { label: 'Active Clients', value: String(t.active_clients), sub: `${t.total_clients} total`, tone: 'caution' as const, icon: <Users size={15} /> },
-    { label: 'Sessions (mo)', value: String(t.sessions_this_month), sub: 'this month', tone: 'neutral' as const, icon: <Clock size={15} /> },
+    { label: 'MRR', value: metrics ? fmtINR(metrics.mrr_inr) : '—', sub: metrics ? `${fmtINR(metrics.arr_inr)} ARR` : 'loading…', tone: 'positive' as const, icon: <TrendingUp size={15} /> },
+    { label: 'ARPU', value: metrics ? fmtINR(metrics.arpu_inr) : '—', sub: metrics ? `${metrics.paying_studios} paying studios` : 'loading…', tone: 'neutral' as const, icon: <IndianRupee size={15} /> },
+  ];
+  const health = [
+    { label: 'Outstanding', value: fmtINR(t.outstanding), sub: 'across all studios', tone: 'critical' as const, icon: <Receipt size={15} /> },
+    { label: 'Renewals due', value: String(renewalsDue), sub: 'within 7 days', tone: 'caution' as const, icon: <Clock size={15} /> },
+    { label: 'Frozen', value: subKpis ? String(subKpis.frozen) : '—', sub: 'need payment', tone: 'critical' as const, icon: <Snowflake size={15} /> },
+    { label: 'Founders', value: subKpis ? `${subKpis.founders}${metrics ? `/${metrics.founders.limit}` : ''}` : '—', sub: subKpis ? `${subKpis.founder_slots_remaining} slots left` : '', tone: 'brand' as const, icon: <Crown size={15} /> },
   ];
 
+  // Real, derived signals from the numbers already on this page — not an LLM
+  // call (there's no AI-insights backend yet), just surfaced as sentences
+  // instead of left for the operator to notice by scanning every tile.
+  const signals: { text: string; tone: keyof typeof SIGNAL_DOT; onClick?: () => void }[] = [];
+  if (pendingRequests > 0) signals.push({ text: `${pendingRequests} studio${pendingRequests === 1 ? '' : 's'} waiting on a plan request`, tone: 'caution', onClick: () => onNavigate('finance') });
+  if (renewalsDue > 0) signals.push({ text: `${renewalsDue} renewal${renewalsDue === 1 ? '' : 's'} due within 7 days`, tone: 'caution', onClick: () => onNavigate('finance') });
+  if (subKpis && subKpis.frozen > 0) signals.push({ text: `${subKpis.frozen} studio${subKpis.frozen === 1 ? '' : 's'} frozen, waiting on payment`, tone: 'critical', onClick: () => onNavigate('finance') });
+  if (revDeltaPct != null) signals.push({ text: `Revenue collected ${revDeltaPct >= 0 ? 'up' : 'down'} ${Math.abs(revDeltaPct)}% vs last month`, tone: revDeltaPct >= 0 ? 'positive' : 'critical' });
+  if (Number(t.outstanding) > 0) signals.push({ text: `${fmtINR(t.outstanding)} outstanding across all studios`, tone: 'neutral', onClick: () => onNavigate('studios') });
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <SectionLabel>Platform</SectionLabel>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -619,7 +916,74 @@ function OverviewTab() {
       </div>
 
       <div>
-        <SectionLabel hint={`${data.studios.length} total`}>Studios</SectionLabel>
+        <SectionLabel>Health</SectionLabel>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {health.map((k, i) => (
+            <StatTile key={k.label} label={k.label} value={k.value} sub={k.sub}
+              icon={k.icon} tone={k.tone} delay={0.16 + i * 0.04} />
+          ))}
+        </div>
+      </div>
+
+      {signals.length > 0 && (
+        <div>
+          <SectionLabel>Needs attention</SectionLabel>
+          <Reveal delay={0.3}>
+            <Panel padded={false} className="overflow-hidden">
+              {signals.map((s, i) => (
+                <button
+                  key={i} onClick={s.onClick} disabled={!s.onClick}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors disabled:cursor-default"
+                  style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}
+                  onMouseEnter={(e) => { if (s.onClick) e.currentTarget.style.background = 'var(--bg-hover)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: SIGNAL_DOT[s.tone] }} />
+                  <span className="flex-1 text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{s.text}</span>
+                  {s.onClick && <ChevronRight size={14} style={{ color: 'var(--text-disabled)' }} />}
+                </button>
+              ))}
+            </Panel>
+          </Reveal>
+        </div>
+      )}
+
+      <div>
+        <SectionLabel hint={
+          <button onClick={() => onNavigate('activity')} className="flex items-center gap-1 font-[650]" style={{ color: 'var(--brand)' }}>
+            View all <ArrowRight size={11} />
+          </button>
+        }>
+          Today&apos;s activity
+        </SectionLabel>
+        <Reveal delay={0.34}>
+          <Panel padded={false} className="overflow-hidden">
+            {todayActivity.length === 0 ? (
+              <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Nothing yet today.</p>
+            ) : (
+              todayActivity.slice(0, 8).map((a, i) => (
+                <div key={a.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[12.5px]"
+                  style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
+                  <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>
+                    {activityLabel(a)}
+                    {a.organization_name && <span style={{ color: 'var(--text-muted)' }}> · {a.organization_name}</span>}
+                  </span>
+                  <span className="flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{fmtWhen(a.created_at)}</span>
+                </div>
+              ))
+            )}
+          </Panel>
+        </Reveal>
+      </div>
+
+      <div>
+        <SectionLabel hint={
+          <button onClick={() => onNavigate('studios')} className="flex items-center gap-1 font-[650]" style={{ color: 'var(--brand)' }}>
+            Manage <ArrowRight size={11} />
+          </button>
+        }>
+          Studios
+        </SectionLabel>
 
         {data.studios.length === 0 ? (
           <Panel><p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>No studios yet.</p></Panel>

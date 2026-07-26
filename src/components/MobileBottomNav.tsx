@@ -26,7 +26,7 @@ const FINANCE_ITEM = {
 const PLATFORM_ITEMS = [
   { href: '/platform',              icon: LayoutGrid, label: 'Overview'  },
   { href: '/platform?tab=studios',  icon: Layers,     label: 'Studios'   },
-  { href: '/platform?tab=billing',  icon: CreditCard, label: 'Billing'   },
+  { href: '/platform?tab=finance',  icon: CreditCard, label: 'Finance'   },
   { href: '/platform?tab=activity', icon: Activity,   label: 'Activity'  },
 ];
 
