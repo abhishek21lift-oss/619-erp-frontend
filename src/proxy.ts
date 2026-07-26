@@ -36,11 +36,6 @@ const PUBLIC_PREFIXES: string[] = [
   '/robots.txt',
   '/icons',
   '/images',
-  // Generated anatomy artwork + its manifest. Static, non-tenant, MIT-licensed
-  // reference material. Needed explicitly because the matcher below only
-  // exempts image/font extensions — anatomy-manifest.json is a .json and would
-  // otherwise be redirected to /login, breaking the whiteboard's anatomy picker.
-  '/anatomy',
 ];
 
 function isPublicPath(pathname: string): boolean {
