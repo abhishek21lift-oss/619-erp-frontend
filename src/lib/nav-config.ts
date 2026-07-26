@@ -118,14 +118,11 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'IndianRupee',
     items: [
       { href: '/sales/today',               label: "Today's Sales",        icon: 'IndianRupee',  roles: ['admin', 'manager'] },
-      { href: '/finance/verify-payments',   label: 'Verify Payments',      icon: 'ShieldCheck',  roles: ['admin', 'manager'] },
       { href: '/finance/record-payment',    label: 'Record Payment',       icon: 'Wallet',       roles: ['admin'] },
       { href: '/finance/collected-payments', label: 'Collected Payments',  icon: 'Banknote',     roles: ['admin'] },
       { href: '/finance/invoices',          label: 'Invoices',             icon: 'FileText',     roles: ['admin'] },
       { href: '/finance/dues',              label: 'Outstanding Dues',     icon: 'AlertCircle',  badge: 'duesCount', roles: ['admin'] },
       { href: '/finance/forecast',          label: 'Revenue Forecast',     icon: 'TrendingUp',   roles: ['admin'] },
-      { href: '/member/payments',           label: 'Member Payments',      icon: 'Receipt',      roles: ['admin', 'manager'] },
-      { href: '/finance/payment-settings',  label: 'UPI Collection',       icon: 'Smartphone',   roles: ['admin'] },
     ],
   },
   // Members get their own group. It is the only one they see, so it carries
