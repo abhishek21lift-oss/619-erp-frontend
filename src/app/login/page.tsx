@@ -3,10 +3,11 @@
 /**
  * MY PT STUDIO — authentication experience.
  *
- * A premium, enterprise-grade sign-in surface: a rich maroon+gold brand panel
+ * A premium, enterprise-grade sign-in surface: a rich blue+black brand panel
  * on the left (product showcase, live-feeling analytics, rotating proof) and a
- * clean glass auth card on the right. Self-contained maroon/gold palette so it
- * matches the marketing site rather than the in-product tokens.
+ * clean glass auth card on the right. Self-contained blue/black palette, taken
+ * from the logo mark, so it matches the marketing site rather than the
+ * in-product tokens.
  *
  * Everything here is wired to real auth: password, Google (when a client id is
  * configured) and passkey / Face ID / fingerprint (when the device supports a
@@ -31,12 +32,16 @@ import { useAuth } from '@/lib/auth-context';
 import { isWebAuthnSupported, isBiometricAvailable, webAuthnError } from '@/hooks/useWebAuthn';
 
 // ── Palette (mirrors the marketing site) ─────────────────────────────────────
-const MAROON = '#6E1230';
-const MAROON_DEEP = '#4A0A1E';
-const GOLD = '#C8A24B';
-const INK = '#1A1420';
-const MUTE = '#6B6470';
-const LINE = 'rgba(26,20,32,0.10)';
+// Blue + black, from the MY PT STUDIO cube mark — the same values LandingPage
+// uses, so signing in doesn't jump from a blue page to a maroon one. The
+// constant names stay MAROON/GOLD deliberately: this is a colour change, not a
+// rename, and keeping them makes the diff readable against the marketing file.
+const MAROON = '#0060E0';       // primary — logo blue
+const MAROON_DEEP = '#081120';  // near-black — the logo's cube
+const GOLD = '#5CB0FF';         // bright accent
+const INK = '#0B1220';          // blue-black body text
+const MUTE = '#5B6675';         // neutral slate
+const LINE = 'rgba(11,18,32,0.10)';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 const SUPPORT_EMAIL = 'help@myptstudio.app';
@@ -100,14 +105,14 @@ function ForgotModal({ open, onClose, prefillEmail }: { open: boolean; onClose: 
           transition={{ duration: 0.2 }}
           role="dialog" aria-modal="true" aria-labelledby="forgot-title"
         >
-          <div className="absolute inset-0" style={{ background: 'rgba(26,20,32,0.45)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+          <div className="absolute inset-0" style={{ background: 'rgba(11,18,32,0.45)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
           <m.div
             className="relative w-full max-w-[440px] overflow-hidden rounded-3xl bg-white"
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            style={{ boxShadow: '0 40px 90px -30px rgba(74,10,30,0.5)' }}
+            style={{ boxShadow: '0 40px 90px -30px rgba(8,17,32,0.5)' }}
           >
             <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${MAROON}, ${GOLD})` }} />
             <div className="p-7">
@@ -333,7 +338,7 @@ export default function LoginPage() {
     <div
       className="relative flex min-h-[100dvh] flex-col items-center justify-center"
       style={{
-        background: 'radial-gradient(120% 78% at 50% -8%, #FBF6F2 0%, #ffffff 48%)',
+        background: 'radial-gradient(120% 78% at 50% -8%, #F2F7FF 0%, #ffffff 48%)',
         color: INK,
         fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
         // Guarantee the logo clears the status bar / notch even when
@@ -380,7 +385,7 @@ export default function LoginPage() {
           animate={shakeKey > 0 && !reduce ? { x: [0, -9, 8, -6, 4, 0] } : undefined}
           transition={{ duration: 0.42 }}
           className="rounded-3xl bg-white p-7 sm:p-8"
-          style={{ border: `1px solid ${LINE}`, boxShadow: '0 30px 70px -34px rgba(74,10,30,0.28), 0 4px 14px rgba(26,20,32,0.04)' }}
+          style={{ border: `1px solid ${LINE}`, boxShadow: '0 30px 70px -34px rgba(8,17,32,0.28), 0 4px 14px rgba(11,18,32,0.04)' }}
         >
 
             {/* remembered-account chip */}

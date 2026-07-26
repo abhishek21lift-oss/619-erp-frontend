@@ -24,13 +24,23 @@ import {
 } from 'lucide-react';
 
 // ── Palette ─────────────────────────────────────────────────────────────────
-const MAROON = '#6E1230';
-const MAROON_DEEP = '#4A0A1E';
-const MAROON_HI = '#8E1B41';
-const GOLD = '#C8A24B';
-const GOLD_HI = '#E4C877';
-const INK = '#1A1420';
-const MUTE = '#6B6470';
+// Blue + black, taken from the MY PT STUDIO cube mark. BLUE is sampled from the
+// artwork itself (#0060E0) rather than picked by eye, so the page and the logo
+// are the same blue.
+//
+// The names are kept as MAROON/GOLD so this stays a pure colour change: the
+// file uses these constants in ~100 places and in fixed structural roles
+// (MAROON = primary, MAROON_DEEP = darkest surface + text on accent,
+// GOLD = the bright accent that has to pop against the dark panels). Renaming
+// them as well would bury a simple recolour inside a 100-line rename diff and
+// make it far harder to review or revert.
+const MAROON = '#0060E0';       // primary — logo blue
+const MAROON_DEEP = '#081120';  // near-black — the logo's cube
+const MAROON_HI = '#2E86FF';    // lifted primary
+const GOLD = '#5CB0FF';         // bright accent; sits on the dark panels
+const GOLD_HI = '#9AD0FF';      // lightest accent
+const INK = '#0B1220';          // blue-black body text
+const MUTE = '#5B6675';         // neutral slate
 
 const gradText: React.CSSProperties = {
   background: `linear-gradient(120deg, ${MAROON_DEEP} 0%, ${MAROON} 44%, ${GOLD} 118%)`,
@@ -66,8 +76,12 @@ function Wordmark({ light = false }: { light?: boolean }) {
         className="h-9 w-9 shrink-0 object-contain"
         style={light ? { filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.35))' } : undefined}
       />
-      <span className={`text-[15.5px] font-[750] tracking-[-0.01em] ${light ? 'text-white' : ''}`} style={light ? undefined : { color: INK }}>
-        MY&nbsp;PT&nbsp;<span style={{ color: GOLD }}>STUDIO</span>
+      {/* Mirrors the artwork: "MY PT" blue, "STUDIO" black. On the dark footer
+          that inverts — black on near-black is invisible — so STUDIO takes the
+          light accent there instead. */}
+      <span className="text-[15.5px] font-[750] tracking-[-0.01em]">
+        <span style={{ color: light ? '#fff' : MAROON }}>MY&nbsp;PT&nbsp;</span>
+        <span style={{ color: light ? GOLD : INK }}>STUDIO</span>
       </span>
     </span>
   );
@@ -90,7 +104,7 @@ function Nav() {
         background: 'rgba(255,255,255,0.88)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(110,18,48,0.07)',
+        borderBottom: '1px solid rgba(0,96,224,0.07)',
       }}
     >
       <div className="mx-auto max-w-6xl px-4">
@@ -113,7 +127,7 @@ function Nav() {
           </button>
         </nav>
         {open && (
-          <div className="mt-2 rounded-2xl p-3 md:hidden" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(18px)', border: '1px solid rgba(110,18,48,0.08)' }}>
+          <div className="mt-2 rounded-2xl p-3 md:hidden" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(18px)', border: '1px solid rgba(0,96,224,0.08)' }}>
             {NAV.map((n) => (
               <a key={n} href={`#${n.toLowerCase()}`} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 text-[14px] font-[560]" style={{ color: INK }}>{n}</a>
             ))}
@@ -134,14 +148,14 @@ function DashboardMock() {
   return (
     <div
       className="relative overflow-hidden rounded-[22px] p-3 sm:p-4"
-      style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(110,18,48,0.10)', boxShadow: '0 40px 90px -30px rgba(74,10,30,0.35), 0 12px 30px -12px rgba(74,10,30,0.18)' }}
+      style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(0,96,224,0.10)', boxShadow: '0 40px 90px -30px rgba(8,17,32,0.35), 0 12px 30px -12px rgba(8,17,32,0.18)' }}
     >
       {/* window chrome */}
       <div className="mb-3 flex items-center gap-1.5 px-1">
         <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#F2C6C6' }} />
         <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#F5E2B8' }} />
         <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#C7E9D2' }} />
-        <span className="ml-2 rounded-md px-2 py-0.5 text-[9px] font-[600]" style={{ background: 'rgba(110,18,48,0.06)', color: MAROON }}>app.myptstudio.com</span>
+        <span className="ml-2 rounded-md px-2 py-0.5 text-[9px] font-[600]" style={{ background: 'rgba(0,96,224,0.06)', color: MAROON }}>app.myptstudio.com</span>
       </div>
       {/* KPI row */}
       <div className="grid grid-cols-3 gap-2.5">
@@ -152,7 +166,7 @@ function DashboardMock() {
         ].map((k) => (
           <div key={k.l} className="rounded-xl p-2.5" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.05)' }}>
             <div className="mb-1 flex items-center gap-1" style={{ color: MAROON }}>
-              <span className="grid h-5 w-5 place-items-center rounded-md" style={{ background: 'rgba(110,18,48,0.08)' }}>{k.i}</span>
+              <span className="grid h-5 w-5 place-items-center rounded-md" style={{ background: 'rgba(0,96,224,0.08)' }}>{k.i}</span>
             </div>
             <div className="text-[15px] font-[800]" style={{ color: INK }}>{k.v}</div>
             <div className="flex items-center justify-between">
@@ -201,7 +215,7 @@ function Section({ id, children, className = '' }: { id?: string; children: Reac
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-[720] uppercase tracking-[0.14em]"
-      style={{ background: 'rgba(110,18,48,0.06)', color: MAROON, border: '1px solid rgba(110,18,48,0.10)' }}>
+      style={{ background: 'rgba(0,96,224,0.06)', color: MAROON, border: '1px solid rgba(0,96,224,0.10)' }}>
       {children}
     </span>
   );
@@ -347,7 +361,7 @@ export default function LandingPage() {
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full" style={{ background: `radial-gradient(circle, ${MAROON}18, transparent 68%)` }} />
         <div className="absolute -right-40 top-24 h-[560px] w-[560px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}22, transparent 68%)` }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% -8%, rgba(110,18,48,0.06), transparent 60%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% -8%, rgba(0,96,224,0.06), transparent 60%)' }} />
       </div>
 
       <Nav />
@@ -400,7 +414,7 @@ export default function LandingPage() {
             {/* floating accent cards */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.6 }}
               className="absolute -left-4 top-10 z-10 hidden rounded-2xl p-3 sm:-left-10 sm:block"
-              style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 20px 40px -18px rgba(74,10,30,0.3)' }}>
+              style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 20px 40px -18px rgba(8,17,32,0.3)' }}>
               <div className="flex items-center gap-2">
                 <span className="grid h-8 w-8 place-items-center rounded-lg text-white" style={{ background: '#0E9F6E' }}><Check size={16} /></span>
                 <div className="text-left">
@@ -411,7 +425,7 @@ export default function LandingPage() {
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.65, duration: 0.6 }}
               className="absolute -right-4 bottom-8 z-10 hidden rounded-2xl p-3 sm:-right-10 sm:block"
-              style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 20px 40px -18px rgba(74,10,30,0.3)' }}>
+              style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 20px 40px -18px rgba(8,17,32,0.3)' }}>
               <div className="flex items-center gap-2">
                 <span className="grid h-8 w-8 place-items-center rounded-lg text-white" style={{ background: GOLD }}><LineChart size={16} /></span>
                 <div className="text-left">
@@ -469,12 +483,12 @@ export default function LandingPage() {
         </Reveal>
         <div className="mt-12 grid gap-5 md:grid-cols-2">
           <Reveal>
-            <div className="h-full rounded-3xl p-7" style={{ background: 'rgba(74,10,30,0.03)', border: '1px solid rgba(74,10,30,0.10)' }}>
+            <div className="h-full rounded-3xl p-7" style={{ background: 'rgba(8,17,32,0.03)', border: '1px solid rgba(8,17,32,0.10)' }}>
               <span className="text-[12px] font-[720] uppercase tracking-[0.14em]" style={{ color: MAROON }}>Before</span>
               <ul className="mt-5 space-y-3.5">
                 {['Client data scattered across Excel & Sheets', 'Plans and updates lost in WhatsApp', 'Manual billing, missed renewals & dues', 'Attendance on paper, no real insight', 'No single view of the business'].map((p) => (
                   <li key={p} className="flex items-start gap-3 text-[14.5px]" style={{ color: INK }}>
-                    <X size={18} className="mt-0.5 shrink-0" style={{ color: '#C0455F' }} /> <span style={{ opacity: 0.82 }}>{p}</span>
+                    <X size={18} className="mt-0.5 shrink-0" style={{ color: '#DC2626' }} /> <span style={{ opacity: 0.82 }}>{p}</span>
                   </li>
                 ))}
               </ul>
@@ -523,7 +537,7 @@ export default function LandingPage() {
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
             {SECONDARY.map((s) => (
               <span key={s.t} className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-[600]"
-                style={{ background: 'rgba(110,18,48,0.05)', color: INK, border: '1px solid rgba(110,18,48,0.08)' }}>
+                style={{ background: 'rgba(0,96,224,0.05)', color: INK, border: '1px solid rgba(0,96,224,0.08)' }}>
                 <s.i size={14} style={{ color: MAROON }} /> {s.t}
               </span>
             ))}
@@ -534,7 +548,7 @@ export default function LandingPage() {
       {/* ── PLATFORM SHOWCASE ── */}
       <Section className="py-20">
         <Reveal>
-          <div className="overflow-hidden rounded-[32px] p-8 sm:p-12" style={{ background: 'linear-gradient(160deg, #FBF7F3 0%, #F6EEF0 100%)', border: '1px solid rgba(110,18,48,0.08)' }}>
+          <div className="overflow-hidden rounded-[32px] p-8 sm:p-12" style={{ background: 'linear-gradient(160deg, #F5F9FF 0%, #E7F0FC 100%)', border: '1px solid rgba(0,96,224,0.08)' }}>
             <div className="grid items-center gap-10 lg:grid-cols-2">
               <div>
                 <Eyebrow>Beautiful on every screen</Eyebrow>
@@ -549,11 +563,11 @@ export default function LandingPage() {
                 </ul>
               </div>
               <div className="relative">
-                <div className="rounded-2xl p-2" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 30px 60px -30px rgba(74,10,30,0.35)' }}>
+                <div className="rounded-2xl p-2" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 30px 60px -30px rgba(8,17,32,0.35)' }}>
                   <DashboardMock />
                 </div>
                 {/* phone frame */}
-                <div className="absolute -bottom-6 -right-2 w-28 rounded-[20px] p-1.5 sm:w-32" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 44px -18px rgba(74,10,30,0.4)' }}>
+                <div className="absolute -bottom-6 -right-2 w-28 rounded-[20px] p-1.5 sm:w-32" style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 44px -18px rgba(8,17,32,0.4)' }}>
                   <div className="rounded-[15px] p-2" style={{ background: `linear-gradient(160deg, ${MAROON}, ${MAROON_DEEP})` }}>
                     <div className="text-[8px] font-[700] text-white opacity-80">Today</div>
                     <div className="mt-0.5 text-[15px] font-[850] text-white">₹6.4L</div>
@@ -578,7 +592,7 @@ export default function LandingPage() {
         </Reveal>
         <Reveal delay={0.08}>
           <div className="mt-12 overflow-hidden rounded-3xl" style={{ border: '1px solid rgba(0,0,0,0.07)' }}>
-            <div className="grid grid-cols-5 items-center px-5 py-4 text-[12px] font-[700]" style={{ background: '#FBF7F3', color: MUTE }}>
+            <div className="grid grid-cols-5 items-center px-5 py-4 text-[12px] font-[700]" style={{ background: '#F5F9FF', color: MUTE }}>
               <div className="col-span-2 text-left" style={{ color: INK }}>Capability</div>
               <div className="text-center" style={{ color: MAROON }}>MY PT STUDIO</div>
               <div className="text-center">Excel / Sheets</div>
@@ -789,5 +803,5 @@ export default function LandingPage() {
 function Cell({ v, strong = false }: { v: boolean | 'partial'; strong?: boolean }) {
   if (v === true) return <span className="grid h-6 w-6 place-items-center rounded-full text-white" style={{ background: strong ? MAROON : '#0E9F6E' }}><Check size={13} /></span>;
   if (v === 'partial') return <span className="h-1 w-4 rounded-full" style={{ background: '#D9B24A' }} />;
-  return <X size={16} style={{ color: '#D0B8BE' }} />;
+  return <X size={16} style={{ color: '#B6C2D1' }} />;
 }
