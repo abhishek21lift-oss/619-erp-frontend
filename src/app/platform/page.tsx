@@ -18,7 +18,7 @@ import {
   LayoutDashboard, Activity, LogIn, Pencil, Trash2, UserPlus, IndianRupee, Clock, Eye,
   CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket, Percent, Ban, CheckCircle2,
   Search, ArrowRight, TrendingUp, ChevronRight,
-  MoreVertical, Download, ArrowUpDown, CheckSquare, Square,
+  MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -85,6 +85,8 @@ export default function PlatformAdminPage() {
 
 type Tab = 'overview' | 'studios' | 'finance' | 'activity';
 const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'activity'];
+type FinanceSubTab = 'dashboard' | 'billing' | 'coupons';
+type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
 // Finance as an in-page sub-tab. Old bookmarks/sidebar links still point at
 // ?tab=billing / ?tab=coupons, so both keep working — they just land on
@@ -105,7 +107,7 @@ function PlatformContent() {
     if (getImpersonation()) window.location.replace('/');
   }, []);
   const [tab, setTab] = useState<Tab>(() => normalizeTab(paramTab));
-  const [financeSubTab, setFinanceSubTab] = useState<'billing' | 'coupons'>(paramTab === 'coupons' ? 'coupons' : 'billing');
+  const [financeSubTab, setFinanceSubTab] = useState<FinanceSubTab>(paramTab === 'coupons' ? 'coupons' : paramTab === 'billing' ? 'billing' : 'dashboard');
   const [commandOpen, setCommandOpen] = useState(false);
 
   // Keep the active tab in sync with the ?tab= query so the sidebar / bottom-nav
@@ -136,6 +138,12 @@ function PlatformContent() {
     { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
   ];
+
+  const onNavigate = (t: Tab, opts?: NavOpts) => {
+    if (opts?.financeSubTab) setFinanceSubTab(opts.financeSubTab);
+    setTab(t);
+    setCommandOpen(false);
+  };
 
   return (
     <>
@@ -175,22 +183,14 @@ function PlatformContent() {
         {/* Keyed so switching tabs replays the stagger — it reads as the panel
             being assembled rather than content silently swapping underneath. */}
         <div key={tab}>
-          {tab === 'overview' && <OverviewTab onNavigate={setTab} />}
+          {tab === 'overview' && <OverviewTab onNavigate={onNavigate} />}
           {tab === 'studios' && <StudiosTab />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
           {tab === 'activity' && <ActivityTab />}
         </div>
       </div>
 
-      <CommandBar
-        open={commandOpen}
-        onClose={() => setCommandOpen(false)}
-        onNavigate={(t, opts) => {
-          if (opts?.financeSubTab) setFinanceSubTab(opts.financeSubTab);
-          setTab(t);
-          setCommandOpen(false);
-        }}
-      />
+      <CommandBar open={commandOpen} onClose={() => setCommandOpen(false)} onNavigate={onNavigate} />
     </>
   );
 }
@@ -201,10 +201,10 @@ function PlatformContent() {
 // call each. There is no unified cross-entity search endpoint (users/
 // payments/logs each need their own query with their own filters), so those
 // stay in their own tabs rather than pretending to be searchable from here.
-type NavOpts = { financeSubTab?: 'billing' | 'coupons' };
 const NAV_TARGETS: { tab: Tab; label: string; icon: React.ReactNode; opts?: NavOpts }[] = [
   { tab: 'overview', label: 'Go to Overview', icon: <LayoutDashboard size={14} /> },
   { tab: 'studios', label: 'Go to Studios', icon: <Building2 size={14} /> },
+  { tab: 'finance', label: 'Go to Finance · Dashboard', icon: <CreditCard size={14} />, opts: { financeSubTab: 'dashboard' } },
   { tab: 'finance', label: 'Go to Finance · Billing', icon: <CreditCard size={14} />, opts: { financeSubTab: 'billing' } },
   { tab: 'finance', label: 'Go to Finance · Coupons', icon: <Ticket size={14} />, opts: { financeSubTab: 'coupons' } },
   { tab: 'activity', label: 'Go to Activity', icon: <Activity size={14} /> },
@@ -358,16 +358,19 @@ function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClose: () 
 }
 
 /* ─────────────────────────────────────────────────────── FINANCE */
-// Billing (subscriptions, MRR/ARR, per-studio payments) and Coupons used to be
-// separate top-level tabs. Neither's internals changed here — this just nests
-// them under one Finance section with an in-page sub-switch, since they're
-// both "money" and splitting them across the top-level nav buried Coupons.
-function FinanceTab({ subTab, onSubTabChange }: { subTab: 'billing' | 'coupons'; onSubTabChange: (t: 'billing' | 'coupons') => void }) {
+// Billing (per-studio subscriptions/payments) and Coupons used to be separate
+// top-level tabs; Dashboard is new. None of Billing's or Coupons' internals
+// changed here — this nests all three under one Finance section with an
+// in-page sub-switch, with the aggregate KPIs that used to live at the top
+// of Billing moved into Dashboard (Billing is now purely the per-studio
+// action list, which is what an operator actually works from day to day).
+function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTabChange: (t: FinanceSubTab) => void }) {
   return (
     <div>
-      <div className="mb-5 max-w-[280px]">
+      <div className="mb-5 max-w-[380px]">
         <SegmentedTabs
           tabs={[
+            { id: 'dashboard' as const, label: 'Dashboard', icon: <TrendingUp size={13} /> },
             { id: 'billing' as const, label: 'Billing', icon: <CreditCard size={13} /> },
             { id: 'coupons' as const, label: 'Coupons', icon: <Ticket size={13} /> },
           ]}
@@ -376,7 +379,9 @@ function FinanceTab({ subTab, onSubTabChange }: { subTab: 'billing' | 'coupons';
         />
       </div>
       <div key={subTab}>
-        {subTab === 'billing' ? <BillingTab /> : <CouponsTab />}
+        {subTab === 'dashboard' && <FinanceDashboardTab onNavigate={onSubTabChange} />}
+        {subTab === 'billing' && <BillingTab />}
+        {subTab === 'coupons' && <CouponsTab />}
       </div>
     </div>
   );
@@ -393,30 +398,117 @@ const SUB_STATE: Record<string, { label: string; tone: 'success' | 'danger' | 'w
   suspended: { label: 'Suspended', tone: 'danger' },
 };
 
+// ── Finance Dashboard ─────────────────────────────────────────────────────────
+// The run-rate view: MRR/ARR/ARPU/outstanding, the revenue trend + plan
+// distribution + lifecycle breakdown already built for the old Billing tab
+// (SaasMetrics, untouched), and a renewals/expiring list derived from the
+// same subscriptions() call every other Finance surface uses. No LTV, no
+// churn-rate percentage: this backend has no cohort/retention tracking to
+// compute either honestly, and a made-up formula presented as a real metric
+// is worse than not having the tile. The Lifecycle panel inside SaasMetrics
+// already tells the churn story as real counts (frozen/lapsed/cancelled)
+// instead of a single number that would need caveats to be true.
+function FinanceDashboardTab({ onNavigate }: { onNavigate: (t: FinanceSubTab) => void }) {
+  const [kpis, setKpis] = useState<SubKpis | null>(null);
+  const [studios, setStudios] = useState<SubStudio[]>([]);
+  const [totals, setTotals] = useState<PlatformOverview['totals'] | null>(null);
+  const [metrics, setMetrics] = useState<SubscriptionMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = useCallback(() => {
+    setLoading(true); setError('');
+    Promise.all([api.superAdmin.subscriptions(), api.superAdmin.overview()])
+      .then(([subs, ov]) => {
+        setKpis(subs.data.kpis ?? null);
+        setStudios(subs.data.studios ?? []);
+        setTotals(ov.data.totals);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load finance data'))
+      .finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { api.superAdmin.subscriptionMetrics().then((r) => setMetrics(r.data)).catch(() => setMetrics(null)); }, []);
+
+  if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
+  if (error) return <ErrorState error={error} onRetry={load} />;
+
+  const renewalsDue = studios
+    .filter((s) => s.renewal_due || s.requested_at)
+    .sort((a, b) => (a.period_days_left ?? 99) - (b.period_days_left ?? 99));
+
+  const kpiCards = [
+    { label: 'MRR', value: metrics ? fmtINR(metrics.mrr_inr) : '—', sub: metrics ? `${fmtINR(metrics.arr_inr)} ARR` : 'loading…', tone: 'positive' as const, icon: <TrendingUp size={15} /> },
+    { label: 'ARPU', value: metrics ? fmtINR(metrics.arpu_inr) : '—', sub: metrics ? `${metrics.paying_studios} paying studios` : 'loading…', tone: 'brand' as const, icon: <IndianRupee size={15} /> },
+    { label: 'Outstanding', value: totals ? fmtINR(totals.outstanding) : '—', sub: 'across all studios', tone: 'critical' as const, icon: <Receipt size={15} /> },
+    { label: 'Founders', value: kpis && metrics ? `${kpis.founders}/${metrics.founders.limit}` : '—', sub: kpis ? `${kpis.founder_slots_remaining} slots left` : '', tone: 'caution' as const, icon: <Crown size={15} /> },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <SectionLabel>Run-rate</SectionLabel>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {kpiCards.map((k, i) => (
+            <StatTile key={k.label} label={k.label} value={k.value} sub={k.sub}
+              icon={k.icon} tone={k.tone} delay={i * 0.04} />
+          ))}
+        </div>
+      </div>
+
+      {metrics && <SaasMetrics data={metrics} />}
+
+      <div>
+        <SectionLabel hint={
+          <button onClick={() => onNavigate('billing')} className="flex items-center gap-1 font-[650]" style={{ color: 'var(--brand)' }}>
+            Manage in Billing <ArrowRight size={11} />
+          </button>
+        }>
+          Renewals &amp; requests
+        </SectionLabel>
+        <Reveal delay={0.2}>
+          <Panel padded={false} className="overflow-hidden">
+            {renewalsDue.length === 0 ? (
+              <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Nothing due right now.</p>
+            ) : (
+              renewalsDue.slice(0, 10).map((s, i) => (
+                <button key={s.id} onClick={() => onNavigate('billing')}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-[12.5px] transition-colors hover:bg-black/[0.03]"
+                  style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
+                  <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 650 }}>{s.name}</span> · {s.plan_name || 'No plan'}
+                  </span>
+                  <span className="flex flex-shrink-0 items-center gap-2">
+                    {s.requested_at && <Badge tone="warning">requested</Badge>}
+                    {s.period_days_left != null && <span className="tabular-nums" style={{ color: 'var(--text-muted)' }}>{s.period_days_left}d left</span>}
+                  </span>
+                </button>
+              ))
+            )}
+          </Panel>
+        </Reveal>
+      </div>
+    </div>
+  );
+}
+
 function BillingTab() {
   const { toast } = useToast();
   const [studios, setStudios] = useState<SubStudio[]>([]);
-  const [kpis, setKpis] = useState<SubKpis | null>(null);
   const [plans, setPlans] = useState<SubPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [payTarget, setPayTarget] = useState<SubStudio | null>(null);
   const [detailTarget, setDetailTarget] = useState<SubStudio | null>(null);
-  const [metrics, setMetrics] = useState<SubscriptionMetrics | null>(null);
 
   const load = useCallback(() => {
     setLoading(true); setError('');
     api.superAdmin.subscriptions()
-      .then((r) => { setStudios(r.data.studios ?? []); setKpis(r.data.kpis ?? null); })
+      .then((r) => { setStudios(r.data.studios ?? []); })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load subscriptions'))
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
-  // Run-rate metrics load independently: they are a bonus panel, so a failure
-  // here must not take down the studio list the operator actually works from.
-  useEffect(() => {
-    api.superAdmin.subscriptionMetrics().then((r) => setMetrics(r.data)).catch(() => setMetrics(null));
-  }, []);
   useEffect(() => { api.subscription.plans().then((r) => setPlans(r.data.plans ?? [])).catch(() => {}); }, []);
 
   const quickFreeze = async (s: SubStudio, freeze: boolean) => {
@@ -432,28 +524,8 @@ function BillingTab() {
   if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
 
-  const kpiCards = kpis ? [
-    { label: 'Revenue', value: fmtINR(kpis.total_revenue), sub: `${fmtINR(kpis.revenue_this_month)} this month`, tone: 'positive' as const, icon: <IndianRupee size={15} /> },
-    { label: 'Active', value: String(kpis.active), sub: `${kpis.trial} on trial`, tone: 'brand' as const, icon: <CreditCard size={15} /> },
-    { label: 'Frozen', value: String(kpis.frozen), sub: 'need payment', tone: 'critical' as const, icon: <Snowflake size={15} /> },
-    // Founder cap comes from the API — it used to be hardcoded to 50 and is now 20.
-    { label: 'Founders', value: `${kpis.founders}${metrics ? `/${metrics.founders.limit}` : ''}`, sub: `${kpis.founder_slots_remaining} slots left`, tone: 'caution' as const, icon: <Crown size={15} /> },
-  ] : [];
-
   return (
     <div className="space-y-5">
-      <div>
-        <SectionLabel>Platform</SectionLabel>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {kpiCards.map((k, i) => (
-            <StatTile key={k.label} label={k.label} value={k.value} sub={k.sub}
-              icon={k.icon} tone={k.tone} delay={i * 0.04} />
-          ))}
-        </div>
-      </div>
-
-      {metrics && <SaasMetrics data={metrics} />}
-
       <div className="space-y-3">
         {studios.map((s) => {
           const st = SUB_STATE[s.effective_state] || { label: s.effective_state, tone: 'neutral' as const };
@@ -839,7 +911,7 @@ const SIGNAL_DOT: Record<'critical' | 'caution' | 'positive' | 'neutral', string
 };
 
 /* ─────────────────────────────────────────────────────── OVERVIEW */
-function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
+function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab, opts?: NavOpts) => void }) {
   const [data, setData] = useState<PlatformOverview | null>(null);
   const [subKpis, setSubKpis] = useState<SubKpis | null>(null);
   const [subStudios, setSubStudios] = useState<SubStudio[]>([]);
@@ -898,11 +970,11 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab) => void }) {
   // call (there's no AI-insights backend yet), just surfaced as sentences
   // instead of left for the operator to notice by scanning every tile.
   const signals: { text: string; tone: keyof typeof SIGNAL_DOT; onClick?: () => void }[] = [];
-  if (pendingRequests > 0) signals.push({ text: `${pendingRequests} studio${pendingRequests === 1 ? '' : 's'} waiting on a plan request`, tone: 'caution', onClick: () => onNavigate('finance') });
-  if (renewalsDue > 0) signals.push({ text: `${renewalsDue} renewal${renewalsDue === 1 ? '' : 's'} due within 7 days`, tone: 'caution', onClick: () => onNavigate('finance') });
-  if (subKpis && subKpis.frozen > 0) signals.push({ text: `${subKpis.frozen} studio${subKpis.frozen === 1 ? '' : 's'} frozen, waiting on payment`, tone: 'critical', onClick: () => onNavigate('finance') });
+  if (pendingRequests > 0) signals.push({ text: `${pendingRequests} studio${pendingRequests === 1 ? '' : 's'} waiting on a plan request`, tone: 'caution', onClick: () => onNavigate('finance', { financeSubTab: 'billing' }) });
+  if (renewalsDue > 0) signals.push({ text: `${renewalsDue} renewal${renewalsDue === 1 ? '' : 's'} due within 7 days`, tone: 'caution', onClick: () => onNavigate('finance', { financeSubTab: 'billing' }) });
+  if (subKpis && subKpis.frozen > 0) signals.push({ text: `${subKpis.frozen} studio${subKpis.frozen === 1 ? '' : 's'} frozen, waiting on payment`, tone: 'critical', onClick: () => onNavigate('finance', { financeSubTab: 'billing' }) });
   if (revDeltaPct != null) signals.push({ text: `Revenue collected ${revDeltaPct >= 0 ? 'up' : 'down'} ${Math.abs(revDeltaPct)}% vs last month`, tone: revDeltaPct >= 0 ? 'positive' : 'critical' });
-  if (Number(t.outstanding) > 0) signals.push({ text: `${fmtINR(t.outstanding)} outstanding across all studios`, tone: 'neutral', onClick: () => onNavigate('studios') });
+  if (Number(t.outstanding) > 0) signals.push({ text: `${fmtINR(t.outstanding)} outstanding across all studios`, tone: 'neutral', onClick: () => onNavigate('finance', { financeSubTab: 'dashboard' }) });
 
   return (
     <div className="space-y-6">
@@ -1655,6 +1727,27 @@ function ActivityTab() {
 // Operator surface for the discount catalogue. A redeemed coupon can be
 // deactivated but never deleted — it is part of the billing record — so the UI
 // offers Deactivate for used coupons and Delete only for unused ones.
+// Quick-start presets for the create-coupon form below. Each just seeds the
+// SAME form with sensible defaults for a common promo shape — there is no
+// separate "template" concept on the backend (coupons don't have a category
+// column), so this is pure UX sugar around the one real creation endpoint,
+// not a new feature pretending to exist. "Founder" pricing is deliberately
+// NOT a template here: it's a distinct locked-price status on the org itself
+// (Studios > Support access / Grant founder), not a discount coupon, and
+// listing it here would conflate two different systems.
+type CouponTemplate = {
+  key: string; label: string; icon: React.ReactNode;
+  initial: { description: string; discountType: 'percent' | 'fixed'; discountValue: string; maxPerOrg: string; validUntil?: string };
+};
+function couponTemplates(): CouponTemplate[] {
+  const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return [
+    { key: 'launch', label: 'Launch offer', icon: <Sparkles size={13} />, initial: { description: 'Launch discount', discountType: 'percent', discountValue: '20', maxPerOrg: '1' } },
+    { key: 'referral', label: 'Referral', icon: <Gift size={13} />, initial: { description: 'Referral reward', discountType: 'fixed', discountValue: '500', maxPerOrg: '1' } },
+    { key: 'seasonal', label: 'Seasonal', icon: <Percent size={13} />, initial: { description: 'Seasonal promotion', discountType: 'percent', discountValue: '15', maxPerOrg: '1', validUntil: in30Days } },
+  ];
+}
+
 function CouponsTab() {
   const { toast } = useToast();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -1662,6 +1755,7 @@ function CouponsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [template, setTemplate] = useState<CouponTemplate | null>(null);
   const [busy, setBusy] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [redemptions, setRedemptions] = useState<Record<string, { id: string; organization_name: string | null; gross_amount_inr: number; discount_inr: number; net_amount_inr: number; redeemed_at: string }[]>>({});
@@ -1710,8 +1804,29 @@ function CouponsTab() {
   if (loading) return <Center><Loader2 size={26} className="animate-spin" style={{ color: '#6366f1' }} /></Center>;
   if (error) return <ErrorState error={error} onRetry={load} />;
 
+  // Coupon analytics — aggregated from the same rows already loaded for the
+  // list below (times_redeemed / total_discount_inr come pre-computed from
+  // the redemption ledger server-side), not a separate call.
+  const activeCoupons = coupons.filter((c) => c.is_active).length;
+  const totalRedemptions = coupons.reduce((s, c) => s + c.times_redeemed, 0);
+  const totalDiscountGiven = coupons.reduce((s, c) => s + c.total_discount_inr, 0);
+  const topCoupon = [...coupons].sort((a, b) => b.times_redeemed - a.times_redeemed)[0];
+
+  const openTemplate = (t: CouponTemplate | null) => { setTemplate(t); setShowForm(true); };
+  const closeForm = () => { setShowForm(false); setTemplate(null); };
+
   return (
     <div className="space-y-4">
+      {coupons.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatTile label="Active coupons" value={String(activeCoupons)} sub={`${coupons.length} total`} tone="brand" icon={<Ticket size={15} />} />
+          <StatTile label="Redemptions" value={String(totalRedemptions)} sub="all time" tone="positive" icon={<CheckCircle2 size={15} />} />
+          <StatTile label="Discount given" value={fmtINR(totalDiscountGiven)} sub="all time" tone="caution" icon={<Percent size={15} />} />
+          <StatTile label="Top coupon" value={topCoupon && topCoupon.times_redeemed > 0 ? topCoupon.code : '—'}
+            sub={topCoupon && topCoupon.times_redeemed > 0 ? `${topCoupon.times_redeemed} uses` : 'none redeemed yet'} tone="neutral" icon={<Sparkles size={15} />} />
+        </div>
+      )}
+
       {/* Wraps on narrow screens — the action previously sat on the same row as
           a long paragraph and was clipped to "New coup…" on a phone. */}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1721,16 +1836,32 @@ function CouponsTab() {
             Applied at activation. Redemption counts come from the ledger, so they always reconcile with payments.
           </p>
         </div>
-        <Button className="w-full shrink-0 sm:w-auto"
-          onClick={() => setShowForm((v) => !v)} iconLeft={<Plus size={14} />}>
-          {showForm ? 'Close' : 'New coupon'}
-        </Button>
+        {showForm ? (
+          <Button className="w-full shrink-0 sm:w-auto" onClick={closeForm} iconLeft={<X size={14} />}>Close</Button>
+        ) : (
+          <Button className="w-full shrink-0 sm:w-auto" onClick={() => openTemplate(null)} iconLeft={<Plus size={14} />}>New coupon</Button>
+        )}
       </div>
+
+      {!showForm && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] font-[650]" style={{ color: 'var(--text-muted)' }}>Quick start:</span>
+          {couponTemplates().map((t) => (
+            <button key={t.key} onClick={() => openTemplate(t)}
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11.5px] font-[650] transition-colors"
+              style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+              {t.icon} {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {showForm && (
         <CouponForm
+          key={template?.key ?? 'blank'}
           plans={plans}
-          onCreated={() => { setShowForm(false); load(); }}
+          initial={template?.initial}
+          onCreated={() => { closeForm(); load(); }}
         />
       )}
 
@@ -1823,16 +1954,22 @@ function CouponsTab() {
   );
 }
 
-function CouponForm({ plans, onCreated }: { plans: SubPlan[]; onCreated: () => void }) {
+function CouponForm({ plans, initial, onCreated }: {
+  plans: SubPlan[];
+  /** Seeds the form once, from one of the quick-start templates above — the
+   *  operator can still edit every field before creating. */
+  initial?: { description: string; discountType: 'percent' | 'fixed'; discountValue: string; maxPerOrg: string; validUntil?: string };
+  onCreated: () => void;
+}) {
   const { toast } = useToast();
   const [code, setCode] = useState('');
-  const [description, setDescription] = useState('');
-  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
-  const [discountValue, setDiscountValue] = useState('');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>(initial?.discountType ?? 'percent');
+  const [discountValue, setDiscountValue] = useState(initial?.discountValue ?? '');
   const [maxDiscount, setMaxDiscount] = useState('');
   const [maxRedemptions, setMaxRedemptions] = useState('');
-  const [maxPerOrg, setMaxPerOrg] = useState('1');
-  const [validUntil, setValidUntil] = useState('');
+  const [maxPerOrg, setMaxPerOrg] = useState(initial?.maxPerOrg ?? '1');
+  const [validUntil, setValidUntil] = useState(initial?.validUntil ?? '');
   const [appliesTo, setAppliesTo] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
