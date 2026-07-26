@@ -1575,7 +1575,12 @@ function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPasswor
   const planAccent = row.sub?.plan_code ? (PLAN_ACCENT[row.sub.plan_code] || NO_PLAN_ACCENT) : NO_PLAN_ACCENT;
 
   return (
-    <div className="relative overflow-hidden rounded-[18px]"
+    // No overflow-hidden on the card itself: the More menu's dropdown is
+    // absolutely positioned inside it, and a clipped ancestor was cutting
+    // the dropdown off at the card's edge instead of letting it float above
+    // the next card. The top strip and the expanded panel round their own
+    // corners instead of relying on the parent to clip them square.
+    <div className="relative rounded-[18px]"
       style={{
         background: 'var(--bg-card)',
         border: selected ? '1.5px solid var(--brand)' : '1px solid var(--border)',
@@ -1583,7 +1588,7 @@ function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPasswor
       }}>
       {/* Plan-tier accent strip — the card's identity at a glance, before
           reading a single word. Neutral hairline when there's no plan yet. */}
-      <div className="h-[3px] w-full" style={{ background: planAccent }} />
+      <div className="h-[3px] w-full rounded-t-[17px]" style={{ background: planAccent }} />
 
       <div className="p-4">
         {/* Identity row — ONLY the checkbox, logo, and name/slug live here.
@@ -1652,7 +1657,7 @@ function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPasswor
       </div>
 
       {expanded && (
-        <div className="border-t px-4 py-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}>
+        <div className="border-t rounded-b-[17px] px-4 py-3" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}>
           {loadingDetail && <div className="flex justify-center py-4"><Loader2 size={18} className="animate-spin" style={{ color: '#6366f1' }} /></div>}
           {detail && detail.users.length === 0 && <p className="py-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>No login accounts.</p>}
           {detail && detail.users.map((u) => (
