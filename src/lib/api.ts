@@ -1,4 +1,4 @@
-import { http, httpSSE } from './http';
+import { http, httpSSE, apiBase } from './http';
 export { http };
 import type { Role } from './roles';
 
@@ -2175,6 +2175,300 @@ export const api = {
         + (planCode ? `&plan_code=${encodeURIComponent(planCode)}` : ''),
       ),
   },
+
+  /**
+   * Membership plans (the `plans` table). Read-only here — plans are managed
+   * elsewhere; this exists so the UPI flow can offer real plans at their real
+   * price instead of asking staff to retype an amount.
+   */
+  membershipPlans: {
+    list: () => http<MembershipPlan[]>('/api/plans?kind=Membership&active=true'),
+  },
+
+  // ── Manual UTR verification payments ──────────────────────────────────────
+  // Mounted under /api/payments/upi so it sits beside the finance ledger
+  // (/api/payments) without colliding with it.
+  upiPayments: {
+    /** The studio's payee details. Any signed-in user in the studio may read. */
+    getSettings: () =>
+      http<{ data: UpiSettings | null; configured: boolean; enabled: boolean }>(
+        '/api/payments/upi/settings'),
+
+    /** Configure collection. Admin only. */
+    saveSettings: (body: UpiSettingsInput) =>
+      http<{ data: UpiSettings }>('/api/payments/upi/settings', {
+        method: 'PUT', body: JSON.stringify(body),
+      }),
+
+    /**
+     * Open an order. `base_amount` is ignored server-side whenever `plan_id`
+     * names a real plan — the stored price wins — so this is never the
+     * authority on what is charged.
+     */
+    create: (body: UpiCreateOrderInput) =>
+      http<{ data: { order: UpiOrder; payment: UpiPaymentView; reused: boolean } }>(
+        '/api/payments/upi/create', { method: 'POST', body: JSON.stringify(body) }),
+
+    /** Full state of one order: QR, intents, every submission, the activation. */
+    status: (orderId: string) =>
+      http<{ data: UpiOrderDetail }>(`/api/payments/upi/${orderId}/status`),
+
+    /** Telemetry only — records that a UPI app was actually launched. */
+    markOpened: (orderId: string) =>
+      http<{ data: { status: UpiOrderStatus } }>(`/api/payments/upi/${orderId}/opened`,
+        { method: 'POST' }),
+
+    /**
+     * Upload payment proof. Returns a SERVER-CHOSEN storage key; pass it
+     * straight back to submitUtr, which re-checks that this order issued it.
+     */
+    uploadProof: (orderId: string, file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return http<{ data: { screenshot_url: string; mime: string; bytes: number } }>(
+        `/api/payments/upi/${orderId}/upload`, { method: 'POST', body: formData });
+    },
+
+    submitUtr: (orderId: string, body: UpiSubmitUtrInput) =>
+      http<{ data: UpiSubmission }>(`/api/payments/upi/${orderId}/submit-utr`, {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+
+    cancel: (orderId: string) =>
+      http<{ data: UpiOrder }>(`/api/payments/upi/${orderId}/cancel`, { method: 'POST' }),
+
+    /** A member sees only their own rows here, whatever is passed. */
+    history: (params: { status?: string; client_id?: string; limit?: number; offset?: number } = {}) => {
+      const q = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) if (v !== undefined) q.set(k, String(v));
+      const qs = q.toString();
+      return http<{ data: UpiHistoryRow[]; total: number }>(
+        `/api/payments/upi/history${qs ? `?${qs}` : ''}`);
+    },
+
+    /** The admin verification queue plus its dashboard counters. Admin only. */
+    pending: (params: UpiQueueParams = {}) => {
+      const q = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) if (v !== undefined) q.set(k, String(v));
+      const qs = q.toString();
+      return http<{
+        data: UpiQueueRow[]; total: number; stats: UpiQueueStats;
+        reject_reasons: Record<UpiRejectReason, string>;
+      }>(`/api/payments/upi/pending${qs ? `?${qs}` : ''}`);
+    },
+
+    approve: (orderId: string) =>
+      http<{ data: { order: UpiOrder; activation: UpiActivation } }>(
+        `/api/payments/upi/${orderId}/approve`, { method: 'POST' }),
+
+    reject: (orderId: string, reason: UpiRejectReason, note?: string) =>
+      http<{ data: { reason: UpiRejectReason; note: string | null } }>(
+        `/api/payments/upi/${orderId}/reject`, {
+          method: 'POST', body: JSON.stringify({ reason, note }),
+        }),
+
+    requestCorrection: (orderId: string, reason: UpiRejectReason, note?: string) =>
+      http<{ data: { reason: UpiRejectReason; note: string | null } }>(
+        `/api/payments/upi/${orderId}/request-correction`, {
+          method: 'POST', body: JSON.stringify({ reason, note }),
+        }),
+
+    audit: (orderId: string) =>
+      http<{ data: UpiAuditEntry[] }>(`/api/payments/upi/${orderId}/audit`),
+
+    /** Absolute URL of the receipt PDF, for a link or a print window. */
+    receiptUrl: (orderId: string) => `${apiBase()}/api/payments/upi/${orderId}/receipt`,
+  },
+};
+
+export type MembershipPlan = {
+  id: string;
+  kind: string;
+  name: string;
+  description: string | null;
+  /** An enum of words ('Monthly' … 'Yearly'), not a number of months. */
+  duration: string;
+  final_amount: string;
+  is_active: boolean;
+};
+
+/** plans.duration is a word; the order needs a count. Mirrors the backend map. */
+export const PLAN_DURATION_MONTHS: Record<string, number> = {
+  'Monthly': 1, 'Quarterly': 3, 'Half Yearly': 6, 'Yearly': 12,
+};
+
+// ── Manual UTR payment types ──────────────────────────────────────────────────
+
+export type UpiOrderStatus =
+  | 'CREATED' | 'PAYMENT_PENDING' | 'VERIFICATION_PENDING'
+  | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED';
+
+export type UpiSubmissionStatus =
+  'VERIFICATION_PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+export type UpiRejectReason =
+  | 'DUPLICATE_UTR' | 'WRONG_UTR' | 'PAYMENT_NOT_RECEIVED'
+  | 'AMOUNT_MISMATCH' | 'FAKE_SCREENSHOT' | 'OTHER';
+
+export type UpiSettings = {
+  id: string;
+  organization_id: string;
+  upi_id: string;
+  merchant_name: string;
+  gst_percent: string;
+  gst_number: string | null;
+  is_enabled: boolean;
+  instructions: string | null;
+  order_ttl_minutes: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UpiSettingsInput = {
+  upi_id: string;
+  merchant_name: string;
+  gst_percent?: number;
+  gst_number?: string | null;
+  is_enabled?: boolean;
+  instructions?: string | null;
+  order_ttl_minutes?: number;
+};
+
+export type UpiCreateOrderInput = {
+  client_id?: string | null;
+  plan_id?: string | null;
+  plan_name: string;
+  duration_months: number;
+  base_amount: number;
+  notes?: string | null;
+};
+
+export type UpiSubmitUtrInput = {
+  utr: string;
+  screenshot_url?: string | null;
+  screenshot_mime?: string | null;
+  notes?: string | null;
+};
+
+/**
+ * Amounts arrive as strings because they are Postgres NUMERIC — node-postgres
+ * does not parse them into JS numbers, and it is right not to: a float cannot
+ * hold every 2-decimal rupee value exactly. Format them, do not arithmetic
+ * them.
+ */
+export type UpiOrder = {
+  id: string;
+  organization_id: string;
+  order_no: string;
+  client_id: string;
+  client_name?: string;
+  plan_id: string | null;
+  plan_name: string;
+  duration_months: number;
+  base_amount: string;
+  gst_percent: string;
+  gst_amount: string;
+  total_amount: string;
+  upi_id: string;
+  merchant_name: string;
+  status: UpiOrderStatus;
+  expires_at: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UpiAppIntent = { key: string; label: string; url: string };
+
+export type UpiPaymentView = {
+  intent_url: string;
+  app_intents: UpiAppIntent[];
+  qr_data_url: string;
+};
+
+export type UpiSubmission = {
+  id: string;
+  utr: string;
+  screenshot_url: string | null;
+  notes: string | null;
+  status: UpiSubmissionStatus;
+  submitted_at: string;
+  verified_at: string | null;
+  rejected_reason: UpiRejectReason | null;
+  rejected_note: string | null;
+};
+
+export type UpiActivation = {
+  receipt_no: string;
+  amount: string;
+  utr: string;
+  activated_from: string;
+  activated_to: string;
+  approved_at: string;
+};
+
+export type UpiOrderDetail = {
+  order: UpiOrder & { client_name: string; client_mobile: string | null; client_email: string | null };
+  /** null once the order can no longer be paid — no QR for a settled order. */
+  payment: UpiPaymentView | null;
+  submissions: UpiSubmission[];
+  activation: UpiActivation | null;
+  reject_reasons: Record<UpiRejectReason, string>;
+};
+
+export type UpiHistoryRow = UpiOrder & {
+  client_name: string;
+  utr: string | null;
+  submission_status: UpiSubmissionStatus | null;
+  submitted_at: string | null;
+  rejected_reason: UpiRejectReason | null;
+  rejected_note: string | null;
+  screenshot_url: string | null;
+  receipt_no: string | null;
+  activated_from: string | null;
+  activated_to: string | null;
+};
+
+export type UpiQueueRow = UpiOrder & {
+  client_name: string;
+  client_mobile: string | null;
+  client_email: string | null;
+  client_photo_url: string | null;
+  submission_id: string | null;
+  utr: string | null;
+  screenshot_url: string | null;
+  submission_notes: string | null;
+  submitted_at: string | null;
+  submission_status: UpiSubmissionStatus | null;
+  rejected_reason: UpiRejectReason | null;
+  rejected_note: string | null;
+};
+
+export type UpiQueueParams = {
+  q?: string;
+  status?: 'VERIFICATION_PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
+  sort?: 'newest' | 'oldest' | 'amount_high' | 'amount_low';
+  limit?: number;
+  offset?: number;
+};
+
+export type UpiQueueStats = {
+  pending_count: number;
+  pending_amount: string;
+  approved_today: number;
+  approved_today_amount: string;
+  total_collected: string;
+  rejected_today: number;
+};
+
+export type UpiAuditEntry = {
+  action: string;
+  from_status: string | null;
+  to_status: string | null;
+  detail: Record<string, unknown> | null;
+  actor_name: string | null;
+  actor_role: string | null;
+  created_at: string;
 };
 
 // ── Platform Super Admin types ────────────────────────────────────────────────
