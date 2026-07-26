@@ -12,10 +12,11 @@ import {
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer,
+  QrCode, Printer, PenLine,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import WhiteboardPanel from '@/components/whiteboard/WhiteboardPanel';
 
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -840,6 +841,18 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* Documents */}
                     <DocumentsCard clientId={client.id} />
+
+                    {/* Whiteboards — movement corrections, pain mapping, progressions.
+                        Full width because a canvas in a narrow column is unusable. */}
+                    <div className="lg:col-span-2">
+                      <DarkCard title="Whiteboards" icon={<PenLine size={14} />} from="#8b5cf6">
+                        <WhiteboardPanel
+                          entityType="pt_client"
+                          entityId={client.id}
+                          defaultTitle={client.name}
+                        />
+                      </DarkCard>
+                    </div>
 
                     {/* Check-in QR */}
                     <QrCheckinCard clientId={client.id} clientName={client.name} />

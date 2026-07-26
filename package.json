@@ -14,9 +14,11 @@
     "analyze": "ANALYZE=true next build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "knip": "knip"
+    "knip": "knip",
+    "postinstall": "node scripts/copy-excalidraw-assets.mjs"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.1",
     "@radix-ui/react-dialog": "^1.1.19",
     "@react-oauth/google": "^0.13.5",
     "@sentry/browser": "^10.65.0",

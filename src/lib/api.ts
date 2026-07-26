@@ -2124,6 +2124,74 @@ export const api = {
     changePlan: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string }) =>
       http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
   },
+  /**
+   * Whiteboards — annotation canvases attachable to any entity.
+   *
+   * The `document` is the canvas engine's own snapshot format and is passed
+   * through untouched in both directions; the server treats it as opaque. It
+   * is typed as `WhiteboardDocument` (elements + appState) rather than the
+   * engine's full element union so that upgrading the engine does not require
+   * regenerating types here.
+   */
+  whiteboards: {
+    list: (params: { entity_type?: WhiteboardEntityType; entity_id?: string; status?: 'active' | 'archived' } = {}) => {
+      const qs = new URLSearchParams();
+      if (params.entity_type) qs.set('entity_type', params.entity_type);
+      if (params.entity_id) qs.set('entity_id', params.entity_id);
+      if (params.status) qs.set('status', params.status);
+      const q = qs.toString();
+      return http<{ data: WhiteboardSummary[] }>(`/api/whiteboards${q ? `?${q}` : ''}`);
+    },
+    get: (id: string) => http<{ data: Whiteboard }>(`/api/whiteboards/${id}`),
+    create: (body: {
+      title: string;
+      entity_type?: WhiteboardEntityType;
+      entity_id?: string;
+      document?: WhiteboardDocument;
+    }) =>
+      http<{ data: Whiteboard }>('/api/whiteboards', {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+
+    /**
+     * Autosave target. `document_version` is the version that was loaded — the
+     * server refuses the write with 409 if it has moved on, rather than
+     * silently overwriting someone else's edits.
+     */
+    saveDocument: (id: string, document: WhiteboardDocument, document_version: number) =>
+      http<{ data: { id: string; document_version: number; updated_at: string } }>(
+        `/api/whiteboards/${id}/document`,
+        { method: 'PUT', body: JSON.stringify({ document, document_version }) },
+      ),
+    updateMeta: (id: string, body: { title?: string; status?: 'active' | 'archived' }) =>
+      http<{ data: WhiteboardSummary }>(`/api/whiteboards/${id}`, {
+        method: 'PATCH', body: JSON.stringify(body),
+      }),
+    remove: (id: string) =>
+      http<{ data: { deleted: boolean } }>(`/api/whiteboards/${id}`, { method: 'DELETE' }),
+
+    listVersions: (id: string) =>
+      http<{ data: WhiteboardVersion[] }>(`/api/whiteboards/${id}/versions`),
+    createVersion: (id: string, label?: string) =>
+      http<{ data: WhiteboardVersion }>(`/api/whiteboards/${id}/versions`, {
+        method: 'POST', body: JSON.stringify({ ...(label ? { label } : {}) }),
+      }),
+    restoreVersion: (id: string, versionId: string) =>
+      http<{ data: { id: string; document_version: number } }>(
+        `/api/whiteboards/${id}/versions/${versionId}/restore`, { method: 'POST' },
+      ),
+
+    uploadAttachment: (id: string, file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return http<{ data: WhiteboardAttachment }>(`/api/whiteboards/${id}/attachments`, {
+        method: 'POST', body: formData,
+      });
+    },
+    search: (q: string) =>
+      http<{ data: WhiteboardSummary[] }>(`/api/whiteboards/search?q=${encodeURIComponent(q)}`),
+  },
+
   subscription: {
     status: () => http<{ data: SubscriptionStatus }>('/api/subscription/status'),
     plans: () => http<{ data: { plans: SubPlan[]; founder_slots_remaining: number; founder_limit: number } }>('/api/subscription/plans'),
@@ -2190,6 +2258,69 @@ export type OrgUser = {
   last_login?: string | null; created_at?: string; organization_id?: string;
 };
 export type OrganizationDetail = Organization & { users: OrgUser[] };
+
+// ── Whiteboards ─────────────────────────────────────────────────────────────
+
+/** Kept in step with ENTITY_TYPES in the backend service and the CHECK
+ *  constraint in migration 111. Adding a value in one place only means the API
+ *  accepts something Postgres then rejects at write time. */
+export type WhiteboardEntityType =
+  | 'pt_client' | 'session' | 'exercise' | 'staff' | 'course' | 'consultation';
+
+/**
+ * The canvas engine's snapshot. `elements` is intentionally loosely typed:
+ * mirroring Excalidraw's full element union here would couple this file to the
+ * engine version and break on every upgrade, and nothing in our code inspects
+ * individual elements — the server treats the document as opaque too.
+ */
+export type WhiteboardDocument = {
+  elements: unknown[];
+  appState?: Record<string, unknown>;
+  files?: Record<string, unknown>;
+};
+
+/** List-view shape. Deliberately has no `document` — a board list must not
+ *  drag every canvas snapshot across the wire. */
+export type WhiteboardSummary = {
+  id: string;
+  organization_id: string;
+  title: string;
+  entity_type: WhiteboardEntityType | null;
+  entity_id: string | null;
+  document_version: number;
+  thumbnail_key: string | null;
+  status: 'active' | 'archived';
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Whiteboard = WhiteboardSummary & {
+  document: WhiteboardDocument;
+  search_text?: string;
+  /** Server-evaluated: whether this user's role may edit, so the client does
+   *  not have to duplicate the role rules and drift from them. */
+  can_edit: boolean;
+};
+
+export type WhiteboardVersion = {
+  id: string;
+  document_version: number;
+  label: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type WhiteboardAttachment = {
+  id: string;
+  file_key: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  created_at: string;
+  url: string;
+};
 
 export type StudioOverview = {
   id: string; name: string; slug: string;
