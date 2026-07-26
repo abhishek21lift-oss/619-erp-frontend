@@ -57,7 +57,7 @@ export default function BrandLogo({
         width: size,
         height: size,
         objectFit: 'contain',
-        filter: 'drop-shadow(0 12px 26px rgba(74,10,30,0.20))',
+        filter: 'drop-shadow(0 12px 26px rgba(15,23,42,0.18))',
         flexShrink: 0,
       }}
     />

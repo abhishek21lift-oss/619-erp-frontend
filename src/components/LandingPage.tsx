@@ -364,7 +364,7 @@ export default function LandingPage() {
             height={148}
             priority
             className="mx-auto mb-7 h-28 w-28 object-contain sm:h-36 sm:w-36"
-            style={{ filter: 'drop-shadow(0 16px 34px rgba(74,10,30,0.20))' }}
+            style={{ filter: 'drop-shadow(0 16px 34px rgba(15,23,42,0.18))' }}
           />
         </Reveal>
         <Reveal delay={0.04}>
