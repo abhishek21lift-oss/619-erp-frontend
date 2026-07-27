@@ -7,7 +7,7 @@
  * pull. Stages, driven by phase + progress:
  *
  *   idle → arrow appears → arrow rotates + ring fills → (armed, gold) →
- *   MY PT STUDIO logo spins while refreshing → success checkmark → bounce back
+ *   brand mark spins while refreshing → success checkmark → bounce back
  *
  * Motion is GPU-friendly (transform/opacity only). Under reduced-motion the
  * disc simply fades without translate/rotate/spring.
@@ -129,7 +129,7 @@ export default function PullIndicator({ phase, progress, pullDistance, reducedMo
                 animation: reducedMotion ? undefined : 'spin 0.9s linear infinite',
               }}
             >
-              <Image src="/mypt-logo.png" alt="" width={24} height={24} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+              <Image src="/refresh-logo.png" alt="" width={24} height={24} style={{ width: 24, height: 24, objectFit: 'contain' }} />
             </m.span>
           ) : (
             <m.span
