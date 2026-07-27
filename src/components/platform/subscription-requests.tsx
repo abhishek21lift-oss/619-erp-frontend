@@ -223,6 +223,9 @@ function RequestCard({
             {row.current_period_end
               ? ` · expires ${new Date(row.current_period_end).toLocaleDateString('en-IN', { dateStyle: 'medium' })}`
               : ''}
+            {row.direction === 'upgrade' && row.previous_plan_code
+              ? ` · Upgrade from ${row.previous_plan_code}`
+              : row.direction === 'renewal' ? ' · Renewal' : ''}
           </p>
         </div>
 

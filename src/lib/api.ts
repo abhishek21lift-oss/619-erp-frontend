@@ -2388,6 +2388,12 @@ export type SubCheckoutRequest = {
   discount_inr: number;
   amount_inr: number;
   coupon_code: string | null;
+  /** 'activation' for a brand-new subscription; 'upgrade'/'renewal' when an
+      already-active studio priced this through checkout — amount_inr already
+      has proration_credit_inr netted out in that case. */
+  direction: 'activation' | 'renewal' | 'upgrade';
+  proration_credit_inr: number;
+  previous_plan_code: string | null;
   upi_id: string;
   merchant_name: string;
   status: SubCheckoutStatus;

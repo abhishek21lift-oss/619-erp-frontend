@@ -177,8 +177,9 @@ function SeatMeter({ used, limit, remaining }: {
 // ── Plan-change preview ───────────────────────────────────────────────────────
 // Rendered inline rather than in a modal — it stays readable on a phone without
 // a dialog layer, and the numbers belong next to the plan that produced them.
-function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
-  quote: PlanChangeQuote; busy: boolean; onConfirm: () => void; onDismiss: () => void;
+function ChangePreview({ quote, busy, checkoutAvailable, onConfirm, onPay, onDismiss }: {
+  quote: PlanChangeQuote; busy: boolean; checkoutAvailable: boolean;
+  onConfirm: () => void; onPay: () => void; onDismiss: () => void;
 }) {
   const isDowngrade = quote.direction === 'downgrade';
   const accent = isDowngrade ? 'var(--info)' : 'var(--success)';
@@ -258,10 +259,26 @@ function ChangePreview({ quote, busy, onConfirm, onDismiss }: {
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2.5">
-          <Button onClick={onConfirm} loading={busy} disabled={busy}
-            style={isDowngrade ? undefined : { background: GOLD, color: '#fff' }}>
-            {isDowngrade ? 'Schedule this change' : 'Request this upgrade'}
-          </Button>
+          {/* A downgrade is free and scheduled — nothing to pay, so it never
+              goes near checkout. An upgrade/renewal DOES cost money: when
+              self-checkout is on, the confirm action opens the same Pay+UTR
+              window a fresh subscription uses, instead of filing a free-text
+              request the operator would have to take on faith. Falls back to
+              the old manual request only when checkout isn't configured yet,
+              so billing never dead-ends. */}
+          {isDowngrade ? (
+            <Button onClick={onConfirm} loading={busy} disabled={busy}>
+              Schedule this change
+            </Button>
+          ) : checkoutAvailable ? (
+            <Button onClick={onPay} loading={busy} disabled={busy} style={{ background: GOLD, color: '#fff' }}>
+              Pay {fmtINR(quote.amount_due_inr)}
+            </Button>
+          ) : (
+            <Button onClick={onConfirm} loading={busy} disabled={busy} style={{ background: GOLD, color: '#fff' }}>
+              Request this upgrade
+            </Button>
+          )}
           <Button variant="outline" onClick={onDismiss} disabled={busy}>Not now</Button>
         </div>
       </div>
@@ -644,8 +661,10 @@ function SubscriptionScreen() {
       {quote && (
         <ChangePreview
           quote={quote}
-          busy={confirming}
+          busy={confirming || requesting === quote.new_plan.code}
+          checkoutAvailable={checkoutAvailable}
           onConfirm={confirmChange}
+          onPay={() => { const code = quote.new_plan.code; setQuote(null); startCheckout(code); }}
           onDismiss={() => setQuote(null)}
         />
       )}
