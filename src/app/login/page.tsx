@@ -554,6 +554,14 @@ export default function LoginPage() {
                 <span className="text-[13px] font-[550]" style={{ color: MUTE }}>Keep me signed in on this device</span>
               </label>
 
+              {/* The reset flow existed on the backend but had no way in from
+                  the UI, so a locked-out user had to ask an admin. */}
+              <div className="mt-2 text-right">
+                <Link href="/forgot-password" className="text-[13px] font-[650]" style={{ color: MAROON }}>
+                  Forgot password?
+                </Link>
+              </div>
+
               {/* submit */}
               <m.button
                 type="submit"

@@ -1,171 +1,243 @@
-
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import AppShell from '@/components/AppShell';
-import Guard from '@/components/Guard';
+// Consume a password-reset token from the emailed link.
+//
+// This route previously rendered an AUTHENTICATED change-password form: it
+// asked for the current password and called /api/auth/change-password. That
+// made the whole reset flow a dead end — the emailed link landed here and
+// demanded the very password the user had forgotten, through an endpoint that
+// requires a live session they do not have.
+//
+// Nothing linked to the old page (change-password already lives in Settings →
+// Profile and in Settings), so it is replaced outright rather than moved.
+
+import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { m } from 'framer-motion';
+import { ArrowLeft, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import BrandLogoWide from '@/components/BrandLogoWide';
 import { api } from '@/lib/api';
-import { ArrowLeft, KeyRound, ShieldCheck } from 'lucide-react';
+import { checkNewPassword, passwordStrength, MIN_LENGTH } from '@/lib/password-policy';
 
-function ResetPasswordContent() {
+const MAROON = '#0060E0';
+const GOLD = '#5CB0FF';
+const INK = '#0B1220';
+const MUTE = '#5B6675';
+const LINE = 'rgba(11,18,32,0.10)';
+
+const STRENGTH_LABEL = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+const STRENGTH_COLOR = ['transparent', '#EF4444', '#F59E0B', '#3B82F6', '#16A34A'];
+
+function ResetPasswordForm() {
   const router = useRouter();
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') ?? '';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+
+  // Send them somewhere useful once the password is changed. The backend bumps
+  // token_version, so every existing session is already invalid — signing in
+  // again is required, not optional.
+  useEffect(() => {
+    if (!done) return;
+    const t = setTimeout(() => router.replace('/login'), 3000);
+    return () => clearTimeout(t);
+  }, [done, router]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setSuccess('');
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setError('Please fill all password fields.');
-      return;
-    }
-    if (newPassword.length < 8) {
-      setError('New password must be at least 8 characters long.');
-      return;
-    }
-    if (!/[A-Z]/.test(newPassword)) {
-      setError('New password must contain at least one uppercase letter.');
-      return;
-    }
-    if (!/[0-9]/.test(newPassword)) {
-      setError('New password must contain at least one number.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('New password and confirm password do not match.');
-      return;
-    }
-    if (currentPassword === newPassword) {
-      setError('New password must be different from current password.');
-      return;
-    }
+    const check = checkNewPassword(password, confirm);
+    if (!check.ok) { setError(check.error); return; }
 
-    setLoading(true);
+    setBusy(true);
     try {
-      await api.auth.changePassword(currentPassword, newPassword);
-      setSuccess('Password changed successfully. Please use the new password next time you log in.');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err: any) {
-      setError(err?.message || 'Unable to reset password right now.');
+      await api.auth.resetPassword(token, password);
+      setDone(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not reset the password. The link may have expired.');
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
-  };
+  }
+
+  const strength = passwordStrength(password);
+
+  // No token means someone opened this URL directly rather than via the email.
+  // Say so plainly instead of rendering a form that cannot possibly work.
+  if (!token) {
+    return (
+      <div className="rounded-[20px] bg-white p-6 text-center" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(11,18,32,0.08)' }}>
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(239,68,68,0.10)' }}>
+          <AlertCircle size={24} style={{ color: '#DC2626' }} />
+        </div>
+        <p className="text-[14px] font-[650]" style={{ color: INK }}>This link is missing its reset code</p>
+        <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: MUTE }}>
+          Open the link straight from your email, or request a new one.
+        </p>
+        <Link
+          href="/forgot-password"
+          className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14.5px] font-[700] text-white"
+          style={{ background: MAROON }}
+        >
+          Request a new link
+        </Link>
+      </div>
+    );
+  }
+
+  if (done) {
+    return (
+      <div className="rounded-[20px] bg-white p-6 text-center" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(11,18,32,0.08)' }}>
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(34,197,94,0.12)' }}>
+          <CheckCircle2 size={24} style={{ color: '#16A34A' }} />
+        </div>
+        <p className="text-[14px] font-[650]" style={{ color: INK }}>Password updated</p>
+        <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: MUTE }}>
+          For safety, every device that was signed in has been signed out. Taking you to sign in…
+        </p>
+        <Link
+          href="/login"
+          className="mt-4 inline-flex w-full items-center justify-center rounded-[12px] py-3 text-[14.5px] font-[700] text-white"
+          style={{ background: MAROON }}
+        >
+          Sign in now
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <AppShell>
-      <div className="mx-auto max-w-3xl space-y-6">
-        <div className="flex items-center justify-between gap-4 rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)]">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Account Security</div>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--text-primary)]">Reset Password</h1>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">Update your web app login password securely from this page.</p>
-          </div>
-          <div className="hidden h-16 w-16 items-center justify-center rounded-3xl bg-[var(--brand-soft)] text-[var(--brand)] sm:flex">
-            <KeyRound size={28} />
-          </div>
+    <div className="rounded-[20px] bg-white p-6" style={{ border: `1px solid ${LINE}`, boxShadow: '0 18px 48px rgba(11,18,32,0.08)' }}>
+      <form onSubmit={handleSubmit} noValidate>
+        <label className="mb-1.5 block text-[12.5px] font-[650]" style={{ color: INK }}>New password</label>
+        <div className="relative">
+          <Lock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTE }} />
+          <input
+            type={show ? 'text' : 'password'}
+            autoComplete="new-password"
+            autoFocus
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={`At least ${MIN_LENGTH} characters`}
+            className="w-full rounded-[12px] py-3 pl-10 pr-11 text-[14px] outline-none transition-colors focus:border-[#0060E0]"
+            style={{ border: `1.5px solid ${LINE}`, color: INK }}
+          />
+          <button
+            type="button"
+            onClick={() => setShow((v) => !v)}
+            aria-label={show ? 'Hide password' : 'Show password'}
+            className="absolute right-3 top-1/2 -translate-y-1/2"
+            style={{ color: MUTE }}
+          >
+            {show ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-          <form onSubmit={handleSubmit} className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)]">
-            <div className="space-y-5">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">Current Password</label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand-soft)] dark:bg-[#1E1F24]"
-                  placeholder="Enter current password"
+        {password && (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex h-1 flex-1 gap-1">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-full flex-1 rounded-full transition-colors"
+                  style={{ background: i <= strength ? STRENGTH_COLOR[strength] : LINE }}
                 />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">New Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand-soft)] dark:bg-[#1E1F24]"
-                  placeholder="Enter new password"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">Confirm New Password</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand-soft)] dark:bg-[#1E1F24]"
-                  placeholder="Re-enter new password"
-                />
-              </div>
+              ))}
             </div>
-
-            {error && (
-              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                {success}
-              </div>
-            )}
-
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex items-center justify-center rounded-2xl bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-brand)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? 'Updating Password...' : 'Reset Password'}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-5 py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-subtle)]"
-              >
-                <ArrowLeft size={16} />
-                Back
-              </button>
-            </div>
-          </form>
-
-          <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-card)]">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)] text-[var(--brand)]">
-              <ShieldCheck size={22} />
-            </div>
-            <h2 className="mt-4 text-lg font-semibold text-[var(--text-primary)]">Password rules</h2>
-            <ul className="mt-4 space-y-3 text-sm text-[var(--text-muted)]">
-              <li>- Minimum 6 characters required.</li>
-              <li>- New password should be different from current password.</li>
-              <li>- Confirm password must match exactly.</li>
-              <li>- Use a strong password that only authorised staff can access.</li>
-            </ul>
+            <span className="text-[11.5px] font-[650]" style={{ color: STRENGTH_COLOR[strength] }}>
+              {STRENGTH_LABEL[strength]}
+            </span>
           </div>
+        )}
+
+        <label className="mb-1.5 mt-4 block text-[12.5px] font-[650]" style={{ color: INK }}>Confirm password</label>
+        <div className="relative">
+          <Lock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: MUTE }} />
+          <input
+            type={show ? 'text' : 'password'}
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder="Type it again"
+            className="w-full rounded-[12px] py-3 pl-10 pr-3 text-[14px] outline-none transition-colors focus:border-[#0060E0]"
+            style={{ border: `1.5px solid ${LINE}`, color: INK }}
+          />
         </div>
-      </div>
-    </AppShell>
+
+        {error && (
+          <div className="mt-3 flex items-start gap-2 rounded-[10px] px-3 py-2.5" style={{ background: 'rgba(239,68,68,0.08)' }}>
+            <AlertCircle size={15} className="mt-[1px] shrink-0" style={{ color: '#DC2626' }} />
+            <span className="text-[12.5px] font-[550]" style={{ color: '#B91C1C' }}>{error}</span>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] py-3 text-[14.5px] font-[700] text-white transition-opacity disabled:opacity-60"
+          style={{ background: MAROON, boxShadow: '0 8px 22px rgba(0,96,224,0.28)' }}
+        >
+          {busy ? <><Loader2 size={17} className="animate-spin" /> Updating…</> : 'Set new password'}
+        </button>
+      </form>
+    </div>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <Guard>
-      <ResetPasswordContent />
-    </Guard>
+    <main
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center"
+      style={{
+        background: 'radial-gradient(120% 78% at 50% -8%, #F2F7FF 0%, #ffffff 48%)',
+        color: INK,
+        fontFamily: "var(--font-sans), 'Inter', system-ui, sans-serif",
+        paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 1.25rem)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)',
+        paddingLeft: 'max(1.25rem, env(safe-area-inset-left))',
+        paddingRight: 'max(1.25rem, env(safe-area-inset-right))',
+      }}
+    >
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -right-24 -top-24 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${GOLD}18, transparent 68%)` }} />
+        <div className="absolute -bottom-28 -left-20 h-[320px] w-[320px] rounded-full" style={{ background: `radial-gradient(circle, ${MAROON}10, transparent 68%)` }} />
+      </div>
+
+      <Link
+        href="/login"
+        className="absolute left-4 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[12.5px] font-[600] backdrop-blur transition-colors hover:bg-white"
+        style={{ color: MUTE, border: `1px solid ${LINE}`, top: 'calc(max(env(safe-area-inset-top), 2.75rem) + 0.5rem)' }}
+      >
+        <ArrowLeft size={13} /> Sign in
+      </Link>
+
+      <m.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-[400px]"
+      >
+        <div className="mb-6 flex flex-col items-center text-center">
+          <BrandLogoWide width={224} priority />
+          <h1 className="mt-4 text-[27px] font-[840] tracking-[-0.025em]" style={{ color: INK }}>Set a new password</h1>
+          <p className="mt-1.5 max-w-[330px] text-[14px]" style={{ color: MUTE }}>
+            Choose something you have not used here before.
+          </p>
+        </div>
+
+        {/* useSearchParams needs a Suspense boundary in the App Router. */}
+        <Suspense fallback={<div className="h-[260px] rounded-[20px] bg-white" style={{ border: `1px solid ${LINE}` }} />}>
+          <ResetPasswordForm />
+        </Suspense>
+      </m.div>
+    </main>
   );
 }

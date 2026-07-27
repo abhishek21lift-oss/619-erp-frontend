@@ -919,6 +919,19 @@ export const api = {
         method: 'POST',
         body: { currentPassword, newPassword },
       }),
+    // Forgot/reset. The backend answers forgotPassword identically whether or
+    // not the address exists — do not "improve" the UI by reporting which,
+    // that is deliberate anti-enumeration behaviour and the copy must match it.
+    forgotPassword: (email: string) =>
+      http<{ message: string }>('/api/auth/forgot-password', {
+        method: 'POST',
+        body: { email },
+      }),
+    resetPassword: (token: string, password: string) =>
+      http<{ message: string }>('/api/auth/reset-password', {
+        method: 'POST',
+        body: { token, password },
+      }),
     listUsers: () => http<User[]>('/api/auth/users'),
     createUser: (data: {
       name: string;
