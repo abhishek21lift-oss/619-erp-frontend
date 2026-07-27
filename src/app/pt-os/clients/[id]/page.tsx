@@ -976,133 +976,44 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </div>
                 </div>
 
-                {/* ── SUBSCRIPTION HISTORY ── */}
-                {(() => {
-                  const allTerms = subscriptionHistory;
-                  const useSubscriptions = allTerms.length > 0;
-                  const totalTerms = useSubscriptions ? allTerms.length : 1;
-                  const now = new Date();
-                  const termStatus = (startDate?: string, endDate?: string) => {
-                    if (!endDate) return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#059669' };
-                    const end = new Date(endDate);
-                    const start = startDate ? new Date(startDate) : null;
-                    if (end < now) return { label: 'Expired', from: '#64748b', to: '#475569', bg: 'rgba(100,116,139,0.10)', color: 'var(--text-muted)' };
-                    if (start && start > now) return { label: 'Upcoming', from: '#3b82f6', to: '#2563eb', bg: 'rgba(59,130,246,0.12)', color: '#2563eb' };
-                    return { label: 'Active', from: '#10b981', to: '#059669', bg: 'rgba(16,185,129,0.12)', color: '#059669' };
-                  };
-                  return (
-                    <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="mt-5 overflow-hidden rounded-[24px] p-6 bg-white"
-                      style={{
-                        border: '1px solid var(--border)',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                      }}>
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-[11px]"
-                            style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
-                            <Repeat size={15} className="text-indigo-500" />
-                          </div>
-                          <div>
-                            <h3 className="text-[14px] font-[740] text-gray-900">PT Subscription History</h3>
-                            <p className="text-[10.5px] text-slate-500">{totalTerms} term{totalTerms !== 1 ? 's' : ''} total</p>
-                          </div>
-                        </div>
-                        </div>
-
-                      {/* Terms */}
-                      <div className="space-y-3">
-                        {useSubscriptions ? allTerms.map((s: any, idx: number) => {
-                          const isLast = idx === allTerms.length - 1;
-                          const st = termStatus(s.start_date, s.end_date);
-                          return (
-                            <div key={s.id ?? idx}
-                              className="overflow-hidden rounded-[16px] p-4"
-                              style={isLast
-                                ? { background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.18)' }
-                                : { background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                              <div className="flex items-start justify-between gap-3 mb-3">
-                                <div className="flex min-w-0 items-center gap-2.5">
-                                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
-                                    style={{ background: 'rgba(99,102,241,0.12)' }}>{idx + 1}</span>
-                                  <div className="min-w-0">
-                                    <div className="flex min-w-0 items-center gap-2">
-                                      <p className="min-w-0 truncate text-[13px] font-[700] text-gray-900">{s.plan_name || '—'}</p>
-                                      {isLast && (
-                                        <span className="shrink-0 rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
-                                          style={{ background: 'rgba(99,102,241,0.12)' }}>Current</span>
-                                      )}
-                                    </div>
-                                    <p className="text-[10.5px] text-slate-500 mt-0.5">
-                                      {s.duration_months ? `${s.duration_months}m · ` : ''}
-                                      {fmtDate(s.start_date)} → {fmtDate(s.end_date)}
-                                    </p>
-                                  </div>
-                                </div>
-                                <span className="shrink-0 rounded-[7px] px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wider"
-                                  style={{ background: st.bg, color: st.color }}>{st.label}</span>
-                              </div>
-                              <div className={`grid gap-2 ${isLast ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
-                                {[
-                                  { label: 'Fee', value: fmtINR(s.selling_price), color: 'var(--text-primary)' },
-                                  { label: 'Paid', value: fmtINR(s.amount_paid), color: '#059669' },
-                                  { label: 'Balance', value: fmtINR(s.balance_amount), color: Number(s.balance_amount) > 0 ? '#ef4444' : '#059669' },
-                                  ...(isLast ? [{ label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' }] : []),
-                                ].map(f => (
-                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: 'var(--bg-subtle)' }}>
-                                    <p className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-500 mb-0.5">{f.label}</p>
-                                    <p className="text-[12.5px] font-[760] tabular-nums" style={{ color: f.color }}>{f.value}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        }) : (() => {
-                          const st = termStatus(client.pt_start_date, client.pt_end_date);
-                          return (
-                            <div className="rounded-[16px] p-4"
-                              style={{ background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.18)' }}>
-                              <div className="flex items-start justify-between gap-3 mb-3">
-                                <div className="flex min-w-0 items-center gap-2.5">
-                                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
-                                    style={{ background: 'rgba(99,102,241,0.12)' }}>1</span>
-                                  <div className="min-w-0">
-                                    <div className="flex min-w-0 items-center gap-2">
-                                      <p className="min-w-0 truncate text-[13px] font-[700] text-gray-900">{client.package_type || '—'}</p>
-                                      <span className="shrink-0 rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
-                                        style={{ background: 'rgba(99,102,241,0.12)' }}>Current</span>
-                                    </div>
-                                    <p className="text-[10.5px] text-slate-500 mt-0.5">
-                                      {client.duration_months ? `${client.duration_months}m · ` : ''}
-                                      {fmtDate(client.pt_start_date)} → {fmtDate(client.pt_end_date)}
-                                    </p>
-                                  </div>
-                                </div>
-                                <span className="shrink-0 rounded-[7px] px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wider"
-                                  style={{ background: st.bg, color: st.color }}>{st.label}</span>
-                              </div>
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                {[
-                                  { label: 'Fee', value: fmtINR(client.final_amount), color: 'var(--text-primary)' },
-                                  { label: 'Paid', value: fmtINR(client.paid_amount), color: '#059669' },
-                                  { label: 'Balance', value: fmtINR(client.balance_amount), color: client.balance_amount > 0 ? '#ef4444' : '#059669' },
-                                  { label: 'Days Left', value: client.days_left !== null ? `${client.days_left}d` : '—', color: '#6366f1' },
-                                ].map(f => (
-                                  <div key={f.label} className="rounded-[10px] p-2.5" style={{ background: 'var(--bg-subtle)' }}>
-                                    <p className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-500 mb-0.5">{f.label}</p>
-                                    <p className="text-[12.5px] font-[760] tabular-nums" style={{ color: f.color }}>{f.value}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
+                {/* ── SUBSCRIPTION HISTORY (summary → dedicated page) ── */}
+                <m.button
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                  onClick={() => router.push(`/pt-os/clients/${client.id}/subscriptions`)}
+                  className="group mt-5 block w-full overflow-hidden rounded-[24px] p-6 text-left transition-all duration-200 hover:-translate-y-0.5 bg-white"
+                  style={{
+                    border: '1px solid var(--border)',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                  }}>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-[13px]"
+                        style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                        <Repeat size={18} className="text-indigo-500" />
                       </div>
-                    </m.div>
-                  );
-                })()}
+                      <div>
+                        <h3 className="text-[14.5px] font-[760] text-gray-900">PT Subscription History</h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          {lifetimeTermCount} term{lifetimeTermCount !== 1 ? 's' : ''} · {fmtINR(lifetimePaid)} lifetime paid
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {currentTermBalance > 0 ? (
+                        <span className="rounded-[7px] px-2.5 py-1 text-[10px] font-[700] uppercase tracking-wider"
+                          style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                          {fmtINR(currentTermBalance)} due
+                        </span>
+                      ) : (
+                        <span className="rounded-[7px] px-2.5 py-1 text-[10px] font-[700] uppercase tracking-wider"
+                          style={{ background: 'rgba(16,185,129,0.1)', color: '#059669' }}>
+                          Cleared
+                        </span>
+                      )}
+                      <ChevronRight size={18} className="text-indigo-400 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </div>
+                  </div>
+                </m.button>
 
                 {/* ── DELETE MODAL ── */}
                 <AnimatePresence>
