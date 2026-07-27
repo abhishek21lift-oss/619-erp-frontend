@@ -68,24 +68,21 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
           })}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(['previous_physiotherapy', 'previous_trainer'] as const).map((key) => {
-            const checked = ph[key];
-            const label = key === 'previous_physiotherapy' ? 'Previous Physiotherapy' : 'Previously Worked With a Trainer';
-            return (
-              <button
-                key={key} type="button" onClick={() => toggleBool(key)}
-                className="flex items-center gap-2.5 rounded-[12px] px-3.5 py-3 text-left transition-all"
-                style={{ background: checked ? 'rgba(245,158,11,0.06)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #F59E0B' : '1.5px solid rgba(15,23,42,0.08)' }}
-              >
-                <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: checked ? '#F59E0B' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}>
-                  {checked && <Check size={11} color="#fff" strokeWidth={3} />}
-                </span>
-                <span className="text-[12.5px] font-[650]" style={{ color: checked ? '#0f172a' : '#475569' }}>{label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* previous_trainer moved to the PT enrollment form — a training-history
+            question belongs with Training Mode/Workout Experience there, not
+            in a medical screening. The field stays on PastHistoryForm (see the
+            comment on CONDITIONS above) so older submitted forms still render;
+            it just defaults to false and is no longer collected here. */}
+        <button
+          type="button" onClick={() => toggleBool('previous_physiotherapy')}
+          className="flex w-full items-center gap-2.5 rounded-[12px] px-3.5 py-3 text-left transition-all sm:w-auto"
+          style={{ background: ph.previous_physiotherapy ? 'rgba(245,158,11,0.06)' : 'var(--bg-subtle)', border: ph.previous_physiotherapy ? '1.5px solid #F59E0B' : '1.5px solid rgba(15,23,42,0.08)' }}
+        >
+          <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: ph.previous_physiotherapy ? '#F59E0B' : '#fff', border: ph.previous_physiotherapy ? 'none' : '1.5px solid #cbd5e1' }}>
+            {ph.previous_physiotherapy && <Check size={11} color="#fff" strokeWidth={3} />}
+          </span>
+          <span className="text-[12.5px] font-[650]" style={{ color: ph.previous_physiotherapy ? '#0f172a' : '#475569' }}>Previous Physiotherapy</span>
+        </button>
 
       {error && <p className="text-[11px] font-medium" style={{ color: 'var(--danger)' }}>{error}</p>}
     </div>

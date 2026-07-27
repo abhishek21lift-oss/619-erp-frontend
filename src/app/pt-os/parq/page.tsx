@@ -572,6 +572,17 @@ function SubmitSuccess({ clientName, result, onDone }: { clientName: string; res
     `PAR-Q + Health Screening for ${clientName}.${result.pdfUrl ? `\n\nSigned consent PDF: ${result.pdfUrl}` : ''}`,
   );
 
+  // Opens the PDF through our own viewer (pt-os/pdf-viewer) rather than the
+  // raw file URL directly. A bare window.open(pdfUrl, '_blank') hands the
+  // page entirely to whatever PDF chrome the browser/OS happens to supply —
+  // on several real devices that has no visible Share or Download control at
+  // all. The viewer always renders its own.
+  const viewPdf = () => {
+    if (!result.pdfUrl) return;
+    const href = `/pt-os/pdf-viewer?url=${encodeURIComponent(result.pdfUrl)}&title=${encodeURIComponent(`PAR-Q - ${clientName}`)}`;
+    window.open(href, '_blank', 'noopener');
+  };
+
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-5 py-10 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: 'rgba(16,185,129,0.12)' }}>
@@ -583,16 +594,10 @@ function SubmitSuccess({ clientName, result, onDone }: { clientName: string; res
       </p>
 
       <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-        <Button
-          iconLeft={<Download size={14} />} disabled={!result.pdfUrl}
-          onClick={() => { if (result.pdfUrl) window.open(result.pdfUrl, '_blank', 'noopener'); }}
-        >
+        <Button iconLeft={<Download size={14} />} disabled={!result.pdfUrl} onClick={viewPdf}>
           Download PDF
         </Button>
-        <Button
-          variant="outline" iconLeft={<Printer size={14} />} disabled={!result.pdfUrl}
-          onClick={() => { if (result.pdfUrl) window.open(result.pdfUrl, '_blank', 'noopener'); }}
-        >
+        <Button variant="outline" iconLeft={<Printer size={14} />} disabled={!result.pdfUrl} onClick={viewPdf}>
           Print
         </Button>
         <Button variant="outline" iconLeft={<Mail size={14} />} onClick={() => { window.location.href = `mailto:?subject=${encodeURIComponent(`PAR-Q — ${clientName}`)}&body=${mailBody}`; }}>

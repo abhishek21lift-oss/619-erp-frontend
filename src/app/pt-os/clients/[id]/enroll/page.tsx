@@ -26,6 +26,7 @@ interface EnrollFormData {
   trainerName: string;
   trainingMode: 'Offline' | 'Online' | 'Hybrid' | '';
   workoutExperienceLevel: string;
+  previousTrainerExperience: boolean;
   workoutTime: string;
   customTime: string;
   useCustomTime: boolean;
@@ -180,7 +181,8 @@ function hasErrors(errors: FormErrors): boolean {
 function initForm(): EnrollFormData {
   return {
     startDate: todayStr(), duration: '',
-    trainerId: '', trainerName: '', trainingMode: '', workoutExperienceLevel: '', workoutTime: '',
+    trainerId: '', trainerName: '', trainingMode: '', workoutExperienceLevel: '',
+    previousTrainerExperience: false, workoutTime: '',
     customTime: '', useCustomTime: false, trainingDays: [], sessionsPerWeek: '',
     finalAmount: '', amountPaid: '',
   };
@@ -246,6 +248,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         trainerName: String(c.trainer_name ?? ''),
         trainingMode: (String(c.training_mode ?? '') as EnrollFormData['trainingMode']) || '',
         workoutExperienceLevel: String(c.workout_experience_level ?? ''),
+        previousTrainerExperience: Boolean(c.previous_trainer_experience),
         workoutTime: String(c.preferred_workout_time ?? ''),
         customTime: '',
         useCustomTime: false,
@@ -347,6 +350,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
     trainer_name: form.trainerName || undefined,
     training_mode: form.trainingMode,
     workout_experience_level: form.workoutExperienceLevel || undefined,
+    previous_trainer_experience: form.previousTrainerExperience,
     preferred_workout_time: form.useCustomTime ? form.customTime : form.workoutTime,
     preferred_training_days: form.trainingDays.join(', '),
     sessions_per_week: Number(form.sessionsPerWeek),
@@ -596,6 +600,36 @@ function EnrollForm({ clientId }: { clientId: string }) {
                   onChange={(v) => set('workoutExperienceLevel', v)}
                   options={WORKOUT_EXPERIENCE_OPTIONS}
                 />
+              </div>
+
+              {/* Previously worked with a trainer — moved here from the PAR-Q
+                  health screening. It's a training-history question that
+                  belongs with the rest of this client's fitness background,
+                  not in a medical screening. */}
+              <div>
+                <p className="mb-3 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
+                  Previously Worked With a Trainer?
+                </p>
+                <div className="flex gap-2.5">
+                  {([true, false] as const).map((val) => {
+                    const selected = form.previousTrainerExperience === val;
+                    return (
+                      <button
+                        key={String(val)} type="button" aria-pressed={selected}
+                        onClick={() => set('previousTrainerExperience', val)}
+                        className="flex-1 rounded-[12px] py-3 text-[13px] font-[700] transition-all duration-200"
+                        style={{
+                          background: selected ? 'linear-gradient(135deg, #F59E0B, #D97706)' : '#f8fafc',
+                          color: selected ? '#fff' : '#94a3b8',
+                          border: selected ? 'none' : '1.5px solid #e2e8f0',
+                          boxShadow: selected ? '0 4px 14px rgba(245,158,11,0.25)' : 'none',
+                        }}
+                      >
+                        {val ? 'Yes' : 'No'}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Preferred Workout Time */}
