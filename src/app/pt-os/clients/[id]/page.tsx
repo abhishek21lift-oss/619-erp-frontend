@@ -440,13 +440,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     : 0;
 
   // ── Donut data for the Client Insights section ──
-  // Payment Breakdown: a genuine 2-part composition of the current term's
-  // fee (paid vs due), not a single-ratio meter dressed up as a donut.
-  const paymentBreakdownData = [
-    { name: 'Paid', value: currentTermPaid, color: '#10b981' },
-    { name: 'Balance Due', value: currentTermBalance, color: '#ef4444' },
-  ];
-
   // PT Term Progress: elapsed vs remaining days of the current term.
   const totalDurationDays = client?.pt_start_date && client?.pt_end_date
     ? Math.max(1, Math.round((new Date(client.pt_end_date).getTime() - new Date(client.pt_start_date).getTime()) / 86400000))
@@ -660,20 +653,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     </div>
                     <h3 className="text-[13.5px] font-[740] text-gray-900">Client Insights</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <InsightDonut
-                      title="Payment Breakdown" icon={<Wallet size={13} />} from="#10b981" delay={0.2}
-                      data={paymentBreakdownData}
-                      centerValue={`${completionPct}%`} centerLabel="of fee paid"
-                      valueFormatter={fmtINR}
-                      footer={
-                        <div className="mt-3 flex justify-between">
-                          <span className="text-[10.5px] font-[600] text-emerald-600">{fmtINR(currentTermPaid)} paid</span>
-                          <span className="text-[10.5px] font-[600] text-slate-500">{fmtINR(currentTermFee)} total</span>
-                        </div>
-                      }
-                    />
-
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     <InsightDonut
                       title="PT Term Progress" icon={<Clock size={13} />} from="#6366f1" delay={0.25}
                       data={ptTermDonutData}
