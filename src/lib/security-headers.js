@@ -56,15 +56,21 @@ function buildCsp(env = process.env) {
   return [
     "default-src 'self'",
 
-    // 'unsafe-inline' is required by the theme bootstrap script in
-    // app/layout.tsx, which must run before first paint to avoid a flash of
-    // the wrong theme. 'unsafe-eval' has no identified consumer and is the
-    // single biggest remaining weakness in this policy — removing it needs a
-    // full click-through in a real browser, so it is tracked as follow-up
-    // rather than dropped blind here.
+    // 'unsafe-eval' was removed after verifying in a real Chromium that the
+    // app raises zero securitypolicyviolation events without it and still
+    // mounts — it had no consumer, it was inherited boilerplate. Do not add it
+    // back to make a library work; find the library that calls eval instead.
+    //
+    // 'unsafe-inline' remains, and is now the single biggest weakness here. It
+    // is required by the theme bootstrap script in app/layout.tsx, which must
+    // run before first paint to avoid a flash of the wrong theme, and by
+    // Next.js's own hydration scripts. Replacing it needs a per-request nonce
+    // — tracked separately, and being measured first via the Report-Only
+    // policy below.
+    //
     // cdnjs serves SheetJS, which lib/sheet-import.ts injects as a script tag
     // (with SRI) on first use of the spreadsheet importer.
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com",
+    "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com",
 
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/",
     `img-src 'self' data: blob: https://${supabaseHost} https://lh3.googleusercontent.com`,

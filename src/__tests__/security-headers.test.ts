@@ -25,6 +25,14 @@ describe('buildCsp', () => {
     expect(() => buildCsp({ NEXT_PUBLIC_API_URL: 'not a url' })).not.toThrow();
   });
 
+  it('never allows eval', () => {
+    // Verified in Chromium: the app raises zero CSP violations and mounts
+    // without it. If a dependency ever needs eval, replace the dependency —
+    // re-adding this hands an attacker arbitrary code execution from any
+    // string they can get into the page.
+    expect(buildCsp({})).not.toContain('unsafe-eval');
+  });
+
   it('denies framing, objects and stray base tags', () => {
     const csp = buildCsp({});
     expect(csp).toContain("frame-ancestors 'none'");
