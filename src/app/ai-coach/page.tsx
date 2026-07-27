@@ -1,590 +1,1060 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { m, AnimatePresence, type Variants } from 'framer-motion';
+// AI Coach — a working chat console, not a landing page.
+//
+// This replaced a 590-line marketing page (hero headline, "PROCESS 01/02/03",
+// stat tiles advertising "4 tools / <10s response"). That copy sells a feature
+// to someone who hasn't bought it; this screen is opened by staff who already
+// own it and want to ask something. The chat is now the page, with the four
+// generators demoted to a launcher row and everything else cut.
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { m, AnimatePresence } from 'framer-motion';
 import {
-  Dumbbell, Apple, TrendingUp, BarChart3, Sparkles, ArrowRight,
-  Zap, Brain, Shield, CheckCircle2, ChevronRight, Users, Target,
-  Clock, LayoutGrid, Star, Cpu, MessageCircle,
+  Sparkles, Send, Square, Copy, Check, RotateCcw, Plus, Search, X, Trash2,
+  Pin, PinOff, Pencil, MessageSquare, PanelLeft, Download, User, BookOpen,
+  Dumbbell, Apple, TrendingUp, BarChart3, Database, Loader2, AlertTriangle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
-import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
+import ChatMarkdown from '@/components/fitness/ChatMarkdown';
+import { api } from '@/lib/api';
+import { apiBase } from '@/lib/http';
+import { useToast } from '@/lib/toast';
+import { useAuth } from '@/lib/auth-context';
+import { normaliseRole } from '@/lib/nav-config';
+import type { AiConversation, Client } from '@/lib/api';
 
-/* ─────────────────────────────────────────────────────────────── */
-/*  Data                                                           */
-/* ─────────────────────────────────────────────────────────────── */
+/* ── Types ─────────────────────────────────────────────────────────────── */
 
-const TOOLS = [
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  error?: boolean;
+  /** Studio documents the answer was grounded in (RAG). */
+  sources?: string[];
+  /** Live-data tools consulted (client lookup, revenue, attendance…). */
+  tools?: string[];
+}
+
+interface StreamEvent {
+  type: 'start' | 'chunk' | 'sources' | 'tools' | 'done' | 'error';
+  content?: string;
+  message?: string;
+  conversation_id?: string;
+  sources?: string[];
+  tools?: string[];
+}
+
+/* ── Suggested prompts ─────────────────────────────────────────────────────
+ * Grouped by what they exercise, and every one is a question the backend can
+ * actually answer well — the studio-data ones hit the tool layer, the rest
+ * hit general coaching knowledge. Clicking sends immediately; a suggestion
+ * that only fills the box is a second click for nothing.
+ */
+const PROMPT_GROUPS: { label: string; accent: string; prompts: string[] }[] = [
   {
-    href: '/ai/workout-generator',
-    icon: Dumbbell,
-    label: 'Workout Generator',
-    eyebrow: 'Training Plans',
-    description:
-      'Create fully personalised, periodised training programmes in seconds. Every variable — volume, intensity, rest, tempo, progression — optimised for the individual.',
-    capabilities: [
-      'Goals: fat loss, muscle gain, strength, endurance',
-      'Equipment-aware: gym, home, minimal, bodyweight',
-      'Adjusts for injuries, experience, and schedule',
+    label: 'Studio',
+    accent: '#22d3ee',
+    prompts: [
+      'How many active clients do we have?',
+      'What was our revenue this month?',
+      'Who has outstanding dues?',
+      'How was attendance this week?',
     ],
-    color: '#60A5FA',
-    glow: 'rgba(96,165,250,0.22)',
-    gradientFrom: 'rgba(37,99,235,0.18)',
-    gradientTo: 'rgba(37,99,235,0.04)',
-    border: 'rgba(96,165,250,0.20)',
-    badge: null,
   },
   {
-    href: '/ai/diet-generator',
-    icon: Apple,
-    label: 'Diet Generator',
-    eyebrow: 'Nutrition Plans',
-    description:
-      'Generate science-backed meal plans matched to each client\'s caloric targets, macro ratios, food preferences, allergies, and budget — with a full grocery list.',
-    capabilities: [
-      'Vegetarian, vegan, keto, paleo, and more',
-      'Adjusts calories for cutting, bulking, or maintenance',
-      'Grocery list included for effortless meal prep',
+    label: 'Coaching',
+    accent: '#a78bfa',
+    prompts: [
+      'Design a 4-week fat-loss block for a beginner',
+      'What exercises target back for a beginner?',
+      'How should I progress a client stuck on bench press?',
     ],
-    color: '#4ADE80',
-    glow: 'rgba(74,222,128,0.22)',
-    gradientFrom: 'rgba(22,163,74,0.18)',
-    gradientTo: 'rgba(22,163,74,0.04)',
-    border: 'rgba(74,222,128,0.20)',
-    badge: null,
   },
   {
-    href: '/ai/progress-analysis',
-    icon: TrendingUp,
-    label: 'Progress Analyzer',
-    eyebrow: 'Client Insights',
-    description:
-      'Deep AI analysis of any client\'s entire fitness journey. Surfaces trends, flags plateaus, highlights wins, and generates targeted coaching recommendations.',
-    capabilities: [
-      'Timeline analysis of measurements and sessions',
-      'Detects stagnation before clients do',
-      'Personalised next-step action plan',
+    label: 'Nutrition',
+    accent: '#34d399',
+    prompts: [
+      'Build a 2,000 kcal vegetarian day with 150g protein',
+      'Explain protein timing around training',
     ],
-    color: '#FBBF24',
-    glow: 'rgba(251,191,36,0.22)',
-    gradientFrom: 'rgba(217,119,6,0.18)',
-    gradientTo: 'rgba(217,119,6,0.04)',
-    border: 'rgba(251,191,36,0.20)',
-    badge: null,
-  },
-  {
-    href: '/ai/business-insights',
-    icon: BarChart3,
-    label: 'Business Insights',
-    eyebrow: 'Studio Intelligence',
-    description:
-      'Studio-level AI analysis: revenue trends, at-risk clients, peak hours, trainer performance, and actionable growth strategies — all from your own data.',
-    capabilities: [
-      'Revenue forecast and trend detection',
-      'Churn risk scoring for every active client',
-      'Prioritised action plan with ROI rationale',
-    ],
-    color: '#C084FC',
-    glow: 'rgba(192,132,252,0.22)',
-    gradientFrom: 'rgba(124,58,237,0.18)',
-    gradientTo: 'rgba(124,58,237,0.04)',
-    border: 'rgba(192,132,252,0.20)',
-    badge: 'Admin',
   },
 ];
 
-const STEPS = [
-  {
-    n: '01',
-    icon: Target,
-    title: 'Pick your tool',
-    body: 'Choose the AI module that fits the job — training plan, nutrition, client progress, or studio analytics.',
-  },
-  {
-    n: '02',
-    icon: Cpu,
-    title: 'Enter context',
-    body: 'Fill in a short form — goals, metrics, timeframe. The AI reads your gym\'s data automatically where available.',
-  },
-  {
-    n: '03',
-    icon: Zap,
-    title: 'Get results instantly',
-    body: 'A complete, professional-grade output — ready to share with the client or act on immediately. Usually under 10 seconds.',
-  },
+const GENERATORS = [
+  { href: '/ai/workout-generator', icon: Dumbbell,   label: 'Workout Plan', color: '#60a5fa' },
+  { href: '/ai/diet-generator',    icon: Apple,      label: 'Diet Plan',    color: '#34d399' },
+  { href: '/ai/progress-analysis', icon: TrendingUp, label: 'Progress',     color: '#fbbf24' },
+  { href: '/ai/business-insights', icon: BarChart3,  label: 'Business',     color: '#c084fc', adminOnly: true },
 ];
 
-const STATS = [
-  { value: 'GPT-4o', label: 'Model', icon: Brain },
-  { value: '< 10s', label: 'Avg. response', icon: Clock },
-  { value: '4 tools', label: 'AI modules', icon: LayoutGrid },
-  { value: '619', label: 'Studio-tuned', icon: Star },
-];
+const ACCENT = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+const VIOLET = '#a78bfa';
 
-const USE_CASES = [
-  'New-client onboarding in minutes',
-  'Re-engage a plateau client',
-  'Build a 12-week programme overnight',
-  "Spot churn risk before it's too late",
-  'Justify a plan change with data',
-  'Dietary advice for complex preferences',
-  'Weekly progress report for any client',
-  'Studio revenue deep-dive',
-];
+function fmtRelative(iso: string) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const mins = Math.round((Date.now() - d.getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+}
 
-/* ─────────────────────────────────────────────────────────────── */
-/*  Animations                                                     */
-/* ─────────────────────────────────────────────────────────────── */
-
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  show: (i: number) => ({ opacity: 1, y: 0, transition: { duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] } }),
-};
-
-/* ─────────────────────────────────────────────────────────────── */
-/*  Page                                                           */
-/* ─────────────────────────────────────────────────────────────── */
+/* ── Page ──────────────────────────────────────────────────────────────── */
 
 export default function AiCoachPage() {
-  // The four cards below each open a single-purpose GENERATOR (a form → one
-  // structured plan). The free-form conversational coach — which also answers
-  // from this studio's uploaded SOPs and its live member/attendance/revenue
-  // data — lives in AiCoachPanel, and until now was only reachable from a
-  // floating button on the Workout Plans / Diet Plans pages. There was no way
-  // to just ask it a question from here, which is the whole point of a page
-  // called "AI Coach".
-  const [chatOpen, setChatOpen] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const role = normaliseRole(user?.role);
+  const isAdminOrManager = role === 'admin' || role === 'manager';
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [streaming, setStreaming] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  const [conversations, setConversations] = useState<AiConversation[]>([]);
+  const [historyQuery, setHistoryQuery] = useState('');
+  const [railOpen, setRailOpen] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
+
+  const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
+  const [clientQuery, setClientQuery] = useState('');
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const abortRef = useRef<AbortController | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  /** Last user message, so Regenerate can resend it without re-reading state. */
+  const lastUserMsgRef = useRef<string>('');
+
+  /* ── Data loading ──────────────────────────────────────────────────── */
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const res = await api.ai.conversations({ limit: 50 });
+      setConversations(res.data ?? []);
+    } catch { /* history is non-critical — a failure here must not block chat */ }
+  }, []);
+
+  useEffect(() => { loadConversations(); }, [loadConversations]);
+
+  useEffect(() => {
+    api.pt.clients()
+      .then((r) => setClients(((r?.data ?? []) as Client[])))
+      .catch(() => { /* client attach is optional */ });
+  }, []);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, streaming]);
+
+  /* ── Streaming send ────────────────────────────────────────────────── */
+
+  const send = useCallback(async (text: string, opts?: { regenerate?: boolean }) => {
+    const body = text.trim();
+    if (!body || streaming) return;
+
+    const regenerate = Boolean(opts?.regenerate);
+    lastUserMsgRef.current = body;
+
+    if (regenerate) {
+      // Drop the answer being replaced so the new one streams into its place
+      // rather than stacking a second reply under the same question.
+      setMessages((prev) => {
+        const next = [...prev];
+        while (next.length && next[next.length - 1].role === 'assistant') next.pop();
+        return next;
+      });
+    } else {
+      setMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', content: body }]);
+      setInput('');
+    }
+
+    setStreaming(true);
+    const replyId = `a-${Date.now()}`;
+    let acc = '';
+    let started = false;
+    let pendingSources: string[] | undefined;
+    let pendingTools: string[] | undefined;
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const pushReply = (content: string, error = false) =>
+      setMessages((prev) => [...prev, { id: replyId, role: 'assistant', content, error, sources: pendingSources, tools: pendingTools }]);
+    const updateReply = (content: string) =>
+      setMessages((prev) => prev.map((msg) => (msg.id === replyId ? { ...msg, content, sources: pendingSources, tools: pendingTools } : msg)));
+
+    try {
+      const res = await fetch(`${apiBase()}/api/ai/chat`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          message: body,
+          conversation_id: conversationId ?? undefined,
+          client_id: selectedClient?.id,
+          regenerate,
+        }),
+      });
+      if (!res.ok || !res.body) {
+        throw new Error(res.status === 401 ? 'Your session has expired — please sign in again.' : `Request failed (${res.status}).`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+          let evt: StreamEvent;
+          try { evt = JSON.parse(raw) as StreamEvent; } catch { continue; }
+
+          if (evt.type === 'start' && evt.conversation_id) {
+            setConversationId(evt.conversation_id);
+          } else if (evt.type === 'sources') {
+            pendingSources = evt.sources;
+          } else if (evt.type === 'tools') {
+            pendingTools = evt.tools;
+          } else if (evt.type === 'chunk') {
+            acc += evt.content ?? '';
+            if (!started) { started = true; pushReply(acc); } else updateReply(acc);
+          } else if (evt.type === 'done') {
+            if (evt.conversation_id) setConversationId(evt.conversation_id);
+          } else if (evt.type === 'error') {
+            throw new Error(evt.message || 'The coach ran into a problem.');
+          }
+        }
+      }
+
+      if (!started) pushReply("I couldn't generate a reply just now — please try again.", true);
+      loadConversations();
+    } catch (err) {
+      // A user-pressed Stop is not a failure — keep whatever streamed.
+      if (controller.signal.aborted) { loadConversations(); return; }
+      const msg = err instanceof Error ? err.message : 'Something went wrong.';
+      if (!started) pushReply(`⚠️ ${msg}`, true);
+      else updateReply(`${acc}\n\n⚠️ ${msg}`);
+    } finally {
+      setStreaming(false);
+      abortRef.current = null;
+    }
+  }, [streaming, conversationId, selectedClient, loadConversations]);
+
+  const stop = () => abortRef.current?.abort();
+
+  /* ── Conversation actions ──────────────────────────────────────────── */
+
+  const newChat = () => {
+    abortRef.current?.abort();
+    setMessages([]);
+    setConversationId(null);
+    setInput('');
+    setRailOpen(false);
+    composerRef.current?.focus();
+  };
+
+  const openConversation = async (id: string) => {
+    abortRef.current?.abort();
+    setRailOpen(false);
+    try {
+      const res = await api.ai.conversation(id);
+      const loaded = (res.data.messages ?? []).map((msg, i) => ({
+        id: msg.id || `h-${i}`,
+        role: msg.role,
+        content: msg.content,
+      })) as ChatMessage[];
+      setMessages(loaded);
+      setConversationId(id);
+      // Seed the regenerate source from the loaded thread. Without this,
+      // "Try again" on a conversation opened from history would call send('')
+      // — which returns early — and appear to do nothing at all.
+      const lastUser = [...loaded].reverse().find((msg) => msg.role === 'user');
+      lastUserMsgRef.current = lastUser?.content ?? '';
+      // Sources/tools aren't persisted per message, so a reloaded thread shows
+      // the text without its chips — the answer itself is unchanged.
+    } catch {
+      toast.error('Could not open that conversation.');
+    }
+  };
+
+  const removeConversation = async (id: string) => {
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
+    try {
+      await api.ai.deleteConversation(id);
+      setConversations((prev) => prev.filter((c) => c.id !== id));
+      if (conversationId === id) newChat();
+    } catch {
+      toast.error('Could not delete that conversation.');
+    }
+  };
+
+  const togglePin = async (conv: AiConversation) => {
+    const next = !conv.pinned;
+    setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, pinned: next } : c)));
+    try {
+      await api.ai.updateConversation(conv.id, { pinned: next });
+      loadConversations(); // re-sorts pinned to the top server-side
+    } catch {
+      setConversations((prev) => prev.map((c) => (c.id === conv.id ? { ...c, pinned: !next } : c)));
+      toast.error('Could not update that conversation.');
+    }
+  };
+
+  const commitRename = async (id: string) => {
+    const title = renameDraft.trim();
+    setRenamingId(null);
+    if (!title) return;
+    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, title } : c)));
+    try {
+      await api.ai.updateConversation(id, { title });
+    } catch {
+      toast.error('Could not rename that conversation.');
+      loadConversations();
+    }
+  };
+
+  const copyMessage = async (msg: ChatMessage) => {
+    try {
+      await navigator.clipboard.writeText(msg.content);
+      setCopiedId(msg.id);
+      setTimeout(() => setCopiedId(null), 1600);
+    } catch {
+      toast.error('Could not copy to clipboard.');
+    }
+  };
+
+  /** Exports the open thread as a markdown file — the format it's authored in. */
+  const exportChat = () => {
+    if (!messages.length) return;
+    const body = messages
+      .map((msg) => (msg.role === 'user' ? `## You\n\n${msg.content}` : `## AI Coach\n\n${msg.content}`))
+      .join('\n\n---\n\n');
+    const blob = new Blob([`# AI Coach conversation\n\n${body}\n`], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-coach-${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  /* ── Derived ───────────────────────────────────────────────────────── */
+
+  const filteredConversations = useMemo(() => {
+    const q = historyQuery.trim().toLowerCase();
+    if (!q) return conversations;
+    return conversations.filter((c) =>
+      (c.title ?? '').toLowerCase().includes(q) || (c.last_message ?? '').toLowerCase().includes(q));
+  }, [conversations, historyQuery]);
+
+  const filteredClients = useMemo(() => {
+    const q = clientQuery.trim().toLowerCase();
+    const list = q ? clients.filter((c) => (c.name ?? '').toLowerCase().includes(q)) : clients;
+    return list.slice(0, 8);
+  }, [clients, clientQuery]);
+
+  const visibleGenerators = GENERATORS.filter((g) => !g.adminOnly || isAdminOrManager);
+  const isEmpty = messages.length === 0;
+
+  /* ── Render ────────────────────────────────────────────────────────── */
 
   return (
     <Guard>
-      <AppShell title="AI Coach">
-        <div className="min-h-screen">
+      {/* No `title` prop: AppShell would render its own <h1>AI Coach</h1> above
+          this, duplicating the in-chat header and eating height the fixed
+          layout below has to account for. */}
+      <AppShell>
+        {/* data-no-pull-refresh: the message list owns vertical dragging, so
+            pulling at its top must not also trigger the shell's global
+            pull-to-refresh. */}
+        <div
+          className="ai-chat-shell flex"
+          data-no-pull-refresh
+        >
+          {/* ── History rail ───────────────────────────────────────── */}
+          <ConversationRail
+            open={railOpen}
+            onClose={() => setRailOpen(false)}
+            conversations={filteredConversations}
+            activeId={conversationId}
+            query={historyQuery}
+            onQuery={setHistoryQuery}
+            onNew={newChat}
+            onOpen={openConversation}
+            onDelete={removeConversation}
+            onTogglePin={togglePin}
+            renamingId={renamingId}
+            renameDraft={renameDraft}
+            onRenameStart={(c) => { setRenamingId(c.id); setRenameDraft(c.title ?? ''); }}
+            onRenameChange={setRenameDraft}
+            onRenameCommit={commitRename}
+            onRenameCancel={() => setRenamingId(null)}
+          />
 
-          {/* ── Hero ─────────────────────────────────────────── */}
-          <section className="relative px-4 pt-12 pb-16 text-center overflow-hidden">
+          {/* ── Chat column ────────────────────────────────────────── */}
+          <div className="flex min-w-0 flex-1 flex-col">
 
-            <m.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            {/* Header */}
+            <header
+              className="flex shrink-0 items-center gap-2 px-3 py-2.5 sm:px-5"
+              style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-card)' }}
             >
-              {/* Pill badge */}
-              <div className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full"
-                style={{
-                  background: 'rgba(212,175,55,0.10)',
-                  border: '1px solid rgba(212,175,55,0.25)',
-                }}>
-                <Sparkles size={12} style={{ color: '#D4AF37' }} />
-                <span className="text-[11px] font-semibold tracking-[0.08em] uppercase" style={{ color: '#D4AF37' }}>
-                  619 AI Suite · Powered by GPT‑4o
-                </span>
-              </div>
-
-              {/* Headline */}
-              <h1
-                className="text-[42px] sm:text-[56px] font-black leading-[1.05] tracking-[-0.03em] mb-4"
-                style={{ color: 'var(--text-primary)' }}
+              <button
+                onClick={() => setRailOpen(true)}
+                aria-label="Conversation history"
+                className="flex h-9 w-9 items-center justify-center rounded-[10px] lg:hidden"
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
               >
-                Train smarter.{' '}
-                <span
-                  style={{
-                    background: 'linear-gradient(135deg, #D4AF37 0%, #F7E7A1 45%, #D4AF37 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  Coach better.
-                </span>
-              </h1>
+                <PanelLeft size={15} />
+              </button>
 
-              <p className="mx-auto max-w-xl text-[16px] leading-relaxed mb-8" style={{ color: 'var(--text-muted)' }}>
-                Four AI tools built for serious fitness studios. Generate elite training plans,
-                personalised nutrition, client progress analysis, and business intelligence —
-                all from inside 619.
-              </p>
-
-              {/* CTAs — "Ask AI Coach" leads, because a page called AI Coach
-                  should let you actually ask it something without first
-                  choosing which generator form you want. */}
-              <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-                <button
-                  onClick={() => setChatOpen(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
-                  style={{
-                    background: 'linear-gradient(135deg, #D4AF37 0%, #F7E7A1 100%)',
-                    color: '#050816',
-                    boxShadow: '0 0 32px rgba(212,175,55,0.35)',
-                  }}
-                >
-                  <MessageCircle size={15} />
-                  Ask AI Coach
-                </button>
-                <Link
-                  href="/ai/workout-generator"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-200 hover:bg-zinc-100"
-                  style={{
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  <Zap size={15} />
-                  Start generating
-                </Link>
-                <Link
-                  href="/ai/progress-analysis"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-200 hover:bg-zinc-100"
-                  style={{
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  Analyse a client
-                  <ChevronRight size={15} />
-                </Link>
-              </div>
-
-              {/* Use-case pill scroller */}
-              <div className="relative overflow-hidden">
-                <div className="flex flex-wrap justify-center gap-2 max-w-2xl mx-auto">
-                  {USE_CASES.map((uc) => (
-                    <span
-                      key={uc}
-                      className="text-[11px] px-3 py-1 rounded-full font-medium"
-                      style={{
-                        background: 'var(--bg-subtle)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text-muted)',
-                      }}
-                    >
-                      {uc}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </m.div>
-          </section>
-
-          {/* ── Stats bar ────────────────────────────────────── */}
-          <section className="px-4 pb-12">
-            <div
-              className="mx-auto max-w-3xl grid grid-cols-2 sm:grid-cols-4 gap-px rounded-2xl overflow-hidden"
-              style={{ background: '#e5e7eb', border: '1px solid var(--border)' }}
-            >
-              {STATS.map(({ value, label, icon: Icon }, i) => (
-                <m.div
-                  key={label}
-                  custom={i}
-                  initial="hidden"
-                  animate="show"
-                  variants={fadeUp}
-                  className="flex flex-col items-center gap-1.5 py-5 px-4"
-                  style={{ background: 'var(--bg-card)' }}
-                >
-                  <Icon size={15} style={{ color: '#D4AF37' }} />
-                  <span className="text-[20px] font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>{value}</span>
-                  <span className="text-[10px] font-semibold tracking-[0.07em] uppercase" style={{ color: 'var(--text-disabled)' }}>{label}</span>
-                </m.div>
-              ))}
-            </div>
-          </section>
-
-          {/* ── Tool Cards ───────────────────────────────────── */}
-          <section className="px-4 pb-20">
-            <div className="mx-auto max-w-5xl">
-
-              <m.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.15 }}
-                className="text-center mb-10"
-              >
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#D4AF37' }}>
-                  Four modules
-                </p>
-                <h2 className="text-[28px] sm:text-[34px] font-black tracking-[-0.025em]" style={{ color: 'var(--text-primary)' }}>
-                  Everything your studio needs
-                </h2>
-                <p className="mt-2 text-[14px]" style={{ color: 'var(--text-muted)' }}>
-                  Pick any tool below. Results in seconds.
-                </p>
-              </m.div>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                {TOOLS.map(({ href, icon: Icon, label, eyebrow, description, capabilities, color, glow, gradientFrom, gradientTo, border, badge }, i) => (
-                  <m.div
-                    key={href}
-                    custom={i}
-                    initial="hidden"
-                    animate="show"
-                    variants={fadeUp}
-                  >
-                    <Link
-                      href={href}
-                      className="group relative flex flex-col rounded-3xl overflow-hidden transition-transform duration-300 hover:scale-[1.015] hover:-translate-y-0.5"
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                      }}
-                    >
-                      {/* Card header gradient */}
-                      <div
-                        className="relative px-6 pt-7 pb-6"
-                        style={{
-                          background: `linear-gradient(160deg, ${gradientFrom} 0%, ${gradientTo} 100%)`,
-                          borderBottom: '1px solid var(--border)',
-                        }}
-                      >
-                        <div className="relative flex items-start justify-between">
-                          <div
-                            className="flex items-center justify-center w-11 h-11 rounded-2xl"
-                            style={{
-                              background: 'var(--bg-subtle)',
-                              border: `1px solid ${border}`,
-                            }}
-                          >
-                            <Icon size={20} style={{ color }} />
-                          </div>
-                          {badge && (
-                            <span
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-[0.08em]"
-                              style={{
-                                background: 'var(--bg-subtle)',
-                                border: `1px solid ${border}`,
-                                color,
-                              }}
-                            >
-                              {badge}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-4">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.10em] mb-1" style={{ color: `${color}cc` }}>
-                            {eyebrow}
-                          </p>
-                          <h3 className="text-[20px] font-black tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
-                            {label}
-                          </h3>
-                        </div>
-                      </div>
-
-                      {/* Card body */}
-                      <div className="flex flex-col flex-1 px-6 py-5 gap-4">
-                        <p className="text-[13px] leading-[1.65]" style={{ color: 'var(--text-muted)' }}>
-                          {description}
-                        </p>
-
-                        <ul className="space-y-2">
-                          {capabilities.map((cap) => (
-                            <li key={cap} className="flex items-start gap-2.5">
-                              <CheckCircle2 size={13} className="flex-shrink-0 mt-0.5" style={{ color }} />
-                              <span className="text-[12px] leading-snug" style={{ color: 'var(--text-muted)' }}>
-                                {cap}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-
-                        <div
-                          className="mt-auto flex items-center gap-1.5 text-[12px] font-bold tracking-[0.02em] transition-all duration-200 group-hover:gap-3"
-                          style={{ color }}
-                        >
-                          Open tool <ArrowRight size={13} />
-                        </div>
-                      </div>
-
-                      {/* Hover glow overlay */}
-                      <div
-                        className="absolute inset-0 rounded-3xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-400"
-                        style={{ boxShadow: `inset 0 0 60px ${glow}` }}
-                      />
-                    </Link>
-                  </m.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── How it works ─────────────────────────────────── */}
-          <section className="px-4 pb-20">
-            <div className="mx-auto max-w-4xl">
-
-              <div className="text-center mb-12">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#D4AF37' }}>
-                  Process
-                </p>
-                <h2 className="text-[28px] sm:text-[34px] font-black tracking-[-0.025em]" style={{ color: 'var(--text-primary)' }}>
-                  From idea to output in seconds
-                </h2>
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-3">
-                {STEPS.map(({ n, icon: Icon, title, body }, i) => (
-                  <m.div
-                    key={n}
-                    custom={i}
-                    initial="hidden"
-                    animate="show"
-                    variants={fadeUp}
-                    className="relative flex flex-col gap-4 rounded-2xl p-6"
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {/* Step number */}
-                    <div className="flex items-center justify-between">
-                      <div
-                        className="flex items-center justify-center w-9 h-9 rounded-xl"
-                        style={{
-                          background: 'rgba(212,175,55,0.10)',
-                          border: '1px solid rgba(212,175,55,0.20)',
-                        }}
-                      >
-                        <Icon size={16} style={{ color: '#D4AF37' }} />
-                      </div>
-                      <span
-                        className="text-[44px] font-black tabular-nums leading-none"
-                        style={{ color: 'rgba(212,175,55,0.15)' }}
-                      >
-                        {n}
-                      </span>
-                    </div>
-
-                    <h3 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
-                    <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{body}</p>
-
-                    {/* Connector line (not on last) */}
-                    {i < 2 && (
-                      <div
-                        className="hidden sm:block absolute top-10 -right-3 w-6 h-px"
-                        style={{ background: 'rgba(212,175,55,0.20)' }}
-                      />
-                    )}
-                  </m.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* ── Feature callout strip ────────────────────────── */}
-          <section className="px-4 pb-20">
-            <div className="mx-auto max-w-4xl">
               <div
-                className="rounded-3xl overflow-hidden"
-                style={{
-                  background: 'var(--bg-subtle)',
-                  border: '1px solid var(--border)',
-                }}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+                style={{ background: ACCENT, boxShadow: '0 3px 14px rgba(124,58,237,0.35)' }}
               >
-                <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-200">
-                  {[
-                    { icon: Brain, title: 'Context-aware', body: 'The AI reads each client\'s actual history — not just generic templates.' },
-                    { icon: Shield, title: 'Data stays yours', body: 'All processing uses your studio\'s own data. Nothing is shared externally.' },
-                    { icon: Users, title: 'Client-ready output', body: 'Responses are formatted to hand directly to clients or import into plans.' },
-                  ].map(({ icon: Icon, title, body }) => (
-                    <div key={title} className="flex flex-col gap-3 p-6">
-                      <div
-                        className="flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0"
-                        style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.18)' }}
-                      >
-                        <Icon size={16} style={{ color: '#D4AF37' }} />
-                      </div>
-                      <h4 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h4>
-                      <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{body}</p>
-                    </div>
-                  ))}
-                </div>
+                <Sparkles size={16} color="#fff" />
               </div>
-            </div>
-          </section>
 
-          {/* ── Quick launch strip ───────────────────────────── */}
-          <section className="px-4 pb-20">
-            <div className="mx-auto max-w-4xl">
-              <div className="text-center mb-8">
-                <h2 className="text-[22px] font-black tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
-                  Jump straight in
-                </h2>
-                <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
-                  Each tool is a one-screen flow. No setup required.
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>AI Coach</p>
+                <p className="truncate text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+                  Answers from your studio&apos;s live data &amp; documents
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {TOOLS.map(({ href, icon: Icon, label, color, border, eyebrow }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="group flex items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-200 hover:scale-[1.012]"
-                    style={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    <div
-                      className="flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0"
-                      style={{ background: `${color}18`, border: `1px solid ${color}30` }}
-                    >
-                      <Icon size={16} style={{ color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.08em]" style={{ color: `${color}99` }}>{eyebrow}</p>
-                      <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{label}</p>
-                    </div>
-                    <ArrowRight
-                      size={15}
-                      className="flex-shrink-0 transition-transform duration-200 group-hover:translate-x-1"
-                      style={{ color: 'var(--text-disabled)' }}
-                    />
-                  </Link>
-                ))}
+              {/* Client attach */}
+              <ClientAttach
+                selected={selectedClient}
+                open={clientPickerOpen}
+                query={clientQuery}
+                options={filteredClients}
+                onToggle={() => setClientPickerOpen((v) => !v)}
+                onQuery={setClientQuery}
+                onSelect={(c) => { setSelectedClient(c); setClientPickerOpen(false); setClientQuery(''); }}
+                onClear={() => setSelectedClient(null)}
+              />
+
+              {messages.length > 0 && (
+                <button
+                  onClick={exportChat}
+                  title="Export conversation as Markdown"
+                  aria-label="Export conversation"
+                  className="hidden h-9 w-9 items-center justify-center rounded-[10px] sm:flex"
+                  style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+                >
+                  <Download size={14} />
+                </button>
+              )}
+
+              <button
+                onClick={newChat}
+                className="flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700]"
+                style={{ background: ACCENT, color: '#fff', boxShadow: '0 3px 14px rgba(124,58,237,0.3)' }}
+              >
+                <Plus size={13} /> <span className="hidden sm:inline">New</span>
+              </button>
+            </header>
+
+            {/* Messages / empty state */}
+            <div className="min-h-0 flex-1 overflow-y-auto" style={{ background: 'var(--bg-canvas)' }}>
+              <div className="mx-auto w-full max-w-3xl px-3 py-5 sm:px-5">
+                {isEmpty ? (
+                  <EmptyState
+                    onPrompt={(p) => send(p)}
+                    generators={visibleGenerators}
+                    onGenerator={(href) => router.push(href)}
+                    onKnowledgeBase={isAdminOrManager ? () => router.push('/ai-coach/knowledge') : undefined}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {messages.map((msg, i) => (
+                      <MessageBubble
+                        key={msg.id}
+                        msg={msg}
+                        copied={copiedId === msg.id}
+                        onCopy={() => copyMessage(msg)}
+                        // Regenerate belongs only on the final answer — an
+                        // older one can't be replaced without discarding the
+                        // turns that came after it.
+                        canRegenerate={
+                          msg.role === 'assistant' && !msg.error && i === messages.length - 1 && !streaming
+                        }
+                        onRegenerate={() => send(lastUserMsgRef.current, { regenerate: true })}
+                      />
+                    ))}
+                    {streaming && messages[messages.length - 1]?.role === 'user' && <TypingDots />}
+                    <div ref={endRef} />
+                  </div>
+                )}
               </div>
             </div>
-          </section>
 
-          {/* ── Footer disclaimer ────────────────────────────── */}
-          <div className="px-4 pb-12 text-center">
-            <p className="text-[11px] leading-relaxed mx-auto max-w-md" style={{ color: 'var(--text-disabled)' }}>
-              AI-generated plans are a professional starting point. Always apply your
-              expertise and judgement before sharing any recommendation with a client.
-              619 AI Suite is powered by OpenAI GPT-4o.
-            </p>
+            {/* Composer */}
+            <div
+              className="shrink-0 px-3 pt-2.5 sm:px-5"
+              style={{
+                borderTop: '1px solid var(--border)',
+                background: 'var(--bg-card)',
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
+              }}
+            >
+              <div className="mx-auto flex w-full max-w-3xl items-end gap-2">
+                <textarea
+                  ref={composerRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); }
+                  }}
+                  rows={1}
+                  placeholder="Ask about a client, your studio's numbers, training, nutrition…"
+                  className="flex-1 resize-none rounded-[14px] px-3.5 py-2.5 text-[13px] outline-none"
+                  style={{
+                    background: 'var(--bg-subtle)',
+                    border: '1.5px solid var(--border)',
+                    color: 'var(--text-primary)',
+                    maxHeight: 140,
+                    minHeight: 42,
+                  }}
+                />
+                {streaming ? (
+                  <button
+                    onClick={stop}
+                    aria-label="Stop generating"
+                    className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px]"
+                    style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+                  >
+                    <Square size={14} fill="currentColor" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => send(input)}
+                    disabled={!input.trim()}
+                    aria-label="Send"
+                    className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[13px] transition-opacity disabled:opacity-40"
+                    style={{ background: ACCENT, color: '#fff', boxShadow: '0 4px 16px rgba(124,58,237,0.32)' }}
+                  >
+                    <Send size={15} />
+                  </button>
+                )}
+              </div>
+              <p className="mx-auto mt-1.5 max-w-3xl text-center text-[10px]" style={{ color: 'var(--text-disabled)' }}>
+                AI can make mistakes — apply your own judgement before acting on a recommendation.
+              </p>
+            </div>
           </div>
-
-          {/* Floating chat launcher — the hero CTA scrolls out of view on a
-              long page, so the way to ask a question stays reachable. */}
-          <m.button
-            onClick={() => setChatOpen(true)}
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.96 }}
-            aria-label="Ask AI Coach"
-            className="above-bottom-nav"
-            style={{
-              position: 'fixed', right: 28, width: 52, height: 52, borderRadius: 16,
-              border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', boxShadow: '0 4px 24px rgba(99,102,241,0.45)', zIndex: 100,
-            }}
-          >
-            <MessageCircle size={20} />
-          </m.button>
-
-          {/* Conversational coach — opens straight into chat, no plan form. */}
-          <AnimatePresence>
-            {chatOpen && (
-              <AiCoachPanel type="general" initialMode="chat" onClose={() => setChatOpen(false)} />
-            )}
-          </AnimatePresence>
-
         </div>
+
+        {/* A chat console wants the message list to scroll on its own with the
+            composer pinned, which needs an exact height — but .shell-main
+            (globals.css) wraps every page in padding that differs by
+            breakpoint, and on mobile that padding also reserves space for the
+            bottom nav. So each breakpoint cancels its own padding with a
+            matching negative margin, then subtracts only what is genuinely
+            unavailable: the top bar always, plus the bottom nav where it
+            exists. Keep these in step with .shell-main if its padding changes. */}
+        <style>{`
+          .ai-chat-shell {
+            margin: -16px;
+            margin-bottom: calc(-1 * (var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 16px));
+            height: calc(100dvh - var(--topbar-h, 46px) - var(--bottom-nav-h) - env(safe-area-inset-bottom, 0px));
+            overflow: hidden;
+          }
+          @media (min-width: 768px) {
+            .ai-chat-shell {
+              margin: -24px;
+              margin-bottom: calc(-1 * (var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 16px));
+            }
+          }
+          @media (min-width: 1024px) {
+            .ai-chat-shell {
+              margin: -24px;
+              margin-bottom: -32px;
+              height: calc(100dvh - var(--topbar-h, 46px));
+            }
+          }
+        `}</style>
       </AppShell>
     </Guard>
+  );
+}
+
+/* ── Conversation rail ─────────────────────────────────────────────────── */
+
+interface RailProps {
+  open: boolean;
+  onClose: () => void;
+  conversations: AiConversation[];
+  activeId: string | null;
+  query: string;
+  onQuery: (v: string) => void;
+  onNew: () => void;
+  onOpen: (id: string) => void;
+  onDelete: (id: string) => void;
+  onTogglePin: (c: AiConversation) => void;
+  renamingId: string | null;
+  renameDraft: string;
+  onRenameStart: (c: AiConversation) => void;
+  onRenameChange: (v: string) => void;
+  onRenameCommit: (id: string) => void;
+  onRenameCancel: () => void;
+}
+
+function ConversationRail(props: RailProps) {
+  const { open, onClose, conversations, activeId, query, onQuery, onNew } = props;
+
+  const body = (
+    <div className="flex h-full flex-col" style={{ background: 'var(--bg-card)' }}>
+      <div className="flex items-center gap-2 p-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        <button
+          onClick={onNew}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-[11px] py-2 text-[12.5px] font-[700]"
+          style={{ background: ACCENT, color: '#fff' }}
+        >
+          <Plus size={14} /> New chat
+        </button>
+        <button
+          onClick={onClose}
+          aria-label="Close history"
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] lg:hidden"
+          style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
+        >
+          <X size={15} />
+        </button>
+      </div>
+
+      <div className="px-3 pt-3">
+        <div
+          className="flex items-center gap-2 rounded-[10px] px-2.5 py-2"
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+        >
+          <Search size={13} style={{ color: 'var(--text-disabled)' }} />
+          <input
+            value={query}
+            onChange={(e) => onQuery(e.target.value)}
+            placeholder="Search chats"
+            className="min-w-0 flex-1 bg-transparent text-[12px] outline-none"
+            style={{ color: 'var(--text-primary)' }}
+          />
+          {query && (
+            <button onClick={() => onQuery('')} aria-label="Clear search" style={{ color: 'var(--text-disabled)' }}>
+              <X size={12} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-2 min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+        {conversations.length === 0 ? (
+          <p className="px-2 py-6 text-center text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>
+            {query ? 'No chats match that search.' : 'No conversations yet.'}
+          </p>
+        ) : (
+          conversations.map((c) => (
+            <RailRow key={c.id} conv={c} active={c.id === activeId} {...props} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop: permanent column */}
+      <aside className="hidden w-[268px] shrink-0 lg:block" style={{ borderRight: '1px solid var(--border)' }}>
+        {body}
+      </aside>
+
+      {/* Mobile: slide-over */}
+      <AnimatePresence>
+        {open && (
+          <>
+            <m.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="fixed inset-0 z-[60] lg:hidden"
+              style={{ background: 'rgba(0,0,0,0.45)' }}
+            />
+            <m.aside
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 340 }}
+              className="fixed inset-y-0 left-0 z-[61] w-[280px] lg:hidden"
+              style={{ boxShadow: '8px 0 32px rgba(0,0,0,0.25)' }}
+            >
+              {body}
+            </m.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function RailRow({
+  conv, active, onOpen, onDelete, onTogglePin,
+  renamingId, renameDraft, onRenameStart, onRenameChange, onRenameCommit, onRenameCancel,
+}: RailProps & { conv: AiConversation; active: boolean }) {
+  const isRenaming = renamingId === conv.id;
+
+  if (isRenaming) {
+    return (
+      <div className="mb-1 rounded-[10px] p-1.5" style={{ background: 'var(--bg-subtle)' }}>
+        <input
+          autoFocus
+          value={renameDraft}
+          onChange={(e) => onRenameChange(e.target.value)}
+          onBlur={() => onRenameCommit(conv.id)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); onRenameCommit(conv.id); }
+            if (e.key === 'Escape') onRenameCancel();
+          }}
+          className="w-full rounded-[7px] px-2 py-1.5 text-[12px] outline-none"
+          style={{ background: 'var(--bg-card)', border: `1.5px solid ${VIOLET}`, color: 'var(--text-primary)' }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="group mb-1 flex items-center gap-1 rounded-[10px] px-2 py-2"
+      style={{
+        background: active ? 'rgba(139,92,246,0.12)' : 'transparent',
+        border: `1px solid ${active ? 'rgba(139,92,246,0.28)' : 'transparent'}`,
+      }}
+    >
+      <button onClick={() => onOpen(conv.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+        {conv.pinned
+          ? <Pin size={11} style={{ color: VIOLET, flexShrink: 0 }} />
+          : <MessageSquare size={11} style={{ color: 'var(--text-disabled)', flexShrink: 0 }} />}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[12.5px] font-[620]" style={{ color: active ? VIOLET : 'var(--text-primary)' }}>
+            {conv.title || 'Untitled chat'}
+          </span>
+          <span className="block truncate text-[10px]" style={{ color: 'var(--text-disabled)' }}>
+            {fmtRelative(conv.updated_at)}
+          </span>
+        </span>
+      </button>
+
+      {/* Actions stay mounted (opacity-only) so they don't reflow the row on
+          hover; on touch there's no hover, so they're always visible there. */}
+      <span className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
+        <IconBtn label={conv.pinned ? 'Unpin' : 'Pin'} onClick={() => onTogglePin(conv)}>
+          {conv.pinned ? <PinOff size={11} /> : <Pin size={11} />}
+        </IconBtn>
+        <IconBtn label="Rename" onClick={() => onRenameStart(conv)}><Pencil size={11} /></IconBtn>
+        <IconBtn label="Delete" danger onClick={() => onDelete(conv.id)}><Trash2 size={11} /></IconBtn>
+      </span>
+    </div>
+  );
+}
+
+function IconBtn({ children, label, onClick, danger }: {
+  children: React.ReactNode; label: string; onClick: () => void; danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="flex h-6 w-6 items-center justify-center rounded-[6px]"
+      style={{ color: danger ? '#ef4444' : 'var(--text-disabled)' }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ── Client attach ─────────────────────────────────────────────────────── */
+
+function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSelect, onClear }: {
+  selected: Client | null; open: boolean; query: string; options: Client[];
+  onToggle: () => void; onQuery: (v: string) => void; onSelect: (c: Client) => void; onClear: () => void;
+}) {
+  return (
+    <div className="relative">
+      <button
+        onClick={onToggle}
+        title={selected ? `Coaching about ${selected.name}` : 'Attach a client for context'}
+        className="flex h-9 items-center gap-1.5 rounded-[10px] px-2.5 text-[11.5px] font-[650]"
+        style={{
+          background: selected ? 'rgba(139,92,246,0.12)' : 'var(--bg-subtle)',
+          border: `1px solid ${selected ? 'rgba(139,92,246,0.3)' : 'var(--border)'}`,
+          color: selected ? VIOLET : 'var(--text-muted)',
+          maxWidth: 150,
+        }}
+      >
+        <User size={13} />
+        <span className="hidden truncate sm:inline">{selected ? selected.name : 'Client'}</span>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[70]" onClick={onToggle} />
+          <div
+            className="absolute right-0 top-full z-[71] mt-1.5 w-[240px] overflow-hidden rounded-[13px] p-1.5"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 14px 36px rgba(0,0,0,0.2)' }}
+          >
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => onQuery(e.target.value)}
+              placeholder="Search clients…"
+              className="mb-1 w-full rounded-[9px] px-2.5 py-2 text-[12px] outline-none"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            />
+            {selected && (
+              <button
+                onClick={onClear}
+                className="mb-1 w-full rounded-[8px] px-2.5 py-1.5 text-left text-[11.5px] font-[650]"
+                style={{ color: '#ef4444' }}
+              >
+                Clear selection
+              </button>
+            )}
+            <div className="max-h-[220px] overflow-y-auto">
+              {options.length === 0 ? (
+                <p className="px-2.5 py-3 text-center text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>No clients found.</p>
+              ) : options.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => onSelect(c)}
+                  className="block w-full truncate rounded-[8px] px-2.5 py-2 text-left text-[12px]"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── Empty state ───────────────────────────────────────────────────────── */
+
+function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase }: {
+  onPrompt: (p: string) => void;
+  generators: typeof GENERATORS;
+  onGenerator: (href: string) => void;
+  onKnowledgeBase?: () => void;
+}) {
+  return (
+    <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-6">
+      <div className="mb-6 text-center">
+        <div
+          className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[18px]"
+          style={{ background: ACCENT, boxShadow: '0 8px 30px rgba(124,58,237,0.4)' }}
+        >
+          <Sparkles size={24} color="#fff" />
+        </div>
+        <h1 className="text-[22px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
+          What can I help with?
+        </h1>
+        <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          I read your studio&apos;s live records — clients, attendance, revenue, dues — and any SOPs
+          you&apos;ve uploaded, so answers are about <em>your</em> studio, not generic advice.
+        </p>
+      </div>
+
+      <div className="mb-6 flex flex-col gap-3">
+        {PROMPT_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="mb-1.5 text-[9.5px] font-[750] uppercase tracking-[0.08em]" style={{ color: group.accent }}>
+              {group.label}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {group.prompts.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => onPrompt(p)}
+                  className="rounded-full px-3 py-1.5 text-left text-[11.5px] font-[560] transition-transform active:scale-[0.97]"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+        <p className="mb-2 text-[9.5px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
+          Structured generators
+        </p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {generators.map((g) => (
+            <button
+              key={g.href}
+              onClick={() => onGenerator(g.href)}
+              className="flex items-center gap-2 rounded-[12px] px-3 py-2.5 text-left transition-transform active:scale-[0.98]"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <g.icon size={15} style={{ color: g.color, flexShrink: 0 }} />
+              <span className="truncate text-[11.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>{g.label}</span>
+            </button>
+          ))}
+        </div>
+        {onKnowledgeBase && (
+          <button
+            onClick={onKnowledgeBase}
+            className="mt-2 flex w-full items-center gap-2 rounded-[12px] px-3 py-2.5 text-left"
+            style={{ background: 'var(--bg-card)', border: '1px dashed var(--border)' }}
+          >
+            <BookOpen size={15} style={{ color: VIOLET, flexShrink: 0 }} />
+            <span className="text-[11.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>
+              Knowledge Base — upload SOPs the coach should answer from
+            </span>
+          </button>
+        )}
+      </div>
+    </m.div>
+  );
+}
+
+/* ── Message bubble ────────────────────────────────────────────────────── */
+
+function MessageBubble({ msg, copied, onCopy, canRegenerate, onRegenerate }: {
+  msg: ChatMessage; copied: boolean; onCopy: () => void;
+  canRegenerate: boolean; onRegenerate: () => void;
+}) {
+  const isUser = msg.role === 'user';
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div
+          className="max-w-[85%] rounded-[16px] rounded-br-[5px] px-3.5 py-2.5"
+          style={{ background: ACCENT, color: '#fff' }}
+        >
+          <p className="whitespace-pre-wrap text-[13px] leading-[1.5]">{msg.content}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="group flex gap-2.5">
+      <div
+        className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]"
+        style={{ background: msg.error ? 'rgba(239,68,68,0.12)' : 'rgba(139,92,246,0.14)' }}
+      >
+        {msg.error
+          ? <AlertTriangle size={13} style={{ color: '#ef4444' }} />
+          : <Sparkles size={13} style={{ color: VIOLET }} />}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div
+          className="rounded-[16px] rounded-tl-[5px] px-3.5 py-2.5"
+          style={{
+            background: msg.error ? 'rgba(239,68,68,0.06)' : 'var(--bg-card)',
+            border: `1px solid ${msg.error ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
+          }}
+        >
+          <ChatMarkdown content={msg.content} tone="themed" size={13} />
+
+          {(msg.sources?.length || msg.tools?.length) ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+              {msg.sources?.length ? (
+                <>
+                  <span className="flex items-center gap-1 text-[9px] font-[750] uppercase tracking-[0.05em]" style={{ color: 'var(--text-disabled)' }}>
+                    <BookOpen size={9} /> Sources
+                  </span>
+                  {msg.sources.map((s) => (
+                    <span key={s} className="rounded-full px-2 py-0.5 text-[10px] font-[620]"
+                      style={{ background: 'rgba(139,92,246,0.12)', color: VIOLET }}>{s}</span>
+                  ))}
+                </>
+              ) : null}
+              {msg.tools?.length ? (
+                <>
+                  <span className="flex items-center gap-1 text-[9px] font-[750] uppercase tracking-[0.05em]" style={{ color: 'var(--text-disabled)' }}>
+                    <Database size={9} /> Checked
+                  </span>
+                  {msg.tools.map((t) => (
+                    <span key={t} className="rounded-full px-2 py-0.5 text-[10px] font-[620]"
+                      style={{ background: 'rgba(34,211,238,0.14)', color: '#0891b2' }}>{t}</span>
+                  ))}
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {!msg.error && (
+          <div className="mt-1 flex items-center gap-1 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+            <button
+              onClick={onCopy}
+              className="flex items-center gap-1 rounded-[7px] px-1.5 py-1 text-[10px] font-[650]"
+              style={{ color: copied ? '#10b981' : 'var(--text-disabled)' }}
+            >
+              {copied ? <Check size={10} /> : <Copy size={10} />} {copied ? 'Copied' : 'Copy'}
+            </button>
+            {canRegenerate && (
+              <button
+                onClick={onRegenerate}
+                className="flex items-center gap-1 rounded-[7px] px-1.5 py-1 text-[10px] font-[650]"
+                style={{ color: 'var(--text-disabled)' }}
+              >
+                <RotateCcw size={10} /> Try again
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <div className="flex gap-2.5">
+      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]" style={{ background: 'rgba(139,92,246,0.14)' }}>
+        <Loader2 size={13} className="animate-spin" style={{ color: VIOLET }} />
+      </div>
+      <div
+        className="flex items-center gap-1 rounded-[16px] rounded-tl-[5px] px-4 py-3"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+      >
+        {[0, 1, 2].map((i) => (
+          <m.span
+            key={i}
+            animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
+            transition={{ repeat: Infinity, duration: 0.9, delay: i * 0.15, ease: 'easeInOut' }}
+            style={{ width: 5, height: 5, borderRadius: '50%', background: VIOLET }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }

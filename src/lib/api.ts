@@ -1980,6 +1980,13 @@ export const api = {
     deleteConversation: (id: string) =>
       http<{ message: string }>(`/api/ai/conversations/${id}`, { method: 'DELETE' }),
 
+    /** Rename and/or pin a conversation. Send at least one field. */
+    updateConversation: (id: string, data: { title?: string; pinned?: boolean }) =>
+      http<{ data: AiConversation }>(`/api/ai/conversations/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+
     usage: () =>
       http<{ data: AiUsageStats }>('/api/ai/usage'),
 
@@ -2841,6 +2848,7 @@ export type AiConversation = {
   id: string;
   title: string | null;
   client_id: string | null;
+  pinned?: boolean;
   last_message?: string | null;
   message_count?: number;
   created_at: string;
