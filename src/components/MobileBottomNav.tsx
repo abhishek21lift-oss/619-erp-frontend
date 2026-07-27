@@ -2,25 +2,25 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Home, Users, ScanFace, Dumbbell, IndianRupee, LayoutGrid, Layers, CreditCard, Activity } from 'lucide-react';
+import { Home, Users, ScanFace, Dumbbell, Bot, LayoutGrid, Layers, CreditCard, Activity } from 'lucide-react';
 import { m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { getImpersonation } from '@/lib/http';
 import { normaliseRole } from '@/lib/nav-config';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 
+// AI Coach replaced the Finance tab here. Finance was also the one tab gated
+// to admin/manager, which meant trainers and reception saw a 4-tab bar and
+// everyone else a 5-tab one; AI Coach is open to every studio role (see the
+// ai-coach group in nav-config.ts), so the bar is now the same five tabs for
+// everyone. Finance is still reachable from the sidebar's Finance group.
 const BASE_ITEMS = [
-  { href: '/',               icon: Home,        label: 'Home'     },
-  { href: '/pt-os/clients',  icon: Users,       label: 'Clients'  },
+  { href: '/',                   icon: Home,     label: 'Home'     },
+  { href: '/pt-os/clients',      icon: Users,    label: 'Clients'  },
+  { href: '/ai-coach',           icon: Bot,      label: 'AI Coach' },
+  { href: '/pt-os/sessions',     icon: Dumbbell, label: 'Sessions' },
   { href: '/checkin/qr-scanner', icon: ScanFace, label: 'Check-in' },
-  { href: '/pt-os/sessions', icon: Dumbbell,    label: 'Sessions' },
 ];
-
-const FINANCE_ITEM = {
-  href: '/finance/collected-payments',
-  icon: IndianRupee,
-  label: 'Finance',
-};
 
 // Platform operators get control-plane tabs instead of studio tabs. These all
 // share the /platform pathname and differ only by ?tab=, so each carries an
@@ -55,9 +55,7 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   // While impersonating, the operator acts as the studio admin — show studio
   // tabs, not the platform control plane.
   const isSuperAdmin     = role === 'super_admin' && !getImpersonation();
-  const isAdminOrManager = role === 'admin' || role === 'manager';
-  const items            = isSuperAdmin ? PLATFORM_ITEMS
-                          : isAdminOrManager ? [...BASE_ITEMS, FINANCE_ITEM] : BASE_ITEMS;
+  const items            = isSuperAdmin ? PLATFORM_ITEMS : BASE_ITEMS;
 
   const { reducedMotion } = useNavScroll();
   const dur = reducedMotion ? 0 : 0.28;
@@ -150,8 +148,11 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
               </m.span>
 
               {/* Label */}
+              {/* nowrap: "AI Coach" is the only label containing a space, and
+                  the bar's height is fixed — letting it stack onto two lines
+                  would push it out of the row. */}
               <span
-                className="relative z-10 select-none text-[9.5px] font-bold uppercase leading-none"
+                className="relative z-10 select-none whitespace-nowrap text-[9.5px] font-bold uppercase leading-none"
                 style={{
                   letterSpacing: '0.065em',
                   color: isActive ? '#c4b5fd' : 'rgba(255,255,255,0.36)',
