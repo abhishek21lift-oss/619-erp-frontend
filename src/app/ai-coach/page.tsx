@@ -656,8 +656,12 @@ interface RailProps {
 function ConversationRail(props: RailProps) {
   const { open, onClose, conversations, activeId, query, onQuery, onNew } = props;
 
+  // No background here on purpose — each wrapper supplies its own. The desktop
+  // column keeps the translucent glass token because it sits on the page
+  // canvas, but the mobile drawer floats over live chat content and needs an
+  // opaque surface or you read the messages straight through it.
   const body = (
-    <div className="flex h-full flex-col" style={{ background: 'var(--bg-card)' }}>
+    <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 p-3" style={{ borderBottom: '1px solid var(--border)' }}>
         <button
           onClick={onNew}
@@ -714,7 +718,10 @@ function ConversationRail(props: RailProps) {
   return (
     <>
       {/* Desktop: permanent column */}
-      <aside className="hidden w-[268px] shrink-0 lg:block" style={{ borderRight: '1px solid var(--border)' }}>
+      <aside
+        className="hidden w-[268px] shrink-0 lg:block"
+        style={{ borderRight: '1px solid var(--border)', background: 'var(--bg-card)' }}
+      >
         {body}
       </aside>
 
@@ -732,7 +739,11 @@ function ConversationRail(props: RailProps) {
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 32, stiffness: 340 }}
               className="ai-rail-band left-0 z-[61] w-[280px] lg:hidden"
-              style={{ boxShadow: '8px 0 32px rgba(0,0,0,0.25)' }}
+              style={{
+                background: 'var(--bg-elevated)',
+                borderRight: '1px solid var(--border)',
+                boxShadow: '8px 0 32px rgba(0,0,0,0.25)',
+              }}
             >
               {body}
             </m.aside>
