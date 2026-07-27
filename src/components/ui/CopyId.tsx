@@ -42,7 +42,7 @@ export function CopyId({ id, color = '#6366f1', className = '' }: Props) {
       }}
     >
       {id}
-      <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+      <span className="opacity-40 transition-opacity group-hover:opacity-100 group-active:opacity-100">
         {copied
           ? <Check size={9} />
           : <Copy size={9} />

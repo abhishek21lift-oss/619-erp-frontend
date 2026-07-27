@@ -110,9 +110,9 @@ function CircularProgress({
 
 function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
-    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
-      <span className="text-[12px] font-[500] text-slate-500">{label}</span>
-      <span className="text-[12.5px] font-[650] text-right" style={{ color: valueColor ?? '#111827' }}>{value}</span>
+    <div className="flex items-start justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+      <span className="shrink-0 text-[12px] font-[500] text-slate-500">{label}</span>
+      <span className="min-w-0 flex-1 break-words text-right text-[12.5px] font-[650]" style={{ color: valueColor ?? '#111827' }}>{value}</span>
     </div>
   );
 }
@@ -975,15 +975,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               style={isLast
                                 ? { background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.18)' }
                                 : { background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-center gap-2.5">
-                                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
+                              <div className="flex items-start justify-between gap-3 mb-3">
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
                                     style={{ background: 'rgba(99,102,241,0.12)' }}>{idx + 1}</span>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-[13px] font-[700] text-gray-900">{s.plan_name || '—'}</p>
+                                  <div className="min-w-0">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      <p className="min-w-0 truncate text-[13px] font-[700] text-gray-900">{s.plan_name || '—'}</p>
                                       {isLast && (
-                                        <span className="rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
+                                        <span className="shrink-0 rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
                                           style={{ background: 'rgba(99,102,241,0.12)' }}>Current</span>
                                       )}
                                     </div>
@@ -993,7 +993,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                                     </p>
                                   </div>
                                 </div>
-                                <span className="rounded-[7px] px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wider"
+                                <span className="shrink-0 rounded-[7px] px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wider"
                                   style={{ background: st.bg, color: st.color }}>{st.label}</span>
                               </div>
                               <div className={`grid gap-2 ${isLast ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
@@ -1016,14 +1016,14 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           return (
                             <div className="rounded-[16px] p-4"
                               style={{ background: 'rgba(99,102,241,0.06)', border: '1.5px solid rgba(99,102,241,0.18)' }}>
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex items-center gap-2.5">
-                                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
+                              <div className="flex items-start justify-between gap-3 mb-3">
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-[800] text-indigo-600"
                                     style={{ background: 'rgba(99,102,241,0.12)' }}>1</span>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-[13px] font-[700] text-gray-900">{client.package_type || '—'}</p>
-                                      <span className="rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
+                                  <div className="min-w-0">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      <p className="min-w-0 truncate text-[13px] font-[700] text-gray-900">{client.package_type || '—'}</p>
+                                      <span className="shrink-0 rounded-[5px] px-1.5 py-0.5 text-[8.5px] font-[800] uppercase tracking-wider text-indigo-600"
                                         style={{ background: 'rgba(99,102,241,0.12)' }}>Current</span>
                                     </div>
                                     <p className="text-[10.5px] text-slate-500 mt-0.5">
@@ -1032,7 +1032,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                                     </p>
                                   </div>
                                 </div>
-                                <span className="rounded-[7px] px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wider"
+                                <span className="shrink-0 rounded-[7px] px-2 py-0.5 text-[9.5px] font-[700] uppercase tracking-wider"
                                   style={{ background: st.bg, color: st.color }}>{st.label}</span>
                               </div>
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
