@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
   ArrowLeft, Save, User, Dumbbell, Wallet,
-  CheckCircle, Info, Activity,
+  CheckCircle, Info,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -13,11 +13,6 @@ import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-
-interface Trainer {
-  id: string;
-  name: string;
-}
 
 function addMonths(dateStr: string, months: number): string {
   if (!dateStr || !months) return '';
@@ -66,24 +61,18 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
 
   const [form, setForm] = useState({
     // Personal
-    name: '', mobile: '', email: '', gender: '', dob: '', address: '', weight: '', emergency_contact: '', emergency_phone: '',
+    name: '', mobile: '', email: '', gender: '', dob: '', address: '', emergency_contact: '', emergency_phone: '',
     // PT Assignment
-    trainer_id: '', trainer_name: '', package_type: '', pt_start_date: '', pt_end_date: '', duration_months: '',
+    pt_start_date: '', pt_end_date: '', duration_months: '',
     // Financial
-    base_amount: '', final_amount: '', paid_amount: '', monthly_pt_amount: '',
-    // Status
-    status: 'active',
-    // Fitness profile
-    goal: '', height: '', body_fat: '', health_conditions: '', injuries: '', frequency: '',
+    final_amount: '', paid_amount: '',
   });
 
   // Derived (read-only)
-  const discount = Math.max(0, (parseFloat(form.base_amount) || 0) - (parseFloat(form.final_amount) || 0));
-  const balance  = Math.max(0, (parseFloat(form.final_amount) || 0) - (parseFloat(form.paid_amount) || 0));
+  const balance = Math.max(0, (parseFloat(form.final_amount) || 0) - (parseFloat(form.paid_amount) || 0));
 
   const set = (key: keyof typeof form) => (v: string) =>
     setForm(p => ({ ...p, [key]: v }));
@@ -96,26 +85,12 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     }
   }, []);
 
-  // When final_amount or duration_months changes → recalculate monthly fee
-  const recalcMonthly = useCallback((finalAmt: string, months: string) => {
-    const f = parseFloat(finalAmt);
-    const monthsNum = parseInt(months, 10);
-    if (f > 0 && monthsNum > 0) {
-      setForm(p => ({ ...p, monthly_pt_amount: (f / monthsNum).toFixed(2) }));
-    }
-  }, []);
-
-  // Load client data and trainers
+  // Load client data
   useEffect(() => {
     (async () => {
       try {
-        const [clientRes, trainersRes] = await Promise.all([
-          api.pt.client(id),
-          api.pt.trainers(),
-        ]);
+        const clientRes = await api.pt.client(id);
         const c = (clientRes as any)?.data;
-        const trainersArr = Array.isArray((trainersRes as any)?.data) ? (trainersRes as any).data : [];
-        setTrainers(trainersArr.map((t: any) => ({ id: t.id, name: t.name })));
         if (c) {
           setForm({
             name: c.name ?? '',
@@ -124,26 +99,13 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
             gender: c.gender ?? '',
             dob: c.dob ? String(c.dob).slice(0, 10) : '',
             address: c.address ?? '',
-            weight: c.weight != null ? String(c.weight) : '',
             emergency_contact: c.emergency_contact ?? '',
             emergency_phone: c.emergency_phone ?? '',
-            trainer_id: c.trainer_id ?? '',
-            trainer_name: c.trainer_name ?? '',
-            package_type: c.package_type ?? '',
             pt_start_date: c.pt_start_date ? String(c.pt_start_date).slice(0, 10) : '',
             pt_end_date: c.pt_end_date ? String(c.pt_end_date).slice(0, 10) : '',
             duration_months: c.duration_months != null ? String(c.duration_months) : '',
-            monthly_pt_amount: c.monthly_pt_amount != null ? String(c.monthly_pt_amount) : '',
-            base_amount: c.base_amount != null ? String(c.base_amount) : '',
             final_amount: c.final_amount != null ? String(c.final_amount) : '',
             paid_amount: c.paid_amount != null ? String(c.paid_amount) : '',
-            status: c.status ?? 'active',
-            goal: c.goal ?? '',
-            height: c.height != null ? String(c.height) : '',
-            body_fat: c.body_fat != null ? String(c.body_fat) : '',
-            health_conditions: c.health_conditions ?? '',
-            injuries: c.injuries ?? '',
-            frequency: c.frequency ?? '',
           });
         }
       } catch (err: any) {
@@ -167,27 +129,13 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
         gender: str(form.gender),
         dob: str(form.dob),
         address: str(form.address),
-        weight: num(form.weight),
         emergency_contact: str(form.emergency_contact),
         emergency_phone: str(form.emergency_phone),
-        trainer_id: str(form.trainer_id),
-        trainer_name: str(form.trainer_name),
-        package_type: str(form.package_type),
         pt_start_date: str(form.pt_start_date),
         pt_end_date: str(form.pt_end_date),
         duration_months: num(form.duration_months),
-        monthly_pt_amount: num(form.monthly_pt_amount),
-        base_amount: num(form.base_amount),
-        discount: discount,
         final_amount: num(form.final_amount),
         paid_amount: num(form.paid_amount),
-        status: form.status,
-        goal: str(form.goal),
-        height: num(form.height),
-        body_fat: num(form.body_fat),
-        health_conditions: str(form.health_conditions),
-        injuries: str(form.injuries),
-        frequency: str(form.frequency),
       });
       toast.success('Client updated successfully');
       router.push(`/pt-os/clients/${id}`);
@@ -263,70 +211,17 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   </select>
                 </div>
                 <FloatInput label="Date of Birth" type="date" value={form.dob} onChange={set('dob')} />
-                <FloatInput label="Weight (kg)" type="number" value={form.weight} onChange={set('weight')} />
                 <div className="sm:col-span-2">
                   <FloatInput label="Address" value={form.address} onChange={set('address')} />
                 </div>
                 <FloatInput label="Emergency Contact" value={form.emergency_contact} onChange={set('emergency_contact')} />
                 <FloatInput label="Emergency Number" type="tel" value={form.emergency_phone} onChange={set('emergency_phone')} />
-                <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>Status</label>
-                  <select
-                    value={form.status}
-                    onChange={e => setForm(p => ({ ...p, status: e.target.value }))}
-                    className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
-                    style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1.5px solid var(--border)' }}>
-                    <option value="active">Active</option>
-                    <option value="expired">Expired</option>
-                    <option value="frozen">Frozen</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
               </div>
             </SectionCard>
 
             {/* ── PT Assignment ── */}
             <SectionCard title="PT Assignment" icon={<Dumbbell size={16} />} accent="#6366f1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                {/* Trainer dropdown */}
-                <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-[600] mb-2" style={{ color: 'var(--text-disabled)' }}>
-                    Trainer
-                  </label>
-                  <select
-                    value={form.trainer_id}
-                    onChange={e => {
-                      const tid = e.target.value;
-                      const t = trainers.find(tr => tr.id === tid);
-                      setForm(p => ({ ...p, trainer_id: tid, trainer_name: t?.name ?? p.trainer_name }));
-                    }}
-                    className="w-full rounded-[13px] px-4 py-3.5 text-[13.5px] font-[500] outline-none appearance-none transition-all"
-                    style={{ background: 'var(--bg-card)', color: form.trainer_id ? '#111827' : '#6b7280', border: '1.5px solid var(--border)' }}>
-                    <option value="">Select trainer…</option>
-                    {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                  {/* Editable fallback if trainer not in list */}
-                  {!form.trainer_id && (
-                    <FloatInput label="Trainer Name (manual)" value={form.trainer_name} onChange={set('trainer_name')} />
-                  )}
-                </div>
-
-                {/* Package name (editable text) */}
-                <div className="sm:col-span-2">
-                  <FloatInput label="Package Name" value={form.package_type} onChange={set('package_type')} />
-                </div>
-
-                <FloatInput
-                  label="Duration (months)"
-                  type="number"
-                  value={form.duration_months}
-                  onChange={v => {
-                    setForm(p => ({ ...p, duration_months: v }));
-                    recalcEndDate(form.pt_start_date, v);
-                    recalcMonthly(form.final_amount, v);
-                  }}
-                />
 
                 <FloatInput
                   label="PT Start Date"
@@ -335,6 +230,16 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   onChange={v => {
                     setForm(p => ({ ...p, pt_start_date: v }));
                     recalcEndDate(v, form.duration_months);
+                  }}
+                />
+
+                <FloatInput
+                  label="Duration (months)"
+                  type="number"
+                  value={form.duration_months}
+                  onChange={v => {
+                    setForm(p => ({ ...p, duration_months: v }));
+                    recalcEndDate(form.pt_start_date, v);
                   }}
                 />
 
@@ -358,29 +263,10 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                 <FloatInput
-                  label="Base Amount (₹)"
-                  type="number"
-                  value={form.base_amount}
-                  onChange={v => {
-                    setForm(p => ({ ...p, base_amount: v }));
-                  }}
-                />
-
-                <FloatInput
                   label="Final / Selling Price (₹)"
                   type="number"
                   value={form.final_amount}
-                  onChange={v => {
-                    setForm(p => ({ ...p, final_amount: v }));
-                    recalcMonthly(v, form.duration_months);
-                  }}
-                />
-
-                {/* Discount — auto-calculated, read-only */}
-                <ReadOnlyField
-                  label="Discount (auto)"
-                  value={discount > 0 ? `−${fmtINR(discount)}` : '—'}
-                  highlight={discount > 0 ? 'amber' : undefined}
+                  onChange={set('final_amount')}
                 />
 
                 <FloatInput
@@ -397,18 +283,6 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                   highlight={balance > 0 ? 'red' : 'green'}
                 />
 
-                <FloatInput
-                  label="Monthly PT Fee (₹)"
-                  type="number"
-                  value={form.monthly_pt_amount}
-                  onChange={set('monthly_pt_amount')}
-                  suffix={
-                    form.duration_months && form.final_amount
-                      ? <span style={{ fontSize: 10, color: '#10b981', fontWeight: 600 }}>auto</span>
-                      : undefined
-                  }
-                />
-
               </div>
 
               {/* Info hint */}
@@ -416,28 +290,8 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.12)' }}>
                 <Info size={12} style={{ color: '#6366f1', marginTop: 2, flexShrink: 0 }} />
                 <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-disabled)' }}>
-                  Discount = Base − Final. Balance = Final − Paid. Monthly Fee = Final ÷ Duration. These recalculate automatically as you type.
+                  Balance = Final − Paid. This recalculates automatically as you type.
                 </p>
-              </div>
-            </SectionCard>
-
-            {/* ── Fitness Profile ── */}
-            <SectionCard title="Fitness Profile" icon={<Activity size={16} />} accent="#0891b2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <FloatInput label="Primary Goal" value={form.goal} onChange={set('goal')} placeholder="e.g. Weight Loss, Muscle Gain" />
-                </div>
-                <FloatInput label="Height (cm)" type="number" value={form.height} onChange={set('height')} />
-                <FloatInput label="Body Fat %" type="number" value={form.body_fat} onChange={set('body_fat')} />
-                <div className="sm:col-span-2">
-                  <FloatInput label="Frequency (e.g. 3x/week)" value={form.frequency} onChange={set('frequency')} />
-                </div>
-                <div className="sm:col-span-2">
-                  <FloatInput label="Health Conditions" value={form.health_conditions} onChange={set('health_conditions')} placeholder="e.g. Diabetes, Hypertension" />
-                </div>
-                <div className="sm:col-span-2">
-                  <FloatInput label="Injuries / Medical Notes" value={form.injuries} onChange={set('injuries')} />
-                </div>
               </div>
             </SectionCard>
 
