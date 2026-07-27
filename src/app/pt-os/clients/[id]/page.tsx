@@ -12,7 +12,7 @@ import {
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer,
+  QrCode, Printer, PiggyBank,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -425,6 +425,14 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const currentTermPaid    = currentSub ? Number(currentSub.amount_paid    ?? 0) : (client?.paid_amount    ?? 0);
   const currentTermBalance = currentSub ? Number(currentSub.balance_amount ?? 0) : (client?.balance_amount ?? 0);
 
+  // Lifetime paid — sum of amount_paid across every PT term/renewal, not just
+  // the current one. Falls back to the client's own paid_amount when there's
+  // no renewal history yet (client is still on their first, only term).
+  const lifetimePaid = subscriptionHistory.length > 0
+    ? subscriptionHistory.reduce((s: number, t: any) => s + Number(t.amount_paid ?? 0), 0)
+    : (client?.paid_amount ?? 0);
+  const lifetimeTermCount = subscriptionHistory.length > 0 ? subscriptionHistory.length : 1;
+
   const completionPct = currentTermFee > 0
     ? Math.min(Math.round((currentTermPaid / currentTermFee) * 100), 100)
     : 0;
@@ -566,7 +574,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 </div>
 
                 {/* ── KPI CARDS ── */}
-                <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     {
                       label: 'Total PT Fee', value: fmtINR(currentTermFee),
@@ -584,6 +592,11 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       from: currentTermBalance > 0 ? '#ef4444' : '#10b981',
                       to: currentTermBalance > 0 ? '#dc2626' : '#059669',
                       sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'OVERDUE' : 'Due') : 'Cleared',
+                    },
+                    {
+                      label: 'Total Paid (All Terms)', value: fmtINR(lifetimePaid),
+                      icon: <PiggyBank size={18} />, from: '#0ea5e9', to: '#0284c7',
+                      sub: `Across ${lifetimeTermCount} term${lifetimeTermCount !== 1 ? 's' : ''}`,
                     },
                   ].map((card, i) => (
                     <m.div key={card.label}
