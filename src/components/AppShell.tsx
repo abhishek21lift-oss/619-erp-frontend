@@ -23,6 +23,7 @@ import OrgSwitcher from '@/components/OrgSwitcher';
 import ImpersonationBanner from '@/components/ImpersonationBanner';
 import TrialBanner from '@/components/TrialBanner';
 import GlobalSearch, { type PageEntry } from '@/components/search/GlobalSearch';
+import useKeyboardViewportFix from '@/hooks/useKeyboardViewportFix';
 import { clearSearchHistory } from '@/components/search/recent';
 
 interface AppShellProps {
@@ -100,6 +101,10 @@ function timeAgo(dateStr: string): string {
 }
 
 function AppShellContent({ children, title, headerLeft }: AppShellProps) {
+  // Every page in the shell has fields, so the iOS keyboard-dismiss gap is a
+  // shell-level problem, not a per-page one.
+  useKeyboardViewportFix();
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
