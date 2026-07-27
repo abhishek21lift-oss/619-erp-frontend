@@ -48,10 +48,20 @@ function hostOf(url) {
  * breaks the app in production if a directive is wrong, and it is the one
  * header here with real logic in it.
  */
-function buildCsp(env = process.env) {
+function buildCsp(env = process.env, opts = {}) {
   const supabaseHost = hostOf(env.NEXT_PUBLIC_SUPABASE_URL) || '*.supabase.co';
   const apiOrigin = originOf(env.NEXT_PUBLIC_API_URL);
   const apiConnect = apiOrigin ? ` ${apiOrigin}` : '';
+
+  // With a nonce, script-src trades 'unsafe-inline' for the nonce itself —
+  // Next.js stamps its own hydration scripts with it, and the app no longer
+  // has any inline script of its own (the theme bootstrap moved to
+  // /theme-init.js). Everything else in the policy is identical, so a
+  // violation reported under the nonce policy is unambiguously about inline
+  // script and nothing else.
+  const scriptSrc = opts.nonce
+    ? `script-src 'self' 'nonce-${opts.nonce}' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com`
+    : null;
 
   return [
     "default-src 'self'",
@@ -70,7 +80,7 @@ function buildCsp(env = process.env) {
     //
     // cdnjs serves SheetJS, which lib/sheet-import.ts injects as a script tag
     // (with SRI) on first use of the spreadsheet importer.
-    "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com",
+    scriptSrc || "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com",
 
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/",
     `img-src 'self' data: blob: https://${supabaseHost} https://lh3.googleusercontent.com`,
@@ -189,4 +199,27 @@ function securityHeaders(isProd, env = process.env) {
   return headers;
 }
 
-module.exports = { securityHeaders, buildCsp, HSTS };
+/**
+ * The candidate strict policy, as REPORT-ONLY.
+ *
+ * This is how 'unsafe-inline' gets removed without a silent production
+ * outage. The enforced policy (above, from next.config.js) is unchanged and
+ * still permits inline script, so nothing can break; this one runs alongside
+ * it and only reports what WOULD have been blocked. When real traffic stops
+ * producing violations, the same string can be promoted to the enforced
+ * header and 'unsafe-inline' deleted.
+ *
+ * A CSP tightened by reasoning alone breaks in exactly the places nobody
+ * tested. This measures instead.
+ *
+ * `reportUri` is optional: without it violations appear only in the browser
+ * console and as securitypolicyviolation events. Sentry accepts CSP reports
+ * at https://<host>/api/<project>/security/?sentry_key=<key> if you want them
+ * collected centrally.
+ */
+function buildReportOnlyCsp(env, nonce, reportUri) {
+  const csp = buildCsp(env, { nonce });
+  return reportUri ? `${csp}; report-uri ${reportUri}` : csp;
+}
+
+module.exports = { securityHeaders, buildCsp, buildReportOnlyCsp, HSTS };

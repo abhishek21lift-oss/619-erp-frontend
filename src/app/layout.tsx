@@ -23,6 +23,24 @@ const jetBrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+// Required by the nonce-based CSP, and measured rather than assumed.
+//
+// A per-request nonce cannot reach a statically prerendered page: its HTML —
+// including the inline hydration scripts Next.js emits — is written to disk at
+// build time, long before any request exists. With /login prerendered, the
+// Report-Only policy in proxy.ts reported 8 inline-script violations per page
+// load; with this line, zero. That is the whole cost of removing
+// 'unsafe-inline' from script-src, stated plainly:
+//
+//   every page is now server-rendered per request instead of served from a
+//   prebuilt HTML file — more serverless invocations and a slower TTFB.
+//
+// It is cheap here because nearly every route is an auth-gated client
+// component whose real content arrives from the API anyway; the prerendered
+// HTML was an empty shell. Delete this line to get static rendering back, and
+// expect the inline-script violations to return with it.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://619fitnessstudio.com'),
   title: {
@@ -97,14 +115,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           (stored preference wins over the system preference) and is wrapped in
           try/catch because localStorage throws in some privacy modes.
 
-          Inline script is permitted by the CSP in proxy.ts ('unsafe-inline' on
-          script-src).
+          It is an external file, NOT an inline script, and that is a security
+          decision rather than a style one: author-written inline scripts are
+          what force 'unsafe-inline' into script-src, and this was the only one
+          left in the app. An external file needs only 'self'. The alternative
+          — keeping it inline and stamping it with the request nonce — would
+          mean calling headers() here, which is more machinery for eight lines
+          of theme code.
+
+          Render-blocking on purpose — no async/defer. It must complete before
+          the first paint, and it is a handful of bytes served same-origin.
+          eslint-disable next line: @next/next/no-sync-scripts exists to stop
+          people accidentally blocking render. Here blocking IS the feature —
+          a deferred theme script is just the flash of wrong theme all over
+          again.
         */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`,
-          }}
-        />
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/theme-init.js" />
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="manifest" href="/manifest.json" />
         {/* Skip-to-content link (Accessibility — Issue #16) */}

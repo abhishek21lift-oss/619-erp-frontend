@@ -3,7 +3,12 @@
 // only. These tests are the only thing standing between an edit here and a
 // blank page for every user.
 
-const { securityHeaders, buildCsp, HSTS } = require('../lib/security-headers');
+const {
+  securityHeaders,
+  buildCsp,
+  buildReportOnlyCsp,
+  HSTS,
+} = require('../lib/security-headers');
 
 type Header = { key: string; value: string };
 const byKey = (hs: Header[], k: string) => hs.find((h) => h.key === k)?.value;
@@ -51,6 +56,42 @@ describe('buildCsp', () => {
     expect(csp).toMatch(/frame-src[^;]*https:\/\/accounts\.google\.com/);
     // Google avatar images.
     expect(csp).toContain('https://lh3.googleusercontent.com');
+  });
+});
+
+describe('buildReportOnlyCsp — the candidate strict policy', () => {
+  it('swaps unsafe-inline for the nonce in script-src', () => {
+    // The whole point of the measurement: if this policy still allowed inline
+    // script it would report nothing and prove nothing.
+    // Scoped to script-src deliberately — style-src keeps 'unsafe-inline',
+    // because Next.js injects inline styles and inline CSS is a far smaller
+    // problem than inline JS. Removing that is a separate exercise.
+    const scriptSrc = buildReportOnlyCsp({}, 'abc123')
+      .split('; ')
+      .find((d: string) => d.startsWith('script-src')) as string;
+    expect(scriptSrc).toContain("'nonce-abc123'");
+    expect(scriptSrc).not.toContain('unsafe-inline');
+    expect(scriptSrc).not.toContain('unsafe-eval');
+  });
+
+  it('leaves the enforced policy alone', () => {
+    // Report-Only must never be able to break the site. The enforced policy
+    // keeps unsafe-inline until the reports say it is safe to drop.
+    expect(buildCsp({})).toContain('unsafe-inline');
+  });
+
+  it('differs from the enforced policy ONLY in script-src', () => {
+    // A violation must be unambiguously about inline script. If any other
+    // directive drifted, the reports would be uninterpretable.
+    const strip = (csp: string) =>
+      csp.split('; ').filter((d) => !d.startsWith('script-src')).join('; ');
+    expect(strip(buildReportOnlyCsp({}, 'n1'))).toBe(strip(buildCsp({})));
+  });
+
+  it('appends report-uri only when one is configured', () => {
+    expect(buildReportOnlyCsp({}, 'n1', 'https://example.com/csp'))
+      .toContain('report-uri https://example.com/csp');
+    expect(buildReportOnlyCsp({}, 'n1')).not.toContain('report-uri');
   });
 });
 

@@ -21,6 +21,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { buildReportOnlyCsp } from '@/lib/security-headers';
 
 const PUBLIC_PREFIXES: string[] = [
   '/',
@@ -40,6 +41,11 @@ const PUBLIC_PREFIXES: string[] = [
   // icon. It only describes the app's name, icons and start URL; nothing here
   // is private.
   '/manifest.json',
+  // The matcher below exempts image and font extensions but NOT .js, so
+  // without this the pre-paint theme script 307s to /login for anyone signed
+  // out — meaning the login page itself flashes the wrong theme. It only reads
+  // localStorage and sets a class name.
+  '/theme-init.js',
   '/logo.png',
   '/619-logo.png',
   '/sitemap.xml',
@@ -54,12 +60,46 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
-// Security headers (CSP, HSTS, COOP, CORP, …) are NOT set here. They live in
-// next.config.js via src/lib/security-headers.js, because the matcher at the
-// bottom of this file deliberately skips `api`, `_next/static`, `_next/image`,
-// favicon and every image/font extension — so anything set here would miss API
-// responses and every static asset. next.config.js headers() covers all of it.
+// The ENFORCED security headers (CSP, HSTS, COOP, CORP, …) are NOT set here.
+// They live in next.config.js via src/lib/security-headers.js, because the
+// matcher at the bottom of this file deliberately skips `api`,
+// `_next/static`, `_next/image`, favicon and every image/font extension — so
+// anything set there would miss API responses and every static asset.
 // Re-adding them here would silently override that single source of truth.
+//
+// What DOES belong here is the Report-Only policy, because it needs a
+// per-request nonce and next.config.js headers() are static. It only applies
+// to documents, which is the only place a CSP does anything at all.
+
+/** Base64 nonce. crypto.getRandomValues is available in the edge runtime. */
+function makeNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes));
+}
+
+/**
+ * Attach the candidate strict CSP as Report-Only, so violations are measured
+ * against real traffic before 'unsafe-inline' is removed from the enforced
+ * policy.
+ *
+ * Next.js reads the nonce out of the Content-Security-Policy REQUEST header
+ * and stamps its own inline hydration scripts with it. That is why the request
+ * header is set as well as the response header — without it every Next.js
+ * bootstrap script would report a violation and the signal would be all noise.
+ */
+function withReportOnlyCsp(req: NextRequest): NextResponse {
+  const nonce = makeNonce();
+  const csp = buildReportOnlyCsp(process.env, nonce, process.env.CSP_REPORT_URI);
+
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
+
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  res.headers.set('Content-Security-Policy-Report-Only', csp);
+  return res;
+}
 
 function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextResponse {
   const loginUrl = req.nextUrl.clone();
@@ -77,7 +117,7 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (isPublicPath(pathname)) {
-    return NextResponse.next();
+    return withReportOnlyCsp(req);
   }
 
   // Accept token from cookie or Authorization: Bearer header
@@ -97,7 +137,7 @@ export async function proxy(req: NextRequest) {
     // Full cryptographic verification — requires JWT_SECRET in frontend env
     try {
       await jwtVerify(token, new TextEncoder().encode(secret));
-      return NextResponse.next();
+      return withReportOnlyCsp(req);
     } catch {
       return redirectToLogin(req, true);
     }
@@ -117,7 +157,7 @@ export async function proxy(req: NextRequest) {
     return redirectToLogin(req, true);
   }
 
-  return NextResponse.next();
+  return withReportOnlyCsp(req);
 }
 
 export const config = {
