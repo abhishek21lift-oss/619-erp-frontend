@@ -9,7 +9,14 @@ import PtOsDashboard from '@/components/dashboards/PtOsDashboard';
 import LandingPage from '@/components/LandingPage';
 import BrandLogo from '@/components/BrandLogo';
 
-const INIT_TIMEOUT_MS = 10_000;
+// Must stay comfortably ABOVE the auth bootstrap's own abort timeout
+// (auth-context.tsx aborts /api/auth/me at 10s). Both used to be 10s, so they
+// raced: auth-context handles a slow or unreachable API by keeping the cached
+// session and resolving — the graceful path — while this timer was declaring a
+// hard "Connection problem" on the same deadline. Whichever won decided
+// whether the user got the app or a dead end. This net is only for auth never
+// resolving at all; a slow API is already somebody else's job.
+const INIT_TIMEOUT_MS = 20_000;
 
 export default function Root() {
   const { user, loading } = useAuth();
