@@ -442,7 +442,10 @@ export default function AiCoachPage() {
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[14px] font-[760]" style={{ color: 'var(--text-primary)' }}>AI Coach</p>
-                <p className="truncate text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+                {/* Hidden on phones: at that width it only ever rendered as
+                    "Answers from your studio's live data & doc…", which tells
+                    the user nothing and costs a line of a very tight header. */}
+                <p className="hidden truncate text-[10.5px] sm:block" style={{ color: 'var(--text-muted)' }}>
                   Answers from your studio&apos;s live data &amp; documents
                 </p>
               </div>
@@ -516,11 +519,10 @@ export default function AiCoachPage() {
 
             {/* Composer */}
             <div
-              className="shrink-0 px-3 pt-2.5 sm:px-5"
+              className="ai-composer shrink-0 px-3 pt-2.5 sm:px-5"
               style={{
                 borderTop: '1px solid var(--border)',
                 background: 'var(--bg-card)',
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
               }}
             >
               <div className="mx-auto flex w-full max-w-3xl items-end gap-2">
@@ -532,7 +534,7 @@ export default function AiCoachPage() {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); }
                   }}
                   rows={1}
-                  placeholder="Ask about a client, your studio's numbers, training, nutrition…"
+                  placeholder="Ask anything…"
                   className="flex-1 resize-none rounded-[14px] px-3.5 py-2.5 text-[13px] outline-none"
                   style={{
                     background: 'var(--bg-subtle)',
@@ -564,7 +566,8 @@ export default function AiCoachPage() {
                 )}
               </div>
               <p className="mx-auto mt-1.5 max-w-3xl text-center text-[10px]" style={{ color: 'var(--text-disabled)' }}>
-                AI can make mistakes — apply your own judgement before acting on a recommendation.
+                AI can make mistakes — apply your own judgement
+                <span className="hidden sm:inline"> before acting on a recommendation</span>.
               </p>
             </div>
           </div>
@@ -597,6 +600,18 @@ export default function AiCoachPage() {
               margin-bottom: -32px;
               height: calc(100dvh - var(--topbar-h, 46px));
             }
+          }
+
+          /* The composer used to pad itself by env(safe-area-inset-bottom),
+             which double-counted the home-indicator inset: below 1024px the
+             chat shell already stops at the top of the bottom nav, and the
+             nav is what clears the safe area. The result was a ~34pt strip of
+             dead card background under the disclaimer on every notched phone.
+             The inset is only the composer's problem at >=1024px, where the
+             nav is hidden and the shell really does reach the screen edge. */
+          .ai-composer { padding-bottom: 10px; }
+          @media (min-width: 1024px) {
+            .ai-composer { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
           }
 
           /* The mobile history drawer and its scrim occupy the band between
@@ -881,24 +896,29 @@ function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase }: {
   onKnowledgeBase?: () => void;
 }) {
   return (
-    <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-6">
-      <div className="mb-6 text-center">
+    <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-3 sm:py-6">
+      {/* The hero is deliberately smaller on phones. At full desktop size it
+          pushed every prompt chip below the fold, so the first thing you saw
+          on the page whose whole point is "ask me something" was a headline
+          asking what you need — and nothing to tap. */}
+      <div className="mb-5 text-center sm:mb-6">
         <div
-          className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[18px]"
+          className="mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-[15px] sm:mb-3 sm:h-14 sm:w-14 sm:rounded-[18px]"
           style={{ background: ACCENT, boxShadow: '0 8px 30px rgba(124,58,237,0.4)' }}
         >
-          <Sparkles size={24} color="#fff" />
+          <Sparkles size={20} color="#fff" />
         </div>
-        <h1 className="text-[22px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
+        <h1 className="text-[18px] font-[820] tracking-[-0.02em] sm:text-[22px]" style={{ color: 'var(--text-primary)' }}>
           What can I help with?
         </h1>
-        <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          I read your studio&apos;s live records — clients, attendance, revenue, dues — and any SOPs
-          you&apos;ve uploaded, so answers are about <em>your</em> studio, not generic advice.
+        <p className="mx-auto mt-1.5 max-w-md text-[11.5px] leading-relaxed sm:text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+          I read your studio&apos;s live records — clients, attendance, revenue, dues
+          <span className="hidden sm:inline"> — and any SOPs you&apos;ve uploaded</span>, so answers
+          are about <em>your</em> studio, not generic advice.
         </p>
       </div>
 
-      <div className="mb-6 flex flex-col gap-3">
+      <div className="mb-5 flex flex-col gap-3 sm:mb-6">
         {PROMPT_GROUPS.map((group) => (
           <div key={group.label}>
             <p className="mb-1.5 text-[9.5px] font-[750] uppercase tracking-[0.08em]" style={{ color: group.accent }}>
@@ -944,8 +964,9 @@ function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase }: {
             style={{ background: 'var(--bg-card)', border: '1px dashed var(--border)' }}
           >
             <BookOpen size={15} style={{ color: VIOLET, flexShrink: 0 }} />
-            <span className="text-[11.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>
-              Knowledge Base — upload SOPs the coach should answer from
+            <span className="min-w-0 text-[11.5px] font-[650]" style={{ color: 'var(--text-secondary)' }}>
+              Knowledge Base
+              <span className="hidden sm:inline"> — upload SOPs the coach should answer from</span>
             </span>
           </button>
         )}
