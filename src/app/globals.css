@@ -2121,3 +2121,37 @@ a[href="/pt-os"], button[data-href="/pt-os"] { font-weight:900; letter-spacing:.
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.35);
 }
 :root { --bg-4: var(--bg-hover); }
+
+/* ════════════════════════════════════════════════════════════════════
+   iOS FOCUS ZOOM  —  keep the page still when a field is tapped
+
+   Safari on iOS zooms the whole page whenever a focused form control's
+   computed font-size is below 16px, and it does not zoom back out. On a
+   dense app like this one that means tapping any search box, text field or
+   native dropdown throws the layout off-screen mid-task.
+
+   layout.tsx deliberately does NOT set maximum-scale to suppress this —
+   that would also kill pinch-zoom, which WCAG 1.4.4 requires. Its comment
+   says the zoom is "prevented by ensuring font-size >= 16px on all
+   inputs", but the only rule that ever did so was scoped to .form-control.
+   The app has ~300 form controls and most are styled with Tailwind text
+   utilities, so the great majority were never covered.
+
+   This applies the 16px floor to the elements themselves. !important is
+   required, not stylistic: an element selector loses to any Tailwind class
+   (`text-[13px]`) and to inline styles, both of which are everywhere here.
+
+   Scoped to coarse pointers rather than a width breakpoint, because the
+   trigger is the touch keyboard, not the viewport — a narrow desktop
+   window should keep its compact fields, and an iPad in landscape should
+   not lose the fix. Checkbox/radio/range have no text and are excluded so
+   their sizing is untouched.
+   ════════════════════════════════════════════════════════════════════ */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+  select,
+  textarea,
+  [contenteditable='true'] {
+    font-size: 16px !important;
+  }
+}
