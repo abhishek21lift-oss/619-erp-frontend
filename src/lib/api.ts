@@ -718,6 +718,21 @@ export interface DietTemplate {
   meals: DietTemplateMeal[];
 }
 
+export interface ClientBirthday {
+  id: string;
+  name: string;
+  mobile?: string | null;
+  email?: string | null;
+  photo_url?: string | null;
+  dob: string;
+  status: string;
+  trainer_id?: string | null;
+  trainer_name?: string | null;
+  days_until_birthday: number;
+  turning_age: number;
+  is_today: boolean;
+}
+
 export interface DietAssignment {
   id: string;
   diet_template_id: string;
@@ -1690,6 +1705,10 @@ export const api = {
     balanceSheet: (params?: { trainer_id?: string }) =>
       http<{ data: unknown[]; total: number; total_outstanding: number }>(
         `/api/pt-os/balance-sheet${buildQs(params)}`,
+      ),
+    clientBirthdays: (params?: { trainer_id?: string }) =>
+      http<{ data: ClientBirthday[]; total: number; today_count: number }>(
+        `/api/pt-os/clients/birthdays${buildQs(params)}`,
       ),
     commissions: (params?: { trainer_id?: string }) =>
       http<{ data: unknown[] }>(`/api/pt-os/commissions${buildQs(params)}`),
