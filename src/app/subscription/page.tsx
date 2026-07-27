@@ -331,10 +331,19 @@ function SubscriptionScreen() {
    * every mobile browser blocks window.open() called later from inside a
    * promise, which would silently do nothing on exactly the devices most
    * likely to be paying.
+   *
+   * Deliberately WITHOUT noopener/noreferrer. Those cause window.open() to
+   * return null in Chromium- and WebKit-based browsers — there is no `win` to
+   * navigate later, so the popup we just opened is abandoned as a permanent
+   * blank tab while the fallback branch quietly navigates the WRONG window.
+   * That combination is exactly what left studios staring at an about:blank
+   * tab. Safe to drop here: the destination is our own same-origin route, not
+   * an external link, so there is no tab-nabbing risk from keeping the
+   * opener/referrer link.
    */
   const startCheckout = async (planCode: string) => {
     setRequesting(planCode);
-    const win = window.open('', '_blank', 'noopener,noreferrer,width=520,height=860');
+    const win = window.open('', '_blank', 'width=520,height=860');
     try {
       const r = await api.subscription.checkout.open(
         planCode,
