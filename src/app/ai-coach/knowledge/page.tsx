@@ -167,8 +167,9 @@ export default function AiKnowledgeBasePage() {
                         <StatusIcon size={11} className={doc.status === 'processing' ? 'animate-spin' : undefined} />
                         {st.label}
                       </span>
-                      {doc.status === 'failed' && (
-                        <button onClick={() => handleReindex(doc.id)} title="Retry indexing"
+                      {(doc.status === 'failed' || doc.status === 'processing') && (
+                        <button onClick={() => handleReindex(doc.id)}
+                          title={doc.status === 'failed' ? 'Retry indexing' : 'Stuck on Processing for a while? Click to restart indexing.'}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0 }}>
                           <RefreshCw size={13} />
                         </button>
