@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
-import { ArrowLeft, Dumbbell, Pencil, Plus, Trash2, Loader2, Check, Target, Clock } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Dumbbell, Pencil, Plus, Trash2, Loader2, Check, Target, Clock } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button } from '@/components/ui';
@@ -24,13 +24,32 @@ interface DraftExercise {
 }
 
 export default function WorkoutPlanDetailPage() {
-  return <Guard roles={['admin', 'manager', 'trainer']}><AppShell><Inner /></AppShell></Guard>;
+  return (
+    <Guard roles={['admin', 'manager', 'trainer']}>
+      <AppShell>
+        <Suspense fallback={
+          <div className="flex items-center justify-center py-24">
+            <Loader2 size={22} className="animate-spin" style={{ color: 'var(--text-disabled)' }} />
+          </div>
+        }>
+          <Inner />
+        </Suspense>
+      </AppShell>
+    </Guard>
+  );
 }
 
 function Inner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+
+  // Carried from the builder (Save & Assign Plan) or the client profile's
+  // Workout Plans button — the client this plan session belongs to, so the
+  // Workout Log button below knows whose session to open next.
+  const clientId = searchParams.get('client_id');
+  const [clientName, setClientName] = useState('');
 
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +58,13 @@ function Inner() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerDay, setPickerDay] = useState(1);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    api.pt.client(clientId)
+      .then((res) => setClientName(String((res as { data?: { name?: string } })?.data?.name ?? '')))
+      .catch(() => {});
+  }, [clientId]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -135,11 +161,25 @@ function Inner() {
             </span>
             <div className="min-w-0">
               <h1 className="truncate text-[22px] font-[800] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>{plan.name}</h1>
+              {clientName && (
+                <p className="mt-0.5 text-[13px] font-[650]" style={{ color: '#6366f1' }}>For {clientName}</p>
+              )}
               {plan.description && <p className="mt-0.5 text-[13px]" style={{ color: 'var(--text-muted)' }}>{plan.description}</p>}
             </div>
           </div>
           {!editing && (
-            <Button variant="outline" size="sm" iconLeft={<Pencil size={13} />} onClick={startEditing}>Edit Exercises</Button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="outline" size="sm" iconLeft={<Pencil size={13} />} onClick={startEditing}>Edit Exercises</Button>
+              {/* Saved the plan — now log the actual session against it. */}
+              {clientId && (
+                <Button
+                  variant="primary" size="sm" iconLeft={<ClipboardList size={13} />}
+                  onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
+                >
+                  Workout Log
+                </Button>
+              )}
+            </div>
           )}
         </div>
 

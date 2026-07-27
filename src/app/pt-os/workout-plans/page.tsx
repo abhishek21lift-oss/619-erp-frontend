@@ -92,7 +92,11 @@ function Inner() {
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [assignPlan, setAssignPlan] = useState<WorkoutPlan | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'builder' | 'ai'>('plans');
+  // Arriving with ?client_id= (the client profile's "Workout Plans" button)
+  // means the trainer wants to design a plan for THAT client right now, not
+  // browse a shared list first — so land straight in the builder instead of
+  // the default plans tab.
+  const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'builder' | 'ai'>(presetClientId ? 'builder' : 'plans');
   const [builderStep, setBuilderStep] = useState(0);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
@@ -110,15 +114,20 @@ function Inner() {
   const [builderSaving, setBuilderSaving] = useState(false);
 
   const resetBuilder = useCallback(() => {
-    setBuilderStep(0);
+    // A client-scoped session (arrived via ?client_id=) stays scoped to
+    // that client across "+ New Plan" too — the trainer is still working
+    // with the same person and re-searching for them again would just be
+    // friction the preset already exists to remove.
+    const presetClient = presetClientId ? clients.find((c) => c.id === presetClientId) ?? null : null;
+    setBuilderStep(presetClient ? 1 : 0);
     setBuilderClientSearch('');
-    setSelectedClient(null);
+    setSelectedClient(presetClient);
     setPlanName('');
     setPlanGoal(GOALS[0].value);
     setDurationWeeks(4);
     setSessionsPerWeek(3);
     setBuilderExercises([]);
-  }, []);
+  }, [presetClientId, clients]);
 
   const fetchData = useCallback(async () => {
     setDataLoading(true);
@@ -143,11 +152,17 @@ function Inner() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // Pre-select the client the trainer arrived from (e.g. client profile
-  // Quick Action) once the client list has loaded.
+  // Quick Action) once the client list has loaded, and skip straight past
+  // the builder's "Choose a Client" step — the client is already known, so
+  // asking the trainer to pick them again from a search box would be a
+  // pointless extra step in the exact flow this preset exists to shortcut.
   useEffect(() => {
     if (!presetClientId || selectedClient || clients.length === 0) return;
     const match = clients.find((c) => c.id === presetClientId);
-    if (match) setSelectedClient(match);
+    if (match) {
+      setSelectedClient(match);
+      setBuilderStep((s) => (s === 0 ? 1 : s));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetClientId, clients]);
 
@@ -226,10 +241,13 @@ function Inner() {
         })),
       });
       await assignPlanToClient(createdPlan, selectedClient);
+      // Captured before resetBuilder() clears selectedClient — the plan
+      // detail page needs this to know whose Workout Log to link to.
+      const savedForClientId = selectedClient.id;
       resetBuilder();
       setActiveTab('plans');
       fetchData();
-      router.push(`/pt-os/workout-plans/${createdPlan.id}`);
+      router.push(`/pt-os/workout-plans/${createdPlan.id}?client_id=${savedForClientId}`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Could not create plan.');
     } finally {
