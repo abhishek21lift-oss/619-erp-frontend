@@ -2,8 +2,7 @@
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
-// CSP and the other security headers are set per-request in src/proxy.ts
-// (Next.js 16 renamed the middleware convention to proxy.ts).
+const { securityHeaders } = require('./src/lib/security-headers');
 
 const nextConfig = {
   output: 'standalone',
@@ -52,14 +51,21 @@ const nextConfig = {
     return config;
   },
 
-  // Security headers (CSP, X-Frame-Options, X-Content-Type-Options,
-  // Referrer-Policy, Permissions-Policy) are set dynamically per-request
-  // in src/proxy.ts (nonce-based CSP) — that is the single source of
-  // truth. Do not duplicate them here; proxy.ts runs on every request
-  // and its headers.set() calls would silently override anything
-  // declared in this file, leaving a second copy to bit-rot.
-  // (The face-api.js model cache-control rules that used to live here were
-  // removed along with the face recognition check-in system — see /models.)
+  // Security headers — single source of truth is src/lib/security-headers.js.
+  //
+  // These lived in src/proxy.ts until now. The middleware matcher excludes
+  // `api`, `_next/static`, `_next/image`, favicon and every image/font
+  // extension, so API responses and static assets were served with no
+  // security headers whatsoever — including no HSTS. A matcher cannot express
+  // "every path"; this can, and it also applies to the /api/:path* rewrite
+  // below, which is how the backend is reached in production.
+  //
+  // Do not also set these in proxy.ts or vercel.json: a middleware
+  // headers.set() overrides this file silently, which is exactly how the two
+  // copies drifted apart before.
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders(IS_PROD) }];
+  },
 
   async redirects() {
     return [

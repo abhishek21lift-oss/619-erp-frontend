@@ -1,5 +1,9 @@
 /**
- * proxy.ts — Server-side auth guard + security headers (Next.js 16+)
+ * proxy.ts — Server-side auth guard (Next.js 16+)
+ *
+ * Security headers used to be set here too; they now live in next.config.js
+ * (see src/lib/security-headers.js) so they also cover /api and static assets,
+ * which this file's matcher excludes.
  *
  * Renamed from middleware.ts to proxy.ts per Next.js 16 convention.
  * https://nextjs.org/docs/messages/middleware-to-proxy
@@ -50,55 +54,12 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
-// ── CSP ───────────────────────────────────────────────────────────────────────
-const SUPABASE_HOST = process.env.NEXT_PUBLIC_SUPABASE_URL
-  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
-  : '*.supabase.co';
-
-// Full ORIGIN (scheme + host + port), not just the hostname. This previously
-// took .hostname and re-prefixed it with a hardcoded `https://`, which dropped
-// the port and forced the scheme — so a local backend on http://localhost:5000
-// produced `https://localhost` in connect-src and every API call in local
-// development was blocked by CSP. Production was unaffected (the browser talks
-// same-origin through the Vercel rewrite, covered by 'self'), which is why it
-// went unnoticed. Using .origin is correct in both.
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL
-  ? (() => { try { return new URL(process.env.NEXT_PUBLIC_API_URL!).origin; } catch { return ''; } })()
-  : '';
-
-function buildCsp(): string {
-  const apiConnect = API_ORIGIN ? ` ${API_ORIGIN}` : '';
-  return [
-    "default-src 'self'",
-    // cdnjs.cloudflare.com serves SheetJS, which lib/sheet-import.ts injects as
-    // a <script> tag (with SRI + crossorigin) on first use of the spreadsheet
-    // importer. Without this origin the browser blocks the load and member
-    // import fails outright wherever the CSP applies — i.e. in production.
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/",
-    `img-src 'self' data: blob: https://${SUPABASE_HOST} https://lh3.googleusercontent.com`,
-    // cdn.jsdelivr.net was dropped: nothing fetches from it any more (the
-    // SheetJS load moved to cdnjs and is a script tag, which connect-src does
-    // not govern), so keeping it only widened the policy for no reason.
-    `connect-src 'self' https://${SUPABASE_HOST}${apiConnect} https://accounts.google.com`,
-    "font-src 'self' https://fonts.gstatic.com",
-    "media-src 'self' blob:",
-    "worker-src 'self' blob:",
-    "frame-src 'self' https://accounts.google.com",
-    "frame-ancestors 'self'",
-    "form-action 'self'",
-    "base-uri 'self'",
-  ].join('; ');
-}
-
-function addSecurityHeaders(response: NextResponse): void {
-  response.headers.set('Content-Security-Policy', buildCsp());
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
-}
+// Security headers (CSP, HSTS, COOP, CORP, …) are NOT set here. They live in
+// next.config.js via src/lib/security-headers.js, because the matcher at the
+// bottom of this file deliberately skips `api`, `_next/static`, `_next/image`,
+// favicon and every image/font extension — so anything set here would miss API
+// responses and every static asset. next.config.js headers() covers all of it.
+// Re-adding them here would silently override that single source of truth.
 
 function redirectToLogin(req: NextRequest, deleteTokenCookie = false): NextResponse {
   const loginUrl = req.nextUrl.clone();
@@ -116,9 +77,7 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (isPublicPath(pathname)) {
-    const res = NextResponse.next();
-    addSecurityHeaders(res);
-    return res;
+    return NextResponse.next();
   }
 
   // Accept token from cookie or Authorization: Bearer header
@@ -138,9 +97,7 @@ export async function proxy(req: NextRequest) {
     // Full cryptographic verification — requires JWT_SECRET in frontend env
     try {
       await jwtVerify(token, new TextEncoder().encode(secret));
-      const res = NextResponse.next();
-      addSecurityHeaders(res);
-      return res;
+      return NextResponse.next();
     } catch {
       return redirectToLogin(req, true);
     }
@@ -160,9 +117,7 @@ export async function proxy(req: NextRequest) {
     return redirectToLogin(req, true);
   }
 
-  const res = NextResponse.next();
-  addSecurityHeaders(res);
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {
