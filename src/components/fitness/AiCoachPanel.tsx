@@ -403,48 +403,17 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
               >
                 {/* Client select */}
                 <Field label="Client">
-                  {clientLocked && selectedClient ? (
-                    <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <User size={14} color="rgba(255,255,255,0.45)" />
-                      <span>{selectedClient.name}</span>
-                    </div>
-                  ) : (
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type="text"
-                        value={selectedClient ? selectedClient.name : clientQuery}
-                        onFocus={() => { setShowClientDropdown(true); if (selectedClient) { setSelectedClient(null); setClientQuery(''); } }}
-                        onChange={e => { setClientQuery(e.target.value); setSelectedClient(null); setShowClientDropdown(true); }}
-                        onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
-                        placeholder="Search clients..."
-                        style={inputStyle}
-                      />
-                      {showClientDropdown && filteredClients.length > 0 && (
-                        <div
-                          style={{
-                            position: 'absolute', zIndex: 10, width: '100%', marginTop: 4,
-                            background: 'rgba(20,16,34,0.99)', border: '1px solid rgba(255,255,255,0.12)',
-                            borderRadius: 10, maxHeight: 190, overflowY: 'auto',
-                            boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
-                          }}
-                        >
-                          {filteredClients.map(c => (
-                            <button
-                              key={c.id}
-                              onMouseDown={() => { setSelectedClient(c); setClientQuery(c.name); setShowClientDropdown(false); }}
-                              style={{
-                                display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px',
-                                background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.85)',
-                                fontSize: 13, cursor: 'pointer',
-                              }}
-                            >
-                              {c.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <ClientPicker
+                    clientLocked={clientLocked}
+                    selectedClient={selectedClient}
+                    clientQuery={clientQuery}
+                    showClientDropdown={showClientDropdown}
+                    filteredClients={filteredClients}
+                    onFocus={() => { setShowClientDropdown(true); if (selectedClient) { setSelectedClient(null); setClientQuery(''); } }}
+                    onQueryChange={(v) => { setClientQuery(v); setSelectedClient(null); setShowClientDropdown(true); }}
+                    onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
+                    onSelect={(c) => { setSelectedClient(c); setClientQuery(c.name); setShowClientDropdown(false); }}
+                  />
                 </Field>
 
                 {/* Goal select */}
@@ -573,12 +542,42 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
                 transition={{ duration: 0.2 }}
                 style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
               >
-                {/* Client context chip */}
-                {selectedClient && (
-                  <div style={{ padding: '10px 16px 0' }}>
+                {/* Client selection — chat used to have no way to attach a
+                    client at all unless one was already picked in Generate
+                    mode or the panel was opened directly from a client's own
+                    page (clientLocked). Ask about a client with none set and
+                    the AI has nothing client-specific to answer from — which
+                    is exactly the "I don't have access" reply this fixes. */}
+                {selectedClient ? (
+                  <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: VIOLET, background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.22)', borderRadius: 999, padding: '4px 10px' }}>
                       <User size={11} /> Coaching about {selectedClient.name}
                     </span>
+                    {!clientLocked && (
+                      <button
+                        onClick={() => { setSelectedClient(null); setClientQuery(''); }}
+                        style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.38)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 6px' }}
+                      >
+                        Change
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ padding: '10px 16px 0' }}>
+                    <ClientPicker
+                      clientLocked={clientLocked}
+                      selectedClient={selectedClient}
+                      clientQuery={clientQuery}
+                      showClientDropdown={showClientDropdown}
+                      filteredClients={filteredClients}
+                      onFocus={() => setShowClientDropdown(true)}
+                      onQueryChange={(v) => { setClientQuery(v); setShowClientDropdown(true); }}
+                      onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
+                      onSelect={(c) => { setSelectedClient(c); setClientQuery(c.name); setShowClientDropdown(false); }}
+                    />
+                    <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.32)', margin: '5px 2px 0' }}>
+                      Optional — pick a client so the coach can factor in their profile.
+                    </p>
                   </div>
                 )}
 
@@ -683,6 +682,74 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
+/**
+ * The client search/select field — shared between Generate mode and Chat
+ * mode. It used to exist only in Generate mode: a chat opened without ever
+ * visiting Generate first had no way to attach a client at all, so
+ * client_id stayed undefined on every message and the AI, quite correctly,
+ * had nothing client-specific to answer from.
+ */
+function ClientPicker({
+  clientLocked, selectedClient, clientQuery, showClientDropdown, filteredClients,
+  onFocus, onQueryChange, onBlur, onSelect,
+}: {
+  clientLocked: boolean;
+  selectedClient: Client | null;
+  clientQuery: string;
+  showClientDropdown: boolean;
+  filteredClients: Client[];
+  onFocus: () => void;
+  onQueryChange: (v: string) => void;
+  onBlur: () => void;
+  onSelect: (c: Client) => void;
+}) {
+  if (clientLocked && selectedClient) {
+    return (
+      <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <User size={14} color="rgba(255,255,255,0.45)" />
+        <span>{selectedClient.name}</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        type="text"
+        value={selectedClient ? selectedClient.name : clientQuery}
+        onFocus={onFocus}
+        onChange={e => onQueryChange(e.target.value)}
+        onBlur={onBlur}
+        placeholder="Search clients..."
+        style={inputStyle}
+      />
+      {showClientDropdown && filteredClients.length > 0 && (
+        <div
+          style={{
+            position: 'absolute', zIndex: 10, width: '100%', marginTop: 4,
+            background: 'rgba(20,16,34,0.99)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 10, maxHeight: 190, overflowY: 'auto',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
+          }}
+        >
+          {filteredClients.map(c => (
+            <button
+              key={c.id}
+              onMouseDown={() => onSelect(c)}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left', padding: '10px 12px',
+                background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.85)',
+                fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
