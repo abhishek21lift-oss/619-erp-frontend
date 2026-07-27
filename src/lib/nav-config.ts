@@ -66,7 +66,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/pt-os/new-client',       label: 'New Client',         icon: 'UserPlus' },
       { href: '/pt-os/clients',          label: 'All Clients',        icon: 'Users' },
-      { href: '/pt-os/balance-sheet',    label: 'Balance Sheet',      icon: 'Wallet' },
+      { href: '/pt-os/clients/birthdays', label: 'Clients Birthday',  icon: 'Cake' },
     ],
   },
   {
@@ -122,6 +122,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/collected-payments', label: 'Collected Payments',  icon: 'Banknote',     roles: ['admin'] },
       { href: '/finance/invoices',          label: 'Invoices',             icon: 'FileText',     roles: ['admin'] },
       { href: '/finance/dues',              label: 'Outstanding Dues',     icon: 'AlertCircle',  badge: 'duesCount', roles: ['admin'] },
+      { href: '/pt-os/balance-sheet',       label: 'Balance Sheet',        icon: 'Wallet' },
       { href: '/finance/forecast',          label: 'Revenue Forecast',     icon: 'TrendingUp',   roles: ['admin'] },
     ],
   },
