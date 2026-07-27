@@ -44,22 +44,29 @@ export default function Root() {
         role="status"
         style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
       >
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }} className="fade-up">
-          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1.5rem' }}>
+        {/* No "MY PT STUDIO" heading under the mark: the logo artwork already
+            carries the wordmark, so the text was the brand name printed twice,
+            one above the other. Dropping it lets the mark itself carry the
+            screen, which is why it is sized up here. */}
+        {/* Flex column rather than text-align on inline-blocks: an inline-block
+            sits on a text baseline, so the line box left descender space under
+            the mark and nudged the whole group off true centre. */}
+        <div
+          className="fade-up"
+          style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
+        >
+          <div style={{ position: 'relative', display: 'flex', marginBottom: '1.75rem' }}>
             <div
               style={{
                 position: 'absolute',
-                inset: -16,
+                inset: -24,
                 borderRadius: '50%',
                 background: 'radial-gradient(circle, var(--brand-glow) 0%, transparent 70%)',
-                filter: 'blur(10px)',
+                filter: 'blur(14px)',
                 animation: 'pulse-glow 1.8s ease-in-out infinite',
               }}
             />
-            <BrandLogo size={84} />
-          </div>
-          <div className="display" style={{ fontSize: 22, marginBottom: 8 }}>
-            MY PT STUDIO
+            <BrandLogo size={140} />
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '2.4px', textTransform: 'uppercase', fontWeight: 700 }}>
             Initialising …
