@@ -858,7 +858,10 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
           <div className="fixed inset-0 z-[70]" onClick={onToggle} />
           <div
             className="absolute right-0 top-full z-[71] mt-1.5 w-[240px] overflow-hidden rounded-[13px] p-1.5"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 14px 36px rgba(0,0,0,0.2)' }}
+            // --bg-elevated, not --bg-card: this floats over the chat, and
+            // --bg-card is translucent glass. Matches OrgSwitcher, the AppShell
+            // menus and SearchableSelect, which all use elevated for popovers.
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', boxShadow: '0 14px 36px rgba(0,0,0,0.2)' }}
           >
             <input
               autoFocus
