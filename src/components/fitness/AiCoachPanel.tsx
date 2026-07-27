@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw, BookOpen,
+  Sparkles, X, Brain, Zap, Dumbbell, Salad, Send, User, ChevronDown, RotateCcw, BookOpen, Database,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { apiBase } from '@/lib/http';
@@ -27,16 +27,19 @@ interface Message {
   error?: boolean;
   /** Titles of this studio's own documents the answer was grounded in, when RAG found a match. */
   sources?: string[];
+  /** Live-data tools (member counts, attendance, revenue, etc.) consulted for this answer. */
+  tools?: string[];
 }
 
 // ─── SSE stream event shape (from POST /api/ai/chat) ──────────────────────────
 
 interface ChatEvent {
-  type: 'start' | 'chunk' | 'sources' | 'done' | 'error';
+  type: 'start' | 'chunk' | 'sources' | 'tools' | 'done' | 'error';
   content?: string;
   message?: string;
   conversation_id?: string;
   sources?: string[];
+  tools?: string[];
 }
 
 function computeAge(dob?: string): number | undefined {
@@ -206,12 +209,13 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
     let acc = '';
     let started = false;
     let pendingSources: string[] | undefined;
+    let pendingTools: string[] | undefined;
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     const pushCoach = (content: string, error = false) =>
-      setMessages(prev => [...prev, { id: coachId, role: 'coach', content, timestamp: new Date(), error, sources: pendingSources }]);
+      setMessages(prev => [...prev, { id: coachId, role: 'coach', content, timestamp: new Date(), error, sources: pendingSources, tools: pendingTools }]);
     const updateCoach = (content: string) =>
       setMessages(prev => prev.map(m2 => (m2.id === coachId ? { ...m2, content } : m2)));
 
@@ -251,6 +255,8 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
             setConversationId(evt.conversation_id);
           } else if (evt.type === 'sources') {
             pendingSources = evt.sources;
+          } else if (evt.type === 'tools') {
+            pendingTools = evt.tools;
           } else if (evt.type === 'chunk') {
             acc += evt.content ?? '';
             if (!started) { started = true; setIsTyping(false); pushCoach(acc); }
@@ -621,6 +627,19 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
                                 <span key={title}
                                   style={{ fontSize: 10.5, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(167,139,250,0.15)', color: VIOLET }}>
                                   {title}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {msg.tools && msg.tools.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: msg.sources?.length ? 6 : 8, paddingTop: msg.sources?.length ? 0 : 8, borderTop: msg.sources?.length ? 'none' : '1px solid rgba(255,255,255,0.08)' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'rgba(255,255,255,0.4)' }}>
+                                <Database size={10} /> Checked:
+                              </span>
+                              {msg.tools.map((name) => (
+                                <span key={name}
+                                  style={{ fontSize: 10.5, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(34,211,238,0.15)', color: '#22d3ee' }}>
+                                  {name}
                                 </span>
                               ))}
                             </div>
