@@ -44,7 +44,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
-    packageType: '',
     finalAmount: '',
     paidNow: '',
     startDate: '',
@@ -70,7 +69,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
         setClient(c);
         setForm(f => ({
           ...f,
-          packageType: c?.package_type || '',
           finalAmount: String(c?.final_amount || ''),
           startDate: new Date().toISOString().slice(0, 10),
         }));
@@ -86,7 +84,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
     setSaving(true);
     try {
       await api.clients.renewPt(id, {
-        package_type: form.packageType || undefined,
         final_amount: final,
         paid_amount: paidNow,
         monthly_pt_amount: form.durationMonths ? Math.round(final / Number(form.durationMonths)) : 0,
@@ -154,7 +151,6 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
                 <h2 className="text-[13px] font-[700]" style={{ color: 'var(--text-primary)' }}>Package Details</h2>
               </div>
               <div className="space-y-4">
-                <FloatInput label="Package type" value={form.packageType} onChange={v => setForm(f => ({ ...f, packageType: v }))} />
                 <div className="grid grid-cols-2 gap-3">
                   <FloatInput label="Start Date *" type="date" value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} />
                   <FloatInput label="Duration (months) *" type="number" value={form.durationMonths} onChange={v => setForm(f => ({ ...f, durationMonths: v }))} />
