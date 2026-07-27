@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, useId } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CopyId } from '@/components/ui/CopyId';
 import { m, AnimatePresence } from 'framer-motion';
@@ -12,14 +12,14 @@ import {
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, PiggyBank,
+  QrCode, Printer, PiggyBank, PieChart, Layers,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { Button, PremiumAreaChart } from '@/components/ui';
+import { Button, PremiumAreaChart, DonutChart } from '@/components/ui';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 
 interface PtClientDetail {
@@ -70,41 +70,33 @@ function getStatusConfig(status: string, days_left: number | null, pt_end_date?:
   return { label: status, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
 }
 
-// Thick, colorful ring chart — replaces the old linear progress bars for
-// Payment Progress / PT Duration. Percent fills clockwise from the top.
-function CircularProgress({
-  percent, size = 108, strokeWidth = 17, colorFrom, colorTo, colorVia, children,
+// Donut-chart insight card — replaces the old hand-rolled SVG ring meters
+// for Payment Progress / PT Duration with the same DonutChart component the
+// rest of the app's fitness dashboards (Nutrition, Fitness, Goal cards) use,
+// so a client's profile reads as one system with the rest of PT OS.
+function InsightDonut({
+  title, icon, from, data, centerValue, centerLabel, valueFormatter, footer, delay = 0,
 }: {
-  percent: number; size?: number; strokeWidth?: number;
-  colorFrom: string; colorTo: string; colorVia?: string; children?: React.ReactNode;
+  title: string; icon: React.ReactNode; from: string;
+  data: { name: string; value: number; color?: string }[];
+  centerValue?: string; centerLabel?: string;
+  valueFormatter?: (v: number) => string;
+  footer?: React.ReactNode;
+  delay?: number;
 }) {
-  const gradId = useId();
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const clamped = Math.min(Math.max(percent, 0), 100);
-  const offset = circumference * (1 - clamped / 100);
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <defs>
-          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={colorFrom} />
-            {colorVia && <stop offset="50%" stopColor={colorVia} />}
-            <stop offset="100%" stopColor={colorTo} />
-          </linearGradient>
-        </defs>
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--bg-subtle)" strokeWidth={strokeWidth} />
-        <m.circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={`url(#${gradId})`}
-          strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {children}
+    <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
+      className="rounded-[20px] p-5 bg-white"
+      style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+      <div className="mb-1 flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: `${from}20` }}>
+          <span style={{ color: from }}>{icon}</span>
+        </div>
+        <span className="text-[12px] font-[700] text-gray-900">{title}</span>
       </div>
-    </div>
+      <DonutChart data={data} centerValue={centerValue} centerLabel={centerLabel} valueFormatter={valueFormatter} height={196} thin />
+      {footer}
+    </m.div>
   );
 }
 
@@ -315,6 +307,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [editNotes, setEditNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
   const [subscriptionHistory, setSubscriptionHistory] = useState<any[]>([]);
+  const [activityCounts, setActivityCounts] = useState({ payments: 0, checkins: 0, measurements: 0, goals: 0 });
 
   const loadData = async () => {
     try {
@@ -343,6 +336,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
       const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
       setSubscriptionHistory(renewals);
+
+      // Full (unfiltered) counts, for the Activity Mix donut — timeline below
+      // truncates to 10 most recent events, which would undercount totals.
+      setActivityCounts({
+        payments: rawPayments.length,
+        checkins: checkins.length,
+        measurements: assessments.length,
+        goals: goals.length,
+      });
 
       const events: TimelineEvent[] = [];
       checkins.forEach((ch: any) => events.push({
@@ -437,13 +439,43 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     ? Math.min(Math.round((currentTermPaid / currentTermFee) * 100), 100)
     : 0;
 
-  const durationProgressPct = client?.duration_months && client?.pt_start_date && client?.pt_end_date
-    ? (() => {
-        const start = new Date(client.pt_start_date!).getTime();
-        const end = new Date(client.pt_end_date!).getTime();
-        return Math.min(Math.max(((Date.now() - start) / (end - start)) * 100, 0), 100);
-      })()
+  // ── Donut data for the Client Insights section ──
+  // Payment Breakdown: a genuine 2-part composition of the current term's
+  // fee (paid vs due), not a single-ratio meter dressed up as a donut.
+  const paymentBreakdownData = [
+    { name: 'Paid', value: currentTermPaid, color: '#10b981' },
+    { name: 'Balance Due', value: currentTermBalance, color: '#ef4444' },
+  ];
+
+  // PT Term Progress: elapsed vs remaining days of the current term.
+  const totalDurationDays = client?.pt_start_date && client?.pt_end_date
+    ? Math.max(1, Math.round((new Date(client.pt_end_date).getTime() - new Date(client.pt_start_date).getTime()) / 86400000))
     : 0;
+  const elapsedDaysForDonut = totalDurationDays > 0 && client?.pt_start_date
+    ? Math.max(0, Math.min(totalDurationDays, Math.round((Date.now() - new Date(client.pt_start_date).getTime()) / 86400000)))
+    : 0;
+  const remainingDaysForDonut = Math.max(0, totalDurationDays - elapsedDaysForDonut);
+  const ptTermDonutData = [
+    { name: 'Elapsed', value: elapsedDaysForDonut, color: '#6366f1' },
+    { name: 'Remaining', value: remainingDaysForDonut, color: '#e2e8f0' },
+  ];
+
+  // Payments by Term: real part-to-whole across every renewal — only
+  // meaningful (and only rendered) once a client has 2+ terms.
+  const paymentsByTermData = subscriptionHistory.map((t: any, idx: number) => ({
+    name: t.plan_name || `Term ${idx + 1}`,
+    value: Number(t.amount_paid ?? 0),
+  }));
+
+  // Activity Mix: what kind of engagement has been logged for this client.
+  // Colors match the Recent Activity timeline's own dot colors below, so the
+  // donut and the timeline read as the same system rather than two palettes.
+  const activityMixData = [
+    { name: 'Payments', value: activityCounts.payments, color: '#8b5cf6' },
+    { name: 'Check-ins', value: activityCounts.checkins, color: '#10b981' },
+    { name: 'Measurements', value: activityCounts.measurements, color: '#f59e0b' },
+    { name: 'Goals', value: activityCounts.goals, color: '#3b82f6' },
+  ];
 
   const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date) : null;
 
@@ -619,64 +651,67 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   ))}
                 </div>
 
-                {/* ── PROGRESS RINGS ── */}
-                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Payment progress */}
-                  <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                    className="rounded-[20px] p-5 bg-white"
-                    style={{
-                      border: '1px solid var(--border)',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                    }}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                        style={{ background: 'rgba(16,185,129,0.12)' }}>
-                        <Wallet size={13} className="text-emerald-500" />
-                      </div>
-                      <span className="text-[12px] font-[700] text-gray-900">Payment Progress</span>
+                {/* ── CLIENT INSIGHTS (donuts) ── */}
+                <div className="mb-6">
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
+                      style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.2)' }}>
+                      <PieChart size={14} style={{ color: '#f97316' }} />
                     </div>
-                    <div className="flex items-center justify-center">
-                      <CircularProgress percent={completionPct} colorFrom="#10b981" colorVia="#14b8a6" colorTo="#06b6d4">
-                        <span className="text-[22px] font-[860] tracking-[-0.02em] tabular-nums" style={{ color: completionPct >= 100 ? '#10b981' : '#0f172a' }}>
-                          {completionPct}%
-                        </span>
-                        <span className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-400">Paid</span>
-                      </CircularProgress>
-                    </div>
-                    <div className="mt-4 flex justify-between">
-                      <span className="text-[10.5px] font-[600] text-emerald-600">{fmtINR(currentTermPaid)} paid</span>
-                      <span className="text-[10.5px] font-[600] text-slate-500">{fmtINR(currentTermFee)} total</span>
-                    </div>
-                  </m.div>
+                    <h3 className="text-[13.5px] font-[740] text-gray-900">Client Insights</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <InsightDonut
+                      title="Payment Breakdown" icon={<Wallet size={13} />} from="#10b981" delay={0.2}
+                      data={paymentBreakdownData}
+                      centerValue={`${completionPct}%`} centerLabel="of fee paid"
+                      valueFormatter={fmtINR}
+                      footer={
+                        <div className="mt-3 flex justify-between">
+                          <span className="text-[10.5px] font-[600] text-emerald-600">{fmtINR(currentTermPaid)} paid</span>
+                          <span className="text-[10.5px] font-[600] text-slate-500">{fmtINR(currentTermFee)} total</span>
+                        </div>
+                      }
+                    />
 
-                  {/* PT Duration */}
-                  <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                    className="rounded-[20px] p-5 bg-white"
-                    style={{
-                      border: '1px solid var(--border)',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                    }}>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-[8px]"
-                        style={{ background: 'rgba(99,102,241,0.12)' }}>
-                        <Clock size={13} className="text-indigo-500" />
-                      </div>
-                      <span className="text-[12px] font-[700] text-gray-900">PT Duration</span>
-                    </div>
-                    <div className="flex items-center justify-center">
-                      <CircularProgress percent={durationProgressPct} colorFrom="#6366f1" colorVia="#8b5cf6" colorTo="#ec4899">
-                        <span className="text-[20px] font-[860] tracking-[-0.02em] tabular-nums"
-                          style={{ color: (client.days_left <= 7 && client.days_left >= 0) ? '#ef4444' : '#0f172a' }}>
-                          {client.days_left !== null ? client.days_left : '—'}
-                        </span>
-                        <span className="text-[8.5px] font-[700] uppercase tracking-wider text-slate-400">Days Left</span>
-                      </CircularProgress>
-                    </div>
-                    <div className="mt-4 flex justify-between">
-                      <span className="text-[10.5px] font-[600] text-slate-500">Start: {fmtDate(client.pt_start_date)}</span>
-                      <span className="text-[10.5px] font-[600] text-slate-500">End: {fmtDate(client.pt_end_date)}</span>
-                    </div>
-                  </m.div>
+                    <InsightDonut
+                      title="PT Term Progress" icon={<Clock size={13} />} from="#6366f1" delay={0.25}
+                      data={ptTermDonutData}
+                      centerValue={client.days_left !== null ? String(client.days_left) : '—'} centerLabel="days left"
+                      valueFormatter={(v) => `${v} day${v !== 1 ? 's' : ''}`}
+                      footer={
+                        <div className="mt-3 flex justify-between">
+                          <span className="text-[10.5px] font-[600] text-slate-500">Start: {fmtDate(client.pt_start_date)}</span>
+                          <span className="text-[10.5px] font-[600] text-slate-500">End: {fmtDate(client.pt_end_date)}</span>
+                        </div>
+                      }
+                    />
+
+                    {paymentsByTermData.length >= 2 && (
+                      <InsightDonut
+                        title="Payments by Term" icon={<Layers size={13} />} from="#0ea5e9" delay={0.3}
+                        data={paymentsByTermData}
+                        centerLabel="lifetime paid"
+                        valueFormatter={fmtINR}
+                        footer={
+                          <p className="mt-3 text-[10.5px] font-[600] text-slate-500">
+                            {lifetimeTermCount} terms · {fmtINR(lifetimePaid)} total
+                          </p>
+                        }
+                      />
+                    )}
+
+                    <InsightDonut
+                      title="Activity Mix" icon={<Activity size={13} />} from="#ec4899" delay={0.35}
+                      data={activityMixData}
+                      centerLabel="logged"
+                      footer={
+                        <p className="mt-3 text-[10.5px] font-[600] text-slate-500">
+                          Payments, check-ins, measurements &amp; goals recorded
+                        </p>
+                      }
+                    />
+                  </div>
                 </div>
 
                 {/* ── QUICK ACTIONS GRID ── */}
