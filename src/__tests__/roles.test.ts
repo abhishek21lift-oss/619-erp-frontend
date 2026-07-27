@@ -37,14 +37,35 @@ describe('roles', () => {
   });
 
   describe('hasRole', () => {
-    it('admin always passes regardless of required', () => {
+    it('admin satisfies any TENANT role requirement', () => {
       expect(hasRole('admin', 'member')).toBe(true);
       expect(hasRole('admin', ['trainer', 'reception'])).toBe(true);
-      expect(hasRole('admin', undefined)).toBe(true);
     });
-    it('no required means open to anyone (even logged out) — caller decides', () => {
-      expect(hasRole('member', undefined)).toBe(true);
-      expect(hasRole(undefined, undefined)).toBe(true);
+
+    it('admin does NOT satisfy a super_admin gate', () => {
+      // The security property this whole function exists for. A tenant admin
+      // is a superuser inside their own workspace but is not the platform
+      // operator, so it must never clear a platform-only gate. This test
+      // previously asserted the opposite ("admin always passes regardless")
+      // and failed for months — anyone who had "fixed" the code to make it
+      // pass would have opened a privilege-escalation path.
+      expect(hasRole('admin', 'super_admin')).toBe(false);
+      expect(hasRole('admin', ['super_admin'])).toBe(false);
+      expect(hasRole('admin', ['super_admin', 'manager'])).toBe(false);
+      // super_admin itself clears everything.
+      expect(hasRole('super_admin', 'super_admin')).toBe(true);
+      expect(hasRole('super_admin', 'member')).toBe(true);
+    });
+
+    it('returns false when no role is required — callers must skip the check', () => {
+      // Not "open to anyone": undefined means "no constraint expressed", and
+      // this function answers a narrower question ("does this role satisfy
+      // that requirement?") which is unanswerable without a requirement.
+      // Guard.tsx relies on exactly this and skips calling hasRole at all
+      // when neither `role` nor `roles` was passed.
+      expect(hasRole('member', undefined)).toBe(false);
+      expect(hasRole('admin', undefined)).toBe(false);
+      expect(hasRole(undefined, undefined)).toBe(false);
     });
     it('matches single required role', () => {
       expect(hasRole('manager', 'manager')).toBe(true);

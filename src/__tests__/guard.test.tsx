@@ -53,14 +53,19 @@ describe('<Guard />', () => {
     expect(screen.queryByText('never')).not.toBeInTheDocument();
   });
 
-  it('redirects to /pt-os when role is not allowed', async () => {
+  it('sends a signed-in user with the wrong role home, not to /login', async () => {
+    // Home is '/', not '/pt-os' — that route now 308s to '/' via next.config
+    // redirects, and the old assertion was left behind. Sending them to /login
+    // would be worse than useless: they have a valid session, so the login
+    // page would detect it and bounce them straight back here.
     mockUseAuth.mockReturnValue({ user: { id: 'u3', role: 'trainer' as Role }, loading: false });
     render(
       <Guard role="admin">
         <div>never</div>
       </Guard>,
     );
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/pt-os'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/'));
+    expect(mockReplace).not.toHaveBeenCalledWith('/login');
   });
 
   it('normalises receptionist to reception', async () => {

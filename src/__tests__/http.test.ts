@@ -81,15 +81,48 @@ describe('http()', () => {
   });
 
   it('dispatches session-expired on 401 and clears cached user', async () => {
+    // Two things this test has to get right, both of which it previously did
+    // not — which is why it sat failing rather than catching anything.
+    //
+    // 1. handleUnauthorized() deliberately does nothing on a PUBLIC path
+    //    ('/', '/login', '/reset-password'): being signed out on the login
+    //    page is not an expiry worth announcing. The shared beforeEach pins
+    //    pathname to '/', so the event could never fire.
+    // 2. A 401 is not final. http() first tries to refresh the access token
+    //    via the rotating cookie and only gives up if that also fails — so
+    //    the refresh call needs a response too, and it must be a 401 (the
+    //    one status tryRefreshToken treats as "genuinely gone" instead of
+    //    retrying with backoff).
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hostname: 'localhost', pathname: '/clients' },
+      writable: true,
+    });
+
     const handler = vi.fn();
     window.addEventListener('session-expired', handler);
     window.localStorage.setItem('619_user_v2', 'cached');
-    vi.mocked(fetch).mockResolvedValueOnce(
-      mockJsonResponse(401, { error: { message: 'Token expired' } }),
-    );
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(mockJsonResponse(401, { error: { message: 'Token expired' } }))
+      .mockResolvedValueOnce(mockJsonResponse(401, { error: { message: 'No refresh token' } }));
+
     await expect(http('/api/me')).rejects.toBeInstanceOf(ApiError);
     expect(handler).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem('619_user_v2')).toBeNull();
+    window.removeEventListener('session-expired', handler);
+  });
+
+  it('stays quiet about a 401 on a public page', async () => {
+    // The other half of the same rule. Landing on /login without a session is
+    // the normal case, not an event worth firing at the app.
+    const handler = vi.fn();
+    window.addEventListener('session-expired', handler);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(mockJsonResponse(401, { error: { message: 'Token expired' } }))
+      .mockResolvedValueOnce(mockJsonResponse(401, { error: { message: 'No refresh token' } }));
+
+    await expect(http('/api/me')).rejects.toBeInstanceOf(ApiError);
+    expect(handler).not.toHaveBeenCalled();
     window.removeEventListener('session-expired', handler);
   });
 
