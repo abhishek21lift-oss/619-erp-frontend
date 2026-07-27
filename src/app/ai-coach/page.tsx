@@ -598,6 +598,19 @@ export default function AiCoachPage() {
               height: calc(100dvh - var(--topbar-h, 46px));
             }
           }
+
+          /* The mobile history drawer and its scrim occupy the band between
+             the fixed top bar and the bottom nav — not the whole viewport.
+             Spanning the full height buried the top bar (and the status bar
+             above it) and the bottom nav under the scrim, so while history
+             was open you could not switch tabs or reach anything in the
+             header. Same tokens .below-topbar/.above-bottom-nav use, so the
+             band tracks the top bar's live expanded/compact height. */
+          .ai-rail-band {
+            position: fixed;
+            top: var(--topbar-h, calc(46px + env(safe-area-inset-top, 0px)));
+            bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+          }
         `}</style>
       </AppShell>
     </Guard>
@@ -697,13 +710,13 @@ function ConversationRail(props: RailProps) {
             <m.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={onClose}
-              className="fixed inset-0 z-[60] lg:hidden"
+              className="ai-rail-band left-0 right-0 z-[60] lg:hidden"
               style={{ background: 'rgba(0,0,0,0.45)' }}
             />
             <m.aside
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 32, stiffness: 340 }}
-              className="fixed inset-y-0 left-0 z-[61] w-[280px] lg:hidden"
+              className="ai-rail-band left-0 z-[61] w-[280px] lg:hidden"
               style={{ boxShadow: '8px 0 32px rgba(0,0,0,0.25)' }}
             >
               {body}
