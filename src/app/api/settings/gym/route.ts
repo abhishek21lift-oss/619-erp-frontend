@@ -1,48 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/require-auth';
+import { NextRequest } from 'next/server';
+import { proxyToBackend } from '@/lib/proxy';
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL ?? '';
-
-function forwardHeaders(req: NextRequest): HeadersInit {
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
-  const cookie = req.headers.get('cookie');
-  if (cookie) headers['cookie'] = cookie;
-  const auth = req.headers.get('authorization');
-  if (auth) headers['authorization'] = auth;
-  return headers;
-}
-
+// Thin pass-through to the Express backend, same as every other route under
+// src/app/api. It used to call requireAuth() first, verifying the JWT here
+// before forwarding — which looked like defence in depth but was not:
+// the request is forwarded with its cookie and Authorization header intact and
+// the backend authenticates it anyway, so the local check could only ever
+// reject requests the backend was going to reject a moment later.
+//
+// It was not free, either. Verifying a signature locally meant the frontend
+// needed JWT_SECRET — the *same symmetric secret the backend signs with* —
+// copied into Vercel, so anyone with access to the frontend's environment
+// could mint valid admin tokens. And if the variable was missing, this route
+// answered 500 "Server misconfiguration" rather than degrading: the gym
+// settings on the check-in page silently failed to load.
+//
+// Dropping the local check removes that secret from the frontend's
+// requirements entirely, at the cost of one extra network hop for requests
+// that were unauthenticated to begin with.
 export async function GET(req: NextRequest) {
-  const authResult = await requireAuth(req);
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const res = await fetch(`${BACKEND}/api/settings/gym`, {
-      headers: forwardHeaders(req),
-    });
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
-  } catch (err: any) {
-    console.error('Proxy GET /api/settings/gym error:', err.message);
-    return NextResponse.json({ error: 'Failed to reach backend' }, { status: 502 });
-  }
+  return proxyToBackend(req, '/api/settings/gym');
 }
 
 export async function PUT(req: NextRequest) {
-  const authResult = await requireAuth(req);
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const body = await req.text();
-    const res = await fetch(`${BACKEND}/api/settings/gym`, {
-      method: 'PUT',
-      headers: forwardHeaders(req),
-      body,
-    });
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
-  } catch (err: any) {
-    console.error('Proxy PUT /api/settings/gym error:', err.message);
-    return NextResponse.json({ error: 'Failed to reach backend' }, { status: 502 });
-  }
+  return proxyToBackend(req, '/api/settings/gym');
 }
