@@ -1,14 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { m, type Variants } from 'framer-motion';
+import { m, AnimatePresence, type Variants } from 'framer-motion';
 import {
   Dumbbell, Apple, TrendingUp, BarChart3, Sparkles, ArrowRight,
   Zap, Brain, Shield, CheckCircle2, ChevronRight, Users, Target,
-  Clock, LayoutGrid, Star, Cpu,
+  Clock, LayoutGrid, Star, Cpu, MessageCircle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
 
 /* ─────────────────────────────────────────────────────────────── */
 /*  Data                                                           */
@@ -146,6 +148,15 @@ const fadeUp: Variants = {
 /* ─────────────────────────────────────────────────────────────── */
 
 export default function AiCoachPage() {
+  // The four cards below each open a single-purpose GENERATOR (a form → one
+  // structured plan). The free-form conversational coach — which also answers
+  // from this studio's uploaded SOPs and its live member/attendance/revenue
+  // data — lives in AiCoachPanel, and until now was only reachable from a
+  // floating button on the Workout Plans / Diet Plans pages. There was no way
+  // to just ask it a question from here, which is the whole point of a page
+  // called "AI Coach".
+  const [chatOpen, setChatOpen] = useState(false);
+
   return (
     <Guard>
       <AppShell title="AI Coach">
@@ -195,15 +206,29 @@ export default function AiCoachPage() {
                 all from inside 619.
               </p>
 
-              {/* CTAs */}
+              {/* CTAs — "Ask AI Coach" leads, because a page called AI Coach
+                  should let you actually ask it something without first
+                  choosing which generator form you want. */}
               <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-                <Link
-                  href="/ai/workout-generator"
+                <button
+                  onClick={() => setChatOpen(true)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
                   style={{
                     background: 'linear-gradient(135deg, #D4AF37 0%, #F7E7A1 100%)',
                     color: '#050816',
                     boxShadow: '0 0 32px rgba(212,175,55,0.35)',
+                  }}
+                >
+                  <MessageCircle size={15} />
+                  Ask AI Coach
+                </button>
+                <Link
+                  href="/ai/workout-generator"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-200 hover:bg-zinc-100"
+                  style={{
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-secondary)',
                   }}
                 >
                   <Zap size={15} />
@@ -532,6 +557,31 @@ export default function AiCoachPage() {
               619 AI Suite is powered by OpenAI GPT-4o.
             </p>
           </div>
+
+          {/* Floating chat launcher — the hero CTA scrolls out of view on a
+              long page, so the way to ask a question stays reachable. */}
+          <m.button
+            onClick={() => setChatOpen(true)}
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.96 }}
+            aria-label="Ask AI Coach"
+            className="above-bottom-nav"
+            style={{
+              position: 'fixed', right: 28, width: 52, height: 52, borderRadius: 16,
+              border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', boxShadow: '0 4px 24px rgba(99,102,241,0.45)', zIndex: 100,
+            }}
+          >
+            <MessageCircle size={20} />
+          </m.button>
+
+          {/* Conversational coach — opens straight into chat, no plan form. */}
+          <AnimatePresence>
+            {chatOpen && (
+              <AiCoachPanel type="general" initialMode="chat" onClose={() => setChatOpen(false)} />
+            )}
+          </AnimatePresence>
 
         </div>
       </AppShell>

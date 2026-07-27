@@ -12,9 +12,16 @@ import type { Client } from '@/lib/api';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AiCoachPanelProps {
-  type: 'workout' | 'diet';
+  /** 'general' is a plain open-ended coach — used when opened from the AI Coach
+   *  hub page rather than from a workout/diet-specific context. It hides the
+   *  Generate Plan tab (that form is shaped for one specialization or the
+   *  other) and opens straight into Chat. */
+  type: 'workout' | 'diet' | 'general';
   onClose?: () => void;
   clientId?: string;
+  /** Which tab to open on. Defaults to 'generate' for existing callers
+   *  (workout/diet plan pages); the hub page's chat launcher passes 'chat'. */
+  initialMode?: Mode;
 }
 
 type Mode = 'generate' | 'chat';
@@ -63,8 +70,8 @@ const VIOLET = '#a78bfa';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
-  const [mode, setMode] = useState<Mode>('generate');
+export function AiCoachPanel({ type, onClose, clientId, initialMode }: AiCoachPanelProps) {
+  const [mode, setMode] = useState<Mode>(initialMode ?? 'generate');
 
   // Client selection state
   const [clientList, setClientList] = useState<Client[]>([]);
@@ -88,7 +95,9 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
     {
       id: 'welcome',
       role: 'coach',
-      content: `Hi! I'm your AI ${type === 'workout' ? 'workout' : 'nutrition'} coach. Ask me anything about ${type === 'workout' ? 'training, programming, or recovery' : 'nutrition, macros, or meal planning'} — I'll factor in the selected client's profile when one is set.`,
+      content: type === 'general'
+        ? `Hi! I'm your AI Coach. Ask me about training, nutrition, a specific client, or your studio's own data — active clients, attendance, revenue, dues, trainers — and I'll pull the numbers directly. I'll also check this studio's own SOPs and guides if you've uploaded any to the Knowledge Base.`
+        : `Hi! I'm your AI ${type === 'workout' ? 'workout' : 'nutrition'} coach. Ask me anything about ${type === 'workout' ? 'training, programming, or recovery' : 'nutrition, macros, or meal planning'} — I'll factor in the selected client's profile when one is set.`,
       timestamp: new Date(),
     },
   ]);
@@ -353,7 +362,9 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
               <p style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.42)', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
                 {type === 'workout'
                   ? <><Dumbbell size={11} /> Workout Specialist</>
-                  : <><Salad size={11} /> Nutrition Specialist</>}
+                  : type === 'diet'
+                  ? <><Salad size={11} /> Nutrition Specialist</>
+                  : <><Brain size={11} /> Ask anything</>}
               </p>
             </div>
 
@@ -375,7 +386,10 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
             )}
           </div>
 
-          {/* Segmented mode toggle */}
+          {/* Segmented mode toggle — hidden for the general coach, whose
+              Generate form (goal / experience / dietary prefs) is shaped for
+              a workout or diet plan specifically and has nothing to render. */}
+          {type !== 'general' && (
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 11, padding: 3, gap: 2 }}>
             {(['generate', 'chat'] as const).map(m_ => (
               <button
@@ -395,12 +409,13 @@ export function AiCoachPanel({ type, onClose, clientId }: AiCoachPanelProps) {
               </button>
             ))}
           </div>
+          )}
         </div>
 
         {/* Body */}
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
           <AnimatePresence mode="wait">
-            {mode === 'generate' ? (
+            {mode === 'generate' && type !== 'general' ? (
               <m.div
                 key="generate"
                 initial={{ opacity: 0, x: -14 }}
