@@ -170,6 +170,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/ai/diet-generator',   label: 'Diet Generator',     icon: 'Apple' },
       { href: '/ai/progress-analysis',label: 'Progress Analyzer',  icon: 'TrendingUp' },
       { href: '/ai/business-insights',label: 'Business Insights',  icon: 'BarChart3',  roles: ['admin'] },
+      { href: '/ai-coach/knowledge',  label: 'Knowledge Base',     icon: 'BookOpen',   roles: ['admin', 'manager'] },
     ],
   },
   {

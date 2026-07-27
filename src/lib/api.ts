@@ -2027,6 +2027,23 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(params || {}),
       }),
+
+    // ── Knowledge base (RAG documents: SOPs, guides, policies) ──────────
+    knowledge: {
+      list: () =>
+        http<{ data: AiKnowledgeDocument[] }>('/api/ai/knowledge'),
+      upload: (file: File, title: string, category: 'sop' | 'guide' | 'policy') => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', title);
+        formData.append('category', category);
+        return http<{ data: AiKnowledgeDocument }>('/api/ai/knowledge', { method: 'POST', body: formData });
+      },
+      delete: (id: string) =>
+        http<{ message: string }>(`/api/ai/knowledge/${id}`, { method: 'DELETE' }),
+      reindex: (id: string) =>
+        http<{ message: string }>(`/api/ai/knowledge/${id}/reindex`, { method: 'POST' }),
+    },
   },
 
   // ── Platform Super Admin (multi-tenant SaaS) ──────────────────────────────
@@ -2873,6 +2890,20 @@ export type AiProviderSettings = {
   configured: boolean;
   base_url: string;
   models: { primary: string; secondary: string; fallback: string };
+};
+
+export type AiKnowledgeDocument = {
+  id: string;
+  title: string;
+  category: 'sop' | 'guide' | 'policy';
+  filename: string;
+  mime_type: string;
+  file_size_bytes: number;
+  status: 'processing' | 'ready' | 'failed';
+  error_message?: string | null;
+  chunk_count: number;
+  uploaded_by_name?: string | null;
+  created_at: string;
 };
 
 export type AiWorkoutParams = {
