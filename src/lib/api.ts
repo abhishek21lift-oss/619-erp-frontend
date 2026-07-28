@@ -2305,6 +2305,17 @@ export const api = {
     deleteAnnouncement: (id: string) =>
       http<{ data: { deleted: boolean } }>(`/api/super-admin/announcements/${id}`, { method: 'DELETE' }),
 
+    // ── Security Centre ─────────────────────────────────────────────────────
+    securityOverview: () => http<{ data: SecurityOverview }>('/api/super-admin/security/overview'),
+    loginEvents: (params: LoginEventQuery = {}) =>
+      http<{ data: LoginEvent[]; paging: { limit: number; offset: number; total: number } }>(
+        `/api/super-admin/security/login-events${qsOf(params)}`,
+      ),
+    securityThreats: (params: { hours?: number; min?: number } = {}) =>
+      http<{ data: SecurityThreats }>(`/api/super-admin/security/threats${qsOf(params)}`),
+    activeSessions: (orgId?: string) =>
+      http<{ data: ActiveSession[] }>(`/api/super-admin/security/sessions${orgId ? `?org_id=${orgId}` : ''}`),
+
     impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
         method: 'POST',
@@ -3068,6 +3079,65 @@ export type AnnouncementInput = {
   audience_statuses?: string[];
   audience_org_ids?: string[];
   audience_roles?: string[];
+};
+
+// ── Security Centre ───────────────────────────────────────────────────────────
+export type LoginOutcome =
+  | 'success' | 'bad_password' | 'unknown_user' | 'inactive' | 'mfa_required' | 'mfa_failed';
+export type LoginMethod = 'password' | 'google' | 'passkey' | 'refresh';
+
+export type LoginEvent = {
+  id: string | number;
+  user_id: string | null; user_name: string | null; user_role: string | null;
+  email_attempted: string | null;
+  organization_id: string | null; organization_name: string | null;
+  outcome: LoginOutcome; method: LoginMethod;
+  ip_address: string | null; user_agent: string | null;
+  created_at: string;
+};
+
+export type SecurityOverview = {
+  checked_at: string;
+  logins_24h: {
+    success_24h: number; failed_24h: number; failing_ips_24h: number;
+    targeted_accounts_24h: number;
+    /** A wrong second factor against a correct password — the loudest signal. */
+    mfa_failed_24h: number;
+  };
+  operators: {
+    total: number; without_mfa: number;
+    accounts: { id: string; name: string; email: string; last_login: string | null; mfa_enabled: boolean }[];
+  };
+  active_sessions: number;
+  impersonations_7d: number;
+};
+
+export type SecurityThreats = {
+  window_hours: number;
+  min_failures: number;
+  /** Many failures at ONE account — someone guessing a specific password. */
+  by_account: {
+    email_attempted: string; failures: number; distinct_ips: number;
+    last_attempt: string;
+    /** Whether the run ENDED in a success: a breach, not a repelled attempt. */
+    succeeded_after: boolean;
+  }[];
+  /** Many failures from ONE address across MANY accounts — credential stuffing. */
+  by_ip: {
+    ip_address: string; failures: number; accounts_targeted: number; last_attempt: string;
+  }[];
+};
+
+export type ActiveSession = {
+  user_id: string; name: string; email: string; role: string; last_login: string | null;
+  organization_id: string | null; organization_name: string | null;
+  sessions: number; oldest_session: string; newest_session: string;
+};
+
+export type LoginEventQuery = {
+  outcome?: string; method?: string; org_id?: string; user_id?: string;
+  ip?: string; failed?: string; from?: string; to?: string; q?: string;
+  limit?: number; offset?: number;
 };
 
 export type ImpersonationSession = {

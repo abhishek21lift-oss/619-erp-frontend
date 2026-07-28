@@ -49,6 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/platform?tab=announcements', label: 'Announcements', icon: 'Megaphone' },
       { href: '/platform?tab=activity', label: 'Activity',       icon: 'Activity' },
       { href: '/platform?tab=audit',    label: 'Audit Centre',   icon: 'ScrollText' },
+      { href: '/platform?tab=security', label: 'Security',       icon: 'ShieldAlert' },
       { href: '/platform?tab=health',   label: 'System Health',  icon: 'HeartPulse' },
     ],
   },
