@@ -20,7 +20,7 @@ import {
   Search, ArrowRight, TrendingUp, ChevronRight,
   MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
   ScrollText, HeartPulse, LogOut, ShieldOff, CalendarPlus, StickyNote, Save, FileText,
-  ToggleLeft, ToggleRight, Lock, Megaphone, Bot, LifeBuoy, HardDrive,
+  ToggleLeft, ToggleRight, Lock, Megaphone, Bot, LifeBuoy, HardDrive, Mail,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Guard from '@/components/Guard';
@@ -49,6 +49,9 @@ const SecurityCentre = dynamic(() => import('@/components/platform/security-cent
 });
 const SupportCentre = dynamic(() => import('@/components/platform/support-centre'), {
   loading: () => <PanelSkeleton label="Loading tickets…" />,
+});
+const InvitationsPanel = dynamic(() => import('@/components/platform/invitations'), {
+  loading: () => <PanelSkeleton label="Loading invitations…" />,
 });
 const AiControlCentre = dynamic(() => import('@/components/platform/ai-control'), {
   loading: () => <PanelSkeleton label="Reading AI usage…" />,
@@ -131,10 +134,10 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'support' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'storage' | 'health';
+type Tab = 'overview' | 'studios' | 'invitations' | 'support' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'storage' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
-const TAB_IDS: Tab[] = ['overview', 'studios', 'support', 'analytics', 'ai', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'storage', 'health'];
+const TAB_IDS: Tab[] = ['overview', 'studios', 'invitations', 'support', 'analytics', 'ai', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'storage', 'health'];
 type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'invoices' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
@@ -196,6 +199,7 @@ function PlatformContent() {
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
+    { id: 'invitations', label: 'Invitations', icon: <Mail size={15} /> },
     { id: 'support', label: 'Support', icon: <LifeBuoy size={15} /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={15} /> },
     { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
@@ -258,6 +262,7 @@ function PlatformContent() {
           {tab === 'analytics' && <AnalyticsPanel />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
           {tab === 'support' && <SupportCentre />}
+          {tab === 'invitations' && <InvitationsPanel />}
           {tab === 'ai' && <AiControlCentre />}
           {tab === 'features' && <FeatureManager />}
           {tab === 'announcements' && <NotificationCentre />}
@@ -2910,23 +2915,47 @@ function PasswordField({ value, onChange, onGenerate }: { value: string; onChang
 }
 
 // ── Create Organization modal ───────────────────────────────────────────────────
+//
+// Creating a studio now INVITES the owner by default rather than setting a
+// password for them. The operator no longer chooses, sees, or has to transmit
+// a customer's credential.
+//
+// The manual-password path is kept, behind a disclosure, because it is the
+// only way to stand a studio up when SMTP is down — and the API refuses the
+// invite path in that case rather than creating an account nobody can claim.
 function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: '', trainer_name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', trainer_name: '', email: '', mobile: '', password: '' });
+  const [manual, setManual] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (!form.name.trim() || !form.email.trim() || form.password.length < 8) {
-      toast.error('Name, a valid email, and an 8+ character password are required.'); return;
+    if (!form.name.trim() || !form.email.trim()) {
+      toast.error('Studio name and a valid login email are required.'); return;
+    }
+    if (manual && form.password.length < 8) {
+      toast.error('A manual password must be at least 8 characters.'); return;
     }
     setSaving(true);
     try {
-      await api.superAdmin.createOrg({
+      const res = await api.superAdmin.createOrg({
         name: form.name.trim(),
         trainer_name: form.trainer_name.trim() || undefined,
-        email: form.email.trim(), password: form.password,
+        email: form.email.trim(),
+        mobile: form.mobile.trim() || undefined,
+        // Omitted entirely on the invite path — its absence is what selects it.
+        password: manual ? form.password : undefined,
       });
-      toast.success('Studio created.'); onCreated();
+      if (!manual) {
+        // The studio exists either way. Whether the email actually left is a
+        // separate fact the operator has to be told: only they can resend, and
+        // a silent failure leaves an unclaimed studio nobody is chasing.
+        if (res.data?.email_sent) toast.success(`Studio created. Invitation sent to ${form.email.trim()}.`);
+        else toast.error(`Studio created, but the invitation could not be sent: ${res.data?.email_error ?? 'unknown error'}. Resend it from Invitations.`);
+      } else {
+        toast.success('Studio created with a manual password.');
+      }
+      onCreated();
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Create failed'); setSaving(false); }
   };
 
@@ -2937,21 +2966,53 @@ function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; onCreated
           <input className={inputCls} style={inputStyle} value={form.name} placeholder="e.g. Riya's Fitness Studio"
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
         </Field>
-        <Field label="Owner / trainer name">
+        <Field label="Owner name">
           <input className={inputCls} style={inputStyle} value={form.trainer_name} placeholder="Defaults to studio name"
             onChange={(e) => setForm((f) => ({ ...f, trainer_name: e.target.value }))} />
         </Field>
         <Field label="Login email">
-          <input className={inputCls} style={inputStyle} type="email" value={form.email} placeholder="trainer@example.com"
+          <input className={inputCls} style={inputStyle} type="email" value={form.email} placeholder="owner@example.com"
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
         </Field>
-        <Field label="Temporary password">
-          <PasswordField value={form.password} onChange={(v) => setForm((f) => ({ ...f, password: v }))} onGenerate={() => setForm((f) => ({ ...f, password: genPassword() }))} />
-          <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>Share with the owner; they change it after first login.</p>
+        <Field label="Mobile number">
+          <input className={inputCls} style={inputStyle} type="tel" value={form.mobile} placeholder="Optional"
+            onChange={(e) => setForm((f) => ({ ...f, mobile: e.target.value }))} />
         </Field>
+
+        {!manual ? (
+          <div className="rounded-[11px] p-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+            <p className="flex items-center gap-1.5 text-[12px] font-[700]" style={{ color: 'var(--text-primary)' }}>
+              <Mail size={13} /> The owner will be invited by email
+            </p>
+            <p className="mt-1 text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              They set their own password through a single-use link that expires in 24 hours. No password is
+              created, stored, or sent by you.
+            </p>
+            <button
+              onClick={() => setManual(true)}
+              className="mt-2 text-[11.5px] font-[650] underline"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Set a password manually instead
+            </button>
+          </div>
+        ) : (
+          <Field label="Temporary password">
+            <PasswordField value={form.password} onChange={(v) => setForm((f) => ({ ...f, password: v }))} onGenerate={() => setForm((f) => ({ ...f, password: genPassword() }))} />
+            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              You will have to transmit this to the owner yourself. Prefer an invitation unless email is down.{' '}
+              <button onClick={() => setManual(false)} className="underline" style={{ color: 'var(--brand)' }}>
+                Send an invitation instead
+              </button>
+            </p>
+          </Field>
+        )}
+
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>Create</Button>
+          <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>
+            {manual ? 'Create' : 'Create & invite'}
+          </Button>
         </div>
       </div>
     </Modal>

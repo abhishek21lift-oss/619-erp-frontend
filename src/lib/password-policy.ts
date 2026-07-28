@@ -54,3 +54,39 @@ export function passwordStrength(password: string): number {
   if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) score++;
   return score;
 }
+
+/* ── Invitation activation ─────────────────────────────────────────────── */
+
+export interface Rule { label: string; ok: boolean }
+
+/**
+ * The rules for a brand-new admin activating their studio.
+ *
+ * Stricter than checkNewPassword above, and deliberately a SEPARATE function
+ * rather than a tightening of it. The two are enforced by different backends:
+ * auth.js checks only length, while routes/invitations.js checks all five. If
+ * this tightened the shared helper, the reset and change-password screens
+ * would start rejecting passwords their own endpoints would happily accept —
+ * a rule that exists only in the UI and fails nothing is worse than no rule.
+ *
+ * These five mirror routes/invitations.js exactly. When they drift, the user
+ * sees a form that passed locally and then failed on submit with a different
+ * message, which reads as the app being broken.
+ */
+export function invitationPasswordRules(password: string): Rule[] {
+  return [
+    { label: `At least ${MIN_LENGTH} characters`, ok: password.length >= MIN_LENGTH },
+    { label: 'A lowercase letter', ok: /[a-z]/.test(password) },
+    { label: 'An uppercase letter', ok: /[A-Z]/.test(password) },
+    { label: 'A number', ok: /[0-9]/.test(password) },
+    { label: 'A special character', ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+}
+
+/** First failure, or '' when every rule passes and the confirmation matches. */
+export function checkInvitationPassword(password: string, confirm: string): string {
+  const failed = invitationPasswordRules(password).find((r) => !r.ok);
+  if (failed) return `Password needs: ${failed.label.toLowerCase()}.`;
+  if (password !== confirm) return 'Passwords do not match.';
+  return '';
+}

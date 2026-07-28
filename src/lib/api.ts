@@ -1247,6 +1247,19 @@ export const api = {
     backupDatabase: () => http<{ message?: string }>('/api/admin/backup-database', { method: 'POST' }),
   },
 
+  // ── Invitations (public) ──────────────────────────────────
+  // Used by an admin who has no session yet. The token in the URL is the only
+  // credential, so nothing here sends an Authorization header.
+  invitations: {
+    preview: (token: string) =>
+      http<{ data: InvitationPreview }>(`/api/invitations/${encodeURIComponent(token)}`),
+    accept: (token: string, password: string) =>
+      http<{ data: { activated: boolean; email: string } }>(
+        `/api/invitations/${encodeURIComponent(token)}/accept`,
+        { method: 'POST', body: JSON.stringify({ password }) }
+      ),
+  },
+
   // ── Feature flags ─────────────────────────────────────────
   // The studio's read-only view of what the platform has enabled for it. The
   // organization comes off the session server-side; there is no parameter for
@@ -2148,8 +2161,21 @@ export const api = {
       http<{ data: Organization[] }>('/api/super-admin/organizations'),
     getOrg: (id: string) =>
       http<{ data: OrganizationDetail }>(`/api/super-admin/organizations/${id}`),
-    createOrg: (data: { name: string; trainer_name?: string; email: string; password: string }) =>
-      http<{ data: { organization: Organization; owner: OrgUser } }>('/api/super-admin/organizations', {
+    /**
+     * Omitting `password` selects the INVITATION path: the account is created
+     * with no usable password and the owner is emailed a single-use link.
+     * Passing one keeps the original behaviour, for when SMTP is unavailable.
+     */
+    createOrg: (data: { name: string; trainer_name?: string; email: string; mobile?: string; password?: string }) =>
+      http<{ data: {
+        organization: Organization;
+        owner: OrgUser;
+        onboarding: 'invitation' | 'password';
+        invitation: Invitation | null;
+        /** Whether the invitation email actually left. False is actionable. */
+        email_sent: boolean;
+        email_error: string | null;
+      } }>('/api/super-admin/organizations', {
         method: 'POST', body: JSON.stringify(data),
       }),
     updateOrg: (id: string, data: { name?: string; status?: 'active' | 'suspended' }) =>
@@ -2331,6 +2357,24 @@ export const api = {
       http<{ data: ActiveSession[] }>(`/api/super-admin/security/sessions${orgId ? `?org_id=${orgId}` : ''}`),
 
     // ── AI Control Centre ───────────────────────────────────────────────────
+    /** Invitation management. `status` filters on the DERIVED status. */
+    listInvitations: (params: { org_id?: string; status?: string; q?: string } = {}) =>
+      http<{ data: Invitation[]; counts: Record<string, number>; smtp_configured: boolean }>(
+        `/api/super-admin/invitations${qsOf(params)}`),
+    resendInvitation: (id: string) =>
+      http<{ data: Invitation }>(`/api/super-admin/invitations/${id}/resend`, { method: 'POST' }),
+    /**
+     * A POST because it MUTATES: the raw token is never stored, so there is no
+     * existing link to read. This mints a new one and invalidates the old.
+     */
+    invitationLink: (id: string) =>
+      http<{ data: { url: string; expires_at: string; invitation: Invitation } }>(
+        `/api/super-admin/invitations/${id}/link`, { method: 'POST' }),
+    cancelInvitation: (id: string) =>
+      http<{ data: Invitation }>(`/api/super-admin/invitations/${id}/cancel`, { method: 'POST' }),
+    invitationEvents: (id: string) =>
+      http<{ data: InvitationDetail }>(`/api/super-admin/invitations/${id}/events`),
+
     aiOverview: (days = 30) => http<{ data: AiOverview }>(`/api/super-admin/ai/overview?days=${days}`),
     aiByStudio: (days = 30) => http<{ data: AiStudioUsage[] }>(`/api/super-admin/ai/by-studio?days=${days}`),
     aiByModel: (days = 30) => http<{ data: AiModelUsage[] }>(`/api/super-admin/ai/by-model?days=${days}`),
@@ -3441,6 +3485,49 @@ export type SubKpis = {
  * one month), NOT cash collected — proration credits and one-offs move cash but
  * not the run-rate. `revenue_trend` is the cash side.
  */
+// ── Admin invitations ─────────────────────────────────────────────────────────
+export type InvitationStatus = 'pending' | 'sent' | 'opened' | 'activated' | 'expired' | 'cancelled';
+
+export type Invitation = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  email: string;
+  owner_name: string | null;
+  studio_name: string | null;
+  /** Derived server-side — `expired` is a function of the clock, not a stored value. */
+  status: InvitationStatus;
+  expires_at: string;
+  sent_at: string | null;
+  opened_at: string | null;
+  activated_at: string | null;
+  cancelled_at: string | null;
+  send_attempts: number;
+  /** Why delivery failed, when it did. Null otherwise. */
+  last_error: string | null;
+  created_by_name: string | null;
+  created_at: string;
+};
+
+export type InvitationEvent = { at: string; label: string; by: string | null; meta: string | null };
+
+export type InvitationDetail = {
+  invitation: Invitation;
+  events: InvitationEvent[];
+  audit: { action: string; user_name: string | null; ip_address: string | null; user_agent: string | null; created_at: string }[];
+  created_user_agent: string | null;
+  activated_user_agent: string | null;
+};
+
+/** What the set-password page may know before anyone has authenticated. */
+export type InvitationPreview = {
+  studio_name: string;
+  owner_name: string | null;
+  /** Masked — this endpoint must not become an email-disclosure oracle. */
+  email_masked: string;
+  expires_at: string;
+};
+
 export type SubscriptionMetrics = {
   mrr_inr: number;
   arr_inr: number;

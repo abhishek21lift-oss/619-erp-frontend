@@ -28,6 +28,10 @@ const PUBLIC_PREFIXES: string[] = [
   '/login',
   '/reset-password',
   '/forgot-password',
+  // An invited admin has no session yet — that is the entire point. Without
+  // this the invitation link 307s to /login and the studio can never be
+  // claimed.
+  '/auth/set-password',
   '/checkin',
   '/_next',
   '/api/health',
