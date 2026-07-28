@@ -55,6 +55,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/platform',              label: 'Command Centre', icon: 'LayoutGrid' },
       { href: '/platform?tab=studios',  label: 'Studios',        icon: 'Layers' },
       { href: '/platform?tab=finance',  label: 'Finance',        icon: 'CreditCard' },
+      { href: '/platform?tab=support',  label: 'Support',        icon: 'LifeBuoy' },
       { href: '/platform?tab=ai',       label: 'AI Control',     icon: 'Bot' },
       { href: '/platform?tab=features', label: 'Features',       icon: 'ToggleRight' },
       { href: '/platform?tab=announcements', label: 'Announcements', icon: 'Megaphone' },
@@ -222,6 +223,7 @@ export const SETTINGS_GROUP: NavGroup = {
   icon: 'Settings',
   items: [
     { href: '/settings/profile',          label: 'My Profile',           icon: 'User' },
+    { href: '/support',                   label: 'Support',              icon: 'LifeBuoy' },
     { href: '/subscription',              label: 'Subscription & Billing', icon: 'CreditCard',  roles: ['admin'] },
     { href: '/settings/branches',         label: 'Branches',             icon: 'Building2',      roles: ['admin'], feature: 'branches' },
     { href: '/settings/passkeys',         label: 'Passkeys & Security',  icon: 'Shield',         roles: ['admin'], feature: 'passkeys' },

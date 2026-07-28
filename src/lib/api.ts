@@ -2351,6 +2351,20 @@ export const api = {
     clearOrgAiLimit: (orgId: string) =>
       http<{ data: { cleared: boolean } }>(`/api/super-admin/organizations/${orgId}/ai-limit`, { method: 'DELETE' }),
 
+    // ── Support Centre (platform side) ──────────────────────────────────────
+    supportOverview: () => http<{ data: SupportOverview }>('/api/super-admin/support/overview'),
+    supportTickets: (params: { status?: string; priority?: string; category?: string; org_id?: string; unassigned?: string; q?: string; limit?: number } = {}) =>
+      http<{ data: SupportTicket[] }>(`/api/super-admin/support/tickets${qsOf(params)}`),
+    supportTicket: (id: string) => http<{ data: SupportTicket }>(`/api/super-admin/support/tickets/${id}`),
+    replyToTicket: (id: string, body: string, isInternal = false) =>
+      http<{ data: TicketMessage }>(`/api/super-admin/support/tickets/${id}/messages`, {
+        method: 'POST', body: JSON.stringify({ body, is_internal: isInternal }),
+      }),
+    updateTicket: (id: string, patch: { status?: TicketStatus; priority?: TicketPriority; assigned_to?: string | null }) =>
+      http<{ data: SupportTicket }>(`/api/super-admin/support/tickets/${id}`, {
+        method: 'PATCH', body: JSON.stringify(patch),
+      }),
+
     impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
         method: 'POST',
@@ -2434,6 +2448,18 @@ export const api = {
      *  for this: it stacks time on top instead of crediting it, double-granting days). */
     changePlan: (orgId: string, body: { plan_code: string; amount_inr?: number; method?: string; reference?: string; notes?: string }) =>
       http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/subscription/change`, { method: 'POST', body: JSON.stringify(body) }),
+  },
+  /** The studio's own support tickets. Scoped server-side to the caller's
+   *  organization — there is no parameter naming a studio. */
+  support: {
+    tickets: () => http<{ data: SupportTicket[] }>('/api/support/tickets'),
+    ticket: (id: string) => http<{ data: SupportTicket }>(`/api/support/tickets/${id}`),
+    create: (body: { subject: string; body: string; category?: TicketCategory; priority?: TicketPriority }) =>
+      http<{ data: SupportTicket }>('/api/support/tickets', { method: 'POST', body: JSON.stringify(body) }),
+    reply: (id: string, body: string) =>
+      http<{ data: TicketMessage }>(`/api/support/tickets/${id}/messages`, {
+        method: 'POST', body: JSON.stringify({ body }),
+      }),
   },
   subscription: {
     status: () => http<{ data: SubscriptionStatus }>('/api/subscription/status'),
@@ -3264,6 +3290,43 @@ export type AiSettings = {
   default_monthly_tokens: number | string | null;
   warn_at_pct: number;
   rates: AiModelRate[];
+};
+
+// ── Support ───────────────────────────────────────────────────────────────────
+export type TicketStatus = 'open' | 'pending' | 'resolved' | 'closed';
+export type TicketPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type TicketCategory = 'general' | 'billing' | 'technical' | 'feature_request' | 'bug' | 'account';
+
+/** The studio's view. `is_internal` is absent by construction, not merely false. */
+export type TicketMessage = {
+  id: string; ticket_id: string;
+  author_side: 'studio' | 'platform';
+  author_name: string | null; body: string; created_at: string;
+  /** Present only on the platform view. */
+  is_internal?: boolean;
+};
+
+export type SupportTicket = {
+  id: string; subject: string;
+  category: TicketCategory; priority: TicketPriority; status: TicketStatus;
+  created_by_name: string | null;
+  created_at: string; updated_at: string; resolved_at: string | null;
+  message_count?: number;
+  messages?: TicketMessage[];
+  /** Platform view only. */
+  organization_id?: string; organization_name?: string; plan_code?: string | null;
+  assigned_to?: string | null; assigned_to_name?: string | null;
+  first_response_at?: string | null;
+  last_studio_message_at?: string | null;
+};
+
+export type SupportOverview = {
+  open: number; pending: number; resolved: number; closed: number;
+  unassigned: number; urgent_live: number;
+  /** Never answered at all and still waiting — the worst state to be in. */
+  awaiting_first_reply: number;
+  median_first_response_hours: number | null;
+  median_resolution_hours: number | null;
 };
 
 export type ImpersonationSession = {
