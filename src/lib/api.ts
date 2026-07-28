@@ -2280,6 +2280,31 @@ export const api = {
         method: 'DELETE',
       }),
 
+    // ── Notification Centre ─────────────────────────────────────────────────
+    announcements: (status?: string) =>
+      http<{ data: Announcement[] }>(`/api/super-admin/announcements${status ? `?status=${status}` : ''}`),
+    createAnnouncement: (body: AnnouncementInput) =>
+      http<{ data: Announcement }>('/api/super-admin/announcements', {
+        method: 'POST', body: JSON.stringify(body),
+      }),
+    updateAnnouncement: (id: string, patch: Partial<AnnouncementInput>) =>
+      http<{ data: Announcement }>(`/api/super-admin/announcements/${id}`, {
+        method: 'PATCH', body: JSON.stringify(patch),
+      }),
+    /** Read-only: computes reach without delivering anything. */
+    previewAnnouncement: (id: string) =>
+      http<{ data: AnnouncementPreview }>(`/api/super-admin/announcements/${id}/preview`, { method: 'POST' }),
+    sendAnnouncement: (id: string) =>
+      http<{ data: Announcement }>(`/api/super-admin/announcements/${id}/send`, { method: 'POST' }),
+    scheduleAnnouncement: (id: string, scheduledFor: string) =>
+      http<{ data: Announcement }>(`/api/super-admin/announcements/${id}/schedule`, {
+        method: 'POST', body: JSON.stringify({ scheduled_for: scheduledFor }),
+      }),
+    cancelAnnouncement: (id: string) =>
+      http<{ data: Announcement }>(`/api/super-admin/announcements/${id}/cancel`, { method: 'POST' }),
+    deleteAnnouncement: (id: string) =>
+      http<{ data: { deleted: boolean } }>(`/api/super-admin/announcements/${id}`, { method: 'DELETE' }),
+
     impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
         method: 'POST',
@@ -2997,6 +3022,52 @@ export type FeatureOverrideRow = {
   plan_code: string | null; feature_key: string; enabled: boolean;
   reason: string | null; expires_at: string | null;
   set_by_name: string | null; updated_at: string;
+};
+
+// ── Notification Centre ───────────────────────────────────────────────────────
+export type AnnouncementSeverity = 'info' | 'success' | 'warning' | 'critical';
+export type AnnouncementStatus = 'draft' | 'scheduled' | 'sent' | 'cancelled';
+export type AnnouncementAudience = 'all' | 'plan' | 'status' | 'studios';
+
+export type Announcement = {
+  id: string; title: string; body: string;
+  severity: AnnouncementSeverity;
+  link: string | null;
+  audience: AnnouncementAudience;
+  audience_plans: string[] | null;
+  audience_statuses: string[] | null;
+  audience_org_ids: string[] | null;
+  audience_roles: string[];
+  status: AnnouncementStatus;
+  scheduled_for: string | null;
+  sent_at: string | null;
+  /** Snapshotted at send — never recomputed, so history cannot drift. */
+  recipient_count: number | null;
+  studio_count: number | null;
+  created_by_name: string | null;
+  sent_by_name: string | null;
+  created_at: string;
+  /** Live counts from the delivered copies; present on the list endpoint. */
+  delivered?: number;
+  read_count?: number;
+};
+
+/** What a send would reach, computed by the same resolver the send uses. */
+export type AnnouncementPreview = {
+  recipient_count: number;
+  studio_count: number;
+  sample: { name: string; role: string; organization_name: string }[];
+};
+
+export type AnnouncementInput = {
+  title: string; body: string;
+  severity?: AnnouncementSeverity;
+  link?: string | null;
+  audience?: AnnouncementAudience;
+  audience_plans?: string[];
+  audience_statuses?: string[];
+  audience_org_ids?: string[];
+  audience_roles?: string[];
 };
 
 export type ImpersonationSession = {

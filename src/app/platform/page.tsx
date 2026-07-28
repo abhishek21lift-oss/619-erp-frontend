@@ -20,7 +20,7 @@ import {
   Search, ArrowRight, TrendingUp, ChevronRight,
   MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
   ScrollText, HeartPulse, LogOut, ShieldOff, CalendarPlus, StickyNote, Save, FileText,
-  ToggleLeft, ToggleRight, Lock,
+  ToggleLeft, ToggleRight, Lock, Megaphone,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Guard from '@/components/Guard';
@@ -40,6 +40,9 @@ const InvoicesPanel = dynamic(() => import('@/components/platform/invoices'), {
 });
 const FeatureManager = dynamic(() => import('@/components/platform/feature-manager'), {
   loading: () => <PanelSkeleton label="Loading features…" />,
+});
+const NotificationCentre = dynamic(() => import('@/components/platform/notification-centre'), {
+  loading: () => <PanelSkeleton label="Loading announcements…" />,
 });
 
 function PanelSkeleton({ label }: { label: string }) {
@@ -112,10 +115,10 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'finance' | 'features' | 'activity' | 'audit' | 'health';
+type Tab = 'overview' | 'studios' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
-const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'features', 'activity', 'audit', 'health'];
+const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'features', 'announcements', 'activity', 'audit', 'health'];
 type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'invoices' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
@@ -179,6 +182,7 @@ function PlatformContent() {
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
     { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
     { id: 'features', label: 'Features', icon: <ToggleRight size={15} /> },
+    { id: 'announcements', label: 'Announcements', icon: <Megaphone size={15} /> },
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
     { id: 'audit', label: 'Audit', icon: <ScrollText size={15} /> },
     { id: 'health', label: 'Health', icon: <HeartPulse size={15} /> },
@@ -232,6 +236,7 @@ function PlatformContent() {
           {tab === 'studios' && <StudiosTab />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
           {tab === 'features' && <FeatureManager />}
+          {tab === 'announcements' && <NotificationCentre />}
           {tab === 'activity' && <ActivityTab />}
           {tab === 'audit' && <AuditCentre />}
           {tab === 'health' && <SystemHealthPanel />}
