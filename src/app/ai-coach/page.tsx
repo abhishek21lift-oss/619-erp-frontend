@@ -485,7 +485,10 @@ export default function AiCoachPage() {
 
             {/* Messages / empty state */}
             <div className="min-h-0 flex-1 overflow-y-auto" style={{ background: 'var(--bg-canvas)' }}>
-              <div className="mx-auto w-full max-w-3xl py-5">
+              {/* px here is required: .ai-chat-shell cancels .shell-main's page
+                  padding with a negative margin to go full-bleed, so every
+                  section inside it pads itself — see the header and composer. */}
+              <div className="mx-auto w-full max-w-3xl px-3 py-5 sm:px-5">
                 {isEmpty ? (
                   <EmptyState
                     onPrompt={(p) => send(p)}
@@ -849,8 +852,15 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
           maxWidth: 150,
         }}
       >
-        <User size={13} />
-        <span className="hidden truncate sm:inline">{selected ? selected.name : 'Client'}</span>
+        <User size={13} className="shrink-0" />
+        {/* The name must show on phones too. Hiding it below `sm` meant that
+            after picking a client the only feedback was the button changing
+            tint — the attached client, which changes every answer the coach
+            gives, was invisible on the device most used. The generic "Client"
+            label stays desktop-only, since the icon already says that. */}
+        <span className={selected ? 'truncate' : 'hidden truncate sm:inline'}>
+          {selected ? selected.name : 'Client'}
+        </span>
       </button>
 
       {open && (
