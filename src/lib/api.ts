@@ -718,6 +718,24 @@ export interface DietTemplate {
   meals: DietTemplateMeal[];
 }
 
+export interface PtLead {
+  id: string;
+  name: string;
+  mobile?: string | null;
+  email?: string | null;
+  source: string;
+  status: 'new' | 'contacted' | 'trial_scheduled' | 'converted' | 'lost';
+  interested_package?: string | null;
+  trainer_id?: string | null;
+  trainer_name?: string | null;
+  follow_up_date?: string | null;
+  notes?: string | null;
+  converted_client_id?: string | null;
+  converted_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ClientBirthday {
   id: string;
   name: string;
@@ -1757,6 +1775,18 @@ export const api = {
       http<{ data: DuplicateGroup[]; total_groups: number; total_records: number; total_duplicates: number; total_financial_value: number }>('/api/pt-os/clients/duplicates'),
     mergeDuplicates: () =>
       http<{ success: boolean; run_id: string; merged_groups: number; records_removed: number; results: MergeResult[] }>('/api/pt-os/clients/merge-duplicates', { method: 'POST' }),
+    leads: {
+      list: (params?: { status?: string; q?: string }) =>
+        http<{ data: PtLead[]; total: number }>(`/api/pt-os/leads${buildQs(params)}`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: PtLead }>('/api/pt-os/leads', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: PtLead }>(`/api/pt-os/leads/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+      delete: (id: string) =>
+        http<{ message: string }>(`/api/pt-os/leads/${id}`, { method: 'DELETE' }),
+      convert: (id: string) =>
+        http<{ data: { client_id: string } }>(`/api/pt-os/leads/${id}/convert`, { method: 'POST' }),
+    },
   },
 
   memberWebauthn: {
