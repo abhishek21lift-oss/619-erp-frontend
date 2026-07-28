@@ -103,7 +103,16 @@ export function SearchableSelect({
                 style={{ background: 'var(--bg-subtle)', color: 'rgb(15,23,42)' }}
               />
             </div>
-            <div className="max-h-56 overflow-y-auto p-1">
+            {/* overscroll-contain stops scroll chaining: without it, the moment
+                this list hits its top/bottom boundary the touch drag propagates
+                to the page, so the whole screen scrolls under the open dropdown
+                instead of the options moving. The list only holds ~5 rows, so
+                that boundary is reached almost immediately and the dropdown
+                felt like it did not scroll at all. */}
+            <div
+              className="max-h-56 overflow-y-auto overscroll-contain p-1"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               {filtered.map((opt) => (
                 <button
                   key={opt.value} type="button"

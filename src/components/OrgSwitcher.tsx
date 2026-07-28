@@ -94,7 +94,9 @@ export default function OrgSwitcher() {
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-disabled)]">
             Platform · view as
           </div>
-          <div className="max-h-[320px] overflow-y-auto pb-1.5">
+          {/* overscroll-contain: without it, reaching this list's scroll
+              boundary chains the drag to the page behind the open dropdown. */}
+          <div className="max-h-[320px] overflow-y-auto overscroll-contain pb-1.5">
             {/* Platform-wide */}
             <button
               type="button"

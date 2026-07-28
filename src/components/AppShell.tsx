@@ -446,7 +446,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                       </div>
 
                       {/* List */}
-                      <div className="max-h-[320px] overflow-y-auto">
+                      {/* overscroll-contain: without it, reaching this list's
+                          scroll boundary chains the drag to the page behind
+                          the open notification panel. */}
+                      <div className="max-h-[320px] overflow-y-auto overscroll-contain">
                         {notifLoading ? (
                           <div className="flex items-center justify-center py-10">
                             <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--border)] border-t-[var(--brand)]" />
