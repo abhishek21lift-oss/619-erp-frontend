@@ -59,8 +59,8 @@ function fmtDayLabel(ymd: string): string {
 }
 
 /* ── Status config — values match the pt_sessions CHECK constraint
-   ('scheduled','completed','cancelled','no_show'). Note the underscore in
-   no_show: the Session History page uses 'no-show', which never matches. */
+   ('scheduled','completed','cancelled','no_show'), which is the only set
+   the database will accept. Note the underscore in no_show. */
 const STATUS_META: Record<PtSessionStatus, { label: string; color: string; bg: string }> = {
   scheduled: { label: 'Scheduled', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
   completed: { label: 'Completed', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },

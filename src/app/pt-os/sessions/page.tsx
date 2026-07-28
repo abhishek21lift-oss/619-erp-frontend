@@ -28,14 +28,19 @@ const STATUS_STYLES: Record<string, { label: string; color: string; bg: string; 
   scheduled: { label: 'Scheduled', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', dot: '#3B82F6' },
   completed: { label: 'Completed', color: '#10B981', bg: 'rgba(16,185,129,0.08)', dot: '#10B981' },
   cancelled: { label: 'Cancelled', color: '#EF4444', bg: 'rgba(239,68,68,0.08)', dot: '#EF4444' },
-  'no-show': { label: 'No Show', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', dot: '#F59E0B' },
+  // no_show with an underscore — that is the only spelling the pt_sessions
+  // status CHECK constraint permits, so it is what actually comes back from
+  // the API. Keyed as 'no-show' here, this entry never matched: the lookup
+  // fell through to the 'scheduled' default and no-shows rendered as a blue
+  // "Scheduled" badge.
+  no_show: { label: 'No Show', color: '#F59E0B', bg: 'rgba(245,158,11,0.08)', dot: '#F59E0B' },
 };
 
 const STATUS_ICONS: Record<string, React.ElementType> = {
   scheduled: Clock,
   completed: CheckCircle2,
   cancelled: XCircle,
-  'no-show': XCircle,
+  no_show: XCircle,
 };
 
 function fmtTime(t?: string) {
@@ -151,7 +156,7 @@ export default function PTSessionsPage() {
               />
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-              {['all', 'scheduled', 'completed', 'cancelled', 'no-show'].map(st => {
+              {['all', 'scheduled', 'completed', 'cancelled', 'no_show'].map(st => {
                 const cfg = STATUS_STYLES[st] || { label: st, color: '#6B7280', bg: 'rgba(107,114,128,0.08)', dot: '#6B7280' };
                 return (
                   <button key={st} onClick={() => setStatusFilter(st)}
