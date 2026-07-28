@@ -20,6 +20,7 @@ import {
   Search, ArrowRight, TrendingUp, ChevronRight,
   MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
   ScrollText, HeartPulse, LogOut, ShieldOff, CalendarPlus, StickyNote, Save, FileText,
+  ToggleLeft, ToggleRight, Lock,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Guard from '@/components/Guard';
@@ -37,6 +38,9 @@ const SystemHealthPanel = dynamic(() => import('@/components/platform/system-hea
 const InvoicesPanel = dynamic(() => import('@/components/platform/invoices'), {
   loading: () => <PanelSkeleton label="Loading invoices…" />,
 });
+const FeatureManager = dynamic(() => import('@/components/platform/feature-manager'), {
+  loading: () => <PanelSkeleton label="Loading features…" />,
+});
 
 function PanelSkeleton({ label }: { label: string }) {
   return (
@@ -52,7 +56,7 @@ import type {
   Organization, OrganizationDetail, OrgUser,
   PlatformOverview, StudioOverview, ActivityEntry,
   SubStudio, SubKpis, SubDetail, SubPlan, SubEvent, SubscriptionMetrics, Coupon, PlanChangeQuote,
-  OrgBillingProfile,
+  OrgBillingProfile, ResolvedFeature,
 } from '@/lib/api';
 import {
   AmbientField, ConsoleHeader, SegmentedTabs, Panel, StatTile, Reveal, SectionLabel,
@@ -108,10 +112,10 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'finance' | 'activity' | 'audit' | 'health';
+type Tab = 'overview' | 'studios' | 'finance' | 'features' | 'activity' | 'audit' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
-const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'activity', 'audit', 'health'];
+const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'features', 'activity', 'audit', 'health'];
 type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'invoices' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
@@ -174,6 +178,7 @@ function PlatformContent() {
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
     { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
+    { id: 'features', label: 'Features', icon: <ToggleRight size={15} /> },
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
     { id: 'audit', label: 'Audit', icon: <ScrollText size={15} /> },
     { id: 'health', label: 'Health', icon: <HeartPulse size={15} /> },
@@ -226,6 +231,7 @@ function PlatformContent() {
           {tab === 'overview' && <OverviewTab onNavigate={onNavigate} />}
           {tab === 'studios' && <StudiosTab />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
+          {tab === 'features' && <FeatureManager />}
           {tab === 'activity' && <ActivityTab />}
           {tab === 'audit' && <AuditCentre />}
           {tab === 'health' && <SystemHealthPanel />}
@@ -1901,6 +1907,133 @@ function StudioOperatorPanel({ org, onChanged }: { org: Organization; onChanged:
       <div className="lg:col-span-2">
         <BillingProfileEditor orgId={org.id} />
       </div>
+
+      <div className="lg:col-span-2">
+        <StudioFeatureEditor orgId={org.id} orgName={org.name} />
+      </div>
+    </div>
+  );
+}
+
+/* Per-studio feature overrides. Lives here rather than in the Features tab
+   because the question is always "what does THIS studio have" — asked while
+   looking at the studio, in response to a support conversation about it.
+   The Features tab answers the other question, "what does the platform offer".
+
+   Every row shows WHY it resolved the way it did. Without that, an operator
+   staring at a disabled feature cannot tell an expired trial from a plan that
+   never included it from a kill switch someone pulled this morning. */
+const FEATURE_SOURCE_LABEL: Record<ResolvedFeature['source'], string> = {
+  core: 'Core — always on',
+  global_off: 'Off platform-wide',
+  override: 'Set for this studio',
+  plan: 'From their plan',
+  default: 'Default',
+};
+
+function StudioFeatureEditor({ orgId, orgName }: { orgId: string; orgName: string }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<ResolvedFeature[] | null>(null);
+  const [busyKey, setBusyKey] = useState('');
+
+  const load = useCallback(() => {
+    api.superAdmin.orgFeatures(orgId)
+      .then((r) => setRows(r.data))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'Could not load features'));
+  }, [orgId, toast]);
+
+  useEffect(() => { if (open && !rows) load(); }, [open, rows, load]);
+
+  const setOverride = async (f: ResolvedFeature) => {
+    const next = !f.enabled;
+    // The reason is mandatory server-side; asking for it here means the
+    // operator never meets a validation error they cannot act on.
+    const reason = window.prompt(
+      `${next ? 'Grant' : 'Remove'} ${f.name} for ${orgName}.\n\nWhy? (recorded in the audit trail)`,
+    );
+    if (reason === null) return;
+    if (!reason.trim()) { toast.error('A reason is required.'); return; }
+    setBusyKey(f.key);
+    try {
+      await api.superAdmin.setOrgFeature(orgId, f.key, { enabled: next, reason: reason.trim() });
+      toast.success(`${f.name} ${next ? 'granted' : 'removed'} for ${orgName}.`);
+      setRows(null);
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not set the override'); }
+    finally { setBusyKey(''); }
+  };
+
+  const clearOverride = async (f: ResolvedFeature) => {
+    setBusyKey(f.key);
+    try {
+      await api.superAdmin.clearOrgFeature(orgId, f.key);
+      toast.success(`${f.name} follows their plan again.`);
+      setRows(null);
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not clear the override'); }
+    finally { setBusyKey(''); }
+  };
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)} aria-expanded={open}
+        className="mb-1.5 flex items-center gap-1.5 text-[10px] font-[750] uppercase tracking-[0.08em]"
+        style={{ color: 'var(--text-disabled)' }}
+      >
+        <ToggleRight size={11} /> Features
+        <ChevronDown size={11} style={{ transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+
+      {open && (
+        <div className="rounded-[10px]" style={{ border: '1px solid var(--border)' }}>
+          {!rows && (
+            <div className="flex justify-center py-5">
+              <Loader2 size={16} className="animate-spin" style={{ color: 'var(--brand)' }} />
+            </div>
+          )}
+          {rows?.map((f) => (
+            <div key={f.key} className="flex items-center gap-2.5 px-2.5 py-2" style={{ borderTop: '1px solid var(--border)' }}>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>{f.name}</p>
+                <p className="truncate text-[10.5px]" style={{ color: 'var(--text-muted)' }}>
+                  {FEATURE_SOURCE_LABEL[f.source]}
+                  {f.override?.reason ? ` · ${f.override.reason}` : ''}
+                </p>
+              </div>
+              {f.source === 'override' && (
+                <button
+                  onClick={() => clearOverride(f)} disabled={busyKey === f.key}
+                  className="shrink-0 text-[10.5px] font-[650] disabled:opacity-40"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Clear
+                </button>
+              )}
+              {busyKey === f.key
+                ? <Loader2 size={14} className="animate-spin shrink-0" style={{ color: 'var(--brand)' }} />
+                : (
+                  <button
+                    role="switch" aria-checked={f.enabled}
+                    aria-label={`${f.name} for ${orgName}`}
+                    disabled={f.is_core || f.source === 'global_off'}
+                    onClick={() => setOverride(f)}
+                    className="shrink-0 disabled:opacity-35"
+                    style={{ color: f.enabled ? 'var(--success)' : 'var(--text-disabled)' }}
+                  >
+                    {f.is_core ? <Lock size={14} /> : f.enabled ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+                  </button>
+                )}
+            </div>
+          ))}
+          {rows && (
+            // A studio-level switch cannot beat the platform kill switch, so
+            // saying nothing here would look like a broken toggle.
+            <p className="px-2.5 py-2 text-[10.5px]" style={{ color: 'var(--text-disabled)', borderTop: '1px solid var(--border)' }}>
+              Features off platform-wide cannot be granted to one studio.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -2257,6 +2257,29 @@ export const api = {
         method: 'PUT', body: JSON.stringify(patch),
       }),
 
+    // ── Feature Manager ─────────────────────────────────────────────────────
+    features: () => http<{ data: FeatureCatalogue }>('/api/super-admin/features'),
+    updateFeature: (key: string, patch: { global_enabled?: boolean; default_enabled?: boolean; is_plan_gated?: boolean }) =>
+      http<{ data: PlatformFeature }>(`/api/super-admin/features/${key}`, {
+        method: 'PATCH', body: JSON.stringify(patch),
+      }),
+    setFeaturePlans: (key: string, plans: Record<string, boolean>) =>
+      http<{ data: unknown }>(`/api/super-admin/features/${key}/plans`, {
+        method: 'PUT', body: JSON.stringify({ plans }),
+      }),
+    featureOverrides: (key: string) =>
+      http<{ data: FeatureOverrideRow[] }>(`/api/super-admin/features/${key}/overrides`),
+    orgFeatures: (orgId: string) =>
+      http<{ data: ResolvedFeature[] }>(`/api/super-admin/organizations/${orgId}/features`),
+    setOrgFeature: (orgId: string, key: string, body: { enabled: boolean; reason: string; expires_at?: string }) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/features/${key}`, {
+        method: 'PUT', body: JSON.stringify(body),
+      }),
+    clearOrgFeature: (orgId: string, key: string) =>
+      http<{ data: { cleared: boolean } }>(`/api/super-admin/organizations/${orgId}/features/${key}`, {
+        method: 'DELETE',
+      }),
+
     impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
         method: 'POST',
@@ -2937,6 +2960,43 @@ export type OrgBillingProfile = {
   billing_address_line1: string | null; billing_address_line2: string | null;
   billing_city: string | null; billing_state: string | null;
   billing_state_code: string | null; billing_postal_code: string | null;
+};
+
+// ── Feature Manager ───────────────────────────────────────────────────────────
+export type PlatformFeature = {
+  key: string; name: string; description: string | null; category: string;
+  default_enabled: boolean; is_plan_gated: boolean; is_core: boolean;
+  global_enabled: boolean; sort_order: number;
+  /** Studios with a live override — what a global flip is about to collide with. */
+  override_count: number;
+  disabled_count: number;
+};
+
+export type FeatureCatalogue = {
+  features: PlatformFeature[];
+  plans: { code: string; name: string; sort_order: number }[];
+  /** plan code → feature key → included. A plan with no rows is still present. */
+  plan_matrix: Record<string, Record<string, boolean>>;
+};
+
+/** Why a feature resolved the way it did, so an operator can explain it. */
+export type FeatureSource = 'core' | 'global_off' | 'override' | 'plan' | 'default';
+
+export type ResolvedFeature = {
+  key: string; name: string; description: string | null; category: string;
+  enabled: boolean; source: FeatureSource;
+  is_core: boolean; is_plan_gated: boolean;
+  override: {
+    enabled: boolean; reason: string | null; expires_at: string | null;
+    set_by: string | null; active: boolean;
+  } | null;
+};
+
+export type FeatureOverrideRow = {
+  organization_id: string; organization_name: string; organization_slug: string;
+  plan_code: string | null; feature_key: string; enabled: boolean;
+  reason: string | null; expires_at: string | null;
+  set_by_name: string | null; updated_at: string;
 };
 
 export type ImpersonationSession = {

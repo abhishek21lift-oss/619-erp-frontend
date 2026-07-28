@@ -45,6 +45,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/platform',              label: 'Command Centre', icon: 'LayoutGrid' },
       { href: '/platform?tab=studios',  label: 'Studios',        icon: 'Layers' },
       { href: '/platform?tab=finance',  label: 'Finance',        icon: 'CreditCard' },
+      { href: '/platform?tab=features', label: 'Features',       icon: 'ToggleRight' },
       { href: '/platform?tab=activity', label: 'Activity',       icon: 'Activity' },
       { href: '/platform?tab=audit',    label: 'Audit Centre',   icon: 'ScrollText' },
       { href: '/platform?tab=health',   label: 'System Health',  icon: 'HeartPulse' },
