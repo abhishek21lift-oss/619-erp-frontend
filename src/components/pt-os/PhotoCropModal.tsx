@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
-import { UploadCloud, Camera, RotateCcw, Check, X, Loader2 } from 'lucide-react';
+import { UploadCloud, Camera, RotateCcw, Check, X, Loader2, SwitchCamera } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui';
 import { useCamera } from '@/hooks/useCamera';
@@ -91,6 +91,11 @@ export default function PhotoCropModal({
     }
   }, [camera]);
 
+  const flipCamera = useCallback(async () => {
+    const next = camera.facingMode === 'user' ? 'environment' : 'user';
+    await camera.start(next);
+  }, [camera]);
+
   const capturePhoto = useCallback(() => {
     if (!camera.videoRef.current) return;
     const video = camera.videoRef.current;
@@ -171,7 +176,7 @@ export default function PhotoCropModal({
                 ref={camera.videoRef}
                 autoPlay playsInline muted
                 className="h-full w-full object-cover"
-                style={{ transform: 'scaleX(-1)' }}
+                style={{ transform: camera.facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
               />
               {camera.status === 'starting' && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -182,6 +187,17 @@ export default function PhotoCropModal({
                 <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-[12.5px] text-white">
                   {camera.error || 'Camera unavailable.'}
                 </div>
+              )}
+              {camera.status === 'active' && (
+                <button
+                  type="button"
+                  onClick={flipCamera}
+                  aria-label="Switch camera"
+                  className="absolute right-3 top-3 z-[2] flex h-9 w-9 items-center justify-center rounded-xl border-0 text-white"
+                  style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+                >
+                  <SwitchCamera size={17} />
+                </button>
               )}
             </div>
             <div className="flex gap-2">
