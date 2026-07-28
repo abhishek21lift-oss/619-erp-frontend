@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   LogOut, Bell, Settings,
   Zap, User, HelpCircle, ChevronDown, CreditCard,
@@ -15,7 +15,8 @@ import Sidebar from '@/components/sidebar';
 import StudioMark from '@/components/StudioMark';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
-import { allNavItems } from '@/lib/nav-config';
+import { allNavItems, isVisibleForFeature } from '@/lib/nav-config';
+import { useFeatures } from '@/lib/features-context';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
 import { PullRefreshRegistryProvider } from '@/contexts/pull-refresh-context';
 import PullToRefresh from '@/components/common/PullToRefresh';
@@ -78,17 +79,25 @@ const EXTRA_SEARCH_PAGES: PageEntry[] = [
 // The page index. This used to BE the search: the box filtered this array in
 // the browser and nothing else. It is now a secondary group inside
 // GlobalSearch — typing "reports" still jumps you there — while the primary
-// answer comes from the server. Built once at module scope; the nav is static.
-const SEARCH_PAGES: PageEntry[] = [
-  ...allNavItems()
-    .filter(item => !item.hidden)
-    .map(item => ({
-      label: item.label,
-      href: item.href,
-      keywords: NAV_KEYWORDS[item.href] ?? item.label.toLowerCase(),
-    })),
-  ...EXTRA_SEARCH_PAGES,
-];
+// answer comes from the server.
+//
+// It used to be built once at module scope, because the nav was static. It no
+// longer is: a studio's feature flags decide which pages exist for it, so this
+// is rebuilt per session instead. Searching a page the studio does not have
+// would only lead to a 403.
+function buildSearchPages(features: Record<string, boolean>): PageEntry[] {
+  return [
+    ...allNavItems()
+      .filter(item => !item.hidden)
+      .filter(item => isVisibleForFeature(item, features))
+      .map(item => ({
+        label: item.label,
+        href: item.href,
+        keywords: NAV_KEYWORDS[item.href] ?? item.label.toLowerCase(),
+      })),
+    ...EXTRA_SEARCH_PAGES,
+  ];
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -104,6 +113,9 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
   // Every page in the shell has fields, so the iOS keyboard-dismiss gap is a
   // shell-level problem, not a per-page one.
   useKeyboardViewportFix();
+
+  const { features } = useFeatures();
+  const searchPages = useMemo(() => buildSearchPages(features), [features]);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -312,7 +324,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                   Owns its own state, requests and keyboard handling. Renders as
                   an inline combobox from sm up and as a full-screen sheet on a
                   phone, where an inline field would be ~140px wide. */}
-              <GlobalSearch pages={SEARCH_PAGES} darkMode={darkMode} />
+              <GlobalSearch pages={searchPages} darkMode={darkMode} />
 
               {/* Spacer — pushes the icon cluster right. Needed at every width
                   now: on a phone the search is a 36px button, so nothing else

@@ -11,8 +11,9 @@ import Link from 'next/link';
 import { m, AnimatePresence } from 'framer-motion';
 import { cn } from '@/components/ui/cn';
 import StudioMark from '@/components/StudioMark';
-import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole } from '@/lib/nav-config';
+import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
 import { usePermissions } from '@/lib/permissions-context';
+import { useFeatures } from '@/lib/features-context';
 import {
   LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
   ClipboardList, ScanFace, User as UserIcon, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
@@ -80,6 +81,7 @@ function canSeeByPermission(href: string, groupId: string, can: (f: string) => b
 function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkClick?: () => void }) {
   const { user } = useAuth();
   const { can } = usePermissions();
+  const { features } = useFeatures();
   const pathname = usePathname();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const isAdmin = user?.role === 'admin' || user?.role === 'manager';
@@ -104,13 +106,18 @@ function SidebarNav({ collapsed, onLinkClick }: { collapsed?: boolean; onLinkCli
     }).catch(() => {});
   }, [isAdmin]);
 
-  const filterItem = (i: { href: string; role?: string; roles?: string[] }, groupId: string): boolean => {
+  const filterItem = (i: { href: string; role?: string; roles?: string[]; feature?: string }, groupId: string): boolean => {
     if (!isVisibleForRole(i as Parameters<typeof isVisibleForRole>[0], user?.role)) return false;
+    // Feature flags sit alongside role and permission checks, never replacing
+    // them: an item has to clear all three. Fails open, so a studio never
+    // loses nav to a slow or failed /api/features.
+    if (!isVisibleForFeature(i, features)) return false;
     return canSeeByPermission(i.href, groupId, isAdmin ? () => true : can);
   };
 
   const navItems = NAV_GROUPS
     .filter(g => isGroupVisibleForRole(g, user?.role))
+    .filter(g => isGroupVisibleForFeature(g, features))
     .map(g => ({
       ...g,
       items: g.items.filter(i => filterItem(i, g.id)).flatMap(i =>

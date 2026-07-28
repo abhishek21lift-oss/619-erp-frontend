@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { allNavItems, isVisibleForRole, QUICK_ACTIONS, NAV_GROUPS } from '@/lib/nav-config';
+import { allNavItems, isVisibleForRole, isVisibleForFeature, QUICK_ACTIONS, NAV_GROUPS } from '@/lib/nav-config';
+import { useFeatures } from '@/lib/features-context';
 import type { Role } from '@/lib/nav-config';
 import { api, type Client } from '@/lib/api';
 
@@ -33,6 +34,7 @@ function fuzzyScore(haystack: string, needle: string): number {
 
 export default function CommandPalette() {
   const { user } = useAuth();
+  const { features } = useFeatures();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -104,7 +106,10 @@ export default function CommandPalette() {
   // ── Build static results ──
   const staticResults = useMemo<Result[]>(() => {
     const items = allNavItems()
-      .filter(i => isVisibleForRole(i, user?.role));
+      .filter(i => isVisibleForRole(i, user?.role))
+      // allNavItems() inherits each group's feature tag onto its items, so this
+      // one filter covers both group-level and item-level flags.
+      .filter(i => isVisibleForFeature(i, features));
     const navResults: Result[] = (items ?? []).map(i => ({
       id: 'nav-' + i.href,
       label: i.label,
@@ -115,6 +120,7 @@ export default function CommandPalette() {
     }));
     const actions: Result[] = QUICK_ACTIONS
       .filter(a => !a.roles?.length || (!!user?.role && a.roles.includes(user.role as Role)))
+      .filter(a => isVisibleForFeature(a, features))
       .map(a => ({
         id: a.id,
         label: a.label,
@@ -123,7 +129,7 @@ export default function CommandPalette() {
         group: 'Quick actions',
       }));
     return [...actions, ...navResults];
-  }, [user?.role]);
+  }, [user?.role, features]);
 
   // ── Combine + score ──
   const results = useMemo<Result[]>(() => {

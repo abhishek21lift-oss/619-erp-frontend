@@ -6,7 +6,8 @@ import { Home, Users, ScanFace, Dumbbell, Bot, LayoutGrid, Layers, CreditCard, A
 import { m } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { getImpersonation } from '@/lib/http';
-import { normaliseRole } from '@/lib/nav-config';
+import { normaliseRole, isVisibleForFeature } from '@/lib/nav-config';
+import { useFeatures } from '@/lib/features-context';
 import { useNavScroll } from '@/contexts/nav-scroll-context';
 
 // AI Coach replaced the Finance tab here. Finance was also the one tab gated
@@ -14,12 +15,18 @@ import { useNavScroll } from '@/contexts/nav-scroll-context';
 // everyone else a 5-tab one; AI Coach is open to every studio role (see the
 // ai-coach group in nav-config.ts), so the bar is now the same five tabs for
 // everyone. Finance is still reachable from the sidebar's Finance group.
+//
+// Two of these five are feature-gated capabilities, so they carry the same
+// keys the sidebar uses. A studio with AI Suite or Attendance switched off
+// gets a shorter bar rather than a tab that 403s — which is worse here than
+// in the sidebar, since this is the only navigation on a phone. Home, Clients
+// and Sessions are core and can never be switched off.
 const BASE_ITEMS = [
   { href: '/',                   icon: Home,     label: 'Home'     },
   { href: '/pt-os/clients',      icon: Users,    label: 'Clients'  },
-  { href: '/ai-coach',           icon: Bot,      label: 'AI Coach' },
+  { href: '/ai-coach',           icon: Bot,      label: 'AI Coach', feature: 'ai_suite'   },
   { href: '/pt-os/sessions',     icon: Dumbbell, label: 'Sessions' },
-  { href: '/checkin/qr-scanner', icon: ScanFace, label: 'Check-in' },
+  { href: '/checkin/qr-scanner', icon: ScanFace, label: 'Check-in', feature: 'attendance' },
 ];
 
 // Platform operators get control-plane tabs instead of studio tabs. These all
@@ -55,7 +62,11 @@ export default function MobileBottomNav({ sidebarOpen = false }: MobileBottomNav
   // While impersonating, the operator acts as the studio admin — show studio
   // tabs, not the platform control plane.
   const isSuperAdmin     = role === 'super_admin' && !getImpersonation();
-  const items            = isSuperAdmin ? PLATFORM_ITEMS : BASE_ITEMS;
+  const { features }     = useFeatures();
+  // Platform tabs are control-plane surfaces and are never tenant-gated.
+  const items            = isSuperAdmin
+    ? PLATFORM_ITEMS
+    : BASE_ITEMS.filter(i => isVisibleForFeature(i, features));
 
   const { reducedMotion } = useNavScroll();
   const dur = reducedMotion ? 0 : 0.28;

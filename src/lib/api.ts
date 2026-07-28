@@ -1247,6 +1247,15 @@ export const api = {
     backupDatabase: () => http<{ message?: string }>('/api/admin/backup-database', { method: 'POST' }),
   },
 
+  // ── Feature flags ─────────────────────────────────────────
+  // The studio's read-only view of what the platform has enabled for it. The
+  // organization comes off the session server-side; there is no parameter for
+  // which studio to ask about. A platform operator gets `{}` (no tenant, so no
+  // per-studio answer) — see features-context for why that reads as "all on".
+  features: {
+    map: () => http<{ data: Record<string, boolean> }>('/api/features'),
+  },
+
   // ── Settings ──────────────────────────────────────────────
   settings: {
     /** All key-value settings (system_settings table) */

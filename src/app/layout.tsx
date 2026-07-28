@@ -4,6 +4,7 @@ import { LazyMotion, domAnimation } from 'framer-motion';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/lib/toast';
 import { PermissionsProvider } from '@/lib/permissions-context';
+import { FeaturesProvider } from '@/lib/features-context';
 import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SentryInit from '@/components/SentryInit';
@@ -175,13 +176,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ThemeProvider>
               <AuthProvider>
                 <PermissionsProvider>
-                  <ToastProvider>
-                    <LazyMotion features={domAnimation}>
-                      <SentryInit />
-                      {children}
-                      <CommandPalette />
-                    </LazyMotion>
-                  </ToastProvider>
+                  <FeaturesProvider>
+                    <ToastProvider>
+                      <LazyMotion features={domAnimation}>
+                        <SentryInit />
+                        {children}
+                        <CommandPalette />
+                      </LazyMotion>
+                    </ToastProvider>
+                  </FeaturesProvider>
                 </PermissionsProvider>
               </AuthProvider>
             </ThemeProvider>
