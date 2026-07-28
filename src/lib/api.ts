@@ -2330,6 +2330,27 @@ export const api = {
     activeSessions: (orgId?: string) =>
       http<{ data: ActiveSession[] }>(`/api/super-admin/security/sessions${orgId ? `?org_id=${orgId}` : ''}`),
 
+    // ── AI Control Centre ───────────────────────────────────────────────────
+    aiOverview: (days = 30) => http<{ data: AiOverview }>(`/api/super-admin/ai/overview?days=${days}`),
+    aiByStudio: (days = 30) => http<{ data: AiStudioUsage[] }>(`/api/super-admin/ai/by-studio?days=${days}`),
+    aiByModel: (days = 30) => http<{ data: AiModelUsage[] }>(`/api/super-admin/ai/by-model?days=${days}`),
+    aiTrend: (days = 30) => http<{ data: AiTrendPoint[] }>(`/api/super-admin/ai/trend?days=${days}`),
+    aiSettings: () => http<{ data: AiSettings }>('/api/super-admin/ai/settings'),
+    saveAiSettings: (patch: { enforcement_enabled?: boolean; default_monthly_tokens?: number | null; warn_at_pct?: number }) =>
+      http<{ data: AiSettings; studios_already_over: number | null }>('/api/super-admin/ai/settings', {
+        method: 'PUT', body: JSON.stringify(patch),
+      }),
+    saveAiRate: (model: string, body: { provider?: string | null; prompt_per_1k_inr: number; completion_per_1k_inr: number }) =>
+      http<{ data: AiModelRate }>(`/api/super-admin/ai/rates/${encodeURIComponent(model)}`, {
+        method: 'PUT', body: JSON.stringify(body),
+      }),
+    setOrgAiLimit: (orgId: string, body: { monthly_tokens: number | null; reason?: string }) =>
+      http<{ data: unknown }>(`/api/super-admin/organizations/${orgId}/ai-limit`, {
+        method: 'PUT', body: JSON.stringify(body),
+      }),
+    clearOrgAiLimit: (orgId: string) =>
+      http<{ data: { cleared: boolean } }>(`/api/super-admin/organizations/${orgId}/ai-limit`, { method: 'DELETE' }),
+
     impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
         method: 'POST',
@@ -3196,6 +3217,53 @@ export type LoginEventQuery = {
   outcome?: string; method?: string; org_id?: string; user_id?: string;
   ip?: string; failed?: string; from?: string; to?: string; q?: string;
   limit?: number; offset?: number;
+};
+
+// ── AI Control Centre ─────────────────────────────────────────────────────────
+export type AiOverview = {
+  window_days: number;
+  requests: number; tokens: number; tokens_prompt: number; tokens_completion: number;
+  studios: number; users: number; avg_latency_ms: number;
+  fallbacks: number; fallback_pct: number;
+  cost_inr: number;
+  /** Non-empty means cost_inr is a FLOOR, not a total — say so in the UI. */
+  unpriced_models: string[];
+  enforcement_enabled: boolean;
+  default_monthly_tokens: number | null;
+};
+
+export type AiStudioUsage = {
+  organization_id: string; organization_name: string; plan_code: string | null;
+  requests: number; tokens: number; cost_inr: number;
+  tokens_this_month: number; last_used_at: string | null;
+  /** null = unlimited. `limit_source` says whether that was chosen or inherited. */
+  limit: number | null;
+  limit_source: 'studio' | 'default' | 'none';
+  used_pct: number | null;
+  over: boolean;
+};
+
+export type AiModelUsage = {
+  model: string | null; provider: string | null;
+  requests: number; tokens: number; cost_inr: number;
+  avg_latency_ms: number; fallbacks: number;
+  /** false → this model's tokens contribute no cost. */
+  priced: boolean;
+};
+
+export type AiTrendPoint = { day: string; requests: number; tokens: number; cost_inr: number };
+
+export type AiModelRate = {
+  model: string; provider: string | null;
+  prompt_per_1k_inr: string; completion_per_1k_inr: string;
+  updated_at: string; updated_by: string | null;
+};
+
+export type AiSettings = {
+  enforcement_enabled: boolean;
+  default_monthly_tokens: number | string | null;
+  warn_at_pct: number;
+  rates: AiModelRate[];
 };
 
 export type ImpersonationSession = {

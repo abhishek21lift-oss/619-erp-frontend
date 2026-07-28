@@ -20,7 +20,7 @@ import {
   Search, ArrowRight, TrendingUp, ChevronRight,
   MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
   ScrollText, HeartPulse, LogOut, ShieldOff, CalendarPlus, StickyNote, Save, FileText,
-  ToggleLeft, ToggleRight, Lock, Megaphone,
+  ToggleLeft, ToggleRight, Lock, Megaphone, Bot,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Guard from '@/components/Guard';
@@ -46,6 +46,9 @@ const NotificationCentre = dynamic(() => import('@/components/platform/notificat
 });
 const SecurityCentre = dynamic(() => import('@/components/platform/security-centre'), {
   loading: () => <PanelSkeleton label="Checking security posture…" />,
+});
+const AiControlCentre = dynamic(() => import('@/components/platform/ai-control'), {
+  loading: () => <PanelSkeleton label="Reading AI usage…" />,
 });
 const AnalyticsPanel = dynamic(() => import('@/components/platform/analytics'), {
   loading: () => <PanelSkeleton label="Crunching platform usage…" />,
@@ -121,10 +124,10 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'analytics' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'health';
+type Tab = 'overview' | 'studios' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
-const TAB_IDS: Tab[] = ['overview', 'studios', 'analytics', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'health'];
+const TAB_IDS: Tab[] = ['overview', 'studios', 'analytics', 'ai', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'health'];
 type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'invoices' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
@@ -188,6 +191,7 @@ function PlatformContent() {
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={15} /> },
     { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
+    { id: 'ai', label: 'AI', icon: <Bot size={15} /> },
     { id: 'features', label: 'Features', icon: <ToggleRight size={15} /> },
     { id: 'announcements', label: 'Announcements', icon: <Megaphone size={15} /> },
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
@@ -244,6 +248,7 @@ function PlatformContent() {
           {tab === 'studios' && <StudiosTab />}
           {tab === 'analytics' && <AnalyticsPanel />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
+          {tab === 'ai' && <AiControlCentre />}
           {tab === 'features' && <FeatureManager />}
           {tab === 'announcements' && <NotificationCentre />}
           {tab === 'security' && <SecurityCentre />}
