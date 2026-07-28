@@ -2336,6 +2336,23 @@ export const api = {
     aiByModel: (days = 30) => http<{ data: AiModelUsage[] }>(`/api/super-admin/ai/by-model?days=${days}`),
     aiTrend: (days = 30) => http<{ data: AiTrendPoint[] }>(`/api/super-admin/ai/trend?days=${days}`),
     aiSettings: () => http<{ data: AiSettings }>('/api/super-admin/ai/settings'),
+
+    /**
+     * Which MODEL each tier routes to — separate from aiSettings, which governs
+     * how much a studio may spend rather than what it spends it on.
+     */
+    aiRouting: () => http<{ data: AiRouting }>('/api/super-admin/ai/routing'),
+    /**
+     * Omit a tier to leave it alone; send null to clear its override and fall
+     * back to the deploy's environment variable. Those are different intents.
+     */
+    saveAiRouting: (patch: {
+      primary_model?: string | null;
+      secondary_model?: string | null;
+      fallback_model?: string | null;
+    }) => http<{ data: unknown }>('/api/super-admin/ai/routing', {
+      method: 'PUT', body: JSON.stringify(patch),
+    }),
     saveAiSettings: (patch: { enforcement_enabled?: boolean; default_monthly_tokens?: number | null; warn_at_pct?: number }) =>
       http<{ data: AiSettings; studios_already_over: number | null }>('/api/super-admin/ai/settings', {
         method: 'PUT', body: JSON.stringify(patch),
@@ -3293,6 +3310,19 @@ export type AiModelRate = {
   model: string; provider: string | null;
   prompt_per_1k_inr: string; completion_per_1k_inr: string;
   updated_at: string; updated_by: string | null;
+};
+
+type AiTierMap = { primary: string | null; secondary: string | null; fallback: string | null };
+
+export type AiRouting = {
+  /** What an operator explicitly set. null on a tier = following the environment. */
+  override: AiTierMap;
+  /** What a request would actually route to right now. */
+  effective: { primary: string; secondary: string; fallback: string };
+  from_env: AiTierMap;
+  defaults: { primary: string; secondary: string; fallback: string };
+  updated_by_name: string | null;
+  updated_at: string | null;
 };
 
 export type AiSettings = {

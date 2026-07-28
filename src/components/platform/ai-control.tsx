@@ -20,11 +20,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Bot, Loader2, AlertTriangle, Coins, Zap, Building2, Timer,
-  ShieldAlert, Info, Save, Settings2,
+  ShieldAlert, Info, Save, Settings2, RotateCcw, Route,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type {
-  AiOverview, AiStudioUsage, AiModelUsage, AiTrendPoint, AiSettings,
+  AiOverview, AiStudioUsage, AiModelUsage, AiTrendPoint, AiSettings, AiRouting,
 } from '@/lib/api';
 import { Panel, SectionLabel, StatTile, Reveal } from './console';
 import { useToast } from '@/lib/toast';
@@ -360,6 +360,132 @@ function SettingsPanel({ settings, onChanged }: { settings: AiSettings; onChange
 }
 
 /* ── Panel ───────────────────────────────────────────────────────────────── */
+/* ── Model routing ───────────────────────────────────────────────────────── */
+
+const TIERS = ['primary', 'secondary', 'fallback'] as const;
+type Tier = (typeof TIERS)[number];
+
+const TIER_BLURB: Record<Tier, string> = {
+  primary: 'Coaching, workouts, diet — everything client-facing.',
+  secondary: 'Operational lookups: attendance, clients, sessions.',
+  fallback: 'Business reporting, and the safety net when a tier fails.',
+};
+
+/**
+ * Which model each tier resolves to. Separate from Settings above, which
+ * governs how much a studio may spend rather than what it spends it on —
+ * a blank field here is not "no model", it is "follow the deploy's
+ * environment variable", so the effective value is always shown beneath.
+ */
+function RoutingPanel({ routing, onChanged }: { routing: AiRouting; onChanged: () => void }) {
+  const { toast } = useToast();
+  const [draft, setDraft] = useState<Record<Tier, string>>({
+    primary: routing.override.primary ?? '',
+    secondary: routing.override.secondary ?? '',
+    fallback: routing.override.fallback ?? '',
+  });
+  const [busy, setBusy] = useState(false);
+
+  const dirty = TIERS.some((t) => (draft[t].trim() || null) !== (routing.override[t] ?? null));
+
+  const reset = () => setDraft({
+    primary: routing.override.primary ?? '',
+    secondary: routing.override.secondary ?? '',
+    fallback: routing.override.fallback ?? '',
+  });
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.superAdmin.saveAiRouting({
+        // '' means "clear this override" and is sent as null, so the server can
+        // tell it apart from "leave it alone" — an omitted field.
+        primary_model: draft.primary.trim() || null,
+        secondary_model: draft.secondary.trim() || null,
+        fallback_model: draft.fallback.trim() || null,
+      });
+      toast.success('Model routing updated');
+      onChanged();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not update model routing.');
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Panel>
+      <div className="mb-3 flex items-start gap-2 rounded-[10px] p-2.5"
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+        <Info size={13} className="mt-[2px] shrink-0" style={{ color: 'var(--text-muted)' }} />
+        <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          Leave a tier blank to follow the deploy&rsquo;s environment variable. A model id is passed
+          to the provider verbatim — one that does not exist there will fail every request on that
+          tier until it is corrected, so change these one at a time and watch the fallback rate.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {TIERS.map((tier) => {
+          const overridden = !!routing.override[tier];
+          return (
+            <div key={tier}>
+              <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <span className="text-[12.5px] font-[750] capitalize" style={{ color: 'var(--text-primary)' }}>
+                  {tier}
+                </span>
+                <span className="text-[10px] font-[700] uppercase"
+                  style={{ letterSpacing: '0.1em', color: overridden ? 'var(--brand)' : 'var(--text-disabled)' }}>
+                  {overridden ? 'operator override' : routing.from_env[tier] ? 'from environment' : 'built-in default'}
+                </span>
+              </div>
+              <p className="mb-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>{TIER_BLURB[tier]}</p>
+              <input
+                value={draft[tier]}
+                onChange={(e) => setDraft((d) => ({ ...d, [tier]: e.target.value }))}
+                placeholder={routing.from_env[tier] ?? routing.defaults[tier]}
+                spellCheck={false} autoComplete="off" aria-label={`${tier} model`}
+                className="w-full rounded-[10px] px-3 py-2 text-[12.5px] outline-none"
+                style={{
+                  background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                  color: 'var(--text-primary)', fontFamily: 'ui-monospace, monospace',
+                }}
+              />
+              <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+                In force now: <span style={{ fontFamily: 'ui-monospace, monospace' }}>{routing.effective[tier]}</span>
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          onClick={save} disabled={!dirty || busy}
+          className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[700] transition-opacity disabled:opacity-40"
+          style={{ background: 'var(--brand)', color: '#fff' }}
+        >
+          {busy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+          Save routing
+        </button>
+        {dirty && (
+          <button
+            onClick={reset}
+            className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[650]"
+            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+          >
+            <RotateCcw size={13} /> Discard
+          </button>
+        )}
+        <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+          <Route size={11} />
+          {routing.updated_at
+            ? `Last changed by ${routing.updated_by_name ?? 'an operator'} ${fmtWhen(routing.updated_at)}`
+            : 'Never changed — every tier is following the deploy'}
+        </span>
+      </div>
+    </Panel>
+  );
+}
+
 export default function AiControlCentre() {
   const { toast } = useToast();
   const [days, setDays] = useState(30);
@@ -368,6 +494,7 @@ export default function AiControlCentre() {
   const [models, setModels] = useState<AiModelUsage[]>([]);
   const [trend, setTrend] = useState<AiTrendPoint[]>([]);
   const [settings, setSettings] = useState<AiSettings | null>(null);
+  const [routing, setRouting] = useState<AiRouting | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -376,11 +503,11 @@ export default function AiControlCentre() {
     Promise.all([
       api.superAdmin.aiOverview(days), api.superAdmin.aiByStudio(days),
       api.superAdmin.aiByModel(days), api.superAdmin.aiTrend(days),
-      api.superAdmin.aiSettings(),
+      api.superAdmin.aiSettings(), api.superAdmin.aiRouting(),
     ])
-      .then(([o, s, m, t, cfg]) => {
+      .then(([o, s, m, t, cfg, route]) => {
         setOverview(o.data); setStudios(s.data); setModels(m.data);
-        setTrend(t.data); setSettings(cfg.data);
+        setTrend(t.data); setSettings(cfg.data); setRouting(route.data);
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load AI usage.'))
       .finally(() => setLoading(false));
@@ -507,6 +634,15 @@ export default function AiControlCentre() {
           <Reveal delay={0.18}><SettingsPanel settings={settings} onChanged={load} /></Reveal>
         </div>
       </div>
+
+      {routing && (
+        <div>
+          <SectionLabel hint="platform-wide, live within a minute, no redeploy">
+            Model routing
+          </SectionLabel>
+          <Reveal delay={0.22}><RoutingPanel routing={routing} onChanged={load} /></Reveal>
+        </div>
+      )}
 
       <p className="flex items-start gap-1.5 text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
         <Building2 size={11} className="mt-0.5 shrink-0" />
