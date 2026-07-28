@@ -19,10 +19,30 @@ import {
   CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket, Percent, Ban, CheckCircle2,
   Search, ArrowRight, TrendingUp, ChevronRight,
   MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
+  ScrollText, HeartPulse,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import StudioMark from '@/components/StudioMark';
+
+// Code-split: neither panel is on the default tab, and Audit pulls a filter
+// drawer + expandable rows that the Overview visitor should not pay for.
+const AuditCentre = dynamic(() => import('@/components/platform/audit-centre'), {
+  loading: () => <PanelSkeleton label="Loading audit trail…" />,
+});
+const SystemHealthPanel = dynamic(() => import('@/components/platform/system-health'), {
+  loading: () => <PanelSkeleton label="Checking system health…" />,
+});
+
+function PanelSkeleton({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2.5 py-16">
+      <Loader2 size={22} className="animate-spin" style={{ color: 'var(--brand)' }} />
+      <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{label}</p>
+    </div>
+  );
+}
 import { Button, Badge, EmptyState } from '@/components/ui';
 import { api } from '@/lib/api';
 import type {
@@ -84,8 +104,10 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'finance' | 'activity';
-const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'activity'];
+type Tab = 'overview' | 'studios' | 'finance' | 'activity' | 'audit' | 'health';
+// Must list every Tab: normalizeTab() falls back to 'overview' for anything not
+// here, so omitting one silently breaks its ?tab= deep link from the sidebar.
+const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'activity', 'audit', 'health'];
 type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
@@ -148,6 +170,8 @@ function PlatformContent() {
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
     { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
+    { id: 'audit', label: 'Audit', icon: <ScrollText size={15} /> },
+    { id: 'health', label: 'Health', icon: <HeartPulse size={15} /> },
   ];
 
   const onNavigate = (t: Tab, opts?: NavOpts) => {
@@ -170,8 +194,8 @@ function PlatformContent() {
       >
         <ConsoleHeader
           icon={<Building2 size={20} />}
-          title="Command Centre"
-          subtitle="Manage every studio, admin, and account across the platform"
+          title="Control Centre"
+          subtitle="Manage every studio, subscription, and account across the platform"
           actions={
             <button
               onClick={() => setCommandOpen(true)}
@@ -198,6 +222,8 @@ function PlatformContent() {
           {tab === 'studios' && <StudiosTab />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
           {tab === 'activity' && <ActivityTab />}
+          {tab === 'audit' && <AuditCentre />}
+          {tab === 'health' && <SystemHealthPanel />}
         </div>
       </div>
 
@@ -219,6 +245,8 @@ const NAV_TARGETS: { tab: Tab; label: string; icon: React.ReactNode; opts?: NavO
   { tab: 'finance', label: 'Go to Finance · Billing', icon: <CreditCard size={14} />, opts: { financeSubTab: 'billing' } },
   { tab: 'finance', label: 'Go to Finance · Coupons', icon: <Ticket size={14} />, opts: { financeSubTab: 'coupons' } },
   { tab: 'activity', label: 'Go to Activity', icon: <Activity size={14} /> },
+  { tab: 'audit', label: 'Go to Audit Centre', icon: <ScrollText size={14} /> },
+  { tab: 'health', label: 'Go to System Health', icon: <HeartPulse size={14} /> },
 ];
 
 function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClose: () => void; onNavigate: (tab: Tab, opts?: NavOpts) => void }) {

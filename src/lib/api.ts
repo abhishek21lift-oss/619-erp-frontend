@@ -2176,6 +2176,32 @@ export const api = {
         `/api/super-admin/activity${q ? `?${q}` : ''}`,
       );
     },
+    /** Audit Centre. Distinct from `activity` above: that is the dashboard's
+     *  recent-events feed, this is the filterable investigative view with a
+     *  real total and the previous value of each change. */
+    audit: (params: AuditQuery = {}) => {
+      const qs = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+      }
+      const q = qs.toString();
+      return http<{ data: AuditEntry[]; paging: { limit: number; offset: number; total: number; count: number } }>(
+        `/api/super-admin/audit${q ? `?${q}` : ''}`,
+      );
+    },
+    auditFilters: () => http<AuditFilters>('/api/super-admin/audit/filters'),
+    /** Built rather than fetched: the browser must navigate to it so the file
+     *  downloads with the server's Content-Disposition. */
+    auditExportUrl: (params: AuditQuery = {}) => {
+      const qs = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== null && v !== '' && k !== 'limit' && k !== 'offset') qs.set(k, String(v));
+      }
+      const q = qs.toString();
+      return `${apiBase()}/api/super-admin/audit/export${q ? `?${q}` : ''}`;
+    },
+    systemHealth: () => http<SystemHealth>('/api/super-admin/system-health'),
+
     impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
         method: 'POST',
@@ -2762,6 +2788,39 @@ export type ActivityEntry = {
   action: string; entity_type: string | null; entity_id: string | null;
   new_data?: unknown; ip_address?: string | null; created_at: string;
   organization_id: string | null; organization_name: string | null;
+};
+
+/** Audit Centre row — the investigative view, so it carries the previous value
+ *  and the user agent that the dashboard's lighter activity feed omits. */
+export type AuditEntry = ActivityEntry & {
+  old_data?: unknown;
+  user_agent?: string | null;
+};
+
+export type AuditFilters = { actions: string[]; entity_types: string[] };
+
+export type AuditQuery = {
+  org_id?: string; user_id?: string; action?: string; entity_type?: string;
+  from?: string; to?: string; q?: string; limit?: number; offset?: number;
+};
+
+export type SystemHealth = {
+  checked_at: string;
+  check_duration_ms: number;
+  database: {
+    status: 'up' | 'down';
+    latency_ms: number | null;
+    error: string | null;
+    size_bytes: number | null;
+    pool: { total: number | null; idle: number | null; waiting: number | null };
+  };
+  migrations: { applied: number | null; latest: string | null; applied_at: string | null };
+  process: {
+    uptime_seconds: number; node_version: string; app_version: string | null;
+    environment: string;
+    memory: { rss_bytes: number; heap_used_bytes: number; heap_total_bytes: number };
+  };
+  errors_24h: number | null;
 };
 
 export type ImpersonationSession = {

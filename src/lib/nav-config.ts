@@ -38,7 +38,7 @@ export const NAV_GROUPS: NavGroup[] = [
   // gets a dedicated control-plane interface, not a studio dashboard.
   {
     id: 'platform',
-    label: 'Platform',
+    label: 'Control Centre',
     icon: 'ShieldCheck',
     roles: ['super_admin'],
     items: [
@@ -46,6 +46,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/platform?tab=studios',  label: 'Studios',        icon: 'Layers' },
       { href: '/platform?tab=finance',  label: 'Finance',        icon: 'CreditCard' },
       { href: '/platform?tab=activity', label: 'Activity',       icon: 'Activity' },
+      { href: '/platform?tab=audit',    label: 'Audit Centre',   icon: 'ScrollText' },
+      { href: '/platform?tab=health',   label: 'System Health',  icon: 'HeartPulse' },
     ],
   },
   {
