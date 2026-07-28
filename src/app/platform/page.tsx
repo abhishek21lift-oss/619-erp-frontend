@@ -47,6 +47,9 @@ const NotificationCentre = dynamic(() => import('@/components/platform/notificat
 const SecurityCentre = dynamic(() => import('@/components/platform/security-centre'), {
   loading: () => <PanelSkeleton label="Checking security posture…" />,
 });
+const AnalyticsPanel = dynamic(() => import('@/components/platform/analytics'), {
+  loading: () => <PanelSkeleton label="Crunching platform usage…" />,
+});
 
 function PanelSkeleton({ label }: { label: string }) {
   return (
@@ -118,10 +121,10 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'health';
+type Tab = 'overview' | 'studios' | 'analytics' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
-const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'health'];
+const TAB_IDS: Tab[] = ['overview', 'studios', 'analytics', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'health'];
 type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'invoices' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
@@ -183,6 +186,7 @@ function PlatformContent() {
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={15} /> },
     { id: 'studios', label: 'Studios', icon: <Building2 size={15} /> },
+    { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={15} /> },
     { id: 'finance', label: 'Finance', icon: <CreditCard size={15} /> },
     { id: 'features', label: 'Features', icon: <ToggleRight size={15} /> },
     { id: 'announcements', label: 'Announcements', icon: <Megaphone size={15} /> },
@@ -238,6 +242,7 @@ function PlatformContent() {
         <div key={tab}>
           {tab === 'overview' && <OverviewTab onNavigate={onNavigate} />}
           {tab === 'studios' && <StudiosTab />}
+          {tab === 'analytics' && <AnalyticsPanel />}
           {tab === 'finance' && <FinanceTab subTab={financeSubTab} onSubTabChange={setFinanceSubTab} />}
           {tab === 'features' && <FeatureManager />}
           {tab === 'announcements' && <NotificationCentre />}

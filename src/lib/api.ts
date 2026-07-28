@@ -2315,6 +2315,11 @@ export const api = {
       http<{ data: { deleted: boolean } }>(`/api/super-admin/announcements/${id}`, { method: 'DELETE' }),
 
     // ── Security Centre ─────────────────────────────────────────────────────
+    /** Cross-studio product analytics. Read-only; `months` is clamped 3–24 server-side. */
+    analytics: (months?: number) =>
+      http<{ data: PlatformAnalytics }>(
+        `/api/super-admin/analytics${months ? `?months=${months}` : ''}`),
+
     securityOverview: () => http<{ data: SecurityOverview }>('/api/super-admin/security/overview'),
     loginEvents: (params: LoginEventQuery = {}) =>
       http<{ data: LoginEvent[]; paging: { limit: number; offset: number; total: number } }>(
@@ -3042,6 +3047,50 @@ export type FeatureOverrideRow = {
   plan_code: string | null; feature_key: string; enabled: boolean;
   reason: string | null; expires_at: string | null;
   set_by_name: string | null; updated_at: string;
+};
+
+// ── Platform Analytics ────────────────────────────────────────────────────────
+// Product usage across every studio. Distinct from SubscriptionMetrics, which
+// answers the money questions — nothing is repeated between the two.
+export type AnalyticsTrendPoint = {
+  label: string; month: string;
+  active_studios: number; sessions: number;
+  clients_added: number; check_ins: number; studios_joined: number;
+};
+
+export type AnalyticsAdoption = {
+  key: string; studios: number;
+  /** Share of live studios, already rounded to 1dp server-side. */
+  pct: number;
+};
+
+export type AnalyticsCohort = {
+  label: string; joined: string; size: number;
+  /** months-since-signup → studios still doing real work that month. */
+  retention: Record<string, number>;
+};
+
+export type AnalyticsAtRisk = {
+  id: string; name: string; slug: string;
+  plan_code: string | null; subscription_status: string;
+  current_period_end: string | null;
+  last_login: string | null; last_session: string | null;
+  active_clients: number;
+};
+
+export type AnalyticsLeader = {
+  id: string; name: string; slug: string;
+  sessions_30d: number; active_clients: number; check_ins_30d: number;
+};
+
+export type PlatformAnalytics = {
+  months: number;
+  studios: { total: number; live: number };
+  trend: AnalyticsTrendPoint[];
+  adoption: AnalyticsAdoption[];
+  cohorts: AnalyticsCohort[];
+  at_risk: AnalyticsAtRisk[];
+  leaderboard: AnalyticsLeader[];
 };
 
 // ── Notification Centre ───────────────────────────────────────────────────────
