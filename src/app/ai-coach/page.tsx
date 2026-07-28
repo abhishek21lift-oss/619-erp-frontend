@@ -15,6 +15,7 @@ import {
   Sparkles, Send, Square, Copy, Check, RotateCcw, Plus, Search, X, Trash2,
   Pin, PinOff, Pencil, MessageSquare, PanelLeft, Download, User, BookOpen,
   Dumbbell, Apple, TrendingUp, BarChart3, Database, Loader2, AlertTriangle,
+  ChevronRight,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -495,6 +496,7 @@ export default function AiCoachPage() {
                     generators={visibleGenerators}
                     onGenerator={(href) => router.push(href)}
                     onKnowledgeBase={isAdminOrManager ? () => router.push('/ai-coach/knowledge') : undefined}
+                    client={selectedClient}
                   />
                 ) : (
                   <div className="flex flex-col gap-4">
@@ -913,67 +915,120 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
 
 /* ── Empty state ───────────────────────────────────────────────────────── */
 
-function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase }: {
+// Rebuilt as a launcher rather than a poster.
+//
+// The previous version stacked a tall centred hero above all 9 prompts at
+// once, which pushed the generators off the bottom of a phone — on the screen
+// whose entire job is "tap something to start". It also relied on a tiny
+// coloured label as the only signal of grouping (colour alone), and the pills
+// were ~26px tall, under the 44px minimum touch target.
+//
+// Now: a compact one-line hero, the groups behind a segmented control so only
+// one set of prompts is on screen at a time, full-width prompt rows at 48px,
+// and the generators kept above the fold.
+function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase, client }: {
   onPrompt: (p: string) => void;
   generators: typeof GENERATORS;
   onGenerator: (href: string) => void;
   onKnowledgeBase?: () => void;
+  client?: Client | null;
 }) {
+  const [groupIdx, setGroupIdx] = useState(0);
+  const group = PROMPT_GROUPS[groupIdx];
+
   return (
-    <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="py-3 sm:py-6">
-      {/* The hero is deliberately smaller on phones. At full desktop size it
-          pushed every prompt chip below the fold, so the first thing you saw
-          on the page whose whole point is "ask me something" was a headline
-          asking what you need — and nothing to tap. */}
-      <div className="mb-5 text-center sm:mb-6">
+    <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="py-2">
+
+      {/* Hero — horizontal so it costs one row, not a third of the screen. */}
+      <div className="mb-4 flex items-center gap-3">
         <div
-          className="mx-auto mb-2.5 flex h-11 w-11 items-center justify-center rounded-[15px] sm:mb-3 sm:h-14 sm:w-14 sm:rounded-[18px]"
-          style={{ background: ACCENT, boxShadow: '0 8px 30px rgba(124,58,237,0.4)' }}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px]"
+          style={{ background: ACCENT, boxShadow: '0 6px 22px rgba(124,58,237,0.35)' }}
         >
-          <Sparkles size={20} color="#fff" />
+          <Sparkles size={18} color="#fff" />
         </div>
-        <h1 className="text-[18px] font-[820] tracking-[-0.02em] sm:text-[22px]" style={{ color: 'var(--text-primary)' }}>
-          What can I help with?
-        </h1>
-        <p className="mx-auto mt-1.5 max-w-md text-[11.5px] leading-relaxed sm:text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
-          I read your studio&apos;s live records — clients, attendance, revenue, dues
-          <span className="hidden sm:inline"> — and any SOPs you&apos;ve uploaded</span>, so answers
-          are about <em>your</em> studio, not generic advice.
-        </p>
+        <div className="min-w-0">
+          <h1 className="text-[17px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
+            What can I help with?
+          </h1>
+          <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+            Answers come from your studio&apos;s live records, not generic advice.
+          </p>
+        </div>
       </div>
 
-      <div className="mb-5 flex flex-col gap-3 sm:mb-6">
-        {PROMPT_GROUPS.map((group) => (
-          <div key={group.label}>
-            <p className="mb-1.5 text-[9.5px] font-[750] uppercase tracking-[0.08em]" style={{ color: group.accent }}>
-              {group.label}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {group.prompts.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => onPrompt(p)}
-                  className="rounded-full px-3 py-1.5 text-left text-[11.5px] font-[560] transition-transform active:scale-[0.97]"
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Attached-client context. Mirrors the header pill so the state is
+          visible from the body too, where the eye actually is. */}
+      {client && (
+        <div
+          className="mb-4 flex items-center gap-2 rounded-[11px] px-3 py-2"
+          style={{ background: 'rgba(139,92,246,0.10)', border: '1px solid rgba(139,92,246,0.25)' }}
+        >
+          <User size={13} style={{ color: VIOLET, flexShrink: 0 }} />
+          <p className="min-w-0 truncate text-[11.5px] font-[600]" style={{ color: VIOLET }}>
+            Answering about {client.name}
+          </p>
+        </div>
+      )}
+
+      {/* Group selector. Active state uses fill + weight, not colour alone. */}
+      <div
+        className="mb-3 flex gap-1 rounded-[12px] p-1"
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+        role="tablist"
+        aria-label="Prompt categories"
+      >
+        {PROMPT_GROUPS.map((g, i) => {
+          const active = i === groupIdx;
+          return (
+            <button
+              key={g.label}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setGroupIdx(i)}
+              className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[9px] text-[11.5px] transition-colors"
+              style={active
+                ? { background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 750, boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
+                : { color: 'var(--text-muted)', fontWeight: 600 }}
+            >
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: g.accent }} />
+              {g.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Prompt rows — full width, 48px tall, tappable anywhere. */}
+      <div className="mb-4 flex flex-col gap-1.5">
+        {group.prompts.map((p, i) => (
+          <m.button
+            key={p}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.035, duration: 0.2 }}
+            onClick={() => onPrompt(p)}
+            className="flex min-h-[48px] w-full items-center gap-2.5 rounded-[13px] px-3.5 py-2.5 text-left transition-transform active:scale-[0.99]"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
+            <span className="min-w-0 flex-1 text-[12.5px] font-[560] leading-snug" style={{ color: 'var(--text-secondary)' }}>
+              {p}
+            </span>
+            <ChevronRight size={14} style={{ color: 'var(--text-disabled)', flexShrink: 0 }} />
+          </m.button>
         ))}
       </div>
 
-      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+      {/* Generators — kept above the fold now that the prompts are paged. */}
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
         <p className="mb-2 text-[9.5px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
-          Structured generators
+          Generate
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {generators.map((g) => (
             <button
               key={g.href}
               onClick={() => onGenerator(g.href)}
-              className="flex items-center gap-2 rounded-[12px] px-3 py-2.5 text-left transition-transform active:scale-[0.98]"
+              className="flex min-h-[44px] items-center gap-2 rounded-[12px] px-3 py-2.5 text-left transition-transform active:scale-[0.98]"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
             >
               <g.icon size={15} style={{ color: g.color, flexShrink: 0 }} />
@@ -984,7 +1039,7 @@ function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase }: {
         {onKnowledgeBase && (
           <button
             onClick={onKnowledgeBase}
-            className="mt-2 flex w-full items-center gap-2 rounded-[12px] px-3 py-2.5 text-left"
+            className="mt-2 flex min-h-[44px] w-full items-center gap-2 rounded-[12px] px-3 py-2.5 text-left transition-transform active:scale-[0.99]"
             style={{ background: 'var(--bg-card)', border: '1px dashed var(--border)' }}
           >
             <BookOpen size={15} style={{ color: VIOLET, flexShrink: 0 }} />
