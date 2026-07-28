@@ -2365,6 +2365,16 @@ export const api = {
         method: 'PATCH', body: JSON.stringify(patch),
       }),
 
+    // ── Storage accounting ──────────────────────────────────────────────────
+    // Every response carries `measuring_since`: objects written before the
+    // ledger existed have no row, so these are bytes ACCOUNTED, not bytes in
+    // the bucket. The UI is expected to say so.
+    storageOverview: (days = 30) => http<{ data: StorageOverview }>(`/api/super-admin/storage/overview?days=${days}`),
+    storageByStudio: () =>
+      http<{ data: StorageStudio[]; meta: { measuring_since: string | null } }>('/api/super-admin/storage/by-studio'),
+    storageTrend: (days = 30) => http<{ data: StorageTrendPoint[] }>(`/api/super-admin/storage/trend?days=${days}`),
+    storageLargest: (limit = 25) => http<{ data: StorageObject[] }>(`/api/super-admin/storage/largest?limit=${limit}`),
+
     impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
         method: 'POST',
@@ -3290,6 +3300,43 @@ export type AiSettings = {
   default_monthly_tokens: number | string | null;
   warn_at_pct: number;
   rates: AiModelRate[];
+};
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+
+export type StorageCategory = { category: string; bytes: number; objects: number };
+
+export type StorageOverview = {
+  window_days: number;
+  /** Live bytes — soft-deleted objects are excluded and reported separately. */
+  bytes: number; objects: number;
+  deleted_bytes: number; deleted_objects: number;
+  /** Written by a path with no studio in scope. Shown, never hidden. */
+  unattributed_bytes: number;
+  studios: number;
+  bytes_added: number; objects_added: number;
+  by_category: StorageCategory[];
+  /**
+   * When accounting began. Everything above is measured from here, NOT from
+   * the first byte ever stored — the UI must label the totals partial.
+   * null means even that is unknown.
+   */
+  measuring_since: string | null;
+};
+
+export type StorageStudio = {
+  organization_id: string; organization_name: string; plan_code: string | null;
+  bytes: number; objects: number; deleted_bytes: number;
+  categories: number; last_upload_at: string | null;
+};
+
+export type StorageTrendPoint = { day: string; bytes: number; objects: number };
+
+export type StorageObject = {
+  key: string; category: string; bytes: number;
+  content_type: string | null; created_at: string;
+  /** null when the write had no studio in scope. */
+  organization_name: string | null;
 };
 
 // ── Support ───────────────────────────────────────────────────────────────────

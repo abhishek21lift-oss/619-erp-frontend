@@ -20,7 +20,7 @@ import {
   Search, ArrowRight, TrendingUp, ChevronRight,
   MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
   ScrollText, HeartPulse, LogOut, ShieldOff, CalendarPlus, StickyNote, Save, FileText,
-  ToggleLeft, ToggleRight, Lock, Megaphone, Bot, LifeBuoy,
+  ToggleLeft, ToggleRight, Lock, Megaphone, Bot, LifeBuoy, HardDrive,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Guard from '@/components/Guard';
@@ -52,6 +52,9 @@ const SupportCentre = dynamic(() => import('@/components/platform/support-centre
 });
 const AiControlCentre = dynamic(() => import('@/components/platform/ai-control'), {
   loading: () => <PanelSkeleton label="Reading AI usage…" />,
+});
+const StorageCentre = dynamic(() => import('@/components/platform/storage-centre'), {
+  loading: () => <PanelSkeleton label="Reading storage usage…" />,
 });
 const AnalyticsPanel = dynamic(() => import('@/components/platform/analytics'), {
   loading: () => <PanelSkeleton label="Crunching platform usage…" />,
@@ -127,10 +130,10 @@ export default function PlatformAdminPage() {
   );
 }
 
-type Tab = 'overview' | 'studios' | 'support' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'health';
+type Tab = 'overview' | 'studios' | 'support' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'storage' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
-const TAB_IDS: Tab[] = ['overview', 'studios', 'support', 'analytics', 'ai', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'health'];
+const TAB_IDS: Tab[] = ['overview', 'studios', 'support', 'analytics', 'ai', 'finance', 'features', 'announcements', 'activity', 'audit', 'security', 'storage', 'health'];
 type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'invoices' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
@@ -201,6 +204,7 @@ function PlatformContent() {
     { id: 'activity', label: 'Activity', icon: <Activity size={15} /> },
     { id: 'audit', label: 'Audit', icon: <ScrollText size={15} /> },
     { id: 'security', label: 'Security', icon: <ShieldAlert size={15} /> },
+    { id: 'storage', label: 'Storage', icon: <HardDrive size={15} /> },
     { id: 'health', label: 'Health', icon: <HeartPulse size={15} /> },
   ];
 
@@ -259,6 +263,7 @@ function PlatformContent() {
           {tab === 'security' && <SecurityCentre />}
           {tab === 'activity' && <ActivityTab />}
           {tab === 'audit' && <AuditCentre />}
+          {tab === 'storage' && <StorageCentre />}
           {tab === 'health' && <SystemHealthPanel />}
         </div>
       </div>
@@ -283,6 +288,7 @@ const NAV_TARGETS: { tab: Tab; label: string; icon: React.ReactNode; opts?: NavO
   { tab: 'finance', label: 'Go to Finance · Coupons', icon: <Ticket size={14} />, opts: { financeSubTab: 'coupons' } },
   { tab: 'activity', label: 'Go to Activity', icon: <Activity size={14} /> },
   { tab: 'audit', label: 'Go to Audit Centre', icon: <ScrollText size={14} /> },
+  { tab: 'storage', label: 'Go to Storage', icon: <HardDrive size={14} /> },
   { tab: 'health', label: 'Go to System Health', icon: <HeartPulse size={14} /> },
 ];
 
