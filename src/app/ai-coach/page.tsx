@@ -485,7 +485,7 @@ export default function AiCoachPage() {
 
             {/* Messages / empty state */}
             <div className="min-h-0 flex-1 overflow-y-auto" style={{ background: 'var(--bg-canvas)' }}>
-              <div className="mx-auto w-full max-w-3xl px-3 py-5 sm:px-5">
+              <div className="mx-auto w-full max-w-3xl py-5">
                 {isEmpty ? (
                   <EmptyState
                     onPrompt={(p) => send(p)}

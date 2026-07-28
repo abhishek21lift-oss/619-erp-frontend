@@ -789,7 +789,7 @@ function SubscriptionScreen() {
         paddingTop: 'max(env(safe-area-inset-top), 2.75rem)',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 pb-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 pb-4">
           <div className="flex min-w-0 items-center gap-3">
             <StudioMark name={user?.organization_name || 'PT Studio'} logoUrl={user?.organization_logo_url} size={38} radius={11} />
             <div className="min-w-0">
@@ -804,7 +804,7 @@ function SubscriptionScreen() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-5 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] pt-6">
+      <div className="mx-auto max-w-5xl pb-[calc(3rem+env(safe-area-inset-bottom,0px))] pt-6">
         {body}
       </div>
     </div>

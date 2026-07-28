@@ -340,8 +340,8 @@ function SelectRow({ label, description, value, options, onChange }: {
 ───────────────────────────────────────── */
 function ProfileSkeleton() {
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-subtle)' }}>
-      <div className="mx-auto max-w-screen-xl px-5 py-8 sm:px-8">
+    <div>
+      <div className="mx-auto max-w-screen-xl py-8">
         <div className="animate-pulse space-y-5">
           <div className="h-48 w-full rounded-3xl" style={{ background: 'var(--border)' }} />
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_1fr]">
@@ -755,7 +755,7 @@ export default function ProfilePage() {
   if (pageError) {
     return (
       <Guard><AppShell>
-        <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-subtle)' }}>
+        <div className="flex min-h-[60vh] items-center justify-center">
           <GlassCard className="p-10 text-center max-w-sm mx-4">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: 'rgba(239,68,68,0.08)' }}>
               <AlertTriangle size={24} style={{ color: '#ef4444' }} />
@@ -781,11 +781,16 @@ export default function ProfilePage() {
   return (
     <Guard>
       <AppShell>
-        <div className="min-h-screen" style={{ background: 'var(--bg-subtle)' }}>
+        {/* No page-level background: .shell-main (globals.css) already paints
+            the canvas with --bg-canvas. A --bg-subtle panel on top of it read
+            as a grey block inset from the page edges. The banded sections
+            below keep their own backgrounds and inner padding — those are
+            deliberate bands, not a page wrapper. */}
+        <div>
 
           {/* ── BREADCRUMB + TITLE ── */}
           <div className="border-b" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-            <div className="mx-auto max-w-screen-xl px-5 py-5 sm:px-8">
+            <div className="mx-auto max-w-screen-xl py-5">
               <div className="mb-3 flex items-center gap-1.5 text-[11px] font-[500]" style={{ color: 'var(--text-muted)' }}>
                 <span>Settings</span>
                 <ChevronRight size={10} />
@@ -805,7 +810,7 @@ export default function ProfilePage() {
           </div>
 
           {/* ── MAIN ── */}
-          <div className="mx-auto max-w-screen-xl px-5 py-7 sm:px-8">
+          <div className="mx-auto max-w-screen-xl py-7">
 
             {/* ── HERO ── */}
             <FadeUp>

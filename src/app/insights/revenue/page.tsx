@@ -310,7 +310,7 @@ function RevenueAnalytics() {
   return (
     <AppShell>
       <PullToRefresh onRefresh={refreshAll}>
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-5 pb-24 lg:pb-10 space-y-4">
+        <div className="mx-auto w-full max-w-7xl py-5 pb-24 lg:pb-10 space-y-4">
 
           {/* ── Title ───────────────────────────────────────────────────── */}
           <header className="flex flex-wrap items-center justify-between gap-3">

@@ -151,7 +151,7 @@ export default function PtClientSubscriptionsPage({ params }: { params: Promise<
               <Button variant="primary" iconLeft={<RefreshCw size={13} />} onClick={fetchAll} className="mt-4">Retry</Button>
             </div>
           ) : client ? (
-            <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-6">
+            <div className="mx-auto max-w-screen-xl py-6">
               {/* ── Header ── */}
               <m.div
                 initial={{ opacity: 0, y: -8 }}

@@ -60,7 +60,7 @@ export default function WeeklyCheckinPage() {
     return (
       <Guard>
         <AppShell>
-          <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+          <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 320, padding: 40 }}>
               <div style={{
                 background: 'var(--bg-card)',
@@ -101,7 +101,7 @@ export default function WeeklyCheckinPage() {
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
             style={{ background: '#F0FDFA', border: '1px solid #99F6E4' }}>

@@ -126,7 +126,7 @@ function Inner() {
 
   if (!plan) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+      <div className="mx-auto max-w-xl py-16 text-center">
         <p style={{ color: 'var(--text-muted)' }}>Plan not found.</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push('/pt-os/workout-plans')}>Back to Plans</Button>
       </div>
@@ -145,7 +145,7 @@ function Inner() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full max-w-3xl py-6 sm:py-8">
       <button onClick={() => router.push('/pt-os/workout-plans')}
         className="mb-4 flex items-center gap-1.5 text-[13px] font-[600]" style={{ color: 'var(--text-muted)' }}>
         <ArrowLeft size={14} /> Workout Plans

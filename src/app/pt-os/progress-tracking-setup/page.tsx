@@ -65,7 +65,7 @@ function ClientPicker() {
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full max-w-3xl py-6 sm:py-8">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
         style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', boxShadow: '0 12px 40px rgba(15,23,42,0.25)' }}>
@@ -214,7 +214,7 @@ function BaselineDashboard({ clientId }: BaselineDashboardProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-5 sm:px-8 py-6 space-y-6">
+    <div className="mx-auto w-full max-w-4xl py-6 space-y-6">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
         style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', boxShadow: '0 12px 40px rgba(15,23,42,0.25)' }}>

@@ -36,7 +36,7 @@ export default function SessionBalancePage() {
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="p-8 sm:p-10 mb-6"
             style={{ borderBottom: '1px solid var(--border)' }}>

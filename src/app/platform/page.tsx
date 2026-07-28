@@ -165,7 +165,7 @@ function PlatformContent() {
           indicator — without it the last row of every tab sat underneath the
           nav bar and could not be reached. Matches the dashboard's pattern. */}
       <div
-        className="relative mx-auto w-full max-w-5xl px-4 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-8 lg:pb-10"
+        className="relative mx-auto w-full max-w-5xl pt-6 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pt-8 lg:pb-10"
         style={{ zIndex: 1 }}
       >
         <ConsoleHeader

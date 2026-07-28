@@ -916,10 +916,10 @@ function AccountManagementPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+    <div>
       {/* ── PAGE HEADER ── */}
       <div className="border-b" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(20px)', borderColor: 'var(--border)' }}>
-        <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
+        <div className="mx-auto max-w-screen-xl py-6">
           {/* Title row */}
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -966,7 +966,7 @@ function AccountManagementPage() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
+      <div className="mx-auto max-w-screen-xl py-6">
         {/* Segmented tab control */}
         <div className="mb-6 inline-flex overflow-hidden rounded-[13px] p-1"
           style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)' }}>

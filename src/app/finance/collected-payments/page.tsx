@@ -121,7 +121,7 @@ function Inner() {
       <PullToRefresh onRefresh={fetchPayments}>
       <div style={{ minHeight: '100dvh' }}>
         {/* Page Header — gradient hero, matching Today's Sale / Record Payment */}
-        <div className="relative z-10 mt-1 max-w-[1280px] mx-auto px-5 pt-2">
+        <div className="relative z-10 mt-1 max-w-[1280px] mx-auto pt-2">
           <m.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

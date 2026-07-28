@@ -432,12 +432,12 @@ function EnrollForm({ clientId }: { clientId: string }) {
   }
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
+    <div className="pb-28">
 
       {/* ── HEADER ── */}
       {/* Header — in normal flow on the page background (no sticky card). */}
       <div className="pt-1">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center gap-3">
+        <div className="mx-auto max-w-3xl py-4 flex items-center gap-3">
           <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}>
             <Award size={18} color="#fff" />
           </div>
@@ -448,7 +448,7 @@ function EnrollForm({ clientId }: { clientId: string }) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+      <div className="mx-auto max-w-3xl py-6 space-y-5">
 
         {/* ── SMART ALERTS ── */}
         <AnimatePresence>

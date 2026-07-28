@@ -94,7 +94,7 @@ function Inner() {
   if (loadError || !detail) {
     return (
       <AppShell>
-        <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <div className="mx-auto max-w-md py-16 text-center">
           <div
             className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl"
             style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}
@@ -140,7 +140,7 @@ function PayView({
   const latest = submissions[0] ?? null;
 
   return (
-    <div className="mx-auto w-full max-w-[560px] px-4 pb-16 pt-2 sm:pt-6">
+    <div className="mx-auto w-full max-w-[560px] pb-16 pt-2 sm:pt-6">
       {/* ── Studio identity ── */}
       <div className="flex flex-col items-center text-center">
         <StudioMark name={studioName} logoUrl={studioLogo} size={56} />

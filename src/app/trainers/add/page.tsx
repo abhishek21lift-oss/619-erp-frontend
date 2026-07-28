@@ -519,9 +519,7 @@ export default function AddCoachPage() {
   return (
     <Guard role="admin">
       <AppShell title="Add New Coach">
-        <div className="min-h-screen" style={{
-          background: 'linear-gradient(160deg, #ede9fe 0%, #e0f2fe 32%, #dcfce7 62%, #fef3c7 100%)',
-        }}>
+        <div>
 
           <div className=""
             style={{
@@ -531,7 +529,7 @@ export default function AddCoachPage() {
               borderBottom: '1px solid rgba(255,255,255,0.55)',
               boxShadow: '0 1px 0 rgba(15,23,42,0.06)',
             }}>
-            <div className="mx-auto flex max-w-3xl items-center gap-4 px-5 py-3.5">
+            <div className="mx-auto flex max-w-3xl items-center gap-4 py-3.5">
               <Link href="/trainers"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition-all duration-200 hover:scale-105 active:scale-95"
                 style={{ background: as_, border: `1.5px solid ${ac}30` }}>
@@ -557,7 +555,7 @@ export default function AddCoachPage() {
             </div>
           </div>
 
-          <div className="mx-auto max-w-3xl px-5 py-8">
+          <div className="mx-auto max-w-3xl py-8">
 
             <div className="mb-8 flex gap-2 overflow-x-auto pb-1">
               {STEPS.map(s => (

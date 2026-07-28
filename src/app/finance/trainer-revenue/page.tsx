@@ -160,7 +160,10 @@ function Inner() {
 
   return (
     <AppShell>
-      <div style={{ minHeight: '100dvh', background: 'var(--bg-base)' }}>
+      {/* No page-level background: .shell-main already paints the canvas with
+          --bg-canvas. A --bg-base panel on top read as a white block inset
+          from the page edges (and inverted badly in dark mode). */}
+      <div>
 
         {/* ── Hero ── */}
         <div style={{

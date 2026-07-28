@@ -133,7 +133,7 @@ function ClientPicker() {
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 pt-3 pb-6 sm:px-6">
+    <div className="mx-auto w-full max-w-4xl pt-3 pb-6">
       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
         style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -274,7 +274,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
   const style = record ? statusStyle(record.status) : null;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -511,11 +511,11 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   }
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
+    <div className="pb-28">
       {/* Header — in normal flow, directly on the page background. The old
           sticky white card floated at a safe-area-dependent offset, which on
           notched phones opened a large blank band under the top bar. */}
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 pt-1">
+      <div className="mx-auto max-w-3xl pt-1">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div
@@ -542,7 +542,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-5 space-y-5">
+      <div className="mx-auto max-w-3xl py-5 space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
           {step === 1 && <StepExerciseProgrammeConsent form={form} set={set} error={errors.step1} />}
           {step === 2 && <StepAgreements form={form} set={set} error={errors.step2} />}
@@ -577,7 +577,7 @@ function SubmitSuccess({ clientName, result, onDone }: { clientName: string; res
   );
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-5 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center py-10 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: 'rgba(16,185,129,0.12)' }}>
         <CheckCircle2 size={32} style={{ color: '#10b981' }} />
       </div>

@@ -156,7 +156,7 @@ function BiometricInner() {
   }
 
   return (
-    <div className="space-y-6 py-6 px-4 max-w-6xl mx-auto">
+    <div className="space-y-6 py-6 max-w-6xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between">

@@ -177,7 +177,10 @@ export default function TrainerProfilePage({ params }: { params: Promise<{ id: s
   return (
     <Guard roles={['admin', 'manager']}>
       <AppShell>
-        <div style={{ minHeight: '100dvh', background: 'var(--bg-subtle)' }}>
+        {/* No page-level background: .shell-main already paints the canvas.
+            The hero below keeps its own --bg-card background — that is a
+            deliberate banded header, not a page wrapper. */}
+        <div>
           {/* ── Hero ── */}
           <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '28px 32px 36px', borderRadius: '0 0 40px 40px' }}>
             <button onClick={() => router.back()}

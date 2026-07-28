@@ -219,7 +219,7 @@ function WorkoutLogHub({ clientId }: { clientId: string }) {
 
   return (
     <PullToRefresh onRefresh={refreshAll}>
-      <div className="mx-auto w-full max-w-4xl px-4 sm:px-8 py-6 space-y-5 pb-24">
+      <div className="mx-auto w-full max-w-4xl py-6 space-y-5 pb-24">
         <button onClick={() => router.push(`/pt-os/clients/${clientId}`)}
           className="flex items-center gap-2 text-[12px] font-[600] text-slate-500 transition-colors hover:text-slate-700">
           <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>

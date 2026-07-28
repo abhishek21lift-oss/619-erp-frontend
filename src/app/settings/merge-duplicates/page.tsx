@@ -82,8 +82,8 @@ function MergeContent() {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
-      <div className="mx-auto max-w-screen-xl px-4 py-6 sm:px-8">
+    <div>
+      <div className="mx-auto max-w-screen-xl py-6">
 
         {/* ── Header ── */}
         <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}

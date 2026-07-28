@@ -126,7 +126,7 @@ function ClientPicker() {
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full max-w-3xl py-6 sm:py-8">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -258,7 +258,7 @@ function GoalsHub({ clientId, toast }: GoalsHubProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -425,10 +425,10 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
   };
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
+    <div className="pb-28">
       {/* Header — in normal flow on the page background (no sticky card). */}
       <div className="pt-1">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between gap-3">
+        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}>
               <Target size={18} color="#fff" />
@@ -443,13 +443,13 @@ function GoalWizard({ clientId, clientName, latestWeight, latestBodyFat, editing
           </button>
         </div>
         {!reviewMode && (
-          <div className="mx-auto max-w-3xl px-5 sm:px-8 pb-3">
+          <div className="mx-auto max-w-3xl pb-3">
             <GoalProgressTimeline current={step} onStep={setStep} />
           </div>
         )}
       </div>
 
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+      <div className="mx-auto max-w-3xl py-6 space-y-5">
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepPrimaryGoal form={form} set={set} error={errors.primaryGoal} />}

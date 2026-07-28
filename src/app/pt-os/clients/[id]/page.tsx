@@ -477,7 +477,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       <AppShell>
         <div className="min-h-screen">
 
-          <div className="relative mx-auto max-w-screen-lg px-4 pb-6 sm:px-6">
+          <div className="relative mx-auto max-w-screen-lg pb-6">
 
             {/* ── LOADING ── */}
             {loading && (

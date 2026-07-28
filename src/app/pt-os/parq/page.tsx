@@ -117,7 +117,7 @@ function ClientPicker() {
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 pt-3 pb-6 sm:px-6">
+    <div className="mx-auto w-full max-w-4xl pt-3 pb-6">
       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
         style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -254,7 +254,7 @@ function ParqHub({ clientId, toast }: ParqHubProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -506,10 +506,10 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
   }
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
+    <div className="pb-28">
       {/* Header — in normal flow on the page background (no sticky card). */}
       <div className="pt-1">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between gap-3">
+        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}>
               <ShieldCheck size={18} color="#fff" />
@@ -523,12 +523,12 @@ function ParqWizard({ clientId, clientName, formId, toast, onDone }: ParqWizardP
             <X size={12} /> Cancel
           </button>
         </div>
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 pb-3">
+        <div className="mx-auto max-w-3xl pb-3">
           <StepperTimeline steps={stepperSteps} current={step} onStep={(id) => setStep(id as StepId)} />
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+      <div className="mx-auto max-w-3xl py-6 space-y-5">
         <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
           {step === 1 && <StepParqQuestionnaire form={form} set={set} error={errors.parqQuestionnaire} stepLabel={stepPositionLabel('parqQuestionnaire', riskLevel)} />}
           {step === 2 && riskLevel === 'high' && (
@@ -584,7 +584,7 @@ function SubmitSuccess({ clientName, result, onDone }: { clientName: string; res
   };
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-5 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center py-10 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: 'rgba(16,185,129,0.12)' }}>
         <CheckCircle2 size={32} style={{ color: '#10b981' }} />
       </div>

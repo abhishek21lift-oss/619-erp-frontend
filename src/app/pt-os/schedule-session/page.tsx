@@ -295,11 +295,11 @@ function SchedulePageContent() {
   const trainerFilterOptions = ['', ...trainerList.map((t) => t.name)];
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+    <div>
       {/* ── HEADER ── */}
       {/* Header — in normal flow on the page background (no sticky bar). */}
       <div>
-        <div className="mx-auto max-w-screen-xl px-5 py-4 sm:px-8">
+        <div className="mx-auto max-w-screen-xl py-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2.5">
@@ -381,7 +381,7 @@ function SchedulePageContent() {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="mx-auto max-w-screen-xl px-5 py-6 sm:px-8">
+      <div className="mx-auto max-w-screen-xl py-6">
         {sessionsLoading ? (
           <SessionsSkeleton />
         ) : sessionsError ? (

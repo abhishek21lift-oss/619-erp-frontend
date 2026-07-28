@@ -108,7 +108,7 @@ function ClientPicker() {
   const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pt-3 pb-6 sm:px-6">
+    <div className="mx-auto w-full max-w-3xl pt-3 pb-6">
       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
         style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -227,7 +227,7 @@ function MobilityHub({ clientId, toast }: MobilityHubProps) {
   const latest = sorted[0];
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+    <div className="mx-auto w-full max-w-3xl py-6 space-y-5">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
@@ -370,10 +370,10 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
   };
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
+    <div className="pb-28">
       {/* Header — in normal flow on the page background (no sticky card). */}
       <div className="pt-1">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between gap-3">
+        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}>
               <Move size={18} color="#fff" />
@@ -388,13 +388,13 @@ function MobilityWizard({ clientId, clientName, editing, toast, onDone }: Mobili
           </button>
         </div>
         {!reviewMode && (
-          <div className="mx-auto max-w-3xl px-5 sm:px-8 pb-3">
+          <div className="mx-auto max-w-3xl pb-3">
             <MobilityProgressTimeline current={step} onStep={setStep} />
           </div>
         )}
       </div>
 
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+      <div className="mx-auto max-w-3xl py-6 space-y-5">
         {!reviewMode ? (
           <m.div key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }}>
             {step === 1 && <StepBodyRegions form={form} set={set} />}

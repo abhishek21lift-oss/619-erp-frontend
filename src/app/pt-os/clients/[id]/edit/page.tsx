@@ -165,7 +165,7 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
     <Guard>
       <AppShell>
         <div className="min-h-screen">
-          <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 space-y-5">
+          <div className="mx-auto max-w-3xl py-6 space-y-5">
 
             {/* ── Header ── */}
             <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}

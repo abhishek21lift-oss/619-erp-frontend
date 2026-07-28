@@ -103,7 +103,7 @@ export default function RenewPtPage({ params }: { params: Promise<{ id: string }
   return (
     <Guard>
       <AppShell>
-        <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+        <div className="mx-auto max-w-2xl py-6">
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">

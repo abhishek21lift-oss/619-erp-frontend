@@ -289,8 +289,10 @@ export default function PackagesPage() {
 
 function PageContent() {
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--bg-subtle)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px', position: 'relative' }}>
+    {/* No page-level background or x-padding: .shell-main already paints the
+        canvas and supplies the gutter. */}
+    <div>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '8px 0 24px', position: 'relative' }}>
         {/* Header */}
         <m.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, borderRadius: 16, background: grad, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 8px 32px ${a}44` }}>

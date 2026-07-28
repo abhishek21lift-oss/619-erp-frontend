@@ -411,7 +411,7 @@ function AttendanceContent() {
         {/* FooterBar below is position:sticky, which breaks under a
             transformed ancestor — keep it outside PullToRefresh's wrapper. */}
         <PullToRefresh onRefresh={loadData}>
-        <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl pb-28 pt-4">
 
           {/* ── toasts ── */}
           {error   && <Toast msg={error}   type="error"   onClose={() => setError('')} />}

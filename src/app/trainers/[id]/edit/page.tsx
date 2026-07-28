@@ -351,8 +351,8 @@ function EditContent({ id }: { id: string }) {
   if (loading) {
     return (
       <AppShell>
-        <div className="min-h-screen" style={{ background: 'linear-gradient(160deg,#fff7ed 0%,#fef3c7 30%,#ede9fe 70%,#e0f2fe 100%)' }}>
-          <div className="mx-auto max-w-2xl space-y-4 px-5 py-12">
+        <div>
+          <div className="mx-auto max-w-2xl space-y-4 py-12">
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-36 animate-pulse rounded-[24px]" style={{ background: 'rgba(255,255,255,0.6)' }} />
             ))}
@@ -364,14 +364,12 @@ function EditContent({ id }: { id: string }) {
 
   return (
     <AppShell title="Edit Trainer">
-      <div className="min-h-screen pb-28" style={{
-        background: 'linear-gradient(160deg, #fff7ed 0%, #fef3c7 30%, #ede9fe 68%, #e0f2fe 100%)',
-      }}>
+      <div className="pb-28">
 
         {/* ── Sticky page header ─────────────────────────────────────── */}
         <div className=""
           style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.55)', boxShadow: '0 1px 0 rgba(15,23,42,0.06)' }}>
-          <div className="mx-auto flex max-w-2xl items-center gap-3 px-5 py-3.5">
+          <div className="mx-auto flex max-w-2xl items-center gap-3 py-3.5">
             <Link href={`/trainers/${id}`}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition-all duration-200 hover:scale-105 active:scale-95"
               style={{ background: 'rgba(255,179,0,0.12)', border: '1.5px solid rgba(255,179,0,0.30)' }}>
@@ -390,7 +388,7 @@ function EditContent({ id }: { id: string }) {
         </div>
 
         <form onSubmit={submit}>
-          <div className="mx-auto max-w-2xl space-y-5 px-5 py-7">
+          <div className="mx-auto max-w-2xl space-y-5 py-7">
 
             {/* ── Banners ────────────────────────────────────────────── */}
             <AnimatePresence>

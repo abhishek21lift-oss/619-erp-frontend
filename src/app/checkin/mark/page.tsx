@@ -172,7 +172,7 @@ function MarkAttendanceContent() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(145deg,#f8fafc 0%,#f1f5f9 50%,#fafafe 100%)' }}>
+    <div>
       {/* Hero */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#f0fdf4 0%,#f5f3ff 100%)', padding: '36px 32px 32px', borderRadius: '0 0 36px 36px', borderBottom: '1px solid var(--border)' }}>
         <div className="mx-auto" style={{ maxWidth: 600 }}>

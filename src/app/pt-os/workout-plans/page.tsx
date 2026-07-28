@@ -274,7 +274,7 @@ function Inner() {
 
   return (
     <div style={{ minHeight: '100%', position: 'relative' }}>
-      <div className="relative z-10 mt-1 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 pb-24">
+      <div className="relative z-10 mt-1 mx-auto max-w-[1400px] pb-24">
         {/* ── Gradient Hero ── */}
         <m.div
           initial={{ opacity: 0, y: 12 }}

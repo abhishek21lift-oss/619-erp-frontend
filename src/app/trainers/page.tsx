@@ -329,7 +329,7 @@ export default function TrainersPage() {
   return (
     <Guard role="admin">
       <AppShell>
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto w-full max-w-7xl py-6 sm:py-8">
           {/* ── Hero Section ── */}
           <m.div
             initial={{ opacity: 0, y: 16 }}

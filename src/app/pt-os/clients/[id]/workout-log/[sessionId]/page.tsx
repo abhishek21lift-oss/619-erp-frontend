@@ -196,10 +196,10 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const s = session.summary;
 
   return (
-    <div className="min-h-screen pb-32" style={{ background: 'linear-gradient(160deg,#f8fafc 0%,#f1f5f9 60%,#fafafe 100%)' }}>
+    <div className="pb-32">
       {/* Header — in normal flow on the page background (no sticky card). */}
       <div className="pt-1">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between gap-3">
+        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
           <button onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
             className="flex items-center gap-2 text-[12px] font-[650]" style={{ color: '#94a3b8' }}>
             <ArrowLeft size={13} /> Workout Log
@@ -211,7 +211,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-6 space-y-5">
+      <div className="mx-auto max-w-3xl py-6 space-y-5">
         {/* Session header — a compact summary strip by default so the
             exercises (the actual logging work) are reachable without
             scrolling past a wall of fields; tap to edit. */}
