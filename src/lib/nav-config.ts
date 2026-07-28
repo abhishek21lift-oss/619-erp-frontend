@@ -88,6 +88,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Sessions',
     icon: 'Calendar',
     items: [
+      { href: '/pt-os/my-schedule',       label: 'My Schedule',          icon: 'CalendarCheck' },
       { href: '/pt-os/schedule-session',  label: 'Book Session',         icon: 'CalendarPlus' },
       { href: '/pt-os/session-balance',   label: 'Session Balance',      icon: 'Gauge' },
       { href: '/pt-os/sessions',          label: 'Session History',      icon: 'History' },

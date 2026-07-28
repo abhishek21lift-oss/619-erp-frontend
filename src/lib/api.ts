@@ -718,6 +718,25 @@ export interface DietTemplate {
   meals: DietTemplateMeal[];
 }
 
+export type PtSessionStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
+
+export interface PtSession {
+  id: string;
+  client_id: string;
+  client_name?: string | null;
+  client_mobile?: string | null;
+  trainer_id?: string | null;
+  title?: string | null;
+  session_date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  duration_minutes?: number | null;
+  session_type?: string | null;
+  status: PtSessionStatus;
+  notes?: string | null;
+  recurrence_id?: string | null;
+}
+
 export interface PtLead {
   id: string;
   name: string;
@@ -1723,6 +1742,11 @@ export const api = {
       http<{ data: unknown[] }>(`/api/pt-os/trainers${buildQs(params)}`),
     sessions: (params?: { trainer_id?: string; date?: string }) =>
       http<{ data: unknown[] }>(`/api/pt-os/sessions${buildQs(params)}`),
+    /** The signed-in user's own sessions as a trainer (never another's). */
+    mySessions: (params?: { from?: string; to?: string }) =>
+      http<{ data: PtSession[]; total: number; trainer_linked: boolean }>(
+        `/api/pt-os/sessions/my${buildQs(params)}`,
+      ),
     createSession: (data: Record<string, unknown>) =>
       // `data` is a single session row normally, or an array of 4 when
       // booked as recurring (weekly occurrences share one recurrence_id).
