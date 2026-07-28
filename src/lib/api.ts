@@ -4,6 +4,18 @@ import type { Role } from './roles';
 
 export { ROLES, normaliseRole, hasRole, isAdminOrManager } from './roles';
 
+/** Query string from a params object, dropping empties so `?status=` never
+ *  reaches the server as a filter for the empty string. `omit` is for keys
+ *  that make sense on a paged request but not on an export of the whole set. */
+function qsOf(params: Record<string, unknown>, omit: string[] = []): string {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '' && !omit.includes(k)) qs.set(k, String(v));
+  }
+  const q = qs.toString();
+  return q ? `?${q}` : '';
+}
+
 // ─────────────────────────── Types ───────────────────────────────────
 
 export type DuplicateGroup = {
@@ -2223,6 +2235,28 @@ export const api = {
     },
     systemHealth: () => http<SystemHealth>('/api/super-admin/system-health'),
 
+    // ── Billing Centre ──────────────────────────────────────────────────────
+    billingSettings: () => http<{ data: PlatformBillingSettings }>('/api/super-admin/billing/settings'),
+    saveBillingSettings: (patch: Partial<PlatformBillingSettings>) =>
+      http<{ data: PlatformBillingSettings }>('/api/super-admin/billing/settings', {
+        method: 'PUT', body: JSON.stringify(patch),
+      }),
+    invoices: (params: InvoiceQuery = {}) =>
+      http<{ data: SubscriptionInvoice[]; totals: InvoiceTotals; page: { limit: number; offset: number; has_more: boolean } }>(
+        `/api/super-admin/billing/invoices${qsOf(params)}`,
+      ),
+    /** Built rather than fetched, same as auditExportUrl: the browser must
+     *  navigate to it so the file lands with the server's Content-Disposition. */
+    invoicesExportUrl: (params: InvoiceQuery = {}) =>
+      `${apiBase()}/api/super-admin/billing/invoices/export${qsOf(params, ['limit', 'offset'])}`,
+    invoicePdfUrl: (id: string) => `${apiBase()}/api/super-admin/billing/invoices/${id}/pdf`,
+    orgBillingProfile: (orgId: string) =>
+      http<{ data: OrgBillingProfile }>(`/api/super-admin/organizations/${orgId}/billing-profile`),
+    saveOrgBillingProfile: (orgId: string, patch: Partial<OrgBillingProfile>) =>
+      http<{ data: OrgBillingProfile }>(`/api/super-admin/organizations/${orgId}/billing-profile`, {
+        method: 'PUT', body: JSON.stringify(patch),
+      }),
+
     impersonate: (orgId: string, opts: { userId?: string; mode?: 'read_only' | 'full' } = {}) =>
       http<{ data: ImpersonationSession }>(`/api/super-admin/organizations/${orgId}/impersonate`, {
         method: 'POST',
@@ -2848,6 +2882,61 @@ export type SystemHealth = {
     memory: { rss_bytes: number; heap_used_bytes: number; heap_total_bytes: number };
   };
   errors_24h: number | null;
+};
+
+// ── Billing Centre ────────────────────────────────────────────────────────────
+/** The platform's own seller identity, printed on every subscription invoice. */
+export type PlatformBillingSettings = {
+  legal_name: string | null;
+  address_line1: string | null; address_line2: string | null;
+  city: string | null; state: string | null; state_code: string | null;
+  postal_code: string | null; country: string | null;
+  gstin: string | null; pan: string | null;
+  email: string | null; phone: string | null;
+  /** Applies to invoices issued from now on; historical ones keep their own. */
+  gst_percent: number | string;
+  prices_include_gst: boolean;
+  invoice_prefix: string;
+  invoice_notes: string | null;
+  updated_at?: string | null; updated_by?: string | null;
+};
+
+/** Numeric columns arrive as strings from pg's NUMERIC — never assume number. */
+export type SubscriptionInvoice = {
+  id: string; invoice_number: string;
+  organization_id: string; organization_name: string | null; organization_slug: string | null;
+  payment_id: string | null;
+  plan_code: string | null; plan_name: string | null;
+  amount_inr: number;
+  /** null on invoices issued before tax was itemised — render, don't invent. */
+  taxable_value_inr: string | null; gst_percent: string | null;
+  cgst_inr: string | null; sgst_inr: string | null; igst_inr: string | null;
+  period_start: string | null; period_end: string | null;
+  status: 'paid' | 'refunded' | string;
+  issued_at: string;
+  billing_gstin: string | null;
+  buyer_snapshot: { gstin?: string | null; name?: string | null } | null;
+  payment_method: string | null; payment_reference: string | null;
+};
+
+export type InvoiceTotals = {
+  count: number; gross_inr: number; taxable_inr: number;
+  tax_inr: number; refunded_inr: number;
+  /** How many rows in this set have no tax snapshot, so tax_inr under-reports. */
+  untaxed_count: number;
+};
+
+export type InvoiceQuery = {
+  org_id?: string; status?: string; plan_code?: string;
+  from?: string; to?: string; q?: string; limit?: number; offset?: number;
+};
+
+export type OrgBillingProfile = {
+  id: string; name: string;
+  billing_name: string | null; billing_email: string | null; billing_gstin: string | null;
+  billing_address_line1: string | null; billing_address_line2: string | null;
+  billing_city: string | null; billing_state: string | null;
+  billing_state_code: string | null; billing_postal_code: string | null;
 };
 
 export type ImpersonationSession = {

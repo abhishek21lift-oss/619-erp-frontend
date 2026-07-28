@@ -19,7 +19,7 @@ import {
   CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket, Percent, Ban, CheckCircle2,
   Search, ArrowRight, TrendingUp, ChevronRight,
   MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
-  ScrollText, HeartPulse, LogOut, ShieldOff, CalendarPlus, StickyNote, Save,
+  ScrollText, HeartPulse, LogOut, ShieldOff, CalendarPlus, StickyNote, Save, FileText,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Guard from '@/components/Guard';
@@ -33,6 +33,9 @@ const AuditCentre = dynamic(() => import('@/components/platform/audit-centre'), 
 });
 const SystemHealthPanel = dynamic(() => import('@/components/platform/system-health'), {
   loading: () => <PanelSkeleton label="Checking system health…" />,
+});
+const InvoicesPanel = dynamic(() => import('@/components/platform/invoices'), {
+  loading: () => <PanelSkeleton label="Loading invoices…" />,
 });
 
 function PanelSkeleton({ label }: { label: string }) {
@@ -49,6 +52,7 @@ import type {
   Organization, OrganizationDetail, OrgUser,
   PlatformOverview, StudioOverview, ActivityEntry,
   SubStudio, SubKpis, SubDetail, SubPlan, SubEvent, SubscriptionMetrics, Coupon, PlanChangeQuote,
+  OrgBillingProfile,
 } from '@/lib/api';
 import {
   AmbientField, ConsoleHeader, SegmentedTabs, Panel, StatTile, Reveal, SectionLabel,
@@ -108,7 +112,7 @@ type Tab = 'overview' | 'studios' | 'finance' | 'activity' | 'audit' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not
 // here, so omitting one silently breaks its ?tab= deep link from the sidebar.
 const TAB_IDS: Tab[] = ['overview', 'studios', 'finance', 'activity', 'audit', 'health'];
-type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'coupons';
+type FinanceSubTab = 'dashboard' | 'billing' | 'payments' | 'invoices' | 'coupons';
 type NavOpts = { financeSubTab?: FinanceSubTab };
 // Billing and Coupons used to be separate top-level tabs; both now live inside
 // Finance as an in-page sub-tab. Old bookmarks/sidebar links still point at
@@ -121,6 +125,7 @@ const FINANCE_DEEP_LINKS: Record<string, FinanceSubTab> = {
   billing: 'billing',
   coupons: 'coupons',
   payments: 'payments',
+  invoices: 'invoices',
 };
 function normalizeTab(raw: string | null): Tab {
   if (raw && raw in FINANCE_DEEP_LINKS) return 'finance';
@@ -243,6 +248,7 @@ const NAV_TARGETS: { tab: Tab; label: string; icon: React.ReactNode; opts?: NavO
   { tab: 'studios', label: 'Go to Studios', icon: <Building2 size={14} /> },
   { tab: 'finance', label: 'Go to Finance · Dashboard', icon: <CreditCard size={14} />, opts: { financeSubTab: 'dashboard' } },
   { tab: 'finance', label: 'Go to Finance · Billing', icon: <CreditCard size={14} />, opts: { financeSubTab: 'billing' } },
+  { tab: 'finance', label: 'Go to Finance · Invoices', icon: <Receipt size={14} />, opts: { financeSubTab: 'invoices' } },
   { tab: 'finance', label: 'Go to Finance · Coupons', icon: <Ticket size={14} />, opts: { financeSubTab: 'coupons' } },
   { tab: 'activity', label: 'Go to Activity', icon: <Activity size={14} /> },
   { tab: 'audit', label: 'Go to Audit Centre', icon: <ScrollText size={14} /> },
@@ -412,6 +418,7 @@ function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTa
             { id: 'dashboard' as const, label: 'Dashboard', icon: <TrendingUp size={13} /> },
             { id: 'billing' as const, label: 'Billing', icon: <CreditCard size={13} /> },
             { id: 'payments' as const, label: 'Payments', icon: <Wallet size={13} /> },
+            { id: 'invoices' as const, label: 'Invoices', icon: <Receipt size={13} /> },
             { id: 'coupons' as const, label: 'Coupons', icon: <Ticket size={13} /> },
           ]}
           value={subTab}
@@ -422,6 +429,7 @@ function FinanceTab({ subTab, onSubTabChange }: { subTab: FinanceSubTab; onSubTa
         {subTab === 'dashboard' && <FinanceDashboardTab onNavigate={onSubTabChange} />}
         {subTab === 'billing' && <BillingTab />}
         {subTab === 'payments' && <SubscriptionRequestsTab />}
+        {subTab === 'invoices' && <InvoicesPanel />}
         {subTab === 'coupons' && <CouponsTab />}
       </div>
     </div>
@@ -854,9 +862,18 @@ function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStudio; onC
             <p className="mb-1.5 text-[11px] font-[700] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Invoices</p>
             {detail.invoices.length === 0 && <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>None yet.</p>}
             {detail.invoices.map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between py-1.5 text-[12px]" style={{ borderTop: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{inv.invoice_number} · {fmtDate(inv.issued_at)}</span>
-                <span className="tabular-nums font-[650]" style={{ color: inv.status === 'refunded' ? '#94a3b8' : 'var(--text-primary)', textDecoration: inv.status === 'refunded' ? 'line-through' : 'none' }}>{fmtINR(inv.amount_inr)}</span>
+              <div key={inv.id} className="flex items-center justify-between gap-2 py-1.5 text-[12px]" style={{ borderTop: '1px solid var(--border)' }}>
+                <span className="min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>{inv.invoice_number} · {fmtDate(inv.issued_at)}</span>
+                <span className="flex flex-shrink-0 items-center gap-2">
+                  <span className="tabular-nums font-[650]" style={{ color: inv.status === 'refunded' ? '#94a3b8' : 'var(--text-primary)', textDecoration: inv.status === 'refunded' ? 'line-through' : 'none' }}>{fmtINR(inv.amount_inr)}</span>
+                  {/* Reaching the document from the studio the operator is
+                      already looking at, rather than making them go to Finance
+                      and search for the number. */}
+                  <a href={api.superAdmin.invoicePdfUrl(inv.id)} target="_blank" rel="noopener noreferrer"
+                    aria-label={`Open invoice ${inv.invoice_number} as PDF`} style={{ color: 'var(--text-muted)' }}>
+                    <FileText size={13} />
+                  </a>
+                </span>
               </div>
             ))}
           </div>
@@ -1880,6 +1897,108 @@ function StudioOperatorPanel({ org, onChanged }: { org: Organization; onChanged:
           )}
         </div>
       </div>
+
+      <div className="lg:col-span-2">
+        <BillingProfileEditor orgId={org.id} />
+      </div>
+    </div>
+  );
+}
+
+/* The studio's registered identity as it will appear on future invoices. Kept
+   next to the other operator tools rather than in Finance, because the moment
+   you need it is when a studio emails asking for their GSTIN on the bill —
+   which happens while you are looking at the studio, not at the ledger.
+   Loaded lazily on expand: most visits to a studio row never touch billing. */
+function BillingProfileEditor({ orgId }: { orgId: string }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<Partial<OrgBillingProfile> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (!open || form) return;
+    api.superAdmin.orgBillingProfile(orgId)
+      .then((r) => setForm(r.data))
+      .catch((e) => toast.error(e instanceof Error ? e.message : 'Could not load the billing profile'));
+  }, [open, form, orgId, toast]);
+
+  const save = async () => {
+    if (!form) return;
+    setSaving(true);
+    try {
+      const r = await api.superAdmin.saveOrgBillingProfile(orgId, {
+        billing_name: form.billing_name ?? null, billing_email: form.billing_email ?? null,
+        billing_gstin: form.billing_gstin ?? null,
+        billing_address_line1: form.billing_address_line1 ?? null,
+        billing_address_line2: form.billing_address_line2 ?? null,
+        billing_city: form.billing_city ?? null, billing_state: form.billing_state ?? null,
+        billing_state_code: form.billing_state_code ?? null,
+        billing_postal_code: form.billing_postal_code ?? null,
+      });
+      setForm(r.data); setDirty(false);
+      toast.success('Billing profile saved — applies to invoices issued from now on.');
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save the billing profile'); }
+    finally { setSaving(false); }
+  };
+
+  const field = { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const;
+  const set = (k: keyof OrgBillingProfile, v: string) => { setForm((f) => (f ? { ...f, [k]: v } : f)); setDirty(true); };
+
+  const FIELDS: { key: keyof OrgBillingProfile; label: string; placeholder?: string; wide?: boolean }[] = [
+    { key: 'billing_name', label: 'Registered name', placeholder: 'Iron House Fitness LLP', wide: true },
+    { key: 'billing_gstin', label: 'GSTIN', placeholder: '27AAAAA0000A1Z5' },
+    { key: 'billing_email', label: 'Billing email' },
+    { key: 'billing_address_line1', label: 'Address line 1', wide: true },
+    { key: 'billing_address_line2', label: 'Address line 2', wide: true },
+    { key: 'billing_city', label: 'City' },
+    { key: 'billing_state', label: 'State' },
+    { key: 'billing_state_code', label: 'GST state code', placeholder: '27' },
+    { key: 'billing_postal_code', label: 'PIN' },
+  ];
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)} aria-expanded={open}
+        className="mb-1.5 flex items-center gap-1.5 text-[10px] font-[750] uppercase tracking-[0.08em]"
+        style={{ color: 'var(--text-disabled)' }}
+      >
+        <Receipt size={11} /> Billing profile
+        <ChevronDown size={11} style={{ transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+
+      {open && (
+        <>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {FIELDS.map((f) => (
+              <label key={String(f.key)} className={`flex flex-col gap-1 ${f.wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
+                <span className="text-[10px] font-[700]" style={{ color: 'var(--text-disabled)' }}>{f.label}</span>
+                <input
+                  value={(form?.[f.key] as string) ?? ''}
+                  onChange={(e) => set(f.key, e.target.value)}
+                  placeholder={form ? f.placeholder : 'Loading…'}
+                  disabled={!form}
+                  className="h-9 rounded-[9px] px-2.5 text-[12.5px] outline-none disabled:opacity-50" style={field}
+                />
+              </label>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              onClick={save} disabled={saving || !dirty}
+              className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] disabled:opacity-40"
+              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+            >
+              {saving ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Save
+            </button>
+            <span className="text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
+              Invoices already issued keep the details recorded on them.
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
