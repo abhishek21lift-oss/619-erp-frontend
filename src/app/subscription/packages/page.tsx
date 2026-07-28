@@ -288,9 +288,9 @@ export default function PackagesPage() {
 }
 
 function PageContent() {
+  // No page-level background or x-padding: .shell-main already paints the
+  // canvas and supplies the gutter.
   return (
-    {/* No page-level background or x-padding: .shell-main already paints the
-        canvas and supplies the gutter. */}
     <div>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '8px 0 24px', position: 'relative' }}>
         {/* Header */}
