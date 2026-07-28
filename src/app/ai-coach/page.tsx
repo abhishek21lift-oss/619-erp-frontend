@@ -484,6 +484,33 @@ export default function AiCoachPage() {
               </button>
             </header>
 
+            {/* Attached-client context bar.
+                Sits between the header and the scroll area rather than inside
+                it, so it stays put during a long conversation — the whole
+                point is that it qualifies every answer on screen, and it would
+                be useless if it scrolled away after the first reply. Doubles
+                as the detach control, which was otherwise buried behind
+                "Clear selection" inside the picker dropdown. */}
+            {selectedClient && (
+              <div
+                className="flex shrink-0 items-center gap-2 px-3 py-1.5 sm:px-5"
+                style={{ background: 'rgba(139,92,246,0.10)', borderBottom: '1px solid rgba(139,92,246,0.22)' }}
+              >
+                <User size={13} style={{ color: VIOLET, flexShrink: 0 }} />
+                <p className="min-w-0 flex-1 truncate text-[11.5px] font-[600]" style={{ color: VIOLET }}>
+                  Answering about {selectedClient.name}
+                </p>
+                <button
+                  onClick={() => setSelectedClient(null)}
+                  aria-label={`Stop answering about ${selectedClient.name}`}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] transition-colors"
+                  style={{ color: VIOLET }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
             {/* Messages / empty state */}
             <div className="min-h-0 flex-1 overflow-y-auto" style={{ background: 'var(--bg-canvas)' }}>
               {/* px here is required: .ai-chat-shell cancels .shell-main's page
@@ -496,7 +523,6 @@ export default function AiCoachPage() {
                     generators={visibleGenerators}
                     onGenerator={(href) => router.push(href)}
                     onKnowledgeBase={isAdminOrManager ? () => router.push('/ai-coach/knowledge') : undefined}
-                    client={selectedClient}
                   />
                 ) : (
                   <div className="flex flex-col gap-4">
@@ -926,12 +952,11 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
 // Now: a compact one-line hero, the groups behind a segmented control so only
 // one set of prompts is on screen at a time, full-width prompt rows at 48px,
 // and the generators kept above the fold.
-function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase, client }: {
+function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase }: {
   onPrompt: (p: string) => void;
   generators: typeof GENERATORS;
   onGenerator: (href: string) => void;
   onKnowledgeBase?: () => void;
-  client?: Client | null;
 }) {
   const [groupIdx, setGroupIdx] = useState(0);
   const group = PROMPT_GROUPS[groupIdx];
@@ -956,20 +981,6 @@ function EmptyState({ onPrompt, generators, onGenerator, onKnowledgeBase, client
           </p>
         </div>
       </div>
-
-      {/* Attached-client context. Mirrors the header pill so the state is
-          visible from the body too, where the eye actually is. */}
-      {client && (
-        <div
-          className="mb-4 flex items-center gap-2 rounded-[11px] px-3 py-2"
-          style={{ background: 'rgba(139,92,246,0.10)', border: '1px solid rgba(139,92,246,0.25)' }}
-        >
-          <User size={13} style={{ color: VIOLET, flexShrink: 0 }} />
-          <p className="min-w-0 truncate text-[11.5px] font-[600]" style={{ color: VIOLET }}>
-            Answering about {client.name}
-          </p>
-        </div>
-      )}
 
       {/* Group selector. Active state uses fill + weight, not colour alone. */}
       <div
