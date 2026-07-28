@@ -847,7 +847,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <InfoRow label="Date of Birth" value={fmtDate(client.dob)} />
                       <InfoRow label="Phone" value={client.mobile || '—'} />
                       <InfoRow label="Email" value={client.email || '—'} />
-                      <InfoRow label="Weight" value={client.weight ? `${client.weight} kg` : '—'} />
                       <InfoRow label="Joined" value={fmtDate(client.joining_date)} />
                     </DarkCard>
                   </div>
@@ -857,7 +856,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* PT Assignment */}
                     <DarkCard title="PT Assignment" icon={<Dumbbell size={14} />} from="#7c3aed">
-                      <InfoRow label="Plan" value={client.package_type || '—'} />
                       <InfoRow label="Start" value={fmtDate(client.pt_start_date)} />
                       <InfoRow label="End" value={fmtDate(client.pt_end_date)} />
                       <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
