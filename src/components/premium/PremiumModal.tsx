@@ -74,7 +74,7 @@ export function PremiumModal({ open, onClose, title, subtitle, icon, size = 'md'
                 <X size={16} />
               </button>
             </div>
-            <div className="px-6 py-4 max-h-[60vh] overflow-y-auto">{children}</div>
+            <div className="px-6 py-4 max-h-[60vh] overflow-y-auto overscroll-contain">{children}</div>
             {footer && (
               <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
                 {footer}

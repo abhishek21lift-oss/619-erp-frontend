@@ -46,7 +46,7 @@ export function FloatingPanel({ open, onClose, title, subtitle, icon, size = 'md
             exit={{ x: '100%' }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className={clsx(
-              'relative w-full bg-white shadow-2xl border-l border-slate-100 overflow-y-auto',
+              'relative w-full bg-white shadow-2xl border-l border-slate-100 overflow-y-auto overscroll-contain',
               widths[size],
             )}
           >

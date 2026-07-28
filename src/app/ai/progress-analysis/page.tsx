@@ -144,7 +144,7 @@ export default function ProgressAnalysisPage() {
                   position: 'absolute', zIndex: 20, width: '100%', marginTop: 4,
                   background: 'var(--bg-card)', border: '1px solid var(--border)',
                   borderRadius: 14, boxShadow: 'var(--shadow-card)',
-                  maxHeight: 220, overflowY: 'auto',
+                  maxHeight: 220, overflowY: 'auto', overscrollBehavior: 'contain',
                 }}>
                   {filteredClients.map((c, i) => (
                     <button

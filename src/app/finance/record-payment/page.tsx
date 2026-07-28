@@ -253,7 +253,7 @@ export default function RecordPaymentPage() {
                             placeholder="Search name or phone"
                             className="flex-1 border-none bg-transparent text-[14px] text-[var(--text-primary)] outline-none" />
                         </div>
-                        <div className="max-h-[240px] overflow-y-auto">
+                        <div className="max-h-[240px] overflow-y-auto overscroll-contain">
                           {loadingClients ? (
                             <div className="px-4 py-5 text-center text-[13px] text-[var(--text-muted)]">Loading…</div>
                           ) : filtered.length === 0 ? (

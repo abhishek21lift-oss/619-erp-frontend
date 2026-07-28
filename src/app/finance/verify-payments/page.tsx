@@ -739,7 +739,7 @@ function NewRequestDialog({
         <div className="absolute inset-0" style={{ background: 'var(--bg-overlay)' }}
           onClick={() => !busy && onClose()} />
         <m.div
-          className="relative max-h-[92vh] w-full max-w-[440px] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
+          className="relative max-h-[92vh] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl"
           initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 16, opacity: 0 }}
           transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
           style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}

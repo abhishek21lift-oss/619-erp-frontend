@@ -880,7 +880,7 @@ function ClientAttach({ selected, open, query, options, onToggle, onQuery, onSel
                 Clear selection
               </button>
             )}
-            <div className="max-h-[220px] overflow-y-auto">
+            <div className="max-h-[220px] overflow-y-auto overscroll-contain">
               {options.length === 0 ? (
                 <p className="px-2.5 py-3 text-center text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>No clients found.</p>
               ) : options.map((c) => (

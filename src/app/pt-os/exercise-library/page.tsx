@@ -166,7 +166,7 @@ function ExerciseModal({ exercise, onClose, onSave }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto overscroll-contain rounded-2xl"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
         {/* Header */}

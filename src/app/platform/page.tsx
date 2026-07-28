@@ -308,7 +308,7 @@ function CommandBar({ open, onClose, onNavigate }: { open: boolean; onClose: () 
           <kbd className="rounded-[5px] px-1.5 py-0.5 text-[10px] font-[700]" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>Esc</kbd>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-2">
+        <div className="max-h-[60vh] overflow-y-auto overscroll-contain p-2">
           {navResults.length > 0 && (
             <div className="mb-1">
               <p className="px-3 py-1.5 text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Jump to</p>
@@ -781,7 +781,7 @@ function SubDetailModal({ studio, onClose, onChanged }: { studio: SubStudio; onC
       {loading || !o ? (
         <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: '#6366f1' }} /></div>
       ) : (
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto overscroll-contain">
           <div className="rounded-[12px] p-3 text-[12px]" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
             <div className="flex justify-between"><span>Status</span><b>{(SUB_STATE[o.effective_state]?.label) || o.effective_state}</b></div>
             <div className="flex justify-between"><span>Plan</span><b>{o.plan_name || '—'}</b></div>

@@ -703,7 +703,7 @@ function AssessmentWizard({ clientId, router, toast }: AssessmentWizardProps) {
       )}
 
       <Dialog open={!!historyAiId} onOpenChange={(open) => { if (!open) setHistoryAiId(null); }}>
-        <DialogContent className="!max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="!max-w-2xl max-h-[85vh] overflow-y-auto overscroll-contain">
           <DialogHeader>
             <DialogTitle>AI Recommendations</DialogTitle>
           </DialogHeader>

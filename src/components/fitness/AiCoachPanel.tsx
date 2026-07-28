@@ -781,7 +781,7 @@ function ClientPicker({
           style={{
             position: 'absolute', zIndex: 10, width: '100%', marginTop: 4,
             background: 'rgba(20,16,34,0.99)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 10, maxHeight: 190, overflowY: 'auto',
+            borderRadius: 10, maxHeight: 190, overflowY: 'auto', overscrollBehavior: 'contain',
             boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
           }}
         >
