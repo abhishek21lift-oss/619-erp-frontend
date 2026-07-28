@@ -230,8 +230,13 @@ export default function MySchedulePage() {
     <Guard>
       <AppShell>
         <PullToRefresh onRefresh={schedule.refetch}>
-          <div className="min-h-screen" style={{ background: 'var(--bg-subtle)' }}>
-            <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+          {/* No background or horizontal padding of our own: .shell-main
+              (globals.css) already paints the canvas and supplies the page
+              gutter + max-width. Re-declaring them here painted a greyer
+              --bg-subtle panel on top of --bg-canvas and doubled the side
+              padding, so the page sat narrower and a different colour than
+              every other screen. */}
+          <div className="relative z-10 mx-auto mt-1 w-full max-w-[1600px] pb-6">
 
               {/* Header */}
               <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
@@ -410,7 +415,6 @@ export default function MySchedulePage() {
                   )}
                 </>
               )}
-            </div>
           </div>
         </PullToRefresh>
       </AppShell>
