@@ -80,6 +80,7 @@ import {
   AmbientField, ConsoleHeader, SegmentedTabs, Panel, StatTile, Reveal, SectionLabel,
 } from '@/components/platform/console';
 import SubscriptionRequestsTab from '@/components/platform/subscription-requests';
+import { BarChart, HBarChart, StackedBar, Ring } from '@/components/platform/charts';
 import { setImpersonation, getImpersonation } from '@/lib/http';
 import { clearCachedAuthUser } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -1071,6 +1072,29 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab, opts?: NavOpts) =>
   if (revDeltaPct != null) signals.push({ text: `Revenue collected ${revDeltaPct >= 0 ? 'up' : 'down'} ${Math.abs(revDeltaPct)}% vs last month`, tone: revDeltaPct >= 0 ? 'positive' : 'critical' });
   if (Number(t.outstanding) > 0) signals.push({ text: `${fmtINR(t.outstanding)} outstanding across all studios`, tone: 'neutral', onClick: () => onNavigate('finance', { financeSubTab: 'dashboard' }) });
 
+  // ── Chart inputs ─────────────────────────────────────────────────────────
+  // All of this was already being fetched and thrown away: before this the
+  // whole of subscriptionMetrics fed exactly one number, revDeltaPct.
+  const revenuePoints = revTrend.map((r) => ({ label: r.label, value: Number(r.revenue_inr || 0) }));
+  const growthPoints = (metrics?.growth ?? []).map((g) => ({ label: g.label, value: Number(g.new_studios || 0) }));
+  const planRows = (metrics?.plan_distribution ?? [])
+    .filter((p) => p.studios > 0)
+    .map((p) => ({ label: p.name, value: p.studios, sub: fmtINR(p.mrr_inr) }));
+
+  // Eight lifecycle states collapse to four buckets. Eight segments on one bar
+  // are unreadable, and more to the point an operator does not act differently
+  // on 'expired' than on 'cancelled' — both are gone. The buckets are what the
+  // decisions actually divide on.
+  const st = metrics?.states;
+  const lifecycle = st ? [
+    { label: 'Active', value: st.active },
+    { label: 'On trial', value: st.on_trial },
+    { label: 'At risk', value: st.frozen + st.lapsed + st.trial_lapsed + st.suspended },
+    { label: 'Ended', value: st.expired + st.cancelled },
+  ] : [];
+
+  const conv = metrics?.trial_conversion;
+
   return (
     <div className="space-y-6">
       <div>
@@ -1083,12 +1107,94 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: Tab, opts?: NavOpts) =>
         </div>
       </div>
 
+      {/* ── Charts ──────────────────────────────────────────────────────────
+          One measure per chart and one axis each. Revenue and studio count
+          share a time axis but never a y-scale: ₹10,000 and 4 studios on one
+          axis would flatten the studio line onto the baseline, and putting
+          them on two axes would make the point where they cross an artefact
+          of the scales rather than anything real. */}
+      {metrics && (
+        <div>
+          <SectionLabel hint="last 12 months">Trend</SectionLabel>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <Reveal delay={0.16}>
+              <BarChart
+                title="Revenue collected"
+                points={revenuePoints}
+                format={fmtINR}
+                hint={revDeltaPct != null
+                  ? <span style={{ color: revDeltaPct >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                      {revDeltaPct >= 0 ? '▲' : '▼'} {Math.abs(revDeltaPct)}% vs last month
+                    </span>
+                  : 'no prior month to compare'}
+              />
+            </Reveal>
+            <Reveal delay={0.2}>
+              <BarChart
+                title="New studios"
+                points={growthPoints}
+                hint={`${growthPoints.reduce((a, p) => a + p.value, 0)} in the window`}
+              />
+            </Reveal>
+          </div>
+        </div>
+      )}
+
+      {metrics && (
+        <div>
+          <SectionLabel>Subscription mix</SectionLabel>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <Reveal delay={0.24}>
+              <StackedBar
+                title="Studio lifecycle"
+                segments={lifecycle}
+                total={st?.total}
+                hint={`${st?.total ?? 0} studios`}
+              />
+            </Reveal>
+            <Reveal delay={0.28}>
+              <HBarChart
+                title="Plan distribution"
+                rows={planRows}
+                format={(n) => `${n} studio${n === 1 ? '' : 's'}`}
+                hint="studios · MRR"
+                empty="No studio is on a paid plan yet."
+              />
+            </Reveal>
+            <Reveal delay={0.32}>
+              <Ring
+                title="Trial conversion"
+                value={conv?.converted ?? 0}
+                max={conv?.started ?? 0}
+                label={conv?.rate_pct == null ? 'No trials yet' : `${conv.converted} of ${conv.started} converted`}
+                sub={conv?.rate_pct == null
+                  ? 'The rate appears once a studio has started a trial.'
+                  : 'Studios that started a trial and went on to pay.'}
+                hint={conv?.rate_pct == null ? '—' : `${conv.rate_pct}%`}
+                tone="var(--success)"
+              />
+            </Reveal>
+            <Reveal delay={0.36}>
+              <Ring
+                title="Founder Club"
+                value={metrics.founders.granted}
+                max={metrics.founders.limit}
+                label={`${metrics.founders.granted} of ${metrics.founders.limit} claimed`}
+                sub={`${metrics.founders.slots_remaining} slots left · ${fmtINR(metrics.founders.locked_value_inr)} locked in`}
+                hint={`${metrics.founders.slots_remaining} left`}
+                tone="var(--accent)"
+              />
+            </Reveal>
+          </div>
+        </div>
+      )}
+
       <div>
         <SectionLabel>Health</SectionLabel>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {health.map((k, i) => (
             <StatTile key={k.label} label={k.label} value={k.value} sub={k.sub}
-              icon={k.icon} tone={k.tone} delay={0.16 + i * 0.04} />
+              icon={k.icon} tone={k.tone} delay={0.4 + i * 0.04} />
           ))}
         </div>
       </div>

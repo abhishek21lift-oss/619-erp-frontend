@@ -156,6 +156,23 @@ export function Reveal({
  * Driven by transform (not left/width) so it composites on the GPU and cannot
  * cause layout shift.
  */
+/**
+ * The section switcher.
+ *
+ * Rewritten when the Control Centre reached twelve tabs. The previous version
+ * gave every tab `flex-1` and positioned the sliding indicator arithmetically
+ * as `100 / tabs.length` percent. That works while the tabs fit. At twelve
+ * tabs on a 390pt phone it does not: the labels refuse to shrink below their
+ * text, the row overflows a container with no scrolling, and everything past
+ * Announcements is clipped off the right edge with no way to reach it. Five of
+ * twelve sections were simply unreachable on a phone.
+ *
+ * So the row scrolls, tabs keep their natural width, and the indicator is
+ * MEASURED from the active button rather than computed from a tab count. The
+ * measurement is what makes it correct at any number of tabs and under any
+ * font — the arithmetic version was only ever correct when every tab happened
+ * to be the same width.
+ */
 export function SegmentedTabs<T extends string>({
   tabs, value, onChange,
 }: {
@@ -164,56 +181,106 @@ export function SegmentedTabs<T extends string>({
   onChange: (id: T) => void;
 }) {
   const reduce = useReducedMotion();
-  const index = Math.max(0, tabs.findIndex((t) => t.id === value));
-  const pct = 100 / tabs.length;
+  const scrollerRef = React.useRef<HTMLDivElement | null>(null);
+  const btnRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
+  const [box, setBox] = React.useState<{ left: number; width: number } | null>(null);
+
+  // Measure the active tab and park the indicator on it. Runs on selection,
+  // on resize, and after fonts settle — a label that reflows after a webfont
+  // loads would otherwise leave the indicator behind.
+  React.useLayoutEffect(() => {
+    const measure = () => {
+      const el = btnRefs.current[value];
+      if (!el) return;
+      setBox({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (scrollerRef.current) ro.observe(scrollerRef.current);
+    const el = btnRefs.current[value];
+    if (el) ro.observe(el);
+    return () => ro.disconnect();
+  }, [value, tabs.length]);
+
+  // Keep the selected tab on screen. Selection can change from the sidebar or
+  // a ?tab= deep link, not just from tapping this row, in which case the
+  // active tab may be scrolled out of sight entirely.
+  React.useEffect(() => {
+    btnRefs.current[value]?.scrollIntoView({
+      behavior: reduce ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest',
+    });
+  }, [value, reduce]);
 
   return (
-    <div
-      role="tablist"
-      aria-label="Command centre sections"
-      className="relative flex rounded-[14px] p-1"
-      style={{
-        background: 'var(--bg-subtle)',
-        border: '1px solid var(--border)',
-        boxShadow: 'inset 0 1px 2px rgba(15,23,42,0.05)',
-      }}
-    >
-      {/* Sliding selection. aria-hidden: it is decoration, the buttons carry state. */}
+    <div className="relative">
+      <div
+        ref={scrollerRef}
+        role="tablist"
+        aria-label="Command centre sections"
+        className="relative flex overflow-x-auto rounded-[14px] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{
+          background: 'var(--bg-subtle)',
+          border: '1px solid var(--border)',
+          boxShadow: 'inset 0 1px 2px rgba(15,23,42,0.05)',
+        }}
+      >
+        {/* Sliding selection. aria-hidden: it is decoration, the buttons carry state. */}
+        {box && (
+          <div
+            aria-hidden
+            className="absolute inset-y-1 rounded-[10px]"
+            style={{
+              left: 0,
+              width: box.width,
+              transform: `translateX(${box.left}px)`,
+              transition: reduce ? 'none' : `transform 420ms cubic-bezier(${EASE_EXPO.join(',')}), width 420ms cubic-bezier(${EASE_EXPO.join(',')})`,
+              background: 'var(--bg-elevated)',
+              boxShadow: 'var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.10)',
+              border: '1px solid var(--border)',
+            }}
+          />
+        )}
+        {tabs.map((t) => {
+          const active = t.id === value;
+          return (
+            <button
+              key={t.id}
+              ref={(el) => { btnRefs.current[t.id] = el; }}
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(t.id)}
+              /* shrink-0, not flex-1: at twelve tabs flex-1 would squeeze each
+                 to ~30px and the labels would collide. They keep their natural
+                 width and the row scrolls instead.
+
+                 The label is ALWAYS rendered. An icon-only tab bar is a
+                 discoverability regression — twelve unlabelled glyphs are not
+                 identifiable, and this row is the only way into most of the
+                 Control Centre. */
+              className="relative z-10 flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-[10px] px-2.5 py-1.5 transition-colors duration-200 sm:flex-row sm:gap-1.5 sm:px-3 sm:py-2"
+              style={{ color: active ? 'var(--text-primary)' : 'var(--text-muted)', minHeight: 44 }}
+            >
+              {t.icon}
+              <span className="whitespace-nowrap text-[9.5px] font-[700] leading-tight sm:text-[12.5px] sm:font-[680]">
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Edge fades. Without them a scrolling row looks like a row that simply
+          ends, which is exactly the impression that hid five sections. */}
       <div
         aria-hidden
-        className="absolute inset-y-1 rounded-[10px]"
-        style={{
-          width: `calc(${pct}% - 0.5rem)`,
-          left: '0.25rem',
-          transform: `translateX(calc(${index} * (100% + 0.5rem)))`,
-          transition: reduce ? 'none' : `transform 420ms cubic-bezier(${EASE_EXPO.join(',')})`,
-          background: 'var(--bg-elevated)',
-          boxShadow: 'var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.10)',
-          border: '1px solid var(--border)',
-        }}
+        className="pointer-events-none absolute inset-y-1 left-1 w-6 rounded-l-[13px]"
+        style={{ background: 'linear-gradient(90deg, var(--bg-subtle) 0%, transparent 100%)' }}
       />
-      {tabs.map((t) => {
-        const active = t.id === value;
-        return (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(t.id)}
-            /* Icon stacks above the label on phones and sits beside it from sm
-               up. The label is ALWAYS rendered: an icon-only tab bar is a
-               discoverability regression, and five unlabelled glyphs are not
-               identifiable. */
-            className="relative z-10 flex flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] px-1 py-1.5 transition-colors duration-200 sm:flex-row sm:gap-1.5 sm:py-2"
-            style={{ color: active ? 'var(--text-primary)' : 'var(--text-muted)', minHeight: 44 }}
-          >
-            {t.icon}
-            <span className="text-[9.5px] font-[700] leading-tight sm:text-[12.5px] sm:font-[680]">
-              {t.label}
-            </span>
-          </button>
-        );
-      })}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-1 right-1 w-6 rounded-r-[13px]"
+        style={{ background: 'linear-gradient(270deg, var(--bg-subtle) 0%, transparent 100%)' }}
+      />
     </div>
   );
 }
@@ -322,7 +389,7 @@ export function ConsoleHeader({
   return (
     <Reveal>
       <div
-        className="relative mb-6 overflow-hidden rounded-[20px] px-4 py-5 sm:rounded-[22px] sm:px-6 sm:py-6"
+        className="relative mb-4 overflow-hidden rounded-[20px] px-4 py-3.5 sm:mb-6 sm:rounded-[22px] sm:px-6 sm:py-6"
         style={{
           background:
             'linear-gradient(135deg, color-mix(in srgb, var(--brand) 16%, var(--bg-elevated)) 0%, '
@@ -344,11 +411,14 @@ export function ConsoleHeader({
           style={{ background: 'radial-gradient(circle, var(--brand) 0%, transparent 70%)', opacity: 0.20, filter: 'blur(36px)' }}
         />
 
-        <div className="relative flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3.5">
+        {/* flex-nowrap on phones: wrapping is what pushed the search button
+            onto its own line and doubled the hero's height. The title block
+            can shrink (min-w-0 + truncate); the actions slot keeps its size. */}
+        <div className="relative flex flex-nowrap items-center justify-between gap-3 sm:flex-wrap">
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
             {icon && (
               <div
-                className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[16px] sm:h-[52px] sm:w-[52px]"
+                className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[13px] sm:h-[52px] sm:w-[52px] sm:rounded-[16px]"
                 style={{
                   background: 'linear-gradient(145deg, #A78BFA 0%, var(--brand) 45%, #6D28D9 100%)',
                   boxShadow: '0 8px 22px color-mix(in srgb, var(--brand) 45%, transparent), inset 0 1px 0 rgba(255,255,255,0.32)',
@@ -367,7 +437,7 @@ export function ConsoleHeader({
             )}
             <div className="min-w-0">
               <h1
-                className="truncate text-[20px] sm:text-[23px]"
+                className="truncate text-[17px] sm:text-[23px]"
                 style={{
                   fontWeight: 850,
                   letterSpacing: '-0.024em',
@@ -379,10 +449,13 @@ export function ConsoleHeader({
               >
                 {title}
               </h1>
-              {/* Wraps to two lines on a phone instead of truncating mid-sentence
-                  to "…account across …", which told the reader nothing. */}
+              {/* Hidden on phones. It wrapped to two lines and, with the
+                  actions slot wrapping below it, the hero was eating a sixth
+                  of the viewport to explain a page the operator opens daily
+                  and already knows. It stays from sm up, where it costs
+                  nothing. */}
               {subtitle && (
-                <p className="mt-0.5 text-[11.5px] leading-snug sm:text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                <p className="mt-0.5 hidden text-[11.5px] leading-snug sm:block sm:text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
                   {subtitle}
                 </p>
               )}
