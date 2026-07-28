@@ -19,7 +19,7 @@ import {
   CreditCard, Snowflake, Crown, Gift, RotateCcw, Receipt, Ticket, Percent, Ban, CheckCircle2,
   Search, ArrowRight, TrendingUp, ChevronRight,
   MoreVertical, Download, ArrowUpDown, CheckSquare, Square, Sparkles, Wallet,
-  ScrollText, HeartPulse,
+  ScrollText, HeartPulse, LogOut, ShieldOff, CalendarPlus, StickyNote, Save,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Guard from '@/components/Guard';
@@ -1565,6 +1565,8 @@ function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPasswor
       .finally(() => setLoadingDetail(false));
   }, [org.id]);
 
+  const [userBusy, setUserBusy] = useState<string | null>(null);
+
   const toggleExpand = () => {
     const next = !expanded;
     setExpanded(next);
@@ -1577,6 +1579,28 @@ function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPasswor
       toast.success(u.is_active ? 'Account deactivated.' : 'Account activated.');
       loadDetail(); onChanged();
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Update failed'); }
+  };
+
+  const forceLogout = async (u: OrgUser) => {
+    // Confirmed because it disconnects a live human mid-task, but tone is
+    // neutral: this is recoverable by signing back in, unlike a reset.
+    if (!window.confirm(`Sign ${u.name} out of every device?\n\nTheir password is unchanged — they can log straight back in.`)) return;
+    setUserBusy(`logout:${u.id}`);
+    try {
+      await api.superAdmin.forceLogout(u.id);
+      toast.success('All sessions revoked.');
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not revoke sessions'); }
+    finally { setUserBusy(null); }
+  };
+
+  const resetMfa = async (u: OrgUser) => {
+    if (!window.confirm(`Reset two-factor for ${u.name}?\n\nThis removes a security factor from their account and signs them out everywhere. They will re-enrol on next login. The action is recorded against you.`)) return;
+    setUserBusy(`mfa:${u.id}`);
+    try {
+      const r = await api.superAdmin.resetMfa(u.id);
+      toast.success(r.data.was_enabled ? 'Two-factor reset; sessions revoked.' : 'No two-factor was enrolled.');
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not reset two-factor'); }
+    finally { setUserBusy(null); }
   };
 
   const deleteUser = async (u: OrgUser) => {
@@ -1722,6 +1746,12 @@ function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPasswor
               )}
               <IconBtn title="Edit" onClick={() => onEditUser(u)}><Pencil size={12} /> Edit</IconBtn>
               <IconBtn title="Reset password" onClick={() => onResetPassword(u)}><KeyRound size={12} /> Reset</IconBtn>
+              <IconBtn title="Sign out of every device (password unchanged)" onClick={() => forceLogout(u)} busy={userBusy === `logout:${u.id}`}>
+                <LogOut size={12} /> Sign out
+              </IconBtn>
+              <IconBtn title="Reset two-factor — removes a security factor" onClick={() => resetMfa(u)} busy={userBusy === `mfa:${u.id}`} tone="danger">
+                <ShieldOff size={12} /> 2FA
+              </IconBtn>
               <IconBtn title={u.is_active ? 'Deactivate' : 'Activate'} onClick={() => toggleUser(u)}
                 tone={u.is_active ? 'danger' : 'success'}><Power size={12} /> {u.is_active ? 'Off' : 'On'}</IconBtn>
               <IconBtn title="Remove account" onClick={() => deleteUser(u)} tone="danger"><Trash2 size={12} /></IconBtn>
@@ -1734,8 +1764,122 @@ function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onResetPasswor
               <UserPlus size={12} /> Add account
             </button>
           )}
+          {detail && <StudioOperatorPanel org={org} onChanged={onChanged} />}
         </div>
       )}
+    </div>
+  );
+}
+
+/* Operator-only controls for a studio: goodwill extensions and the internal
+   scratchpad. Both are platform-side — nothing here is visible to the studio's
+   own admins, and the notes deliberately never leave the super-admin API. */
+function StudioOperatorPanel({ org, onChanged }: { org: Organization; onChanged: () => void }) {
+  const { toast } = useToast();
+  const [days, setDays] = useState('');
+  const [reason, setReason] = useState('');
+  const [granting, setGranting] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [notesMeta, setNotesMeta] = useState<{ at: string | null; by: string | null }>({ at: null, by: null });
+  const [notesLoaded, setNotesLoaded] = useState(false);
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    api.superAdmin.orgNotes(org.id)
+      .then((r) => {
+        setNotes(r.data.internal_notes ?? '');
+        setNotesMeta({ at: r.data.internal_notes_updated_at, by: r.data.internal_notes_updated_by });
+      })
+      .catch(() => { /* notes are supplementary; a failure must not blank the panel */ })
+      .finally(() => setNotesLoaded(true));
+  }, [org.id]);
+
+  const grant = async () => {
+    const n = parseInt(days, 10);
+    if (!Number.isFinite(n) || n === 0) { toast.error('Enter a non-zero number of days.'); return; }
+    if (!window.confirm(`${n > 0 ? 'Add' : 'Remove'} ${Math.abs(n)} day${Math.abs(n) === 1 ? '' : 's'} ${n > 0 ? 'to' : 'from'} ${org.name}'s subscription?`)) return;
+    setGranting(true);
+    try {
+      const r = await api.superAdmin.bonusDays(org.id, n, reason || undefined);
+      toast.success(`${n > 0 ? 'Granted' : 'Removed'} ${Math.abs(n)} days — ${r.data.field.replace(/_/g, ' ')} updated.`);
+      setDays(''); setReason('');
+      onChanged();
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not apply bonus days'); }
+    finally { setGranting(false); }
+  };
+
+  const saveNotes = async () => {
+    setSavingNotes(true);
+    try {
+      const r = await api.superAdmin.saveOrgNotes(org.id, notes);
+      setNotesMeta({ at: r.data.internal_notes_updated_at, by: r.data.internal_notes_updated_by });
+      setDirty(false);
+      toast.success('Notes saved.');
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Could not save notes'); }
+    finally { setSavingNotes(false); }
+  };
+
+  const field = { background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const;
+
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-3 border-t pt-3 lg:grid-cols-2" style={{ borderColor: 'var(--border)' }}>
+      {/* Bonus days */}
+      <div>
+        <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
+          <CalendarPlus size={11} /> Bonus days
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="number" value={days} onChange={(e) => setDays(e.target.value)}
+            placeholder="14" aria-label="Bonus days"
+            className="h-9 w-20 rounded-[9px] px-2.5 text-[12.5px] outline-none" style={field}
+          />
+          <input
+            value={reason} onChange={(e) => setReason(e.target.value)}
+            placeholder="Reason (optional)" aria-label="Reason"
+            className="h-9 min-w-[120px] flex-1 rounded-[9px] px-2.5 text-[12.5px] outline-none" style={field}
+          />
+          <button
+            onClick={grant} disabled={granting}
+            className="flex h-9 items-center gap-1.5 rounded-[9px] px-3 text-[11.5px] font-[700] text-white disabled:opacity-50"
+            style={{ background: '#6366f1' }}
+          >
+            {granting ? <Loader2 size={12} className="animate-spin" /> : <Gift size={12} />} Grant
+          </button>
+        </div>
+        <p className="mt-1.5 text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
+          Extends the trial while trialling, otherwise the paid period. Negative values shorten it.
+        </p>
+      </div>
+
+      {/* Internal notes */}
+      <div>
+        <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'var(--text-disabled)' }}>
+          <StickyNote size={11} /> Internal notes
+        </p>
+        <textarea
+          value={notes}
+          onChange={(e) => { setNotes(e.target.value); setDirty(true); }}
+          placeholder={notesLoaded ? 'Operator-only context — never shown to the studio.' : 'Loading…'}
+          rows={3} aria-label="Internal notes"
+          className="w-full resize-y rounded-[9px] px-2.5 py-2 text-[12.5px] outline-none" style={field}
+        />
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <button
+            onClick={saveNotes} disabled={savingNotes || !dirty}
+            className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5 text-[11.5px] font-[700] disabled:opacity-40"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+          >
+            {savingNotes ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Save
+          </button>
+          {notesMeta.at && (
+            <span className="text-[10.5px]" style={{ color: 'var(--text-disabled)' }}>
+              {notesMeta.by ? `${notesMeta.by} · ` : ''}{fmtWhen(notesMeta.at)}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

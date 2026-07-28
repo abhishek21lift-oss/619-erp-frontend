@@ -2176,6 +2176,27 @@ export const api = {
         `/api/super-admin/activity${q ? `?${q}` : ''}`,
       );
     },
+    // ── Admin Management operator actions ──────────────────────────────
+    /** Revokes every live session for one account (bumps token_version).
+     *  Deliberately does not touch the password. */
+    forceLogout: (userId: string) =>
+      http<{ data: { id: string; message: string } }>(`/api/super-admin/users/${userId}/force-logout`, { method: 'POST' }),
+    /** Clears the enrolled authenticator and revokes sessions with it. */
+    resetMfa: (userId: string) =>
+      http<{ data: { id: string; was_enabled: boolean; message: string } }>(`/api/super-admin/users/${userId}/reset-mfa`, { method: 'POST' }),
+    /** Extends the studio's current period (or trial) by a delta. */
+    bonusDays: (orgId: string, days: number, reason?: string) =>
+      http<{ data: { id: string; field: string; previous: string | null; days: number } }>(
+        `/api/super-admin/organizations/${orgId}/subscription/bonus-days`,
+        { method: 'POST', body: JSON.stringify({ days, ...(reason ? { reason } : {}) }) },
+      ),
+    orgNotes: (orgId: string) =>
+      http<{ data: OrgInternalNotes }>(`/api/super-admin/organizations/${orgId}/notes`),
+    saveOrgNotes: (orgId: string, notes: string) =>
+      http<{ data: OrgInternalNotes }>(`/api/super-admin/organizations/${orgId}/notes`, {
+        method: 'PUT', body: JSON.stringify({ notes }),
+      }),
+
     /** Audit Centre. Distinct from `activity` above: that is the dashboard's
      *  recent-events feed, this is the filterable investigative view with a
      *  real total and the previous value of each change. */
@@ -2795,6 +2816,12 @@ export type ActivityEntry = {
 export type AuditEntry = ActivityEntry & {
   old_data?: unknown;
   user_agent?: string | null;
+};
+
+export type OrgInternalNotes = {
+  internal_notes: string | null;
+  internal_notes_updated_at: string | null;
+  internal_notes_updated_by: string | null;
 };
 
 export type AuditFilters = { actions: string[]; entity_types: string[] };
