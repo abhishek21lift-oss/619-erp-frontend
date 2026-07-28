@@ -19,13 +19,26 @@
 // download racing to independently agree on the file's current content.
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Download, Share2, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Download, Share2, Loader2, AlertTriangle, FileText } from 'lucide-react';
 import Guard from '@/components/Guard';
 import { useToast } from '@/lib/toast';
 
 function safeFilename(title: string): string {
   const cleaned = title.trim().replace(/[^a-z0-9\-_ ]+/gi, '').replace(/\s+/g, '-');
   return `${cleaned || 'document'}.pdf`;
+}
+
+// iOS's WKWebView — used by installed home-screen PWAs and most in-app
+// browsers (unlike full mobile Safari) — silently fails to render a PDF
+// given to it via <iframe src="blob:...">: no error, just a blank frame.
+// There's no reliable feature-detect for that failure (it doesn't fire
+// onerror), so we detect the standalone/WKWebView context up front and
+// skip the iframe there entirely rather than let it hang blank.
+function isLikelyBrokenPdfIframeHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  const standalone = window.matchMedia?.('(display-mode: standalone)').matches
+    || (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+  return Boolean(standalone);
 }
 
 function PdfViewerScreen() {
@@ -41,6 +54,7 @@ function PdfViewerScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sharing, setSharing] = useState(false);
+  const [skipInlinePreview] = useState(isLikelyBrokenPdfIframeHost);
 
   useEffect(() => {
     if (!url) { setError('No document was specified.'); setLoading(false); return; }
@@ -167,7 +181,23 @@ function PdfViewerScreen() {
             <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{error}</p>
           </div>
         )}
-        {!error && blobUrl && (
+        {!error && blobUrl && skipInlinePreview && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+            <FileText size={32} style={{ color: 'var(--text-muted)' }} />
+            <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>
+              Preview isn&apos;t available here. Use Download or Share above to open the PDF.
+            </p>
+            <button
+              onClick={handleDownload}
+              className="flex h-9 items-center gap-1.5 rounded-full px-4 text-[12.5px] font-[700] text-white transition"
+              style={{ background: 'var(--brand)' }}
+            >
+              <Download size={14} />
+              Download
+            </button>
+          </div>
+        )}
+        {!error && blobUrl && !skipInlinePreview && (
           <iframe src={blobUrl} title={title} className="h-full w-full" style={{ border: 'none' }} />
         )}
       </div>
