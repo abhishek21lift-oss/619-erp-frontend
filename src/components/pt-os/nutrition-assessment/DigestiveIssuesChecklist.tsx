@@ -41,7 +41,7 @@ export function DigestiveIssuesChecklist({ value, onChange }: DigestiveIssuesChe
         const checked = isChecked(issue);
         const item = get(issue);
         return (
-          <div key={issue} className="rounded-[16px] overflow-hidden transition-all" style={{ border: checked ? '2px solid #F59E0B' : '2px solid rgba(15,23,42,0.08)', background: checked ? 'rgba(245,158,11,0.04)' : 'var(--bg-subtle)' }}>
+          <div key={issue} className="rounded-[16px] transition-all" style={{ border: checked ? '2px solid #F59E0B' : '2px solid rgba(15,23,42,0.08)', background: checked ? 'rgba(245,158,11,0.04)' : 'var(--bg-subtle)' }}>
             <button
               type="button" onClick={() => toggle(issue)}
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
