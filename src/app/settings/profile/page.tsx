@@ -16,7 +16,12 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { ProfileMe, NotificationPreferences, UserPreferences, ProfileDevice, ProfileSession, ActivityEvent, Certification } from '@/lib/api';
+import type {
+  ProfileMe, NotificationPreferences, UserPreferences, ProfileDevice, ProfileSession,
+  ActivityEvent, Certification, CoachingMode, ProfileGym, WorkingHours,
+} from '@/lib/api';
+import { AboutSection } from '@/components/profile/AboutSection';
+import { ProfessionalSection, WorkingHoursEditor } from '@/components/profile/ProfessionalSection';
 import { apiBase } from '@/lib/http';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -149,8 +154,10 @@ type CertDraft = Omit<Certification, 'status' | 'daysLeft'>;
 type Snapshot = {
   name: string; email: string; phone: string; location: string; bio: string;
   jobTitle: string; experienceSince: string;
+  philosophy: string; trainingStyle: string; designation: string;
   /** Serialised, so the dirty check compares values rather than references. */
   specialisations: string; certifications: string;
+  languages: string; coachingModes: string; previousGyms: string; workingHours: string;
 };
 
 /**
@@ -709,9 +716,20 @@ export default function ProfilePage() {
   const [specialisations, setSpecialisations] = useState<string[]>([]);
   const [certifications, setCertifications] = useState<CertDraft[]>([]);
 
+  /* Professional profile (migration 133) */
+  const [philosophy, setPhilosophy] = useState('');
+  const [trainingStyle, setTrainingStyle] = useState('');
+  const [designation, setDesignation] = useState('');
+  const [languages, setLanguages] = useState<string[]>([]);
+  const [coachingModes, setCoachingModes] = useState<CoachingMode[]>([]);
+  const [previousGyms, setPreviousGyms] = useState<ProfileGym[]>([]);
+  const [workingHours, setWorkingHours] = useState<WorkingHours>({});
+
   const originalRef = useRef<Snapshot>({
     name: '', email: '', phone: '', location: '', bio: '',
-    jobTitle: '', experienceSince: '', specialisations: '[]', certifications: '[]',
+    jobTitle: '', experienceSince: '', philosophy: '', trainingStyle: '', designation: '',
+    specialisations: '[]', certifications: '[]',
+    languages: '[]', coachingModes: '[]', previousGyms: '[]', workingHours: '{}',
   });
   // The two lists compare by serialised value rather than reference: editing a
   // certificate replaces the array, so an identity check would call the form
@@ -723,8 +741,15 @@ export default function ProfilePage() {
     || bio !== originalRef.current.bio
     || jobTitle !== originalRef.current.jobTitle
     || experienceSince !== originalRef.current.experienceSince
+    || philosophy !== originalRef.current.philosophy
+    || trainingStyle !== originalRef.current.trainingStyle
+    || designation !== originalRef.current.designation
     || JSON.stringify(specialisations) !== originalRef.current.specialisations
-    || JSON.stringify(certifications) !== originalRef.current.certifications;
+    || JSON.stringify(certifications) !== originalRef.current.certifications
+    || JSON.stringify(languages) !== originalRef.current.languages
+    || JSON.stringify(coachingModes) !== originalRef.current.coachingModes
+    || JSON.stringify(previousGyms) !== originalRef.current.previousGyms
+    || JSON.stringify(workingHours) !== originalRef.current.workingHours;
 
   /** Load a server row into the form and reset the dirty baseline together. */
   const hydrate = useCallback((row: ProfileMe) => {
@@ -734,6 +759,13 @@ export default function ProfilePage() {
     setJobTitle(row.jobTitle || '');
     setExperienceSince(row.experienceSince || '');
     setSpecialisations(row.specialisations || []);
+    setPhilosophy(row.philosophy || '');
+    setTrainingStyle(row.trainingStyle || '');
+    setDesignation(row.designation || '');
+    setLanguages(row.languages || []);
+    setCoachingModes(row.coachingModes || []);
+    setPreviousGyms(row.previousGyms || []);
+    setWorkingHours(row.workingHours || {});
     // Drop the server's computed status from the editable copy: it is derived,
     // and keeping it in the draft would make the dirty check fire whenever the
     // clock rolled a certificate from "valid" to "expiring".
@@ -745,8 +777,14 @@ export default function ProfilePage() {
     originalRef.current = {
       name: row.name, email: row.email, phone: row.phone, location: row.location, bio: row.bio,
       jobTitle: row.jobTitle || '', experienceSince: row.experienceSince || '',
+      philosophy: row.philosophy || '', trainingStyle: row.trainingStyle || '',
+      designation: row.designation || '',
       specialisations: JSON.stringify(row.specialisations || []),
       certifications: JSON.stringify(drafts),
+      languages: JSON.stringify(row.languages || []),
+      coachingModes: JSON.stringify(row.coachingModes || []),
+      previousGyms: JSON.stringify(row.previousGyms || []),
+      workingHours: JSON.stringify(row.workingHours || {}),
     };
   }, []);
 
@@ -835,6 +873,9 @@ export default function ProfilePage() {
       const row = await api.profile.updateMe({
         name, email, phone, location, bio,
         job_title: jobTitle,
+        philosophy, training_style: trainingStyle, designation,
+        languages, coaching_modes: coachingModes,
+        previous_gyms: previousGyms, working_hours: workingHours,
         // '' clears the date; the server distinguishes that from omitting it.
         experience_since: experienceSince || '',
         specialisations,
@@ -859,6 +900,11 @@ export default function ProfilePage() {
     const o = originalRef.current;
     setName(o.name); setEmail(o.email); setPhone(o.phone); setLocation(o.location); setBio(o.bio);
     setJobTitle(o.jobTitle); setExperienceSince(o.experienceSince);
+    setPhilosophy(o.philosophy); setTrainingStyle(o.trainingStyle); setDesignation(o.designation);
+    setLanguages(JSON.parse(o.languages));
+    setCoachingModes(JSON.parse(o.coachingModes));
+    setPreviousGyms(JSON.parse(o.previousGyms));
+    setWorkingHours(JSON.parse(o.workingHours));
     setSpecialisations(JSON.parse(o.specialisations));
     setCertifications(JSON.parse(o.certifications));
     setSaveMsg(null);
@@ -1374,6 +1420,51 @@ export default function ProfilePage() {
                         </p>
                       </div>
                     </div>
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <SectionHeader
+                      icon={<User size={15} style={{ color: '#6366f1' }} />}
+                      title="About"
+                      subtitle="What you'd tell someone before they train with you"
+                    />
+                    <AboutSection
+                      bio={bio} philosophy={philosophy} trainingStyle={trainingStyle} languages={languages}
+                      set={(patch) => {
+                        if (patch.bio !== undefined) setBio(patch.bio);
+                        if (patch.philosophy !== undefined) setPhilosophy(patch.philosophy);
+                        if (patch.trainingStyle !== undefined) setTrainingStyle(patch.trainingStyle);
+                        if (patch.languages !== undefined) setLanguages(patch.languages);
+                      }}
+                    />
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <SectionHeader
+                      icon={<Briefcase size={15} style={{ color: '#6366f1' }} />}
+                      title="Professional information"
+                      subtitle="Your designation, how you coach, and where you've coached"
+                    />
+                    <ProfessionalSection
+                      designation={designation} coachingModes={coachingModes} previousGyms={previousGyms}
+                      set={(patch) => {
+                        if (patch.designation !== undefined) setDesignation(patch.designation);
+                        if (patch.coachingModes !== undefined) setCoachingModes(patch.coachingModes);
+                        if (patch.previousGyms !== undefined) setPreviousGyms(patch.previousGyms);
+                      }}
+                    />
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <SectionHeader
+                      icon={<Calendar size={15} style={{ color: '#6366f1' }} />}
+                      title="Availability"
+                      subtitle="When you take sessions. Split shifts are supported."
+                    />
+                    <WorkingHoursEditor
+                      value={workingHours} onChange={setWorkingHours}
+                      weeklyMinutes={me?.weeklyMinutes ?? 0}
+                    />
                   </GlassCard>
 
                   <GlassCard className="p-6">

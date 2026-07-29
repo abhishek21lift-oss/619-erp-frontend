@@ -78,7 +78,66 @@ export interface ProfileMe {
   specialisations: string[];
   certifications: Certification[];
   credentialSummary: CredentialSummary;
+
+  // ── Professional profile (migration 133) ──────────────────────────────────
+  coverUrl: string | null;
+  designation: string;
+  philosophy: string;
+  trainingStyle: string;
+  currentGym: string;
+  languages: string[];
+  coachingModes: CoachingMode[];
+  previousGyms: ProfileGym[];
+  education: ProfileEducation[];
+  achievements: ProfileAchievement[];
+  workingHours: WorkingHours;
+  /** Derived server-side, so no two screens can add up a week differently. */
+  weeklyMinutes: number;
 }
+
+export type CoachingMode = 'online' | 'offline' | 'hybrid' | 'home' | 'video';
+
+export type AchievementKind =
+  | 'competition' | 'certification' | 'award' | 'record'
+  | 'media' | 'speaking' | 'publication' | 'other';
+
+/** A past workplace. `to: null` means still there. Months, not dates. */
+export interface ProfileGym {
+  id: string;
+  name: string;
+  role: string;
+  /** 'YYYY-MM' or null. */
+  from: string | null;
+  to: string | null;
+}
+
+export interface ProfileEducation {
+  id: string;
+  institution: string;
+  degree: string;
+  field: string;
+  year: number | null;
+}
+
+export interface ProfileAchievement {
+  id: string;
+  title: string;
+  kind: AchievementKind;
+  issuer: string;
+  year: number | null;
+  detail: string;
+}
+
+export type TimeRange = { from: string; to: string };
+
+/**
+ * Availability, keyed by day. A day holds a LIST of ranges because split
+ * shifts are the norm in this trade — 06:00–10:00 and 17:00–21:00 is one
+ * coach's ordinary Tuesday.
+ */
+export type WorkingHours = Partial<Record<
+  'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', TimeRange[]
+>>;
 
 /**
  * A professional certificate. `status` and `daysLeft` are computed server-side
@@ -117,6 +176,16 @@ export interface ProfileUpdate {
   experience_since?: string | null;
   specialisations?: string[];
   certifications?: Array<Omit<Certification, 'status' | 'daysLeft'>>;
+  designation?: string;
+  philosophy?: string;
+  training_style?: string;
+  current_gym?: string;
+  languages?: string[];
+  coaching_modes?: CoachingMode[];
+  previous_gyms?: ProfileGym[];
+  education?: ProfileEducation[];
+  achievements?: ProfileAchievement[];
+  working_hours?: WorkingHours;
 }
 
 export interface NotificationPreferences {
