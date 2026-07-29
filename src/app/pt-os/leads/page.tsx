@@ -43,6 +43,35 @@ const STATUS_FILTERS = [
   { value: 'lost', label: 'Lost' },
 ];
 
+/**
+ * A titled group of fields inside the lead dialog.
+ *
+ * The label wears the same micro-label treatment as the KPI captions on the
+ * page behind it, so the dialog reads as part of that screen. Its job is to
+ * break eight inputs into groups small enough to take in at a glance.
+ */
+function FormSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3">
+      {/* The trailing rule is doing real work, not decoration. SearchableSelect
+          renders its own uppercase label above the field ("SOURCE", "TRAINER"),
+          so a group heading in the same case and a similar size reads as a
+          competing sibling rather than a level above it. The rule and the
+          darker ink settle which is which. */}
+      <div className="flex items-center gap-2.5">
+        <h3
+          className="shrink-0 text-[10.5px] font-[750] uppercase tracking-wide"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {label}
+        </h3>
+        <span aria-hidden className="h-px flex-1" style={{ background: 'var(--border)' }} />
+      </div>
+      {children}
+    </section>
+  );
+}
+
 interface LeadFormState {
   name: string;
   mobile: string;
@@ -410,53 +439,117 @@ export default function LeadsPage() {
         </PullToRefresh>
 
         {/* Add / Edit dialog */}
+        {/*
+          Built to the same language as the page behind it — the violet gradient
+          badge, the uppercase micro-labels and the card radii all come from the
+          header and KPI row above, so opening the dialog does not feel like
+          landing in a different product.
+
+          Three structural choices, all of them about the phone:
+
+          · p-0 with its own header / body / footer rows, so the BODY scrolls
+            and the actions stay put. Previously the whole form was one column
+            inside a centred dialog: with the keyboard up, Save was somewhere
+            below the fold and the fields after Trainer were unreachable.
+          · Fields are grouped and titled rather than run together. Eight
+            unlabelled inputs in a stack is a wall; four short named groups is
+            a form you can see the end of.
+          · max-h-[85dvh] on a phone. Deliberately not 100dvh — leaving the
+            page visible behind the dialog is what makes it read as a sheet
+            over the list rather than a new screen.
+        */}
         <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) setDialogOpen(false); }}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editingId ? 'Edit Lead' : 'Add Lead'}</DialogTitle>
-              <DialogDescription>Capture the essentials — you can fill in the rest later.</DialogDescription>
+          {/* grid-rows-[auto_minmax(0,1fr)_auto]: header and footer take their
+              natural height and the body gets whatever is left. The minmax(0,…)
+              is the load-bearing part — a default `1fr` row refuses to shrink
+              below its content, so the body would push the footer off the
+              bottom and overflow-hidden would clip it. Sizing the body with a
+              hand-computed calc() instead is what broke first: it assumed a
+              one-line header, and the description wraps to two on a phone. */}
+          <DialogContent className="grid max-h-[85dvh] max-w-lg grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:max-w-xl">
+            <DialogHeader
+              className="shrink-0 flex-row items-center gap-3.5 px-5 pb-4 pt-5 sm:px-6"
+              style={{ borderBottom: '1px solid var(--border)' }}
+            >
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
+                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 6px 20px rgba(139,92,246,0.32)' }}
+              >
+                <UserSearch size={19} className="text-white" />
+              </div>
+              {/* pr-8 keeps the title clear of the dialog's own close button. */}
+              <div className="min-w-0 pr-8">
+                <DialogTitle className="text-[17px] font-[820] tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
+                  {editingId ? 'Edit Lead' : 'Add Lead'}
+                </DialogTitle>
+                <DialogDescription className="mt-0.5 text-[12px] font-[500]" style={{ color: 'var(--text-muted)' }}>
+                  Capture the essentials — you can fill in the rest later.
+                </DialogDescription>
+              </div>
             </DialogHeader>
-            <div className="flex flex-col gap-4">
-              <FloatInput label="Full Name" required value={form.name} onChange={(v) => set('name', v)} />
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FloatInput label="Mobile" type="tel" value={form.mobile} onChange={(v) => set('mobile', v)} />
-                <FloatInput label="Email" type="email" value={form.email} onChange={(v) => set('email', v)} />
+
+            {/* The only scrolling region. overscroll-contain stops a flick at
+                the end of the list from scrolling the page underneath. */}
+            <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+              <div className="flex flex-col gap-5">
+                <FormSection label="Contact">
+                  <FloatInput label="Full Name" required value={form.name} onChange={(v) => set('name', v)} />
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <FloatInput label="Mobile" type="tel" value={form.mobile} onChange={(v) => set('mobile', v)} />
+                    <FloatInput label="Email" type="email" value={form.email} onChange={(v) => set('email', v)} />
+                  </div>
+                </FormSection>
+
+                <FormSection label="Where they came from">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <SearchableSelect
+                      label="Source" allowCustom={false}
+                      value={form.source} onChange={(v) => set('source', v)}
+                      options={SOURCE_OPTIONS}
+                    />
+                    <SearchableSelect
+                      label="Trainer" allowCustom={false}
+                      value={form.trainer_id}
+                      onChange={(v) => {
+                        set('trainer_id', v);
+                        set('trainer_name', (trainers.data ?? []).find((t) => t.id === v)?.name || '');
+                      }}
+                      options={(trainers.data ?? []).map((t) => ({ value: t.id, label: t.name }))}
+                      placeholder="Unassigned"
+                    />
+                  </div>
+                </FormSection>
+
+                <FormSection label="What they want">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <FloatInput label="Interested Package" value={form.interested_package} onChange={(v) => set('interested_package', v)} />
+                    <FloatInput label="Follow-up Date" type="date" value={form.follow_up_date} onChange={(v) => set('follow_up_date', v)} />
+                  </div>
+                </FormSection>
+
+                <FormSection label="Notes">
+                  <FloatInput label="Anything worth remembering" multiline rows={3} value={form.notes} onChange={(v) => set('notes', v)} />
+                </FormSection>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <SearchableSelect
-                  label="Source" allowCustom={false}
-                  value={form.source} onChange={(v) => set('source', v)}
-                  options={SOURCE_OPTIONS}
-                />
-                <SearchableSelect
-                  label="Trainer" allowCustom={false}
-                  value={form.trainer_id}
-                  onChange={(v) => {
-                    set('trainer_id', v);
-                    set('trainer_name', (trainers.data ?? []).find((t) => t.id === v)?.name || '');
-                  }}
-                  options={(trainers.data ?? []).map((t) => ({ value: t.id, label: t.name }))}
-                  placeholder="Unassigned"
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FloatInput label="Interested Package" value={form.interested_package} onChange={(v) => set('interested_package', v)} />
-                <FloatInput label="Follow-up Date" type="date" value={form.follow_up_date} onChange={(v) => set('follow_up_date', v)} />
-              </div>
-              <FloatInput label="Notes" multiline rows={3} value={form.notes} onChange={(v) => set('notes', v)} />
-              <div className="flex justify-end gap-2 pt-1">
-                <Button type="button" variant="outline" iconLeft={<X size={14} />} onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  type="button" loading={saving} disabled={saving}
-                  iconLeft={!saving ? <Check size={15} /> : undefined}
-                  onClick={handleSave}
-                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff' }}
-                >
-                  {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Lead'}
-                </Button>
-              </div>
+            </div>
+
+            {/* Pinned, so the primary action is reachable at any scroll
+                position and with the keyboard open. */}
+            <div
+              className="shrink-0 flex items-center justify-end gap-2 px-5 py-3.5 sm:px-6"
+              style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-subtle)' }}
+            >
+              <Button type="button" variant="outline" iconLeft={<X size={14} />} onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button" loading={saving} disabled={saving}
+                iconLeft={!saving ? <Check size={15} /> : undefined}
+                onClick={handleSave}
+                style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', color: '#fff' }}
+              >
+                {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Lead'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

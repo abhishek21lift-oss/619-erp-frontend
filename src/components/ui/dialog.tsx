@@ -38,6 +38,13 @@ const DialogContent = React.forwardRef<
       data-no-pull-refresh
       className={cn(
         'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4',
+        // Never taller than the viewport, and scrollable when the content
+        // wants to be. Without this a form with more than about six fields
+        // simply ran off the bottom of a phone with no way to reach the rest —
+        // the dialog is centred and translated, so the overflow had nowhere to
+        // go and no scroll container to go in. dvh rather than vh because the
+        // on-screen keyboard is exactly when this bites, and vh ignores it.
+        'max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain',
         'bg-white dark:bg-[rgba(23,24,28,0.97)] backdrop-blur-xl',
         'border border-white/25 dark:border-white/8',
         'rounded-2xl p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]',
