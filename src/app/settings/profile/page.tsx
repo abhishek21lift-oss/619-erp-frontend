@@ -10,7 +10,7 @@ import {
   RefreshCw, LogOut, ShieldCheck, AlertTriangle,
   History, Fingerprint, Copy, Loader2, Settings,
   Zap, Calendar, Wifi, Camera, FileSignature, Dumbbell, ClipboardList,
-  Award, Plus, BadgeCheck, Briefcase,
+  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -19,9 +19,12 @@ import { api } from '@/lib/api';
 import type {
   ProfileMe, NotificationPreferences, UserPreferences, ProfileDevice, ProfileSession,
   ActivityEvent, Certification, CoachingMode, ProfileGym, WorkingHours,
+  ProfileEducation, ProfileAchievement,
 } from '@/lib/api';
 import { AboutSection } from '@/components/profile/AboutSection';
 import { ProfessionalSection, WorkingHoursEditor } from '@/components/profile/ProfessionalSection';
+import { EducationSection } from '@/components/profile/EducationSection';
+import { AchievementsSection } from '@/components/profile/AchievementsSection';
 import { apiBase } from '@/lib/http';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -158,6 +161,7 @@ type Snapshot = {
   /** Serialised, so the dirty check compares values rather than references. */
   specialisations: string; certifications: string;
   languages: string; coachingModes: string; previousGyms: string; workingHours: string;
+  education: string; achievements: string;
 };
 
 /**
@@ -724,12 +728,15 @@ export default function ProfilePage() {
   const [coachingModes, setCoachingModes] = useState<CoachingMode[]>([]);
   const [previousGyms, setPreviousGyms] = useState<ProfileGym[]>([]);
   const [workingHours, setWorkingHours] = useState<WorkingHours>({});
+  const [education, setEducation] = useState<ProfileEducation[]>([]);
+  const [achievements, setAchievements] = useState<ProfileAchievement[]>([]);
 
   const originalRef = useRef<Snapshot>({
     name: '', email: '', phone: '', location: '', bio: '',
     jobTitle: '', experienceSince: '', philosophy: '', trainingStyle: '', designation: '',
     specialisations: '[]', certifications: '[]',
     languages: '[]', coachingModes: '[]', previousGyms: '[]', workingHours: '{}',
+    education: '[]', achievements: '[]',
   });
   // The two lists compare by serialised value rather than reference: editing a
   // certificate replaces the array, so an identity check would call the form
@@ -749,7 +756,9 @@ export default function ProfilePage() {
     || JSON.stringify(languages) !== originalRef.current.languages
     || JSON.stringify(coachingModes) !== originalRef.current.coachingModes
     || JSON.stringify(previousGyms) !== originalRef.current.previousGyms
-    || JSON.stringify(workingHours) !== originalRef.current.workingHours;
+    || JSON.stringify(workingHours) !== originalRef.current.workingHours
+    || JSON.stringify(education) !== originalRef.current.education
+    || JSON.stringify(achievements) !== originalRef.current.achievements;
 
   /** Load a server row into the form and reset the dirty baseline together. */
   const hydrate = useCallback((row: ProfileMe) => {
@@ -766,6 +775,8 @@ export default function ProfilePage() {
     setCoachingModes(row.coachingModes || []);
     setPreviousGyms(row.previousGyms || []);
     setWorkingHours(row.workingHours || {});
+    setEducation(row.education || []);
+    setAchievements(row.achievements || []);
     // Drop the server's computed status from the editable copy: it is derived,
     // and keeping it in the draft would make the dirty check fire whenever the
     // clock rolled a certificate from "valid" to "expiring".
@@ -785,6 +796,8 @@ export default function ProfilePage() {
       coachingModes: JSON.stringify(row.coachingModes || []),
       previousGyms: JSON.stringify(row.previousGyms || []),
       workingHours: JSON.stringify(row.workingHours || {}),
+      education: JSON.stringify(row.education || []),
+      achievements: JSON.stringify(row.achievements || []),
     };
   }, []);
 
@@ -876,6 +889,7 @@ export default function ProfilePage() {
         philosophy, training_style: trainingStyle, designation,
         languages, coaching_modes: coachingModes,
         previous_gyms: previousGyms, working_hours: workingHours,
+        education, achievements,
         // '' clears the date; the server distinguishes that from omitting it.
         experience_since: experienceSince || '',
         specialisations,
@@ -905,6 +919,8 @@ export default function ProfilePage() {
     setCoachingModes(JSON.parse(o.coachingModes));
     setPreviousGyms(JSON.parse(o.previousGyms));
     setWorkingHours(JSON.parse(o.workingHours));
+    setEducation(JSON.parse(o.education));
+    setAchievements(JSON.parse(o.achievements));
     setSpecialisations(JSON.parse(o.specialisations));
     setCertifications(JSON.parse(o.certifications));
     setSaveMsg(null);
@@ -1474,6 +1490,24 @@ export default function ProfilePage() {
                       subtitle="The work you take on"
                     />
                     <SpecialisationEditor value={specialisations} onChange={setSpecialisations} />
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <SectionHeader
+                      icon={<GraduationCap size={15} style={{ color: '#6366f1' }} />}
+                      title="Education"
+                      subtitle="Degrees, diplomas and academy courses"
+                    />
+                    <EducationSection value={education} onChange={setEducation} />
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <SectionHeader
+                      icon={<Trophy size={15} style={{ color: '#6366f1' }} />}
+                      title="Achievements"
+                      subtitle="Competitions, records, awards and media — newest first"
+                    />
+                    <AchievementsSection value={achievements} onChange={setAchievements} />
                   </GlassCard>
 
                   <GlassCard className="p-6">
