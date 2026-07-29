@@ -566,17 +566,42 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
   onSave: () => void; onDiscard: () => void;
   msg: { type: 'success' | 'error'; text: string } | null;
 }) {
+  // Whether the bar is centred (desktop) or spans the gutter (phone). Read as
+  // a media query rather than assumed, because the x offset has to be handed
+  // to Framer Motion — CSS cannot supply half of a transform it is animating.
+  const [centred, setCentred] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)');
+    const sync = () => setCentred(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
   return (
     <AnimatePresence>
       {dirty && (
         <m.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
+          initial={{ y: 100, opacity: 0, x: centred ? '-50%' : 0 }}
+          animate={{ y: 0, opacity: 1, x: centred ? '-50%' : 0 }}
+          exit={{ y: 100, opacity: 0, x: centred ? '-50%' : 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-          className="fixed above-bottom-nav left-1/2 z-50 flex items-center gap-3 rounded-2xl px-5 py-3"
+          /*
+            Spans the width on a phone, centres on desktop.
+
+            It used to be `left-1/2` with `transform: translateX(-50%)` in the
+            inline style. Framer Motion animates `y` by writing `transform`, so
+            it overwrote that centring outright: the bar's LEFT edge sat at 50%
+            of the viewport and Save ran off the right of the screen with no way
+            to reach it. Anything that has to compose with a motion transform
+            belongs in the motion props, not in `style` — hence `x` below rather
+            than a CSS translate.
+
+            On a phone the answer is not to centre it at all: full width with a
+            gutter gives the buttons room and puts them under the thumb.
+          */
+          className="fixed above-bottom-nav left-4 right-4 z-50 flex flex-wrap items-center justify-end gap-2.5 rounded-2xl px-4 py-3 sm:left-1/2 sm:right-auto sm:w-auto sm:flex-nowrap sm:gap-3 sm:px-5"
           style={{
-            transform: 'translateX(-50%)',
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
             boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
@@ -593,7 +618,7 @@ function StickySaveBar({ dirty, saving, onSave, onDiscard, msg }: {
             </>
           ) : (
             <>
-              <span className="text-[12.5px] font-[500]" style={{ color: 'var(--text-secondary)' }}>Unsaved changes</span>
+              <span className="mr-auto text-[12.5px] font-[500]" style={{ color: 'var(--text-secondary)' }}>Unsaved changes</span>
               <button
                 onClick={onDiscard}
                 className="rounded-xl px-3 py-1.5 text-[12px] font-[620] transition-colors"
@@ -1056,7 +1081,11 @@ export default function ProfilePage() {
           </div>
 
           {/* ── MAIN ── */}
-          <div className="mx-auto max-w-screen-xl py-7">
+          {/* The bottom padding clears the fixed mobile bottom nav AND the
+              floating save bar above it — without it the last card sat under
+              both with no way to scroll further. Matches the pattern the
+              dashboard and Leads pages already use. */}
+          <div className="mx-auto max-w-screen-xl pt-7 pb-[calc(var(--bottom-nav-h,4rem)+env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-10">
 
             {/* ── HERO ── */}
             <FadeUp>
@@ -1146,8 +1175,12 @@ export default function ProfilePage() {
 
             {/* ── TABS ── */}
             <FadeUp delay={0.1}>
-              <div className="mb-7 inline-flex overflow-x-auto rounded-2xl p-1"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)', scrollbarWidth: 'none' }}>
+              {/* `inline-flex` shrank the strip to its content and then clipped
+                  it: a fourth tab was cut mid-word with no scrollbar and no
+                  hint there was anything past it. Full width scrolls properly,
+                  and the tabs no longer shrink below their labels. */}
+              <div className="mb-7 flex w-full overflow-x-auto rounded-2xl p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)' }}>
                 {([
                   { id: 'overview', label: 'Overview', icon: <User size={13} /> },
                   { id: 'credentials', label: 'Credentials', icon: <Award size={13} /> },
@@ -1157,7 +1190,7 @@ export default function ProfilePage() {
                   <button
                     key={t.id}
                     onClick={() => setTab(t.id)}
-                    className="relative flex shrink-0 items-center gap-2 rounded-[13px] px-4 py-2.5 text-[12.5px] font-[680] transition-all"
+                    className="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[13px] px-4 py-2.5 text-[12.5px] font-[680] transition-all"
                     style={{
                       background: tab === t.id ? 'rgba(99,102,241,1)' : 'transparent',
                       color: tab === t.id ? 'white' : 'var(--text-muted)',
