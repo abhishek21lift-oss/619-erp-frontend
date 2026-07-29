@@ -3102,8 +3102,21 @@ function EditUserModal({ user, onClose, onSaved }: { user: OrgUser; onClose: () 
 }
 
 // ── Reset Password modal ─────────────────────────────────────────────────────────
+/**
+ * Two ways to get someone a working password, with the better one first.
+ *
+ * Emailing a set-password link is the default because typing one in here means
+ * the operator now knows a password they will have to convey somehow — down a
+ * chat window, over the phone — and the account holder never chose it. The
+ * emailed route ends with a password only its owner has seen.
+ *
+ * Setting one directly stays, because it is the only option when email is not
+ * configured or the address on the account is wrong — which is exactly when
+ * someone is locked out and needs it most.
+ */
 function ResetPasswordModal({ user, onClose }: { user: OrgUser; onClose: () => void }) {
   const { toast } = useToast();
+  const [mode, setMode] = useState<'email' | 'manual'>('email');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -3116,18 +3129,69 @@ function ResetPasswordModal({ user, onClose }: { user: OrgUser; onClose: () => v
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Reset failed'); setSaving(false); }
   };
 
+  const sendLink = async () => {
+    setSaving(true);
+    try {
+      const r = await api.superAdmin.sendPasswordSetup(user.id);
+      toast.success(r.data.message); onClose();
+    } catch (e) {
+      // The backend distinguishes "SMTP is not configured" from "the send
+      // failed" and says which; surfacing its message verbatim is the whole
+      // point of not reusing the public forgot-password endpoint here.
+      toast.error(e instanceof Error ? e.message : 'Could not send the email');
+      setSaving(false);
+    }
+  };
+
   return (
-    <Modal title="Reset Password" onClose={onClose}>
+    <Modal title="Set a new password" onClose={onClose}>
       <p className="mb-4 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-        New password for <strong>{user.name}</strong> ({user.email}). This signs them out everywhere.
+        For <strong>{user.name}</strong> ({user.email || 'no email on file'}).
+        Either way, this signs them out everywhere.
       </p>
-      <Field label="New password">
-        <PasswordField value={password} onChange={setPassword} onGenerate={() => setPassword(genPassword())} />
-      </Field>
-      <div className="flex justify-end gap-2 pt-5">
-        <Button variant="outline" onClick={onClose}>Cancel</Button>
-        <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>Reset</Button>
+
+      <div className="mb-4 flex gap-1 rounded-[11px] p-1" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+        {([['email', 'Email them a link'], ['manual', 'Set one myself']] as const).map(([id, label]) => (
+          <button
+            key={id} onClick={() => setMode(id)} disabled={saving}
+            className="min-h-[36px] flex-1 rounded-[8px] px-2 text-[12px] font-[700] transition-colors disabled:opacity-60"
+            style={mode === id
+              ? { background: 'var(--bg-elevated)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(15,23,42,0.10)' }
+              : { color: 'var(--text-muted)' }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
+
+      {mode === 'email' ? (
+        <>
+          <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            Sends a link to <strong style={{ color: 'var(--text-primary)' }}>{user.email || '—'}</strong> where
+            they choose their own password. You never see it, and it never has to
+            be passed along in a message.
+          </p>
+          <div className="flex justify-end gap-2 pt-5">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button
+              loading={saving} disabled={saving || !user.email} onClick={sendLink}
+              style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}
+            >
+              Send link
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <Field label="New password">
+            <PasswordField value={password} onChange={setPassword} onGenerate={() => setPassword(genPassword())} />
+          </Field>
+          <div className="flex justify-end gap-2 pt-5">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button loading={saving} disabled={saving} onClick={submit} style={{ background: 'linear-gradient(135deg,#0f172a,#334155)', color: '#fff' }}>Reset</Button>
+          </div>
+        </>
+      )}
     </Modal>
   );
 }

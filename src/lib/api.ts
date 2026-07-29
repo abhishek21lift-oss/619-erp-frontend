@@ -2190,6 +2190,16 @@ export const api = {
       http<{ data: { id: string; message: string } }>(`/api/super-admin/users/${id}/reset-password`, {
         method: 'POST', body: JSON.stringify({ password }),
       }),
+    /**
+     * Emails the account a link to set their own password. Unlike the public
+     * forgot-password endpoint, this one reports what actually happened —
+     * 503 if SMTP is unconfigured, 502 if the send failed — so "no email
+     * arrived" is never indistinguishable from "email is not set up".
+     */
+    sendPasswordSetup: (id: string) =>
+      http<{ data: { id: string; email: string; expires_in_minutes: number; message: string } }>(
+        `/api/super-admin/users/${id}/send-password-setup`, { method: 'POST' },
+      ),
     uploadOrgLogo: (id: string, file: File) => {
       const formData = new FormData();
       formData.append('file', file);
