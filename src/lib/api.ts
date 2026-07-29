@@ -93,6 +93,31 @@ export interface ProfileMe {
   workingHours: WorkingHours;
   /** Derived server-side, so no two screens can add up a week differently. */
   weeklyMinutes: number;
+  /**
+   * Percentage AND checklist from one server call over one weight table, so
+   * the ring and the next-step list can never disagree. The client computes
+   * none of this — it describes SAVED data, so it must change when the server
+   * accepts a write, not while somebody is typing.
+   */
+  completion: ProfileCompletion;
+}
+
+export interface CompletionItem {
+  key: string;
+  label: string;
+  weight: number;
+  /** Which tab the field lives on, so a step can link to itself. */
+  tab: 'overview' | 'credentials';
+  done: boolean;
+}
+
+export interface ProfileCompletion {
+  percent: number;
+  earned: number;
+  total: number;
+  items: CompletionItem[];
+  /** The heaviest outstanding items, capped at three. */
+  nextSteps: Omit<CompletionItem, 'done'>[];
 }
 
 export type CoachingMode = 'online' | 'offline' | 'hybrid' | 'home' | 'video';

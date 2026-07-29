@@ -25,6 +25,7 @@ import { AboutSection } from '@/components/profile/AboutSection';
 import { ProfessionalSection, WorkingHoursEditor } from '@/components/profile/ProfessionalSection';
 import { EducationSection } from '@/components/profile/EducationSection';
 import { AchievementsSection } from '@/components/profile/AchievementsSection';
+import { CompletionPanel } from '@/components/profile/CompletionPanel';
 import { apiBase } from '@/lib/http';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -1273,6 +1274,21 @@ export default function ProfilePage() {
                 <m.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+                  {/* Leads the tab: it is the one thing on this page that says
+                      what to do next, and it is useless below the fold.
+                      lg:col-span-2 because the checklist reads as a list, not
+                      as a column beside another card. */}
+                  {me?.completion && (
+                    <GlassCard className="p-6 lg:col-span-2" glow>
+                      <SectionHeader
+                        icon={<BadgeCheck size={15} style={{ color: '#6366f1' }} />}
+                        title="Profile completion"
+                        subtitle="Scored on what you've saved, not what you've typed"
+                      />
+                      <CompletionPanel completion={me.completion} onGoToTab={setTab} />
+                    </GlassCard>
+                  )}
 
                   {/* Personal Information */}
                   <FadeUp>
