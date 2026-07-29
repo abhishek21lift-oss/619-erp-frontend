@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { m, AnimatePresence, useInView } from 'framer-motion';
 import qrcode from 'qrcode-generator';
 import {
@@ -10,7 +11,7 @@ import {
   RefreshCw, LogOut, ShieldCheck, AlertTriangle,
   History, Fingerprint, Copy, Loader2, Settings,
   Zap, Calendar, Wifi, Camera, FileSignature, Dumbbell, ClipboardList,
-  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy,
+  Award, Plus, BadgeCheck, Briefcase, GraduationCap, Trophy, Images,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -19,13 +20,26 @@ import { api } from '@/lib/api';
 import type {
   ProfileMe, NotificationPreferences, UserPreferences, ProfileDevice, ProfileSession,
   ActivityEvent, Certification, CoachingMode, ProfileGym, WorkingHours,
-  ProfileEducation, ProfileAchievement,
+  ProfileEducation, ProfileAchievement, ProfileTab,
 } from '@/lib/api';
 import { AboutSection } from '@/components/profile/AboutSection';
 import { ProfessionalSection, WorkingHoursEditor } from '@/components/profile/ProfessionalSection';
 import { EducationSection } from '@/components/profile/EducationSection';
 import { AchievementsSection } from '@/components/profile/AchievementsSection';
 import { CompletionPanel } from '@/components/profile/CompletionPanel';
+import { ProfileHero } from '@/components/profile/ProfileHero';
+import { PortfolioSkeleton } from '@/components/profile/PortfolioSection';
+
+/**
+ * The gallery is the heaviest thing on this page — a media grid, an upload
+ * dialog and a lightbox — and most visits to /settings/profile never open it.
+ * `ssr: false` because it is entirely client state: rendering it on the server
+ * would produce an empty grid and then immediately replace it.
+ */
+const PortfolioSection = dynamic(() => import('@/components/profile/PortfolioSection'), {
+  ssr: false,
+  loading: () => <PortfolioSkeleton />,
+});
 import { apiBase } from '@/lib/http';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -693,9 +707,13 @@ const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; de
    PAGE
 ───────────────────────────────────────── */
 export default function ProfilePage() {
-  const { logout } = useAuth();
+  // `user` is the session. The studio name comes from there rather than from
+  // the profile form — see the note at the top of ProfileHero.
+  const { logout, user } = useAuth();
   const { toast } = useToast();
-  const [tab, setTab] = useState<'overview' | 'credentials' | 'security' | 'preferences'>('overview');
+  // ProfileTab is the subset a completion step can link to; Security and
+  // Preferences hold nothing that is scored, so they are named separately.
+  const [tab, setTab] = useState<ProfileTab | 'security' | 'preferences'>('overview');
 
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -805,9 +823,9 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  /* Avatar */
-  const avatarInputRef = useRef<HTMLInputElement>(null);
+  /* Avatar + cover banner */
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [coverBusy, setCoverBusy] = useState(false);
 
   /* Password */
   const [currentPw, setCurrentPw] = useState('');
@@ -927,29 +945,85 @@ export default function ProfilePage() {
     setSaveMsg(null);
   };
 
-  /* ── Avatar upload ── */
-  const handleAvatarPick = () => avatarInputRef.current?.click();
-  const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  /**
+   * Re-read the profile for its DERIVED fields only.
+   *
+   * An upload or a portfolio change moves the completion score, and the score
+   * is the server's to compute. Merging the whole row back in would be a
+   * hydrate() in disguise: it would overwrite whatever is half-typed in the
+   * form and reset the dirty baseline underneath the Save bar. So only the
+   * fields no input is bound to are taken.
+   */
+  const refreshDerived = useCallback(async () => {
+    try {
+      const row = await api.profile.me();
+      setMe(prev => (prev ? {
+        ...prev,
+        completion: row.completion,
+        portfolioCount: row.portfolioCount,
+        avatarUrl: row.avatarUrl,
+        coverUrl: row.coverUrl,
+      } : row));
+    } catch {
+      // A stale ring is not worth an error toast on top of whichever one the
+      // action that triggered this already showed.
+    }
+  }, []);
+
+  /** Shared guard for the two image uploads. */
+  const rejectImage = (file: File, maxBytes: number): string | null => {
     if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
-      toast.error('Only PNG, JPG, WEBP, or GIF images are allowed');
-      return;
+      return 'Only PNG, JPG, WEBP, or GIF images are allowed';
     }
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be under 2MB');
-      return;
-    }
+    if (file.size > maxBytes) return `Image must be under ${Math.round(maxBytes / (1024 * 1024))}MB`;
+    return null;
+  };
+
+  /* ── Avatar upload ── */
+  const handleAvatarFile = async (file: File) => {
+    const bad = rejectImage(file, 2 * 1024 * 1024);
+    if (bad) { toast.error(bad); return; }
     setAvatarUploading(true);
     try {
       const { avatarUrl } = await api.profile.uploadAvatar(file);
       setMe(prev => prev ? { ...prev, avatarUrl } : prev);
       toast.success('Profile photo updated');
+      refreshDerived();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to upload photo');
     } finally {
       setAvatarUploading(false);
+    }
+  };
+
+  /* ── Cover banner ── */
+  const handleCoverFile = async (file: File) => {
+    const bad = rejectImage(file, 5 * 1024 * 1024);
+    if (bad) { toast.error(bad); return; }
+    setCoverBusy(true);
+    try {
+      const { coverUrl } = await api.profile.uploadCover(file);
+      setMe(prev => prev ? { ...prev, coverUrl } : prev);
+      toast.success('Cover banner updated');
+      refreshDerived();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload banner');
+    } finally {
+      setCoverBusy(false);
+    }
+  };
+
+  const handleCoverRemove = async () => {
+    setCoverBusy(true);
+    try {
+      await api.profile.removeCover();
+      setMe(prev => prev ? { ...prev, coverUrl: null } : prev);
+      toast.success('Cover banner removed');
+      refreshDerived();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove banner');
+    } finally {
+      setCoverBusy(false);
     }
   };
 
@@ -1151,72 +1225,25 @@ export default function ProfilePage() {
           <div className="mx-auto max-w-screen-xl pt-7 pb-[calc(var(--bottom-nav-h,4rem)+env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-10">
 
             {/* ── HERO ── */}
-            <FadeUp>
-              <div className="relative overflow-hidden rounded-3xl mb-7 p-6 sm:p-8"
-                style={{
-                  background: 'linear-gradient(135deg,#6366f1 0%,#7c3aed 40%,#8b5cf6 70%,#a78bfa 100%)',
-                  boxShadow: '0 12px 48px rgba(99,102,241,0.32)',
-                }}>
-                <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-                <div className="relative flex flex-col items-center gap-5 sm:flex-row sm:items-start">
-                  {/* Avatar */}
-                  <div className="relative shrink-0">
-                    <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif"
-                      className="hidden" onChange={handleAvatarFile} />
-                    <button
-                      onClick={handleAvatarPick}
-                      disabled={avatarUploading}
-                      className="group relative flex h-[76px] w-[76px] items-center justify-center overflow-hidden rounded-[22px] text-[28px] font-[880] text-white transition-transform hover:scale-[1.04]"
-                      style={{
-                        background: me?.avatarUrl ? undefined : 'rgba(255,255,255,0.18)',
-                        backdropFilter: 'blur(16px)',
-                        border: '2px solid rgba(255,255,255,0.35)',
-                        boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
-                        letterSpacing: '-0.02em',
-                      }}
-                    >
-                      {me?.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={`${apiBase()}${me.avatarUrl}`} alt={displayName} className="h-full w-full object-cover" />
-                      ) : initials(displayName)}
-                      <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
-                        style={{ background: 'rgba(15,23,42,0.55)' }}>
-                        {avatarUploading ? <Loader2 size={18} className="animate-spin text-white" /> : <Camera size={18} className="text-white" />}
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Identity */}
-                  <div className="flex-1 text-center sm:text-left">
-                    <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                      <h2 className="text-[26px] font-[880] tracking-[-0.03em] text-white">{displayName}</h2>
-                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-[760]"
-                        style={{ background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.25)' }}>
-                        <ShieldCheck size={10} /> {roleLabel}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center justify-center gap-4 sm:justify-start">
-                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                        <Mail size={11} /> {me?.email}
-                      </span>
-                      {me?.phone && (
-                        <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                          <Phone size={11} /> {me.phone}
-                        </span>
-                      )}
-                      {me?.location && (
-                        <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                          <MapPin size={11} /> {me.location}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1.5 text-[12px]" style={{ color: 'rgba(255,255,255,0.80)' }}>
-                        <Calendar size={11} /> Since {fmtDate(me?.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </FadeUp>
+            {/* Reads `me`, not the form state: this is who the server says you
+                are, and it must not change while somebody is typing a new name
+                into a field they have not saved yet. */}
+            {me && (
+              <FadeUp>
+                <ProfileHero
+                  me={me}
+                  organizationName={user?.organization_name}
+                  resolveUrl={(p) => `${apiBase()}${p}`}
+                  roleLabel={roleLabel}
+                  memberSince={fmtDate(me.createdAt)}
+                  avatarUploading={avatarUploading}
+                  coverBusy={coverBusy}
+                  onPickAvatar={handleAvatarFile}
+                  onPickCover={handleCoverFile}
+                  onRemoveCover={handleCoverRemove}
+                />
+              </FadeUp>
+            )}
 
             {/* ── QUICK STATS ── */}
             <FadeUp delay={0.06}>
@@ -1247,6 +1274,7 @@ export default function ProfilePage() {
                 {([
                   { id: 'overview', label: 'Overview', icon: <User size={13} /> },
                   { id: 'credentials', label: 'Credentials', icon: <Award size={13} /> },
+                  { id: 'portfolio', label: 'Portfolio', icon: <Images size={13} /> },
                   { id: 'security', label: 'Security', icon: <Lock size={13} /> },
                   { id: 'preferences', label: 'Preferences', icon: <Settings size={13} /> },
                 ] as const).map(t => (
@@ -1571,6 +1599,28 @@ export default function ProfilePage() {
                         ))}
                       </div>
                     )}
+                  </GlassCard>
+                </m.div>
+              )}
+
+              {/* ═══ PORTFOLIO ═══ */}
+              {tab === 'portfolio' && (
+                <m.div key="portfolio" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                  <GlassCard className="p-5 sm:p-6">
+                    <SectionHeader
+                      icon={<Images size={14} style={{ color: '#6366f1' }} />}
+                      title="Portfolio"
+                      subtitle="Transformations, sessions and clips — saved as you go, not on Save"
+                    />
+                    {/* Nothing here feeds the dirty baseline: every action is
+                        its own request, which is why this section owns its
+                        state and the rest of the page does not. */}
+                    <PortfolioSection
+                      resolveUrl={(p) => `${apiBase()}${p}`}
+                      onChanged={refreshDerived}
+                      notify={{ success: toast.success, error: toast.error }}
+                    />
                   </GlassCard>
                 </m.div>
               )}

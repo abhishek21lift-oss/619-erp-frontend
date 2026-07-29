@@ -94,6 +94,12 @@ export interface ProfileMe {
   /** Derived server-side, so no two screens can add up a week differently. */
   weeklyMinutes: number;
   /**
+   * How many portfolio items exist — the count only, because the gallery has
+   * its own endpoint and putting thirty items inside every profile read to
+   * render one tab badge would be a poor trade.
+   */
+  portfolioCount: number;
+  /**
    * Percentage AND checklist from one server call over one weight table, so
    * the ring and the next-step list can never disagree. The client computes
    * none of this — it describes SAVED data, so it must change when the server
@@ -107,9 +113,46 @@ export interface CompletionItem {
   label: string;
   weight: number;
   /** Which tab the field lives on, so a step can link to itself. */
-  tab: 'overview' | 'credentials';
+  tab: ProfileTab;
   done: boolean;
 }
+
+/** The tabs a completion step can send someone to. Security and Preferences
+ *  hold nothing that is scored, so they are deliberately not in this union. */
+export type ProfileTab = 'overview' | 'credentials' | 'portfolio';
+
+export type PortfolioKind = 'image' | 'before_after' | 'video_link';
+
+/**
+ * One gallery item, exactly as `present()` returns it (src/lib/portfolio.js).
+ * The storage key is never in this shape — it is what authorisation is keyed
+ * on server-side, and the served URL is all a browser needs.
+ */
+export interface PortfolioItem {
+  id: string;
+  kind: PortfolioKind;
+  title: string;
+  caption: string;
+  /** The image. For a video_link this is the poster. */
+  url: string;
+  /** The "after" image, before/after only. */
+  afterUrl: string | null;
+  /** The YouTube or Vimeo link, video_link only. */
+  externalUrl: string | null;
+  /** Both assets summed, already a number. */
+  bytes: number;
+  pinned: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+/** Server-enforced; mirrored here only so the UI can say no before uploading. */
+export const PORTFOLIO_LIMITS = {
+  items: 30,
+  pinned: 3,
+  imageBytes: 8 * 1024 * 1024,
+  posterBytes: 4 * 1024 * 1024,
+} as const;
 
 export interface ProfileCompletion {
   percent: number;
@@ -2131,6 +2174,57 @@ export const api = {
       const formData = new FormData();
       formData.append('avatar', file);
       return http<{ avatarUrl: string }>('/api/profile/avatar', { method: 'POST', body: formData });
+    },
+    uploadCover: (file: File) => {
+      const formData = new FormData();
+      formData.append('cover', file);
+      return http<{ coverUrl: string }>('/api/profile/cover', { method: 'POST', body: formData });
+    },
+    /** Clears the banner and removes the object. Returns `{ coverUrl: null }`. */
+    removeCover: () =>
+      http<{ coverUrl: null }>('/api/profile/cover', { method: 'DELETE' }),
+
+    /**
+     * Portfolio actions are immediate and per-item, so they never touch the
+     * page's dirty baseline — unlike every field on the main form, there is
+     * nothing here a Save button could batch.
+     */
+    portfolio: {
+      list: () => http<PortfolioItem[]>('/api/profile/portfolio'),
+      /**
+       * One item per request. `after` is required for a before/after and
+       * `externalUrl` for a video link; the server enforces both, and a
+       * half-formed item is refused rather than stored broken.
+       */
+      create: (data: {
+        kind: PortfolioKind;
+        file: File;
+        after?: File;
+        externalUrl?: string;
+        title?: string;
+        caption?: string;
+      }) => {
+        const fd = new FormData();
+        fd.append('kind', data.kind);
+        fd.append('file', data.file);
+        if (data.after) fd.append('after', data.after);
+        if (data.externalUrl) fd.append('external_url', data.externalUrl);
+        if (data.title) fd.append('title', data.title);
+        if (data.caption) fd.append('caption', data.caption);
+        return http<PortfolioItem>('/api/profile/portfolio', { method: 'POST', body: fd });
+      },
+      /** Partial, like `PUT /me`: an omitted field is left alone. */
+      update: (id: string, data: { title?: string; caption?: string; pinned?: boolean }) =>
+        http<PortfolioItem>(`/api/profile/portfolio/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+      remove: (id: string) =>
+        http<{ id: string; removed: boolean }>(`/api/profile/portfolio/${id}`, { method: 'DELETE' }),
+      /**
+       * The submitted ids must be exactly what the server holds. If another tab
+       * changed the gallery this throws a 409 whose `payload.items` is the
+       * current list — re-render from that rather than guessing what was missed.
+       */
+      reorder: (ids: string[]) =>
+        http<PortfolioItem[]>('/api/profile/portfolio/order', { method: 'PUT', body: JSON.stringify({ ids }) }),
     },
     mfa: {
       setup: () => http<{ secret: string; qrUrl: string }>('/api/profile/mfa/setup', { method: 'POST' }),

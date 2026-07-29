@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { CheckCircle2, Circle, ArrowRight, PartyPopper } from 'lucide-react';
-import type { ProfileCompletion } from '@/lib/api';
+import type { ProfileCompletion, ProfileTab } from '@/lib/api';
 
 /** Where the ring stops feeling like a warning and starts feeling like progress. */
 const TONE = (percent: number) =>
@@ -27,7 +27,7 @@ const TONE = (percent: number) =>
  * `pathLength={100}` makes the dash array a literal percentage, so the geometry
  * does not have to be recomputed if the radius ever changes.
  */
-function Ring({ percent, size = 84 }: { percent: number; size?: number }) {
+export function CompletionRing({ percent, size = 84 }: { percent: number; size?: number }) {
   const tone = TONE(percent);
   const stroke = 8;
   const r = (size - stroke) / 2;
@@ -60,7 +60,7 @@ function Ring({ percent, size = 84 }: { percent: number; size?: number }) {
 
 export function CompletionPanel({ completion, onGoToTab }: {
   completion: ProfileCompletion;
-  onGoToTab: (tab: 'overview' | 'credentials') => void;
+  onGoToTab: (tab: ProfileTab) => void;
 }) {
   const { percent, items, nextSteps } = completion;
   const tone = TONE(percent);
@@ -69,7 +69,7 @@ export function CompletionPanel({ completion, onGoToTab }: {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-4">
-        <Ring percent={percent} />
+        <CompletionRing percent={percent} />
         <div className="min-w-0">
           <p className="text-[14px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
             {percent === 100 ? 'Your profile is complete' : 'Finish your profile'}
