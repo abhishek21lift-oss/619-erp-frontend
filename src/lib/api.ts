@@ -69,6 +69,54 @@ export interface ProfileMe {
   createdAt: string;
   lastLoginAt: string | null;
   mfaEnabled: boolean;
+  /** "Head Coach" — what they do, as opposed to `role`, which is what the software lets them click. */
+  jobTitle: string;
+  /** 'YYYY-MM-DD' or null. */
+  experienceSince: string | null;
+  /** Derived from experienceSince by the server, never stored. */
+  yearsExperience: number | null;
+  specialisations: string[];
+  certifications: Certification[];
+  credentialSummary: CredentialSummary;
+}
+
+/**
+ * A professional certificate. `status` and `daysLeft` are computed server-side
+ * on every read — a device with a skewed clock, or simply left open overnight,
+ * would show a lapsed certificate as current, and whether someone is qualified
+ * to take a session today is not a question to answer against that.
+ */
+export interface Certification {
+  id: string;
+  name: string;
+  issuer: string;
+  /** 'YYYY-MM-DD' or null. */
+  issued_on: string | null;
+  expires_on: string | null;
+  credential_id: string;
+  /** 'unknown' means no expiry was recorded — deliberately NOT the same as valid. */
+  status: 'expired' | 'expiring' | 'valid' | 'unknown';
+  daysLeft: number | null;
+}
+
+export interface CredentialSummary {
+  total: number;
+  expired: number;
+  expiring: number;
+  unknown: number;
+}
+
+/** The fields `updateProfile` may send. Anything omitted is left untouched. */
+export interface ProfileUpdate {
+  name: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
+  job_title?: string;
+  experience_since?: string | null;
+  specialisations?: string[];
+  certifications?: Array<Omit<Certification, 'status' | 'daysLeft'>>;
 }
 
 export interface NotificationPreferences {
@@ -1978,7 +2026,12 @@ export const api = {
   // ── Profile (My Profile page) ────────────────────────────────────
   profile: {
     me: () => http<ProfileMe>('/api/profile/me'),
-    updateMe: (data: { name: string; email: string; phone?: string; location?: string; bio?: string }) =>
+    /**
+     * Partial by design: the server only writes the credential fields this
+     * request actually carries, so a form that does not show certifications
+     * cannot wipe them by saving a phone number.
+     */
+    updateMe: (data: ProfileUpdate) =>
       http<ProfileMe>('/api/profile/me', { method: 'PUT', body: JSON.stringify(data) }),
     uploadAvatar: (file: File) => {
       const formData = new FormData();

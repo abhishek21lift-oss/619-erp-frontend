@@ -10,12 +10,13 @@ import {
   RefreshCw, LogOut, ShieldCheck, AlertTriangle,
   History, Fingerprint, Copy, Loader2, Settings,
   Zap, Calendar, Wifi, Camera, FileSignature, Dumbbell, ClipboardList,
+  Award, Plus, BadgeCheck, Briefcase,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { ProfileMe, NotificationPreferences, UserPreferences, ProfileDevice, ProfileSession, ActivityEvent } from '@/lib/api';
+import type { ProfileMe, NotificationPreferences, UserPreferences, ProfileDevice, ProfileSession, ActivityEvent, Certification } from '@/lib/api';
 import { apiBase } from '@/lib/http';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
@@ -134,6 +135,201 @@ function GlassCard({ children, className = '', style = {}, glow = false }: {
       }}
     >
       {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────
+   CREDENTIALS
+───────────────────────────────────────── */
+
+/** The editable copy of a certificate — the server's derived fields removed. */
+type CertDraft = Omit<Certification, 'status' | 'daysLeft'>;
+
+type Snapshot = {
+  name: string; email: string; phone: string; location: string; bio: string;
+  jobTitle: string; experienceSince: string;
+  /** Serialised, so the dirty check compares values rather than references. */
+  specialisations: string; certifications: string;
+};
+
+/**
+ * How a certificate's expiry reads.
+ *
+ * Four states, not three. "No expiry recorded" is deliberately not folded into
+ * valid: the certificate might never expire, or might have lapsed two years
+ * ago, and showing those the same way is the failure this whole feature is
+ * meant to prevent. Every state carries an icon and a word — colour never
+ * carries the meaning alone.
+ */
+const CERT_STATUS: Record<Certification['status'], { label: string; color: string; bg: string; icon: React.ReactNode }> = {
+  expired:  { label: 'Expired',  color: '#dc2626', bg: 'rgba(220,38,38,0.10)',  icon: <XCircle size={11} /> },
+  expiring: { label: 'Renew soon', color: '#b45309', bg: 'rgba(245,158,11,0.12)', icon: <AlertTriangle size={11} /> },
+  valid:    { label: 'Valid',    color: '#047857', bg: 'rgba(16,185,129,0.10)', icon: <CheckCircle2 size={11} /> },
+  unknown:  { label: 'No expiry set', color: '#64748b', bg: 'rgba(100,116,139,0.10)', icon: <AlertTriangle size={11} /> },
+};
+
+function certExpiryLine(status: Certification['status'], daysLeft: number | null, expiresOn: string | null) {
+  if (status === 'unknown' || daysLeft === null) return 'No expiry date recorded';
+  if (status === 'expired') {
+    const d = Math.abs(daysLeft);
+    return `Lapsed ${d === 0 ? 'today' : `${d} day${d === 1 ? '' : 's'} ago`} · ${fmtDate(expiresOn)}`;
+  }
+  if (daysLeft === 0) return `Expires today · ${fmtDate(expiresOn)}`;
+  return `${daysLeft} day${daysLeft === 1 ? '' : 's'} left · ${fmtDate(expiresOn)}`;
+}
+
+/**
+ * One certificate, editable in place.
+ *
+ * The status pill is driven by the SERVER's verdict for the saved copy. While a
+ * row is being edited the pill is hidden rather than recomputed in the browser,
+ * because a locally-derived "Valid" is exactly the reassurance nobody should
+ * get from an unverified clock.
+ */
+function CertificateRow({ cert, saved, onChange, onRemove }: {
+  cert: CertDraft;
+  saved: Certification | undefined;
+  onChange: (next: CertDraft) => void;
+  onRemove: () => void;
+}) {
+  const edited = !saved
+    || saved.name !== cert.name || saved.issuer !== cert.issuer
+    || saved.issued_on !== cert.issued_on || saved.expires_on !== cert.expires_on
+    || saved.credential_id !== cert.credential_id;
+  const meta = saved && !edited ? CERT_STATUS[saved.status] : null;
+  const set = (k: keyof CertDraft, v: string) => onChange({ ...cert, [k]: v || (k.endsWith('_on') ? null : '') } as CertDraft);
+
+  return (
+    <div
+      className="rounded-2xl p-4"
+      style={{
+        background: 'var(--bg-subtle)',
+        border: '1px solid var(--border)',
+        // A hairline in the status colour down the leading edge, so a wall of
+        // certificates shows its problems before any of it is read.
+        borderLeft: `3px solid ${meta ? meta.color : 'var(--border)'}`,
+      }}
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        {/* The name gets the full width and the status sits UNDER it, beside
+            the sentence that explains it. Sharing a row with the pill truncated
+            real certification names on a phone — "NASM Certified Personal Tr" —
+            and split the status from its own explanation. */}
+        <div className="min-w-0 flex-1">
+          <input
+            value={cert.name}
+            onChange={(e) => set('name', e.target.value)}
+            placeholder="Certification name"
+            className="w-full bg-transparent text-[14px] font-[780] tracking-[-0.01em] outline-none"
+            style={{ color: 'var(--text-primary)' }}
+          />
+          {meta && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-[760] whitespace-nowrap"
+                style={{ background: meta.bg, color: meta.color }}
+              >
+                {meta.icon} {meta.label}
+              </span>
+              <span className="text-[11px] font-[560]" style={{ color: 'var(--text-muted)' }}>
+                {certExpiryLine(saved!.status, saved!.daysLeft, saved!.expires_on)}
+              </span>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={onRemove}
+          aria-label={`Remove ${cert.name || 'certification'}`}
+          className="shrink-0 rounded-lg p-1.5 transition-colors hover:bg-[var(--bg-hover)]"
+          style={{ color: 'var(--text-disabled)' }}
+        >
+          <XCircle size={15} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        {([
+          ['Issuing body', 'issuer', 'text', 'NASM, ACE, K11…'],
+          ['Credential ID', 'credential_id', 'text', 'Optional'],
+          ['Issued', 'issued_on', 'date', ''],
+          ['Expires', 'expires_on', 'date', ''],
+        ] as const).map(([label, key, type, placeholder]) => (
+          <label key={key} className="block">
+            <span className="mb-1 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+              {label}
+            </span>
+            <input
+              type={type}
+              value={(cert[key] as string) || ''}
+              placeholder={placeholder}
+              onChange={(e) => set(key, e.target.value)}
+              className="w-full rounded-xl px-3 py-2 text-[12.5px] font-[560] outline-none"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Free-text tags. Enter or comma commits; backspace on an empty box removes. */
+function SpecialisationEditor({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [draft, setDraft] = useState('');
+
+  const commit = (raw: string) => {
+    const v = raw.replace(/\s+/g, ' ').trim();
+    if (!v) return;
+    // Matches the server, which de-duplicates case-insensitively and keeps the
+    // spelling that was typed first.
+    if (value.some((x) => x.toLowerCase() === v.toLowerCase())) { setDraft(''); return; }
+    onChange([...value, v]);
+    setDraft('');
+  };
+
+  return (
+    <div>
+      <div className="mb-2.5 flex flex-wrap gap-2">
+        {value.length === 0 && (
+          <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>
+            Nothing added yet — try “Strength &amp; Conditioning” or “Post-natal”.
+          </p>
+        )}
+        {value.map((sp) => (
+          <span
+            key={sp}
+            className="inline-flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 text-[12px] font-[680]"
+            style={{ background: 'rgba(99,102,241,0.10)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.22)' }}
+          >
+            {sp}
+            <button
+              onClick={() => onChange(value.filter((x) => x !== sp))}
+              aria-label={`Remove ${sp}`}
+              className="rounded-full p-0.5 transition-opacity hover:opacity-70"
+            >
+              <XCircle size={13} />
+            </button>
+          </span>
+        ))}
+      </div>
+      <input
+        value={draft}
+        onChange={(e) => {
+          // A comma is how people naturally separate these, so treat it as Enter
+          // rather than letting it become part of the tag.
+          if (e.target.value.includes(',')) commit(e.target.value.replace(/,/g, ''));
+          else setDraft(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(draft); }
+          if (e.key === 'Backspace' && !draft && value.length) onChange(value.slice(0, -1));
+        }}
+        onBlur={() => commit(draft)}
+        placeholder="Add a specialisation and press Enter"
+        className="w-full rounded-xl px-3.5 py-2.5 text-[12.5px] font-[560] outline-none"
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+      />
     </div>
   );
 }
@@ -462,7 +658,7 @@ const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; de
 export default function ProfilePage() {
   const { logout } = useAuth();
   const { toast } = useToast();
-  const [tab, setTab] = useState<'overview' | 'security' | 'preferences'>('overview');
+  const [tab, setTab] = useState<'overview' | 'credentials' | 'security' | 'preferences'>('overview');
 
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -482,12 +678,52 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
   const [location, setLocation] = useState('');
   const [bio, setBio] = useState('');
-  const originalRef = useRef({ name: '', email: '', phone: '', location: '', bio: '' });
+  /* Professional credentials */
+  const [jobTitle, setJobTitle] = useState('');
+  const [experienceSince, setExperienceSince] = useState('');
+  const [specialisations, setSpecialisations] = useState<string[]>([]);
+  const [certifications, setCertifications] = useState<CertDraft[]>([]);
+
+  const originalRef = useRef<Snapshot>({
+    name: '', email: '', phone: '', location: '', bio: '',
+    jobTitle: '', experienceSince: '', specialisations: '[]', certifications: '[]',
+  });
+  // The two lists compare by serialised value rather than reference: editing a
+  // certificate replaces the array, so an identity check would call the form
+  // dirty the moment anything was touched and never clean again.
   const isDirty = name !== originalRef.current.name
     || email !== originalRef.current.email
     || phone !== originalRef.current.phone
     || location !== originalRef.current.location
-    || bio !== originalRef.current.bio;
+    || bio !== originalRef.current.bio
+    || jobTitle !== originalRef.current.jobTitle
+    || experienceSince !== originalRef.current.experienceSince
+    || JSON.stringify(specialisations) !== originalRef.current.specialisations
+    || JSON.stringify(certifications) !== originalRef.current.certifications;
+
+  /** Load a server row into the form and reset the dirty baseline together. */
+  const hydrate = useCallback((row: ProfileMe) => {
+    setMe(row);
+    setName(row.name); setEmail(row.email); setPhone(row.phone);
+    setLocation(row.location); setBio(row.bio);
+    setJobTitle(row.jobTitle || '');
+    setExperienceSince(row.experienceSince || '');
+    setSpecialisations(row.specialisations || []);
+    // Drop the server's computed status from the editable copy: it is derived,
+    // and keeping it in the draft would make the dirty check fire whenever the
+    // clock rolled a certificate from "valid" to "expiring".
+    const drafts: CertDraft[] = (row.certifications || []).map((x) => ({
+      id: x.id, name: x.name, issuer: x.issuer,
+      issued_on: x.issued_on, expires_on: x.expires_on, credential_id: x.credential_id,
+    }));
+    setCertifications(drafts);
+    originalRef.current = {
+      name: row.name, email: row.email, phone: row.phone, location: row.location, bio: row.bio,
+      jobTitle: row.jobTitle || '', experienceSince: row.experienceSince || '',
+      specialisations: JSON.stringify(row.specialisations || []),
+      certifications: JSON.stringify(drafts),
+    };
+  }, []);
 
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -533,17 +769,14 @@ export default function ProfilePage() {
     setPageLoading(true);
     setPageError(null);
     api.profile.me()
-      .then(row => {
-        setMe(row);
-        setName(row.name); setEmail(row.email); setPhone(row.phone);
-        setLocation(row.location); setBio(row.bio);
-        originalRef.current = { name: row.name, email: row.email, phone: row.phone, location: row.location, bio: row.bio };
-      })
+      // hydrate() sets `me` as well as the form fields and the dirty baseline,
+      // so they can never drift apart.
+      .then(hydrate)
       .catch(err => setPageError(err instanceof Error ? err.message : 'Could not load profile'))
       .finally(() => setPageLoading(false));
     api.profile.notifications.get().then(setNotifications).catch(() => {});
     api.profile.preferences.get().then(setPreferences).catch(() => {});
-  }, []);
+  }, [hydrate]);
 
   const fetchActivity = useCallback(async () => {
     setActivityLoading(true);
@@ -574,9 +807,19 @@ export default function ProfilePage() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      const row = await api.profile.updateMe({ name, email, phone, location, bio });
-      setMe(row);
-      originalRef.current = { name: row.name, email: row.email, phone: row.phone, location: row.location, bio: row.bio };
+      const row = await api.profile.updateMe({
+        name, email, phone, location, bio,
+        job_title: jobTitle,
+        // '' clears the date; the server distinguishes that from omitting it.
+        experience_since: experienceSince || '',
+        specialisations,
+        // status/daysLeft are the server's to compute — sending them back
+        // would let a stale browser assert a certificate is still valid.
+        certifications: certifications.map(({ id, name: n, issuer, issued_on, expires_on, credential_id }) => ({
+          id, name: n, issuer, issued_on, expires_on, credential_id,
+        })),
+      });
+      hydrate(row);
       setSaveMsg({ type: 'success', text: 'Profile saved successfully' });
       setTimeout(() => setSaveMsg(null), 3000);
     } catch (err: unknown) {
@@ -590,6 +833,9 @@ export default function ProfilePage() {
   const handleDiscard = () => {
     const o = originalRef.current;
     setName(o.name); setEmail(o.email); setPhone(o.phone); setLocation(o.location); setBio(o.bio);
+    setJobTitle(o.jobTitle); setExperienceSince(o.experienceSince);
+    setSpecialisations(JSON.parse(o.specialisations));
+    setCertifications(JSON.parse(o.certifications));
     setSaveMsg(null);
   };
 
@@ -904,6 +1150,7 @@ export default function ProfilePage() {
                 style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(15,23,42,0.05)', scrollbarWidth: 'none' }}>
                 {([
                   { id: 'overview', label: 'Overview', icon: <User size={13} /> },
+                  { id: 'credentials', label: 'Credentials', icon: <Award size={13} /> },
                   { id: 'security', label: 'Security', icon: <Lock size={13} /> },
                   { id: 'preferences', label: 'Preferences', icon: <Settings size={13} /> },
                 ] as const).map(t => (
@@ -1033,6 +1280,127 @@ export default function ProfilePage() {
               )}
 
               {/* ═══ SECURITY ═══ */}
+              {/* ═══ CREDENTIALS ═══ */}
+              {tab === 'credentials' && (
+                <m.div key="credentials" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex flex-col gap-6">
+
+                  {/* The banner exists because a lapsed certificate is an
+                      insurance problem, not an admin one. It leads the tab
+                      rather than sitting under the list — the whole reason
+                      expiry dates are stored per certificate instead of as one
+                      block of text is to be able to say this sentence. */}
+                  {me && (me.credentialSummary.expired > 0 || me.credentialSummary.expiring > 0) && (
+                    <div className="rounded-2xl p-4"
+                      style={{
+                        background: me.credentialSummary.expired > 0 ? 'rgba(220,38,38,0.08)' : 'rgba(245,158,11,0.09)',
+                        border: `1px solid ${me.credentialSummary.expired > 0 ? 'rgba(220,38,38,0.22)' : 'rgba(245,158,11,0.24)'}`,
+                      }}>
+                      <p className="flex items-start gap-2.5 text-[12.5px] font-[620] leading-relaxed"
+                        style={{ color: me.credentialSummary.expired > 0 ? '#b91c1c' : '#b45309' }}>
+                        <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+                        <span>
+                          {me.credentialSummary.expired > 0 && (
+                            <><strong>{me.credentialSummary.expired}</strong> certification{me.credentialSummary.expired === 1 ? ' has' : 's have'} expired. </>
+                          )}
+                          {me.credentialSummary.expiring > 0 && (
+                            <><strong>{me.credentialSummary.expiring}</strong> expire{me.credentialSummary.expiring === 1 ? 's' : ''} within 60 days. </>
+                          )}
+                          Renew before taking sessions against them.
+                        </span>
+                      </p>
+                    </div>
+                  )}
+
+                  <GlassCard className="p-6" glow>
+                    <SectionHeader
+                      icon={<Briefcase size={15} style={{ color: '#6366f1' }} />}
+                      title="Professional profile"
+                      subtitle="What you do, as opposed to what the software lets you click"
+                    />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <FloatInput label="Job title" value={jobTitle} onChange={setJobTitle} />
+                      <div>
+                        <span className="mb-1.5 block text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                          Coaching since
+                        </span>
+                        <input
+                          type="date" value={experienceSince}
+                          onChange={(e) => setExperienceSince(e.target.value)}
+                          className="w-full rounded-xl px-3.5 py-3 text-[13px] font-[560] outline-none"
+                          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                        />
+                        {/* A date is stored and the duration derived, so this
+                            never silently goes stale the way a typed "8 years"
+                            would. */}
+                        <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                          {me?.yearsExperience != null
+                            ? `${me.yearsExperience} year${me.yearsExperience === 1 ? '' : 's'} of experience`
+                            : 'Set a date and the years keep themselves current'}
+                        </p>
+                      </div>
+                    </div>
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <SectionHeader
+                      icon={<Dumbbell size={15} style={{ color: '#6366f1' }} />}
+                      title="Specialisations"
+                      subtitle="The work you take on"
+                    />
+                    <SpecialisationEditor value={specialisations} onChange={setSpecialisations} />
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                      <SectionHeader
+                        icon={<Award size={15} style={{ color: '#6366f1' }} />}
+                        title="Certifications"
+                        subtitle={me && me.credentialSummary.total > 0
+                          ? `${me.credentialSummary.total} on file${me.credentialSummary.unknown > 0 ? ` · ${me.credentialSummary.unknown} with no expiry recorded` : ''}`
+                          : 'Qualifications, with the dates that matter'}
+                      />
+                      <button
+                        onClick={() => setCertifications((prev) => [...prev, {
+                          // Local-only id; the server issues its own on save.
+                          id: `new_${Date.now().toString(36)}`,
+                          name: '', issuer: '', issued_on: null, expires_on: null, credential_id: '',
+                        }])}
+                        className="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-[700] text-white transition-transform hover:scale-[1.03]"
+                        style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.32)' }}
+                      >
+                        <Plus size={13} /> Add
+                      </button>
+                    </div>
+
+                    {certifications.length === 0 ? (
+                      <div className="rounded-2xl px-4 py-10 text-center"
+                        style={{ background: 'var(--bg-subtle)', border: '1px dashed var(--border)' }}>
+                        <BadgeCheck size={26} className="mx-auto mb-2.5" style={{ color: 'var(--text-disabled)' }} />
+                        <p className="text-[13px] font-[680]" style={{ color: 'var(--text-primary)' }}>No certifications yet</p>
+                        <p className="mx-auto mt-1 max-w-[380px] text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                          Add your CPT, CPR/AED and any specialist qualifications. Record the
+                          expiry and this page will tell you before one lapses.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {certifications.map((cert, i) => (
+                          <CertificateRow
+                            key={cert.id}
+                            cert={cert}
+                            saved={me?.certifications.find((x) => x.id === cert.id)}
+                            onChange={(next) => setCertifications((prev) => prev.map((x, j) => (j === i ? next : x)))}
+                            onRemove={() => setCertifications((prev) => prev.filter((_, j) => j !== i))}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </GlassCard>
+                </m.div>
+              )}
+
               {tab === 'security' && (
                 <m.div key="security" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
