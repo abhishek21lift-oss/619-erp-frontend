@@ -14,7 +14,8 @@
     "analyze": "ANALYZE=true next build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "knip": "knip"
+    "knip": "knip",
+    "device-check": "node scripts/device-check/run.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.19",

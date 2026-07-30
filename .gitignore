@@ -52,3 +52,6 @@ _pcheck.js
 # python bytecode (from .claude skill scripts)
 __pycache__/
 *.pyc
+
+# device-check screenshots — output to look at, not artefacts to version
+/.device-check/
