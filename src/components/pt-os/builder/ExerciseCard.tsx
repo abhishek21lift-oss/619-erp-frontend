@@ -104,12 +104,18 @@ export default function ExerciseCard({
         {/*
           44px, not an icon-sized hit box. This is the control most likely to be
           used with a thumb, and the brief is explicit about no tiny buttons.
+
+          Explicit pixels, not h-11/w-11. globals.css sets `html { font-size:
+          14px }`, so every rem-based Tailwind size renders at 87.5% — h-11 is
+          38.5px, not the 44 the name implies, and this handle measured
+          31.5×38.5 on a 390px viewport. Anything that has to be exactly 44
+          says 44.
         */}
         <button
           type="button"
           aria-label={`Reorder ${exercise.name}`}
           {...dragHandleProps}
-          className="-ml-1 flex h-11 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-[10px] active:cursor-grabbing"
+          className="-ml-1 flex h-[44px] w-[44px] shrink-0 cursor-grab touch-none items-center justify-center rounded-[10px] active:cursor-grabbing"
           style={{ color: 'var(--text-muted)' }}
         >
           <GripVertical size={18} />
@@ -173,7 +179,7 @@ export default function ExerciseCard({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="mt-3 flex h-9 items-center gap-1 text-[12px] font-[650]"
+        className="mt-3 flex h-[44px] items-center gap-1 text-[12px] font-[650]"
         style={{ color: 'var(--text-muted)' }}
       >
         <ChevronDown
@@ -215,7 +221,7 @@ function IconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors"
+      className="flex h-[44px] w-[44px] items-center justify-center rounded-[12px] transition-colors"
       style={{ color: danger ? 'var(--danger)' : 'var(--text-muted)' }}
     >
       {children}
@@ -275,7 +281,24 @@ function InlineField({
       <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
         {spec.label}
       </span>
-      <div className="relative">
+      {/*
+        The unit sits BESIDE the input, not on top of it.
+
+        It used to be an absolutely-positioned span over the input's right
+        edge, which works only while the value is narrow. At 390px each of
+        these four fields is about 70px wide, and a 1000 kg prescription
+        rendered as "1000" with "kg" painted across the final zero — the
+        number and its unit were unreadable together, which is the one thing
+        the field has to do. Padding could not fix it: an overlay is outside
+        the input's box, so no amount of padding stops the text reaching it.
+
+        As a flex row the input genuinely ends before the unit, so a long
+        value scrolls within its own box and can never collide.
+      */}
+      <div
+        className="flex items-center overflow-hidden rounded-[12px]"
+        style={inputStyle}
+      >
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -286,12 +309,12 @@ function InlineField({
           }}
           inputMode={spec.mode === 'text' ? 'text' : spec.mode === 'decimal' ? 'decimal' : 'numeric'}
           placeholder={spec.placeholder ?? '—'}
-          className="h-11 w-full rounded-[12px] px-2.5 text-center text-[14px] font-[700] outline-none"
-          style={inputStyle}
+          className="h-[44px] w-full min-w-0 flex-1 bg-transparent px-1.5 text-center text-[14px] font-[700] outline-none"
+          style={{ color: 'var(--text-primary)' }}
         />
         {spec.suffix && draft !== '' && (
           <span
-            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-[600]"
+            className="shrink-0 pr-2 text-[10px] font-[600]"
             style={{ color: 'var(--text-muted)' }}
           >
             {spec.suffix}
@@ -308,13 +331,32 @@ function NotesField({
   const committed = exercise.notes ?? '';
   const [draft, setDraft] = useState(committed);
   const last = useRef(committed);
+  const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (committed !== last.current) { last.current = committed; setDraft(committed); }
   }, [committed]);
 
+  /**
+   * Grow to fit the note.
+   *
+   * `rows={1}` with a 44px min-height clipped anything longer than two lines:
+   * a three-line coaching cue rendered as 44px of box with 114px of text inside
+   * it, cut off mid-word. `resize-y` was the escape hatch, but a phone has no
+   * resize handle to drag, so on the device this screen is designed for the
+   * rest of the note was simply unreachable. The note is the one field a
+   * trainer writes prose into; it has to be readable without being edited.
+   */
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.max(44, el.scrollHeight)}px`;
+  }, [draft]);
+
   return (
     <textarea
+      ref={ref}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
@@ -326,7 +368,7 @@ function NotesField({
       rows={1}
       placeholder="Coach notes…"
       aria-label={`Coach notes for ${exercise.name}`}
-      className="min-h-[44px] w-full resize-y rounded-[12px] px-3 py-2.5 text-[13px] outline-none"
+      className="min-h-[44px] w-full resize-none overflow-hidden rounded-[12px] px-3 py-2.5 text-[13px] outline-none"
       style={inputStyle}
     />
   );

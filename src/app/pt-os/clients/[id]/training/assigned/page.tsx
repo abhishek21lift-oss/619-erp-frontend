@@ -91,7 +91,7 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
               action={(
                 <Link
                   href="/pt-os/workout-plans"
-                  className="inline-flex h-11 items-center rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
+                  className="inline-flex h-[44px] items-center rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
                   style={{ background: 'var(--brand)' }}
                 >
                   Browse programmes
@@ -161,7 +161,7 @@ export default function AssignedWorkoutsPage({ params }: { params: Promise<{ id:
 
                     <Link
                       href={`/pt-os/clients/${clientId}/training/builder?plan=${a.workout_plan_id}`}
-                      className="mt-3 flex h-11 items-center justify-between rounded-[12px] px-3 text-[13px] font-[700]"
+                      className="mt-3 flex h-[44px] items-center justify-between rounded-[12px] px-3 text-[13px] font-[700]"
                       style={{ background: 'var(--bg-subtle)', color: 'var(--brand)' }}
                     >
                       Open in builder

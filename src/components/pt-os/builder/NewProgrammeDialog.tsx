@@ -113,7 +113,13 @@ export default function NewProgrammeDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      // z-[120], not z-50. The AI assistant's floating button is z-100 and
+      // fixed to the bottom-right, so at z-50 this sheet opened UNDERNEATH it
+      // and the FAB sat on top of the "Create and add exercises" button —
+      // covering the sheet's primary action on a 390px screen. Above the FAB
+      // and the nav, below the toasts (z-9999) and the impersonation banner
+      // (z-10000), both of which should outrank a dialog.
+      className="fixed inset-0 z-[120] flex items-end justify-center sm:items-center"
       style={{ background: 'rgba(15,23,42,0.45)' }}
       onClick={onClose}
       role="presentation"
@@ -133,7 +139,7 @@ export default function NewProgrammeDialog({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="flex h-10 w-10 items-center justify-center rounded-[12px]"
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-[12px]"
             style={{ color: 'var(--text-muted)' }}
           >
             <X size={18} />
@@ -146,7 +152,7 @@ export default function NewProgrammeDialog({
             onChange={(e) => setName(e.target.value)}
             autoFocus
             placeholder="e.g. Upper / Lower Split"
-            className="h-12 w-full rounded-[12px] px-3 text-[14px] outline-none"
+            className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
             style={inputStyle}
           />
         </Field>
@@ -159,7 +165,7 @@ export default function NewProgrammeDialog({
                 <button
                   key={g.value}
                   onClick={() => setGoal(g.value)}
-                  className="h-10 rounded-[12px] px-3 text-[12.5px] font-[700]"
+                  className="h-[44px] rounded-[12px] px-3 text-[12.5px] font-[700]"
                   style={{
                     background: active ? 'var(--brand)' : 'var(--bg-subtle)',
                     color: active ? '#fff' : 'var(--text-muted)',
@@ -177,7 +183,7 @@ export default function NewProgrammeDialog({
             <input
               type="number" min={1} max={52} value={weeks} inputMode="numeric"
               onChange={(e) => setWeeks(Math.max(1, Number(e.target.value) || 1))}
-              className="h-12 w-full rounded-[12px] px-3 text-[14px] outline-none"
+              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
               style={inputStyle}
             />
           </Field>
@@ -185,7 +191,7 @@ export default function NewProgrammeDialog({
             <input
               type="number" min={1} max={14} value={perWeek} inputMode="numeric"
               onChange={(e) => setPerWeek(Math.max(1, Number(e.target.value) || 1))}
-              className="h-12 w-full rounded-[12px] px-3 text-[14px] outline-none"
+              className="h-[48px] w-full rounded-[12px] px-3 text-[14px] outline-none"
               style={inputStyle}
             />
           </Field>
@@ -199,7 +205,7 @@ export default function NewProgrammeDialog({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search clients…"
-                className="h-11 w-full rounded-[12px] pl-9 pr-3 text-[13.5px] outline-none"
+                className="h-[44px] w-full rounded-[12px] pl-9 pr-3 text-[13.5px] outline-none"
                 style={inputStyle}
               />
             </div>
@@ -210,7 +216,7 @@ export default function NewProgrammeDialog({
                 <button
                   key={c.id}
                   onClick={() => setClientId(c.id)}
-                  className="flex h-11 w-full items-center px-3 text-left text-[13.5px] font-[650]"
+                  className="flex h-[44px] w-full items-center px-3 text-left text-[13.5px] font-[650]"
                   style={{
                     background: c.id === clientId ? 'var(--bg-subtle)' : 'transparent',
                     color: c.id === clientId ? 'var(--brand)' : 'var(--text-primary)',
@@ -226,7 +232,7 @@ export default function NewProgrammeDialog({
         <button
           onClick={submit}
           disabled={saving}
-          className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white disabled:opacity-60"
+          className="mt-2 flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] text-[14px] font-[700] text-white disabled:opacity-60"
           style={{ background: 'var(--brand)' }}
         >
           {saving && <Loader2 size={16} className="animate-spin" />}

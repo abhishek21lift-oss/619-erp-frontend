@@ -190,7 +190,7 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
                         <button
                           key={n}
                           onClick={() => setSelected(n)}
-                          className="h-10 shrink-0 rounded-[12px] px-3 text-[12.5px] font-[700] transition-colors"
+                          className="h-[44px] shrink-0 rounded-[12px] px-3 text-[12.5px] font-[700] transition-colors"
                           style={{
                             background: active ? STRENGTH : 'var(--bg-subtle)',
                             color: active ? '#fff' : 'var(--text-muted)',

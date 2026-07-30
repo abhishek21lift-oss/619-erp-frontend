@@ -23,6 +23,13 @@
 // value stays (retyping it would be worse) but the status pill goes red and
 // says so — an optimistic UI that hides a failed write is worse than a save
 // button, because the trainer leaves believing the programme is stored.
+//
+// ── Why the sizes are h-[44px] and not h-11 ───────────────────────────────
+//
+// globals.css sets `html { font-size: 14px }`, so Tailwind's rem-based sizes
+// render at 87.5% of their names: h-11 is 38.5px, h-12 is 42, h-14 is 49. Every
+// control on this screen was written as h-11 for "44px touch target" and shipped
+// measuring 38.5. Sizes that have to be exact are written in pixels here.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, Reorder, useDragControls } from 'framer-motion';
@@ -191,7 +198,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
               role="tab"
               aria-selected={active}
               onClick={() => setDay(d.n)}
-              className="flex h-11 shrink-0 items-center gap-1.5 rounded-[14px] px-3.5 text-[13px] font-[700] transition-colors"
+              className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-[14px] px-3.5 text-[13px] font-[700] transition-colors"
               style={{
                 background: active ? 'var(--brand)' : 'var(--bg-card)',
                 color: active ? '#fff' : 'var(--text-muted)',
@@ -225,7 +232,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
             <button
               type="button"
               onClick={() => setPicking(true)}
-              className="inline-flex h-11 items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
+              className="inline-flex h-[44px] items-center gap-2 rounded-[14px] px-4 text-[13.5px] font-[700] text-white"
               style={{ background: 'var(--brand)' }}
             >
               <Plus size={16} /> Add exercise
@@ -253,7 +260,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
         <button
           type="button"
           onClick={() => setPicking(true)}
-          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[16px] text-[13.5px] font-[700] transition-colors"
+          className="mt-3 flex h-[48px] w-full items-center justify-center gap-2 rounded-[16px] text-[13.5px] font-[700] transition-colors"
           style={{
             background: 'var(--bg-card)',
             border: '1px dashed var(--border)',
@@ -271,7 +278,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
         type="button"
         onClick={() => setPicking(true)}
         aria-label="Add exercise"
-        className="fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white"
+        className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white"
         style={{
           bottom: 'calc(var(--bottom-nav-h, 52px) + env(safe-area-inset-bottom, 0px) + 16px)',
           background: 'var(--brand)',

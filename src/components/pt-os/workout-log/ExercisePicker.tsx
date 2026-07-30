@@ -29,7 +29,13 @@ const PAGE_SIZE = 30;
 
 /** Searchable/filterable picker over the shared exercises library
  *  (src/app/pt-os/exercise-library) — reuses the exact same API rather
- *  than a second exercise data source. */
+ *  than a second exercise data source.
+ *
+ *  The chips and the Cancel button are sized in explicit pixels: globals.css
+ *  sets `html { font-size: 14px }`, so padding-derived heights land short of a
+ *  thumb target. Measured at 390px they were 24px tall, against the 44 the
+ *  workout brief asks for. This sheet is opened from the builder on a phone,
+ *  mid-session, which is exactly when a 24px chip is unhittable. */
 export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: ExercisePickerProps) {
   const { toast } = useToast();
   const [search, setSearch] = useState('');
@@ -91,14 +97,14 @@ export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: Ex
           <div className="mb-3 flex flex-wrap gap-1.5">
             <button
               onClick={() => setBodyPart('')}
-              className="rounded-full px-2.5 py-1 text-[11px] font-[650] transition"
+              className="flex h-[44px] min-w-[44px] items-center justify-center rounded-full px-3.5 text-[11px] font-[650] transition"
               style={{ background: !bodyPart ? '#0f172a' : 'var(--bg-subtle)', color: !bodyPart ? '#fff' : '#64748b' }}>
               All
             </button>
             {bodyParts.slice(0, 8).map((bp) => (
               <button
                 key={bp} onClick={() => setBodyPart(bp === bodyPart ? '' : bp)}
-                className="rounded-full px-2.5 py-1 text-[11px] font-[650] capitalize transition"
+                className="flex h-[44px] items-center rounded-full px-3.5 text-[11px] font-[650] capitalize transition"
                 style={{ background: bodyPart === bp ? '#0f172a' : 'var(--bg-subtle)', color: bodyPart === bp ? '#fff' : '#64748b' }}>
                 {bp}
               </button>
@@ -116,7 +122,7 @@ export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: Ex
                 <button
                   key={name}
                   onClick={() => { onSelect({ id: '', name }); onClose(); }}
-                  className="rounded-full px-3 py-1.5 text-[12px] font-[650] transition hover:opacity-80"
+                  className="flex h-[44px] items-center rounded-full px-3.5 text-[12px] font-[650] transition hover:opacity-80"
                   style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706', border: '1px solid rgba(245,158,11,0.25)' }}>
                   {name}
                 </button>
@@ -154,7 +160,7 @@ export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: Ex
         <div className="mt-2 flex justify-end">
           <button
             onClick={onClose}
-            className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[650]"
+            className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3.5 text-[12px] font-[650]"
             style={{ color: '#64748b' }}
           >
             <X size={13} /> Cancel
