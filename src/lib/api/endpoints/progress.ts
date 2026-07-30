@@ -1,0 +1,230 @@
+// API endpoints: progress.
+//
+// Lifted verbatim from the single `api` object in the 4,185-line api.ts.
+// Method names, URLs and request shapes are unchanged; index.ts composes these
+// back into the same `api` object every consumer already imports.
+
+import { http } from '../../http';
+import { buildQs } from '../qs';
+import type {
+  ConsentRecord, InformedConsent, InformedConsentActivity, MedicalClearance, ParqDocument,
+  ParqDocumentType, ParqForm, ParqFormDetail, ParqGateStatus, WorkoutPreviousExercise,
+  WorkoutProgressPoint, WorkoutSession, WorkoutSessionDetail, WorkoutSessionExercise,
+  WorkoutSet, WorkoutVolumePoint,
+} from '../types';
+
+// ── Progress Tracking ─────────────────────────────────────────
+export const progress = {
+  assessments: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/assessments${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/assessments', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+  },
+  goals: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/goals${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/goals', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/progress/goals/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+  },
+  weeklyCheckins: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/weekly-checkins${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/weekly-checkins', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+  },
+  strengthLogs: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/strength-logs${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/strength-logs', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+  },
+  progressPhotos: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/progress-photos${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/progress-photos', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    delete: (id: string) => http(`/api/progress/progress-photos/${id}`, { method: 'DELETE' }),
+  },
+  lifestyleAssessments: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/lifestyle-assessments${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/lifestyle-assessments', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/progress/lifestyle-assessments/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+  },
+  nutritionAssessments: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/nutrition-assessments${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/nutrition-assessments', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/progress/nutrition-assessments/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+  },
+  mobilityPerformanceAssessments: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/mobility-performance-assessments${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/mobility-performance-assessments', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/progress/mobility-performance-assessments/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+  },
+  postureAssessments: {
+    list: (params?: Record<string, string | number>) =>
+      http<{ data: unknown[] }>(`/api/progress/posture-assessments${buildQs(params)}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: unknown }>('/api/progress/posture-assessments', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: unknown }>(`/api/progress/posture-assessments/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+  },
+  parqForms: {
+    list: (params?: { client_id?: string }) =>
+      http<{ data: ParqForm[] }>(`/api/pt-os/parq/forms${buildQs(params)}`),
+    get: (id: string) =>
+      http<{ data: ParqFormDetail }>(`/api/pt-os/parq/forms/${id}`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: ParqForm }>('/api/pt-os/parq/forms', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: ParqForm }>(`/api/pt-os/parq/forms/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+    gateStatus: (id: string) =>
+      http<ParqGateStatus>(`/api/pt-os/parq/forms/${id}/gate-status`),
+  },
+  parqClearance: {
+    create: (formId: string, data: Record<string, unknown>) =>
+      http<{ data: MedicalClearance }>(`/api/pt-os/parq/forms/${formId}/clearance`, {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: MedicalClearance }>(`/api/pt-os/parq/clearance/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+  },
+  parqConsent: {
+    create: (formId: string, data: Record<string, unknown>) =>
+      http<{ data: ConsentRecord }>(`/api/pt-os/parq/forms/${formId}/consent`, {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+  },
+  parqDocuments: {
+    upload: (formId: string, docType: ParqDocumentType, file: File) => {
+      const formData = new FormData();
+      formData.append('doc_type', docType);
+      formData.append('file', file);
+      return http<{ data: ParqDocument }>(`/api/pt-os/parq/forms/${formId}/documents`, {
+        method: 'POST', body: formData,
+      });
+    },
+  },
+  informedConsent: {
+    list: (params?: { client_id?: string }) =>
+      http<{ data: InformedConsent[] }>(`/api/pt-os/informed-consent${buildQs(params)}`),
+    get: (id: string) =>
+      http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}`),
+    activity: (id: string) =>
+      http<{ data: InformedConsentActivity[] }>(`/api/pt-os/informed-consent/${id}/activity`),
+    create: (data: Record<string, unknown>) =>
+      http<{ data: InformedConsent }>('/api/pt-os/informed-consent', {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}`, {
+        method: 'PATCH', body: JSON.stringify(data),
+      }),
+    sign: (id: string, data: { signer: 'client' | 'trainer' | 'witness'; signature: string; witness_name?: string }) =>
+      http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}/sign`, {
+        method: 'POST', body: JSON.stringify(data),
+      }),
+    revoke: (id: string) =>
+      http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}/revoke`, {
+        method: 'POST',
+      }),
+    uploadClearance: (id: string, file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return http<{ data: InformedConsent }>(`/api/pt-os/informed-consent/${id}/medical-clearance`, {
+        method: 'POST', body: formData,
+      });
+    },
+  },
+  workoutLog: {
+    sessions: {
+      list: (params: { client_id: string; limit?: number; offset?: number }) =>
+        http<{ data: WorkoutSession[] }>(`/api/pt-os/workout-log/sessions${buildQs(params)}`),
+      get: (id: string) =>
+        http<{ data: WorkoutSessionDetail }>(`/api/pt-os/workout-log/sessions/${id}`),
+      create: (data: Record<string, unknown>) =>
+        http<{ data: WorkoutSession; screening_warnings?: string[] }>('/api/pt-os/workout-log/sessions', {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: WorkoutSession }>(`/api/pt-os/workout-log/sessions/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+      delete: (id: string) =>
+        http<{ message: string }>(`/api/pt-os/workout-log/sessions/${id}`, { method: 'DELETE' }),
+      plannedDayOptions: (id: string) =>
+        http<{ data: string[] }>(`/api/pt-os/workout-log/sessions/${id}/planned-day-options`),
+    },
+    exercises: {
+      add: (sessionId: string, data: { exercise_id?: string | null; exercise_name: string; notes?: string | null }) =>
+        http<{ data: WorkoutSessionExercise }>(`/api/pt-os/workout-log/sessions/${sessionId}/exercises`, {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      remove: (id: string) =>
+        http<{ message: string }>(`/api/pt-os/workout-log/exercises/${id}`, { method: 'DELETE' }),
+    },
+    sets: {
+      add: (sessionExerciseId: string, data: Record<string, unknown>) =>
+        http<{ data: WorkoutSet }>(`/api/pt-os/workout-log/exercises/${sessionExerciseId}/sets`, {
+          method: 'POST', body: JSON.stringify(data),
+        }),
+      update: (id: string, data: Record<string, unknown>) =>
+        http<{ data: WorkoutSet }>(`/api/pt-os/workout-log/sets/${id}`, {
+          method: 'PATCH', body: JSON.stringify(data),
+        }),
+      delete: (id: string) =>
+        http<{ message: string }>(`/api/pt-os/workout-log/sets/${id}`, { method: 'DELETE' }),
+    },
+    previous: (params: { client_id: string; exercise_id?: string; exercise_name?: string; exclude_session_id?: string }) =>
+      http<{ data: WorkoutPreviousExercise | null }>(`/api/pt-os/workout-log/previous${buildQs(params)}`),
+    progress: (params: { client_id: string; exercise_id?: string; exercise_name?: string }) =>
+      http<{ data: WorkoutProgressPoint[] }>(`/api/pt-os/workout-log/progress${buildQs(params)}`),
+    volumeSummary: (params: { client_id: string; group_by?: 'week' | 'month' }) =>
+      http<{ data: WorkoutVolumePoint[] }>(`/api/pt-os/workout-log/volume-summary${buildQs(params)}`),
+  },
+};
