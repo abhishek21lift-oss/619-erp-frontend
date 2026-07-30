@@ -1028,7 +1028,39 @@ export interface WorkoutPlanExercise {
   day_of_week: number;
   sort_order: number;
   notes?: string | null;
+
+  // ── Programming parameters (migration 136) ──────────────────────────────
+  // All optional: rows written before the migration have NULL in every one of
+  // them, and a plan authored through the older whole-plan PUT still may.
+  /** Prescribed load. Unit is a studio display preference, not stored here. */
+  target_weight?: number | null;
+  /** Four-figure tempo, e.g. "3-1-2-0". "X" means explosive. */
+  tempo?: string | null;
+  /** Target intensity — RPE 6-10 or RIR 0-5, whichever scale the studio uses. */
+  rpe?: number | null;
+  /** Count of warm-up sets before the working sets. */
+  warmup_sets?: number | null;
+  /** Exercises sharing a value are performed together: superset, giant set, circuit. */
+  superset_group?: string | null;
+  /**
+   * Per-method parameters that would otherwise each need a column: drop sets,
+   * AMRAP/EMOM caps, timed sets, pause reps, voice notes. Deliberately loose —
+   * the point is that a new set type ships without a migration.
+   */
+  config?: Record<string, unknown> | null;
+
+  // Demo media, joined from the exercise library so a card can show it without
+  // a second request.
+  video_url?: string | null;
+  gif_url?: string | null;
 }
+
+/** Fields the builder may write on a planned exercise. */
+export type WorkoutExerciseInput = Partial<
+  Pick<WorkoutPlanExercise,
+    'exercise_id' | 'day_of_week' | 'sort_order' | 'sets' | 'reps' | 'rest_seconds' |
+    'notes' | 'target_weight' | 'tempo' | 'rpe' | 'warmup_sets' | 'superset_group' | 'config'>
+>;
 
 export interface WorkoutPlan {
   id: string;
@@ -1589,6 +1621,46 @@ export const api = {
         }),
       delete: (id: string) =>
         http<{ message: string }>(`/api/workouts/plans/${id}`, { method: 'DELETE' }),
+
+      /**
+       * Granular, id-stable edits to a plan's exercises.
+       *
+       * `update` above replaces the WHOLE plan: it deletes every exercise row
+       * and re-inserts, minting new ids. That is fine for a save button and
+       * fatal for autosave — saving Monday would erase Tuesday-Sunday, and
+       * every save would invalidate the ids the builder is dragging.
+       *
+       * These four touch only what they name, so the builder can save on every
+       * keystroke and an exercise keeps its id for its whole life.
+       */
+      exercises: {
+        add: (planId: string, data: WorkoutExerciseInput & { exercise_id: string }) =>
+          http<{ message: string; exercise: WorkoutPlanExercise }>(
+            `/api/workouts/plans/${planId}/exercises`,
+            { method: 'POST', body: JSON.stringify(data) },
+          ),
+        /** Send only the fields that changed; `null` clears, `0` is kept. */
+        patch: (planId: string, rowId: string, data: WorkoutExerciseInput) =>
+          http<{ message: string; exercise: WorkoutPlanExercise }>(
+            `/api/workouts/plans/${planId}/exercises/${rowId}`,
+            { method: 'PATCH', body: JSON.stringify(data) },
+          ),
+        remove: (planId: string, rowId: string) =>
+          http<{ message: string }>(
+            `/api/workouts/plans/${planId}/exercises/${rowId}`,
+            { method: 'DELETE' },
+          ),
+        /**
+         * Reorder one day. `exerciseIds` must list exactly the exercises already
+         * on that day, in their new order — the server rejects anything else
+         * rather than silently moving a row in from elsewhere.
+         */
+        reorder: (planId: string, day: number, exerciseIds: string[]) =>
+          http<{ message: string; count: number }>(
+            `/api/workouts/plans/${planId}/days/${day}/order`,
+            { method: 'PUT', body: JSON.stringify({ exercise_ids: exerciseIds }) },
+          ),
+      },
     },
     assignments: {
       list: (params: { client_id: string; status?: string }) =>
