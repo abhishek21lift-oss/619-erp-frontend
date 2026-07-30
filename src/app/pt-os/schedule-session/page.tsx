@@ -185,7 +185,6 @@ function SchedulePageContent() {
     fetchSessions();
   }, [fetchSessions]);
 
-  const [selectedTrainerFilter, setSelectedTrainerFilter] = useState('');
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -195,10 +194,9 @@ function SchedulePageContent() {
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
       if (search && !s.client.toLowerCase().includes(search.toLowerCase()) && !s.trainer.toLowerCase().includes(search.toLowerCase())) return false;
-      if (selectedTrainerFilter && s.trainer !== selectedTrainerFilter) return false;
       return true;
     });
-  }, [sessions, search, selectedTrainerFilter]);
+  }, [sessions, search]);
 
   const sessionsForDate = useMemo(() => {
     return filteredSessions.filter((s) => s.date === selectedDate).sort((a, b) => a.time.localeCompare(b.time));
@@ -292,8 +290,6 @@ function SchedulePageContent() {
     }
   };
 
-  const trainerFilterOptions = ['', ...trainerList.map((t) => t.name)];
-
   return (
     <div>
       {/* ── HEADER ── */}
@@ -351,17 +347,6 @@ function SchedulePageContent() {
               <input value={search} onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search sessions…"
                 className="flex-1 bg-transparent text-[12px] font-[500] outline-none" style={{ color: 'rgb(15,23,42)' }} />
-            </div>
-
-            {/* Trainer Filter */}
-            <div className="flex items-center gap-1.5 rounded-[10px] px-2.5 py-1"
-              style={{ background: 'var(--bg-card)', border: '1px solid rgba(15,23,42,0.08)' }}>
-              <Train size={12} style={{ color: 'rgb(148,163,184)' }} />
-              <select value={selectedTrainerFilter} onChange={(e) => setSelectedTrainerFilter(e.target.value)}
-                className="bg-transparent text-[11px] font-[500] outline-none" style={{ color: 'rgb(15,23,42)' }}>
-                <option value="">All Trainers</option>
-                {trainerList.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
-              </select>
             </div>
 
             {/* Date Nav */}

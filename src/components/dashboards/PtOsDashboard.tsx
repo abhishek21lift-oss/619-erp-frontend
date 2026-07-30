@@ -17,12 +17,12 @@
 
 import { useCallback, useMemo } from 'react';
 import { m } from 'framer-motion';
-import { PremiumBarChart, PullToRefresh } from '@/components/ui';
+import { PullToRefresh } from '@/components/ui';
 import {
-  Users, TrendingUp, Wallet, Percent, RefreshCw,
+  Users, TrendingUp, Wallet, Percent,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
   UserPlus, CalendarPlus, Receipt,
-  Trophy, ShieldCheck, Target, Gauge, Crown,
+  ShieldCheck, Target, Gauge, Crown,
   CalendarClock, AlertCircle, CheckCircle2, XCircle,
   FileSignature, HeartPulse, Apple, PersonStanding,
 } from 'lucide-react';
@@ -93,7 +93,6 @@ const C = {
 };
 
 const TRAINER_COLORS = [C.purple, C.blue, C.emerald, C.amber, C.crimson, C.cyan];
-const MEDALS = ['🥇', '🥈', '🥉'];
 
 const STATUS_META: Record<SessionStatus, { label: string; color: string; icon: React.ReactNode }> = {
   scheduled: { label: 'Scheduled', color: C.blue,    icon: <CalendarClock size={10} /> },
@@ -450,58 +449,6 @@ function StatCard({
         </div>
       )}
     </m.div>
-  );
-}
-
-// ─── Section 4 — Revenue Chart ──────────────────────────────────────────────────
-function RevenueChart({ data }: { data: DashData['revenueTrend'] }) {
-  if (!data?.length) return (
-    <Glass className="p-5 flex items-center justify-center" style={{ minHeight: 180 }}>
-      <p className="text-[12px]" style={{ color: C.muted }}>No revenue data yet</p>
-    </Glass>
-  );
-
-  const totalRev = data.reduce((s, d) => s + Number(d.revenue), 0);
-  const totalComm = data.reduce((s, d) => s + Number(d.incentives), 0);
-  const chartData = data.map(d => ({ ...d, label: (d.label ?? '').split(' ')[0] }));
-
-  return (
-    <Glass className="p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div>
-          <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Revenue Trend</h3>
-          <p className="text-[10.5px] mt-0.5 font-[500]" style={{ color: C.muted }}>6-month · {fmtCompact(totalRev)} total</p>
-        </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <span className="inline-flex items-center gap-1"><span className="h-2 w-4 rounded-full" style={{ background: C.purple }} /><span className="text-[9px] font-[600]" style={{ color: C.muted }}>Revenue</span></span>
-          <span className="inline-flex items-center gap-1"><span className="h-2 w-4 rounded-full" style={{ background: C.rose }} /><span className="text-[9px] font-[600]" style={{ color: C.muted }}>Comm.</span></span>
-        </div>
-      </div>
-
-      <PremiumBarChart
-        data={chartData as Record<string, unknown>[]}
-        xKey="label"
-        bars={[
-          { key: 'revenue', label: 'Revenue', color: C.purple },
-          { key: 'incentives', label: 'Commission', color: C.rose },
-        ]}
-        height={160}
-        formatValue={fmtCompact}
-      />
-
-      <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(124,58,237,0.08)' }}>
-        {[
-          { label: '6M Revenue', value: fmtCompact(totalRev), color: C.purple, bg: 'rgba(124,58,237,0.07)' },
-          { label: 'Commission', value: fmtCompact(totalComm), color: C.rose, bg: 'rgba(225,29,72,0.07)' },
-          { label: 'Net', value: fmtCompact(totalRev - totalComm), color: C.emerald, bg: 'rgba(16,185,129,0.07)' },
-        ].map(s => (
-          <div key={s.label} className="flex-1 rounded-[11px] p-2.5" style={{ background: s.bg }}>
-            <p className="text-[7.5px] font-[700] uppercase tracking-[0.09em] mb-0.5" style={{ color: `${s.color}aa` }}>{s.label}</p>
-            <p className="text-[13px] font-[840] tracking-[-0.02em]" style={{ color: s.color }}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-    </Glass>
   );
 }
 
@@ -880,82 +827,6 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
   );
 }
 
-// ─── Section 11 — Trainer Leaderboard ──────────────────────────────────────────
-function TrainerLeaderboard({ trainers, onRefetch, loading }: {
-  trainers: DashData['trainers']; onRefetch: () => void; loading: boolean;
-}) {
-  const sorted = useMemo(() => [...(trainers ?? [])].sort((a, b) => b.monthly_revenue - a.monthly_revenue), [trainers]);
-  const topRevenue = sorted[0]?.monthly_revenue ?? 1;
-  return (
-    <Glass className="p-4 sm:p-5 flex flex-col">
-      <div className="flex items-center justify-between mb-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${C.amber}, #fbbf24)`, boxShadow: `0 5px 12px ${C.amber}40` }}>
-            <Trophy size={14} />
-          </span>
-          <div>
-            <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Trainer Board</h3>
-            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>This month · by revenue</p>
-          </div>
-        </div>
-        <button onClick={onRefetch} className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-purple-50" aria-label="Refresh">
-          <RefreshCw size={13} style={{ color: 'rgba(124,58,237,0.5)' }} className={loading ? 'animate-spin' : ''} />
-        </button>
-      </div>
-
-      {sorted.length === 0 ? (
-        <div className="flex flex-col items-center py-7 text-center">
-          <p className="text-[12px]" style={{ color: C.muted }}>No trainer data yet</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {sorted.map((t, i) => {
-            const color = TRAINER_COLORS[i % TRAINER_COLORS.length];
-            const commPct = t.monthly_revenue > 0 ? (t.monthly_commission / t.monthly_revenue) * 100 : 0;
-            const revPct = (t.monthly_revenue / topRevenue) * 100;
-            const isTop3 = i < 3;
-            return (
-              <m.div key={t.id}
-                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.07, duration: 0.35 }}
-                className="rounded-[14px] p-3"
-                style={{ background: `${color}0a`, border: `1px solid ${color}1c` }}>
-                <div className="flex items-center gap-2.5 mb-1.5">
-                  <div className="w-5 text-center shrink-0">
-                    {isTop3 ? <span className="text-[14px]">{MEDALS[i]}</span>
-                      : <span className="text-[10px] font-[760]" style={{ color: C.muted }}>#{i+1}</span>}
-                  </div>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[10px] font-[820] text-white"
-                    style={{ background: `linear-gradient(135deg,${color},${color}bb)`, boxShadow: `0 3px 8px ${color}30` }}>
-                    {initials(t.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-[720] truncate" style={{ color: C.ink }}>{t.name}</p>
-                    <p className="text-[9px] font-[500]" style={{ color: C.muted }}>{t.active_clients} client{t.active_clients!==1?'s':''}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[12px] font-[820]" style={{ color }}>{fmtCompact(t.monthly_revenue)}</p>
-                    <p className="text-[9px] font-[640]" style={{ color: C.rose }}>{fmtCompact(t.monthly_commission)} comm.</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 ml-[28px]">
-                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
-                    <m.div className="h-full rounded-full" style={{ background: color }}
-                      initial={{ width: 0 }} animate={{ width: `${revPct}%` }}
-                      transition={{ delay: 0.3+i*0.07, duration: 0.55, ease: [0.16,1,0.3,1] }} />
-                  </div>
-                  <span className="text-[8.5px] font-[650] shrink-0" style={{ color: C.muted }}>{commPct.toFixed(0)}%</span>
-                </div>
-              </m.div>
-            );
-          })}
-        </div>
-      )}
-    </Glass>
-  );
-}
-
 // ─── Desktop Quick Dock ─────────────────────────────────────────────────────────
 function QuickDock() {
   const router = useRouter();
@@ -1109,22 +980,23 @@ export default function PtOsDashboard() {
             {/* 5 — AI copilot */}
             <AICopilot d={d} />
 
-            {/* 6 — Revenue chart */}
-            <div>
-              <SectionLabel>Revenue</SectionLabel>
-              <RevenueChart data={d.revenueTrend} />
-            </div>
-
-            {/* 7 — Revenue forecast */}
+            {/* 6 — Revenue forecast.
+                The month-by-month revenue bar chart used to sit above this. It
+                said the same thing twice: the KPI cards already carry the
+                revenue figure and its sparkline, and the forecast below reads
+                the same revenueTrend series. d.revenueTrend is still fetched
+                and still used by both of those. */}
             <ForecastPanel d={d} />
 
-            {/* 8 — Session activity + trainer board (stacked mobile, 2-col md+) */}
+            {/* 7 — Session activity.
+                Was a two-column "Team Performance" row with a trainer
+                leaderboard beside it. Three of the four studios have exactly
+                one trainer, so the board ranked a list of one, and "team" was
+                the wrong word for a solo studio. Full width now that it is the
+                only card in the row. */}
             <div>
-              <SectionLabel>Team Performance</SectionLabel>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                <SessionActivity ops={o} loading={ops.loading} />
-                <TrainerLeaderboard trainers={d.trainers} onRefetch={dash.refetch} loading={dash.loading} />
-              </div>
+              <SectionLabel>Sessions</SectionLabel>
+              <SessionActivity ops={o} loading={ops.loading} />
             </div>
           </>
         )}
