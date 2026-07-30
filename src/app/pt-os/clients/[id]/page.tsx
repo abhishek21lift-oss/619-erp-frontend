@@ -8,7 +8,7 @@ import {
   User, Calendar, Target,
   Dumbbell, Wallet, FileText, Activity, RefreshCw,
   CheckCircle, AlertTriangle, Clock, IndianRupee,
-  Camera, Ruler, Zap, Repeat, ChevronRight,
+  Camera, Zap, Repeat, ChevronRight,
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
@@ -19,7 +19,7 @@ import AppShell from '@/components/AppShell';
 
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { Button, PremiumAreaChart, DonutChart } from '@/components/ui';
+import { PremiumAreaChart, DonutChart } from '@/components/ui';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 
 interface PtClientDetail {
@@ -36,18 +36,6 @@ interface PtClientDetail {
   trainer_commission: number; weight?: number; notes?: string;
   status: string; days_left: number;
   due_status?: string;
-}
-
-interface TimelineEvent {
-  id: string;
-  type: 'payment' | 'checkin' | 'session' | 'measurement' | 'goal' | 'strength' | 'photo';
-  title: string;
-  subtitle: string;
-  date: string;
-  icon: React.ReactNode;
-  from: string;
-  to: string;
-  value?: string;
 }
 
 const fmtINR = (n: number | string | null | undefined) =>
@@ -301,7 +289,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [deleting, setDeleting] = useState(false);
   const [openAction, setOpenAction] = useState<string | null>(null);
 
-  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
   const [editNotes, setEditNotes] = useState(false);
@@ -337,8 +324,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
       const renewals = renewalsRes.status === 'fulfilled' && Array.isArray((renewalsRes.value as any)?.data) ? (renewalsRes.value as any).data : [];
       setSubscriptionHistory(renewals);
 
-      // Full (unfiltered) counts, for the Activity Mix donut — timeline below
-      // truncates to 10 most recent events, which would undercount totals.
+      // Counts for the Activity Mix donut. Unfiltered on purpose: these are
+      // totals, so any truncation would undercount them.
       setActivityCounts({
         payments: rawPayments.length,
         checkins: checkins.length,
@@ -346,38 +333,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
         goals: goals.length,
       });
 
-      const events: TimelineEvent[] = [];
-      checkins.forEach((ch: any) => events.push({
-        id: `ch-${ch.id}`, type: 'checkin',
-        title: 'Weekly Check-in',
-        subtitle: `Adherence: ${ch.adherence || ch.workout_adherence || '—'}% · Weight: ${ch.weight || '—'}`,
-        date: ch.week_start_date || ch.created_at,
-        icon: <Activity size={12} />, from: '#10b981', to: '#059669',
-      }));
-      rawPayments.forEach((p: any) => events.push({
-        id: `pmt-${p.id}`, type: 'payment',
-        title: `Payment — ${fmtINR(p.amount)}`,
-        subtitle: `${p.payment_method || p.method || '—'}${p.notes ? ` · ${p.notes}` : ''}`,
-        date: p.date || p.created_at,
-        icon: <Wallet size={12} />, from: '#8b5cf6', to: '#7c3aed', value: fmtINR(p.amount),
-      }));
-      assessments.forEach((a: any) => events.push({
-        id: `meas-${a.id}`, type: 'measurement',
-        title: a.weight ? `Weight: ${a.weight} kg` : 'Assessment recorded',
-        subtitle: a.body_fat ? `Body Fat: ${a.body_fat}% · ${a.assessment_type || 'check-in'}` : (a.assessment_type || 'check-in'),
-        date: a.created_at || a.assessment_date,
-        icon: <Ruler size={12} />, from: '#f59e0b', to: '#d97706', value: a.weight ? `${a.weight} kg` : undefined,
-      }));
-      goals.filter((g: any) => g.status === 'active').forEach((g: any) => events.push({
-        id: `goal-${g.id}`, type: 'goal',
-        title: `Goal: ${g.goal_type || g.type || 'Fitness'}`,
-        subtitle: g.target_weight ? `Target: ${g.target_weight} kg` : g.target_body_fat ? `BF target: ${g.target_body_fat}%` : 'Active goal',
-        date: g.created_at,
-        icon: <Target size={12} />, from: '#3b82f6', to: '#2563eb',
-      }));
-
-      events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setTimeline(events.slice(0, 10));
     } catch (err: any) {
       setError(err?.message || 'Failed to load client');
     } finally {
@@ -461,8 +416,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   }));
 
   // Activity Mix: what kind of engagement has been logged for this client.
-  // Colors match the Recent Activity timeline's own dot colors below, so the
-  // donut and the timeline read as the same system rather than two palettes.
+  // One hue per category, held fixed so a category keeps its colour whatever
+  // the counts are.
   const activityMixData = [
     { name: 'Payments', value: activityCounts.payments, color: '#8b5cf6' },
     { name: 'Check-ins', value: activityCounts.checkins, color: '#10b981' },
@@ -763,41 +718,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 {/* ── MAIN CONTENT GRID ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-                  {/* ── LEFT: Activity + Weight ── */}
+                  {/* ── LEFT: Weight, Goals, Personal Info ── */}
                   <div className="lg:col-span-2 space-y-5">
-
-                    {/* Activity Timeline */}
-                    <DarkCard title="Recent Activity" icon={<Activity size={14} />} from="#6366f1">
-                      {timeline.length === 0 ? (
-                        <p className="text-[13px] text-slate-500 italic">No recent activity recorded</p>
-                      ) : (
-                        <div>
-                          {timeline.map((event, i) => (
-                            <m.div key={event.id}
-                              initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                              className="relative flex gap-3 pb-4 pl-8 last:pb-0">
-                              {/* Line */}
-                              {i < timeline.length - 1 && (
-                                <div className="absolute left-3.5 top-5 bottom-0 w-px"
-                                  style={{ background: 'var(--bg-subtle)' }} />
-                              )}
-                              {/* Dot */}
-                              <div className="absolute left-0 top-0.5 flex h-7 w-7 items-center justify-center rounded-full"
-                                style={{ background: `linear-gradient(135deg, ${event.from}, ${event.to})`, boxShadow: `0 2px 8px ${event.from}40` }}>
-                                <span className="text-white">{event.icon}</span>
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-[12.5px] font-[660] text-gray-900">{event.title}</p>
-                                  <span className="shrink-0 text-[10px] font-[600] text-slate-400">{fmtDate(event.date)}</span>
-                                </div>
-                                <p className="text-[11px] mt-0.5 text-slate-500">{event.subtitle}</p>
-                              </div>
-                            </m.div>
-                          ))}
-                        </div>
-                      )}
-                    </DarkCard>
 
                     {/* Weight Trend */}
                     {recentWeights.length >= 2 && (
@@ -869,24 +791,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
 
                     {/* Check-in QR */}
                     <QrCheckinCard clientId={client.id} clientName={client.name} />
-
-                    {/* Financial Details */}
-                    <DarkCard title="Financials" icon={<Wallet size={14} />} from="#10b981">
-                      {client.discount > 0 && (
-                        <InfoRow label="Discount" value={`-${fmtINR(client.discount)}`} valueColor="#ef4444" />
-                      )}
-                      <InfoRow label="Total PT Fee" value={fmtINR(currentTermFee)} />
-                      <InfoRow label="Paid" value={fmtINR(currentTermPaid)} valueColor="#059669" />
-                      <InfoRow label="Balance" value={fmtINR(currentTermBalance)}
-                        valueColor={currentTermBalance > 0 ? '#ef4444' : '#059669'} />
-                      {client.due_status && client.due_status !== 'CLEAR' && (
-                        <div className="mt-2 flex items-center gap-1.5 rounded-[8px] px-2.5 py-1.5"
-                          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                          <AlertTriangle size={11} className="text-red-500" />
-                          <span className="text-[10px] font-[700] uppercase tracking-wider text-red-500">{client.due_status}</span>
-                        </div>
-                      )}
-                    </DarkCard>
 
                     {/* Notes */}
                     <DarkCard title="Notes" icon={<FileText size={14} />} from="#f59e0b">
