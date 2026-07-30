@@ -1,29 +1,23 @@
 'use client';
-import Guard from '@/components/Guard';
-import AppShell from '@/components/AppShell';
-import { RotateCcw, AlertTriangle } from 'lucide-react';
 
-export default function RootError({ error, reset }: { error: Error; reset: () => void }) {
-  return (
-    <Guard>
-      <AppShell>
-        <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full bg-[#FEF2F2] text-[#EF4444]">
-            <AlertTriangle className="h-7 w-7" />
-          </div>
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">Something went wrong</h2>
-          <p className="max-w-sm text-sm text-[#6B7280]">
-            {error.message || 'An unexpected error occurred. Please try again.'}
-          </p>
-          <button
-            onClick={reset}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_16px_rgba(220,38,38,0.25)] transition-all duration-200 hover:shadow-[0_8px_24px_rgba(220,38,38,0.35)]"
-          >
-            <RotateCcw className="h-4 w-4" strokeWidth={2} />
-            Try again
-          </button>
-        </div>
-      </AppShell>
-    </Guard>
-  );
+// Root error boundary — the last Next.js boundary before global-error.tsx.
+//
+// With per-segment error.tsx files in place (audit H-02) this now only catches
+// throws from routes that have no nearer boundary: the root page and the
+// catch-all. It stays shelled because those are authenticated surfaces.
+//
+// The fallback itself lives in components/RouteError so this and all 27 segment
+// boundaries behave identically. That move fixed three defects this file used
+// to have: it printed `error.message` in production, it hardcoded light-mode
+// colours in a theme-adaptive app, and it never reported to Sentry — which
+// mattered most, because being the nearest boundary meant it caught page errors
+// before components/ErrorBoundary could report them.
+
+import RouteError from '@/components/RouteError';
+
+export default function RootError(props: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return <RouteError {...props} shell />;
 }

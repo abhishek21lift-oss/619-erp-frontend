@@ -72,14 +72,25 @@ describe('platform console — the H-03 split', () => {
     // is easy to leave behind during a rename. Next.js will not warn: nothing
     // under a `_`-prefixed folder is a route, so an unreferenced file is
     // simply never bundled.
-    const all = files.map(rel).filter((f) => f !== 'page.tsx');
+    //
+    // Convention files are the exception and must be excluded. Next.js loads
+    // page/layout/error/loading/not-found/template/default by filename, so they
+    // are entry points that nothing imports — by design. Without this exclusion
+    // adding src/app/platform/error.tsx (audit H-02) reported it as an orphan,
+    // which is how this list came to be written down.
+    const CONVENTION = new Set([
+      'page', 'layout', 'error', 'global-error', 'loading',
+      'not-found', 'template', 'default',
+    ]);
     const corpus = files.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
-    const orphans = all.filter((f) => {
-      const stem = f.replace(/\.tsx?$/, '');
-      const base = path.basename(stem);
-      // Match './_tabs/StudiosTab' or '../_shared/ui' style specifiers.
-      return !new RegExp(`from '[^']*${base}'`).test(corpus);
-    });
+    const orphans = files
+      .map(rel)
+      .filter((f) => !CONVENTION.has(path.basename(f).replace(/\.tsx?$/, '')))
+      .filter((f) => {
+        const base = path.basename(f.replace(/\.tsx?$/, ''));
+        // Match './_tabs/StudiosTab' or '../_shared/ui' style specifiers.
+        return !new RegExp(`from '[^']*${base}'`).test(corpus);
+      });
     expect(orphans).toEqual([]);
   });
 
