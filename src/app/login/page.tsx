@@ -127,7 +127,7 @@ function ForgotModal({ open, onClose, prefillEmail }: { open: boolean; onClose: 
 
               <h2 id="forgot-title" className="mt-4 text-[19px] font-[800] tracking-[-0.01em]" style={{ color: INK }}>Reset your password</h2>
               <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: MUTE }}>
-                For your workspace&rsquo;s security, password resets are issued by your studio administrator.
+                For your workspace&rsquo;s security, password resets are issued by your studio&rsquo;s trainer.
                 Send them a quick request and they&rsquo;ll set you up with a new password.
               </p>
 

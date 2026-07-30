@@ -18,6 +18,7 @@ import {
   Loader2, AlertTriangle, Globe, Monitor, KeyRound, Users, Fingerprint, Eye,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { roleLabel } from '@/lib/roles';
 import type {
   SecurityOverview, SecurityThreats, LoginEvent, LoginEventQuery, ActiveSession,
 } from '@/lib/api';
@@ -429,7 +430,7 @@ export default function SecurityCentre() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[12px] font-[650]" style={{ color: 'var(--text-primary)' }}>{s.name}</p>
                 <p className="truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  {s.organization_name || 'Platform'} · {s.role}
+                  {s.organization_name || 'Platform'} · {roleLabel(s.role)}
                 </p>
               </div>
               <span className="shrink-0 text-[11.5px] tabular-nums" style={{ color: 'var(--text-muted)' }}>

@@ -305,7 +305,7 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
             style={{ background: 'var(--bg-subtle)' }}>
             <Info size={14} className="mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
             <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>
-              No target set for {monthLabel()}. A studio admin sets this.
+              No target set for {monthLabel()}. The studio&rsquo;s trainer sets this.
             </p>
           </div>
         ) : confirming ? (

@@ -12,7 +12,7 @@ const FAQS = [
   { q: 'How do I assign a PT to a client?', a: 'Open the client profile and click "Assign PT" in the action buttons bar.' },
   { q: 'How do I check attendance?', a: 'Use the Check-In page for QR/biometric check-in, or visit Attendance Records.' },
   { q: 'How do I generate reports?', a: 'Go to Reports section — you can access revenue, member, and attendance reports.' },
-  { q: 'How do I reset a user password?', a: 'Admins can manage users under Settings → Staff & Access.' },
+  { q: 'How do I reset a user password?', a: 'The studio owner manages users under Settings → Staff & Access.' },
 ];
 
 const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };

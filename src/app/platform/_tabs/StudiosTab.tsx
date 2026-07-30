@@ -21,6 +21,7 @@ import type {
 import { setImpersonation } from '@/lib/http';
 import { clearCachedAuthUser } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
+import { roleLabel } from '@/lib/roles';
 import {
   AddUserModal, CreateOrgModal, EditUserModal, ResetPasswordModal,
 } from '../_modals/OrgModals';
@@ -537,7 +538,7 @@ export function OrgCard({ row, selected, onToggleSelect, onToggleStatus, onReset
             <div key={u.id} className="flex flex-wrap items-center gap-2 py-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-[650]" style={{ color: 'var(--text-primary)' }}>
-                  {u.name} <span className="font-[500]" style={{ color: 'var(--text-muted)' }}>· {u.role}</span>
+                  {u.name} <span className="font-[500]" style={{ color: 'var(--text-muted)' }}>· {roleLabel(u.role)}</span>
                 </p>
                 <p className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{u.email} · last login {fmtWhen(u.last_login)}</p>
               </div>

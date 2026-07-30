@@ -7,6 +7,7 @@ import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { ROLE_LABELS, roleLabel } from '@/lib/roles';
 import { useToast } from '@/lib/toast';
 import {
   Users, UserPlus, Shield, Key, Search, Filter, MoreHorizontal,
@@ -19,14 +20,19 @@ import {
 /* ────────────────────────────────────────────────────────────────────
    TYPES
 ──────────────────────────────────────────────────────────────────── */
-type Role = 'admin' | 'coach' | 'receptionist' | 'manager';
+// The only role this screen hands out. It used to be
+// 'admin' | 'coach' | 'receptionist' | 'manager', which was fiction twice over:
+// `coach` and `receptionist` are not values users_role_check accepts, so they
+// were translated on the way out and back on the way in, and no account has
+// ever held any role but admin and super_admin.
+type Role = 'admin';
 type Status = 'active' | 'pending' | 'suspended';
 
 interface Account {
   id: string;
   name: string;
   email: string;
-  role: Role;
+  role: string;
   status: Status;
   linkedCoach?: string;
   lastLogin: string;
@@ -40,10 +46,14 @@ interface Account {
    ROLE CONFIG
 ──────────────────────────────────────────────────────────────────── */
 const ROLES: Record<Role, { label: string; icon: React.ReactNode; color: string; bg: string; desc: string; perms: string }> = {
-  admin:        { label: 'Admin',        icon: <Crown size={14} />,     color: '#6366f1', bg: 'rgba(99,102,241,0.08)',   desc: 'Full system access', perms: 'All permissions' },
-  manager:      { label: 'Manager',      icon: <Briefcase size={14} />, color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)',   desc: 'Ops & reporting',    perms: 'Reports, Finance' },
-  coach:        { label: 'Coach',        icon: <Zap size={14} />,       color: '#10b981', bg: 'rgba(16,185,129,0.08)',   desc: 'PT portal access',   perms: 'Clients, Schedule' },
-  receptionist: { label: 'Receptionist', icon: <Headphones size={14} />,color: '#f59e0b', bg: 'rgba(245,158,11,0.08)',   desc: 'Front desk access',  perms: 'Check-in, Payments' },
+  admin: {
+    label: ROLE_LABELS.admin,
+    icon: <Crown size={14} />,
+    color: '#6366f1',
+    bg: 'rgba(99,102,241,0.08)',
+    desc: 'Owns and runs one studio',
+    perms: 'Everything inside their studio',
+  },
 };
 
 const STATUS_CFG: Record<Status, { label: string; color: string; bg: string; dot: string }> = {
@@ -52,22 +62,25 @@ const STATUS_CFG: Record<Status, { label: string; color: string; bg: string; dot
   suspended: { label: 'Suspended', color: 'var(--text-muted)', bg: 'rgba(107,114,128,0.08)', dot: '#9ca3af' },
 };
 
-// Display-only configs for roles that aren't assignable staff roles (so they
-// don't appear in the RoleSelector, which maps over ROLES). Combined with a
-// safe fallback, a badge never crashes on an unmapped role/status.
+// Roles that can be DISPLAYED but not assigned from here. Only one: yours.
+// The account list includes the platform operator, so its badge has to render;
+// it just is not something the New Account form can create.
+//
+// The other five roles used to be listed here. They are gone because none has
+// ever had an account and none is offered anywhere, so a badge for them was
+// describing a state the product does not produce. The fallback below still
+// renders any role that turns up, which is the safety net that matters.
 const ROLE_BADGE_EXTRA: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  super_admin: { label: 'Super Admin', color: '#8b5cf6', bg: 'rgba(139,92,246,0.10)', icon: <Crown size={14} /> },
-  trainer:     { label: 'Trainer',     color: '#10b981', bg: 'rgba(16,185,129,0.10)', icon: <Zap size={14} /> },
-  staff:       { label: 'Staff',       color: '#0ea5e9', bg: 'rgba(14,165,233,0.10)', icon: <Briefcase size={14} /> },
-  reception:   { label: 'Reception',   color: '#f59e0b', bg: 'rgba(245,158,11,0.10)', icon: <Headphones size={14} /> },
-  member:      { label: 'Member',      color: '#6366f1', bg: 'rgba(99,102,241,0.10)', icon: <User size={14} /> },
+  super_admin: { label: ROLE_LABELS.super_admin, color: '#8b5cf6', bg: 'rgba(139,92,246,0.10)', icon: <Crown size={14} /> },
 };
 
 function roleBadgeCfg(role: string) {
   return (
     ROLES[role as Role] ??
     ROLE_BADGE_EXTRA[role] ??
-    { label: role || 'User', color: '#6b7280', bg: 'rgba(107,114,128,0.10)', icon: <User size={14} /> }
+    // Falls back to roleLabel rather than the raw value, so a role that has a
+    // name but no badge styling still reads as a word.
+    { label: roleLabel(role) || 'User', color: '#6b7280', bg: 'rgba(107,114,128,0.10)', icon: <User size={14} /> }
   );
 }
 
@@ -122,7 +135,7 @@ function Avatar({ name, id, size = 40 }: { name: string; id: string; size?: numb
 /* ────────────────────────────────────────────────────────────────────
    ROLE BADGE
 ──────────────────────────────────────────────────────────────────── */
-function RoleBadge({ role }: { role: Role }) {
+function RoleBadge({ role }: { role: string }) {
   const cfg = roleBadgeCfg(role);
   return (
     <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-[660]"
@@ -350,7 +363,6 @@ function CoachSelector({ value, onChange }: { value: string; onChange: (v: strin
 ──────────────────────────────────────────────────────────────────── */
 function AccountCard({ account, onAction }: { account: Account; onAction: (id: string, action: string) => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const role = ROLES[account.role];
 
   return (
     <m.div
@@ -504,7 +516,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [showPw,   setShowPw]   = useState(false);
-  const [role,     setRole]     = useState<Role>('receptionist');
+  const [role,     setRole]     = useState<Role>('admin');
   const [coach,    setCoach]    = useState('');
   const [saving,   setSaving]   = useState(false);
   const [done,     setDone]     = useState(false);
@@ -512,20 +524,13 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
 
   const strength = useMemo(() => pwStrength(password), [password]);
 
-  // Map local UI role names to API role values
-  const toApiRole = (r: Role): 'admin' | 'manager' | 'trainer' | 'reception' | 'member' => {
-    if (r === 'coach') return 'trainer';
-    if (r === 'receptionist') return 'reception';
-    return r as 'admin' | 'manager';
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !password) return;
     setSaving(true);
     setError('');
     try {
-      const result = await api.auth.createUser({ name, email, password, role: toApiRole(role) });
+      const result = await api.auth.createUser({ name, email, password, role });
       const account: Account = {
         id: result.user.id,
         name, email, role, status: 'active',
@@ -536,7 +541,7 @@ function CreateAccountPanel({ onCreated }: { onCreated: (a: Account) => void }) 
       setDone(true);
       setTimeout(() => {
         setDone(false);
-        setName(''); setEmail(''); setPassword(''); setRole('receptionist'); setCoach('');
+        setName(''); setEmail(''); setPassword(''); setRole('admin'); setCoach('');
       }, 1800);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create account');
@@ -855,7 +860,10 @@ function AccountManagementPage() {
         id: u.id ?? u.user_id,
         name: u.name ?? '',
         email: u.email ?? '',
-        role: (u.role === 'trainer' ? 'coach' : u.role === 'reception' ? 'receptionist' : u.role || 'receptionist') as Role,
+        // Kept verbatim. This used to translate trainer→coach and
+        // reception→receptionist, and default to 'receptionist', so an
+        // account with no role displayed as a role that does not exist.
+        role: u.role || '',
         status: (u.status || u.is_active === false ? 'suspended' : 'active') as Status,
         linkedCoach: u.linked_coach || undefined,
         lastLogin: u.last_login || 'Never',
@@ -958,7 +966,7 @@ function AccountManagementPage() {
             <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
               <KpiChip label="Total Accounts"     value={stats.total}   icon={<Users size={13} />}       color="#6366f1" />
               <KpiChip label="Active Users"       value={stats.active}  icon={<Activity size={13} />}    color="#10b981" />
-              <KpiChip label="Admin Accounts"     value={stats.admins}  icon={<Crown size={13} />}       color="#f59e0b" />
+              <KpiChip label="Trainers"           value={stats.admins}  icon={<Crown size={13} />}       color="#f59e0b" />
               <KpiChip label="Pending Invitations" value={stats.pending} icon={<Sparkles size={13} />}   color="#8b5cf6" />
             </div>
           )}

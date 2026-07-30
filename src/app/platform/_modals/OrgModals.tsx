@@ -12,6 +12,7 @@ import type { Organization, OrgUser } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { genPassword } from '../_shared/format';
 import { ROLE_OPTIONS } from '../_shared/types';
+import { roleLabel } from '@/lib/roles';
 import { Field, Modal, PasswordField, inputCls, inputStyle } from '../_shared/ui';
 
 export function CreateOrgModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -138,7 +139,7 @@ export function AddUserModal({ org, onClose, onAdded }: { org: Organization; onC
         </Field>
         <Field label="Role">
           <select className={inputCls} style={inputStyle} value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
-            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
           </select>
         </Field>
         <Field label="Temporary password">
@@ -179,7 +180,7 @@ export function EditUserModal({ user, onClose, onSaved }: { user: OrgUser; onClo
         </Field>
         <Field label="Role">
           <select className={inputCls} style={inputStyle} value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
-            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+            {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{roleLabel(r)}</option>)}
           </select>
           <p className="mt-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>Changing the role signs the account out so it re-authenticates with its new powers.</p>
         </Field>

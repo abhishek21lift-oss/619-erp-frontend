@@ -25,6 +25,7 @@ import type {
   AnnouncementSeverity, AnnouncementAudience, SubPlan,
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
+import { ASSIGNABLE_ROLES, roleLabel } from '@/lib/roles';
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)' } as const;
 const inputStyle = { ...cardStyle, color: 'var(--text-primary)' } as const;
@@ -46,7 +47,11 @@ const STATUS: Record<Announcement['status'], { label: string; bg: string; fg: st
 /* The subscription states an announcement can target. Mirrors the lifecycle in
    migration 099 — these are billing states, not the super-admin on/off flag. */
 const SUB_STATUSES = ['trial', 'active', 'expired', 'frozen', 'cancelled'];
-const ROLES = ['admin', 'manager', 'trainer', 'member'];
+/* Who inside a studio an announcement can target. One role, because one role
+   exists: the trainer who owns the studio. The list used to include manager,
+   trainer and member, none of which has ever had an account, and the chips
+   printed the raw identifier. */
+const ROLES = ASSIGNABLE_ROLES;
 
 function fmtWhen(iso: string | null) {
   if (!iso) return '—';
@@ -93,7 +98,7 @@ function Composer({ initial, plans, onClose, onSaved }: {
     audience_plans: initial?.audience_plans ?? [],
     audience_statuses: initial?.audience_statuses ?? [],
     audience_org_ids: initial?.audience_org_ids ?? [],
-    audience_roles: initial?.audience_roles ?? ['admin', 'manager'],
+    audience_roles: initial?.audience_roles ?? ['admin'],
   });
   const [saving, setSaving] = useState(false);
 
@@ -229,11 +234,11 @@ function Composer({ initial, plans, onClose, onSaved }: {
           <span className="text-[10px] font-[750] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>Who inside each studio</span>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {ROLES.map((r) => (
-              <Chip key={r} on={(form.audience_roles ?? []).includes(r)} onClick={() => toggle('audience_roles', r)}>{r}</Chip>
+              <Chip key={r} on={(form.audience_roles ?? []).includes(r)} onClick={() => toggle('audience_roles', r)}>{roleLabel(r)}</Chip>
             ))}
           </div>
           <p className="mt-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-            Admins and managers by default — platform news is rarely something a studio&rsquo;s members need pushed at them.
+            Goes to the trainer who owns each studio.
           </p>
         </div>
       </div>
@@ -409,7 +414,7 @@ function Row({ a, onChanged, onEdit }: { a: Announcement; onChanged: () => void;
                 <ul className="mt-1.5 space-y-0.5">
                   {preview.sample.map((s, i) => (
                     <li key={i} className="truncate text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                      {s.organization_name} — {s.name} ({s.role})
+                      {s.organization_name} — {s.name} ({roleLabel(s.role)})
                     </li>
                   ))}
                   {preview.recipient_count > preview.sample.length && (

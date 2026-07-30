@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Fingerprint, ShieldCheck, ShieldAlert, Users, Activity, Trash2, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { api } from '@/lib/api';
+import { roleLabel } from '@/lib/roles';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
@@ -345,7 +346,7 @@ function BiometricInner() {
                     <td style={{ padding: '10px 16px' }}>
                       {log.user_name
                         ? <><div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{log.user_name}</div>
-                           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{log.role}</div></>
+                           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{roleLabel(log.role)}</div></>
                         : <span style={{ color: 'var(--text-muted)' }}>Unknown</span>
                       }
                     </td>

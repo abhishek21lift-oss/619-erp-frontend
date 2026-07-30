@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ROLES, normaliseRole, hasRole, isAdminOrManager } from '@/lib/roles';
+import {
+  ROLES, normaliseRole, hasRole, isAdminOrManager,
+  ROLE_LABELS, roleLabel, ASSIGNABLE_ROLES,
+} from '@/lib/roles';
 
 describe('roles', () => {
   it('ROLES contains the canonical role list', () => {
@@ -102,6 +105,71 @@ describe('roles', () => {
     it('is false for nullish', () => {
       expect(isAdminOrManager(undefined)).toBe(false);
       expect(isAdminOrManager(null)).toBe(false);
+    });
+  });
+
+  // ── Labels ────────────────────────────────────────────────────────────────
+  //
+  // The product is sold to individual personal trainers, so the operator reads
+  // "Admin" and the studio owner reads "Trainer". The identifiers underneath
+  // are unchanged, and the hasRole suite above is what proves it: if renaming
+  // had touched a gate, those tests would fail, not these.
+
+  describe('labels', () => {
+    it('names the two roles that exist', () => {
+      expect(roleLabel('super_admin')).toBe('Admin');
+      expect(roleLabel('admin')).toBe('Trainer');
+    });
+
+    it('gives every role a label, so none can reach the UI as an identifier', () => {
+      for (const role of ROLES) {
+        expect(ROLE_LABELS[role], `${role} has no label`).toBeTruthy();
+        // Identifiers are snake_case; a label that still contains an
+        // underscore is an identifier that escaped, which is the exact bug
+        // this map exists to prevent — the AppShell badge used to render
+        // `user.role` raw and read "super_admin" on every page.
+        expect(ROLE_LABELS[role], `${role}'s label looks like an identifier`)
+          .not.toMatch(/_/);
+      }
+    });
+
+    it('resolves the receptionist alias before labelling', () => {
+      // Otherwise the same person reads differently depending on which spelling
+      // the row happens to carry.
+      expect(roleLabel('receptionist')).toBe(roleLabel('reception'));
+    });
+
+    it('falls back to the raw value rather than inventing one', () => {
+      // Seeing an unknown role is how anyone finds out it exists. A friendly
+      // placeholder would hide it.
+      expect(roleLabel('accountant')).toBe('accountant');
+      expect(roleLabel('')).toBe('');
+      expect(roleLabel(null)).toBe('');
+      expect(roleLabel(undefined)).toBe('');
+    });
+
+    it('keeps "Trainer" meaning exactly one thing', () => {
+      // There is also a `trainer` LOGIN ROLE (no accounts, still in the gates)
+      // and a `trainers` TABLE of staff records. If the old role were also
+      // labelled "Trainer", two different permission levels would share a word
+      // in the same UI. It is labelled Assistant Coach instead.
+      expect(ROLE_LABELS.trainer).not.toBe(ROLE_LABELS.admin);
+      const labels = ROLES.map((r) => ROLE_LABELS[r]);
+      expect(labels.filter((l) => l === 'Trainer')).toHaveLength(1);
+    });
+
+    it('offers exactly one assignable role', () => {
+      expect([...ASSIGNABLE_ROLES]).toEqual(['admin']);
+      // Never offer the platform operator's own role from a studio screen.
+      expect(ASSIGNABLE_ROLES).not.toContain('super_admin');
+    });
+
+    it('labelling a role does not grant it anything', () => {
+      // The point of the whole exercise: labels and gates are separate. `admin`
+      // now reads "Trainer" and still must not clear a platform-only gate, and
+      // the old `trainer` role still must not clear an admin gate.
+      expect(hasRole('admin', 'super_admin')).toBe(false);
+      expect(hasRole('trainer', 'admin')).toBe(false);
     });
   });
 });

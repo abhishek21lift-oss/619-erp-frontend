@@ -50,7 +50,7 @@ export default function BusinessInsightsPage() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Failed to generate insights.';
       if (msg.includes('403') || msg.toLowerCase().includes('forbidden') || msg.toLowerCase().includes('admin')) {
-        setError('Business Insights is restricted to admin accounts.');
+        setError('Business Insights is restricted to the studio owner.');
       } else {
         setError(msg);
       }

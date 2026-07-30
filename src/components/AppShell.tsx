@@ -15,6 +15,7 @@ import Sidebar from '@/components/sidebar';
 import StudioMark from '@/components/StudioMark';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { api } from '@/lib/api';
+import { roleLabel } from '@/lib/roles';
 import { allNavItems, isVisibleForFeature } from '@/lib/nav-config';
 import { useFeatures } from '@/lib/features-context';
 import { NavScrollProvider, useNavScroll } from '@/contexts/nav-scroll-context';
@@ -525,7 +526,7 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                   <StudioMark name={studioName} logoUrl={user?.organization_logo_url} size={28} radius={8} />
                   <div className="hidden sm:block text-left">
                     <p className={cn('max-w-[150px] truncate text-[12px] font-semibold uppercase leading-tight', darkMode ? 'text-slate-100' : 'text-slate-800')}>{studioName}</p>
-                    <p className={cn('text-[10px] leading-tight capitalize', darkMode ? 'text-slate-400' : 'text-slate-500')}>{user?.role || '—'}</p>
+                    <p className={cn('text-[10px] leading-tight capitalize', darkMode ? 'text-slate-400' : 'text-slate-500')}>{roleLabel(user?.role) || '—'}</p>
                   </div>
                   <ChevronDown size={12} strokeWidth={1.5} className={cn('shrink-0', darkMode ? 'text-slate-500' : 'text-slate-400')} />
                 </button>
@@ -543,7 +544,10 @@ function AppShellContent({ children, title, headerLeft }: AppShellProps) {
                         <p className="text-[10px] text-[var(--text-muted)]">{user?.email || '—'}</p>
                         <span className="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                           style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>
-                          {user?.role || 'admin'}
+                          {/* Was `{user?.role}` — the raw identifier, so this badge
+                              read "super_admin" on every page for the operator and
+                              "admin" for a studio owner. */}
+                          {roleLabel(user?.role) || 'Trainer'}
                         </span>
                       </div>
                       <div className="py-1">

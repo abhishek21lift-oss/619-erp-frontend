@@ -3,7 +3,15 @@
 // Extracted verbatim from the 3,197-line platform/page.tsx (audit H-03).
 import type { Organization, SubStudio } from '@/lib/api';
 
-export const ROLE_OPTIONS = ['admin', 'manager', 'trainer', 'member'];
+/**
+ * Roles offerable when adding or editing a studio's user.
+ *
+ * Re-exported from lib/roles rather than listed here: it was
+ * ['admin','manager','trainer','member'], three of which have never had a
+ * single account, and the selects printed the raw identifier as the option
+ * text. One list, one set of labels.
+ */
+export { ASSIGNABLE_ROLES as ROLE_OPTIONS } from '@/lib/roles';
 
 export type Tab = 'overview' | 'studios' | 'invitations' | 'support' | 'analytics' | 'ai' | 'finance' | 'features' | 'announcements' | 'activity' | 'audit' | 'security' | 'storage' | 'health';
 // Must list every Tab: normalizeTab() falls back to 'overview' for anything not

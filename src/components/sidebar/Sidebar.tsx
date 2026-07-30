@@ -14,6 +14,7 @@ import StudioMark from '@/components/StudioMark';
 import { NAV_GROUPS, isVisibleForRole, isGroupVisibleForRole, isVisibleForFeature, isGroupVisibleForFeature } from '@/lib/nav-config';
 import { usePermissions } from '@/lib/permissions-context';
 import { useFeatures } from '@/lib/features-context';
+import { roleLabel } from '@/lib/roles';
 import {
   LayoutDashboard, Target, Users, UserPlus, UserCheck, RefreshCw, CalendarClock, UserX, Cake,
   ClipboardList, ScanFace, User as UserIcon, Dumbbell, UserCog, Sparkles, CalendarOff, Calendar, Apple,
@@ -383,7 +384,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
       <div className="shrink-0 flex flex-col items-center gap-2 border-t border-[var(--sidebar-border)] py-3">
         <Link
           href="/settings/profile"
-          title={`${user?.name || 'Profile'} · ${user?.role || 'member'}`}
+          title={`${user?.name || 'Profile'} · ${roleLabel(user?.role) || 'Trainer'}`}
           className="relative"
         >
           <div
@@ -452,7 +453,7 @@ function SidebarProfile({ collapsed, onClose }: { collapsed?: boolean; onClose?:
             className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
             style={{ background: 'rgba(167,139,250,0.15)', color: BRAND, border: '1px solid rgba(167,139,250,0.2)' }}
           >
-            {user?.role || 'member'}
+            {roleLabel(user?.role) || 'Trainer'}
           </span>
         </div>
 
