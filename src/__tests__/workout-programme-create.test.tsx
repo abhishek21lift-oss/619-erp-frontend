@@ -1,0 +1,156 @@
+// Creating a programme must keep working.
+//
+// This is the regression risk Phase 3 carries. The Programs screen used to
+// hold a four-step wizard that was the ONLY way to create a plan with
+// exercises in it. Phase 2's builder supersedes it, so the wizard is gone —
+// and if the replacement is wrong, a trainer simply cannot make a programme.
+//
+// So these assert the contract that replaced it: create the shell, assign it,
+// then hand over to the builder with the id the server returned.
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, cleanup, fireEvent } from '@testing-library/react';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+
+const create = vi.fn();
+const assign = vi.fn();
+const clients = vi.fn();
+vi.mock('@/lib/api', () => ({
+  api: {
+    workouts: { plans: { create: (...a: unknown[]) => create(...a) }, assign: (...a: unknown[]) => assign(...a) },
+    pt: { clients: () => clients() },
+  },
+}));
+
+const toastError = vi.fn();
+vi.mock('@/lib/toast', () => ({ useToast: () => ({ toast: { error: toastError, success: vi.fn() } }) }));
+
+import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
+
+beforeEach(() => {
+  push.mockReset(); create.mockReset(); assign.mockReset(); toastError.mockReset();
+  clients.mockResolvedValue({ data: [{ id: 'cl-1', name: 'Ravi' }] });
+  create.mockResolvedValue({ plan: { id: 'plan-99', name: 'Upper / Lower' } });
+  assign.mockResolvedValue({});
+});
+afterEach(cleanup);
+
+/** Fill the name field and submit. */
+async function fillAndSubmit(name = 'Upper / Lower') {
+  fireEvent.change(screen.getByPlaceholderText(/Upper \/ Lower Split/i), { target: { value: name } });
+  fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
+}
+
+describe('NewProgrammeDialog — the replacement for the deleted wizard', () => {
+  it('creates the plan, assigns it, then opens the builder with the new id', async () => {
+    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    await fillAndSubmit();
+
+    await waitFor(() => expect(create).toHaveBeenCalledOnce());
+    expect(create.mock.calls[0][0]).toMatchObject({ name: 'Upper / Lower' });
+
+    await waitFor(() => expect(assign).toHaveBeenCalledOnce());
+    expect(assign).toHaveBeenCalledWith({ workout_plan_id: 'plan-99', client_id: 'cl-1' });
+
+    // The id must come from the RESPONSE, not from anything client-side.
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99'));
+  });
+
+  it('creates the shell WITHOUT exercises', async () => {
+    // The whole reason the flow split in two: exercises are added in the
+    // builder, one granular request each, so they hold stable ids from birth.
+    // Sending them here would go through the whole-plan PUT path instead.
+    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    await fillAndSubmit();
+    await waitFor(() => expect(create).toHaveBeenCalled());
+    expect(create.mock.calls[0][0].exercises).toBeUndefined();
+  });
+
+  it('refuses to create without a name', async () => {
+    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    fireEvent.click(screen.getByRole('button', { name: /create and add exercises/i }));
+    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('refuses to create without a client', async () => {
+    render(<NewProgrammeDialog open onClose={() => {}} />);
+    await fillAndSubmit();
+    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('still opens the builder when assignment fails', async () => {
+    // The plan exists at this point. Stranding the trainer on a dialog with an
+    // error — and an orphan plan they cannot see — would be worse than telling
+    // them assignment failed and letting them carry on building.
+    assign.mockRejectedValue(new Error('offline'));
+    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    await fillAndSubmit();
+    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(push).toHaveBeenCalledWith('/pt-os/clients/cl-1/training/builder?plan=plan-99');
+  });
+
+  it('does not navigate when creation itself fails', async () => {
+    create.mockRejectedValue(new Error('nope'));
+    render(<NewProgrammeDialog open onClose={() => {}} presetClientId="cl-1" />);
+    await fillAndSubmit();
+    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('renders nothing when closed', () => {
+    const { container } = render(<NewProgrammeDialog open={false} onClose={() => {}} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('the Programs screen no longer carries the old wizard', () => {
+  const PAGE = path.join(process.cwd(), 'src/app/pt-os/workout-plans/page.tsx');
+  const src = fs.readFileSync(PAGE, 'utf8');
+
+  it('has no builder tab or wizard state left behind', () => {
+    // Dead state that still compiles is the usual residue of a deletion this
+    // size — it reads as live code and drifts.
+    for (const ghost of [
+      "'builder'", 'builderStep', 'builderExercises', 'handleSaveBuilderPlan',
+      'BuilderExercise', 'resetBuilder',
+    ]) {
+      expect(src).not.toContain(ghost);
+    }
+  });
+
+  it('routes plan creation through the dialog', () => {
+    expect(src).toContain('NewProgrammeDialog');
+  });
+});
+
+describe('Training navigation', () => {
+  const PROFILE = path.join(process.cwd(), 'src/app/pt-os/clients/[id]/page.tsx');
+  const src = fs.readFileSync(PROFILE, 'utf8');
+
+  it('offers the Training section on the client profile', () => {
+    expect(src).toMatch(/label: 'Training'/);
+  });
+
+  it('every destination it links to exists on disk', () => {
+    // The orphan-link check. A tile pointing at a route nobody created 404s,
+    // and nothing in the build would say so — the same class of miss the
+    // platform-split orphan check caught.
+    const APP = path.join(process.cwd(), 'src/app');
+    for (const route of [
+      'pt-os/workout-plans',
+      'pt-os/clients/[id]/training/assigned',
+      'pt-os/clients/[id]/training/analytics',
+      'pt-os/clients/[id]/training/builder',
+      'pt-os/clients/[id]/workout-log',
+    ]) {
+      expect(fs.existsSync(path.join(APP, route, 'page.tsx')), `${route} missing`).toBe(true);
+    }
+  });
+});

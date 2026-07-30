@@ -12,7 +12,7 @@ import {
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, PiggyBank, PieChart, Layers,
+  QrCode, Printer, PiggyBank, PieChart, Layers, ScrollText,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -266,6 +266,22 @@ const QUICK_ACTIONS: QuickAction[] = [
       { label: 'PAR-Q', icon: <ShieldCheck size={14} />, href: (id) => `/pt-os/parq?client_id=${id}` },
       { label: 'Fitness Testing', icon: <Activity size={14} />, href: (id) => `/pt-os/assessment?client_id=${id}` },
       { label: 'Lifestyle', icon: <HeartPulse size={14} />, href: (id) => `/pt-os/lifestyle-assessment?client_id=${id}` },
+    ],
+  },
+  {
+    // The five surfaces of the Workout Planning module, in the order a trainer
+    // moves through them: pick a programme, build it, see what is assigned,
+    // review what was actually done, then look at the trend.
+    //
+    // Builder is intentionally absent as a direct link — it needs a specific
+    // plan id, and there is no sensible default. Programs and Assigned both
+    // route into it with one.
+    label: 'Training', icon: <Dumbbell size={16} />, from: '#7c3aed', to: '#5b21b6',
+    children: [
+      { label: 'Workout Programs', icon: <Dumbbell size={14} />, href: (id) => `/pt-os/workout-plans?client_id=${id}` },
+      { label: 'Assigned', icon: <ClipboardList size={14} />, href: (id) => `/pt-os/clients/${id}/training/assigned` },
+      { label: 'Workout Log', icon: <ScrollText size={14} />, href: (id) => `/pt-os/clients/${id}/workout-log` },
+      { label: 'Progress Analytics', icon: <TrendingUp size={14} />, href: (id) => `/pt-os/clients/${id}/training/analytics` },
     ],
   },
   { label: 'Goals', icon: <Target size={16} />, href: (id) => `/pt-os/goals?client_id=${id}`, from: '#3b82f6', to: '#2563eb' },

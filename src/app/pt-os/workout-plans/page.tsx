@@ -18,18 +18,12 @@ import { useToast } from '@/lib/toast';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
 import { AnimatedCounter } from '@/components/fitness/AnimatedCounter';
 import { WorkoutPlanCard } from '@/components/fitness/WorkoutPlanCard';
+import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
 import { ExerciseCard } from '@/components/fitness/ExerciseCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
-import { ExercisePicker, type PickedExercise } from '@/components/pt-os/workout-log/ExercisePicker';
-
-type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 
 interface ClientOption { id: string; name: string; }
-interface BuilderExercise {
-  exercise_id: string; name: string; day_of_week: number; sets: number; reps: number; rest_seconds: number;
-}
 
-const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const GOALS: Array<{ value: string; label: string; color: string }> = [
   { value: 'muscle_gain', label: 'Muscle Gain', color: '#6366f1' },
@@ -91,43 +85,16 @@ function Inner() {
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [assignPlan, setAssignPlan] = useState<WorkoutPlan | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   // Arriving with ?client_id= (the client profile's "Workout Plans" button)
   // means the trainer wants to design a plan for THAT client right now, not
   // browse a shared list first — so land straight in the builder instead of
   // the default plans tab.
-  const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'builder' | 'ai'>(presetClientId ? 'builder' : 'plans');
-  const [builderStep, setBuilderStep] = useState(0);
+  const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'ai'>('plans');
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   // ── Plan Builder state ──
-  const [builderClientSearch, setBuilderClientSearch] = useState('');
-  const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null);
-  const [planName, setPlanName] = useState('');
-  const [planGoal, setPlanGoal] = useState(GOALS[0].value);
-  const [planDifficulty] = useState<Difficulty>('intermediate');
-  const [durationWeeks, setDurationWeeks] = useState(4);
-  const [sessionsPerWeek, setSessionsPerWeek] = useState(3);
-  const [builderExercises, setBuilderExercises] = useState<BuilderExercise[]>([]);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerDay, setPickerDay] = useState(1);
-  const [builderSaving, setBuilderSaving] = useState(false);
-
-  const resetBuilder = useCallback(() => {
-    // A client-scoped session (arrived via ?client_id=) stays scoped to
-    // that client across "+ New Plan" too — the trainer is still working
-    // with the same person and re-searching for them again would just be
-    // friction the preset already exists to remove.
-    const presetClient = presetClientId ? clients.find((c) => c.id === presetClientId) ?? null : null;
-    setBuilderStep(presetClient ? 1 : 0);
-    setBuilderClientSearch('');
-    setSelectedClient(presetClient);
-    setPlanName('');
-    setPlanGoal(GOALS[0].value);
-    setDurationWeeks(4);
-    setSessionsPerWeek(3);
-    setBuilderExercises([]);
-  }, [presetClientId, clients]);
 
   const fetchData = useCallback(async () => {
     setDataLoading(true);
@@ -151,20 +118,6 @@ function Inner() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Pre-select the client the trainer arrived from (e.g. client profile
-  // Quick Action) once the client list has loaded, and skip straight past
-  // the builder's "Choose a Client" step — the client is already known, so
-  // asking the trainer to pick them again from a search box would be a
-  // pointless extra step in the exact flow this preset exists to shortcut.
-  useEffect(() => {
-    if (!presetClientId || selectedClient || clients.length === 0) return;
-    const match = clients.find((c) => c.id === presetClientId);
-    if (match) {
-      setSelectedClient(match);
-      setBuilderStep((s) => (s === 0 ? 1 : s));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetClientId, clients]);
 
   /** Assign a plan. The backend screening gate hard-blocks only clients
    *  whose PAR-Q explicitly flags them as medically blocked; missing
@@ -212,48 +165,6 @@ function Inner() {
     }
   }, [toast, fetchData]);
 
-  const handlePickExercise = (ex: PickedExercise) => {
-    if (!ex.id) return;
-    setBuilderExercises((list) => [...list, { exercise_id: ex.id, name: ex.name, day_of_week: pickerDay, sets: 3, reps: 12, rest_seconds: 60 }]);
-  };
-
-  const updateBuilderExercise = (index: number, field: 'sets' | 'reps' | 'rest_seconds', value: number) => {
-    setBuilderExercises((list) => list.map((ex, i) => (i === index ? { ...ex, [field]: value } : ex)));
-  };
-  const removeBuilderExercise = (index: number) => setBuilderExercises((list) => list.filter((_, i) => i !== index));
-
-  const handleSaveBuilderPlan = async () => {
-    if (!selectedClient) { toast.error('Select a client first.'); setBuilderStep(0); return; }
-    if (!planName.trim()) { toast.error('Enter a plan name.'); setBuilderStep(1); return; }
-    if (builderExercises.length === 0) { toast.error('Add at least one exercise.'); setBuilderStep(2); return; }
-
-    setBuilderSaving(true);
-    try {
-      const { plan: createdPlan } = await api.workouts.plans.create({
-        name: planName.trim(),
-        goal: planGoal,
-        difficulty: planDifficulty,
-        duration_weeks: durationWeeks,
-        sessions_per_week: sessionsPerWeek,
-        exercises: builderExercises.map((ex, i) => ({
-          exercise_id: ex.exercise_id, day_of_week: ex.day_of_week, sort_order: i,
-          sets: ex.sets, reps: ex.reps, rest_seconds: ex.rest_seconds,
-        })),
-      });
-      await assignPlanToClient(createdPlan, selectedClient);
-      // Captured before resetBuilder() clears selectedClient — the plan
-      // detail page needs this to know whose Workout Log to link to.
-      const savedForClientId = selectedClient.id;
-      resetBuilder();
-      setActiveTab('plans');
-      fetchData();
-      router.push(`/pt-os/workout-plans/${createdPlan.id}?client_id=${savedForClientId}`);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Could not create plan.');
-    } finally {
-      setBuilderSaving(false);
-    }
-  };
 
   const filteredExercises = exercises.filter((ex) => {
     if (activeBodyPart !== 'All' && ex.body_part !== activeBodyPart) return false;
@@ -261,12 +172,6 @@ function Inner() {
     return true;
   });
 
-  const filteredBuilderClients = clients.filter((c) => c.name.toLowerCase().includes(builderClientSearch.toLowerCase()));
-  const builderExercisesByDay = new Map<number, Array<BuilderExercise & { index: number }>>();
-  builderExercises.forEach((ex, index) => {
-    if (!builderExercisesByDay.has(ex.day_of_week)) builderExercisesByDay.set(ex.day_of_week, []);
-    builderExercisesByDay.get(ex.day_of_week)!.push({ ...ex, index });
-  });
 
   const avgProgress = plans.length
     ? Math.round(plans.reduce((s, p) => s + (p.progress || 0), 0) / plans.length)
@@ -308,7 +213,7 @@ function Inner() {
                   </button>
                 ))}
               </div>
-              <Button variant="primary" size="sm" onClick={() => { resetBuilder(); setActiveTab('builder'); }}>
+              <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
                 <Plus size={14} style={{ marginRight: 5 }} />New Plan
               </Button>
             </div>
@@ -343,11 +248,10 @@ function Inner() {
           {[
             { key: 'plans', label: 'Active Plans', count: plans.length, color: '#6366f1' },
             { key: 'library', label: 'Exercise Library', count: filteredExercises.length, color: '#10b981' },
-            { key: 'builder', label: 'Plan Builder', color: '#f59e0b' },
             { key: 'ai', label: 'AI Suggestions', color: '#ec4899' },
           ].map((tab) => (
             <button key={tab.key}
-              onClick={() => { setActiveTab(tab.key as typeof activeTab); if (tab.key === 'builder' && builderExercises.length === 0 && !selectedClient) setBuilderStep(0); }}
+              onClick={() => setActiveTab(tab.key as typeof activeTab)}
               style={{
                 flexShrink: 0, whiteSpace: 'nowrap',
                 padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
@@ -396,7 +300,11 @@ function Inner() {
                         color={PLAN_COLORS[i % PLAN_COLORS.length]}
                         compact={view === 'list'}
                         onAssign={() => setAssignPlan(plan)}
-                        onEdit={() => router.push(`/pt-os/workout-plans/${plan.id}`)}
+                        onEdit={() => router.push(
+                          presetClientId
+                            ? `/pt-os/clients/${presetClientId}/training/builder?plan=${plan.id}`
+                            : `/pt-os/workout-plans/${plan.id}`,
+                        )}
                         onDelete={() => handleDeletePlan(plan)}
                       />
                     </m.div>
@@ -459,161 +367,6 @@ function Inner() {
                   )}
                 </m.div>
               )}
-            </m.div>
-          )}
-
-          {/* ── Builder Tab ── */}
-          {activeTab === 'builder' && (
-            <m.div key="builder" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <div style={{ maxWidth: 640, margin: '0 auto' }}>
-                {/* Step progress */}
-                <div style={{ display: 'flex', gap: 0, marginBottom: 28, position: 'relative' }}>
-                  {[0, 1, 2, 3].map((step) => (
-                    <div key={step} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-                      <div onClick={() => setBuilderStep(step)}
-                        style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 1, fontWeight: 700, fontSize: 13, transition: 'all 0.2s', background: builderStep >= step ? '#6366f1' : 'var(--bg-subtle)', color: builderStep >= step ? '#fff' : 'var(--text-muted)', border: builderStep >= step ? 'none' : '2px solid var(--border)' }}>
-                        {builderStep > step ? <Check size={14} /> : step + 1}
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: builderStep >= step ? '#6366f1' : 'var(--text-muted)', marginTop: 6, textAlign: 'center' }}>
-                        {['Client', 'Details', 'Exercises', 'Review'][step]}
-                      </span>
-                      {step < 3 && <div style={{ position: 'absolute', top: 16, left: '50%', right: '-50%', height: 2, background: builderStep > step ? '#6366f1' : 'var(--border)', zIndex: 0 }} />}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Step content */}
-                <div className="p-5 sm:p-7" style={{ borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                  {builderStep === 0 && (
-                    <div>
-                      <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Choose a Client</h3>
-                      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--text-muted)' }}>Select the client this plan is for.</p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-subtle)', borderRadius: 10, padding: '10px 14px', border: '1px solid var(--border)', marginBottom: 16 }}>
-                        <Search size={15} color="var(--text-disabled)" />
-                        <input placeholder="Search clients…" value={builderClientSearch} onChange={(e) => setBuilderClientSearch(e.target.value)}
-                          style={{ background: 'none', border: 'none', outline: 'none', fontSize: 14, color: 'var(--text-primary)', flex: 1, fontFamily: 'inherit' }} />
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', maxHeight: 260, overflowY: 'auto' }}>
-                        {filteredBuilderClients.slice(0, 40).map((c) => (
-                          <button key={c.id} onClick={() => { setSelectedClient(c); setBuilderStep(1); }}
-                            style={{ padding: '8px 14px', borderRadius: 10, border: `1px solid ${selectedClient?.id === c.id ? '#6366f1' : 'var(--border)'}`, background: selectedClient?.id === c.id ? 'rgba(99,102,241,0.1)' : 'var(--bg-subtle)', color: selectedClient?.id === c.id ? '#6366f1' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.18s' }}>
-                            <User size={12} style={{ marginRight: 5, verticalAlign: 'middle' }} />{c.name}
-                          </button>
-                        ))}
-                        {filteredBuilderClients.length === 0 && <p style={{ fontSize: 12.5, color: 'var(--text-disabled)' }}>No clients found.</p>}
-                      </div>
-                    </div>
-                  )}
-                  {builderStep === 1 && (
-                    <div>
-                      <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Plan Details</h3>
-                      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'var(--text-muted)' }}>Name the plan and set its goal and schedule.</p>
-
-                      <div style={{ marginBottom: 16 }}>
-                        <label style={labelStyle}>Plan Name</label>
-                        <input value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="e.g. Push Pull Legs" style={inputStyle} />
-                      </div>
-
-                      <div style={{ marginBottom: 16 }}>
-                        <label style={labelStyle}>Goal</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                          {GOALS.map((g) => (
-                            <button key={g.value} onClick={() => setPlanGoal(g.value)}
-                              style={{ padding: '12px 14px', borderRadius: 12, border: `1px solid ${planGoal === g.value ? g.color : 'var(--border)'}`, background: planGoal === g.value ? `${g.color}12` : 'var(--bg-subtle)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.18s' }}>
-                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: g.color, flexShrink: 0 }} />{g.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                        <div>
-                          <label style={labelStyle}>Duration (weeks)</label>
-                          <input type="number" min={1} max={52} value={durationWeeks} onChange={(e) => setDurationWeeks(Math.max(1, Number(e.target.value) || 4))} style={inputStyle} />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>Sessions / week</label>
-                          <input type="number" min={1} max={7} value={sessionsPerWeek} onChange={(e) => setSessionsPerWeek(Math.max(1, Number(e.target.value) || 3))} style={inputStyle} />
-                        </div>
-                      </div>
-
-                      <button onClick={() => { if (!planName.trim()) { toast.error('Enter a plan name.'); return; } setBuilderStep(2); }}
-                        style={{ width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
-                        Continue <ChevronRight size={14} style={{ verticalAlign: 'middle' }} />
-                      </button>
-                    </div>
-                  )}
-                  {builderStep === 2 && (
-                    <div>
-                      <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>Add Exercises</h3>
-                      <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-muted)' }}>Assign exercises from the library to each training day.</p>
-
-                      <div style={{ maxHeight: 340, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {WEEKDAYS.map((day, i) => (
-                          <div key={day} style={{ padding: 12, borderRadius: 12, background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{day}</span>
-                              <button onClick={() => { setPickerDay(i + 1); setPickerOpen(true); }}
-                                style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none', color: '#6366f1', fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
-                                <Plus size={12} /> Add
-                              </button>
-                            </div>
-                            {(builderExercisesByDay.get(i + 1) || []).map((ex) => (
-                              <div key={ex.index} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', borderRadius: 8, background: 'var(--bg-card)', marginBottom: 4 }}>
-                                <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</span>
-                                <input type="number" min={1} value={ex.sets} onChange={(e) => updateBuilderExercise(ex.index, 'sets', Number(e.target.value) || 1)}
-                                  style={{ width: 34, padding: '3px 4px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 11, textAlign: 'center' }} />
-                                <span style={{ fontSize: 10, color: 'var(--text-disabled)' }}>×</span>
-                                <input type="number" min={1} value={ex.reps} onChange={(e) => updateBuilderExercise(ex.index, 'reps', Number(e.target.value) || 1)}
-                                  style={{ width: 34, padding: '3px 4px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-subtle)', fontSize: 11, textAlign: 'center' }} />
-                                <button onClick={() => removeBuilderExercise(ex.index)} style={{ border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex' }}>
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-
-                      <p style={{ margin: '10px 0 0', fontSize: 11.5, color: 'var(--text-disabled)' }}>{builderExercises.length} exercise{builderExercises.length === 1 ? '' : 's'} added</p>
-
-                      <button onClick={() => { if (builderExercises.length === 0) { toast.error('Add at least one exercise.'); return; } setBuilderStep(3); }}
-                        style={{ marginTop: 16, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
-                        Continue <ChevronRight size={14} style={{ verticalAlign: 'middle' }} />
-                      </button>
-                    </div>
-                  )}
-                  {builderStep === 3 && (
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                        <Check size={24} color="#10b981" />
-                      </div>
-                      <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>Review & Save Plan</h3>
-                      <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--text-muted)' }}>Your workout plan is ready. Save it to create and assign it to your client.</p>
-
-                      <div style={{ textAlign: 'left', background: 'var(--bg-subtle)', borderRadius: 12, padding: '14px 16px', marginBottom: 20, fontSize: 12.5, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <span><strong>Client:</strong> {selectedClient?.name || '—'}</span>
-                        <span><strong>Plan:</strong> {planName || '—'}</span>
-                        <span><strong>Goal:</strong> {GOALS.find((g) => g.value === planGoal)?.label}</span>
-                        <span><strong>Schedule:</strong> {sessionsPerWeek}x/week for {durationWeeks} weeks</span>
-                        <span><strong>Exercises:</strong> {builderExercises.length}</span>
-                      </div>
-
-                      <Button variant="primary" onClick={handleSaveBuilderPlan} disabled={builderSaving}>
-                        {builderSaving ? <Loader2 size={14} className="animate-spin" style={{ marginRight: 6 }} /> : <Check size={14} style={{ marginRight: 6 }} />}
-                        Save & Assign Plan
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'space-between' }}>
-                  <button onClick={() => setBuilderStep(Math.max(0, builderStep - 1))} disabled={builderStep === 0}
-                    style={{ padding: '8px 18px', borderRadius: 9, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', cursor: builderStep === 0 ? 'not-allowed' : 'pointer', opacity: builderStep === 0 ? 0.5 : 1 }}>
-                    ← Back
-                  </button>
-                </div>
-              </div>
             </m.div>
           )}
 
@@ -682,13 +435,19 @@ function Inner() {
         }
       `}</style>
 
+      <NewProgrammeDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        presetClientId={presetClientId}
+        onCreated={fetchData}
+      />
+
       <AssignClientModal
         plan={assignPlan}
         onClose={() => setAssignPlan(null)}
         onSelectClient={handleAssignFromModal}
       />
 
-      <ExercisePicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={handlePickExercise} />
     </div>
   );
 }
