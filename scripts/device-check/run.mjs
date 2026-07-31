@@ -108,6 +108,10 @@ const MIN_TOUCH = 44;
  * bottom-anchored, full-width and full of inputs.
  */
 const ROUTES = [
+  // The studio dashboard — the home screen, and until now the one page in the
+  // application with no coverage here at all. Every user lands on it first.
+  ['dashboard', '/'],
+
   ['workout-plans', '/pt-os/workout-plans'],
   ['new-programme-sheet', '/pt-os/workout-plans', async (page) => {
     await page.getByRole('button', { name: /new plan/i }).first().click();

@@ -338,6 +338,76 @@ const LANDMARKS = [
   { target_muscle: 'shoulders', mev_sets: 8, mrv_sets: 26, is_custom: false },
 ];
 
+/**
+ * The studio dashboard.
+ *
+ * Neither endpoint had a fixture until now, and the dashboard had no state in
+ * the harness at all — so the home screen of the whole application, the one
+ * every user sees first, had never been measured at 390px.
+ *
+ * today_sessions and today_unscheduled are BOTH populated on purpose. A studio
+ * that works off programmes has an empty appointment book, and one that works
+ * off the diary has no unscheduled clients; the panel has to hold up when both
+ * lists are present, which is also the widest it ever gets.
+ */
+const DASH = {
+  active_pt_clients: 128,
+  expired_clients: 41,
+  clients_with_balance: 17,
+  total_monthly_pt_revenue: 1284000,
+  total_monthly_commission: 192600,
+  total_outstanding: 238500,
+  trainers: [
+    { id: 't-1', name: 'Ramachandran Subramaniam', active_clients: 34, monthly_revenue: 428000, monthly_commission: 64200 },
+  ],
+  revenueTrend: Array.from({ length: 6 }, (_, i) => ({
+    label: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'][i],
+    month: `2026-0${i + 2}`,
+    revenue: 940000 + i * 62000,
+    incentives: 141000 + i * 9300,
+  })),
+};
+
+const OPS = {
+  today_sessions: [
+    {
+      id: 'ps-1', title: 'PT Session', session_date: '2026-07-30',
+      start_time: '06:30:00', end_time: '07:30:00', status: 'completed', notes: null,
+      client_name: LONG_NAME, client_photo: null, trainer_name: 'Ramachandran Subramaniam',
+      plan_name: LONG_PLAN, plan_id: 'p-1',
+    },
+    {
+      id: 'ps-2', title: 'PT Session', session_date: '2026-07-30',
+      start_time: '07:30:00', end_time: '08:30:00', status: 'scheduled', notes: null,
+      client_name: 'Rahul Mehta', client_photo: null, trainer_name: 'Ramachandran Subramaniam',
+      plan_name: 'Upper / Lower', plan_id: 'p-1',
+    },
+    {
+      // A client on no programme at all: the row must fall back to the
+      // session title rather than render an empty second line.
+      id: 'ps-3', title: 'Assessment', session_date: '2026-07-30',
+      start_time: '18:00:00', end_time: '19:00:00', status: 'no_show', notes: null,
+      client_name: 'Deeksha Tomar', client_photo: null, trainer_name: null,
+      plan_name: null, plan_id: null,
+    },
+  ],
+  today_unscheduled: [
+    { assignment_id: 'a-9', client_id: 'c-9', client_name: 'Ajeet Yadav', client_photo: null, plan_id: 'p-1', plan_name: 'Full Body', planned_exercises: 2 },
+    { assignment_id: 'a-10', client_id: 'c-10', client_name: 'Prakhar Sharma', client_photo: null, plan_id: 'p-1', plan_name: LONG_PLAN, planned_exercises: 12 },
+  ],
+  renewals_due: [
+    { id: 'c-1', name: LONG_NAME, mobile: '+91 98765 43210', trainer_name: 'Ramachandran Subramaniam', package_type: 'Personal Training — 36 Sessions (Couple)', pt_end_date: '2026-08-02', days_left: 3, balance_amount: 18500, monthly_pt_amount: 12000 },
+    { id: 'c-2', name: 'Rahul Mehta', mobile: '+91 98111 22233', trainer_name: null, package_type: 'PT 12', pt_end_date: '2026-08-05', days_left: 6, balance_amount: 0, monthly_pt_amount: 8000 },
+  ],
+  top_dues: [
+    { id: 'c-1', name: LONG_NAME, mobile: '+91 98765 43210', trainer_name: 'Ramachandran Subramaniam', balance_amount: 18500, pt_end_date: '2026-07-20', due_status: 'overdue' },
+  ],
+  session_stats: { this_month_total: 214, this_month_completed: 186, last_month_completed: 171 },
+  trainer_sessions: [
+    { trainer_name: 'Ramachandran Subramaniam', completed: 186, scheduled: 22, missed: 6 },
+  ],
+};
+
 // ── The routing table ───────────────────────────────────────────────────────
 
 const ROUTES = [
@@ -362,6 +432,16 @@ const ROUTES = [
     },
   })],
   [/^\/api\/settings\/permissions$/, () => ({ permissions: {}, role: 'trainer' })],
+
+  // The studio dashboard. /dashboard/ops before /dashboard, or the bare
+  // handler swallows the sub-path and the page renders its skeleton forever.
+  [/^\/api\/pt-os\/dashboard\/ops$/, () => ({ data: OPS })],
+  [/^\/api\/pt-os\/dashboard$/, () => ({ data: DASH })],
+  [/^\/api\/pt-os\/informed-consent$/, () => ({
+    data: [
+      { status: 'signed' }, { status: 'signed' }, { status: 'pending' }, { status: 'not_started' },
+    ],
+  })],
 
   // Workout plans. Specific before general — and /versions is a sub-path of
   // /plans/:id, so it has to come first or the plan handler swallows it.

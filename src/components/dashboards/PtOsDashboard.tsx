@@ -56,6 +56,21 @@ type OpsData = {
     status: SessionStatus; notes: string | null;
     client_name: string | null; client_photo: string | null;
     trainer_name: string | null;
+    /** The programme the client is on, from their active assignment. */
+    plan_name: string | null; plan_id: string | null;
+  }>;
+  /**
+   * Clients whose programme says they train today but who have no booked slot.
+   *
+   * Not a nice-to-have: a studio that runs off programmes rather than the
+   * appointment book has an empty pt_sessions table, and a "today" panel that
+   * can only say "nothing scheduled" teaches the trainer to stop looking.
+   */
+  today_unscheduled: Array<{
+    assignment_id: string; client_id: string;
+    client_name: string | null; client_photo: string | null;
+    plan_id: string; plan_name: string;
+    planned_exercises: number;
   }>;
   renewals_due: Array<{
     id: string; name: string; mobile: string | null;
@@ -583,86 +598,195 @@ function AICopilot({ d }: { d: DashData }) {
   );
 }
 
-// ─── Section 7 — Today's Sessions ──────────────────────────────────────────────
-function TodayOps({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
+// ─── Today's Schedule — the first thing under the hero ────────────────────────
+//
+// The question a studio owner opens the app to answer: who am I training today,
+// when, and what are they doing. It sits directly under the hero because it is
+// the only section whose answer changes what happens in the next hour — revenue
+// and retention can wait until after the 7am.
+//
+// ── Two lists, because there are two kinds of "today" ──────────────────────
+//
+// A BOOKED slot is a row in pt_sessions with a time. A DUE client is one whose
+// programme prescribes today's weekday, whether or not anyone wrote it in the
+// diary.
+//
+// Showing only the first would leave this panel permanently empty for a studio
+// that works off programmes rather than an appointment book — which is the
+// case here: pt_sessions holds no rows at all while five assignments are
+// active. A panel that can only ever say "nothing scheduled" trains the reader
+// to skip it, and then it is worse than nothing.
+//
+// ── Why the programme name and not the session title ──────────────────────
+//
+// pt_sessions.title is usually "PT Session", which tells a trainer nothing.
+// What they want at 6:55 is the programme they are about to coach.
+function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
   const router = useRouter();
-  const sessions = ops?.today_sessions ?? [];
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
+  const booked = ops?.today_sessions ?? [];
+  const due = ops?.today_unscheduled ?? [];
+  const total = booked.length + due.length;
+
+  const today = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long', day: 'numeric', month: 'short',
+  });
 
   return (
-    <Glass className="p-4 sm:p-5 flex flex-col">
-      <div className="flex items-center justify-between mb-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-            style={{ background: `linear-gradient(135deg, ${C.blue}, ${C.cyan})`, boxShadow: `0 5px 12px ${C.blue}40` }}>
-            <CalendarClock size={14} />
+    <Glass className="p-4 sm:p-5">
+      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] text-white"
+            style={{ background: `linear-gradient(135deg, ${C.crimson}, ${C.rose})`, boxShadow: `0 5px 12px ${C.crimson}40` }}>
+            <CalendarClock size={15} />
           </span>
-          <div>
-            <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>Today</h3>
-            <p className="text-[10px] font-[500]" style={{ color: C.muted }}>{today}</p>
+          <div className="min-w-0">
+            <h3 className="truncate text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
+              Today&apos;s Sessions
+            </h3>
+            <p className="text-[10.5px] font-[500]" style={{ color: C.muted }}>{today}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {sessions.length > 0 && (
-            <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]"
-              style={{ background: `${C.blue}15`, color: C.blue }}>{sessions.length}</span>
-          )}
-          <button onClick={() => router.push('/pt-os/sessions')}
-            className="h-8 px-3 rounded-full text-[10.5px] font-[650] transition active:scale-95"
-            style={{ background: `${C.blue}12`, color: C.blue }}>All</button>
+
+        {/* The count a studio owner asks for first, as the largest thing in the
+            row. Split underneath, because "6 today" means something different
+            when five of them are not in the diary. */}
+        <div className="flex shrink-0 items-baseline gap-1.5">
+          <span className="text-[26px] font-[860] leading-none tracking-[-0.03em]" style={{ color: C.ink }}>
+            {loading && !ops ? '—' : total}
+          </span>
+          <span className="text-[10.5px] font-[650]" style={{ color: C.muted }}>
+            session{total === 1 ? '' : 's'}
+          </span>
         </div>
       </div>
 
       {loading && !ops && (
-        <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="rounded-[13px] p-3 flex gap-3" style={{ background: 'rgba(15,23,42,0.03)' }}><Skel w="w-9" h="h-9" r="rounded-full" /><div className="flex-1 space-y-1.5"><Skel w="w-28" h="h-3" /><Skel w="w-20" h="h-2.5" /></div></div>)}</div>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-3 rounded-[13px] p-3" style={{ background: 'rgba(15,23,42,0.03)' }}>
+              <Skel w="w-12" h="h-3" /><Skel w="w-9" h="h-9" r="rounded-full" />
+              <div className="flex-1 space-y-1.5"><Skel w="w-32" h="h-3" /><Skel w="w-24" h="h-2.5" /></div>
+            </div>
+          ))}
+        </div>
       )}
 
-      {!loading && sessions.length === 0 && (
-        <div className="flex flex-col items-center py-7 text-center">
-          <CalendarClock size={24} style={{ color: `${C.blue}55` }} />
-          <p className="mt-2 text-[12px] font-[640]" style={{ color: C.ink }}>No sessions today</p>
+      {!loading && total === 0 && (
+        <div className="flex flex-col items-center py-8 text-center">
+          <CalendarClock size={26} style={{ color: `${C.crimson}44` }} />
+          <p className="mt-2 text-[12.5px] font-[650]" style={{ color: C.ink }}>Nothing on today</p>
+          <p className="mt-0.5 text-[11px]" style={{ color: C.muted }}>
+            No booked slots, and no client&apos;s programme falls on today.
+          </p>
           <button onClick={() => router.push('/pt-os/schedule-session')}
-            className="mt-2.5 inline-flex items-center gap-1.5 h-8 px-4 rounded-full text-[10.5px] font-[680] transition active:scale-95"
-            style={{ background: `${C.blue}15`, color: C.blue }}>
-            <CalendarPlus size={11} /> Schedule
+            className="mt-3 inline-flex h-[44px] items-center gap-1.5 rounded-full px-4 text-[11.5px] font-[700] transition active:scale-95"
+            style={{ background: `${C.crimson}12`, color: C.crimson }}>
+            <CalendarPlus size={12} /> Schedule a session
           </button>
         </div>
       )}
 
-      {sessions.length > 0 && (
-        <div className="space-y-2" style={{ maxHeight: 280, overflowY: 'auto' }}>
-          {sessions.map((s, i) => {
-            const meta = STATUS_META[s.status] ?? STATUS_META.scheduled;
-            const timeStr = fmt12(s.start_time);
-            return (
-              <m.div key={s.id}
-                initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05, duration: 0.3 }}
-                className="flex items-center gap-2.5 rounded-[13px] p-2.5"
-                style={{ background: `${meta.color}09`, border: `1px solid ${meta.color}18` }}>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820] text-white"
-                  style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)` }}>
-                  {initials(s.client_name)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11.5px] font-[720] truncate" style={{ color: C.ink }}>{s.client_name ?? 'Unknown'}</p>
-                  <p className="text-[9.5px] font-[500] truncate" style={{ color: C.muted }}>
-                    {s.trainer_name ? `${s.trainer_name} · ` : ''}{s.title}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  {timeStr && <span className="text-[10px] font-[700] tabular-nums" style={{ color: C.ink }}>{timeStr}</span>}
-                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8.5px] font-[700]"
-                    style={{ background: `${meta.color}15`, color: meta.color }}>
-                    {meta.icon}{meta.label}
-                  </span>
-                </div>
-              </m.div>
-            );
-          })}
+      {total > 0 && (
+        <div className="space-y-3">
+          {booked.length > 0 && (
+            <div>
+              {due.length > 0 && <MiniLabel>Booked · {booked.length}</MiniLabel>}
+              <div className="space-y-2">
+                {booked.map((s, i) => {
+                  const meta = STATUS_META[s.status] ?? STATUS_META.scheduled;
+                  const timeStr = fmt12(s.start_time);
+                  return (
+                    <m.button
+                      key={s.id}
+                      type="button"
+                      onClick={() => router.push('/pt-os/sessions')}
+                      initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.28 }}
+                      className="flex w-full items-center gap-2.5 rounded-[14px] p-2.5 text-left transition active:scale-[0.99]"
+                      style={{ background: `${meta.color}09`, border: `1px solid ${meta.color}1c` }}
+                    >
+                      {/* The time is the anchor: this list is read by scanning
+                          down the left edge for "what is next", so it leads the
+                          row and is tabular so the digits line up. */}
+                      <span className="w-[58px] shrink-0 text-[11.5px] font-[800] tabular-nums" style={{ color: timeStr ? C.ink : C.muted }}>
+                        {timeStr ?? '—'}
+                      </span>
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820] text-white"
+                        style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)` }}>
+                        {initials(s.client_name)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12px] font-[730]" style={{ color: C.ink }}>
+                          {s.client_name ?? 'Unknown client'}
+                        </span>
+                        <span className="block truncate text-[10px] font-[550]" style={{ color: C.muted }}>
+                          {/* The programme, falling back to the session title
+                              only when the client is on no programme at all. */}
+                          {s.plan_name ?? s.title ?? 'No programme assigned'}
+                        </span>
+                      </span>
+                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8.5px] font-[700]"
+                        style={{ background: `${meta.color}15`, color: meta.color }}>
+                        {meta.icon}{meta.label}
+                      </span>
+                    </m.button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {due.length > 0 && (
+            <div>
+              <MiniLabel>
+                {booked.length > 0 ? `Due today · ${due.length}` : `Due today · ${due.length} · not in the diary`}
+              </MiniLabel>
+              <div className="space-y-2">
+                {due.map((c, i) => (
+                  <m.button
+                    key={c.assignment_id}
+                    type="button"
+                    onClick={() => router.push('/pt-os/today')}
+                    initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: (booked.length + i) * 0.04, duration: 0.28 }}
+                    className="flex w-full items-center gap-2.5 rounded-[14px] p-2.5 text-left transition active:scale-[0.99]"
+                    style={{ background: 'rgba(15,23,42,0.025)', border: '1px dashed rgba(100,116,139,0.28)' }}
+                  >
+                    {/* A dash, not a fabricated time. These clients are due
+                        because of their programme, and nobody has said when. */}
+                    <span className="w-[58px] shrink-0 text-[11px] font-[650]" style={{ color: C.muted }}>
+                      No time
+                    </span>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
+                      style={{ background: 'rgba(100,116,139,0.14)', color: C.ink }}>
+                      {initials(c.client_name)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12px] font-[730]" style={{ color: C.ink }}>
+                        {c.client_name ?? 'Unknown client'}
+                      </span>
+                      <span className="block truncate text-[10px] font-[550]" style={{ color: C.muted }}>
+                        {c.plan_name}
+                        {c.planned_exercises > 0 ? ` · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}` : ''}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[10px] font-[700]" style={{ color: C.crimson }}>Start</span>
+                  </m.button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Glass>
+  );
+}
+
+/** A quiet divider label inside a card — smaller than SectionLabel, which sits above one. */
+function MiniLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-1.5 px-0.5 text-[9.5px] font-[750] uppercase tracking-[0.12em]"
+      style={{ color: 'rgba(100,116,139,0.72)' }}>{children}</p>
   );
 }
 
@@ -943,7 +1067,19 @@ export default function PtOsDashboard() {
             {/* 1 — Hero header */}
             <HeroHeader d={d} coach={coach} studioName={studioName} loading={dash.loading} onRefresh={dash.refetch} />
 
-            {/* 2 — Mobile quick actions (desktop uses the dock) */}
+            {/* 2 — Today's sessions.
+                Directly under the hero, above revenue and retention: it is the
+                only section whose answer changes what happens in the next hour.
+                It replaces the half-width "Today" card that used to sit in the
+                Operations row further down — that card showed the session's
+                own title rather than the client's programme, and could only
+                ever see the appointment book. */}
+            <div>
+              <SectionLabel>Today</SectionLabel>
+              <TodaySchedule ops={o} loading={ops.loading} />
+            </div>
+
+            {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
             {/* 3 — KPI grid: 2 cols mobile → 3 tablet → 6 desktop */}
@@ -968,13 +1104,15 @@ export default function PtOsDashboard() {
               </div>
             </div>
 
-            {/* 4 — Today's ops: sessions + renewals (full-width on mobile, 2-col on tablet+) */}
+            {/* 5 — Renewals due.
+                Was a two-column row with a "Today" card beside it. That card
+                is now the full-width section under the hero, where it can show
+                the programme and the clients who are due but unbooked — so
+                keeping it here as well would have been the same list twice, one
+                of them worse. Renewals is full width now that it is alone. */}
             <div>
-              <SectionLabel>Today&apos;s Operations</SectionLabel>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <TodayOps ops={o} loading={ops.loading} />
-                <RenewalsDue ops={o} loading={ops.loading} />
-              </div>
+              <SectionLabel>Renewals</SectionLabel>
+              <RenewalsDue ops={o} loading={ops.loading} />
             </div>
 
             {/* 5 — AI copilot */}
