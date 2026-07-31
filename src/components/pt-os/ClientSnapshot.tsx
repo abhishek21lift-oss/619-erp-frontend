@@ -87,9 +87,9 @@ export default function ClientSnapshot({ clientId, onLoaded }: ClientSnapshotPro
   if (!snap) return null;
 
   return (
-    <div className="mb-6 space-y-4">
+    <div className="mb-5 space-y-3">
       <AttentionStrip alerts={snap.alerts} />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <GoalCard goal={snap.goal} clientId={clientId} />
         <CoachCard insights={snap.coach} />
       </div>
@@ -129,17 +129,17 @@ function AttentionStrip({ alerts }: { alerts: ClientAlert[] }) {
           const tone = TONE[a.severity] ?? TONE.info;
           const body = (
             <>
-              <span className="mt-[3px] shrink-0 text-[13px] leading-none" aria-hidden>⚠</span>
+              <span className="shrink-0 text-[13px] leading-none" aria-hidden>⚠</span>
               <span className="min-w-0">
                 <span className="block text-[12px] font-[750] leading-tight">{a.label}</span>
                 {a.detail && (
                   <span className="mt-0.5 block text-[10.5px] font-[600] opacity-80">{a.detail}</span>
                 )}
               </span>
-              {a.href && <ChevronRight size={13} className="ml-auto mt-[2px] shrink-0 opacity-60" />}
+              {a.href && <ChevronRight size={13} className="ml-auto shrink-0 opacity-60" />}
             </>
           );
-          const className = 'flex min-h-[44px] w-full items-start gap-2 rounded-[13px] px-3 py-2.5 text-left';
+          const className = 'flex min-h-[44px] w-full items-center gap-2 rounded-[14px] px-3 py-2 text-left';
           const style = { background: tone.bg, border: `1px solid ${tone.border}`, color: tone.fg };
           return (
             <m.div key={a.id}
@@ -167,7 +167,7 @@ function AttentionStrip({ alerts }: { alerts: ClientAlert[] }) {
 function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: string }) {
   if (!goal?.present) {
     return (
-      <Card title="Goal" icon={<Target size={13} />} tint="#059669">
+      <Card title="Goal" icon={<Target size={16} />} from="#10b981" to="#059669">
         <Empty
           text="No goal set for this client yet."
           action={{ label: 'Set a goal', href: `/pt-os/goals?client_id=${clientId}` }}
@@ -182,26 +182,22 @@ function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: stri
   const pct = typeof goal.pct === 'number' ? goal.pct : null;
 
   return (
-    <Card title="Goal" icon={<Target size={13} />} tint="#059669">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-[15px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
-          {label}
-          {goal.target_kg != null && (
-            <span className="ml-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
-              → {goal.target_kg} kg
-            </span>
-          )}
-        </p>
-        {pct !== null && (
-          <p className="shrink-0 text-[22px] font-[860] tabular-nums leading-none" style={{ color: '#059669' }}>
-            {pct}%
-          </p>
+    <Card title="Goal" icon={<Target size={16} />} from="#10b981" to="#059669"
+      right={pct !== null
+        ? <span className="shrink-0 text-[20px] font-[860] tabular-nums leading-none" style={{ color: '#059669' }}>{pct}%</span>
+        : null}>
+      <p className="text-[14px] font-[800] tracking-[-0.01em]" style={{ color: 'var(--text-primary)' }}>
+        {label}
+        {goal.target_kg != null && (
+          <span className="ml-1.5 text-[12px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+            → {goal.target_kg} kg
+          </span>
         )}
-      </div>
+      </p>
 
       {pct !== null ? (
         <>
-          <Bar pct={pct} colour="#059669" />
+              <Bar pct={pct} colour="#059669" />
           <div className="mt-2.5 grid grid-cols-3 gap-2">
             <Stat label="Started" value={goal.start_kg != null ? `${goal.start_kg} kg` : '—'} />
             <Stat label="Current" value={goal.current_kg != null ? `${goal.current_kg} kg` : '—'}
@@ -234,7 +230,7 @@ function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: stri
 /** Coaching prompts. Each carries the reading it came from. */
 function CoachCard({ insights }: { insights: CoachInsight[] }) {
   return (
-    <Card title="AI Coach" icon={<Sparkles size={13} />} tint="#7c3aed">
+    <Card title="AI Coach" icon={<Sparkles size={16} />} from="#8b5cf6" to="#7c3aed">
       {insights.length === 0 ? (
         <Empty text="Not enough recorded yet to say anything useful. Log a session or take a measurement." />
       ) : (
@@ -262,7 +258,7 @@ function CoachCard({ insights }: { insights: CoachInsight[] }) {
 /** The number a trainer gets asked for. */
 function PrCard({ prs, clientId }: { prs: ClientPr[]; clientId: string }) {
   return (
-    <Card title="Latest personal records" icon={<Trophy size={13} />} tint="#d97706">
+    <Card title="Latest personal records" icon={<Trophy size={16} />} from="#f59e0b" to="#d97706">
       {prs.length === 0 ? (
         <Empty
           text="No records logged yet. They appear here as soon as a set beats what came before."
@@ -271,14 +267,19 @@ function PrCard({ prs, clientId }: { prs: ClientPr[]; clientId: string }) {
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {prs.map((p) => (
-            <div key={p.exercise} className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--bg-subtle)' }}>
-              <p className="truncate text-[10px] font-[700] uppercase tracking-wide"
-                style={{ color: 'var(--text-muted)' }} title={p.exercise}>{p.exercise}</p>
-              <p className="mt-0.5 text-[17px] font-[850] tabular-nums leading-none"
+            <div key={p.exercise} className="rounded-[14px] px-3 py-2.5"
+              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+              <p className="text-[9.5px] font-[700] uppercase leading-tight tracking-wide"
+                style={{
+                  color: 'var(--text-muted)',
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                }}
+                title={p.exercise}>{p.exercise}</p>
+              <p className="mt-1 text-[18px] font-[860] tabular-nums leading-none"
                 style={{ color: 'var(--text-primary)' }}>
                 {p.weight_kg}<span className="text-[11px] font-[700]"> kg</span>
               </p>
-              <p className="mt-1 text-[10px] font-[620]" style={{ color: 'var(--text-muted)' }}>
+              <p className="mt-1 text-[9.5px] font-[620]" style={{ color: 'var(--text-muted)' }}>
                 {[p.reps != null ? `× ${p.reps}` : null, p.achieved_on].filter(Boolean).join(' · ')}
               </p>
             </div>
@@ -318,17 +319,26 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
 }
 
 function Card({
-  title, icon, tint, children,
-}: { title: string; icon: React.ReactNode; tint: string; children: React.ReactNode }) {
+  title, icon, from, to, right, children,
+}: {
+  title: string; icon: React.ReactNode; from: string; to: string;
+  right?: React.ReactNode; children: React.ReactNode;
+}) {
   return (
     <m.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: EASE }}
-      className="rounded-[18px] p-4"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-[9px]"
-          style={{ background: `${tint}18`, color: tint }}>{icon}</span>
-        <span className="text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>{title}</span>
+      className="rounded-[22px] bg-white p-4 sm:p-5"
+      style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+      {/* The page's own card header: a gradient chip with a coloured shadow and
+          a rule under the title. The first cut used flat pastel squares and a
+          smaller radius, which read as a different product bolted onto this one. */}
+      <div className="mb-3.5 flex items-center gap-2.5 pb-3.5" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+          style={{ background: `linear-gradient(135deg, ${from}, ${to})`, boxShadow: `0 3px 12px ${from}45` }}>
+          <span className="text-white">{icon}</span>
+        </div>
+        <h3 className="min-w-0 flex-1 truncate text-[13.5px] font-[740] text-gray-900">{title}</h3>
+        {right}
       </div>
       {children}
     </m.div>

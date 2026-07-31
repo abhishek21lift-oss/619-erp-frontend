@@ -596,15 +596,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     far through the term they are without having to read a ring. */}
                 <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.35 }}
-                  className="mb-6 rounded-[18px] p-4 bg-white"
+                  className="mb-5 rounded-[22px] bg-white p-4 sm:p-5"
                   style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-[9px]"
-                        style={{ background: 'rgba(99,102,241,0.14)', color: '#6366f1' }}>
-                        <Clock size={13} />
+                  <div className="mb-3.5 flex items-center justify-between gap-3 pb-3.5"
+                    style={{ borderBottom: '1px solid var(--border)' }}>
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+                        style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1)', boxShadow: '0 3px 12px #6366f145' }}>
+                        <Clock size={16} className="text-white" />
                       </span>
-                      <span className="text-[12.5px] font-[750] text-gray-900">PT term</span>
+                      <h3 className="text-[13.5px] font-[740] text-gray-900">PT term</h3>
                     </div>
                     <span className="text-[13px] font-[820] tabular-nums" style={{ color: '#6366f1' }}>
                       {client.days_left != null ? `${client.days_left} days left` : '—'}
