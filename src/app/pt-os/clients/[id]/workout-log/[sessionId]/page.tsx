@@ -341,7 +341,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                       </p>
                     </div>
                     <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}
-                      className="flex-shrink-0 rounded-[8px] px-2.5 py-1.5 text-[11px] font-[700]"
+                      className="flex h-[44px] flex-shrink-0 items-center rounded-[8px] px-3 text-[11px] font-[700]"
                       style={{ background: alreadyAdded ? 'var(--bg-subtle)' : 'rgba(99,102,241,0.1)', color: alreadyAdded ? '#94a3b8' : '#6366f1' }}>
                       {alreadyAdded ? 'Added' : '+ Add'}
                     </button>
@@ -588,16 +588,24 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
                 </button>
               )}
 
+              {/*
+                Explicit h-[44px] on all three. The shared Button renders 35px
+                at default and 28px at size="sm" — its scale is rem-based and
+                globals.css sets the root font to 14px, so every name in it is
+                12.5% smaller than it reads. That is tolerable on a settings
+                page and not here: this is the screen a trainer uses standing
+                up, one-handed, between sets.
+              */}
               <div className="space-y-2">
-                <Button iconLeft={<Plus size={15} />} disabled={busy} onClick={() => handleAddSet()} className="w-full"
+                <Button iconLeft={<Plus size={15} />} disabled={busy} onClick={() => handleAddSet()} className="h-[44px] w-full"
                   style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
                   Add Set
                 </Button>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button size="sm" variant="outline" iconLeft={<Copy size={12} />} disabled={busy || exercise.sets.length === 0} onClick={handleDuplicateLast}>
+                  <Button size="sm" variant="outline" className="h-[44px]" iconLeft={<Copy size={12} />} disabled={busy || exercise.sets.length === 0} onClick={handleDuplicateLast}>
                     Duplicate Last
                   </Button>
-                  <Button size="sm" variant="outline" iconLeft={<Wand2 size={12} />} disabled={busy || !previous} onClick={handleAutoFillPrevious}>
+                  <Button size="sm" variant="outline" className="h-[44px]" iconLeft={<Wand2 size={12} />} disabled={busy || !previous} onClick={handleAutoFillPrevious}>
                     Auto-fill Previous
                   </Button>
                 </div>
@@ -699,7 +707,7 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
           <p className="mb-1 text-center text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Weight (kg)</p>
           <div className="flex items-center gap-1.5">
             <button onClick={() => adjustWeight(-2.5)} aria-label="Decrease weight"
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
+              className="flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
               style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
               <Minus size={16} />
             </button>
@@ -709,7 +717,7 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
               className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
               style={{ fontSize: 17, background: '#fff', border: '1.5px solid #e2e8f0', color: '#0f172a' }} />
             <button onClick={() => adjustWeight(2.5)} aria-label="Increase weight"
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
+              className="flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
               style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
               <Plus size={16} />
             </button>
@@ -719,7 +727,7 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
           <p className="mb-1 text-center text-[9.5px] font-[700] uppercase tracking-wider" style={{ color: '#94a3b8' }}>Reps</p>
           <div className="flex items-center gap-1.5">
             <button onClick={() => adjustReps(-1)} aria-label="Decrease reps"
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
+              className="flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
               style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
               <Minus size={16} />
             </button>
@@ -729,7 +737,7 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
               className="w-full min-w-0 rounded-[12px] py-2.5 text-center font-[800] outline-none"
               style={{ fontSize: 17, background: '#fff', border: '1.5px solid #e2e8f0', color: '#0f172a' }} />
             <button onClick={() => adjustReps(1)} aria-label="Increase reps"
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
+              className="flex h-[44px] w-[44px] flex-shrink-0 items-center justify-center rounded-[12px] transition active:scale-95"
               style={{ background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569' }}>
               <Plus size={16} />
             </button>
@@ -738,19 +746,19 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
       </div>
 
       <div className="mt-2.5 flex items-center gap-2.5">
-        <label className="flex flex-1 items-center gap-1.5 rounded-[10px] px-2.5 py-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+        <label className="flex h-[44px] flex-1 items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
           <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RPE</span>
           <input type="number" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
             onChange={(e) => setRpe(e.target.value)}
             onBlur={() => save({ rpe: numField(rpe) })}
-            className="w-full min-w-0 text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
+            className="h-full w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
-        <label className="flex flex-1 items-center gap-1.5 rounded-[10px] px-2.5 py-1.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+        <label className="flex h-[44px] flex-1 items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
           <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RIR</span>
           <input type="number" inputMode="numeric" min={0} max={10} value={rir} placeholder="—"
             onChange={(e) => setRir(e.target.value)}
             onBlur={() => save({ rir: numField(rir) })}
-            className="w-full min-w-0 text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
+            className="h-full w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
       </div>
 
