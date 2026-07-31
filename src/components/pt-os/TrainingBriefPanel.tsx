@@ -31,13 +31,86 @@ import { useEffect, useState } from 'react';
 import { m } from 'framer-motion';
 import {
   ShieldCheck, ShieldAlert, Activity, HeartPulse, Moon, Target, History,
-  TriangleAlert, ChevronRight, Loader2, ClipboardList, Sparkles, Copy, Check,
+  TriangleAlert, ChevronRight, Loader2, ClipboardList, Copy, Check,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { TrainingBrief } from '@/lib/api';
+import type {
+  TrainingBrief, BriefSectionBase, BriefLimitations, MobilityFinding,
+} from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/* ── Reading the payload ─────────────────────────────────────────────────── */
+
+const obj = (v: unknown): Record<string, unknown> | null =>
+  (v && typeof v === 'object' && !Array.isArray(v)) ? v as Record<string, unknown> : null;
+const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? v as T[] : []);
+const str = (v: unknown): string | null => (typeof v === 'string' && v !== '' ? v : null);
+
+/**
+ * A brief that is safe to render.
+ *
+ * The render below walks about forty paths of the form
+ * `sections.<name>.<field>`, and it used to walk them straight off the
+ * response. One absent key — a section the server did not send, a `findings`
+ * list from a build that predates it — threw a TypeError mid-render, and
+ * because this panel is mounted under /pt-os that throw took the WHOLE
+ * segment to its error boundary: "this part of the app failed to load". One
+ * screen must never be able to do that to the rest of the module, so the
+ * payload is made total once, here, and the render cannot throw afterwards.
+ *
+ * It fills SHAPE, never CONTENT. A section the server did not send comes back
+ * `{ present: false }` — "nobody has checked" — and never an empty section
+ * marked present. Inventing presence here would put the panel straight back
+ * into the thing this whole file exists to prevent: making an unassessed
+ * client look like a clean one.
+ *
+ * Returns null when the payload is not an object at all, which the caller
+ * renders as an explicit failure rather than as a blank tab.
+ */
+export function normaliseBrief(raw: unknown): TrainingBrief | null {
+  const b = obj(raw);
+  if (!b) return null;
+  const src = obj(b.sections) ?? {};
+
+  const sec = <T extends BriefSectionBase>(key: string): T =>
+    ((o) => (o && o.present === true ? o : { present: false }))(obj(src[key])) as unknown as T;
+
+  const limitations = sec<BriefLimitations>('limitations');
+  const posture = obj(limitations.posture);
+  const mobility = obj(limitations.mobility);
+
+  const c = obj(b.client) ?? {};
+  return {
+    client: {
+      id: str(c.id),
+      name: str(c.name),
+      gender: str(c.gender),
+      age: typeof c.age === 'number' && Number.isFinite(c.age) ? c.age : null,
+      goal: str(c.goal),
+      notes: str(c.notes),
+    },
+    sections: {
+      readiness: sec('readiness'),
+      body: sec('body'),
+      capacity: sec('capacity'),
+      limitations: {
+        ...limitations,
+        // The only two nested lists the render walks. Everything else it
+        // reads is a scalar, and a missing scalar already renders as "—".
+        posture: posture ? { ...posture, issues: arr<string>(posture.issues) } : null,
+        mobility: mobility ? { ...mobility, findings: arr<MobilityFinding>(mobility.findings) } : null,
+      } as BriefLimitations,
+      lifestyle: sec('lifestyle'),
+      goal: sec('goal'),
+      history: sec('history'),
+    },
+    missing: arr<unknown>(b.missing).filter((k): k is string => typeof k === 'string'),
+    completeness_pct: typeof b.completeness_pct === 'number' && Number.isFinite(b.completeness_pct)
+      ? b.completeness_pct : 0,
+  };
+}
 
 /** Where a trainer goes to fill a gap. Keyed by the section the server names. */
 const FILL: Record<string, { label: string; href: (id: string) => string }> = {
@@ -65,20 +138,33 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
   const { toast } = useToast();
   const [brief, setBrief] = useState<TrainingBrief | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     api.pt.trainingBrief(clientId)
-      .then(({ data }) => { if (!cancelled) { setBrief(data); onLoaded?.(data); } })
-      .catch(() => { if (!cancelled) toast.error('Could not load this client\'s brief'); })
+      .then(({ data }) => {
+        if (cancelled) return;
+        const b = normaliseBrief(data);
+        if (!b) { setFailed(true); return; }
+        setBrief(b);
+        onLoaded?.(b);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFailed(true);
+        toast.error('Could not load this client\'s brief');
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
     // onLoaded is a render-scoped callback; re-running on its identity would
     // refetch the brief on every parent render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId, toast]);
+  }, [clientId, toast, attempt]);
 
   if (loading) {
     return (
@@ -87,7 +173,32 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
       </div>
     );
   }
-  if (!brief) return null;
+
+  // Said out loud, for the same reason a missing section is. Rendering nothing
+  // here would read as "this client has no brief" when what happened is that
+  // we could not fetch one.
+  if (failed || !brief) {
+    return (
+      <div className="flex flex-col items-center gap-2.5 rounded-[18px] px-5 py-10 text-center"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <TriangleAlert size={20} style={{ color: '#d97706' }} />
+        <p className="text-[12.5px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+          Could not load this client&apos;s brief
+        </p>
+        <p className="max-w-[38ch] text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+          Their assessments are still on file — this page could not read them just now.
+        </p>
+        <button
+          type="button"
+          onClick={() => setAttempt((n) => n + 1)}
+          className="mt-1 flex h-[44px] items-center rounded-[12px] px-4 text-[11.5px] font-[720]"
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--brand)' }}
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   const s = brief.sections;
   const blocked = s.readiness.present && s.readiness.gate_status === 'blocked';
@@ -190,13 +301,13 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
             <Row label="Mobility" value={cap(s.limitations.mobility.category)} />
             {/* Pain and restriction are shown apart because they call for
                 different changes: regress the movement, or remove it. */}
-            {s.limitations.mobility.findings.length === 0 ? (
+            {(s.limitations.mobility.findings ?? []).length === 0 ? (
               <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
                 No painful or restricted regions found.
               </p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {s.limitations.mobility.findings.map((f) => (
+                {(s.limitations.mobility.findings ?? []).map((f) => (
                   <span key={f.region}
                     className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10.5px] font-[700]"
                     style={{
@@ -388,15 +499,20 @@ function Row({ label, value }: { label: string; value?: string | null }) {
  * "Nothing flagged" is a finding. Rendering nothing at all would read the same
  * as the section never being filled in.
  */
-function Chips({ label, items, tone, emptyNote }: { label: string; items: string[]; tone: string; emptyNote: string }) {
+function Chips({ label, items, tone, emptyNote }: { label: string; items?: string[] | null; tone: string; emptyNote: string }) {
+  // Read rather than trusted. These lists come from JSONB columns that hold
+  // three different shapes depending on which assessment screen wrote them,
+  // and a string arriving where a list was expected has a `.length` but no
+  // `.map` — which throws in the middle of a render.
+  const list = (Array.isArray(items) ? items : []).filter((i) => typeof i === 'string');
   return (
     <div>
       <p className="mb-1 text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      {items.length === 0 ? (
+      {list.length === 0 ? (
         <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{emptyNote}</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
-          {items.map((i) => (
+          {list.map((i) => (
             <span key={i} className="rounded-full px-2 py-0.5 text-[10.5px] font-[700] capitalize"
               style={{ background: `${tone}16`, color: tone }}>{i}</span>
           ))}
@@ -437,6 +553,8 @@ const cap = (v?: string | null) => (v ? String(v).replace(/_/g, ' ').replace(/^.
  */
 export function briefAsText(b: TrainingBrief): string {
   const L: string[] = [];
+  /** Same reason as Chips: these lists come from JSONB of three shapes. */
+  const list = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
   const c = b.client;
   L.push(`CLIENT: ${c.name ?? 'Unknown'}${c.age != null ? `, ${c.age}` : ''}${c.gender ? `, ${c.gender}` : ''}`);
   L.push(`Brief completeness: ${b.completeness_pct}%`);
@@ -449,16 +567,17 @@ export function briefAsText(b: TrainingBrief): string {
     L.push('', 'MEDICAL CLEARANCE');
     L.push(`- Risk level: ${s.readiness.risk_level ?? 'unknown'}`);
     if (s.readiness.gate_status) L.push(`- Gate: ${s.readiness.gate_status}`);
-    L.push(`- Current health flags: ${(s.readiness.current_health ?? []).join(', ') || 'none'}`);
-    L.push(`- History flags: ${(s.readiness.past_history ?? []).join(', ') || 'none'}`);
+    L.push(`- Current health flags: ${list(s.readiness.current_health).join(', ') || 'none'}`);
+    L.push(`- History flags: ${list(s.readiness.past_history).join(', ') || 'none'}`);
   }
   if (s.limitations.present) {
     L.push('', 'MOVEMENT LIMITATIONS');
     if (s.limitations.injuries) L.push(`- Injuries: ${s.limitations.injuries}`);
-    for (const f of s.limitations.mobility?.findings ?? []) {
+    for (const f of arr<MobilityFinding>(s.limitations.mobility?.findings)) {
       L.push(`- ${f.region}: ${[f.pain && 'pain', f.restriction && 'restricted'].filter(Boolean).join(' + ')}`);
     }
-    if (s.limitations.posture?.issues?.length) L.push(`- Posture: ${s.limitations.posture.issues.join(', ')}`);
+    const posture = list(s.limitations.posture?.issues);
+    if (posture.length) L.push(`- Posture: ${posture.join(', ')}`);
   }
   if (s.capacity.present) {
     L.push('', 'CAPACITY (studio scores)');
@@ -485,7 +604,8 @@ export function briefAsText(b: TrainingBrief): string {
     L.push('', 'GOAL');
     L.push(`- ${s.goal.priority ?? s.goal.goal_type ?? 'unspecified'}`);
     if (s.goal.target_weight) L.push(`- Target: ${s.goal.target_weight} kg by ${s.goal.target_date ?? 'no date'}`);
-    if (s.goal.challenges?.length) L.push(`- Challenges: ${s.goal.challenges.join(', ')}`);
+    const challenges = list(s.goal.challenges);
+    if (challenges.length) L.push(`- Challenges: ${challenges.join(', ')}`);
   }
   if (s.history.present) {
     L.push('', 'CURRENT PROGRAMME');

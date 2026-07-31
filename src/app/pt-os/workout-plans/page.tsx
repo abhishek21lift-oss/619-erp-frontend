@@ -288,7 +288,10 @@ function Inner() {
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
               style={{
                 flexShrink: 0, whiteSpace: 'nowrap',
-                padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                // 44px explicitly, not padding: globals.css sets the root font
+                // size to 14px, so anything expressed in rem lands at 87.5% of
+                // its nominal value and a "44px" tab measures 38.
+                height: 44, padding: '0 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.2s',
                 background: activeTab === tab.key ? 'var(--bg-card)' : 'transparent',
                 color: activeTab === tab.key ? tab.color : 'var(--text-muted)',

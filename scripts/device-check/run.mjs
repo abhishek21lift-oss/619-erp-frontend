@@ -419,7 +419,6 @@ const KNOWN = [
   // 32px by definition. Changing those heights changes every button in the
   // product, which is the user's call and not this pass's.
   [/"(Edit|Delete|Assign|New Plan|Enroll in PT|Renew PT)"/, 'shared .btn-* sizes — app-wide'],
-  [/"(Active Plans|Exercise Library|AI Suggestions)/, 'Programs list tab strip — shared styles'],
   [/^button is 32×26$/, 'Programs list grid/list toggle — pre-existing'],
   [/"(Try again|Back to app|Retry)"/, 'error-boundary buttons — shared component'],
   [/^button\.group\.inline-flex "c-1"/, 'client-profile copy-id chip — pre-existing'],
