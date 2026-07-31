@@ -41,7 +41,7 @@
 // to /login — which threw again. An unauthenticated user got a loop instead of
 // a message. Auth and public segments therefore pass shell={false}.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { captureError } from '@/lib/sentry';
@@ -62,7 +62,61 @@ export type RouteErrorProps = {
   segment?: string;
 };
 
+/**
+ * A build that no longer exists, not an application fault.
+ *
+ * Next.js code-splits per route, so a tab left open across a deploy is running
+ * a shell that asks for chunk filenames the new build does not serve. The
+ * first client-side navigation after the deploy 404s on a chunk and lands
+ * here, which is why this reads as "this part of the app failed to load" — the
+ * part genuinely did fail to load, and the code is fine.
+ *
+ * The messages differ by bundler and browser, so this matches all four forms
+ * rather than the webpack one everybody quotes.
+ */
+const STALE_BUILD = /ChunkLoadError|Loading chunk \S+ failed|Loading CSS chunk|Failed to fetch dynamically imported module|error loading dynamically imported module/i;
+
+/**
+ * Reload once per build, never in a loop.
+ *
+ * `reset()` cannot fix a stale build — it re-renders the same shell, which
+ * asks for the same missing chunk. Only a document fetch gets the new one. But
+ * a chunk can also be missing because a deploy is genuinely broken, and an
+ * unguarded reload there is an infinite refresh on every page of the app,
+ * which is far worse than an error card. So the attempt is recorded in
+ * sessionStorage and the second failure falls through to the message below.
+ */
+const RELOAD_KEY = 'route-error:stale-build-reload';
+
+/**
+ * A reload that did not fix it means the chunk is genuinely gone, so the
+ * second attempt within this window falls through to the message instead of
+ * refreshing forever. Beyond the window it is a new deploy rather than a loop
+ * — a session left open all day should still recover from the next one.
+ */
+const RELOAD_COOLDOWN_MS = 60_000;
+
+export function reloadOnceForStaleBuild(now = Date.now()): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const last = Number(window.sessionStorage.getItem(RELOAD_KEY));
+    if (Number.isFinite(last) && last > 0 && now - last < RELOAD_COOLDOWN_MS) return false;
+    window.sessionStorage.setItem(RELOAD_KEY, String(now));
+  } catch {
+    return false;          // private mode / storage disabled: show the card
+  }
+  window.location.reload();
+  return true;
+}
+
 export default function RouteError({ error, reset, shell = true, segment }: RouteErrorProps) {
+  const staleBuild = STALE_BUILD.test(`${error.name} ${error.message}`);
+  const [reloading, setReloading] = useState(false);
+
+  useEffect(() => {
+    if (staleBuild) setReloading(reloadOnceForStaleBuild());
+  }, [staleBuild]);
+
   // React StrictMode double-invokes effects in development, and a remount after
   // `reset()` runs this again. Without the ref one thrown error becomes two or
   // three Sentry events, which makes the issue counts lie.
@@ -79,15 +133,19 @@ export default function RouteError({ error, reset, shell = true, segment }: Rout
       role="alert"
       className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center gap-4 px-6 text-center"
     >
+      {/* A stale build is not a failure to warn about, so it does not get the
+          danger triangle — it gets the same refresh glyph as its action. */}
       <div
         className="grid h-14 w-14 place-items-center rounded-full"
-        style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}
+        style={staleBuild
+          ? { background: 'var(--bg-subtle)', color: 'var(--text-muted)' }
+          : { background: 'var(--danger-soft)', color: 'var(--danger)' }}
       >
-        <AlertTriangle className="h-7 w-7" />
+        {staleBuild ? <RotateCcw className="h-7 w-7" /> : <AlertTriangle className="h-7 w-7" />}
       </div>
 
       <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-        Something went wrong
+        {staleBuild ? 'Updating to the latest version' : 'Something went wrong'}
       </h2>
 
       {/*
@@ -96,9 +154,15 @@ export default function RouteError({ error, reset, shell = true, segment }: Rout
         the customer.
       */}
       <p className="max-w-sm text-sm" style={{ color: 'var(--text-muted)' }}>
-        {segment
-          ? `This part of the app (${segment}) failed to load. The rest of the app is still working.`
-          : 'An unexpected error occurred. The rest of the app is still working.'}
+        {staleBuild
+          // Not a fault to apologise for: this tab was open while a new
+          // version shipped, so it asked for files that build no longer has.
+          ? (reloading
+            ? 'A new version was released while this page was open. Reloading…'
+            : 'A new version was released. Refresh the page to pick it up.')
+          : segment
+            ? `This part of the app (${segment}) failed to load. The rest of the app is still working.`
+            : 'An unexpected error occurred. The rest of the app is still working.'}
       </p>
 
       {/*
@@ -122,13 +186,15 @@ export default function RouteError({ error, reset, shell = true, segment }: Rout
       )}
 
       <div className="mt-2 flex flex-wrap justify-center gap-2">
+        {/* `reset()` re-renders the same shell, which asks for the same
+            missing chunk — only a document fetch can fix a stale build. */}
         <button
-          onClick={reset}
+          onClick={staleBuild ? () => window.location.reload() : reset}
           className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all duration-200"
-          style={{ background: 'var(--danger)' }}
+          style={{ background: staleBuild ? 'var(--brand)' : 'var(--danger)' }}
         >
           <RotateCcw className="h-4 w-4" strokeWidth={2} />
-          Try again
+          {staleBuild ? 'Refresh' : 'Try again'}
         </button>
         <Link
           href="/"

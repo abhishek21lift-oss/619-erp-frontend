@@ -206,3 +206,74 @@ describe('every route segment has a boundary', () => {
       .toMatch(/from '@\/components\/RouteError'/);
   });
 });
+
+// ── A tab that was open across a deploy ─────────────────────────────────────
+//
+// Next.js splits code per route, so a page left open while a new version ships
+// asks for chunk filenames the new build does not serve. That 404 lands in this
+// boundary and reads as "this part of the app failed to load" — which is true,
+// and which no amount of `reset()` can fix, because reset re-renders the same
+// shell asking for the same missing file. It has to be a document fetch.
+//
+// The loop guard is the part that actually needs testing: a chunk can also be
+// missing because a deploy is broken, and an unguarded reload there refreshes
+// the app forever, which is much worse than an error card.
+describe('RouteError — stale build after a deploy', () => {
+  const reload = vi.fn();
+  let store: Record<string, string> = {};
+
+  beforeEach(() => {
+    reload.mockClear();
+    store = {};
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => store[k] ?? null,
+      setItem: (k: string, v: string) => { store[k] = v; },
+      removeItem: (k: string) => { delete store[k]; },
+    });
+    Object.defineProperty(window, 'location', {
+      configurable: true, value: { ...window.location, reload },
+    });
+  });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+
+  const chunkErr = () => Object.assign(new Error('Loading chunk 4821 failed.'), {
+    name: 'ChunkLoadError',
+  });
+
+  it('reloads once, and says it is updating rather than blaming the app', async () => {
+    render(<RouteError error={chunkErr()} reset={() => {}} segment="pt-os" />);
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+    expect(screen.getByText(/Updating to the latest version/)).toBeTruthy();
+    expect(screen.queryByText(/failed to load/)).toBeNull();
+  });
+
+  it('does not reload a second time — a broken deploy must not refresh forever', async () => {
+    store['route-error:stale-build-reload'] = String(Date.now());
+    render(<RouteError error={chunkErr()} reset={() => {}} segment="pt-os" />);
+    await waitFor(() => expect(screen.getByText(/Refresh the page/)).toBeTruthy());
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('reloads again for a later deploy in a long-lived session', async () => {
+    store['route-error:stale-build-reload'] = String(Date.now() - 120_000);
+    render(<RouteError error={chunkErr()} reset={() => {}} segment="pt-os" />);
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+  });
+
+  it('leaves a genuine application error alone', async () => {
+    render(<RouteError error={new Error('boom')} reset={() => {}} segment="pt-os" />);
+    await waitFor(() => expect(screen.getByText(/Something went wrong/)).toBeTruthy());
+    expect(reload).not.toHaveBeenCalled();
+    expect(screen.getByText(/This part of the app \(pt-os\) failed to load/)).toBeTruthy();
+  });
+
+  it('matches the other bundlers\' wording too, not just webpack\'s', async () => {
+    render(
+      <RouteError
+        error={new Error('Failed to fetch dynamically imported module: /_next/x.js')}
+        reset={() => {}}
+      />,
+    );
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+  });
+});

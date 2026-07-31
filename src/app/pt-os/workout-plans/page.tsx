@@ -337,8 +337,16 @@ function Inner() {
                         id={plan.id}
                         name={plan.name}
                         description={plan.description ?? undefined}
-                        goal={plan.goal.replace('_', ' ')}
-                        difficulty={plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)}
+                        // Both are read rather than trusted. They are NOT NULL
+                        // in the schema today, but a plan built by an older
+                        // migration or an import can arrive without them, and
+                        // `null.charAt` here throws during render — which
+                        // takes the whole /pt-os segment to its error boundary
+                        // rather than dropping one card.
+                        goal={plan.goal ? plan.goal.replace(/_/g, ' ') : undefined}
+                        difficulty={plan.difficulty
+                          ? plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)
+                          : undefined}
                         duration={`${plan.sessions_per_week}x/wk · ${plan.duration_weeks}wk`}
                         exerciseCount={plan.exercise_count}
                         progress={plan.progress}

@@ -118,6 +118,13 @@ const ROUTES = [
   // The fixture brief is deliberately half-empty so the "not assessed" rows
   // render, which is the state that stops an unassessed client looking clean.
   ['client-training-brief', `/pt-os/workout-plans?client_id=${IDS.client}`],
+  // The same page when the brief endpoint is DOWN, and when it answers with
+  // something that is not a brief. Both have to degrade to a message on the
+  // one tab; neither may take the pt-os segment to its error boundary.
+  ['client-brief-api-down', `/pt-os/workout-plans?client_id=${IDS.client}`, undefined,
+    [[/training-brief/, 500]]],
+  ['client-brief-api-garbage', `/pt-os/workout-plans?client_id=${IDS.client}`, undefined,
+    [[/training-brief/, 200, '{"data":"not a brief"}']]],
   ['new-programme-sheet', '/pt-os/workout-plans', async (page) => {
     await page.getByRole('button', { name: /new plan/i }).first().click();
     await page.waitForTimeout(500);
@@ -473,7 +480,7 @@ async function main() {
 
     for (const vp of VIEWPORTS) {
     for (const theme of themes) {
-      for (const [name, route, open] of ROUTES) {
+      for (const [name, route, open, faults] of ROUTES) {
         if (only && !route.startsWith(only)) continue;
 
         const ctx = await browser.newContext({
@@ -513,6 +520,20 @@ async function main() {
         await page.route('**/api/**', async (route_) => {
           inflight++;
           const url = new URL(route_.request().url());
+          // A state may declare that an endpoint FAILS. A screen is not
+          // verified by its happy path alone: the training brief tab reached
+          // the user's error boundary, and a harness that only ever answers
+          // 200 can never catch that class.
+          const fault = (faults ?? []).find(([re]) => re.test(url.pathname));
+          if (fault) {
+            try {
+              return await route_.fulfill({
+                status: fault[1],
+                contentType: 'application/json',
+                body: fault[2] ?? JSON.stringify({ error: { message: 'injected by device-check' } }),
+              });
+            } finally { inflight--; lastSettled = Date.now(); }
+          }
           const body = resolveFixture(url.pathname, url.search);
           try {
             if (body === null) {
@@ -583,6 +604,25 @@ async function main() {
         if (problems === null) {
           problems = [];
           consoleErrors.push('audit could not run: the page kept navigating');
+        }
+
+        // ── Did the page actually render, or is this its error boundary? ──
+        //
+        // Every assertion above measures LAYOUT, and an error boundary lays
+        // out perfectly: correct widths, 44px buttons, no overflow. So the
+        // harness reported a clean bill of health on a screen that showed the
+        // user "Something went wrong", which is how the training brief crash
+        // reached production with a green run behind it. A boundary is now a
+        // finding, and it is checked on every state rather than the new ones.
+        const boundary = await page.evaluate(() => {
+          const heading = [...document.querySelectorAll('h2')]
+            .find((h) => /^(Something went wrong|Updating to the latest version)$/.test(h.textContent?.trim() ?? ''));
+          if (!heading) return null;
+          return heading.closest('[role="alert"]')?.textContent?.trim().slice(0, 160)
+            ?? heading.textContent;
+        }).catch(() => null);
+        if (boundary) {
+          problems.push({ kind: 'error-boundary', detail: `the page rendered its error boundary: ${boundary}` });
         }
 
         const landed = new URL(page.url()).pathname + new URL(page.url()).search;
