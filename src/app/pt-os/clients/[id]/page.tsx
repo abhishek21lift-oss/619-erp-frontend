@@ -665,10 +665,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </div>
                 </div>
 
-                {/* ── QUICK ACTIONS GRID ── */}
+                {/* ── QUICK ACTIONS GRID ──
+                    No `overflow-hidden` on this card, deliberately. The Screening
+                    and Training tiles open a submenu positioned `absolute
+                    top-full` — a descendant of this card — and an ancestor that
+                    clips its overflow clips that panel no matter what z-index it
+                    carries. With it set, Lifestyle, Workout Log and Progress
+                    Analytics were cut off and unreachable. Nothing in here bleeds
+                    to the rounded corners, so the clip bought nothing. */}
                 <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.35, duration: 0.4 }}
-                  className="mb-6 overflow-hidden rounded-[22px] p-5 bg-white"
+                  className="mb-6 rounded-[22px] p-5 bg-white"
                   style={{
                     border: '1px solid var(--border)',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
@@ -713,12 +720,25 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             <m.div
                               initial={{ opacity: 0, y: -6, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute left-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-[14px] p-1.5"
+                              // Hangs left from the tile's right edge below md,
+                              // and right from its left edge above.
+                              //
+                              // The grid is 3 columns on a phone and 6 at sm,
+                              // and Training is the 6th tile — the RIGHTMOST
+                              // column in both. Anchored left-0 the 176px panel
+                              // measured 254…408 on a 390px screen, 18px past
+                              // the edge, where AppShell's `main` (overflow-x:
+                              // hidden) cut it off. At md the grid is 11 wide
+                              // and both menu tiles sit mid-row with room to
+                              // their right, so the original anchoring is kept.
+                              className="absolute left-0 max-md:left-auto max-md:right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-[14px] p-1.5"
                               style={{ background: '#fff', border: '1px solid var(--border)', boxShadow: '0 12px 32px rgba(15,23,42,0.16)' }}>
                               {action.children.map((child) => (
                                 <button key={child.label}
                                   onClick={() => { setOpenAction(null); router.push(child.href(client.id)); }}
-                                  className="flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left transition hover:bg-slate-50">
+                                  // 44px, not py-2. These are tapped with a
+                                  // thumb on a phone; they measured 142×32.
+                                  className="flex h-[44px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left transition hover:bg-slate-50">
                                   <span style={{ color: action.from }}>{child.icon}</span>
                                   <span className="text-[12px] font-[650] text-gray-800">{child.label}</span>
                                 </button>

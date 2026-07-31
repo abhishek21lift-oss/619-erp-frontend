@@ -55,7 +55,22 @@ const OUT_DIR = process.env.DEVICE_CHECK_OUT
   ?? path.join(process.cwd(), '.device-check');
 
 /** iPhone 12/13/14/15 logical viewport. */
-const VIEWPORT = { width: 390, height: 844 };
+/**
+ * The widths this runs at.
+ *
+ * 390×844 is the iPhone 12-15 logical viewport and the narrowest screen the
+ * studio's trainers carry. 1280×900 was added after a clipped submenu shipped:
+ * the panel fitted at 390px and was cut in half on a laptop, so a phone-only
+ * check reported green on a bug the owner could see. Layout bugs are
+ * width-dependent in both directions; one width is not coverage.
+ *
+ * `touch` drives the 44px assertion — a rule about thumbs, not about mice, so
+ * it is not applied to the desktop pass.
+ */
+const VIEWPORTS = [
+  { name: 'phone', width: 390, height: 844, touch: true },
+  { name: 'desktop', width: 1280, height: 900, touch: false },
+];
 
 /**
  * A `token` cookie that satisfies the edge guard in src/proxy.ts.
@@ -112,6 +127,22 @@ const ROUTES = [
   ['analytics', `/pt-os/clients/${IDS.client}/training/analytics`],
   ['workout-log', `/pt-os/clients/${IDS.client}/workout-log`],
   ['client-profile', `/pt-os/clients/${IDS.client}`],
+
+  // Both Quick Actions submenus, opened. These shipped clipped — the card
+  // around them hid its overflow, so half of each menu was unreachable — and
+  // no check covered them because a closed menu renders nothing. The tile
+  // lookup is scoped to the card: the sidebar has its own "Screening" nav
+  // group, and at 390px it sits off-canvas and cannot be clicked.
+  ['client-profile-training-menu', `/pt-os/clients/${IDS.client}`, async (page) => {
+    await page.locator('div.mb-6').getByRole('button', { name: 'Training', exact: true })
+      .first().click();
+    await page.waitForTimeout(450);
+  }],
+  ['client-profile-screening-menu', `/pt-os/clients/${IDS.client}`, async (page) => {
+    await page.locator('div.mb-6').getByRole('button', { name: 'Screening', exact: true })
+      .first().click();
+    await page.waitForTimeout(450);
+  }],
 ];
 
 const args = process.argv.slice(2);
@@ -232,8 +263,9 @@ const AUDIT = ({ width, minTouch }) => {
     }
   }
 
-  // 3. Touch targets.
-  for (const el of document.querySelectorAll('button, a[href], input, select, [role="tab"]')) {
+  // 3. Touch targets. minTouch is 0 on the desktop pass: 44px is a rule about
+  //    thumbs, and applying it to a mouse pointer would bury the real findings.
+  for (const el of minTouch ? document.querySelectorAll('button, a[href], input, select, [role="tab"]') : []) {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
     if (el.disabled || el.type === 'hidden') continue;
@@ -243,6 +275,49 @@ const AUDIT = ({ width, minTouch }) => {
         kind: 'touch-target',
         detail: `${label(el)} is ${Math.round(r.width)}×${Math.round(r.height)}`,
       });
+    }
+  }
+
+  // 4. Controls clipped by an ancestor that hides its overflow.
+  //
+  // This is the check that was missing. A submenu on the client profile was
+  // rendered inside a card with `overflow-hidden`, so three of its entries —
+  // Lifestyle, Workout Log, Progress Analytics — were cut off and unreachable.
+  // Nothing above catches it: the panel's own box sits inside the viewport, it
+  // is not undersized, and the page does not scroll sideways. It just cannot
+  // be seen, because an ancestor's overflow clips descendants regardless of
+  // their z-index.
+  //
+  // Only INTERACTIVE elements, because a clipped control is unambiguously a
+  // bug — you cannot click what is not painted — whereas clipping is the whole
+  // point for the decorative blurred blobs the page headers use. Those are
+  // pointer-events-none, which is the discriminator.
+  for (const el of document.querySelectorAll('button, a[href], input, select')) {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    if (el.disabled || offCanvas(r) || decorative(el) || srOnly(r)) continue;
+    if (getComputedStyle(el).pointerEvents === 'none') continue;
+
+    // Stops at body: the document root is scrolled by the viewport, not by a
+    // clip, and globals.css sets `overflow-x: clip` on html — so including it
+    // reported every control below the fold as "cut off by body".
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+      const cs = getComputedStyle(n);
+      if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+      const nr = n.getBoundingClientRect();
+      // A scroll container is allowed to hold content beyond its box; that is
+      // what scrolling is for. Only a container that CANNOT be scrolled to
+      // reveal the control is hiding it for good.
+      const scrollable = /auto|scroll/.test(cs.overflowX + cs.overflowY);
+      if (scrollable) continue;
+      if (r.bottom > nr.bottom + 0.5 || r.top < nr.top - 0.5
+        || r.right > nr.right + 0.5 || r.left < nr.left - 0.5) {
+        problems.push({
+          kind: 'clipped',
+          detail: `${label(el)} is cut off by ${label(n).split(' "')[0]}`,
+        });
+        break;
+      }
     }
   }
 
@@ -330,15 +405,16 @@ async function main() {
     await waitForServer();
     const browser = await chromium.launch();
 
+    for (const vp of VIEWPORTS) {
     for (const theme of themes) {
       for (const [name, route, open] of ROUTES) {
         if (only && !route.startsWith(only)) continue;
 
         const ctx = await browser.newContext({
-          viewport: VIEWPORT,
+          viewport: { width: vp.width, height: vp.height },
           deviceScaleFactor: 2,
-          isMobile: true,
-          hasTouch: true,
+          isMobile: vp.touch,
+          hasTouch: vp.touch,
           colorScheme: theme,
         });
         await ctx.addCookies([{
@@ -433,7 +509,7 @@ async function main() {
         let problems = null;
         for (let attempt = 0; attempt < 3 && problems === null; attempt++) {
           try {
-            problems = await page.evaluate(AUDIT, { width: VIEWPORT.width, minTouch: MIN_TOUCH });
+            problems = await page.evaluate(AUDIT, { width: vp.width, minTouch: vp.touch ? MIN_TOUCH : 0 });
           } catch {
             await page.waitForTimeout(1200);
           }
@@ -449,7 +525,7 @@ async function main() {
           problems.push({ kind: 'redirected', detail: `expected ${route}, landed on ${landed}` });
         }
 
-        const file = path.join(OUT_DIR, `${name}-${theme}.png`);
+        const file = path.join(OUT_DIR, `${name}-${vp.name}-${theme}.png`);
         await page.screenshot({ path: file, fullPage: true });
 
         for (const p of problems) p.known = knownReason(p.detail);
@@ -457,11 +533,11 @@ async function main() {
         problems.forEach((p) => { if (p.known) knownSeen.add(p.known); });
 
         if (problems.length || consoleErrors.length) {
-          findings.push({ name, theme, problems, live, consoleErrors });
+          findings.push({ name, theme, vp: vp.name, problems, live, consoleErrors });
         }
         const failing = live.length || consoleErrors.length;
         console.log(
-          `${failing ? '✗' : '✓'} ${name} (${theme})`
+          `${failing ? '✗' : '✓'} ${name} (${vp.name}/${theme})`
           + `${live.length ? ` — ${live.length} problem(s)` : ''}`
           + `${consoleErrors.length ? ` — ${consoleErrors.length} page error(s)` : ''}`
           + `${problems.length - live.length ? ` (+${problems.length - live.length} known)` : ''}`,
@@ -469,6 +545,7 @@ async function main() {
 
         await ctx.close();
       }
+    }
     }
 
     await browser.close();
@@ -499,7 +576,7 @@ async function main() {
 
   console.log('\n── findings ───────────────────────────────────────────────');
   for (const f of failing) {
-    console.log(`\n${f.name} (${f.theme})`);
+    console.log(`\n${f.name} (${f.vp}/${f.theme})`);
     // Identical overflows repeat down a list of cards; collapse them so the
     // report names each defect once rather than once per row.
     const seen = new Map();
