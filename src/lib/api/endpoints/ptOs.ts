@@ -7,7 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ClientBirthday, DuplicateGroup, MergeResult, PtLead, PtSession, TrainingBrief,
+  ClientBirthday, ClientSnapshot, DuplicateGroup, MergeResult, PtLead, PtSession, TrainingBrief,
 } from '../types';
 
 // ── PT OS ────────────────────────────────────────────────────
@@ -29,6 +29,13 @@ export const pt = {
    */
   trainingBrief: (id: string) =>
     http<{ data: TrainingBrief }>(`/api/pt-os/clients/${id}/training-brief`),
+  /**
+   * What a trainer would otherwise have to remember about this client:
+   * a lapsing term, a month with no measurements, a missed session, how far
+   * they are from the number they came here for.
+   */
+  snapshot: (id: string) =>
+    http<{ data: ClientSnapshot }>(`/api/pt-os/clients/${id}/snapshot`),
   create: (data: Record<string, unknown>) =>
     http<{ data: unknown }>('/api/pt-os/clients', { method: 'POST', body: JSON.stringify(data) }),
   uploadPhoto: (id: string, photo: string) =>

@@ -417,6 +417,34 @@ const OPS = {
  * an unassessed client looking like a clean one — the whole point of the
  * panel. The shapes come from the endpoint's declared return type.
  */
+const SNAPSHOT = {
+  alerts: [
+    { id: 'pt_expiring', severity: 'critical', label: 'PT expires in 8 days', detail: 'Ends 2026-08-08', href: '#' },
+    { id: 'pending_payment', severity: 'warning', label: 'Pending payment', detail: '\u20b94,500 outstanding', href: '#' },
+    { id: 'sleep', severity: 'warning', label: 'Sleep poor', detail: '6 h a night', href: '#' },
+    { id: 'stale_measurements', severity: 'warning', label: 'No measurements in 34 days', detail: 'Last recorded 2026-06-27', href: '#' },
+    { id: 'missed_workout', severity: 'warning', label: 'Missed last workout', detail: '2026-07-28 \u00b7 3 days ago', href: '#' },
+    { id: 'weight_change', severity: 'info', label: 'Weight down 2 kg', detail: '80 \u2192 78 kg since 2026-06-01', href: '#' },
+  ],
+  goal: {
+    present: true, goal_type: 'weight_loss', target_date: '2026-10-27',
+    target_kg: 70, current_kg: 73.2, start_kg: 80, delta_kg: -6.8, remaining_kg: -3.2, pct: 68,
+  },
+  prs: [
+    { exercise: 'Deadlift', weight_kg: 140, reps: 3, achieved_on: '2026-07-20' },
+    { exercise: 'Squat', weight_kg: 120, reps: 5, achieved_on: '2026-07-10' },
+    { exercise: 'Bench Press', weight_kg: 85, reps: 3, achieved_on: '2026-07-20' },
+    { exercise: 'Overhead Strict Press', weight_kg: 55, reps: 5, achieved_on: '2026-07-14' },
+    { exercise: 'Pull Ups', weight_kg: 20, reps: 8, achieved_on: '2026-07-02' },
+  ],
+  coach: [
+    { id: 'recovery', tone: 'warn', text: 'Recovery is scoring 45/100. Consider trimming accessory volume before touching the main lifts.', because: 'Lifestyle assessment \u00b7 recovery score' },
+    { id: 'plateau', tone: 'warn', text: 'Progress toward the goal has slowed \u2014 0.3 kg this period against 1.4 kg before it.', because: 'Weight log \u00b7 last 3 readings to 2026-07-27' },
+    { id: 'strength', tone: 'good', text: 'Deadlift is their strongest lift on record at 140 kg \u00d7 3.', because: 'Workout log \u00b7 2026-07-20' },
+  ],
+  baseline_done: true,
+};
+
 const BRIEF = {
   client: { id: 'c-1', name: LONG_NAME, gender: 'female', age: 32, goal: 'muscle_gain', notes: null },
   sections: {
@@ -512,6 +540,7 @@ const ROUTES = [
   // Before the bare /clients/:id — a sub-path would otherwise be swallowed
   // by it and the brief panel would render a client object as a brief.
   [/^\/api\/pt-os\/clients\/[^/]+\/training-brief$/, () => ({ data: BRIEF })],
+  [/^\/api\/pt-os\/clients\/[^/]+\/snapshot$/, () => ({ data: SNAPSHOT })],
   [/^\/api\/pt-os\/clients\/[^/]+$/, () => ({ data: CLIENT })],
   [/^\/api\/pt-os\/clients$/, () => ({ data: [CLIENT] })],
 

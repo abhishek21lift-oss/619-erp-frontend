@@ -2519,3 +2519,55 @@ export interface TrainingBrief {
   missing: string[];
   completeness_pct: number;
 }
+
+/* ── Client snapshot ──────────────────────────────────────────────────────
+   What the profile tells a trainer instead of making them remember it.
+   Every field is derived from a reading that exists; an absent measurement
+   produces an absent card, never a plausible-looking zero. */
+
+export type AlertSeverity = 'critical' | 'warning' | 'info';
+
+export interface ClientAlert {
+  id: string;
+  severity: AlertSeverity;
+  label: string;
+  detail: string | null;
+  href: string | null;
+}
+
+export interface ClientGoalProgress {
+  present: boolean;
+  goal_type?: string | null;
+  target_date?: string | null;
+  target_kg?: number | null;
+  current_kg?: number | null;
+  start_kg?: number | null;
+  delta_kg?: number | null;
+  remaining_kg?: number | null;
+  /** Null when no starting weight was ever recorded — there is no denominator. */
+  pct?: number | null;
+}
+
+export interface ClientPr {
+  exercise: string;
+  weight_kg: number;
+  reps: number | null;
+  achieved_on: string | null;
+}
+
+export interface CoachInsight {
+  id: string;
+  tone: 'good' | 'warn';
+  text: string;
+  /** The reading this came from. A prompt you cannot trace is one you cannot overrule. */
+  because: string;
+}
+
+export interface ClientSnapshot {
+  alerts: ClientAlert[];
+  goal: ClientGoalProgress;
+  prs: ClientPr[];
+  coach: CoachInsight[];
+  /** False only before onboarding — nothing measured and no goal set. */
+  baseline_done: boolean;
+}

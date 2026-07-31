@@ -12,14 +12,15 @@ import {
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, PiggyBank, PieChart, Layers, ScrollText,
+  QrCode, Printer, ScrollText, ChevronDown,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-import { PremiumAreaChart, DonutChart } from '@/components/ui';
+import { PremiumAreaChart } from '@/components/ui';
+import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 
 interface PtClientDetail {
@@ -34,7 +35,9 @@ interface PtClientDetail {
   joining_date?: string; pt_start_date?: string; pt_end_date?: string;
   duration_months?: number; monthly_pt_amount: number;
   trainer_commission: number; weight?: number; notes?: string;
-  status: string; days_left: number;
+  status: string;
+  /** Absent, not zero, for a client with no PT term — check with `!= null`. */
+  days_left: number | null;
   due_status?: string;
 }
 
@@ -49,43 +52,13 @@ const fmtDate = (d?: string) => {
 };
 
 function getStatusConfig(status: string, days_left: number | null, pt_end_date?: string) {
-  const endPassed = pt_end_date ? new Date(pt_end_date) < new Date() : (days_left !== null && days_left <= 0);
+  const endPassed = pt_end_date ? new Date(pt_end_date) < new Date() : (days_left != null && days_left <= 0);
   if (endPassed) return { label: 'Inactive', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
   if (status === 'frozen') return { label: 'Frozen', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', dot: '#3b82f6' };
-  if (status === 'active' && days_left !== null && days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
+  if (status === 'active' && days_left != null && days_left <= 7) return { label: 'Expiring', color: '#f87171', bg: 'rgba(248,113,113,0.12)', dot: '#ef4444' };
   if (status === 'active') return { label: 'Active', color: '#34d399', bg: 'rgba(52,211,153,0.12)', dot: '#10b981' };
   if (status === 'expired' || status === 'inactive') return { label: 'Inactive', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
   return { label: status, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', dot: '#64748b' };
-}
-
-// Donut-chart insight card — replaces the old hand-rolled SVG ring meters
-// for Payment Progress / PT Duration with the same DonutChart component the
-// rest of the app's fitness dashboards (Nutrition, Fitness, Goal cards) use,
-// so a client's profile reads as one system with the rest of PT OS.
-function InsightDonut({
-  title, icon, from, data, centerValue, centerLabel, valueFormatter, footer, delay = 0,
-}: {
-  title: string; icon: React.ReactNode; from: string;
-  data: { name: string; value: number; color?: string }[];
-  centerValue?: string; centerLabel?: string;
-  valueFormatter?: (v: number) => string;
-  footer?: React.ReactNode;
-  delay?: number;
-}) {
-  return (
-    <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-      className="rounded-[20px] p-5 bg-white"
-      style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-      <div className="mb-1 flex items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-[8px]" style={{ background: `${from}20` }}>
-          <span style={{ color: from }}>{icon}</span>
-        </div>
-        <span className="text-[12px] font-[700] text-gray-900">{title}</span>
-      </div>
-      <DonutChart data={data} centerValue={centerValue} centerLabel={centerLabel} valueFormatter={valueFormatter} height={196} thin />
-      {footer}
-    </m.div>
-  );
 }
 
 function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
@@ -166,6 +139,7 @@ function DocumentsCard({ clientId }: { clientId: string }) {
 
 // ── QR Check-in card: printable scannable code for the kiosk/scanner ──
 function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName: string }) {
+  const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -201,19 +175,36 @@ function QrCheckinCard({ clientId, clientName }: { clientId: string; clientName:
 
   return (
     <DarkCard title="Check-in QR Code" icon={<QrCode size={14} />} from="#0891b2">
-      {loading && <p className="text-[12px] text-gray-400">Generating…</p>}
-      {error && <p className="text-[12px] text-red-500">{error}</p>}
-      {dataUrl && !loading && (
-        <div className="flex flex-col items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={dataUrl} alt="Check-in QR code" className="h-40 w-40 rounded-lg border border-zinc-100" />
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[700] transition hover:opacity-80"
-            style={{ background: 'rgba(8,145,178,0.10)', color: '#0891b2', border: '1px solid rgba(8,145,178,0.20)' }}
-          >
-            <Printer size={13} /> Print Card
-          </button>
+      {/* Collapsed by default. This is a print-once artefact — a trainer looks
+          at it when a client joins and never again — and open it took 200px of
+          a rail where everything else is read on every visit. */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex h-[44px] w-full items-center justify-between gap-2 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
+        style={{ background: 'rgba(8,145,178,0.10)', color: '#0891b2', border: '1px solid rgba(8,145,178,0.20)' }}
+      >
+        {open ? 'Hide code' : 'Show code'}
+        <ChevronDown size={14} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
+      </button>
+      {open && (
+        <div className="mt-3">
+          {loading && <p className="text-[12px] text-gray-400">Generating…</p>}
+          {error && <p className="text-[12px] text-red-500">{error}</p>}
+          {dataUrl && !loading && (
+            <div className="flex flex-col items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={dataUrl} alt="Check-in QR code" className="h-40 w-40 rounded-lg border border-zinc-100" />
+              <button
+                onClick={handlePrint}
+                className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3 text-[12px] font-[700] transition hover:opacity-80"
+                style={{ background: 'rgba(8,145,178,0.10)', color: '#0891b2', border: '1px solid rgba(8,145,178,0.20)' }}
+              >
+                <Printer size={13} /> Print Card
+              </button>
+            </div>
+          )}
         </div>
       )}
     </DarkCard>
@@ -254,8 +245,18 @@ interface QuickAction {
   children?: QuickActionChild[];
 }
 
+// Baseline Setup is NOT in this list. It belongs to onboarding — once a client
+// has been measured or given a goal there is nothing to set up, and leaving it
+// among the everyday actions made a one-time step look like a recurring one.
+// It is prepended only while `baseline_done` is false. Delete is not here
+// either: a destructive action does not belong in a grid of navigation tiles
+// where it sits one row from "Photos". It lives inside Edit.
+const BASELINE_ACTION: QuickAction = {
+  label: 'Baseline Setup', icon: <Flag size={16} />,
+  href: (id) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155',
+};
+
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'Baseline Setup', icon: <Flag size={16} />, href: (id) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155' },
   { label: 'Payments', icon: <Wallet size={16} />, href: (id) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
   { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
   { label: 'Workout Log', icon: <ClipboardList size={16} />, href: (id) => `/pt-os/clients/${id}/workout-log`, from: '#f43f5e', to: '#e11d48' },
@@ -291,7 +292,6 @@ const QUICK_ACTIONS: QuickAction[] = [
   { label: 'Check-in', icon: <CheckCircle size={16} />, href: (id) => `/pt-os/weekly-checkin?client_id=${id}`, from: '#14b8a6', to: '#0d9488' },
   { label: 'Diet Plans', icon: <FileText size={16} />, href: (id) => `/pt-os/diet-plans?client_id=${id}`, from: '#f97316', to: '#ea580c' },
   { label: 'Sessions', icon: <Calendar size={16} />, href: (id) => `/pt-os/sessions?client_id=${id}`, from: '#0ea5e9', to: '#0284c7' },
-  { label: 'Delete', icon: <Trash2 size={16} />, href: () => '#delete', from: '#ef4444', to: '#dc2626' },
 ];
 
 export default function PtClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -301,8 +301,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [client, setClient] = useState<PtClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  /** From the snapshot: hides the one-time Baseline Setup tile once onboarded. */
+  const [baselineDone, setBaselineDone] = useState(true);
   const [openAction, setOpenAction] = useState<string | null>(null);
 
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
@@ -364,14 +364,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     } catch { toast.error('Failed to save notes'); }
   };
 
-  const handleDelete = async () => {
-    try {
-      setDeleting(true);
-      await api.pt.deleteClient(id);
-      router.push('/pt-os/clients');
-    } catch { toast.error('Failed to delete client'); setDeleting(false); }
-  };
-
   useEffect(() => { loadData(); }, [id]);
 
   const [activePlanName, setActivePlanName] = useState<string | null>(null);
@@ -410,36 +402,16 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
     ? Math.min(Math.round((currentTermPaid / currentTermFee) * 100), 100)
     : 0;
 
-  // ── Donut data for the Client Insights section ──
-  // PT Term Progress: elapsed vs remaining days of the current term.
+  // ── PT term progress, as a percentage for the bar ──
+  // Elapsed over total, clamped: a term whose end date has passed is 100%
+  // through it, not 140%.
   const totalDurationDays = client?.pt_start_date && client?.pt_end_date
     ? Math.max(1, Math.round((new Date(client.pt_end_date).getTime() - new Date(client.pt_start_date).getTime()) / 86400000))
     : 0;
-  const elapsedDaysForDonut = totalDurationDays > 0 && client?.pt_start_date
+  const elapsedDays = totalDurationDays > 0 && client?.pt_start_date
     ? Math.max(0, Math.min(totalDurationDays, Math.round((Date.now() - new Date(client.pt_start_date).getTime()) / 86400000)))
     : 0;
-  const remainingDaysForDonut = Math.max(0, totalDurationDays - elapsedDaysForDonut);
-  const ptTermDonutData = [
-    { name: 'Elapsed', value: elapsedDaysForDonut, color: '#6366f1' },
-    { name: 'Remaining', value: remainingDaysForDonut, color: '#e2e8f0' },
-  ];
-
-  // Payments by Term: real part-to-whole across every renewal — only
-  // meaningful (and only rendered) once a client has 2+ terms.
-  const paymentsByTermData = subscriptionHistory.map((t: any, idx: number) => ({
-    name: t.plan_name || `Term ${idx + 1}`,
-    value: Number(t.amount_paid ?? 0),
-  }));
-
-  // Activity Mix: what kind of engagement has been logged for this client.
-  // One hue per category, held fixed so a category keeps its colour whatever
-  // the counts are.
-  const activityMixData = [
-    { name: 'Payments', value: activityCounts.payments, color: '#8b5cf6' },
-    { name: 'Check-ins', value: activityCounts.checkins, color: '#10b981' },
-    { name: 'Measurements', value: activityCounts.measurements, color: '#f59e0b' },
-    { name: 'Goals', value: activityCounts.goals, color: '#3b82f6' },
-  ];
+  const ptTermPct = totalDurationDays > 0 ? Math.round((elapsedDays / totalDurationDays) * 100) : 0;
 
   const statusCfg = client ? getStatusConfig(client.status, client.days_left, client.pt_end_date) : null;
 
@@ -589,11 +561,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       to: currentTermBalance > 0 ? '#dc2626' : '#059669',
                       sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'OVERDUE' : 'Due') : 'Cleared',
                     },
-                    {
-                      label: 'Total Paid (All Terms)', value: fmtINR(lifetimePaid),
-                      icon: <PiggyBank size={18} />, from: '#0ea5e9', to: '#0284c7',
-                      sub: `Across ${lifetimeTermCount} term${lifetimeTermCount !== 1 ? 's' : ''}`,
-                    },
                   ].map((card, i) => (
                     <m.div key={card.label}
                       initial={{ opacity: 0, y: 14, scale: 0.97 }}
@@ -615,55 +582,46 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   ))}
                 </div>
 
-                {/* ── CLIENT INSIGHTS (donuts) ── */}
-                <div className="mb-6">
-                  <div className="mb-4 flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
-                      style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.2)' }}>
-                      <PieChart size={14} style={{ color: '#f97316' }} />
+                {/* ── WHAT NEEDS ATTENTION, THE GOAL, THE COACH, THE RECORDS ──
+                    Replaces three donuts. A ring is the right shape for a
+                    share of a whole and the wrong one for progress toward a
+                    target: you cannot see whether 68% is ahead or behind, and
+                    there is nowhere to put the numbers that make it mean
+                    something. Activity Mix went entirely — the ratio of
+                    payments to check-ins is not a question anybody asks. */}
+                <ClientSnapshot clientId={client.id} onLoaded={(s) => setBaselineDone(s.baseline_done)} />
+
+                {/* PT term, as a bar. The one donut worth keeping as a figure,
+                    because "days left" is what gets asked, but a bar shows how
+                    far through the term they are without having to read a ring. */}
+                <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.35 }}
+                  className="mb-6 rounded-[18px] p-4 bg-white"
+                  style={{ border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-[9px]"
+                        style={{ background: 'rgba(99,102,241,0.14)', color: '#6366f1' }}>
+                        <Clock size={13} />
+                      </span>
+                      <span className="text-[12.5px] font-[750] text-gray-900">PT term</span>
                     </div>
-                    <h3 className="text-[13.5px] font-[740] text-gray-900">Client Insights</h3>
+                    <span className="text-[13px] font-[820] tabular-nums" style={{ color: '#6366f1' }}>
+                      {client.days_left != null ? `${client.days_left} days left` : '—'}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <InsightDonut
-                      title="PT Term Progress" icon={<Clock size={13} />} from="#6366f1" delay={0.25}
-                      data={ptTermDonutData}
-                      centerValue={client.days_left !== null ? String(client.days_left) : '—'} centerLabel="days left"
-                      valueFormatter={(v) => `${v} day${v !== 1 ? 's' : ''}`}
-                      footer={
-                        <div className="mt-3 flex justify-between">
-                          <span className="text-[10.5px] font-[600] text-slate-500">Start: {fmtDate(client.pt_start_date)}</span>
-                          <span className="text-[10.5px] font-[600] text-slate-500">End: {fmtDate(client.pt_end_date)}</span>
-                        </div>
-                      }
-                    />
-
-                    {paymentsByTermData.length >= 2 && (
-                      <InsightDonut
-                        title="Payments by Term" icon={<Layers size={13} />} from="#0ea5e9" delay={0.3}
-                        data={paymentsByTermData}
-                        centerLabel="lifetime paid"
-                        valueFormatter={fmtINR}
-                        footer={
-                          <p className="mt-3 text-[10.5px] font-[600] text-slate-500">
-                            {lifetimeTermCount} terms · {fmtINR(lifetimePaid)} total
-                          </p>
-                        }
-                      />
-                    )}
-
-                    <InsightDonut
-                      title="Activity Mix" icon={<Activity size={13} />} from="#ec4899" delay={0.35}
-                      data={activityMixData}
-                      centerLabel="logged"
-                      footer={
-                        <p className="mt-3 text-[10.5px] font-[600] text-slate-500">
-                          Payments, check-ins, measurements &amp; goals recorded
-                        </p>
-                      }
-                    />
+                  <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-subtle)' }}
+                    role="progressbar" aria-valuenow={ptTermPct} aria-valuemin={0} aria-valuemax={100}>
+                    <m.div initial={{ width: 0 }} animate={{ width: `${ptTermPct}%` }}
+                      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                      className="h-full rounded-full"
+                      style={{ background: 'linear-gradient(90deg, #6366f1, #6366f1bb)' }} />
                   </div>
-                </div>
+                  <div className="mt-2.5 flex justify-between">
+                    <span className="text-[10.5px] font-[600] text-slate-500">Start {fmtDate(client.pt_start_date)}</span>
+                    <span className="text-[10.5px] font-[600] text-slate-500">End {fmtDate(client.pt_end_date)}</span>
+                  </div>
+                </m.div>
 
                 {/* ── QUICK ACTIONS GRID ──
                     No `overflow-hidden` on this card, deliberately. The Screening
@@ -688,7 +646,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     <h3 className="text-[13.5px] font-[740] text-gray-900">Quick Actions</h3>
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-11 gap-2.5">
-                    {QUICK_ACTIONS.map((action, i) => (
+                    {(baselineDone ? QUICK_ACTIONS : [BASELINE_ACTION, ...QUICK_ACTIONS]).map((action, i) => (
                       <div key={action.label} className="relative">
                         <m.button
                           initial={{ opacity: 0, scale: 0.9 }}
@@ -696,7 +654,6 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                           transition={{ delay: 0.4 + i * 0.025 }}
                           onClick={() => {
                             if (action.children) { setOpenAction((o) => (o === action.label ? null : action.label)); return; }
-                            if (action.href!(client.id) === '#delete') { setDeleteOpen(true); return; }
                             router.push(action.href!(client.id));
                           }}
                           title={action.label === 'Workout Plans' && activePlanName ? `Active plan: ${activePlanName}` : undefined}
@@ -818,12 +775,9 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                       <InfoRow label="End" value={fmtDate(client.pt_end_date)} />
                       <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
                       <InfoRow label="Monthly Fee" value={fmtINR(client.monthly_pt_amount)} />
-                      <InfoRow label="Days Left" value={client.days_left !== null ? `${client.days_left} days` : '—'}
-                        valueColor={client.days_left <= 7 ? '#ef4444' : undefined} />
+                      <InfoRow label="Days Left" value={client.days_left != null ? `${client.days_left} days` : '—'}
+                        valueColor={client.days_left != null && client.days_left <= 7 ? '#ef4444' : undefined} />
                     </DarkCard>
-
-                    {/* Documents */}
-                    <DocumentsCard clientId={client.id} />
 
                     {/* Check-in QR */}
                     <QrCheckinCard clientId={client.id} clientName={client.name} />
@@ -933,46 +887,15 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </div>
                 </m.button>
 
-                {/* ── DELETE MODAL ── */}
-                <AnimatePresence>
-                  {deleteOpen && (
-                    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-                      onClick={() => setDeleteOpen(false)}>
-                      <m.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-                        className="w-full max-w-sm overflow-hidden rounded-[24px] p-7 text-center bg-white"
-                        style={{
-                          border: '1px solid rgba(239,68,68,0.2)',
-                          boxShadow: '0 24px 80px rgba(0,0,0,0.15)',
-                        }}
-                        onClick={e => e.stopPropagation()}>
-                        <div className="mb-4 flex justify-center">
-                          <div className="flex h-16 w-16 items-center justify-center rounded-full"
-                            style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                            <AlertTriangle size={28} className="text-red-500" />
-                          </div>
-                        </div>
-                        <h3 className="text-[18px] font-[800] tracking-[-0.02em] text-gray-900 mb-2">Delete Client</h3>
-                        <p className="text-[13px] text-slate-500 mb-6">
-                          Are you sure you want to delete <strong className="text-gray-900">{client?.name}</strong>? This cannot be undone.
-                        </p>
-                        <div className="flex gap-3 justify-center">
-                          <button onClick={() => setDeleteOpen(false)}
-                            className="rounded-[13px] px-5 py-2.5 text-[13px] font-[700] text-slate-500 transition hover:text-slate-700"
-                            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                            Cancel
-                          </button>
-                          <button onClick={handleDelete} disabled={deleting}
-                            className="flex items-center gap-2 rounded-[13px] px-5 py-2.5 text-[13px] font-[700] text-white transition-all hover:opacity-80 disabled:opacity-60"
-                            style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 4px 16px rgba(239,68,68,0.4)' }}>
-                            {deleting ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                            {deleting ? 'Deleting…' : 'Delete Client'}
-                          </button>
-                        </div>
-                      </m.div>
-                    </m.div>
-                  )}
-                </AnimatePresence>
+                {/* ── DOCUMENTS ──
+                    At the bottom on purpose. PAR-Q and consent are a status you
+                    check once when onboarding and then only if something is
+                    wrong; sitting at the top of the rail it pushed the notes a
+                    trainer actually reads on every visit below the fold. */}
+                <div className="mt-5">
+                  <DocumentsCard clientId={client.id} />
+                </div>
+
               </>
             )}
           </div>

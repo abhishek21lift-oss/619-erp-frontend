@@ -4,7 +4,7 @@ import { use, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, Save, User, Dumbbell, Wallet,
+  ArrowLeft, Save, User, Dumbbell, Wallet, Trash2, AlertTriangle,
   CheckCircle, Info,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
@@ -115,6 +115,28 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
       }
     })();
   }, [id]);
+
+  // ── Deleting a client ──
+  //
+  // This used to be a tile in the profile's Quick Actions grid, one row from
+  // "Photos" and two from "Diet Plans" — a destructive, irreversible action
+  // sitting among navigation. It belongs behind the deliberate act of opening
+  // Edit, at the bottom, behind a typed confirmation.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await api.pt.deleteClient(id);
+      toast.success('Client deleted.');
+      router.push('/pt-os/clients');
+    } catch {
+      toast.error('Failed to delete client');
+      setDeleting(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Name is required'); return; }
@@ -314,6 +336,62 @@ export default function EditClientPage({ params }: { params: Promise<{ id: strin
                 </Button>
               </div>
             </m.div>
+
+            {/* ── Danger zone ──
+                Last on the page, visually separated, and gated on typing the
+                client's name. A confirm dialog alone is a reflex to dismiss;
+                typing the name makes you look at who you are about to remove. */}
+            <div className="mt-6 rounded-[16px] p-5"
+              style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.25)' }}>
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: '#dc2626' }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12.5px] font-[780]" style={{ color: '#b91c1c' }}>Delete this client</p>
+                  <p className="mt-0.5 max-w-[60ch] text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                    Removes {form.name || 'this client'} along with their assessments, payments and
+                    workout history. This cannot be undone.
+                  </p>
+
+                  {!deleteOpen ? (
+                    <button type="button" onClick={() => setDeleteOpen(true)}
+                      className="mt-3 flex h-[44px] items-center gap-2 rounded-[12px] px-4 text-[12.5px] font-[720]"
+                      style={{ background: 'var(--bg-card)', border: '1px solid rgba(220,38,38,0.35)', color: '#b91c1c' }}>
+                      <Trash2 size={14} /> Delete client
+                    </button>
+                  ) : (
+                    <div className="mt-3 space-y-2.5">
+                      <label className="block text-[11px] font-[700]" style={{ color: 'var(--text-muted)' }}>
+                        Type <span style={{ color: '#b91c1c' }}>{form.name}</span> to confirm
+                      </label>
+                      <input
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        placeholder={form.name}
+                        className="w-full max-w-[320px] rounded-[10px] px-3 text-[13px] outline-none"
+                        style={{
+                          height: 44, background: 'var(--bg-card)',
+                          border: '1px solid rgba(220,38,38,0.3)', color: 'var(--text-primary)',
+                        }}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={handleDelete}
+                          disabled={deleting || confirmText.trim() !== (form.name ?? '').trim() || !form.name}
+                          className="flex h-[44px] items-center gap-2 rounded-[12px] px-4 text-[12.5px] font-[720] text-white disabled:opacity-45"
+                          style={{ background: '#dc2626' }}>
+                          <Trash2 size={14} /> {deleting ? 'Deleting…' : 'Delete permanently'}
+                        </button>
+                        <button type="button"
+                          onClick={() => { setDeleteOpen(false); setConfirmText(''); }}
+                          className="flex h-[44px] items-center rounded-[12px] px-4 text-[12.5px] font-[720]"
+                          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
           </div>
         </div>

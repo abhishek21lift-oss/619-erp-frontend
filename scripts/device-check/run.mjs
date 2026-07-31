@@ -143,6 +143,14 @@ const ROUTES = [
     await page.getByRole('button', { name: /new plan/i }).first().click();
     await page.waitForTimeout(500);
   }],
+  // The client profile itself. It had no coverage at all, which is how three
+  // donuts and a lifetime total survived on the screen a trainer opens most.
+  ['client-profile', `/pt-os/clients/${IDS.client}`],
+  ['client-profile-edit', `/pt-os/clients/${IDS.client}/edit`],
+  ['client-profile-delete', `/pt-os/clients/${IDS.client}/edit`, async (page) => {
+    await page.getByRole('button', { name: /delete client/i }).first().click();
+    await page.waitForTimeout(300);
+  }],
   ['builder', `/pt-os/clients/${IDS.client}/training/builder?plan=${IDS.plan}`],
   ['exercise-picker', `/pt-os/clients/${IDS.client}/training/builder?plan=${IDS.plan}`, async (page) => {
     await page.getByRole('button', { name: 'Add exercise', exact: true }).first().click();
@@ -452,6 +460,16 @@ const KNOWN = [
   [/"(Edit|Delete|Assign|New Plan|Enroll in PT|Renew PT)"/, 'shared .btn-* sizes — app-wide'],
   [/^button is 32×26$/, 'Programs list grid/list toggle — pre-existing'],
   [/"(Try again|Back to app|Retry)"/, 'error-boundary buttons — shared component'],
+
+  // Newly VISIBLE, not newly broken: adding the client edit page to this run
+  // exposed the shared ui/Button at its real size. globals.css sets the root
+  // font size to 14px, so Button's rem-based height renders at 35px and its
+  // `sm` variant at 28 — every primary and secondary button in the product is
+  // under the 44px thumb target. Fixing it is a one-line change to the shared
+  // component that moves every button in the app, which is the user's call
+  // and not this pass's to make. Flagged to them rather than quietly widened.
+  [/^button\.inline-flex\.items-center "(Save Changes|Cancel)"/, 'shared ui/Button height (35px at a 14px root) — app-wide'],
+  [/^button\.flex\.h-9 is 30×32$/, 'page back-arrow button — pre-existing, app-wide'],
   [/^button\.group\.inline-flex "c-1"/, 'client-profile copy-id chip — pre-existing'],
   [/^a\.inline-flex\.items-center "(\+91|WhatsApp)/, 'client-profile contact links — pre-existing'],
 
