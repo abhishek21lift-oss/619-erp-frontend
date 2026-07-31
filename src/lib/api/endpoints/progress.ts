@@ -10,7 +10,7 @@ import type {
   ConsentRecord, InformedConsent, InformedConsentActivity, MedicalClearance, ParqDocument,
   ParqDocumentType, ParqForm, ParqFormDetail, ParqGateStatus, WorkoutPreviousExercise,
   WorkoutProgressPoint, WorkoutSession, WorkoutSessionDetail, WorkoutSessionExercise,
-  WorkoutSet, WorkoutVolumePoint, TodayRoster,
+  WorkoutSet, WorkoutVolumePoint, TodayRoster, TrainingAnalytics, MuscleLandmark,
 } from '../types';
 
 // ── Progress Tracking ─────────────────────────────────────────
@@ -233,5 +233,56 @@ export const progress = {
       http<{ data: WorkoutProgressPoint[] }>(`/api/pt-os/workout-log/progress${buildQs(params)}`),
     volumeSummary: (params: { client_id: string; group_by?: 'week' | 'month' }) =>
       http<{ data: WorkoutVolumePoint[] }>(`/api/pt-os/workout-log/volume-summary${buildQs(params)}`),
+
+    /**
+     * Adherence, records, and weekly sets per muscle — in one request.
+     *
+     * One call rather than four because the screen shows them together, and
+     * four round trips on a phone in a gym is four chances to watch a spinner.
+     */
+    analytics: (params: { client_id: string; weeks?: number; as_of?: string }) =>
+      http<{ data: TrainingAnalytics }>(`/api/pt-os/workout-log/analytics${buildQs(params)}`),
+
+    /**
+     * Build the week's PDF and return where it was stored.
+     *
+     * A POST because it writes a file. Keyed by client and week server-side,
+     * so pressing the button twice overwrites rather than leaving a file per
+     * tap. The URL is behind the studio session — a client cannot open it,
+     * which is why the share action sends text rather than a link.
+     */
+    weeklyReport: (data: { client_id: string; week_start?: string; coach_note?: string }) =>
+      http<{ data: { url: string; week_start: string; week_end: string } }>(
+        '/api/pt-os/workout-log/weekly-report',
+        { method: 'POST', body: JSON.stringify(data) },
+      ),
+
+    /**
+     * The studio's weekly set ranges per muscle.
+     *
+     * A range is a coaching judgement, not a measurement, so it is stored and
+     * editable rather than hard-coded — otherwise a number the trainer never
+     * chose would sit beside a number measured from their client, in the same
+     * typeface, with nothing to tell them apart.
+     */
+    landmarks: {
+      list: () => http<{ data: MuscleLandmark[] }>('/api/pt-os/workout-log/landmarks'),
+      /** Both values may be null: "no range" is an honest answer. */
+      save: (muscle: string, data: { mev_sets: number | null; mrv_sets: number | null }) =>
+        http<{ data: MuscleLandmark }>(`/api/pt-os/workout-log/landmarks/${encodeURIComponent(muscle)}`, {
+          method: 'PUT', body: JSON.stringify(data),
+        }),
+      /**
+       * Drop this studio's override so the shared starting range comes back.
+       *
+       * Not the same as saving two nulls, which stores "this muscle has no
+       * range" — there would otherwise be no way back to a value a trainer
+       * had already typed over.
+       */
+      reset: (muscle: string) =>
+        http<{ data: MuscleLandmark }>(`/api/pt-os/workout-log/landmarks/${encodeURIComponent(muscle)}`, {
+          method: 'DELETE',
+        }),
+    },
   },
 };

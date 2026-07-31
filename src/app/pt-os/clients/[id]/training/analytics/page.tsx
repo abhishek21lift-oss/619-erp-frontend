@@ -18,14 +18,21 @@
 // Bars are zero-anchored: a truncated axis on training volume turns an ordinary
 // week into a cliff.
 
-import { use, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { m } from 'framer-motion';
 import { Loader2, TrendingUp, Trophy, Activity } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { EmptyState, PremiumAreaChart, PremiumBarChart } from '@/components/ui';
+import AdherencePanel from '@/components/pt-os/analytics/AdherencePanel';
+import MusclePanel from '@/components/pt-os/analytics/MusclePanel';
+import PrTimeline from '@/components/pt-os/analytics/PrTimeline';
+import LandmarkEditor from '@/components/pt-os/analytics/LandmarkEditor';
+import WeeklyReport from '@/components/pt-os/analytics/WeeklyReport';
 import { api } from '@/lib/api';
-import type { WorkoutProgressPoint, WorkoutVolumePoint, WorkoutSession } from '@/lib/api';
+import type {
+  WorkoutProgressPoint, WorkoutVolumePoint, WorkoutSession, TrainingAnalytics,
+} from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
 /** One hue for volume, one for strength. Fixed, so a measure keeps its colour. */
@@ -50,6 +57,20 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
   const [progress, setProgress] = useState<WorkoutProgressPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(false);
+  const [stats, setStats] = useState<TrainingAnalytics | null>(null);
+  const [editingRanges, setEditingRanges] = useState(false);
+
+  /** Adherence, records and per-muscle sets. Re-read after a range edit. */
+  const loadStats = useCallback(async () => {
+    try {
+      const { data } = await api.progress.workoutLog.analytics({ client_id: clientId, weeks: 12 });
+      setStats(data);
+    } catch {
+      // The charts below stand on their own; a failed analytics call should
+      // cost the panels, not the page.
+      setStats(null);
+    }
+  }, [clientId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +79,7 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
         const [vol, sess] = await Promise.all([
           api.progress.workoutLog.volumeSummary({ client_id: clientId }).catch(() => ({ data: [] })),
           api.progress.workoutLog.sessions.list({ client_id: clientId, limit: 50 }).catch(() => ({ data: [] })),
+          loadStats(),
         ]);
         if (cancelled) return;
         setVolume(vol.data ?? []);
@@ -69,7 +91,7 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
       }
     })();
     return () => { cancelled = true; };
-  }, [clientId, toast]);
+  }, [clientId, toast, loadStats]);
 
   // Exercise choices come from what this client has actually logged. Offering
   // the whole library would mostly offer exercises with no data behind them.
@@ -151,7 +173,11 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
             <div className="flex justify-center py-20">
               <Loader2 size={24} className="animate-spin" style={{ color: 'var(--brand)' }} />
             </div>
-          ) : volume.length === 0 && sessions.length === 0 ? (
+          ) : volume.length === 0 && sessions.length === 0 && !stats?.plan ? (
+            // Only truly empty when there is no log AND no programme. A client
+            // on a plan who has logged nothing is not an empty screen — they
+            // are a client at 0% attendance, which is the single most useful
+            // thing this page can say about them.
             <EmptyState
               icon={<Activity size={22} />}
               title="Nothing logged yet"
@@ -159,6 +185,16 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
             />
           ) : (
             <div className="flex flex-col gap-4">
+              {/* Attendance first: it is the question asked most often, and the
+                  only one whose answer changes what the trainer does today. */}
+              {stats && (
+                <AdherencePanel
+                  adherence={stats.adherence}
+                  thisWeek={stats.this_week}
+                  planName={stats.plan?.name}
+                />
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <Stat label="Total volume" value={`${Math.round(totals.kg).toLocaleString('en-IN')} kg`} tone={VOLUME} />
                 <Stat label="Sessions logged" value={String(totals.count)} tone={STRENGTH} />
@@ -226,6 +262,22 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
                 )}
               </Panel>
 
+              {/* ── Sets per muscle, against the studio's ranges ── */}
+              {stats && (
+                <MusclePanel
+                  muscles={stats.muscles}
+                  unattributedSets={stats.unattributed_sets}
+                  weeks={stats.weeks}
+                  onEditRanges={() => setEditingRanges(true)}
+                />
+              )}
+
+              {/* ── Personal records ── */}
+              {stats && <PrTimeline prs={stats.prs} />}
+
+              {/* ── The week's report ── */}
+              <WeeklyReport clientId={clientId} stats={stats} />
+
               {/* ── Best set ── */}
               {best && (
                 <Panel title="Best set" icon={<Trophy size={14} />} tone="#d97706">
@@ -245,6 +297,15 @@ export default function TrainingAnalyticsPage({ params }: { params: Promise<{ id
             </div>
           )}
         </div>
+
+        <LandmarkEditor
+          open={editingRanges}
+          onClose={() => setEditingRanges(false)}
+          // Re-read so the verdicts above match the ranges just edited. Doing
+          // it on close rather than per field keeps one refetch instead of one
+          // per keystroke.
+          onSaved={loadStats}
+        />
       </AppShell>
     </Guard>
   );

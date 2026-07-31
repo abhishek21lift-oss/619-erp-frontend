@@ -876,6 +876,80 @@ export interface WorkoutVolumePoint {
   session_count: number;
 }
 
+// ── Training analytics ─────────────────────────────────────────────
+//
+// Everything below is MEASURED from the log or is a range the studio stored.
+// Nothing here is modelled or scored: there is no fatigue index and no
+// recovery percentage, because neither has a measurement behind it. Recovery
+// is `days_since`, which is a fact.
+
+export interface AdherenceWeek {
+  week_start: string;
+  planned: number;
+  /** Capped at `planned` — a bonus session cannot fill another week's hole. */
+  completed: number;
+  /** Sessions beyond the weekly target. Reported, but never counted as adherence. */
+  extra: number;
+}
+
+export interface WorkoutAdherence {
+  planned: number;
+  completed: number;
+  /** null when there is no active programme — nothing to be adherent to. */
+  pct: number | null;
+  weeks: AdherenceWeek[];
+}
+
+/** Weekly sets for one muscle, against the studio's range for it. */
+export interface MuscleWeek {
+  target_muscle: string;
+  sets: number;
+  last_trained: string | null;
+  /** Days since this muscle was last worked. Not a recovery score. */
+  days_since: number | null;
+  mev_sets: number | null;
+  mrv_sets: number | null;
+  /** null when the studio has set no range — not a default "fine". */
+  status: 'below' | 'within' | 'above' | null;
+}
+
+export interface WorkoutPr {
+  session_date: string;
+  exercise_name: string;
+  weight_kg: number | null;
+  reps: number | null;
+  /** One set can break several records at once; that is still one moment. */
+  kinds: Array<'weight' | 'reps' | 'volume'>;
+}
+
+export interface WorkoutThisWeek {
+  week_start: string | null;
+  /** Prescribed days that have passed with nothing logged. */
+  missed: number[];
+  /** Prescribed days still ahead — deliberately not counted as missed. */
+  remaining: number[];
+}
+
+export interface TrainingAnalytics {
+  as_of: string;
+  weeks: number;
+  plan: { id: string; name: string; duration_weeks: number } | null;
+  adherence: WorkoutAdherence;
+  this_week: WorkoutThisWeek | null;
+  prs: WorkoutPr[];
+  muscles: MuscleWeek[];
+  /** Sets whose exercise has no muscle recorded. Shown, never silently dropped. */
+  unattributed_sets: number;
+}
+
+export interface MuscleLandmark {
+  target_muscle: string;
+  mev_sets: number | null;
+  mrv_sets: number | null;
+  /** true when this studio has replaced the shared default. */
+  is_custom: boolean;
+}
+
 export interface WorkoutPreviousExercise {
   session_date: string;
   sets: WorkoutSet[];
