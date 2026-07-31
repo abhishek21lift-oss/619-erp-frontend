@@ -4,8 +4,8 @@ import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { m, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Plus, Trash2, Copy, Wand2, Check, Loader2, AlertCircle,
-  Dumbbell, ChevronDown, Award, Clock, X, Minus, Pencil, Calendar, ClipboardList, Layers,
+  Plus, Trash2, Copy, Wand2, Check, Loader2, AlertCircle,
+  Dumbbell, ChevronDown, Award, Clock, X, Minus, Pencil, ClipboardList, Layers,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -212,47 +212,105 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const s = session.summary;
 
   return (
-    <div className="pb-32">
-      {/* Header — in normal flow on the page background (no sticky card). */}
-      <div className="pt-1">
-        <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
-          <button onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
-            className="flex h-[44px] items-center gap-2 text-[12px] font-[650]" style={{ color: '#94a3b8' }}>
-            <ArrowLeft size={13} /> Workout Log
-          </button>
-          <span className="rounded-full px-3 py-1 text-[10.5px] font-[700]"
-            style={{ background: session.status === 'completed' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', color: session.status === 'completed' ? '#059669' : '#d97706' }}>
-            {session.status === 'completed' ? 'Completed' : 'In Progress'}
-          </span>
+    // ── Full bleed ──
+    //
+    // .shell-main wraps every page in 16px of padding (24px from 768px up).
+    // That padding is what put a gap between the top bar and this screen and
+    // what boxed the content into a column with gutters. Cancelled with
+    // matching negative margins so the hero can run edge to edge and sit flush
+    // under the bar.
+    //
+    // Explicit pixels, and `md:` rather than `sm:`. globals.css sets the root
+    // font to 14px, so -mx-4 would be 14px against 16px of padding and leave a
+    // 2px seam; and the shell's own breakpoint is 768px, which is Tailwind's
+    // `md`, not `sm` at 640 — using `sm:` would over-pull by 8px between 640
+    // and 767.
+    <div className="-mx-[16px] -mt-[16px] pb-32 md:-mx-[24px] md:-mt-[24px]">
+      {/* ── Hero ──
+          A header sheet rather than a card in a stack: flush to the top bar,
+          full width, rounded only at the bottom so it reads as part of the
+          chrome above it rather than as the first item of content.
+
+          It also absorbs what used to sit above it. The back link and the
+          status pill were a strip of their own between the bar and the page;
+          the status now lives here where it belongs, next to the session it
+          describes. Leaving this screen is "Save & Exit" at the foot, which is
+          the deliberate action a half-logged workout deserves. */}
+      <div className="relative overflow-hidden rounded-b-[28px]"
+        style={{
+          background: 'linear-gradient(150deg, #140B2E 0%, #1E1140 45%, #0F0824 100%)',
+          boxShadow: '0 16px 40px -20px rgba(9,7,22,0.8)',
+        }}>
+        {/* Decorative wash, clipped by the rounded parent. */}
+        <span aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-52 w-52 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(252,211,77,0.42) 0%, transparent 70%)', filter: 'blur(52px)' }} />
+        <span aria-hidden className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(192,132,252,0.34) 0%, transparent 70%)', filter: 'blur(56px)' }} />
+
+        <div className="relative mx-auto max-w-3xl px-5 pb-5 pt-4 sm:px-7">
+          <div className="mb-2.5 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-[800] uppercase tracking-[0.1em]"
+              style={session.status === 'completed'
+                ? { background: 'rgba(16,185,129,0.18)', color: '#6EE7B7' }
+                : { background: 'rgba(245,158,11,0.2)', color: '#FCD34D' }}>
+              {/* A dot as well as a colour: the two states must not be
+                  distinguishable by hue alone. */}
+              <span className="h-1.5 w-1.5 rounded-full"
+                style={{ background: session.status === 'completed' ? '#6EE7B7' : '#FCD34D' }} />
+              {session.status === 'completed' ? 'Completed' : 'In Progress'}
+            </span>
+            {session.planned?.week != null && (
+              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-[750]"
+                style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.78)' }}>
+                Week {session.planned.week}
+                {session.planned.duration_weeks ? ` of ${session.planned.duration_weeks}` : ''}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="truncate text-[24px] font-[860] leading-[1.1] tracking-[-0.025em] text-white">
+                {fmtDate(session.session_date)}
+              </h1>
+              <p className="mt-1 truncate text-[12.5px] font-[550]" style={{ color: 'rgba(255,255,255,0.66)' }}>
+                {[session.program_name, session.workout_day].filter(Boolean).join(' · ') || 'Tap edit to add a programme and day'}
+              </p>
+            </div>
+
+            <button onClick={() => setHeaderOpen((o) => !o)}
+              aria-expanded={headerOpen}
+              aria-label={headerOpen ? 'Close session details' : 'Edit session details'}
+              className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] transition-transform active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.16)' }}>
+              {headerOpen
+                ? <ChevronDown size={16} style={{ color: 'rgba(255,255,255,0.85)' }} />
+                : <Pencil size={14} style={{ color: 'rgba(255,255,255,0.85)' }} />}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl py-6 space-y-5">
-        {/* Session header — a compact summary strip by default so the
-            exercises (the actual logging work) are reachable without
-            scrolling past a wall of fields; tap to edit. */}
-        <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}>
-          <button onClick={() => setHeaderOpen((o) => !o)} className="flex w-full items-center justify-between gap-3 px-5 sm:px-7 py-4 text-left">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[12px]" style={{ background: 'rgba(245,158,11,0.1)' }}>
-                <Calendar size={16} style={{ color: '#d97706' }} />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-[14px] font-[760] text-gray-900">{fmtDate(session.session_date)}</p>
-                <p className="truncate text-[12px] text-slate-400">
-                  {[session.program_name, session.workout_day].filter(Boolean).join(' · ') || 'Tap to add program & day'}
-                </p>
-              </div>
-            </div>
-            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px]" style={{ background: 'var(--bg-subtle)' }}>
-              {headerOpen ? <ChevronDown size={14} style={{ color: '#64748b' }} /> : <Pencil size={13} style={{ color: '#64748b' }} />}
-            </span>
-          </button>
-
-          <AnimatePresence initial={false}>
+      {/* Content keeps its own 16px inset — the hero is what goes edge to edge;
+          rounded cards jammed against the screen edge read as broken, not as
+          full-bleed. */}
+      <div className="mx-auto max-w-3xl space-y-5 px-[16px] py-5 md:px-[24px]">
+        {/* The editable detail, unchanged in behaviour: still a disclosure, so
+            the exercises stay reachable without scrolling past a wall of
+            fields. It now hangs below the hero rather than inside a card. */}
+        {/* The card itself is inside the AnimatePresence, not wrapped around
+            it: left outside, a closed panel still renders its border and its
+            shadow, which paints a 1px line and a smudge under the hero for a
+            card that is not there. */}
+        <AnimatePresence initial={false}>
             {headerOpen && (
-              <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: EASE }}>
-                <div className="px-5 sm:px-7 pb-6 pt-1 space-y-4" style={{ borderTop: '1px solid var(--border)' }}>
+              <m.div
+                initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: EASE }}
+                className="overflow-hidden rounded-[24px]"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(15,23,42,0.06)' }}
+              >
+                <div className="px-5 sm:px-7 pb-6 pt-1 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                     <FloatInput label="Date" type="date" value={session.session_date?.slice(0, 10) || ''}
                       onChange={(v) => setSession((p) => (p ? { ...p, session_date: v } : p))}
@@ -293,8 +351,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                 </div>
               </m.div>
             )}
-          </AnimatePresence>
-        </div>
+        </AnimatePresence>
 
         {/* Planned for Today — prescribed exercises for this plan/day, when linked */}
         {session.planned && session.planned.exercises.length > 0 && (
