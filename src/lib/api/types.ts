@@ -2571,3 +2571,13 @@ export interface ClientSnapshot {
   /** False only before onboarding — nothing measured and no goal set. */
   baseline_done: boolean;
 }
+
+/** What the AI coach endpoint returns. `source` says who wrote the lines. */
+export interface CoachGeneration {
+  insights: CoachInsight[];
+  /** 'ai' when a model wrote them; 'derived' when the rule-based ones stood in. */
+  source: 'ai' | 'derived';
+  model: string | null;
+  /** Hash of the readings the answer was written from. */
+  facts_key: string;
+}

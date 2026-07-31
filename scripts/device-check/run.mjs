@@ -162,6 +162,13 @@ const ROUTES = [
     await page.getByRole('tab', { name: /ai coach/i }).first().click();
     await page.waitForTimeout(400);
   }],
+  // The coach card after the model has answered. Its lines are longer than
+  // the derived ones and it grows an AI badge in the header, so it is the
+  // state where the card is most likely to overflow.
+  ['client-profile-coach-answered', `/pt-os/clients/${IDS.client}`, async (page) => {
+    await page.getByRole('button', { name: /ask the ai coach/i }).first().click();
+    await page.waitForTimeout(700);
+  }],
   ['client-profile-edit', `/pt-os/clients/${IDS.client}/edit`],
   ['client-profile-delete', `/pt-os/clients/${IDS.client}/edit`, async (page) => {
     await page.getByRole('button', { name: /delete client/i }).first().click();

@@ -541,6 +541,20 @@ const ROUTES = [
   // by it and the brief panel would render a client object as a brief.
   [/^\/api\/pt-os\/clients\/[^/]+\/training-brief$/, () => ({ data: BRIEF })],
   [/^\/api\/pt-os\/clients\/[^/]+\/snapshot$/, () => ({ data: SNAPSHOT })],
+  // The AI coach, answering. Deliberately longer and more specific than the
+  // derived lines it replaces — that is the shape that overflows a card.
+  [/^\/api\/pt-os\/clients\/[^/]+\/coach$/, () => ({
+    data: {
+      source: 'ai',
+      model: 'openai/gpt-oss-120b',
+      facts_key: 'deadbeef',
+      insights: [
+        { id: 'ai-0', tone: 'warn', source: 'ai', text: 'Six hours of sleep against an intermediate lower-body block is the limiting factor here \u2014 hold total volume where it is for a week rather than adding the planned fourth set.', because: 'Lifestyle assessment \u00b7 sleep 6 h, recovery average' },
+        { id: 'ai-1', tone: 'warn', source: 'ai', text: 'The neck is painful and restricted, so keep overhead pressing out and regress to a landmine press until it is reassessed.', because: 'Mobility assessment \u00b7 neck pain + restriction' },
+        { id: 'ai-2', tone: 'good', source: 'ai', text: 'Bench at 85 kg for 3 is a genuine record and the trend supports a small load increase next session.', because: 'Workout log \u00b7 2026-07-20' },
+      ],
+    },
+  })],
   [/^\/api\/pt-os\/clients\/[^/]+$/, () => ({ data: CLIENT })],
   [/^\/api\/pt-os\/clients$/, () => ({ data: [CLIENT] })],
 

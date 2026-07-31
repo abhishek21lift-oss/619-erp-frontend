@@ -7,7 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ClientBirthday, ClientSnapshot, DuplicateGroup, MergeResult, PtLead, PtSession, TrainingBrief,
+  ClientBirthday, ClientSnapshot, CoachGeneration, DuplicateGroup, MergeResult, PtLead, PtSession, TrainingBrief,
 } from '../types';
 
 // ── PT OS ────────────────────────────────────────────────────
@@ -36,6 +36,16 @@ export const pt = {
    */
   snapshot: (id: string) =>
     http<{ data: ClientSnapshot }>(`/api/pt-os/clients/${id}/snapshot`),
+  /**
+   * Ask a model to interpret this client's readings.
+   *
+   * POST and on demand: a profile is opened dozens of times a day and an LLM
+   * call on every open is money and latency for an answer that has not
+   * changed. Falls back to the derived prompts server-side, so this never
+   * returns an empty card because the API was down.
+   */
+  coach: (id: string) =>
+    http<{ data: CoachGeneration }>(`/api/pt-os/clients/${id}/coach`, { method: 'POST' }),
   create: (data: Record<string, unknown>) =>
     http<{ data: unknown }>('/api/pt-os/clients', { method: 'POST', body: JSON.stringify(data) }),
   uploadPhoto: (id: string, photo: string) =>

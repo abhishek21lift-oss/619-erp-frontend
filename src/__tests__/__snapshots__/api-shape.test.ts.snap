@@ -319,6 +319,7 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "pt.client → /api/pt-os/clients/",
   "pt.clientBirthdays → /api/pt-os/clients/birthdays",
   "pt.clients → /api/pt-os/clients",
+  "pt.coach → /api/pt-os/clients/",
   "pt.commissions → /api/pt-os/commissions",
   "pt.create → /api/pt-os/clients",
   "pt.createPayment → /api/pt-os/payments",

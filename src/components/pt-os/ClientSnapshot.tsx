@@ -106,7 +106,7 @@ export default function ClientSnapshot({ clientId, onLoaded }: ClientSnapshotPro
       <AttentionStrip alerts={snap.alerts} />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <GoalCard goal={snap.goal} clientId={clientId} />
-        <CoachCard insights={snap.coach} />
+        <CoachCard insights={snap.coach} clientId={clientId} />
       </div>
       <PrCard prs={snap.prs} clientId={clientId} />
     </div>
@@ -242,15 +242,56 @@ function GoalCard({ goal, clientId }: { goal: ClientGoalProgress; clientId: stri
   );
 }
 
-/** Coaching prompts. Each carries the reading it came from. */
-function CoachCard({ insights }: { insights: CoachInsight[] }) {
+/**
+ * Coaching prompts. Each carries the reading it came from.
+ *
+ * The lines shown on load are DERIVED — rules over this client's own readings,
+ * true without anything having to be generated. "Ask the AI coach" hands those
+ * same readings to a model and asks it to interpret them.
+ *
+ * The model may interpret; it may not supply facts. The server drops any line
+ * it returns without a citation, and falls back to these derived prompts if it
+ * is unavailable — so this card never empties and never shows a claim nobody
+ * can trace.
+ */
+function CoachCard({ insights, clientId }: { insights: CoachInsight[]; clientId: string }) {
+  const [lines, setLines] = useState<CoachInsight[]>(insights);
+  const [source, setSource] = useState<'derived' | 'ai'>('derived');
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const ask = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      const { data } = await api.pt.coach(clientId);
+      const got = Array.isArray(data?.insights) ? data.insights : [];
+      if (got.length) {
+        setLines(got);
+        setSource(data.source === 'ai' ? 'ai' : 'derived');
+      } else {
+        setFailed(true);
+      }
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <Card title="AI Coach" icon={<Sparkles size={16} />} from="#8b5cf6" to="#7c3aed">
-      {insights.length === 0 ? (
+    <Card title="AI Coach" icon={<Sparkles size={16} />} from="#8b5cf6" to="#7c3aed"
+      right={source === 'ai'
+        ? (
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[9.5px] font-[800] uppercase tracking-wider"
+            style={{ background: 'rgba(139,92,246,0.14)', color: '#7c3aed' }}>AI</span>
+        )
+        : null}>
+      {lines.length === 0 ? (
         <Empty text="Not enough recorded yet to say anything useful. Log a session or take a measurement." />
       ) : (
         <div className="space-y-2">
-          {insights.map((c) => (
+          {lines.map((c) => (
             <div key={c.id} className="rounded-[12px] px-3 py-2.5"
               style={{
                 background: c.tone === 'good' ? 'rgba(16,185,129,0.07)' : 'rgba(217,119,6,0.08)',
@@ -266,6 +307,24 @@ function CoachCard({ insights }: { insights: CoachInsight[] }) {
           ))}
         </div>
       )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={ask}
+          disabled={busy}
+          className="flex h-[44px] items-center gap-1.5 rounded-[12px] px-3.5 text-[11.5px] font-[750] disabled:opacity-60"
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: '#7c3aed' }}
+        >
+          <Sparkles size={13} className={busy ? 'animate-pulse' : undefined} />
+          {busy ? 'Reading their file…' : source === 'ai' ? 'Ask again' : 'Ask the AI coach'}
+        </button>
+        {failed && (
+          <span className="text-[10.5px] font-[620]" style={{ color: 'var(--text-muted)' }}>
+            Could not reach the coach — the notes above still stand.
+          </span>
+        )}
+      </div>
     </Card>
   );
 }
