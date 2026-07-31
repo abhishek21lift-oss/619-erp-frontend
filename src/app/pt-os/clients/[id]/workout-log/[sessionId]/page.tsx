@@ -212,24 +212,27 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const s = session.summary;
 
   return (
-    // ── Full bleed ──
+    // ── Full bleed horizontally, standard gap vertically ──
     //
-    // .shell-main wraps every page in 16px of padding (24px from 768px up).
-    // That padding is what put a gap between the top bar and this screen and
-    // what boxed the content into a column with gutters. Cancelled with
-    // matching negative margins so the hero can run edge to edge and sit flush
-    // under the bar.
+    // .shell-main wraps every page in 16px of padding, 24px from 768px up.
+    //
+    // The HORIZONTAL padding is cancelled so the hero runs edge to edge — that
+    // is what "remove the container" meant. The TOP padding is left alone: it
+    // is the same small gap every other hero in the app sits below, and taking
+    // it away here made this one screen sit tighter than the rest. Consistency
+    // across the app beats a flush edge on a single page.
     //
     // Explicit pixels, and `md:` rather than `sm:`. globals.css sets the root
     // font to 14px, so -mx-4 would be 14px against 16px of padding and leave a
     // 2px seam; and the shell's own breakpoint is 768px, which is Tailwind's
     // `md`, not `sm` at 640 — using `sm:` would over-pull by 8px between 640
     // and 767.
-    <div className="-mx-[16px] -mt-[16px] pb-32 md:-mx-[24px] md:-mt-[24px]">
+    <div className="-mx-[16px] pb-32 md:-mx-[24px]">
       {/* ── Hero ──
-          A header sheet rather than a card in a stack: flush to the top bar,
-          full width, rounded only at the bottom so it reads as part of the
-          chrome above it rather than as the first item of content.
+          A header sheet rather than a card in a stack: full width, rounded
+          only at the bottom so it reads as a lid on the page rather than as
+          the first item of content. It keeps the app's standard gap below the
+          top bar, like every other hero.
 
           It also absorbs what used to sit above it. The back link and the
           status pill were a strip of their own between the bar and the page;

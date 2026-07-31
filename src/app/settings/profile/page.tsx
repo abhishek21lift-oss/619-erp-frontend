@@ -1194,21 +1194,18 @@ export default function ProfilePage() {
             as a grey block inset from the page edges. The banded sections
             below keep their own backgrounds and inner padding — those are
             deliberate bands, not a page wrapper. */}
-        {/* ── Flush to the top bar ──
-            The breadcrumb, the "My Profile" heading and its subtitle used to
+        {/* The breadcrumb, the "My Profile" heading and its subtitle used to
             sit in a bordered band here. All three said what the page already
             says: the card immediately below carries the user's name, photo,
             role and studio, so the title was a label for something already
             labelled, costing about a fifth of a phone screen before any
             content.
 
-            .shell-main's own 16px of padding (24px from 768px up) goes with
-            it, so the profile card starts directly under the bar. Explicit
-            pixels and `md:` rather than -mt-4 sm:, because globals.css sets
-            the root font to 14px — -mt-4 would be 14px against 16px and leave
-            a 2px seam — and the shell's breakpoint is 768px, which is
-            Tailwind's md, not sm at 640. */}
-        <div className="-mt-[16px] md:-mt-[24px]">
+            Only the band is gone. .shell-main's own padding stays, because it
+            is the same small gap every other hero in the app sits below —
+            cancelling it here made this page sit tighter than the rest of the
+            product for no reason a reader could see. */}
+        <div>
 
           {/* ── MAIN ── */}
           {/* The bottom padding clears the fixed mobile bottom nav AND the
