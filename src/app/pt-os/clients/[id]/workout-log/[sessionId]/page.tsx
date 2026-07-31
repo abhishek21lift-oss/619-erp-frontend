@@ -746,19 +746,31 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
       </div>
 
       <div className="mt-2.5 flex items-center gap-2.5">
-        <label className="flex h-[44px] flex-1 items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+        {/*
+          The height belongs on the INPUT, not the label. With h-[44px] on the
+          wrapper the input's content box was 42 — the 1px border top and
+          bottom comes out of it — so the field a thumb actually lands on was
+          still short of the minimum while the box around it measured right.
+        */}
+        <label className="flex flex-1 items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
           <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RPE</span>
           <input type="number" inputMode="decimal" min={0} max={10} value={rpe} placeholder="—"
             onChange={(e) => setRpe(e.target.value)}
             onBlur={() => save({ rpe: numField(rpe) })}
-            className="h-full w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
+            className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
-        <label className="flex h-[44px] flex-1 items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
+        {/*
+          The height belongs on the INPUT, not the label. With h-[44px] on the
+          wrapper the input's content box was 42 — the 1px border top and
+          bottom comes out of it — so the field a thumb actually lands on was
+          still short of the minimum while the box around it measured right.
+        */}
+        <label className="flex flex-1 items-center gap-1.5 rounded-[10px] px-2.5" style={{ background: '#fff', border: '1px solid #e2e8f0' }}>
           <span className="text-[10px] font-[700]" style={{ color: '#94a3b8' }}>RIR</span>
           <input type="number" inputMode="numeric" min={0} max={10} value={rir} placeholder="—"
             onChange={(e) => setRir(e.target.value)}
             onBlur={() => save({ rir: numField(rir) })}
-            className="h-full w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
+            className="h-[44px] w-full min-w-0 bg-transparent text-center outline-none" style={{ fontSize: 14, color: "#0f172a" }} />
         </label>
       </div>
 
