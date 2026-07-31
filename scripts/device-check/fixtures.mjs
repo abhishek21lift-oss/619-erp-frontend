@@ -408,6 +408,61 @@ const OPS = {
   ],
 };
 
+/**
+ * A training brief with real gaps in it.
+ *
+ * Deliberately PARTIAL: readiness, limitations, capacity and goal are filled;
+ * body, lifestyle and history are not. A brief where every section is present
+ * would never render the "not assessed" state, which is the state that stops
+ * an unassessed client looking like a clean one — the whole point of the
+ * panel. The shapes come from the endpoint's declared return type.
+ */
+const BRIEF = {
+  client: { id: 'c-1', name: LONG_NAME, gender: 'female', age: 32, goal: 'muscle_gain', notes: null },
+  sections: {
+    readiness: {
+      present: true, as_of: '2026-06-18', risk_level: 'low',
+      risk_message: null, gate_status: 'cleared', flagged_answers: 1,
+      current_health: [], past_history: ['back pain'], blood_group: 'O+',
+      notes: 'Cleared by physio in May; avoid loaded spinal flexion for now.',
+    },
+    body: { present: false },
+    capacity: {
+      present: true, as_of: '2026-06-18', overall: 63,
+      strength: { score: 58, category: 'average' },
+      cardio: { score: 71, category: 'good', vo2_max: 38.4 },
+      endurance: { score: 60, category: 'average' },
+      flexibility: { score: 44, category: 'below average' },
+    },
+    limitations: {
+      present: true,
+      posture: { as_of: '2026-06-20', risk_level: 'moderate', issues: ['Anterior Pelvic Tilt', 'Uneven Shoulders'], notes: null },
+      mobility: {
+        as_of: '2026-06-20', category: 'fair', score: 62,
+        // One with both, one with pain only — the two render differently.
+        findings: [
+          { region: 'Neck', pain: true, restriction: true, score: 3 },
+          { region: 'Shoulders', pain: true, restriction: false, score: 3 },
+        ],
+        notes: null,
+      },
+      injuries: 'Left rotator cuff strain, 2024 — cleared, still avoids overhead pressing',
+      has_asymmetry: true,
+    },
+    lifestyle: { present: false },
+    goal: {
+      present: true, as_of: '2026-06-01', goal_type: 'muscle_gain', priority: 'muscle_gain',
+      description: null, target_weight: 62, target_body_fat: 24, target_date: '2026-12-01',
+      commitment_level: 'high', motivation_level: 'high',
+      challenges: ['Poor Diet', 'Office Work', 'Lack of Sleep', 'Inconsistent Routine'],
+      estimated_weeks: 24,
+    },
+    history: { present: false },
+  },
+  missing: ['body', 'lifestyle', 'history'],
+  completeness_pct: 57,
+};
+
 // ── The routing table ───────────────────────────────────────────────────────
 
 const ROUTES = [
@@ -454,6 +509,9 @@ const ROUTES = [
   [/^\/api\/workouts\/assignments$/, () => [ASSIGNMENT]],
 
   // PT-OS clients.
+  // Before the bare /clients/:id — a sub-path would otherwise be swallowed
+  // by it and the brief panel would render a client object as a brief.
+  [/^\/api\/pt-os\/clients\/[^/]+\/training-brief$/, () => ({ data: BRIEF })],
   [/^\/api\/pt-os\/clients\/[^/]+$/, () => ({ data: CLIENT })],
   [/^\/api\/pt-os\/clients$/, () => ({ data: [CLIENT] })],
 

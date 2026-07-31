@@ -2434,3 +2434,88 @@ export type AiBusinessInsights = {
   recommendations: { priority: number; action: string; rationale: string; timeframe: string }[];
   executive_summary: string;
 };
+
+// ── Training brief ──────────────────────────────────────────────────
+//
+// Everything needed to write a client a programme, assembled from the six
+// assessments that already exist. Every section carries `present` and its own
+// `as_of` on purpose: a brief that hides its gaps gets designed against as
+// though it were complete, and a capacity score from March is not the same
+// claim as one from last week.
+
+export interface BriefSectionBase { present: boolean; as_of?: string | null }
+
+export interface BriefReadiness extends BriefSectionBase {
+  risk_level?: string | null;
+  risk_message?: string | null;
+  gate_status?: string | null;
+  flagged_answers?: number | null;
+  current_health?: string[];
+  past_history?: string[];
+  blood_group?: string | null;
+  notes?: string | null;
+}
+
+export interface BriefBody extends BriefSectionBase {
+  height_cm?: number | null; weight_kg?: number | null; bmi?: number | null;
+  body_fat_pct?: number | null; lean_mass_kg?: number | null;
+  waist_cm?: number | null; waist_hip_ratio?: number | null;
+  resting_hr?: number | null; bp?: string | null; bp_category?: string | null;
+}
+
+export interface BriefScore { score: number | null; category: string | null; vo2_max?: number | null }
+
+export interface BriefCapacity extends BriefSectionBase {
+  overall?: number | null;
+  strength?: BriefScore; cardio?: BriefScore; endurance?: BriefScore; flexibility?: BriefScore;
+}
+
+/** One joint that came back painful or restricted — never a healthy one. */
+export interface MobilityFinding {
+  region: string;
+  /** Different remedies: restricted means regress the movement, pain means remove it. */
+  pain: boolean;
+  restriction: boolean;
+  score: number | null;
+}
+
+export interface BriefLimitations extends BriefSectionBase {
+  posture?: { as_of: string | null; risk_level: string | null; issues: string[]; notes: string | null } | null;
+  mobility?: { as_of: string | null; category: string | null; score: number | null; findings: MobilityFinding[]; notes: string | null } | null;
+  injuries?: string | null;
+  has_asymmetry?: boolean | null;
+}
+
+export interface BriefLifestyle extends BriefSectionBase {
+  experience_level?: string | null; years_training?: number | null;
+  sleep_hours?: number | null; sleep_quality?: string | null;
+  stress_level?: string | null; occupation_type?: string | null;
+  activity_level?: string | null; daily_steps?: string | null;
+  energy_level?: string | null; recovery_quality?: string | null;
+  recovery_risk?: string | null; lifestyle_score?: number | null; notes?: string | null;
+}
+
+export interface BriefGoal extends BriefSectionBase {
+  goal_type?: string | null; priority?: string | null; description?: string | null;
+  target_weight?: number | null; target_body_fat?: number | null; target_date?: string | null;
+  commitment_level?: string | null; motivation_level?: string | null;
+  challenges?: string[]; estimated_weeks?: number | null;
+}
+
+export interface BriefHistory extends BriefSectionBase {
+  plan_id?: string; plan_name?: string; started_on?: string | null;
+  duration_weeks?: number | null; days_per_week?: number | null; progress_pct?: number | null;
+  sessions_last_4_weeks?: number; completed_last_4_weeks?: number;
+}
+
+export interface TrainingBrief {
+  client: { id: string | null; name: string | null; gender: string | null; age: number | null; goal: string | null; notes: string | null };
+  sections: {
+    readiness: BriefReadiness; body: BriefBody; capacity: BriefCapacity;
+    limitations: BriefLimitations; lifestyle: BriefLifestyle;
+    goal: BriefGoal; history: BriefHistory;
+  };
+  /** Section keys with no data. Named, not omitted. */
+  missing: string[];
+  completeness_pct: number;
+}

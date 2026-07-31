@@ -7,7 +7,7 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  ClientBirthday, DuplicateGroup, MergeResult, PtLead, PtSession,
+  ClientBirthday, DuplicateGroup, MergeResult, PtLead, PtSession, TrainingBrief,
 } from '../types';
 
 // ── PT OS ────────────────────────────────────────────────────
@@ -18,6 +18,17 @@ export const pt = {
     http<{ data: unknown[]; total: number }>(`/api/pt-os/clients${buildQs(params)}`),
   client: (id: string) =>
     http<{ data: unknown }>(`/api/pt-os/clients/${id}`),
+  /**
+   * Everything needed to write this client a programme, in one read.
+   *
+   * Assembled server-side from the six assessments that already exist —
+   * PAR-Q, fitness testing, posture, mobility, lifestyle and goals — plus
+   * four weeks of the log. It reports its own gaps in `missing` rather than
+   * omitting them, because a brief that hides what nobody measured gets
+   * designed against as though it were complete.
+   */
+  trainingBrief: (id: string) =>
+    http<{ data: TrainingBrief }>(`/api/pt-os/clients/${id}/training-brief`),
   create: (data: Record<string, unknown>) =>
     http<{ data: unknown }>('/api/pt-os/clients', { method: 'POST', body: JSON.stringify(data) }),
   uploadPhoto: (id: string, photo: string) =>

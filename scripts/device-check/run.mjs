@@ -113,6 +113,11 @@ const ROUTES = [
   ['dashboard', '/'],
 
   ['workout-plans', '/pt-os/workout-plans'],
+  // The same page reached from a CLIENT — a different screen in practice: it
+  // leads with that client's training brief instead of studio-wide totals.
+  // The fixture brief is deliberately half-empty so the "not assessed" rows
+  // render, which is the state that stops an unassessed client looking clean.
+  ['client-training-brief', `/pt-os/workout-plans?client_id=${IDS.client}`],
   ['new-programme-sheet', '/pt-os/workout-plans', async (page) => {
     await page.getByRole('button', { name: /new plan/i }).first().click();
     await page.waitForTimeout(500);

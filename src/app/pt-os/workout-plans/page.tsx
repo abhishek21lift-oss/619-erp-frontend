@@ -6,13 +6,13 @@ import { m, AnimatePresence } from 'framer-motion';
 import {
   Dumbbell, Plus, Search, User, Clock, Target,
   Activity, FileText, LayoutGrid, List, Check,
-  Trophy, Sparkles, ChevronRight, X, ShieldAlert, Loader2, Trash2,
+  Trophy, Sparkles, ChevronRight, X, ShieldAlert, Loader2, Trash2, ClipboardList,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui';
 import { api } from '@/lib/api';
-import type { WorkoutPlan, LibraryExercise } from '@/lib/api';
+import type { WorkoutPlan, LibraryExercise, TrainingBrief } from '@/lib/api';
 import { ApiError } from '@/lib/http';
 import { useToast } from '@/lib/toast';
 import { SpotlightCard } from '@/components/fitness/SpotlightCard';
@@ -21,6 +21,7 @@ import { WorkoutPlanCard } from '@/components/fitness/WorkoutPlanCard';
 import NewProgrammeDialog from '@/components/pt-os/builder/NewProgrammeDialog';
 import { ExerciseCard } from '@/components/fitness/ExerciseCard';
 import { AiCoachPanel } from '@/components/fitness/AiCoachPanel';
+import TrainingBriefPanel from '@/components/pt-os/TrainingBriefPanel';
 
 interface ClientOption { id: string; name: string; }
 
@@ -87,11 +88,18 @@ function Inner() {
   const [assignPlan, setAssignPlan] = useState<WorkoutPlan | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  // Arriving with ?client_id= (the client profile's "Workout Plans" button)
-  // means the trainer wants to design a plan for THAT client right now, not
-  // browse a shared list first — so land straight in the builder instead of
-  // the default plans tab.
-  const [activeTab, setActiveTab] = useState<'plans' | 'library' | 'ai'>('plans');
+  // Arriving with ?client_id= is the client profile's "Workout Plans" button:
+  // somebody has opened ONE client meaning to design for them.
+  //
+  // With a client in scope the brief is the landing tab: it is the thing you
+  // came to read before designing anything, and burying it behind a tap makes
+  // it as unread as the six screens it replaces.
+  const [activeTab, setActiveTab] = useState<'brief' | 'plans' | 'library' | 'ai'>(
+    presetClientId ? 'brief' : 'plans',
+  );
+  /** Filled by the brief panel, so the hero can name the client it describes. */
+  const [briefClient, setBriefClient] = useState<TrainingBrief['client'] | null>(null);
+  const [briefCompleteness, setBriefCompleteness] = useState(0);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   // ── Plan Builder state ──
@@ -199,9 +207,21 @@ function Inner() {
               >
                 <Dumbbell size={22} />
               </m.span>
+              {/* Arriving with ?client_id= means somebody opened a specific
+                  client's Workout Plans. The page should say whose. */}
               <div className="min-w-0">
-                <h1 className="text-[22px] sm:text-[26px] font-extrabold tracking-[-0.02em] leading-tight text-[var(--text-primary)]">Workout Plans</h1>
-                <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">Build and manage personalized training programs</p>
+                <h1 className="text-[22px] sm:text-[26px] font-extrabold tracking-[-0.02em] leading-tight text-[var(--text-primary)]">
+                  {briefClient?.name ?? 'Workout Plans'}
+                </h1>
+                <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">
+                  {briefClient
+                    ? [
+                      briefClient.age != null ? `${briefClient.age} yrs` : null,
+                      briefClient.gender,
+                      briefClient.goal ? String(briefClient.goal).replace(/_/g, ' ') : null,
+                    ].filter(Boolean).join(' · ') || 'Design their programme'
+                    : 'Build and manage personalized training programs'}
+                </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -222,12 +242,24 @@ function Inner() {
           {/* ── KPI cards ── */}
           <m.div variants={containerVariants} initial="hidden" animate="visible"
             className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {[
-              { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
-              { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
-              { label: 'Clients', value: clients.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
-              { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
-            ].map((s) => (
+            {/* Scoped to whoever is in view. Opening ONE client's plans and
+                being told the studio has 11 clients and 200 library exercises
+                answers a question nobody asked from here; what matters is how
+                complete this client's brief is and what they are running. */}
+            {(presetClientId
+              ? [
+                { label: 'Their Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
+                { label: 'Brief Complete', value: briefClient ? briefCompleteness : 0, icon: <ClipboardList size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)', suffix: '%' },
+                { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
+                { label: 'Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
+              ]
+              : [
+                { label: 'Total Plans', value: plans.length, icon: <FileText size={14} />, color: '#6366f1', spotColor: 'rgba(99,102,241,0.12)' },
+                { label: 'Exercises', value: exercises.length, icon: <Activity size={14} />, color: '#10b981', spotColor: 'rgba(16,185,129,0.12)' },
+                { label: 'Clients', value: clients.length, icon: <User size={14} />, color: '#f59e0b', spotColor: 'rgba(245,158,11,0.12)' },
+                { label: 'Avg Completion', value: avgProgress, icon: <Trophy size={14} />, color: '#ec4899', spotColor: 'rgba(236,72,153,0.12)', suffix: '%' },
+              ]
+            ).map((s) => (
               <m.div key={s.label} variants={itemVariants}>
                 <SpotlightCard spotlightColor={s.spotColor} style={{ padding: '14px 16px', cursor: 'default' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
@@ -246,7 +278,9 @@ function Inner() {
         {/* ── Tabs (horizontally scrollable on mobile) ── */}
         <div className="mt-5 mb-5 flex gap-1 overflow-x-auto" style={{ background: 'var(--bg-subtle)', borderRadius: 11, padding: 3, scrollbarWidth: 'none' }}>
           {[
-            { key: 'plans', label: 'Active Plans', count: plans.length, color: '#6366f1' },
+            // Only with a client in scope — there is no brief for "the studio".
+            ...(presetClientId ? [{ key: 'brief', label: 'Client Brief', color: '#7c3aed' }] : []),
+            { key: 'plans', label: presetClientId ? 'Their Plans' : 'Active Plans', count: plans.length, color: '#6366f1' },
             { key: 'library', label: 'Exercise Library', count: filteredExercises.length, color: '#10b981' },
             { key: 'ai', label: 'AI Suggestions', color: '#ec4899' },
           ].map((tab) => (
@@ -270,6 +304,14 @@ function Inner() {
 
         <AnimatePresence mode="wait">
           {/* ── Plans Tab ── */}
+          {/* ── Client brief ──
+              The reason this page exists when you arrive from a client. Every
+              input a programme needs, assembled from assessments that were
+              already taken and until now only readable one screen at a time. */}
+          {activeTab === 'brief' && presetClientId && (
+            <TrainingBriefPanel clientId={presetClientId} onLoaded={(b) => { setBriefClient(b.client); setBriefCompleteness(b.completeness_pct); }} />
+          )}
+
           {activeTab === 'plans' && (
             <m.div key="plans" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
               {dataLoading ? (
