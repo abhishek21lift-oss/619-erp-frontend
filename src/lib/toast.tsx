@@ -340,7 +340,15 @@ function ToastItem({
           type="button"
           onClick={onClose}
           aria-label="Dismiss notification"
-          className="ml-2 -m-1 grid h-6 w-6 shrink-0 place-items-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+          // 44px of TAP, 24px of ink. The visible chip stays small — a big
+          // grey square beside every toast would read as a second action —
+          // but the button itself is a full thumb target, pulled back into
+          // place with a matching negative margin so nothing moves.
+          //
+          // Written in explicit pixels: globals.css sets the root font size to
+          // 14px, so a rem-based `h-11` measures 38.5 and still fails.
+          className="-my-[10px] -mr-[10px] ml-1 grid shrink-0 place-items-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+          style={{ height: 44, width: 44 }}
         >
           <X className="h-3.5 w-3.5" />
         </button>

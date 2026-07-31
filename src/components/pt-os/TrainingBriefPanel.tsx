@@ -35,7 +35,8 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type {
-  TrainingBrief, BriefSectionBase, BriefLimitations, MobilityFinding,
+  TrainingBrief, BriefSectionBase, BriefLimitations, BriefReadiness,
+  BriefLifestyle, BriefGoal, MobilityFinding,
 } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 
@@ -81,6 +82,13 @@ export function normaliseBrief(raw: unknown): TrainingBrief | null {
   const posture = obj(limitations.posture);
   const mobility = obj(limitations.mobility);
 
+  // The note columns are JSONB objects, not strings. The server flattens them
+  // now, but it deploys separately — and this panel must not depend on which
+  // side shipped first, because the failure mode is the whole segment.
+  const readiness = sec<BriefReadiness>('readiness');
+  const lifestyle = sec<BriefLifestyle>('lifestyle');
+  const goalSec = sec<BriefGoal>('goal');
+
   const c = obj(b.client) ?? {};
   return {
     client: {
@@ -92,18 +100,19 @@ export function normaliseBrief(raw: unknown): TrainingBrief | null {
       notes: str(c.notes),
     },
     sections: {
-      readiness: sec('readiness'),
+      readiness: { ...readiness, notes: str(readiness.notes) },
       body: sec('body'),
       capacity: sec('capacity'),
       limitations: {
         ...limitations,
+        injuries: str(limitations.injuries),
         // The only two nested lists the render walks. Everything else it
         // reads is a scalar, and a missing scalar already renders as "—".
-        posture: posture ? { ...posture, issues: arr<string>(posture.issues) } : null,
-        mobility: mobility ? { ...mobility, findings: arr<MobilityFinding>(mobility.findings) } : null,
+        posture: posture ? { ...posture, issues: arr<string>(posture.issues), notes: str(posture.notes) } : null,
+        mobility: mobility ? { ...mobility, findings: arr<MobilityFinding>(mobility.findings), notes: str(mobility.notes) } : null,
       } as BriefLimitations,
-      lifestyle: sec('lifestyle'),
-      goal: sec('goal'),
+      lifestyle: { ...lifestyle, notes: str(lifestyle.notes) },
+      goal: { ...goalSec, description: str(goalSec.description) },
       history: sec('history'),
     },
     missing: arr<unknown>(b.missing).filter((k): k is string => typeof k === 'string'),
@@ -274,7 +283,7 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
         <Row label="Flagged answers" value={s.readiness.flagged_answers != null ? String(s.readiness.flagged_answers) : null} />
         <Chips label="Current health" items={s.readiness.current_health ?? []} tone="#dc2626" emptyNote="Nothing flagged" />
         <Chips label="History" items={s.readiness.past_history ?? []} tone="#d97706" emptyNote="Nothing flagged" />
-        {s.readiness.notes && <Note>{s.readiness.notes}</Note>}
+        <Note>{s.readiness.notes}</Note>
       </Card>
 
       {/* ── 2. Limitations ──
@@ -290,10 +299,10 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
         clientId={clientId}
         present={s.limitations.present}
       >
-        {s.limitations.injuries && (
+        {text(s.limitations.injuries) && (
           <div className="mb-2 rounded-[10px] px-3 py-2" style={{ background: 'rgba(217,119,6,0.09)' }}>
             <p className="text-[10px] font-[750] uppercase tracking-wide" style={{ color: '#b45309' }}>Injuries on file</p>
-            <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-primary)' }}>{s.limitations.injuries}</p>
+            <p className="mt-0.5 whitespace-pre-line text-[12px]" style={{ color: 'var(--text-primary)' }}>{text(s.limitations.injuries)}</p>
           </div>
         )}
         {s.limitations.mobility && (
@@ -386,7 +395,7 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
           <Row label="Activity" value={cap(s.lifestyle.activity_level)} />
           <Row label="Recovery" value={cap(s.lifestyle.recovery_quality)} />
         </div>
-        {s.lifestyle.notes && <Note>{s.lifestyle.notes}</Note>}
+        <Note>{s.lifestyle.notes}</Note>
       </Card>
 
       {/* ── 6. Goal ── */}
@@ -404,7 +413,7 @@ export default function TrainingBriefPanel({ clientId, onLoaded }: TrainingBrief
         <Row label="By" value={s.goal.target_date} />
         <Row label="Commitment" value={cap(s.goal.commitment_level)} />
         <Chips label="Challenges" items={s.goal.challenges ?? []} tone="#64748b" emptyNote="None recorded" />
-        {s.goal.description && <Note>{s.goal.description}</Note>}
+        <Note>{s.goal.description}</Note>
       </Card>
 
       {/* ── 7. Current programme ── */}
@@ -483,12 +492,16 @@ function Card({
   );
 }
 
-function Row({ label, value }: { label: string; value?: string | null }) {
-  if (!value) return null;
+function Row({ label, value }: { label: string; value?: unknown }) {
+  // Same reason as Note: a text slot must never be handed an object.
+  const shown = typeof value === 'string' ? value.trim()
+    : typeof value === 'number' && Number.isFinite(value) ? String(value)
+      : '';
+  if (!shown) return null;
   return (
     <div className="flex items-baseline justify-between gap-3">
       <span className="shrink-0 text-[11px] font-[600]" style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <span className="min-w-0 truncate text-right text-[12px] font-[700]" style={{ color: 'var(--text-primary)' }}>{value}</span>
+      <span className="min-w-0 truncate text-right text-[12px] font-[700]" style={{ color: 'var(--text-primary)' }}>{shown}</span>
     </div>
   );
 }
@@ -535,12 +548,29 @@ function ScoreTile({ label, score, category }: { label: string; score?: number |
   );
 }
 
-function Note({ children }: { children: React.ReactNode }) {
+/**
+ * Free text, and ONLY free text.
+ *
+ * These note fields are JSONB columns that hold an object with one field per
+ * prompt on the assessment screen, not the strings the brief typed them as.
+ * React throws on an object child — "Objects are not valid as a React child" —
+ * in the middle of the render, which unwinds to the pt-os error boundary and
+ * takes the whole segment down over one paragraph. The server flattens these
+ * now; this is the second line, so that the next column to change shape
+ * renders nothing instead of breaking the module.
+ */
+function Note({ children }: { children?: unknown }) {
+  const text = typeof children === 'string' ? children.trim() : '';
+  if (!text) return null;
   return (
-    <p className="mt-1.5 rounded-[10px] px-3 py-2 text-[11.5px] italic"
-      style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{children}</p>
+    <p className="mt-1.5 whitespace-pre-line rounded-[10px] px-3 py-2 text-[11.5px] italic"
+      style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{text}</p>
   );
 }
+
+/** A string, or nothing — never an object on its way to a text slot. */
+const text = (v: unknown): string | null =>
+  (typeof v === 'string' && v.trim() ? v.trim() : null);
 
 const cap = (v?: string | null) => (v ? String(v).replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()) : null);
 

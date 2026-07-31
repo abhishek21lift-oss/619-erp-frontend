@@ -1,0 +1,158 @@
+{
+  "client": {
+    "id": "67309832-dd54-4908-9682-f48826091509",
+    "name": "Ratnam Yadav",
+    "gender": "Male",
+    "age": 25,
+    "goal": null,
+    "notes": null
+  },
+  "sections": {
+    "readiness": {
+      "present": true,
+      "as_of": "2026-07-27",
+      "risk_level": "low",
+      "risk_message": "Approved for Exercise",
+      "gate_status": "cleared",
+      "flagged_answers": 0,
+      "current_health": [],
+      "past_history": [],
+      "blood_group": "AB+",
+      "notes": {
+        "posture": "",
+        "summary": "",
+        "precautions": "",
+        "observations": "",
+        "recommendations": "",
+        "contraindications": "",
+        "movement_limitations": ""
+      }
+    },
+    "body": {
+      "present": true,
+      "as_of": "2026-07-27",
+      "height_cm": 175,
+      "weight_kg": 80,
+      "bmi": 26.1,
+      "body_fat_pct": null,
+      "lean_mass_kg": null,
+      "waist_cm": null,
+      "waist_hip_ratio": null,
+      "resting_hr": null,
+      "bp": null,
+      "bp_category": null
+    },
+    "capacity": {
+      "present": true,
+      "as_of": "2026-07-27",
+      "overall": 67,
+      "strength": {
+        "score": 88,
+        "category": "Good"
+      },
+      "cardio": {
+        "score": null,
+        "category": null,
+        "vo2_max": null
+      },
+      "endurance": {
+        "score": 40,
+        "category": "Below Average"
+      },
+      "flexibility": {
+        "score": null,
+        "category": "Good"
+      }
+    },
+    "limitations": {
+      "present": true,
+      "posture": {
+        "as_of": "2026-07-27",
+        "risk_level": "Low",
+        "issues": [
+          "Anterior Pelvic Tilt"
+        ],
+        "notes": {
+          "recovery_focus": "",
+          "training_focus": "",
+          "nutrition_focus": "",
+          "corrective_strategy": "",
+          "initial_observations": "",
+          "special_instructions": ""
+        }
+      },
+      "mobility": {
+        "as_of": "2026-07-27",
+        "category": "Below Average",
+        "score": 44,
+        "findings": [
+          {
+            "region": "Neck",
+            "pain": true,
+            "restriction": true,
+            "score": 3
+          },
+          {
+            "region": "Shoulders",
+            "pain": true,
+            "restriction": false,
+            "score": 3
+          }
+        ],
+        "notes": null
+      },
+      "injuries": null,
+      "has_asymmetry": true
+    },
+    "lifestyle": {
+      "present": true,
+      "as_of": "2026-07-27",
+      "experience_level": null,
+      "years_training": null,
+      "sleep_hours": 6,
+      "sleep_quality": 8,
+      "stress_level": 5,
+      "occupation_type": "student",
+      "activity_level": null,
+      "daily_steps": null,
+      "energy_level": null,
+      "recovery_quality": "average",
+      "recovery_risk": "Moderate",
+      "lifestyle_score": 63,
+      "notes": {
+        "sleep": "",
+        "stress": "",
+        "recovery": "",
+        "lifestyle": "",
+        "nutrition": "",
+        "special_instructions": ""
+      }
+    },
+    "goal": {
+      "present": true,
+      "as_of": "2026-07-27",
+      "goal_type": "muscle_gain",
+      "priority": "muscle_gain",
+      "description": null,
+      "target_weight": null,
+      "target_body_fat": 15.5,
+      "target_date": "2026-10-27",
+      "commitment_level": 10,
+      "motivation_level": 8,
+      "challenges": [
+        "Poor Diet",
+        "Office Work",
+        "Lack of Sleep",
+        "Inconsistent Routine"
+      ],
+      "estimated_weeks": null
+    },
+    "history": {
+      "present": false
+    }
+  },
+  "missing": [
+    "history"
+  ],
+  "completeness_pct": 86
+}
