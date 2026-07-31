@@ -271,10 +271,28 @@ const AUDIT = ({ width, minTouch }) => {
 
   // An element inside a deliberately scrollable strip (the builder's day tabs)
   // is meant to extend past the edge.
+  //
+  // `hidden` and `clip` count too, and for a different reason: a box an
+  // ancestor CLIPS cannot paint outside that ancestor, so it can never be the
+  // thing a user sees hanging off the screen. The dashboard hero's decorative
+  // blobs are 240px circles deliberately parked at -80px inside an
+  // overflow-hidden layer — geometrically past the viewport, visually nowhere
+  // near it. Reporting them is noise that buries real findings, which is the
+  // failure mode that made this checker ignorable before.
+  //
+  // Nothing is hidden by this. If the clipping ancestor itself overflows the
+  // page, the ancestor is measured on its own pass and reported by name.
+  //
+  // The walk STOPS AT BODY, and that bound is load-bearing: globals.css sets
+  // `overflow-x: clip` on both html and body. Walking to the root would make
+  // every element on every page "clipped", switch this check off entirely, and
+  // turn the whole suite green while reporting nothing — a dead check that
+  // looks like a passing one. The clipped-by-ancestor check below stops at the
+  // same place, for the same reason.
   const inScroller = (el) => {
-    for (let n = el.parentElement; n; n = n.parentElement) {
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
       const o = getComputedStyle(n).overflowX;
-      if (o === 'auto' || o === 'scroll') return true;
+      if (o === 'auto' || o === 'scroll' || o === 'hidden' || o === 'clip') return true;
     }
     return false;
   };
