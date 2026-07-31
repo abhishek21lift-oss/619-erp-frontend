@@ -12,7 +12,7 @@ import {
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, ScrollText, ChevronDown,
+  QrCode, Printer, ScrollText, ChevronDown, Mail,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -256,6 +256,13 @@ const BASELINE_ACTION: QuickAction = {
   href: (id) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155',
 };
 
+/** A chip on the dark header. One definition, so they cannot drift apart. */
+const GLASS_CHIP = 'inline-flex h-[44px] min-w-0 items-center gap-2 rounded-[13px] px-3.5 text-[12.5px] font-[700] text-white transition-all hover:brightness-125';
+const GLASS_STYLE: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.10)',
+  border: '1px solid rgba(255,255,255,0.16)',
+};
+
 const QUICK_ACTIONS: QuickAction[] = [
   { label: 'Payments', icon: <Wallet size={16} />, href: (id) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
   { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
@@ -452,135 +459,137 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
             {!loading && !error && client && (
               <>
                 {/* ── HERO ── */}
+                {/* ── HEADER ──
+                    One object, not four bands. Identity, contact, the three
+                    actions and the money all lived in separate strips stacked
+                    down the page: a dark card, then chips on the page
+                    background, then buttons on the page background, then a row
+                    of white KPI cards. Nothing tied them together and the eye
+                    had to start over four times.
+                    They are one surface now. The money in particular reads far
+                    better here — three figures on a hairline grid rather than
+                    three cards that, for most clients, all say ₹0. */}
                 <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative mb-5 overflow-hidden rounded-[28px] p-6 sm:p-7"
+                  className="relative mb-4 overflow-hidden rounded-[28px] p-5 sm:p-7"
                   style={{
-                    background: 'linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%)',
+                    background: 'linear-gradient(135deg, #1e1b4b 0%, #2e1065 55%, #3b1a5c 100%)',
                     boxShadow: '0 20px 48px rgba(30,27,75,0.35)',
                   }}>
+                  {/* Depth. Pointer-events-none and clipped by the card, so they
+                      are decoration and never intercept a tap. */}
+                  <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full blur-3xl"
+                    style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.40), transparent 70%)' }} />
+                  <div className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full blur-3xl"
+                    style={{ background: 'radial-gradient(circle, rgba(45,212,191,0.20), transparent 70%)' }} />
 
-                  {/* Status pill */}
-                  {statusCfg && (
-                    <div className="absolute right-5 top-5 flex items-center gap-1.5 rounded-full px-3 py-1.5 sm:right-6 sm:top-6"
-                      style={{ background: statusCfg.bg, border: `1px solid ${statusCfg.color}30` }}>
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusCfg.dot }} />
-                      <span className="text-[10.5px] font-[800] uppercase tracking-wider" style={{ color: statusCfg.color }}>
-                        {statusCfg.label}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-4 sm:gap-5">
-                    {/* Avatar */}
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[22px] text-[24px] font-[860] text-white sm:h-24 sm:w-24 sm:text-[28px]"
-                      style={{
-                        background: 'rgba(255,255,255,0.08)',
-                        border: '1px solid rgba(255,255,255,0.14)',
-                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), 0 10px 24px rgba(0,0,0,0.25)',
-                      }}>
-                      {initials(client.name)}
-                    </div>
-
-                    {/* Identity */}
-                    <div className="min-w-0 flex-1 pr-24 sm:pr-0">
-                      <h1 className="truncate text-[22px] font-[880] leading-tight tracking-[-0.03em] text-white sm:text-[30px]">
-                        {client.name}
-                      </h1>
-                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#2dd4bf" />
-                        {client.trainer_name && (
-                          <span className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-[700]"
-                            style={{ background: 'rgba(196,181,253,0.18)', color: '#c4b5fd' }}>
-                            <User size={11} />{client.trainer_name}
-                          </span>
-                        )}
+                  <div className="relative">
+                    <div className="flex items-start gap-4 sm:gap-5">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-[20px] font-[860] text-white sm:h-[84px] sm:w-[84px] sm:rounded-[24px] sm:text-[26px]"
+                        style={{
+                          background: 'rgba(255,255,255,0.09)',
+                          border: '1px solid rgba(255,255,255,0.16)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 24px rgba(0,0,0,0.28)',
+                        }}>
+                        {initials(client.name)}
                       </div>
+
+                      <div className="min-w-0 flex-1">
+                        <h1 className="text-[20px] font-[880] leading-[1.15] tracking-[-0.03em] text-white sm:text-[30px]">
+                          {client.name}
+                        </h1>
+                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                          <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#2dd4bf" />
+                          {client.trainer_name && (
+                            <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[700]"
+                              style={{ background: 'rgba(196,181,253,0.18)', color: '#c4b5fd' }}>
+                              <User size={11} />{client.trainer_name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* In the flow, not absolutely positioned. The old pill
+                          was pinned to the corner and the name carried a
+                          pr-24 to dodge it, which broke at every width where
+                          the name wrapped differently. */}
+                      {statusCfg && (
+                        <span className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5"
+                          style={{ background: statusCfg.bg, border: `1px solid ${statusCfg.color}30` }}>
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusCfg.dot }} />
+                          <span className="text-[10px] font-[800] uppercase tracking-wider" style={{ color: statusCfg.color }}>
+                            {statusCfg.label}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* ── Contact + actions, on the same surface ── */}
+                    <div className="mt-5 flex flex-wrap items-center gap-2">
+                      {client.mobile && (
+                        <a href={`tel:${client.mobile}`} className={GLASS_CHIP} style={GLASS_STYLE}>
+                          <Phone size={13} /> {client.mobile}
+                        </a>
+                      )}
+                      {client.mobile && (
+                        <a href={whatsappHref(client.mobile, client.name)} target="_blank" rel="noopener noreferrer"
+                          className={GLASS_CHIP}
+                          style={{ background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.28)', color: '#6ee7b7' }}>
+                          <MessageCircle size={13} /> WhatsApp
+                        </a>
+                      )}
+                      {client.email && (
+                        <a href={`mailto:${client.email}`} className={`${GLASS_CHIP} max-w-full`} style={GLASS_STYLE}>
+                          <Mail size={13} className="shrink-0" />
+                          <span className="truncate">{client.email}</span>
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {([
+                        { label: 'Edit', icon: <Pencil size={13} />, href: `/pt-os/clients/${id}/edit` },
+                        { label: 'Enroll in PT', icon: <Award size={13} />, href: `/pt-os/clients/${id}/enroll` },
+                        { label: 'Renew PT', icon: <Repeat size={13} />, href: `/pt-os/clients/${id}/renew` },
+                      ]).map((b) => (
+                        <button key={b.label} onClick={() => router.push(b.href)}
+                          className="flex h-[44px] items-center gap-2 rounded-[13px] px-4 text-[12.5px] font-[750] text-white transition-all hover:brightness-125"
+                          style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}>
+                          {b.icon} {b.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* ── The money, as one strip ──
+                        Was three white cards below the hero. For most clients
+                        all three read ₹0, so a whole band of the page carried
+                        no information at all. A hairline grid says the same
+                        thing in a sixth of the height. */}
+                    <div className="mt-5 grid grid-cols-3 gap-px overflow-hidden rounded-[18px]"
+                      style={{ background: 'rgba(255,255,255,0.12)' }}>
+                      {[
+                        { label: 'Term fee', value: fmtINR(currentTermFee), sub: 'Current term', tone: '#c4b5fd' },
+                        { label: 'Paid', value: fmtINR(currentTermPaid), sub: `${completionPct}% complete`, tone: '#6ee7b7' },
+                        {
+                          label: 'Balance', value: fmtINR(currentTermBalance),
+                          sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
+                          tone: currentTermBalance > 0 ? '#fca5a5' : '#6ee7b7',
+                        },
+                      ].map((k) => (
+                        <div key={k.label} className="px-3 py-3 sm:px-4"
+                          style={{ background: 'rgba(255,255,255,0.05)' }}>
+                          <p className="text-[9px] font-[750] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                            {k.label}
+                          </p>
+                          <p className="mt-1 truncate text-[17px] font-[860] tracking-[-0.02em] text-white sm:text-[20px]">
+                            {k.value}
+                          </p>
+                          <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: k.tone }}>{k.sub}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </m.div>
-
-                {/* ── CONTACT & ACTIONS ── */}
-                <div className="mb-6 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {client.mobile && (
-                      <a href={`tel:${client.mobile}`}
-                        className="inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-[12.5px] font-[700] transition-all hover:opacity-80"
-                        style={{ background: 'rgba(99,102,241,0.12)', color: '#4f46e5', border: '1px solid rgba(99,102,241,0.2)' }}>
-                        <Phone size={14} /> {client.mobile}
-                      </a>
-                    )}
-                    {client.mobile && (
-                      <a href={whatsappHref(client.mobile, client.name)} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-[12.5px] font-[700] transition-all hover:opacity-80"
-                        style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
-                        <MessageCircle size={14} /> WhatsApp
-                      </a>
-                    )}
-                  </div>
-                  {client.email && (
-                    <p className="text-[12.5px] font-[600] text-gray-500">{client.email}</p>
-                  )}
-
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
-                      className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                      <Pencil size={13} /> Edit
-                    </button>
-                    <button onClick={() => router.push(`/pt-os/clients/${id}/enroll`)}
-                      className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                      <Award size={13} /> Enroll in PT
-                    </button>
-                    <button onClick={() => router.push(`/pt-os/clients/${id}/renew`)}
-                      className="flex items-center gap-2 rounded-[12px] px-4 py-2.5 text-[12.5px] font-[700] text-gray-700 transition-all hover:opacity-80"
-                      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                      <Repeat size={13} /> Renew PT
-                    </button>
-                  </div>
-                </div>
-
-                {/* ── KPI CARDS ── */}
-                <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    {
-                      label: 'Total PT Fee', value: fmtINR(currentTermFee),
-                      icon: <IndianRupee size={18} />, from: '#7c3aed', to: '#5b21b6',
-                      sub: 'Current term fee',
-                    },
-                    {
-                      label: 'Paid', value: fmtINR(currentTermPaid),
-                      icon: <CheckCircle size={18} />, from: '#10b981', to: '#059669',
-                      sub: `${completionPct}% complete`,
-                    },
-                    {
-                      label: 'Balance', value: fmtINR(currentTermBalance),
-                      icon: <AlertTriangle size={18} />,
-                      from: currentTermBalance > 0 ? '#ef4444' : '#10b981',
-                      to: currentTermBalance > 0 ? '#dc2626' : '#059669',
-                      sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'OVERDUE' : 'Due') : 'Cleared',
-                    },
-                  ].map((card, i) => (
-                    <m.div key={card.label}
-                      initial={{ opacity: 0, y: 14, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ delay: 0.1 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                      className="relative overflow-hidden rounded-[20px] p-4 bg-white"
-                      style={{
-                        border: `1px solid ${card.from}28`,
-                        boxShadow: `0 1px 4px rgba(0,0,0,0.05)`,
-                      }}>
-                      <div className="flex h-9 w-9 items-center justify-center rounded-[10px] mb-3"
-                        style={{ background: `linear-gradient(135deg, ${card.from}, ${card.to})`, boxShadow: `0 3px 12px ${card.from}45` }}>
-                        <span className="text-white">{card.icon}</span>
-                      </div>
-                      <p className="text-[20px] font-[860] tracking-[-0.02em] text-gray-900">{card.value}</p>
-                      <p className="text-[9.5px] font-[700] uppercase tracking-wider text-slate-500 mt-0.5">{card.label}</p>
-                      <p className="text-[10px] font-[600] mt-1" style={{ color: card.from }}>{card.sub}</p>
-                    </m.div>
-                  ))}
-                </div>
 
                 {/* ── WHAT NEEDS ATTENTION, THE GOAL, THE COACH, THE RECORDS ──
                     Replaces three donuts. A ring is the right shape for a
@@ -646,7 +655,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     </div>
                     <h3 className="text-[13.5px] font-[740] text-gray-900">Quick Actions</h3>
                   </div>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-11 gap-2.5">
+                  <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 lg:grid-cols-7">
                     {(baselineDone ? QUICK_ACTIONS : [BASELINE_ACTION, ...QUICK_ACTIONS]).map((action, i) => (
                       <div key={action.label} className="relative">
                         <m.button
@@ -658,8 +667,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                             router.push(action.href!(client.id));
                           }}
                           title={action.label === 'Workout Plans' && activePlanName ? `Active plan: ${activePlanName}` : undefined}
-                          className="group flex w-full flex-col items-center gap-2 rounded-[14px] p-3 transition-all duration-200 hover:-translate-y-0.5"
-                          style={{ background: `${action.from}0f`, border: `1px solid ${action.from}20` }}>
+                          className="group flex w-full flex-col items-center gap-2 rounded-[16px] p-3 transition-all duration-200 hover:-translate-y-0.5"
+                          style={{
+                            background: 'var(--bg-subtle)',
+                            border: '1px solid var(--border)',
+                            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+                          }}>
                           <div className="relative flex h-9 w-9 items-center justify-center rounded-[10px] transition-all duration-200 group-hover:scale-110"
                             style={{ background: `linear-gradient(135deg, ${action.from}, ${action.to})`, boxShadow: `0 3px 10px ${action.from}40` }}>
                             <span className="text-white">{action.icon}</span>
@@ -667,7 +680,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                               <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full" style={{ background: '#10b981', border: '1.5px solid #fff' }} />
                             )}
                           </div>
-                          <span className="text-[9px] font-[700] text-center leading-tight" style={{ color: action.from }}>
+                          <span className="text-center text-[10px] font-[700] leading-tight text-slate-600">
                             {action.label}
                           </span>
                         </m.button>
@@ -710,143 +723,147 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 </m.div>
 
                 {/* ── MAIN CONTENT GRID ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* ── DETAIL BANDS ──
+                    Was a 2/1 split: a main column and a taller rail.
+                    With the weight chart hidden — which it is for any
+                    client with fewer than two readings, i.e. most of
+                    them — the main column held one card while the rail
+                    held four, so the page ended in a column-high void.
+                    Full-width bands instead: each row is balanced by
+                    construction and there is nothing left to run out. */}
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                  {/* Weight Trend */}
+                  {recentWeights.length >= 2 && (
+                    <DarkCard title="Weight Trend" icon={<TrendingUp size={14} />} from="#10b981">
+                      <PremiumAreaChart
+                        data={recentWeights.map((a: any) => ({
+                          date: fmtDate(a.created_at || a.assessment_date).slice(0, 5),
+                          weight: Number(a.weight),
+                        })) as Record<string, unknown>[]}
+                        xKey="date"
+                        areas={[{ key: 'weight', label: 'Weight (kg)', color: '#10b981' }]}
+                        height={100}
+                        formatValue={(v) => `${v} kg`}
+                      />
+                    </DarkCard>
+                  )}
 
-                  {/* ── LEFT: Weight, Goals, Personal Info ── */}
-                  <div className="lg:col-span-2 space-y-5">
-
-                    {/* Weight Trend */}
-                    {recentWeights.length >= 2 && (
-                      <DarkCard title="Weight Trend" icon={<TrendingUp size={14} />} from="#10b981">
-                        <PremiumAreaChart
-                          data={recentWeights.map((a: any) => ({
-                            date: fmtDate(a.created_at || a.assessment_date).slice(0, 5),
-                            weight: Number(a.weight),
-                          })) as Record<string, unknown>[]}
-                          xKey="date"
-                          areas={[{ key: 'weight', label: 'Weight (kg)', color: '#10b981' }]}
-                          height={100}
-                          formatValue={(v) => `${v} kg`}
-                        />
-                      </DarkCard>
-                    )}
-
-                    {/* Active Goals */}
-                    {activeGoals.length > 0 && (
-                      <DarkCard title="Active Goals" icon={<Target size={14} />} from="#3b82f6">
-                        <div className="space-y-2">
-                          {activeGoals.slice(0, 3).map((g: any) => (
-                            <div key={g.id}
-                              className="flex items-center justify-between rounded-[12px] p-3"
-                              style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
-                              <div>
-                                <p className="text-[12.5px] font-[660] text-gray-900">{g.goal_type || g.type || 'Goal'}</p>
-                                <p className="text-[10.5px] text-slate-500 mt-0.5">
-                                  {g.target_weight ? `Target: ${g.target_weight} kg` : ''}
-                                  {g.target_body_fat ? ` BF: ${g.target_body_fat}%` : ''}
-                                </p>
-                              </div>
-                              <button onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}
-                                className="rounded-[8px] px-2.5 py-1.5 text-[10.5px] font-[700] transition hover:opacity-80"
-                                style={{ background: 'rgba(59,130,246,0.12)', color: '#2563eb' }}>
-                                View
-                              </button>
+                  {/* Active Goals */}
+                  {activeGoals.length > 0 && (
+                    <DarkCard title="Active Goals" icon={<Target size={14} />} from="#3b82f6">
+                      <div className="space-y-2">
+                        {activeGoals.slice(0, 3).map((g: any) => (
+                          <div key={g.id}
+                            className="flex items-center justify-between rounded-[12px] p-3"
+                            style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                            <div>
+                              <p className="text-[12.5px] font-[660] text-gray-900">{g.goal_type || g.type || 'Goal'}</p>
+                              <p className="text-[10.5px] text-slate-500 mt-0.5">
+                                {g.target_weight ? `Target: ${g.target_weight} kg` : ''}
+                                {g.target_body_fat ? ` BF: ${g.target_body_fat}%` : ''}
+                              </p>
                             </div>
-                          ))}
-                        </div>
-                      </DarkCard>
-                    )}
-
-                    {/* Personal Info */}
-                    <DarkCard title="Personal Info" icon={<User size={14} />} from="#db2777">
-                      <InfoRow label="Gender" value={client.gender || '—'} />
-                      <InfoRow label="Date of Birth" value={fmtDate(client.dob)} />
-                      <InfoRow label="Phone" value={client.mobile || '—'} />
-                      <InfoRow label="Email" value={client.email || '—'} />
-                      <InfoRow label="Joined" value={fmtDate(client.joining_date)} />
-                    </DarkCard>
-                  </div>
-
-                  {/* ── RIGHT: Details ── */}
-                  <div className="space-y-5">
-
-                    {/* PT Assignment */}
-                    <DarkCard title="PT Assignment" icon={<Dumbbell size={14} />} from="#7c3aed">
-                      <InfoRow label="Start" value={fmtDate(client.pt_start_date)} />
-                      <InfoRow label="End" value={fmtDate(client.pt_end_date)} />
-                      <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
-                      <InfoRow label="Monthly Fee" value={fmtINR(client.monthly_pt_amount)} />
-                      <InfoRow label="Days Left" value={client.days_left != null ? `${client.days_left} days` : '—'}
-                        valueColor={client.days_left != null && client.days_left <= 7 ? '#ef4444' : undefined} />
-                    </DarkCard>
-
-                    {/* Check-in QR */}
-                    <QrCheckinCard clientId={client.id} clientName={client.name} />
-
-                    {/* Notes */}
-                    <DarkCard title="Notes" icon={<FileText size={14} />} from="#f59e0b">
-                      {editNotes ? (
-                        <div className="space-y-3">
-                          <textarea value={notesDraft} onChange={e => setNotesDraft(e.target.value)} rows={4}
-                            className="w-full resize-none rounded-[12px] px-3.5 py-2.5 text-[13px] outline-none transition-all"
-                            style={{
-                              background: 'var(--bg-card)',
-                              border: '1.5px solid rgba(245,158,11,0.3)',
-                              color: 'var(--text-primary)',
-                            }}
-                            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; }}
-                            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'; }}
-                            placeholder="Add notes about this client…" />
-                          <div className="flex gap-2">
-                            <button onClick={handleSaveNotes}
-                              className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[700] text-white transition hover:opacity-80"
-                              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
-                              <Save size={11} /> Save
-                            </button>
-                            <button onClick={() => { setEditNotes(false); setNotesDraft(client.notes || ''); }}
-                              className="rounded-[10px] px-3 py-2 text-[12px] font-[700] text-slate-500 transition hover:text-slate-700"
-                              style={{ background: 'var(--bg-subtle)' }}>
-                              Cancel
+                            <button onClick={() => router.push(`/pt-os/goals?client_id=${client.id}`)}
+                              className="rounded-[8px] px-2.5 py-1.5 text-[10.5px] font-[700] transition hover:opacity-80"
+                              style={{ background: 'rgba(59,130,246,0.12)', color: '#2563eb' }}>
+                              View
                             </button>
                           </div>
-                        </div>
-                      ) : (
-                        <div onClick={() => setEditNotes(true)} className="group cursor-pointer rounded-[12px] p-3 transition-all"
-                          style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
-                          {client.notes ? (
-                            <p className="text-[12.5px] leading-relaxed text-gray-700">{client.notes}</p>
-                          ) : (
-                            <>
-                              <p className="text-[12.5px] italic text-slate-400 group-hover:hidden">No notes yet…</p>
-                              <p className="hidden text-[12.5px] text-amber-500 group-hover:block">Click to add notes…</p>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </DarkCard>
-
-                    {/* Session Balance */}
-                    <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
-                      className="group w-full rounded-[20px] p-5 text-left transition-all duration-200 hover:-translate-y-0.5 bg-white"
-                      style={{
-                        border: '1px solid rgba(6,182,212,0.18)',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                      }}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
-                            style={{ background: 'rgba(6,182,212,0.12)' }}>
-                            <Calendar size={16} className="text-cyan-500" />
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-[700] text-gray-900">Session Balance</p>
-                            <p className="text-[10.5px] text-slate-500 mt-0.5">Packages &amp; remaining sessions</p>
-                          </div>
-                        </div>
-                        <ChevronRight size={16} className="text-cyan-500 transition-transform duration-200 group-hover:translate-x-0.5" />
+                        ))}
                       </div>
-                    </button>
-                  </div>
+                    </DarkCard>
+                  )}
+
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+                  {/* Personal Info */}
+                  <DarkCard title="Personal Info" icon={<User size={14} />} from="#db2777">
+                    <InfoRow label="Gender" value={client.gender || '—'} />
+                    <InfoRow label="Date of Birth" value={fmtDate(client.dob)} />
+                    <InfoRow label="Phone" value={client.mobile || '—'} />
+                    <InfoRow label="Email" value={client.email || '—'} />
+                    <InfoRow label="Joined" value={fmtDate(client.joining_date)} />
+                  </DarkCard>
+                  {/* PT Assignment */}
+                  <DarkCard title="PT Assignment" icon={<Dumbbell size={14} />} from="#7c3aed">
+                    <InfoRow label="Start" value={fmtDate(client.pt_start_date)} />
+                    <InfoRow label="End" value={fmtDate(client.pt_end_date)} />
+                    <InfoRow label="Duration" value={client.duration_months ? `${client.duration_months} months` : '—'} />
+                    <InfoRow label="Monthly Fee" value={fmtINR(client.monthly_pt_amount)} />
+                    <InfoRow label="Days Left" value={client.days_left != null ? `${client.days_left} days` : '—'}
+                      valueColor={client.days_left != null && client.days_left <= 7 ? '#ef4444' : undefined} />
+                  </DarkCard>
+
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {/* Check-in QR */}
+                  <QrCheckinCard clientId={client.id} clientName={client.name} />
+
+                  {/* Notes */}
+                  <DarkCard title="Notes" icon={<FileText size={14} />} from="#f59e0b">
+                    {editNotes ? (
+                      <div className="space-y-3">
+                        <textarea value={notesDraft} onChange={e => setNotesDraft(e.target.value)} rows={4}
+                          className="w-full resize-none rounded-[12px] px-3.5 py-2.5 text-[13px] outline-none transition-all"
+                          style={{
+                            background: 'var(--bg-card)',
+                            border: '1.5px solid rgba(245,158,11,0.3)',
+                            color: 'var(--text-primary)',
+                          }}
+                          onFocus={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'; }}
+                          placeholder="Add notes about this client…" />
+                        <div className="flex gap-2">
+                          <button onClick={handleSaveNotes}
+                            className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[12px] font-[700] text-white transition hover:opacity-80"
+                            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                            <Save size={11} /> Save
+                          </button>
+                          <button onClick={() => { setEditNotes(false); setNotesDraft(client.notes || ''); }}
+                            className="rounded-[10px] px-3 py-2 text-[12px] font-[700] text-slate-500 transition hover:text-slate-700"
+                            style={{ background: 'var(--bg-subtle)' }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div onClick={() => setEditNotes(true)} className="group cursor-pointer rounded-[12px] p-3 transition-all"
+                        style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
+                        {client.notes ? (
+                          <p className="text-[12.5px] leading-relaxed text-gray-700">{client.notes}</p>
+                        ) : (
+                          <>
+                            <p className="text-[12.5px] italic text-slate-400 group-hover:hidden">No notes yet…</p>
+                            <p className="hidden text-[12.5px] text-amber-500 group-hover:block">Click to add notes…</p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </DarkCard>
+
+                  {/* Session Balance */}
+                  <button onClick={() => router.push(`/pt-os/session-balance?client_id=${client.id}`)}
+                    className="group w-full rounded-[20px] p-5 text-left transition-all duration-200 hover:-translate-y-0.5 bg-white"
+                    style={{
+                      border: '1px solid rgba(6,182,212,0.18)',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                    }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px]"
+                          style={{ background: 'rgba(6,182,212,0.12)' }}>
+                          <Calendar size={16} className="text-cyan-500" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-[700] text-gray-900">Session Balance</p>
+                          <p className="text-[10.5px] text-slate-500 mt-0.5">Packages &amp; remaining sessions</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-cyan-500 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </div>
+                  </button>
                 </div>
 
                 {/* ── SUBSCRIPTION HISTORY (summary → dedicated page) ── */}
