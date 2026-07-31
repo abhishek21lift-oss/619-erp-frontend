@@ -15,8 +15,8 @@
  * All figures are raw backend values or honestly-derived metrics.
  */
 
-import { useCallback, useMemo } from 'react';
-import { m } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { m, useReducedMotion } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui';
 import {
   Users, TrendingUp, Wallet, Percent,
@@ -94,6 +94,9 @@ type OpsData = {
 };
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
+/** The house easing curve, already used inline throughout this file. */
+const EASE = [0.16, 1, 0.3, 1] as const;
+
 const C = {
   maroon:  '#7A0019',
   crimson: '#C1121F',
@@ -136,6 +139,30 @@ function fmt12(t: string | null) {
 }
 function initials(name: string | null) {
   return (name ?? '?').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+/** Minutes since midnight, for comparing a slot against the clock. */
+function minutesOf(t: string | null): number | null {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return Number.isNaN(h) || Number.isNaN(m) ? null : h * 60 + m;
+}
+/**
+ * The two halves of a 12-hour time, split so the featured slot can stack them.
+ *
+ * "7:30" over "AM" reads at a glance in a 46px tile; "7:30 AM" on one line
+ * there would have to shrink to about 9px to fit.
+ */
+function fmtHour(t: string | null) {
+  if (!t) return '—';
+  const [h, m] = t.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return t;
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')}`;
+}
+function fmtMeridiem(t: string | null) {
+  if (!t) return '';
+  const h = Number(t.split(':')[0]);
+  return Number.isNaN(h) ? '' : (h >= 12 ? 'PM' : 'AM');
 }
 function momPct(trend: DashData['revenueTrend'] | undefined, key: 'revenue' | 'incentives'): number | null {
   if (!trend || trend.length < 2) return null;
@@ -623,166 +650,322 @@ function AICopilot({ d }: { d: DashData }) {
 // What they want at 6:55 is the programme they are about to coach.
 function TodaySchedule({ ops, loading }: { ops: OpsData | null | undefined; loading: boolean }) {
   const router = useRouter();
-  const booked = ops?.today_sessions ?? [];
-  const due = ops?.today_unscheduled ?? [];
+  const reduce = useReducedMotion();
+  // Memoised, not `?? []` inline: a fresh literal every render makes it a new
+  // dependency every render, so the "next up" memo below would recompute on
+  // each pass and never actually memoise anything.
+  const booked = useMemo(() => ops?.today_sessions ?? [], [ops?.today_sessions]);
+  const due = useMemo(() => ops?.today_unscheduled ?? [], [ops?.today_unscheduled]);
   const total = booked.length + due.length;
+  const done = booked.filter((s) => s.status === 'completed').length;
+
+  // Read the clock once, after mount. Doing it during render would give the
+  // server one "now" and the browser another, and React would blame the
+  // mismatch on whichever row happened to be next.
+  const [nowMin, setNowMin] = useState<number | null>(null);
+  useEffect(() => {
+    const tick = () => {
+      const d = new Date();
+      setNowMin(d.getHours() * 60 + d.getMinutes());
+    };
+    tick();
+    // A minute is the resolution of the thing being displayed; anything faster
+    // is a re-render nobody can see.
+    const t = setInterval(tick, 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long', day: 'numeric', month: 'short',
   });
 
-  return (
-    <Glass className="p-4 sm:p-5">
-      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] text-white"
-            style={{ background: `linear-gradient(135deg, ${C.crimson}, ${C.rose})`, boxShadow: `0 5px 12px ${C.crimson}40` }}>
-            <CalendarClock size={15} />
-          </span>
-          <div className="min-w-0">
-            <h3 className="truncate text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>
-              Today&apos;s Sessions
-            </h3>
-            <p className="text-[10.5px] font-[500]" style={{ color: C.muted }}>{today}</p>
-          </div>
-        </div>
+  /**
+   * The one session a trainer is about to walk into.
+   *
+   * Earliest slot still ahead of the clock; if the day is already over, the
+   * last one that has not been marked done. Featured rather than merely listed,
+   * because at 6:55 the difference between "which of my six" and "this one" is
+   * the entire value of the panel.
+   */
+  const nextUp = useMemo(() => {
+    const open = booked.filter((s) => s.status === 'scheduled');
+    if (open.length === 0) return null;
+    if (nowMin == null) return open[0];
+    const ahead = open.find((s) => minutesOf(s.start_time) != null && (minutesOf(s.start_time) as number) >= nowMin);
+    return ahead ?? open[open.length - 1];
+  }, [booked, nowMin]);
 
-        {/* The count a studio owner asks for first, as the largest thing in the
-            row. Split underneath, because "6 today" means something different
-            when five of them are not in the diary. */}
-        <div className="flex shrink-0 items-baseline gap-1.5">
-          <span className="text-[26px] font-[860] leading-none tracking-[-0.03em]" style={{ color: C.ink }}>
-            {loading && !ops ? '—' : total}
-          </span>
-          <span className="text-[10.5px] font-[650]" style={{ color: C.muted }}>
-            session{total === 1 ? '' : 's'}
-          </span>
+  const rest = booked.filter((s) => s.id !== nextUp?.id);
+
+  return (
+    <Glass className="overflow-hidden">
+      {/* ── Header band ──
+          A tinted strip rather than a plain card top: it gives the section a
+          lid, which is what separates "a card with a heading" from "a panel".
+          Kept to a wash — a fully saturated bar here would out-shout the hero
+          directly above it. */}
+      <div className="relative px-4 pt-4 pb-3.5 sm:px-5"
+        style={{
+          background: `linear-gradient(135deg, ${C.crimson}0E 0%, ${C.purple}0B 55%, transparent 100%)`,
+          borderBottom: '1px solid rgba(15,23,42,0.06)',
+        }}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-white"
+              style={{
+                background: `linear-gradient(140deg, ${C.crimson}, ${C.maroon})`,
+                boxShadow: `0 6px 16px ${C.crimson}45, inset 0 1px 0 rgba(255,255,255,0.22)`,
+              }}>
+              <CalendarClock size={17} />
+            </span>
+            <div className="min-w-0">
+              <h3 className="truncate text-[15px] font-[800] tracking-[-0.015em]" style={{ color: C.ink }}>
+                Today&apos;s Sessions
+              </h3>
+              <p className="text-[10.5px] font-[560]" style={{ color: C.muted }}>{today}</p>
+            </div>
+          </div>
+
+          {/* The count, as the largest thing in the header. `tabular-nums` so
+              it does not jiggle when the figure changes on refresh. */}
+          <div className="flex shrink-0 items-center gap-3">
+            {booked.length > 0 && (
+              <ProgressRing done={done} total={booked.length} reduce={Boolean(reduce)} />
+            )}
+            <div className="text-right">
+              <p className="text-[27px] font-[880] leading-none tracking-[-0.035em] tabular-nums" style={{ color: C.ink }}>
+                {loading && !ops ? '—' : total}
+              </p>
+              <p className="mt-0.5 text-[9.5px] font-[700] uppercase tracking-[0.1em]" style={{ color: C.muted }}>
+                session{total === 1 ? '' : 's'}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {loading && !ops && (
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3 rounded-[13px] p-3" style={{ background: 'rgba(15,23,42,0.03)' }}>
-              <Skel w="w-12" h="h-3" /><Skel w="w-9" h="h-9" r="rounded-full" />
-              <div className="flex-1 space-y-1.5"><Skel w="w-32" h="h-3" /><Skel w="w-24" h="h-2.5" /></div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="p-4 sm:p-5">
+        {loading && !ops && (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: 'rgba(15,23,42,0.03)' }}>
+                <Skel w="w-12" h="h-3" /><Skel w="w-9" h="h-9" r="rounded-full" />
+                <div className="flex-1 space-y-1.5"><Skel w="w-32" h="h-3" /><Skel w="w-24" h="h-2.5" /></div>
+              </div>
+            ))}
+          </div>
+        )}
 
-      {!loading && total === 0 && (
-        <div className="flex flex-col items-center py-8 text-center">
-          <CalendarClock size={26} style={{ color: `${C.crimson}44` }} />
-          <p className="mt-2 text-[12.5px] font-[650]" style={{ color: C.ink }}>Nothing on today</p>
-          <p className="mt-0.5 text-[11px]" style={{ color: C.muted }}>
-            No booked slots, and no client&apos;s programme falls on today.
-          </p>
-          <button onClick={() => router.push('/pt-os/schedule-session')}
-            className="mt-3 inline-flex h-[44px] items-center gap-1.5 rounded-full px-4 text-[11.5px] font-[700] transition active:scale-95"
-            style={{ background: `${C.crimson}12`, color: C.crimson }}>
-            <CalendarPlus size={12} /> Schedule a session
-          </button>
-        </div>
-      )}
+        {!loading && total === 0 && (
+          <div className="flex flex-col items-center py-8 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-[16px]"
+              style={{ background: `${C.crimson}0E`, border: `1px solid ${C.crimson}1F` }}>
+              <CalendarClock size={22} style={{ color: `${C.crimson}88` }} />
+            </span>
+            <p className="mt-2.5 text-[13px] font-[700]" style={{ color: C.ink }}>Nothing on today</p>
+            <p className="mt-0.5 max-w-[34ch] text-[11px] leading-[1.5]" style={{ color: C.muted }}>
+              No booked slots, and no client&apos;s programme falls on today.
+            </p>
+            <button onClick={() => router.push('/pt-os/schedule-session')}
+              className="mt-3 inline-flex h-[44px] items-center gap-1.5 rounded-full px-4 text-[11.5px] font-[720] transition-transform active:scale-95"
+              style={{ background: `${C.crimson}12`, color: C.crimson, border: `1px solid ${C.crimson}24` }}>
+              <CalendarPlus size={13} /> Schedule a session
+            </button>
+          </div>
+        )}
 
-      {total > 0 && (
-        <div className="space-y-3">
-          {booked.length > 0 && (
-            <div>
-              {due.length > 0 && <MiniLabel>Booked · {booked.length}</MiniLabel>}
-              <div className="space-y-2">
-                {booked.map((s, i) => {
-                  const meta = STATUS_META[s.status] ?? STATUS_META.scheduled;
-                  const timeStr = fmt12(s.start_time);
-                  return (
+        {total > 0 && (
+          <div className="space-y-3.5">
+            {/* ── Next up ──
+                One session, given room. Size and position carry the hierarchy
+                rather than colour, so it still reads first in greyscale. */}
+            {nextUp && (
+              <m.button
+                type="button"
+                onClick={() => router.push('/pt-os/sessions')}
+                initial={reduce ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.28, ease: EASE }}
+                className="group relative flex w-full items-center gap-3 overflow-hidden rounded-[18px] p-3.5 text-left transition-transform active:scale-[0.99]"
+                style={{
+                  background: 'linear-gradient(140deg, #140B2E 0%, #1E1140 48%, #120A28 100%)',
+                  boxShadow: '0 12px 30px -12px rgba(9,7,22,0.7), inset 0 1px 0 rgba(255,255,255,0.09)',
+                }}
+              >
+                {/* Decorative wash. Inside an overflow-hidden parent, so it is
+                    clipped rather than escaping the card. */}
+                <span aria-hidden className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full"
+                  style={{ background: `radial-gradient(circle, ${C.amber}55 0%, transparent 70%)`, filter: 'blur(34px)' }} />
+
+                <span className="relative flex h-[46px] w-[46px] shrink-0 flex-col items-center justify-center rounded-[14px]"
+                  style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}>
+                  <span className="text-[13px] font-[850] leading-none tabular-nums text-white">
+                    {fmtHour(nextUp.start_time)}
+                  </span>
+                  <span className="mt-0.5 text-[8px] font-[750] uppercase tracking-[0.08em]" style={{ color: 'rgba(255,255,255,0.62)' }}>
+                    {fmtMeridiem(nextUp.start_time)}
+                  </span>
+                </span>
+
+                <span className="relative min-w-0 flex-1">
+                  <span className="mb-0.5 flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-[2px] text-[8.5px] font-[800] uppercase tracking-[0.1em]"
+                      style={{ background: `${C.amber}26`, color: '#FCD34D' }}>
+                      Next up
+                    </span>
+                  </span>
+                  <span className="block truncate text-[13.5px] font-[760] text-white">
+                    {nextUp.client_name ?? 'Unknown client'}
+                  </span>
+                  <span className="block truncate text-[10.5px] font-[520]" style={{ color: 'rgba(255,255,255,0.66)' }}>
+                    {nextUp.plan_name ?? nextUp.title ?? 'No programme assigned'}
+                  </span>
+                </span>
+
+                <ChevronRight size={16} className="relative shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }} />
+              </m.button>
+            )}
+
+            {/* ── The rest of the day, on a timeline ──
+                A spine with a node per slot: it reads as a schedule at a
+                glance, where a flat list of cards reads as an inbox. */}
+            {rest.length > 0 && (
+              <div>
+                {(nextUp || due.length > 0) && <MiniLabel>{nextUp ? 'Rest of the day' : 'Booked'} · {rest.length}</MiniLabel>}
+                <div className="relative">
+                  <span aria-hidden className="absolute left-[26px] top-2 bottom-2 w-px"
+                    style={{ background: 'linear-gradient(180deg, rgba(15,23,42,0.14), rgba(15,23,42,0.04))' }} />
+                  <div className="space-y-1.5">
+                    {rest.map((s, i) => {
+                      const meta = STATUS_META[s.status] ?? STATUS_META.scheduled;
+                      const timeStr = fmt12(s.start_time);
+                      const muted = s.status === 'completed' || s.status === 'cancelled';
+                      return (
+                        <m.button
+                          key={s.id}
+                          type="button"
+                          onClick={() => router.push('/pt-os/sessions')}
+                          initial={reduce ? false : { opacity: 0, x: -4 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          // 40ms apart: enough to read as a sequence, quick
+                          // enough that the last row is not still arriving
+                          // after the eye has reached it.
+                          transition={{ delay: reduce ? 0 : i * 0.04, duration: 0.24, ease: EASE }}
+                          className="relative flex w-full items-center gap-2.5 rounded-[14px] py-2 pl-1 pr-2.5 text-left transition-colors hover:bg-[rgba(15,23,42,0.028)]"
+                        >
+                          <span className="w-[50px] shrink-0 text-right text-[10.5px] font-[750] tabular-nums"
+                            style={{ color: muted ? C.muted : C.ink, opacity: muted ? 0.7 : 1 }}>
+                            {timeStr ?? '—'}
+                          </span>
+                          {/* The node sits on the spine. Filled when the slot is
+                              done, hollow while it is still ahead. */}
+                          <span className="relative z-[1] flex h-[9px] w-[9px] shrink-0 rounded-full"
+                            style={{
+                              background: s.status === 'completed' ? meta.color : 'var(--bg-canvas, #fff)',
+                              border: `2px solid ${meta.color}`,
+                              boxShadow: '0 0 0 3px rgba(255,255,255,0.9)',
+                            }} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[12px] font-[720]"
+                              style={{ color: C.ink, opacity: muted ? 0.62 : 1 }}>
+                              {s.client_name ?? 'Unknown client'}
+                            </span>
+                            <span className="block truncate text-[9.5px] font-[540]" style={{ color: C.muted }}>
+                              {s.plan_name ?? s.title ?? 'No programme assigned'}
+                            </span>
+                          </span>
+                          <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-[3px] text-[8.5px] font-[750]"
+                            style={{ background: `${meta.color}14`, color: meta.color }}>
+                            {meta.icon}{meta.label}
+                          </span>
+                        </m.button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Due today, unbooked ──
+                Dashed, and the time column says "no time" rather than showing
+                an invented one. These clients are due because of their
+                programme; nobody has said when. */}
+            {due.length > 0 && (
+              <div>
+                <MiniLabel>Due today · {due.length} · not in the diary</MiniLabel>
+                <div className="space-y-1.5">
+                  {due.map((c, i) => (
                     <m.button
-                      key={s.id}
+                      key={c.assignment_id}
                       type="button"
-                      onClick={() => router.push('/pt-os/sessions')}
-                      initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04, duration: 0.28 }}
-                      className="flex w-full items-center gap-2.5 rounded-[14px] p-2.5 text-left transition active:scale-[0.99]"
-                      style={{ background: `${meta.color}09`, border: `1px solid ${meta.color}1c` }}
+                      onClick={() => router.push('/pt-os/today')}
+                      initial={reduce ? false : { opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: reduce ? 0 : (rest.length + i) * 0.04, duration: 0.24, ease: EASE }}
+                      className="flex w-full items-center gap-2.5 rounded-[14px] p-2.5 text-left transition-colors hover:bg-[rgba(15,23,42,0.028)]"
+                      style={{ border: '1px dashed rgba(100,116,139,0.3)' }}
                     >
-                      {/* The time is the anchor: this list is read by scanning
-                          down the left edge for "what is next", so it leads the
-                          row and is tabular so the digits line up. */}
-                      <span className="w-[58px] shrink-0 text-[11.5px] font-[800] tabular-nums" style={{ color: timeStr ? C.ink : C.muted }}>
-                        {timeStr ?? '—'}
-                      </span>
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820] text-white"
-                        style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)` }}>
-                        {initials(s.client_name)}
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
+                        style={{ background: 'rgba(100,116,139,0.13)', color: C.ink }}>
+                        {initials(c.client_name)}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[12px] font-[730]" style={{ color: C.ink }}>
-                          {s.client_name ?? 'Unknown client'}
+                        <span className="block truncate text-[12px] font-[720]" style={{ color: C.ink }}>
+                          {c.client_name ?? 'Unknown client'}
                         </span>
-                        <span className="block truncate text-[10px] font-[550]" style={{ color: C.muted }}>
-                          {/* The programme, falling back to the session title
-                              only when the client is on no programme at all. */}
-                          {s.plan_name ?? s.title ?? 'No programme assigned'}
+                        <span className="block truncate text-[9.5px] font-[540]" style={{ color: C.muted }}>
+                          {c.plan_name}
+                          {c.planned_exercises > 0 ? ` · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}` : ''}
                         </span>
                       </span>
-                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8.5px] font-[700]"
-                        style={{ background: `${meta.color}15`, color: meta.color }}>
-                        {meta.icon}{meta.label}
+                      <span className="inline-flex h-[26px] shrink-0 items-center gap-1 rounded-full px-2.5 text-[10px] font-[780]"
+                        style={{ background: `${C.crimson}12`, color: C.crimson }}>
+                        Start <ChevronRight size={11} />
                       </span>
                     </m.button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-
-          {due.length > 0 && (
-            <div>
-              <MiniLabel>
-                {booked.length > 0 ? `Due today · ${due.length}` : `Due today · ${due.length} · not in the diary`}
-              </MiniLabel>
-              <div className="space-y-2">
-                {due.map((c, i) => (
-                  <m.button
-                    key={c.assignment_id}
-                    type="button"
-                    onClick={() => router.push('/pt-os/today')}
-                    initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: (booked.length + i) * 0.04, duration: 0.28 }}
-                    className="flex w-full items-center gap-2.5 rounded-[14px] p-2.5 text-left transition active:scale-[0.99]"
-                    style={{ background: 'rgba(15,23,42,0.025)', border: '1px dashed rgba(100,116,139,0.28)' }}
-                  >
-                    {/* A dash, not a fabricated time. These clients are due
-                        because of their programme, and nobody has said when. */}
-                    <span className="w-[58px] shrink-0 text-[11px] font-[650]" style={{ color: C.muted }}>
-                      No time
-                    </span>
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-[820]"
-                      style={{ background: 'rgba(100,116,139,0.14)', color: C.ink }}>
-                      {initials(c.client_name)}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[12px] font-[730]" style={{ color: C.ink }}>
-                        {c.client_name ?? 'Unknown client'}
-                      </span>
-                      <span className="block truncate text-[10px] font-[550]" style={{ color: C.muted }}>
-                        {c.plan_name}
-                        {c.planned_exercises > 0 ? ` · ${c.planned_exercises} exercise${c.planned_exercises === 1 ? '' : 's'}` : ''}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-[10px] font-[700]" style={{ color: C.crimson }}>Start</span>
-                  </m.button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
     </Glass>
   );
 }
 
-/** A quiet divider label inside a card — smaller than SectionLabel, which sits above one. */
+/**
+ * How much of the booked day is behind you.
+ *
+ * A ring rather than a bar: it sits beside a number in a header row, where a
+ * bar would need a width nobody has to give it. The figure is repeated as text
+ * for anyone who cannot resolve the arc — the ring is the decoration, the
+ * label is the data.
+ */
+function ProgressRing({ done, total, reduce }: { done: number; total: number; reduce: boolean }) {
+  const pct = total > 0 ? done / total : 0;
+  const R = 15;
+  const CIRC = 2 * Math.PI * R;
+  return (
+    <div className="relative flex h-[38px] w-[38px] items-center justify-center"
+      role="img" aria-label={`${done} of ${total} booked sessions completed`}>
+      <svg width="38" height="38" viewBox="0 0 38 38" className="-rotate-90">
+        <circle cx="19" cy="19" r={R} fill="none" stroke="rgba(15,23,42,0.09)" strokeWidth="3" />
+        <m.circle
+          cx="19" cy="19" r={R} fill="none" stroke={C.emerald} strokeWidth="3" strokeLinecap="round"
+          strokeDasharray={CIRC}
+          initial={reduce ? false : { strokeDashoffset: CIRC }}
+          animate={{ strokeDashoffset: CIRC * (1 - pct) }}
+          transition={{ duration: 0.6, ease: EASE }}
+        />
+      </svg>
+      <span className="absolute text-[9.5px] font-[820] tabular-nums" style={{ color: C.ink }}>
+        {done}/{total}
+      </span>
+    </div>
+  );
+}
+
 function MiniLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="mb-1.5 px-0.5 text-[9.5px] font-[750] uppercase tracking-[0.12em]"
