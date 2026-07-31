@@ -28,7 +28,7 @@
 import { useEffect, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import {
-  AlertTriangle, ChevronRight, Target, Trophy, Sparkles, Info, Loader2,
+  AlertTriangle, ChevronRight, Target, Trophy, Sparkles, Info,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import type {
@@ -77,10 +77,25 @@ export default function ClientSnapshot({ clientId, onLoaded }: ClientSnapshotPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
+  // A skeleton, not a spinner.
+  //
+  // This section loads after the page around it, so a spinner sitting in the
+  // middle of a rendered profile reads as "the page is reloading" — and on a
+  // phone it appeared directly under the app's own pull-to-refresh indicator,
+  // so the screen showed two refresh spinners at once for the same page.
+  // Placeholders in the shape of the cards say "this part is still coming"
+  // without claiming anything about the rest of the page.
   if (loading) {
     return (
-      <div className="mb-6 flex justify-center py-8">
-        <Loader2 size={20} className="animate-spin" style={{ color: 'var(--brand)' }} />
+      <div className="mb-5 space-y-3" aria-busy="true" aria-label="Loading client summary">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[52px] rounded-[14px]" />)}
+        </div>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <Skeleton className="h-[168px] rounded-[22px]" />
+          <Skeleton className="h-[168px] rounded-[22px]" />
+        </div>
+        <Skeleton className="h-[118px] rounded-[22px]" />
       </div>
     );
   }
@@ -291,6 +306,14 @@ function PrCard({ prs, clientId }: { prs: ClientPr[]; clientId: string }) {
 }
 
 /* ── Shared pieces ───────────────────────────────────────────────────────── */
+
+/** A placeholder in the shape of the thing that is coming. */
+function Skeleton({ className }: { className: string }) {
+  return (
+    <div className={`animate-pulse ${className}`}
+      style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }} />
+  );
+}
 
 function Bar({ pct, colour }: { pct: number; colour: string }) {
   const reduce = useReducedMotion();

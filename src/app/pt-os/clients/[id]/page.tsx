@@ -459,135 +459,152 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
             {!loading && !error && client && (
               <>
                 {/* ── HERO ── */}
-                {/* ── HEADER ──
-                    One object, not four bands. Identity, contact, the three
-                    actions and the money all lived in separate strips stacked
-                    down the page: a dark card, then chips on the page
-                    background, then buttons on the page background, then a row
-                    of white KPI cards. Nothing tied them together and the eye
-                    had to start over four times.
-                    They are one surface now. The money in particular reads far
-                    better here — three figures on a hairline grid rather than
-                    three cards that, for most clients, all say ₹0. */}
+                {/* ── PROFILE CARD ──
+                    Who this is, and the one action that edits them. Nothing
+                    else: contact, enrolment and money each earned their own
+                    block below, because stacking four unrelated jobs on one
+                    surface made a card nobody could scan. */}
                 <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative mb-4 overflow-hidden rounded-[28px] p-5 sm:p-7"
+                  className="relative mb-3 overflow-hidden rounded-[28px] p-6 sm:p-8"
                   style={{
                     background: 'linear-gradient(135deg, #1e1b4b 0%, #2e1065 55%, #3b1a5c 100%)',
                     boxShadow: '0 20px 48px rgba(30,27,75,0.35)',
                   }}>
-                  {/* Depth. Pointer-events-none and clipped by the card, so they
-                      are decoration and never intercept a tap. */}
                   <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full blur-3xl"
                     style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.40), transparent 70%)' }} />
                   <div className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full blur-3xl"
                     style={{ background: 'radial-gradient(circle, rgba(45,212,191,0.20), transparent 70%)' }} />
 
-                  <div className="relative">
-                    <div className="flex items-start gap-4 sm:gap-5">
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-[20px] font-[860] text-white sm:h-[84px] sm:w-[84px] sm:rounded-[24px] sm:text-[26px]"
-                        style={{
-                          background: 'rgba(255,255,255,0.09)',
-                          border: '1px solid rgba(255,255,255,0.16)',
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 24px rgba(0,0,0,0.28)',
-                        }}>
-                        {initials(client.name)}
-                      </div>
+                  <div className="relative flex items-start gap-4 sm:gap-6">
+                    <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-[24px] text-[26px] font-[860] text-white sm:h-[100px] sm:w-[100px] sm:rounded-[30px] sm:text-[32px]"
+                      style={{
+                        background: 'rgba(255,255,255,0.09)',
+                        border: '1px solid rgba(255,255,255,0.16)',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 24px rgba(0,0,0,0.28)',
+                      }}>
+                      {initials(client.name)}
+                    </div>
 
-                      <div className="min-w-0 flex-1">
-                        <h1 className="text-[20px] font-[880] leading-[1.15] tracking-[-0.03em] text-white sm:text-[30px]">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <h1 className="min-w-0 text-[22px] font-[880] leading-[1.15] tracking-[-0.03em] text-white sm:text-[34px]">
                           {client.name}
                         </h1>
-                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                          <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#2dd4bf" />
-                          {client.trainer_name && (
-                            <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[700]"
-                              style={{ background: 'rgba(196,181,253,0.18)', color: '#c4b5fd' }}>
-                              <User size={11} />{client.trainer_name}
+                        {statusCfg && (
+                          <span className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5"
+                            style={{ background: statusCfg.bg, border: `1px solid ${statusCfg.color}30` }}>
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusCfg.dot }} />
+                            <span className="text-[10px] font-[800] uppercase tracking-wider" style={{ color: statusCfg.color }}>
+                              {statusCfg.label}
                             </span>
-                          )}
-                        </div>
+                          </span>
+                        )}
                       </div>
 
-                      {/* In the flow, not absolutely positioned. The old pill
-                          was pinned to the corner and the name carried a
-                          pr-24 to dodge it, which broke at every width where
-                          the name wrapped differently. */}
-                      {statusCfg && (
-                        <span className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5"
-                          style={{ background: statusCfg.bg, border: `1px solid ${statusCfg.color}30` }}>
-                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusCfg.dot }} />
-                          <span className="text-[10px] font-[800] uppercase tracking-wider" style={{ color: statusCfg.color }}>
-                            {statusCfg.label}
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                        <CopyId id={client.unique_id || client.client_id || client.id.slice(0, 8)} color="#2dd4bf" />
+                        {client.trainer_name && (
+                          <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-[700]"
+                            style={{ background: 'rgba(196,181,253,0.18)', color: '#c4b5fd' }}>
+                            <User size={11} />{client.trainer_name}
                           </span>
-                        </span>
-                      )}
-                    </div>
+                        )}
+                      </div>
 
-                    {/* ── Contact + actions, on the same surface ── */}
-                    <div className="mt-5 flex flex-wrap items-center gap-2">
-                      {client.mobile && (
-                        <a href={`tel:${client.mobile}`} className={GLASS_CHIP} style={GLASS_STYLE}>
-                          <Phone size={13} /> {client.mobile}
-                        </a>
-                      )}
-                      {client.mobile && (
-                        <a href={whatsappHref(client.mobile, client.name)} target="_blank" rel="noopener noreferrer"
-                          className={GLASS_CHIP}
-                          style={{ background: 'rgba(16,185,129,0.16)', border: '1px solid rgba(16,185,129,0.28)', color: '#6ee7b7' }}>
-                          <MessageCircle size={13} /> WhatsApp
-                        </a>
-                      )}
                       {client.email && (
-                        <a href={`mailto:${client.email}`} className={`${GLASS_CHIP} max-w-full`} style={GLASS_STYLE}>
-                          <Mail size={13} className="shrink-0" />
-                          <span className="truncate">{client.email}</span>
-                        </a>
+                        <p className="mt-2.5 truncate text-[12px] font-[600]" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                          {client.email}
+                        </p>
                       )}
-                    </div>
 
-                    <div className="mt-2.5 flex flex-wrap gap-2">
-                      {([
-                        { label: 'Edit', icon: <Pencil size={13} />, href: `/pt-os/clients/${id}/edit` },
-                        { label: 'Enroll in PT', icon: <Award size={13} />, href: `/pt-os/clients/${id}/enroll` },
-                        { label: 'Renew PT', icon: <Repeat size={13} />, href: `/pt-os/clients/${id}/renew` },
-                      ]).map((b) => (
-                        <button key={b.label} onClick={() => router.push(b.href)}
-                          className="flex h-[44px] items-center gap-2 rounded-[13px] px-4 text-[12.5px] font-[750] text-white transition-all hover:brightness-125"
-                          style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }}>
-                          {b.icon} {b.label}
-                        </button>
-                      ))}
+                      {/* Edit belongs to the identity, so it lives with it. */}
+                      <button onClick={() => router.push(`/pt-os/clients/${id}/edit`)}
+                        className="mt-4 flex h-[44px] items-center gap-2 rounded-[13px] px-4 text-[12.5px] font-[750] text-white transition-all hover:brightness-125"
+                        style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                        <Pencil size={13} /> Edit profile
+                      </button>
                     </div>
+                  </div>
+                </m.div>
 
-                    {/* ── The money, as one strip ──
-                        Was three white cards below the hero. For most clients
-                        all three read ₹0, so a whole band of the page carried
-                        no information at all. A hairline grid says the same
-                        thing in a sixth of the height. */}
-                    <div className="mt-5 grid grid-cols-3 gap-px overflow-hidden rounded-[18px]"
-                      style={{ background: 'rgba(255,255,255,0.12)' }}>
-                      {[
-                        { label: 'Term fee', value: fmtINR(currentTermFee), sub: 'Current term', tone: '#c4b5fd' },
-                        { label: 'Paid', value: fmtINR(currentTermPaid), sub: `${completionPct}% complete`, tone: '#6ee7b7' },
-                        {
-                          label: 'Balance', value: fmtINR(currentTermBalance),
-                          sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
-                          tone: currentTermBalance > 0 ? '#fca5a5' : '#6ee7b7',
-                        },
-                      ].map((k) => (
-                        <div key={k.label} className="px-3 py-3 sm:px-4"
-                          style={{ background: 'rgba(255,255,255,0.05)' }}>
-                          <p className="text-[9px] font-[750] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                            {k.label}
-                          </p>
-                          <p className="mt-1 truncate text-[17px] font-[860] tracking-[-0.02em] text-white sm:text-[20px]">
-                            {k.value}
-                          </p>
-                          <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: k.tone }}>{k.sub}</p>
-                        </div>
-                      ))}
-                    </div>
+                {/* ── THE FOUR THINGS YOU DO FROM HERE ──
+                    Contact them, message them, sell them a term, renew it. One
+                    row, one weight — they are peers, and burying them among the
+                    identity made them read as decoration on the card. */}
+                <div className="mb-3 grid grid-cols-4 gap-2">
+                  {[
+                    client.mobile
+                      ? { key: 'call', label: client.mobile, icon: <Phone size={16} />, from: '#6366f1', to: '#4f46e5', href: `tel:${client.mobile}` }
+                      : null,
+                    client.mobile
+                      ? { key: 'wa', label: 'WhatsApp', icon: <MessageCircle size={16} />, from: '#10b981', to: '#059669', href: whatsappHref(client.mobile, client.name), external: true }
+                      : null,
+                    { key: 'enroll', label: 'Enroll in PT', icon: <Award size={16} />, from: '#f59e0b', to: '#d97706', push: `/pt-os/clients/${id}/enroll` },
+                    { key: 'renew', label: 'Renew PT', icon: <Repeat size={16} />, from: '#06b6d4', to: '#0891b2', push: `/pt-os/clients/${id}/renew` },
+                  ].filter(Boolean).map((a) => {
+                    const item = a as { key: string; label: string; icon: React.ReactNode; from: string; to: string; href?: string; push?: string; external?: boolean };
+                    const inner = (
+                      <>
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px]"
+                          style={{ background: `linear-gradient(135deg, ${item.from}, ${item.to})`, boxShadow: `0 3px 10px ${item.from}40` }}>
+                          <span className="text-white">{item.icon}</span>
+                        </span>
+                        {/* Wraps rather than truncates. A phone number cut to
+                            "+919876…" is worse than no number at all — you
+                            cannot read it and you cannot dial it. */}
+                        <span className="w-full text-center text-[10px] font-[720] leading-tight text-slate-700 sm:text-[12px]"
+                          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                          {item.label}
+                        </span>
+                      </>
+                    );
+                    const cls = 'flex min-h-[76px] w-full flex-col items-center justify-center gap-2 rounded-[18px] p-2.5 transition-all duration-200 hover:-translate-y-0.5 sm:min-h-[64px] sm:flex-row sm:gap-2.5 sm:p-3';
+                    const st: React.CSSProperties = {
+                      background: 'var(--bg-card)', border: '1px solid var(--border)',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                    };
+                    return item.push
+                      ? <button key={item.key} onClick={() => router.push(item.push!)} className={cls} style={st}>{inner}</button>
+                      : (
+                        <a key={item.key} href={item.href}
+                          {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                          className={cls} style={st}>{inner}</a>
+                      );
+                  })}
+                </div>
+
+                {/* ── MONEY ──
+                    The same hairline grid it has always been, on its own card
+                    now. It is a different question from "who is this", and it
+                    is the one a trainer is asked about at the door. */}
+                <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="mb-4 overflow-hidden rounded-[24px]"
+                  style={{
+                    background: 'linear-gradient(135deg, #241f5c 0%, #34157a 100%)',
+                    boxShadow: '0 12px 32px rgba(30,27,75,0.28)',
+                  }}>
+                  <div className="grid grid-cols-3 gap-px" style={{ background: 'rgba(255,255,255,0.12)' }}>
+                    {[
+                      { label: 'Term fee', value: fmtINR(currentTermFee), sub: 'Current term', tone: '#c4b5fd' },
+                      { label: 'Paid', value: fmtINR(currentTermPaid), sub: `${completionPct}% complete`, tone: '#6ee7b7' },
+                      {
+                        label: 'Balance', value: fmtINR(currentTermBalance),
+                        sub: currentTermBalance > 0 ? (client.due_status === 'OVERDUE' ? 'Overdue' : 'Due') : 'Cleared',
+                        tone: currentTermBalance > 0 ? '#fca5a5' : '#6ee7b7',
+                      },
+                    ].map((k) => (
+                      <div key={k.label} className="px-3 py-4 sm:px-5" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <p className="text-[9px] font-[750] uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                          {k.label}
+                        </p>
+                        <p className="mt-1 truncate text-[18px] font-[860] tracking-[-0.02em] text-white sm:text-[22px]">
+                          {k.value}
+                        </p>
+                        <p className="mt-0.5 truncate text-[10px] font-[700]" style={{ color: k.tone }}>{k.sub}</p>
+                      </div>
+                    ))}
                   </div>
                 </m.div>
 
