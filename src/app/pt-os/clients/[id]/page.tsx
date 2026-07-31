@@ -12,7 +12,8 @@ import {
   TrendingUp, MessageCircle, Save, Trash2, Pencil,
   Award, HeartPulse, Salad, Flag, Phone,
   ShieldCheck, FileSignature, ClipboardList,
-  QrCode, Printer, ScrollText, ChevronDown, Mail,
+  QrCode, Printer, ScrollText, ChevronDown, Mail, Ruler, ClipboardCheck,
+  StickyNote, FileBarChart, Sparkles,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
@@ -21,6 +22,9 @@ import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { PremiumAreaChart } from '@/components/ui';
 import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
+import {
+  ClientTabs, TabPanel, EmptyPanel, LinkPanel, type TabKey,
+} from '@/components/pt-os/client/ClientTabs';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 
 interface PtClientDetail {
@@ -251,56 +255,6 @@ interface QuickAction {
 // It is prepended only while `baseline_done` is false. Delete is not here
 // either: a destructive action does not belong in a grid of navigation tiles
 // where it sits one row from "Photos". It lives inside Edit.
-const BASELINE_ACTION: QuickAction = {
-  label: 'Baseline Setup', icon: <Flag size={16} />,
-  href: (id) => `/pt-os/progress-tracking-setup?client_id=${id}`, from: '#0f172a', to: '#334155',
-};
-
-/** A chip on the dark header. One definition, so they cannot drift apart. */
-const GLASS_CHIP = 'inline-flex h-[44px] min-w-0 items-center gap-2 rounded-[13px] px-3.5 text-[12.5px] font-[700] text-white transition-all hover:brightness-125';
-const GLASS_STYLE: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.10)',
-  border: '1px solid rgba(255,255,255,0.16)',
-};
-
-const QUICK_ACTIONS: QuickAction[] = [
-  { label: 'Payments', icon: <Wallet size={16} />, href: (id) => `/pt-os/clients/${id}/payments`, from: '#8b5cf6', to: '#7c3aed' },
-  { label: 'Workout Plans', icon: <Dumbbell size={16} />, href: (id) => `/pt-os/workout-plans?client_id=${id}`, from: '#22d3ee', to: '#06b6d4' },
-  { label: 'Workout Log', icon: <ClipboardList size={16} />, href: (id) => `/pt-os/clients/${id}/workout-log`, from: '#f43f5e', to: '#e11d48' },
-  {
-    label: 'Screening', icon: <ShieldCheck size={16} />, from: '#0f172a', to: '#334155',
-    children: [
-      { label: 'Consent', icon: <FileSignature size={14} />, href: (id) => `/pt-os/informed-consent?client_id=${id}` },
-      { label: 'PAR-Q', icon: <ShieldCheck size={14} />, href: (id) => `/pt-os/parq?client_id=${id}` },
-      { label: 'Fitness Testing', icon: <Activity size={14} />, href: (id) => `/pt-os/assessment?client_id=${id}` },
-      { label: 'Lifestyle', icon: <HeartPulse size={14} />, href: (id) => `/pt-os/lifestyle-assessment?client_id=${id}` },
-    ],
-  },
-  {
-    // The five surfaces of the Workout Planning module, in the order a trainer
-    // moves through them: pick a programme, build it, see what is assigned,
-    // review what was actually done, then look at the trend.
-    //
-    // Builder is intentionally absent as a direct link — it needs a specific
-    // plan id, and there is no sensible default. Programs and Assigned both
-    // route into it with one.
-    label: 'Training', icon: <Dumbbell size={16} />, from: '#7c3aed', to: '#5b21b6',
-    children: [
-      { label: 'Workout Programs', icon: <Dumbbell size={14} />, href: (id) => `/pt-os/workout-plans?client_id=${id}` },
-      { label: 'Assigned', icon: <ClipboardList size={14} />, href: (id) => `/pt-os/clients/${id}/training/assigned` },
-      { label: 'Workout Log', icon: <ScrollText size={14} />, href: (id) => `/pt-os/clients/${id}/workout-log` },
-      { label: 'Progress Analytics', icon: <TrendingUp size={14} />, href: (id) => `/pt-os/clients/${id}/training/analytics` },
-    ],
-  },
-  { label: 'Goals', icon: <Target size={16} />, href: (id) => `/pt-os/goals?client_id=${id}`, from: '#3b82f6', to: '#2563eb' },
-  { label: 'Nutrition', icon: <Salad size={16} />, href: (id) => `/pt-os/nutrition-assessment?client_id=${id}`, from: '#22c55e', to: '#16a34a' },
-  { label: 'Photos', icon: <Camera size={16} />, href: (id) => `/pt-os/progress-photos?client_id=${id}`, from: '#ec4899', to: '#db2777' },
-  { label: 'Strength', icon: <Zap size={16} />, href: (id) => `/pt-os/strength-tracking?client_id=${id}`, from: '#6366f1', to: '#4f46e5' },
-  { label: 'Check-in', icon: <CheckCircle size={16} />, href: (id) => `/pt-os/weekly-checkin?client_id=${id}`, from: '#14b8a6', to: '#0d9488' },
-  { label: 'Diet Plans', icon: <FileText size={16} />, href: (id) => `/pt-os/diet-plans?client_id=${id}`, from: '#f97316', to: '#ea580c' },
-  { label: 'Sessions', icon: <Calendar size={16} />, href: (id) => `/pt-os/sessions?client_id=${id}`, from: '#0ea5e9', to: '#0284c7' },
-];
-
 export default function PtClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -310,7 +264,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [error, setError] = useState('');
   /** From the snapshot: hides the one-time Baseline Setup tile once onboarded. */
   const [baselineDone, setBaselineDone] = useState(true);
-  const [openAction, setOpenAction] = useState<string | null>(null);
+  /** Which section of the workspace is open. Overview is where you land. */
+  const [tab, setTab] = useState<TabKey>('overview');
 
   const [recentWeights, setRecentWeights] = useState<any[]>([]);
   const [activeGoals, setActiveGoals] = useState<any[]>([]);
@@ -650,96 +605,17 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </div>
                 </m.div>
 
-                {/* ── QUICK ACTIONS GRID ──
-                    No `overflow-hidden` on this card, deliberately. The Screening
-                    and Training tiles open a submenu positioned `absolute
-                    top-full` — a descendant of this card — and an ancestor that
-                    clips its overflow clips that panel no matter what z-index it
-                    carries. With it set, Lifestyle, Workout Log and Progress
-                    Analytics were cut off and unreachable. Nothing in here bleeds
-                    to the rounded corners, so the clip bought nothing. */}
-                <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35, duration: 0.4 }}
-                  className="mb-6 rounded-[22px] p-5 bg-white"
-                  style={{
-                    border: '1px solid var(--border)',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                  }}>
-                  <div className="flex items-center gap-2.5 mb-4" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-[10px]"
-                      style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }}>
-                      <Zap size={14} className="text-violet-600" />
-                    </div>
-                    <h3 className="text-[13.5px] font-[740] text-gray-900">Quick Actions</h3>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5 lg:grid-cols-7">
-                    {(baselineDone ? QUICK_ACTIONS : [BASELINE_ACTION, ...QUICK_ACTIONS]).map((action, i) => (
-                      <div key={action.label} className="relative">
-                        <m.button
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.4 + i * 0.025 }}
-                          onClick={() => {
-                            if (action.children) { setOpenAction((o) => (o === action.label ? null : action.label)); return; }
-                            router.push(action.href!(client.id));
-                          }}
-                          title={action.label === 'Workout Plans' && activePlanName ? `Active plan: ${activePlanName}` : undefined}
-                          className="group flex w-full flex-col items-center gap-2 rounded-[16px] p-3 transition-all duration-200 hover:-translate-y-0.5"
-                          style={{
-                            background: 'var(--bg-subtle)',
-                            border: '1px solid var(--border)',
-                            boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
-                          }}>
-                          <div className="relative flex h-9 w-9 items-center justify-center rounded-[10px] transition-all duration-200 group-hover:scale-110"
-                            style={{ background: `linear-gradient(135deg, ${action.from}, ${action.to})`, boxShadow: `0 3px 10px ${action.from}40` }}>
-                            <span className="text-white">{action.icon}</span>
-                            {action.label === 'Workout Plans' && activePlanName && (
-                              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full" style={{ background: '#10b981', border: '1.5px solid #fff' }} />
-                            )}
-                          </div>
-                          <span className="text-center text-[10px] font-[700] leading-tight text-slate-600">
-                            {action.label}
-                          </span>
-                        </m.button>
+                {/* ── WORKSPACE ──
+                    Twelve sections instead of thirteen tiles. The tiles all
+                    did the same thing — leave. Working on a client meant open
+                    profile, tap tile, read, go back, tap the next one. Tabs
+                    keep the trainer on the client, and a tab says what it
+                    holds before you open it. Every destination the grid had is
+                    still reachable, inside the section it belongs to. */}
+                <ClientTabs active={tab} onChange={setTab} />
 
-                        {action.children && openAction === action.label && (
-                          <>
-                            <div className="fixed inset-0 z-40" onClick={() => setOpenAction(null)} />
-                            <m.div
-                              initial={{ opacity: 0, y: -6, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                              transition={{ duration: 0.15 }}
-                              // Hangs left from the tile's right edge below md,
-                              // and right from its left edge above.
-                              //
-                              // The grid is 3 columns on a phone and 6 at sm,
-                              // and Training is the 6th tile — the RIGHTMOST
-                              // column in both. Anchored left-0 the 176px panel
-                              // measured 254…408 on a 390px screen, 18px past
-                              // the edge, where AppShell's `main` (overflow-x:
-                              // hidden) cut it off. At md the grid is 11 wide
-                              // and both menu tiles sit mid-row with room to
-                              // their right, so the original anchoring is kept.
-                              className="absolute left-0 max-md:left-auto max-md:right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-[14px] p-1.5"
-                              style={{ background: '#fff', border: '1px solid var(--border)', boxShadow: '0 12px 32px rgba(15,23,42,0.16)' }}>
-                              {action.children.map((child) => (
-                                <button key={child.label}
-                                  onClick={() => { setOpenAction(null); router.push(child.href(client.id)); }}
-                                  // 44px, not py-2. These are tapped with a
-                                  // thumb on a phone; they measured 142×32.
-                                  className="flex h-[44px] w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left transition hover:bg-slate-50">
-                                  <span style={{ color: action.from }}>{child.icon}</span>
-                                  <span className="text-[12px] font-[650] text-gray-800">{child.label}</span>
-                                </button>
-                              ))}
-                            </m.div>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </m.div>
+                <TabPanel id="overview" active={tab}>
 
-                {/* ── MAIN CONTENT GRID ── */}
                 {/* ── DETAIL BANDS ──
                     Was a 2/1 split: a main column and a taller rail.
                     With the weight chart hidden — which it is for any
@@ -883,6 +759,20 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </button>
                 </div>
 
+                </TabPanel>
+
+                <TabPanel id="payments" active={tab}>
+                  <div className="mb-4">
+                    <LinkPanel
+                      icon={<Wallet size={16} />}
+                      title="Payments"
+                      body="What has been taken, what is outstanding, and the sessions it bought."
+                      links={[
+                        { label: 'Payment history', href: `/pt-os/clients/${client.id}/payments`, hint: 'Every transaction' },
+                        { label: 'Session balance', href: `/pt-os/session-balance?client_id=${client.id}`, hint: 'Packages and sessions left' },
+                      ]}
+                    />
+                  </div>
                 {/* ── SUBSCRIPTION HISTORY (summary → dedicated page) ── */}
                 <m.button
                   initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
@@ -922,6 +812,144 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                   </div>
                 </m.button>
 
+                </TabPanel>
+
+                {/* ── The sections whose work lives on its own screen ──
+                    These do NOT re-implement the workout log, the diet
+                    planner or the photo gallery. Those pages exist and work; a
+                    second copy inside a tab is a second thing to keep correct,
+                    and the copy is the one that drifts. Each panel says what
+                    is there and sends you to the screen that owns it.
+
+                    The empty states are not placeholders. Most of these tables
+                    are empty in a new studio, and a tab that renders nothing
+                    reads as a broken feature — so each says what would be here
+                    and carries the control that puts it there. */}
+                <TabPanel id="training" active={tab}>
+                  <LinkPanel
+                    icon={<Dumbbell size={16} />}
+                    title="Training"
+                    body={activePlanName
+                      ? `Currently running "${activePlanName}".`
+                      : 'No programme is assigned yet — start with a plan, then build the week.'}
+                    links={[
+                      { label: 'Workout programmes', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Design or assign a plan' },
+                      { label: 'Assigned programme', href: `/pt-os/clients/${client.id}/training/assigned`, hint: 'What they are on now' },
+                      { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume, intensity, trend' },
+                      { label: 'Strength tracking', href: `/pt-os/strength-tracking?client_id=${client.id}`, hint: 'Estimated 1RM and lifts' },
+                      { label: 'Sessions', href: `/pt-os/sessions?client_id=${client.id}`, hint: 'Book and review sessions' },
+                      { label: 'Goals', href: `/pt-os/goals?client_id=${client.id}`, hint: 'What they are training for' },
+                    ]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="log" active={tab}>
+                  <LinkPanel
+                    icon={<ScrollText size={16} />}
+                    title="Workout log"
+                    body="Every set that was actually performed — weight, reps, and the records they beat."
+                    links={[
+                      { label: 'Open the workout log', href: `/pt-os/clients/${client.id}/workout-log`, hint: 'Sets, reps, RPE, notes' },
+                      { label: 'Progress analytics', href: `/pt-os/clients/${client.id}/training/analytics`, hint: 'Volume and trend over time' },
+                    ]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="measurements" active={tab}>
+                  <LinkPanel
+                    icon={<Ruler size={16} />}
+                    title="Measurements"
+                    body="Weight and body composition come from the fitness test. Circumference tracking fills in as measurements are recorded."
+                    links={[
+                      { label: 'Measurements', href: `/pt-os/measurements?client_id=${client.id}`, hint: 'Weight, body fat, circumferences' },
+                      { label: 'Record a fitness test', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Weight, BMI, body fat, scores' },
+                      { label: 'Progress tracking setup', href: `/pt-os/progress-tracking-setup?client_id=${client.id}`, hint: 'Choose what to measure' },
+                    ]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="nutrition" active={tab}>
+                  <LinkPanel
+                    icon={<Salad size={16} />}
+                    title="Nutrition"
+                    body="Calories, macros and compliance appear here once meals are being logged against a plan."
+                    links={[
+                      { label: 'Nutrition assessment', href: `/pt-os/nutrition-assessment?client_id=${client.id}`, hint: 'Habits, preferences, targets' },
+                      { label: 'Diet plans', href: `/pt-os/diet-plans?client_id=${client.id}`, hint: 'Assign a meal plan' },
+                    ]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="checkins" active={tab}>
+                  <EmptyPanel
+                    icon={<ClipboardCheck size={20} />}
+                    title="No check-ins recorded yet"
+                    body="Weekly check-ins are where mood, energy, stress, sleep and recovery come from. Without them the recovery picture stays blank — this is the single fastest way to make the profile useful."
+                    actions={[{ label: 'Start a weekly check-in', href: `/pt-os/weekly-checkin?client_id=${client.id}` }]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="photos" active={tab}>
+                  <EmptyPanel
+                    icon={<Camera size={20} />}
+                    title="No progress photos yet"
+                    body="Front, side and back photos over time are the comparison clients respond to most. They stay private to the studio."
+                    actions={[{ label: 'Add progress photos', href: `/pt-os/progress-photos?client_id=${client.id}` }]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="notes" active={tab}>
+                  <LinkPanel
+                    icon={<StickyNote size={16} />}
+                    title="Notes"
+                    body="Coach notes live on the Overview tab, beside the client's details — they are read alongside everything else rather than filed away."
+                    links={[{ label: 'Go to Overview', href: `/pt-os/clients/${client.id}`, hint: 'Notes card is there' }]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="ai" active={tab}>
+                  <LinkPanel
+                    icon={<Sparkles size={16} />}
+                    title="AI Coach"
+                    body="The observations above the tabs are derived from this client's own readings. The assistant can go further — ask it about their programme, recovery or nutrition."
+                    links={[
+                      { label: 'AI progress analysis', href: `/ai/progress-analysis?client_id=${client.id}`, hint: 'Trend and recommendations' },
+                      { label: 'AI workout generator', href: `/ai/workout-generator?client_id=${client.id}`, hint: 'Draft a programme' },
+                      { label: 'AI diet generator', href: `/ai/diet-generator?client_id=${client.id}`, hint: 'Draft a meal plan' },
+                      { label: 'Training brief', href: `/pt-os/workout-plans?client_id=${client.id}`, hint: 'Everything needed to design a programme' },
+                    ]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="reports" active={tab}>
+                  <LinkPanel
+                    icon={<FileBarChart size={16} />}
+                    title="Reports"
+                    body="A shareable summary of this client's month — sessions, progress and what changed."
+                    links={[{ label: 'Reports', href: `/pt-os/reports?client_id=${client.id}`, hint: 'Generate and share' }]}
+                  />
+                </TabPanel>
+
+                <TabPanel id="documents" active={tab}>
+                  {/* Screening. These forms were reachable only from the old
+                      grid's Screening submenu, so removing the grid would have
+                      stranded lifestyle, posture and mobility — assessments the
+                      training brief reads from and nothing else links to. */}
+                  <div className="mb-4">
+                    <LinkPanel
+                      icon={<ShieldCheck size={16} />}
+                      title="Screening &amp; assessments"
+                      body="The forms the training brief is assembled from."
+                      links={[
+                        { label: 'PAR-Q', href: `/pt-os/parq?client_id=${client.id}`, hint: 'Medical clearance' },
+                        { label: 'Informed consent', href: `/pt-os/informed-consent?client_id=${client.id}`, hint: 'Signed agreement' },
+                        { label: 'Lifestyle assessment', href: `/pt-os/lifestyle-assessment?client_id=${client.id}`, hint: 'Sleep, stress, recovery' },
+                        { label: 'Posture assessment', href: `/pt-os/posture-assessment?client_id=${client.id}`, hint: 'Alignment findings' },
+                        { label: 'Mobility assessment', href: `/pt-os/mobility-assessment?client_id=${client.id}`, hint: 'Restriction and pain' },
+                        { label: 'Fitness testing', href: `/pt-os/assessment?client_id=${client.id}`, hint: 'Strength, cardio, flexibility' },
+                      ]}
+                    />
+                  </div>
                 {/* ── DOCUMENTS ──
                     At the bottom on purpose. PAR-Q and consent are a status you
                     check once when onboarding and then only if something is
@@ -930,6 +958,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 <div className="mt-5">
                   <DocumentsCard clientId={client.id} />
                 </div>
+                </TabPanel>
 
               </>
             )}

@@ -146,6 +146,22 @@ const ROUTES = [
   // The client profile itself. It had no coverage at all, which is how three
   // donuts and a lifetime total survived on the screen a trainer opens most.
   ['client-profile', `/pt-os/clients/${IDS.client}`],
+  // The workspace tabs. Three shapes, one state each: a link panel, an empty
+  // panel, and the tab strip scrolled to its far end — the strip is twelve
+  // items on a 390px screen, so its overflow behaviour is the thing most
+  // likely to break.
+  ['client-profile-training-tab', `/pt-os/clients/${IDS.client}`, async (page) => {
+    await page.getByRole('tab', { name: /training/i }).first().click();
+    await page.waitForTimeout(400);
+  }],
+  ['client-profile-checkins-tab', `/pt-os/clients/${IDS.client}`, async (page) => {
+    await page.getByRole('tab', { name: /check-ins/i }).first().click();
+    await page.waitForTimeout(400);
+  }],
+  ['client-profile-ai-tab', `/pt-os/clients/${IDS.client}`, async (page) => {
+    await page.getByRole('tab', { name: /ai coach/i }).first().click();
+    await page.waitForTimeout(400);
+  }],
   ['client-profile-edit', `/pt-os/clients/${IDS.client}/edit`],
   ['client-profile-delete', `/pt-os/clients/${IDS.client}/edit`, async (page) => {
     await page.getByRole('button', { name: /delete client/i }).first().click();
@@ -206,19 +222,11 @@ const ROUTES = [
     await page.waitForTimeout(500);
   }],
 
-  // Both Quick Actions submenus, opened. These shipped clipped — the card
-  // around them hid its overflow, so half of each menu was unreachable — and
-  // no check covered them because a closed menu renders nothing. The tile
-  // lookup is scoped to the card: the sidebar has its own "Screening" nav
-  // group, and at 390px it sits off-canvas and cannot be clicked.
-  ['client-profile-training-menu', `/pt-os/clients/${IDS.client}`, async (page) => {
-    await page.locator('div.mb-6').getByRole('button', { name: 'Training', exact: true })
-      .first().click();
-    await page.waitForTimeout(450);
-  }],
-  ['client-profile-screening-menu', `/pt-os/clients/${IDS.client}`, async (page) => {
-    await page.locator('div.mb-6').getByRole('button', { name: 'Screening', exact: true })
-      .first().click();
+  // The tab strip at its far end. Twelve tabs on a 390px screen, so how the
+  // strip overflows is the thing most likely to break; the last tab is the one
+  // that proves it scrolls rather than clipping.
+  ['client-profile-last-tab', `/pt-os/clients/${IDS.client}`, async (page) => {
+    await page.getByRole('tab', { name: /reports/i }).first().click();
     await page.waitForTimeout(450);
   }],
 ];

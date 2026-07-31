@@ -135,7 +135,13 @@ describe('Training navigation', () => {
   const src = fs.readFileSync(PROFILE, 'utf8');
 
   it('offers the Training section on the client profile', () => {
-    expect(src).toMatch(/label: 'Training'/);
+    // The profile used to reach Training through a tile in the Quick Actions
+    // grid; it is a tab in the client workspace now. The requirement is
+    // unchanged — Training must be reachable from the profile — so this
+    // asserts the destination rather than the widget that happened to carry
+    // it, which is what made the original brittle.
+    expect(src).toMatch(/TabPanel id="training"/);
+    expect(src).toMatch(/\/pt-os\/workout-plans\?client_id=/);
   });
 
   it('every destination it links to exists on disk', () => {
