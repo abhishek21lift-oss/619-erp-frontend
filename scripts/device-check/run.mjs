@@ -137,7 +137,27 @@ const ROUTES = [
   ['builder-empty-day', `/pt-os/clients/${IDS.client}/training/builder?plan=${IDS.emptyPlan}`],
   ['assigned', `/pt-os/clients/${IDS.client}/training/assigned`],
   ['analytics', `/pt-os/clients/${IDS.client}/training/analytics`],
+  // The range editor: a sheet full of paired number inputs, which is the
+  // shape most likely to overflow at 390px, and it only exists after a tap.
+  ['landmark-editor', `/pt-os/clients/${IDS.client}/training/analytics`, async (page) => {
+    await page.getByRole('button', { name: /edit ranges/i }).first().click();
+    await page.waitForTimeout(600);
+  }],
   ['workout-log', `/pt-os/clients/${IDS.client}/workout-log`],
+
+  // The session screen, with its exercises expanded. This is where a trainer
+  // spends the workout, and until now the harness rendered it with no
+  // exercises at all — so no set row, no completion control and no PR banner
+  // had ever been measured. The 35px "mark done" box shipped that way.
+  ['session-sets', `/pt-os/clients/${IDS.client}/workout-log/${IDS.session}`, async (page) => {
+    // By its set count rather than by the exercise name: the fixture uses the
+    // longest name in the library precisely because it is awkward, and
+    // building a selector out of it would mean escaping parentheses and
+    // em-dashes to find a control this test does not care about identifying
+    // precisely.
+    await page.getByRole('button', { name: /\d+ sets?$/ }).first().click();
+    await page.waitForTimeout(500);
+  }],
   ['client-profile', `/pt-os/clients/${IDS.client}`],
 
   // Today — the screen a trainer opens daily, and the finish sheet at the end

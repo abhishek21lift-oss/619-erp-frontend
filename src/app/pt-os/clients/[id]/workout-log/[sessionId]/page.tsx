@@ -482,6 +482,33 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
     }
   };
 
+  /**
+   * Tick every outstanding set on this exercise.
+   *
+   * Sequential, not Promise.all: each PATCH recomputes the PR flags against
+   * everything logged before it, and firing four at once would have them race
+   * to read the same "previous best" — four sets of 100 kg would each be
+   * declared a weight PR.
+   */
+  const handleCompleteAll = async () => {
+    const pending = exercise.sets.filter((s) => !s.completed);
+    if (pending.length === 0) return;
+    setBusy(true);
+    try {
+      for (const s of pending) {
+        await api.progress.workoutLog.sets.update(s.id, { completed: true });
+      }
+      await onChanged();
+    } catch (err: unknown) {
+      // Partially applied is fine and visible — onChanged in the finally
+      // repaints whatever did land, so the trainer sees where it stopped.
+      toast.error(err instanceof Error ? err.message : 'Could not mark those sets done.');
+      await onChanged();
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const anyPr = exercise.sets.some((s) => s.is_pr_weight || s.is_pr_reps || s.is_pr_volume);
 
   return (
@@ -536,6 +563,30 @@ function ExerciseBlock({ exercise, previous, expanded, onToggle, onRemove, onCha
                   <SetRow key={set.id} set={set} onChanged={onChanged} />
                 ))}
               </div>
+
+              {/*
+                ── One tap for the ordinary case ─────────────────────────
+                Loading a planned exercise creates its sets already filled
+                with the prescribed weight and reps and all UNTICKED, so a
+                client who did exactly what was written still costs the
+                trainer one tap per set — four taps to record "as planned",
+                mid-session, holding a phone.
+                That is the friction behind 44 sets created and 3 ticked.
+                This marks the outstanding ones done in one go; anything
+                that did NOT go to plan is edited set by set, which is the
+                rarer case and the one worth the taps.
+              */}
+              {exercise.sets.some((s) => !s.completed) && (
+                <button
+                  onClick={handleCompleteAll}
+                  disabled={busy}
+                  className="mb-2 flex h-[44px] w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-[750] transition active:scale-[0.99] disabled:opacity-60"
+                  style={{ background: 'rgba(16,185,129,0.12)', border: '1.5px solid rgba(16,185,129,0.4)', color: '#047857' }}
+                >
+                  <Check size={16} strokeWidth={3} />
+                  Mark all {exercise.sets.filter((s) => !s.completed).length} sets done
+                </button>
+              )}
 
               <div className="space-y-2">
                 <Button iconLeft={<Plus size={15} />} disabled={busy} onClick={() => handleAddSet()} className="w-full"
@@ -631,18 +682,16 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => save({ completed: !set.completed })} disabled={saving}
-            aria-label="Mark set complete"
-            className="flex h-10 w-10 items-center justify-center rounded-[12px] transition"
-            style={{ background: set.completed ? '#10b981' : '#fff', border: set.completed ? 'none' : '1.5px solid #cbd5e1' }}>
-            {set.completed && <Check size={17} color="#fff" strokeWidth={3} />}
-          </button>
-          <button onClick={handleDelete} aria-label="Delete set"
-            className="flex h-10 w-10 items-center justify-center rounded-[12px] transition hover:bg-red-50" style={{ border: '1.5px solid transparent' }}>
-            <X size={16} style={{ color: '#cbd5e1' }} />
-          </button>
-        </div>
+        {/*
+          Delete alone in the header. The completion control used to sit
+          immediately beside it — two 35px boxes of the same size and shape,
+          one of which destroys the set. It has moved to the foot of the card.
+        */}
+        <button onClick={handleDelete} aria-label={`Delete set ${set.set_number}`}
+          className="flex h-[44px] w-[44px] items-center justify-center rounded-[12px] transition hover:bg-red-50"
+          style={{ border: '1.5px solid transparent' }}>
+          <X size={16} style={{ color: '#cbd5e1' }} />
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
@@ -704,6 +753,36 @@ function SetRow({ set, onChanged }: { set: WorkoutSet; onChanged: () => Promise<
             className="w-full min-w-0 text-center outline-none" style={{ fontSize: 14, color: '#0f172a' }} />
         </label>
       </div>
+
+      {/*
+        ── The most important control on this screen ──────────────────────
+        A set that is not ticked does not exist: completion is what feeds
+        volume, the PR flags, the session summary and every panel on the
+        analytics page. In the live database 44 sets had been created and 3
+        ticked.
+        This used to be a bare 35px checkbox in the header, beside a delete
+        button of identical size and shape. `h-10` reads as 40px and is not,
+        because globals.css sets the root font to 14px — so the single most
+        repeated action in the app had a target smaller than the guideline
+        minimum, and its neighbour destroyed the row.
+        It is now a full-width labelled button at the foot of the card: the
+        last thing under your thumb after typing the weight and reps, and
+        nowhere near delete.
+      */}
+      <button
+        onClick={() => save({ completed: !set.completed })}
+        disabled={saving}
+        aria-pressed={set.completed}
+        className="mt-2.5 flex h-[44px] w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-[750] transition active:scale-[0.99] disabled:opacity-60"
+        style={{
+          background: set.completed ? '#10b981' : '#fff',
+          border: set.completed ? '1.5px solid #10b981' : '1.5px solid #cbd5e1',
+          color: set.completed ? '#fff' : '#475569',
+        }}
+      >
+        <Check size={16} strokeWidth={3} />
+        {set.completed ? 'Done' : 'Mark done'}
+      </button>
     </div>
   );
 }

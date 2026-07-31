@@ -237,6 +237,107 @@ const LIBRARY = EXERCISE_NAMES.map((name, i) => ({
   is_active: true,
 }));
 
+/**
+ * A session mid-workout: some sets ticked, most not, one a personal best.
+ *
+ * The mix is the point. A set row renders differently completed, outstanding
+ * and PR-flagged, the "mark all done" action only appears while something is
+ * outstanding, and the PR banner is the widest thing the card ever carries.
+ * All-complete or all-empty fixtures would exercise one of those and hide the
+ * rest.
+ */
+const SESSION_EXERCISES = [
+  {
+    id: 'se-1',
+    session_id: 's-1',
+    exercise_id: 'lib-1',
+    exercise_name: EXERCISE_NAMES[0],   // the longest name in the library
+    notes: 'Deficit from a 25 kg plate. Front shin vertical throughout.',
+    sort_order: 0,
+    sets: [
+      { id: 'st-1', session_exercise_id: 'se-1', set_number: 1, weight_kg: 42.5, reps: 8, rpe: 8, rir: 2, tempo: '3-1-2-0', rest_seconds: 90, completed: true, notes: null, is_pr_weight: true, is_pr_reps: false, is_pr_volume: true, created_at: '2026-07-28T06:05:00.000Z', updated_at: '2026-07-28T06:05:00.000Z' },
+      { id: 'st-2', session_exercise_id: 'se-1', set_number: 2, weight_kg: 42.5, reps: 8, rpe: 8.5, rir: 1, tempo: null, rest_seconds: 90, completed: false, notes: null, is_pr_weight: false, is_pr_reps: false, is_pr_volume: false, created_at: '2026-07-28T06:08:00.000Z', updated_at: '2026-07-28T06:08:00.000Z' },
+      { id: 'st-3', session_exercise_id: 'se-1', set_number: 3, weight_kg: 1000, reps: 100, rpe: 9.5, rir: 0, tempo: null, rest_seconds: 300, completed: false, notes: null, is_pr_weight: false, is_pr_reps: false, is_pr_volume: false, created_at: '2026-07-28T06:12:00.000Z', updated_at: '2026-07-28T06:12:00.000Z' },
+    ],
+  },
+  {
+    id: 'se-2',
+    session_id: 's-1',
+    exercise_id: 'lib-2',
+    exercise_name: 'Barbell Back Squat',
+    notes: null,
+    sort_order: 1,
+    // Every set done: the "mark all done" action must disappear here.
+    sets: [
+      { id: 'st-4', session_exercise_id: 'se-2', set_number: 1, weight_kg: 100, reps: 5, rpe: 7, rir: 3, tempo: null, rest_seconds: 120, completed: true, notes: null, is_pr_weight: false, is_pr_reps: false, is_pr_volume: false, created_at: '2026-07-28T06:20:00.000Z', updated_at: '2026-07-28T06:20:00.000Z' },
+    ],
+  },
+];
+
+/** What the plan prescribes for this session's weekday, resolved to its week. */
+const PLANNED_TODAY = {
+  plan_name: LONG_PLAN,
+  week: 6,
+  duration_weeks: 12,
+  progression_type: 'weight',
+  source: 'derived',
+  exercises: [
+    { exercise_id: 'lib-1', name: EXERCISE_NAMES[0], sets: 4, reps: 8, rest_seconds: 90, sort_order: 0, notes: null, target_weight: 72.5, tempo: '3-1-2-0', rpe: 8, warmup_sets: 2, superset_group: 'A', config: { drop_sets: 2 }, week_number: 6 },
+    { exercise_id: 'lib-3', name: 'Romanian Deadlift', sets: 3, reps: 10, rest_seconds: 90, sort_order: 1, notes: null, target_weight: 90, tempo: null, rpe: null, warmup_sets: null, superset_group: null, config: null, week_number: 6 },
+  ],
+};
+
+/**
+ * Twelve weeks of attendance with a hole in it.
+ *
+ * Week 3 has a bonus session and week 5 was missed entirely — together they
+ * are the case the panel exists to render honestly, because a naive
+ * implementation lets the bonus cancel the miss and reports 100%.
+ */
+const ADHERENCE_WEEKS = Array.from({ length: 8 }, (_, i) => {
+  const d = new Date(Date.UTC(2026, 5, 1) + i * 7 * 86400000);
+  const week_start = d.toISOString().slice(0, 10);
+  if (i === 2) return { week_start, planned: 3, completed: 3, extra: 1 };
+  if (i === 4) return { week_start, planned: 3, completed: 0, extra: 0 };
+  if (i === 6) return { week_start, planned: 3, completed: 2, extra: 0 };
+  return { week_start, planned: 3, completed: 3, extra: 0 };
+});
+
+const ANALYTICS = {
+  as_of: '2026-07-30',
+  weeks: 12,
+  plan: { id: 'p-1', name: LONG_PLAN, duration_weeks: 12 },
+  adherence: {
+    planned: ADHERENCE_WEEKS.reduce((s, w) => s + w.planned, 0),
+    completed: ADHERENCE_WEEKS.reduce((s, w) => s + w.completed, 0),
+    pct: 79,
+    weeks: ADHERENCE_WEEKS,
+  },
+  this_week: { week_start: '2026-07-27', missed: [1, 3], remaining: [5] },
+  prs: [
+    { session_date: '2026-07-28', exercise_name: 'Single-Arm Dumbbell Bulgarian Split Squat (Deficit)', weight_kg: 42.5, reps: 8, kinds: ['weight', 'volume'] },
+    { session_date: '2026-07-21', exercise_name: 'Barbell Back Squat', weight_kg: 140, reps: 5, kinds: ['weight'] },
+    { session_date: '2026-07-14', exercise_name: 'Pull-Up (Weighted)', weight_kg: 25, reps: 12, kinds: ['reps'] },
+    { session_date: '2026-07-02', exercise_name: 'Deadlift', weight_kg: 180, reps: 3, kinds: ['weight', 'reps', 'volume'] },
+  ],
+  muscles: [
+    { target_muscle: 'quadriceps', sets: 26, last_trained: '2026-07-29', days_since: 1, mev_sets: 8, mrv_sets: 20, status: 'above' },
+    { target_muscle: 'chest', sets: 14, last_trained: '2026-07-28', days_since: 2, mev_sets: 8, mrv_sets: 22, status: 'within' },
+    { target_muscle: 'hamstrings', sets: 3, last_trained: '2026-07-10', days_since: 20, mev_sets: 6, mrv_sets: 20, status: 'below' },
+    // No range set for this one — it must render no verdict at all.
+    { target_muscle: 'forearms', sets: 6, last_trained: '2026-07-30', days_since: 0, mev_sets: null, mrv_sets: null, status: null },
+  ],
+  unattributed_sets: 7,
+};
+
+const LANDMARKS = [
+  { target_muscle: 'chest', mev_sets: 8, mrv_sets: 22, is_custom: false },
+  { target_muscle: 'quadriceps', mev_sets: 10, mrv_sets: 18, is_custom: true },
+  { target_muscle: 'hamstrings', mev_sets: 6, mrv_sets: 20, is_custom: false },
+  { target_muscle: 'forearms', mev_sets: null, mrv_sets: null, is_custom: false },
+  { target_muscle: 'shoulders', mev_sets: 8, mrv_sets: 26, is_custom: false },
+];
+
 // ── The routing table ───────────────────────────────────────────────────────
 
 const ROUTES = [
@@ -320,12 +421,21 @@ const ROUTES = [
     },
   })],
 
-  [/^\/api\/pt-os\/workout-log\/sessions\/[^/]+\/planned-day-options$/, () => ({ data: [] })],
+  [/^\/api\/pt-os\/workout-log\/sessions\/[^/]+\/planned-day-options$/, () => ({ data: ['Monday', 'Wednesday'] })],
+
+  // The session a trainer is actually standing in, WITH its exercises and
+  // sets.
+  //
+  // This returned `exercises: []` until now, so no set row had ever rendered
+  // in the harness — and the set-completion control, the most repeated action
+  // in the app, shipped at 35px beside a delete button of the same size
+  // without anything failing. An empty fixture is not a neutral choice: it
+  // silently removes a whole screen from every check.
   [/^\/api\/pt-os\/workout-log\/sessions\/[^/]+$/, () => ({
     data: {
       ...SESSIONS[0],
-      exercises: [],
-      planned: null,
+      exercises: SESSION_EXERCISES,
+      planned: PLANNED_TODAY,
       summary: {
         total_sets: 18, total_reps: 164, total_volume: 12480,
         exercises_completed: 5, exercises_total: 6, avg_rpe: 8.5,
@@ -334,16 +444,37 @@ const ROUTES = [
     },
   })],
   [/^\/api\/pt-os\/workout-log\/sessions/, () => ({ data: SESSIONS })],
+
+  // Analytics: adherence, records, sets per muscle. Deliberately awkward —
+  // a missed week, a bonus session, a muscle below its range and one above,
+  // a muscle with no range at all, and sets the log could not attribute.
+  // Average data would let this screen pass while a real client broke it.
+  [/^\/api\/pt-os\/workout-log\/analytics/, () => ({ data: ANALYTICS })],
+  [/^\/api\/pt-os\/workout-log\/landmarks/, () => ({ data: LANDMARKS })],
+
+  // `period` and `session_count`, not `date` and `volume`.
+  //
+  // This fixture used to return { date, volume }, which is not what
+  // WorkoutVolumePoint declares — so the volume chart on the analytics screen
+  // rendered every bar with an undefined x value and the screenshot showed a
+  // chart with blank labels that nothing failed on. Every shape in this file
+  // is supposed to come from the declared return type; this one did not.
   [/^\/api\/pt-os\/workout-log\/volume-summary/, () => ({
-    data: SESSIONS.map((s) => ({ date: s.session_date, volume: s.total_volume })),
+    data: SESSIONS.map((s) => ({
+      period: s.session_date, volume: s.total_volume, session_count: 1,
+    })),
   })],
+
+  // A bare array of points, per WorkoutProgressPoint[] — not the
+  // { series, exercises } envelope this used to invent.
   [/^\/api\/pt-os\/workout-log\/progress/, () => ({
-    data: {
-      series: SESSIONS.map((s) => ({
-        date: s.session_date, value: s.total_volume, sets: s.set_count,
-      })),
-      exercises: LIBRARY.slice(0, 5).map((e) => ({ id: e.id, name: e.name })),
-    },
+    data: SESSIONS.map((s, i) => ({
+      session_date: s.session_date,
+      best_weight: 80 + i * 2.5,
+      best_reps: 8,
+      est_1rm: 100 + i * 3,
+      volume: s.total_volume,
+    })),
   })],
   [/^\/api\/pt-os\/workout-log\/previous/, () => ({ data: null })],
   [/^\/api\/pt-os\/workout-log/, () => ({ data: [] })],
