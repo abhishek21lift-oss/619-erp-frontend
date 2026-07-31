@@ -7,7 +7,7 @@ import qrcode from 'qrcode-generator';
 import {
   User, Mail, Phone, MapPin, Activity, Shield,
   Bell, Smartphone, Monitor, Tablet, Moon, Sun, Globe,
-  ChevronRight, CheckCircle2, XCircle, Lock, Key, Eye, EyeOff,
+  CheckCircle2, XCircle, Lock, Key, Eye, EyeOff,
   RefreshCw, LogOut, ShieldCheck, AlertTriangle,
   History, Fingerprint, Copy, Loader2, Settings,
   Zap, Calendar, Wifi, Camera, FileSignature, Dumbbell, ClipboardList,
@@ -1194,35 +1194,28 @@ export default function ProfilePage() {
             as a grey block inset from the page edges. The banded sections
             below keep their own backgrounds and inner padding — those are
             deliberate bands, not a page wrapper. */}
-        <div>
+        {/* ── Flush to the top bar ──
+            The breadcrumb, the "My Profile" heading and its subtitle used to
+            sit in a bordered band here. All three said what the page already
+            says: the card immediately below carries the user's name, photo,
+            role and studio, so the title was a label for something already
+            labelled, costing about a fifth of a phone screen before any
+            content.
 
-          {/* ── BREADCRUMB + TITLE ── */}
-          <div className="border-b" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-            <div className="mx-auto max-w-screen-xl py-5">
-              <div className="mb-3 flex items-center gap-1.5 text-[11px] font-[500]" style={{ color: 'var(--text-muted)' }}>
-                <span>Settings</span>
-                <ChevronRight size={10} />
-                <span style={{ color: '#6366f1' }}>My Profile</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[13px]"
-                  style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08))' }}>
-                  <User size={17} style={{ color: '#6366f1' }} />
-                </div>
-                <div>
-                  <h1 className="text-[22px] font-[880] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>My Profile</h1>
-                  <p className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Account, security &amp; preferences</p>
-                </div>
-              </div>
-            </div>
-          </div>
+            .shell-main's own 16px of padding (24px from 768px up) goes with
+            it, so the profile card starts directly under the bar. Explicit
+            pixels and `md:` rather than -mt-4 sm:, because globals.css sets
+            the root font to 14px — -mt-4 would be 14px against 16px and leave
+            a 2px seam — and the shell's breakpoint is 768px, which is
+            Tailwind's md, not sm at 640. */}
+        <div className="-mt-[16px] md:-mt-[24px]">
 
           {/* ── MAIN ── */}
           {/* The bottom padding clears the fixed mobile bottom nav AND the
               floating save bar above it — without it the last card sat under
               both with no way to scroll further. Matches the pattern the
               dashboard and Leads pages already use. */}
-          <div className="mx-auto max-w-screen-xl pt-7 pb-[calc(var(--bottom-nav-h,4rem)+env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-10">
+          <div className="mx-auto max-w-screen-xl pb-[calc(var(--bottom-nav-h,4rem)+env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-10">
 
             {/* ── HERO ── */}
             {/* Reads `me`, not the form state: this is who the server says you
