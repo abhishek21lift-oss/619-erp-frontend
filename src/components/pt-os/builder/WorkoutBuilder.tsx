@@ -24,6 +24,21 @@
 // says so — an optimistic UI that hides a failed write is worse than a save
 // button, because the trainer leaves believing the programme is stored.
 //
+// ── One week, not twelve ──────────────────────────────────────────────────
+//
+// The builder authors WEEK 1 and a progression rule; weeks 2..N are derived
+// from those and are not stored. So the week control here is a viewer, not a
+// second editing surface: week 1 is editable, every later week is what the
+// rule produces, read-only.
+//
+// That read-only-ness is load-bearing rather than a simplification. A derived
+// row carries the WEEK-1 row's id — it has none of its own — so an "edit" of
+// week 6 would PATCH week 1 and silently move every other week with it. The
+// honest options were to make later weeks read-only or to mint real override
+// rows on first edit; the first is right for now because the trainer's actual
+// intent ("make week 4 a deload") is a different, deliberate action, and
+// guessing it from a keystroke in a preview is how you lose a programme.
+//
 // ── Why the sizes are h-[44px] and not h-11 ───────────────────────────────
 //
 // globals.css sets `html { font-size: 14px }`, so Tailwind's rem-based sizes
@@ -31,15 +46,19 @@
 // control on this screen was written as h-11 for "44px touch target" and shipped
 // measuring 38.5. Sizes that have to be exact are written in pixels here.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import { Plus, Loader2, Check, CloudOff, Dumbbell } from 'lucide-react';
+import { Plus, Loader2, Check, CloudOff, Dumbbell, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { WorkoutPlan, WorkoutPlanExercise, WorkoutExerciseInput } from '@/lib/api';
+import type {
+  ProgressionPreview, ProgressionType, WorkoutPlan, WorkoutPlanExercise, WorkoutExerciseInput,
+} from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { EmptyState } from '@/components/ui';
 import { ExercisePicker } from '@/components/pt-os/workout-log/ExercisePicker';
 import ExerciseCard from './ExerciseCard';
+import PlanVersions from './PlanVersions';
+import ProgressionRule from './ProgressionRule';
 import { useAutosave, saveStatusLabel } from './useAutosave';
 
 /** ISO-ish: 1 = Monday, matching workout_exercises.day_of_week. */
@@ -64,6 +83,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
   const [rows, setRows] = useState<WorkoutPlanExercise[]>([]);
   const [day, setDay] = useState(1);
+  const [week, setWeek] = useState(1);
   const [loading, setLoading] = useState(true);
   const [picking, setPicking] = useState(false);
 
@@ -72,11 +92,14 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
     onError: () => toast.error('Could not save that change'),
   });
 
+  // Week 1 is the authored week; anything higher is fetched because the server
+  // resolves it — deriving it here would be a second copy of the arithmetic,
+  // free to drift from the one the client's log runs on.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const detail = await api.workouts.plans.detail(planId);
+        const detail = await api.workouts.plans.detail(planId, week > 1 ? { week } : undefined);
         if (cancelled) return;
         setPlan(detail);
         setRows(detail.exercises ?? []);
@@ -87,10 +110,65 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
       }
     })();
     return () => { cancelled = true; };
-  }, [planId, toast]);
+  }, [planId, week, toast]);
+
+  /**
+   * Save the progression rule and re-read week 1.
+   *
+   * Re-reading rather than merging the response: the plan carries
+   * `progression_preview`, which the PUT does not return and which is stale
+   * the moment the rule changes. Showing last rule's ramp under this rule's
+   * label would be worse than showing none.
+   */
+  const saveRule = useCallback(async (patch: {
+    progression_type: ProgressionType;
+    progression_amount: number | null;
+    progression_every_weeks: number;
+  }) => {
+    const snapshot = plan;
+    setPlan((p) => (p ? { ...p, ...patch } : p));   // paint the chip immediately
+    try {
+      await api.workouts.plans.update(planId, patch);
+      const fresh = await api.workouts.plans.detail(planId);
+      setPlan(fresh);
+      setRows(fresh.exercises ?? []);
+      setWeek(1);
+    } catch {
+      setPlan(snapshot);
+      toast.error('Could not save the progression rule');
+    }
+  }, [planId, plan, toast]);
 
   // Flush on unmount so navigating away mid-debounce still saves.
   useEffect(() => () => { void flushNow(); }, [flushNow]);
+
+  /**
+   * Re-read the ramp after an edit lands.
+   *
+   * `progression_preview` is computed server-side from the numbers as they
+   * were when the plan was fetched. Change a squat from 60 to 80 kg and the
+   * ramp underneath it still says "W1 60 → W12 87.5" — a prescription for a
+   * weight the exercise no longer carries, sitting directly below the field
+   * that contradicts it.
+   *
+   * Recomputing it locally would be a second copy of arithmetic that already
+   * exists in one place, so it is re-read instead. Only the preview is
+   * adopted: taking the whole plan would replace `rows` and fight whatever
+   * the trainer is typing next.
+   */
+  const lastStatus = useRef(status);
+  useEffect(() => {
+    const settled = status === 'saved' && lastStatus.current !== 'saved';
+    lastStatus.current = status;
+    if (!settled || week !== 1) return;
+    let cancelled = false;
+    api.workouts.plans.detail(planId)
+      .then((fresh) => {
+        if (!cancelled) setPlan((p) => (p ? { ...p, progression_preview: fresh.progression_preview } : p));
+      })
+      .catch(() => { /* the ramp is a hint; a failed refresh is not worth a toast */ });
+    return () => { cancelled = true; };
+  }, [status, week, planId]);
 
   const forDay = useMemo(
     () => rows.filter((r) => r.day_of_week === day).sort((a, b) => a.sort_order - b.sort_order),
@@ -103,6 +181,19 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
     for (const r of rows) m.set(r.day_of_week, (m.get(r.day_of_week) ?? 0) + 1);
     return m;
   }, [rows]);
+
+  /** Where the rule lands, per exercise row id. Empty when there is no rule. */
+  const previews = useMemo(() => {
+    const m = new Map<string, ProgressionPreview>();
+    for (const p of plan?.progression_preview ?? []) m.set(p.id, p);
+    return m;
+  }, [plan?.progression_preview]);
+
+  const weeks = Math.max(1, plan?.duration_weeks ?? 1);
+  const hasRule = (plan?.progression_type ?? 'none') !== 'none';
+  // Later weeks are derived, and a derived row has no id of its own to write
+  // to. Editing is week 1's job.
+  const editable = week === 1;
 
   const patchRow = useCallback((rowId: string, patch: WorkoutExerciseInput) => {
     setRows((prev) => prev.map((r) => (r.id === rowId ? { ...r, ...patch } as WorkoutPlanExercise : r)));
@@ -185,6 +276,85 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
         <SaveIndicator status={status} />
       </div>
 
+      {/* ── The rule that generates weeks 2..N ──
+          Only on week 1: it describes how the authored week grows, and offering
+          it from inside a derived week would suggest the derived week is what
+          it applies to. */}
+      {plan && editable && <ProgressionRule plan={plan} onChange={saveRule} />}
+
+      {plan && editable && (
+        <PlanVersions
+          planId={planId}
+          version={plan.version ?? 1}
+          onSaved={(next) => setPlan((p) => (p ? { ...p, version: next } : p))}
+        />
+      )}
+
+      {/* ── Week stepper ──
+          Hidden without a rule, because then every week is byte-identical and a
+          control that changes nothing is worse than no control. */}
+      {hasRule && weeks > 1 && (
+        <div
+          className="mb-4 flex items-center justify-between gap-2 rounded-[16px] px-2 py-1.5"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        >
+          <WeekStep
+            label="Previous week"
+            disabled={week <= 1}
+            onClick={() => setWeek((w) => Math.max(1, w - 1))}
+          >
+            <ChevronLeft size={18} />
+          </WeekStep>
+          <div className="min-w-0 text-center">
+            <p className="text-[13px] font-[750]" style={{ color: 'var(--text-primary)' }}>
+              Week {week}
+              <span className="font-[600]" style={{ color: 'var(--text-muted)' }}> of {weeks}</span>
+            </p>
+            <p className="text-[10.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+              {week === 1 ? 'The week you write'
+                : plan?.week_source === 'override' ? 'Written by hand'
+                  : 'Generated from week 1'}
+            </p>
+          </div>
+          <WeekStep
+            label="Next week"
+            disabled={week >= weeks}
+            onClick={() => setWeek((w) => Math.min(weeks, w + 1))}
+          >
+            <ChevronRight size={18} />
+          </WeekStep>
+        </div>
+      )}
+
+      {!editable && (
+        <div
+          className="mb-4 rounded-[14px] px-3.5 py-2.5"
+          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+        >
+          <div className="flex items-start gap-2">
+            <Eye size={14} className="mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+              Week {week} is generated from week 1, so it is read-only. Edit week 1 to change it.
+            </p>
+          </div>
+          {/*
+            The action is its own control below the sentence, not a link inside
+            it. Set inline, it inherits the paragraph's 12px line box — a ~15px
+            tall tap target on the screen this is designed for, which the device
+            check failed it for. A sentence cannot carry a 44px target without
+            wrecking its own leading, so the two are separated.
+          */}
+          <button
+            type="button"
+            onClick={() => setWeek(1)}
+            className="mt-1 flex h-[44px] items-center text-[12.5px] font-[700]"
+            style={{ color: 'var(--brand)' }}
+          >
+            Go to week 1
+          </button>
+        </div>
+      )}
+
       {/* ── Day tabs ──
           Horizontally scrollable rather than wrapped: seven tabs plus counts do
           not fit at 390px, and a wrapped second row pushes the cards down. */}
@@ -226,9 +396,13 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
       {forDay.length === 0 ? (
         <EmptyState
           icon={<Dumbbell size={22} />}
-          title={`Nothing on ${DAYS.find((d) => d.n === day)?.long} yet`}
-          description="Add the first exercise and it becomes a card you can edit, duplicate and reorder."
-          action={(
+          title={editable
+            ? `Nothing on ${DAYS.find((d) => d.n === day)?.long} yet`
+            : `${DAYS.find((d) => d.n === day)?.long} is a rest day`}
+          description={editable
+            ? 'Add the first exercise and it becomes a card you can edit, duplicate and reorder.'
+            : 'Nothing is prescribed on this day in week 1, so nothing is generated here.'}
+          action={editable ? (
             <button
               type="button"
               onClick={() => setPicking(true)}
@@ -237,15 +411,16 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
             >
               <Plus size={16} /> Add exercise
             </button>
-          )}
+          ) : undefined}
         />
-      ) : (
+      ) : editable ? (
         <Reorder.Group axis="y" values={forDay} onReorder={reorder} className="flex flex-col gap-3">
           <AnimatePresence initial={false}>
             {forDay.map((row) => (
               <DraggableExercise
                 key={row.id}
                 row={row}
+                preview={previews.get(row.id)}
                 onChange={(patch) => patchRow(row.id, patch)}
                 onDuplicate={() => duplicate(row)}
                 onDelete={() => remove(row.id)}
@@ -253,10 +428,16 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
             ))}
           </AnimatePresence>
         </Reorder.Group>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {forDay.map((row) => (
+            <ExerciseCard key={row.id} exercise={row} readOnly />
+          ))}
+        </div>
       )}
 
       {/* ── Add, inline after the list ── */}
-      {forDay.length > 0 && (
+      {editable && forDay.length > 0 && (
         <button
           type="button"
           onClick={() => setPicking(true)}
@@ -274,19 +455,21 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
       {/* ── Floating action button ──
           Sits above the bottom nav via the --bottom-nav-h token rather than a
           magic number, so it stays put if the nav height changes. */}
-      <button
-        type="button"
-        onClick={() => setPicking(true)}
-        aria-label="Add exercise"
-        className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white"
-        style={{
-          bottom: 'calc(var(--bottom-nav-h, 52px) + env(safe-area-inset-bottom, 0px) + 16px)',
-          background: 'var(--brand)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
-        }}
-      >
-        <Plus size={24} />
-      </button>
+      {editable && (
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          aria-label="Add exercise"
+          className="fixed right-4 z-40 flex h-[56px] w-[56px] items-center justify-center rounded-full text-white"
+          style={{
+            bottom: 'calc(var(--bottom-nav-h, 52px) + env(safe-area-inset-bottom, 0px) + 16px)',
+            background: 'var(--brand)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
+          }}
+        >
+          <Plus size={24} />
+        </button>
+      )}
 
       <ExercisePicker
         open={picking}
@@ -308,9 +491,10 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
  * attempt to place a cursor or select a value.
  */
 function DraggableExercise({
-  row, onChange, onDuplicate, onDelete,
+  row, preview, onChange, onDuplicate, onDelete,
 }: {
   row: WorkoutPlanExercise;
+  preview?: ProgressionPreview;
   onChange: (patch: WorkoutExerciseInput) => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -329,6 +513,7 @@ function DraggableExercise({
     >
       <ExerciseCard
         exercise={row}
+        preview={preview}
         onChange={onChange}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
@@ -340,6 +525,23 @@ function DraggableExercise({
         }}
       />
     </Reorder.Item>
+  );
+}
+
+function WeekStep({
+  children, label, disabled, onClick,
+}: { children: React.ReactNode; label: string; disabled: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[12px] disabled:opacity-30"
+      style={{ color: 'var(--text-muted)' }}
+    >
+      {children}
+    </button>
   );
 }
 

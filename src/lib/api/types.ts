@@ -889,11 +889,34 @@ export interface WorkoutPlannedExercise {
   rest_seconds: number | null;
   sort_order: number;
   notes?: string | null;
+
+  // The prescription for the week the client is actually in, already resolved
+  // by the server. Week 1's numbers plus the plan's rule, or a hand-written
+  // override for this week — the trainer on the floor is handed the answer,
+  // not the inputs.
+  target_weight?: number | null;
+  tempo?: string | null;
+  rpe?: number | null;
+  warmup_sets?: number | null;
+  superset_group?: string | null;
+  config?: Record<string, unknown> | null;
+  /** Which week these numbers describe. */
+  week_number?: number;
 }
 
 export interface WorkoutPlanned {
   plan_name: string;
   exercises: WorkoutPlannedExercise[];
+  /** Which week of the programme this session falls in, from its start date. */
+  week?: number;
+  duration_weeks?: number;
+  progression_type?: ProgressionType;
+  /**
+   * 'derived' = week 1 plus the rule; 'override' = the trainer wrote this week
+   * by hand. Worth surfacing: a derived number is a suggestion the rule
+   * produced, a written one is an instruction.
+   */
+  source?: 'derived' | 'override';
 }
 
 // ── Diet Plans ──────────────────────────────────────────────────────
@@ -1043,6 +1066,8 @@ export interface LibraryExercise {
 export interface WorkoutPlanExercise {
   id: string;
   exercise_id: string | null;
+  /** 1 for the authored week; higher only for a hand-written override. */
+  week_number?: number;
   name: string;
   muscle_group?: string | null;
   sets: number;
@@ -1085,6 +1110,29 @@ export type WorkoutExerciseInput = Partial<
     'notes' | 'target_weight' | 'tempo' | 'rpe' | 'warmup_sets' | 'superset_group' | 'config'>
 >;
 
+/** How a programme's numbers move from one week to the next. */
+export type ProgressionType = 'none' | 'weight' | 'reps' | 'rpe';
+
+/** Where the rule lands for one exercise: week 1 versus the final week. */
+export interface ProgressionPreview {
+  id: string;
+  first: { week: number; target_weight: number | null; reps: number | null; rpe: number | null };
+  last: { week: number; target_weight: number | null; reps: number | null; rpe: number | null };
+}
+
+/** One archived state of a plan. Read-only history, never assignable. */
+export interface WorkoutPlanVersion {
+  id: string;
+  version: number;
+  created_at: string;
+  created_by_name?: string | null;
+  duration_weeks: number;
+  progression_type: ProgressionType;
+  progression_amount: number | null;
+  progression_every_weeks: number;
+  exercise_count: number;
+}
+
 export interface WorkoutPlan {
   id: string;
   name: string;
@@ -1101,6 +1149,20 @@ export interface WorkoutPlan {
   exercise_count: number;
   progress: number;
   exercises: WorkoutPlanExercise[];
+
+  // ── Weeks and progression (migration 137) ───────────────────────────────
+  /** 'none' repeats the week unchanged — the behaviour before weeks existed. */
+  progression_type?: ProgressionType;
+  progression_amount?: number | null;
+  progression_every_weeks?: number;
+  /** Which week the returned exercises describe. 1 unless ?week= was passed. */
+  week?: number;
+  /** 'base' = the stored week 1, 'derived' = week 1 + rule, 'override' = hand-written. */
+  week_source?: 'base' | 'derived' | 'override';
+  /** null when there is no rule to preview. */
+  progression_preview?: ProgressionPreview[] | null;
+  version?: number;
+  parent_plan_id?: string | null;
 }
 
 export interface WorkoutAssignment {

@@ -27,9 +27,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { m } from 'framer-motion';
 import {
-  GripVertical, Copy, Trash2, ChevronDown, StickyNote, PlayCircle,
+  GripVertical, Copy, Trash2, ChevronDown, StickyNote, PlayCircle, TrendingUp,
 } from 'lucide-react';
-import type { WorkoutPlanExercise, WorkoutExerciseInput } from '@/lib/api';
+import type { ProgressionPreview, WorkoutPlanExercise, WorkoutExerciseInput } from '@/lib/api';
 
 /** Muscle-group hues. Fixed per group so a group keeps its colour everywhere. */
 const GROUP_TONE: Record<string, string> = {
@@ -62,26 +62,49 @@ const ADVANCED: FieldSpec[] = [
   { key: 'tempo',       label: 'Tempo',    mode: 'text',    placeholder: '3-1-2-0' },
   { key: 'rpe',         label: 'RPE / RIR', mode: 'decimal' },
   { key: 'warmup_sets', label: 'Warm-up sets', mode: 'numeric' },
+  // The card has always RENDERED a "Superset A" badge and never had a way to
+  // create one: the column existed, the badge existed, and the only route to a
+  // value was the whole-plan PUT, which the builder does not use. A free-text
+  // letter rather than a picker — exercises sharing a value are performed
+  // together, and "A"/"B" is what a coach writes on the sheet.
+  { key: 'superset_group', label: 'Superset', mode: 'text', placeholder: 'A' },
 ];
 
 export interface ExerciseCardProps {
   exercise: WorkoutPlanExercise;
-  /** Called with only the fields that changed. */
-  onChange: (patch: WorkoutExerciseInput) => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
+  /** Called with only the fields that changed. Required unless `readOnly`. */
+  onChange?: (patch: WorkoutExerciseInput) => void;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
   /** Rendered by the parent's drag container; the handle wires into it. */
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
   /** Suppresses the entry animation while a drag is settling. */
   isDragging?: boolean;
+  /**
+   * Where the plan's progression rule lands for THIS exercise.
+   *
+   * A rule is abstract until you see the number it produces: "+2.5 kg a week"
+   * on a 60 kg squat is 87.5 kg by week 12, which a trainer may well decide is
+   * too much — and that is much cheaper to learn here than in week 9.
+   */
+  preview?: ProgressionPreview;
+  /**
+   * A generated week. Every input becomes text, and the actions disappear.
+   *
+   * Not `disabled` inputs: a greyed-out field reads as "broken, try again",
+   * and a derived week is not broken — it is a correct prescription that
+   * simply is not written here. Week 1 is where it is written.
+   */
+  readOnly?: boolean;
 }
 
 export default function ExerciseCard({
-  exercise, onChange, onDuplicate, onDelete, dragHandleProps, isDragging,
+  exercise, onChange, onDuplicate, onDelete, dragHandleProps, isDragging, preview, readOnly,
 }: ExerciseCardProps) {
   const [open, setOpen] = useState(false);
   const tone = toneFor(exercise.muscle_group);
   const demo = exercise.video_url || exercise.gif_url;
+  const commit = onChange ?? (() => {});
 
   return (
     <m.div
@@ -111,15 +134,17 @@ export default function ExerciseCard({
           31.5×38.5 on a 390px viewport. Anything that has to be exactly 44
           says 44.
         */}
-        <button
-          type="button"
-          aria-label={`Reorder ${exercise.name}`}
-          {...dragHandleProps}
-          className="-ml-1 flex h-[44px] w-[44px] shrink-0 cursor-grab touch-none items-center justify-center rounded-[10px] active:cursor-grabbing"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <GripVertical size={18} />
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            aria-label={`Reorder ${exercise.name}`}
+            {...dragHandleProps}
+            className="-ml-1 flex h-[44px] w-[44px] shrink-0 cursor-grab touch-none items-center justify-center rounded-[10px] active:cursor-grabbing"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <GripVertical size={18} />
+          </button>
+        )}
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-[700]" style={{ color: 'var(--text-primary)' }}>
@@ -154,22 +179,33 @@ export default function ExerciseCard({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5">
-          <IconButton label={`Duplicate ${exercise.name}`} onClick={onDuplicate}>
-            <Copy size={16} />
-          </IconButton>
-          <IconButton label={`Remove ${exercise.name}`} onClick={onDelete} danger>
-            <Trash2 size={16} />
-          </IconButton>
-        </div>
+        {!readOnly && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <IconButton label={`Duplicate ${exercise.name}`} onClick={onDuplicate ?? (() => {})}>
+              <Copy size={16} />
+            </IconButton>
+            <IconButton label={`Remove ${exercise.name}`} onClick={onDelete ?? (() => {})} danger>
+              <Trash2 size={16} />
+            </IconButton>
+          </div>
+        )}
       </div>
 
       {/* ── Parameters ── */}
       <div className="mt-3 grid grid-cols-4 gap-2">
         {PRIMARY.map((f) => (
-          <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={onChange} />
+          readOnly
+            ? <StaticField key={String(f.key)} spec={f} exercise={exercise} />
+            : <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={commit} />
         ))}
       </div>
+
+      {/* ── Where the rule takes this exercise ──
+          One line, only when the rule actually moves this exercise. An
+          exercise with no prescribed load under a weight rule is not
+          progressed at all — inventing a starting weight to show a ramp from
+          would be a number the trainer never wrote. */}
+      {preview && <RampLine preview={preview} exercise={exercise} />}
 
       {/* ── Intensity detail, folded away ──
           Sets/reps/weight/rest are set on nearly every exercise; tempo and RPE
@@ -186,7 +222,7 @@ export default function ExerciseCard({
           size={14}
           style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s' }}
         />
-        {open ? 'Fewer options' : 'Tempo, RPE, warm-up'}
+        {open ? 'Fewer options' : 'Tempo, RPE, warm-up, drop sets'}
       </button>
 
       {open && (
@@ -196,20 +232,168 @@ export default function ExerciseCard({
           transition={{ duration: 0.18 }}
           className="overflow-hidden"
         >
-          <div className="grid grid-cols-3 gap-2 pt-1">
+          {/* Two rows of two rather than three-then-one: a lone field on its
+              own row at 390px reads as a mistake, and 2×2 keeps each box wide
+              enough for "3-1-2-0" to fit without scrolling inside itself. */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
             {ADVANCED.map((f) => (
-              <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={onChange} />
+              readOnly
+                ? <StaticField key={String(f.key)} spec={f} exercise={exercise} />
+                : <InlineField key={String(f.key)} spec={f} exercise={exercise} onCommit={commit} />
             ))}
           </div>
+          <DropSetField exercise={exercise} onCommit={commit} readOnly={readOnly} />
         </m.div>
       )}
 
       {/* ── Coach notes ── */}
-      <div className="mt-3 flex items-start gap-2">
-        <StickyNote size={14} className="mt-2.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
-        <NotesField exercise={exercise} onCommit={onChange} />
-      </div>
+      {(!readOnly || exercise.notes) && (
+        <div className="mt-3 flex items-start gap-2">
+          <StickyNote size={14} className="mt-2.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
+          {readOnly ? (
+            <p className="min-h-[44px] w-full rounded-[12px] px-3 py-2.5 text-[13px]" style={{ ...inputStyle, color: 'var(--text-muted)' }}>
+              {exercise.notes}
+            </p>
+          ) : (
+            <NotesField exercise={exercise} onCommit={commit} />
+          )}
+        </div>
+      )}
     </m.div>
+  );
+}
+
+/**
+ * "W1 60 → W12 87.5 kg" — one line, only where the rule actually moves.
+ *
+ * Rendered from the SERVER's preview rather than recomputed here. The client's
+ * workout log resolves week N server-side too, and a second implementation of
+ * the same arithmetic in TypeScript would eventually disagree with it — at
+ * which point the builder promises a number the gym floor never shows.
+ */
+function RampLine({ preview, exercise }: { preview: ProgressionPreview; exercise: WorkoutPlanExercise }) {
+  const { first, last } = preview;
+
+  // The preview was computed from the numbers as they were when the plan was
+  // fetched. Change the squat from 60 to 80 and it still reads "W1 60 → W12
+  // 87.5" — a prescription for a weight this exercise no longer carries,
+  // sitting directly under the field that contradicts it. The parent re-reads
+  // the ramp once the edit saves; until then, saying nothing beats saying
+  // something wrong.
+  const stale = (first.target_weight ?? null) !== (exercise.target_weight ?? null)
+    || (first.reps ?? null) !== (exercise.reps ?? null)
+    || (first.rpe ?? null) !== (exercise.rpe ?? null);
+  if (stale) return null;
+
+  // Which measure moved decides what to print. Nothing moved (a bodyweight
+  // exercise under a weight rule, an exercise with no RPE under an RPE rule)
+  // means there is no ramp to show, and a flat "60 → 60" is noise.
+  const moved =
+    first.target_weight !== last.target_weight ? { from: first.target_weight, to: last.target_weight, unit: 'kg' }
+      : first.reps !== last.reps ? { from: first.reps, to: last.reps, unit: 'reps' }
+        : first.rpe !== last.rpe ? { from: first.rpe, to: last.rpe, unit: 'RPE' }
+          : null;
+  if (!moved || moved.from == null || moved.to == null) return null;
+
+  return (
+    <div className="mt-2 flex items-center gap-1.5 text-[11.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+      <TrendingUp size={12} style={{ color: 'var(--brand)' }} />
+      <span>
+        W{first.week} {moved.from} → W{last.week}{' '}
+        <span className="font-[800]" style={{ color: 'var(--text-primary)' }}>{moved.to}</span> {moved.unit}
+      </span>
+    </div>
+  );
+}
+
+/** A parameter in a generated week: the same value, with nothing to type into. */
+function StaticField({ spec, exercise }: { spec: FieldSpec; exercise: WorkoutPlanExercise }) {
+  const v = exercise[spec.key as keyof WorkoutPlanExercise];
+  const text = v === null || v === undefined || v === '' ? '—' : String(v);
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+        {spec.label}
+      </span>
+      <div
+        className="flex h-[44px] items-center justify-center gap-0.5 rounded-[12px] px-1.5"
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+      >
+        <span className="truncate text-[14px] font-[700]" style={{ color: 'var(--text-primary)' }}>{text}</span>
+        {spec.suffix && text !== '—' && (
+          <span className="text-[10px] font-[600]" style={{ color: 'var(--text-muted)' }}>{spec.suffix}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Drop sets, stored in `config` rather than a column of its own.
+ *
+ * A toggle and a count, because that is the whole prescription: "after the
+ * last working set, strip the weight and go again, twice". Everything past
+ * that — how much to strip, whether to rest — is studio convention a trainer
+ * writes in the notes, and a field per convention is how this card becomes the
+ * spreadsheet it exists to replace.
+ *
+ * `config` is a loose JSON column (migration 136) precisely so a set method
+ * ships without a migration; this is its first real use.
+ */
+function DropSetField({
+  exercise, onCommit, readOnly,
+}: { exercise: WorkoutPlanExercise; onCommit: (p: WorkoutExerciseInput) => void; readOnly?: boolean }) {
+  const cfg = (exercise.config ?? {}) as Record<string, unknown>;
+  const raw = Number(cfg.drop_sets);
+  const drops = Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
+
+  if (readOnly) {
+    if (drops === 0) return null;
+    return (
+      <p className="pt-2 text-[11.5px] font-[650]" style={{ color: 'var(--text-muted)' }}>
+        {drops} drop set{drops === 1 ? '' : 's'} after the last working set
+      </p>
+    );
+  }
+
+  // Writing the WHOLE config back, not just this key: `config` is one JSON
+  // column, so a patch of `{ drop_sets: n }` replaces whatever else lives in
+  // it. Spreading the current value keeps a future key from being erased by
+  // a trainer toggling drop sets.
+  const set = (n: number) => {
+    const next = { ...cfg };
+    if (n <= 0) delete next.drop_sets; else next.drop_sets = n;
+    onCommit({ config: Object.keys(next).length === 0 ? null : next });
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 pt-3">
+      <span className="text-[10px] font-[700] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+        Drop sets
+      </span>
+      <div className="flex gap-1.5" role="radiogroup" aria-label={`Drop sets for ${exercise.name}`}>
+        {[0, 1, 2, 3].map((n) => {
+          const active = n === drops;
+          return (
+            <button
+              key={n}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => set(n)}
+              className="flex h-[44px] min-w-[44px] items-center justify-center rounded-[12px] px-2.5 text-[12.5px] font-[700]"
+              style={{
+                background: active ? 'var(--brand)' : 'var(--bg-subtle)',
+                color: active ? '#fff' : 'var(--text-muted)',
+                border: `1px solid ${active ? 'var(--brand)' : 'var(--border)'}`,
+              }}
+            >
+              {n === 0 ? 'None' : n}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

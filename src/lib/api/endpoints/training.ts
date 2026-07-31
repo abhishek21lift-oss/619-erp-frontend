@@ -7,8 +7,9 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  DietAssignment, DietTemplate, LibraryExercise, Meal, NutritionLog, WorkoutAssignment,
-  WorkoutAssignmentDetail, WorkoutExerciseInput, WorkoutPlan, WorkoutPlanExercise,
+  DietAssignment, DietTemplate, LibraryExercise, Meal, NutritionLog, ProgressionType,
+  WorkoutAssignment, WorkoutAssignmentDetail, WorkoutExerciseInput, WorkoutPlan,
+  WorkoutPlanExercise, WorkoutPlanVersion,
 } from '../types';
 
 // ── Workout Plans / Assignments ────────────────────────────────────
@@ -16,8 +17,18 @@ export const workouts = {
   plans: {
     list: (params?: Record<string, string | number>) =>
       http<WorkoutPlan[]>(`/api/workouts/plans${buildQs(params)}`),
-    detail: (id: string) =>
-      http<WorkoutPlan>(`/api/workouts/plans/${id}`),
+    /**
+     * One plan.
+     *
+     * `week` asks for that week's PRESCRIPTION rather than the stored week-1
+     * rows: a plan stores one week and derives the rest from its progression
+     * rule, so week 6 has no rows of its own unless a trainer wrote a deload
+     * by hand. Resolving it server-side is deliberate — the client's workout
+     * log resolves the same way, and two implementations of the arithmetic
+     * would eventually disagree about what week 6 says.
+     */
+    detail: (id: string, params?: { week?: number }) =>
+      http<WorkoutPlan>(`/api/workouts/plans/${id}${buildQs(params)}`),
     create: (data: {
       name: string; description?: string; goal?: string; difficulty?: string;
       duration_weeks?: number; sessions_per_week?: number; is_template?: boolean;
@@ -30,6 +41,15 @@ export const workouts = {
     update: (id: string, data: {
       name?: string; description?: string; goal?: string; difficulty?: string;
       duration_weeks?: number; sessions_per_week?: number;
+      /**
+       * The progression rule. Sending `progression_type` is what makes the
+       * amount writable at all — the server keeps the stored amount when the
+       * type is absent, so a rename cannot silently clear the rule, and
+       * sending the type with a null amount really does clear it.
+       */
+      progression_type?: ProgressionType;
+      progression_amount?: number | null;
+      progression_every_weeks?: number;
       exercises?: Array<{ exercise_id: string; day_of_week: number; sort_order?: number; sets?: number; reps?: number; rest_seconds?: number; notes?: string }>;
     }) =>
       http<{ message: string; plan: WorkoutPlan }>(`/api/workouts/plans/${id}`, {
@@ -38,6 +58,29 @@ export const workouts = {
       }),
     delete: (id: string) =>
       http<{ message: string }>(`/api/workouts/plans/${id}`, { method: 'DELETE' }),
+
+    /**
+     * Frozen copies of what the plan USED to say.
+     *
+     * The client's history is safe without this — sessions and sets record
+     * what was actually done, independently of the plan. What an edit destroys
+     * is the prescription: what the programme said in March, once April's
+     * numbers are typed over it.
+     *
+     * `create` archives the current state and leaves the live plan in place,
+     * so its id, its assignments and its clients are untouched. It is a
+     * deliberate action, never automatic: the builder autosaves on every field
+     * blur, and versioning on write would mint a version per keystroke.
+     */
+    versions: {
+      list: (planId: string) =>
+        http<WorkoutPlanVersion[]>(`/api/workouts/plans/${planId}/versions`),
+      create: (planId: string) =>
+        http<{ message: string; plan: WorkoutPlan; snapshot: { id: string; version: number; exercise_count: number } }>(
+          `/api/workouts/plans/${planId}/versions`,
+          { method: 'POST' },
+        ),
+    },
 
     /**
      * Granular, id-stable edits to a plan's exercises.

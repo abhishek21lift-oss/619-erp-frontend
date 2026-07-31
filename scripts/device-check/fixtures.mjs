@@ -103,7 +103,56 @@ const PLAN = {
   exercise_count: 15,
   progress: 42,
   exercises: planExercises(),
+
+  // A programme with a rule, so the week stepper and the ramp lines render.
+  // Without one the builder hides both and the states below audit nothing.
+  progression_type: 'weight',
+  progression_amount: 2.5,
+  progression_every_weeks: 1,
+  version: 3,
+  parent_plan_id: null,
+  week: 1,
+  week_source: 'base',
+  // Only the exercise that HAS a prescribed weight ramps. The rest are null
+  // under a weight rule and must render no ramp line at all — inventing a
+  // starting load to draw an arrow from would be a number nobody typed.
+  progression_preview: [
+    {
+      id: 'ex-1',
+      first: { week: 1, target_weight: 1000, reps: 100, rpe: 9.5 },
+      last: { week: 4, target_weight: 1007.5, reps: 100, rpe: 9.5 },
+    },
+  ],
 };
+
+/** What GET /plans/:id?week=N returns: the same rows, numbers moved on. */
+const DERIVED_WEEK = {
+  ...PLAN,
+  week: 3,
+  week_source: 'derived',
+  progression_preview: null,
+  exercises: planExercises().map((r) => ({
+    ...r,
+    week_number: 3,
+    target_weight: r.target_weight == null ? null : r.target_weight + 5,
+  })),
+};
+
+/** Archived states of the plan — read-only history, newest first. */
+const PLAN_VERSIONS = [
+  {
+    id: 'pv-2', version: 2, created_at: '2026-06-24T09:12:00.000Z',
+    created_by_name: 'Ramachandran Subramaniam', duration_weeks: 4,
+    progression_type: 'weight', progression_amount: 2.5, progression_every_weeks: 1,
+    exercise_count: 15,
+  },
+  {
+    id: 'pv-1', version: 1, created_at: '2026-06-01T08:00:00.000Z',
+    created_by_name: 'Ramachandran Subramaniam', duration_weeks: 4,
+    progression_type: 'none', progression_amount: null, progression_every_weeks: 1,
+    exercise_count: 11,
+  },
+];
 
 /** A second plan with nothing in it — the empty day and zero-count case. */
 const EMPTY_PLAN = {
@@ -213,9 +262,11 @@ const ROUTES = [
   })],
   [/^\/api\/settings\/permissions$/, () => ({ permissions: {}, role: 'trainer' })],
 
-  // Workout plans. Specific before general.
+  // Workout plans. Specific before general — and /versions is a sub-path of
+  // /plans/:id, so it has to come first or the plan handler swallows it.
+  [/^\/api\/workouts\/plans\/[^/]+\/versions$/, () => PLAN_VERSIONS],
   [/^\/api\/workouts\/plans\/p-2$/, () => EMPTY_PLAN],
-  [/^\/api\/workouts\/plans\/[^/]+$/, () => PLAN],
+  [/^\/api\/workouts\/plans\/[^/]+$/, (q) => (Number(q.get('week')) > 1 ? DERIVED_WEEK : PLAN)],
   [/^\/api\/workouts\/plans$/, () => [PLAN, EMPTY_PLAN]],
 
   [/^\/api\/workouts\/assignments\/[^/]+$/, () => ({ ...ASSIGNMENT, plan: PLAN })],
@@ -318,9 +369,13 @@ const ROUTES = [
  * silent empty response would look like a working screen with no data, which
  * is exactly the failure mode that makes mocked screenshots untrustworthy.
  */
-export function resolve(pathname) {
+export function resolve(pathname, search = '') {
+  // `search` is passed because a few endpoints answer differently per query —
+  // /plans/:id?week=3 returns the derived week, not the authored one. Handlers
+  // that do not care simply ignore the argument.
+  const params = new URLSearchParams(search);
   for (const [pattern, handler] of ROUTES) {
-    if (pattern.test(pathname)) return handler();
+    if (pattern.test(pathname)) return handler(params);
   }
   return null;
 }

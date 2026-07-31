@@ -107,6 +107,14 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       for (let i = 1; i <= planned.sets; i++) {
         await api.progress.workoutLog.sets.add(newExerciseId, {
           set_number: i, reps: planned.reps, rest_seconds: planned.rest_seconds, completed: false,
+          // The prescribed load for the week the client is actually in, which
+          // the server resolved. Prefilling it is the entire payoff of the
+          // progression rule: a trainer who has to retype "65" every set has
+          // been given a spreadsheet, not a programme. It stays editable —
+          // this is what was ASKED for, and the log records what was done.
+          weight_kg: planned.target_weight ?? null,
+          rpe: planned.rpe ?? null,
+          tempo: planned.tempo ?? null,
         });
       }
     }
@@ -292,9 +300,22 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
         {session.planned && session.planned.exercises.length > 0 && (
           <div className="rounded-[20px] p-5" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.2)' }}>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <ClipboardList size={15} style={{ color: '#6366f1' }} />
-                <p className="text-[13px] font-[760]" style={{ color: '#312e81' }}>Planned for Today — {session.planned.plan_name}</p>
+              <div className="min-w-0 flex items-center gap-2">
+                <ClipboardList size={15} className="shrink-0" style={{ color: '#6366f1' }} />
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-[760]" style={{ color: '#312e81' }}>Planned for Today — {session.planned.plan_name}</p>
+                  {/* Which week these numbers are for. A programme progresses,
+                      so "3 × 8 at 65 kg" is only meaningful alongside the week
+                      it belongs to — and if the trainer wrote this week by hand
+                      it is an instruction, not something the rule produced. */}
+                  {session.planned.week != null && (
+                    <p className="text-[11px] font-[650]" style={{ color: '#818cf8' }}>
+                      Week {session.planned.week}
+                      {session.planned.duration_weeks ? ` of ${session.planned.duration_weeks}` : ''}
+                      {session.planned.source === 'override' ? ' · written for this week' : ''}
+                    </p>
+                  )}
+                </div>
               </div>
               <button onClick={handleLoadAllPlanned} disabled={loadingPlanned}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-[700]" style={{ background: '#6366f1', color: '#fff' }}>
@@ -308,7 +329,16 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
                   <div key={`${ex.exercise_id || ex.name}-${i}`} className="flex items-center justify-between gap-3 rounded-[12px] px-3.5 py-2.5" style={{ background: '#fff', border: '1px solid rgba(99,102,241,0.12)' }}>
                     <div className="min-w-0">
                       <p className="truncate text-[12.5px] font-[650]" style={{ color: '#1e1b4b' }}>{ex.name}</p>
-                      <p className="text-[11px]" style={{ color: '#818cf8' }}>{ex.sets} &times; {ex.reps} target</p>
+                      {/* The load belongs here. It used to be dropped: the
+                          server resolved the week's prescribed weight and the
+                          card showed only sets × reps, so the one number that
+                          changes from week to week was invisible on the only
+                          screen used at the rack. */}
+                      <p className="text-[11px]" style={{ color: '#818cf8' }}>
+                        {ex.sets} &times; {ex.reps}
+                        {ex.target_weight != null ? ` @ ${ex.target_weight} kg` : ''}
+                        {ex.rpe != null ? ` · RPE ${ex.rpe}` : ''} target
+                      </p>
                     </div>
                     <button onClick={() => handleLoadOnePlanned(ex)} disabled={loadingPlanned || alreadyAdded}
                       className="flex-shrink-0 rounded-[8px] px-2.5 py-1.5 text-[11px] font-[700]"

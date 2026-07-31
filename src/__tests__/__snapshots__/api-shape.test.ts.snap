@@ -527,6 +527,8 @@ exports[`api surface > has not lost or renamed a single endpoint method 1`] = `
   "workouts.plans.exercises.reorder → /api/workouts/plans/",
   "workouts.plans.list → /api/workouts/plans",
   "workouts.plans.update → /api/workouts/plans/",
+  "workouts.plans.versions.create → /api/workouts/plans/",
+  "workouts.plans.versions.list → /api/workouts/plans/",
   "workouts.updateProgress → /api/workouts/assignments/",
 ]
 `;

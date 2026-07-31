@@ -122,6 +122,18 @@ const ROUTES = [
     await page.getByRole('button', { name: /tempo, rpe, warm-up/i }).first().click();
     await page.waitForTimeout(400);
   }],
+
+  // The progression half of the builder. `builder` above already covers the
+  // rule card and the ramp lines at rest; these two are the states that only
+  // exist after a tap, and are therefore the ones nobody looks at.
+  ['builder-derived-week', `/pt-os/clients/${IDS.client}/training/builder?plan=${IDS.plan}`, async (page) => {
+    await page.getByRole('button', { name: 'Next week' }).first().click();
+    await page.waitForTimeout(600);
+  }],
+  ['builder-version-history', `/pt-os/clients/${IDS.client}/training/builder?plan=${IDS.plan}`, async (page) => {
+    await page.getByRole('button', { name: /view history/i }).first().click();
+    await page.waitForTimeout(600);
+  }],
   ['builder-empty-day', `/pt-os/clients/${IDS.client}/training/builder?plan=${IDS.emptyPlan}`],
   ['assigned', `/pt-os/clients/${IDS.client}/training/assigned`],
   ['analytics', `/pt-os/clients/${IDS.client}/training/analytics`],
@@ -455,7 +467,7 @@ async function main() {
         await page.route('**/api/**', async (route_) => {
           inflight++;
           const url = new URL(route_.request().url());
-          const body = resolveFixture(url.pathname);
+          const body = resolveFixture(url.pathname, url.search);
           try {
             if (body === null) {
               missingApi.add(url.pathname);
