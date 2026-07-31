@@ -25,6 +25,7 @@ import {
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
   Flag, Move, Accessibility, ShieldCheck, FileSignature,
   Receipt, Smartphone, UserRound, UserSearch, ScrollText, ToggleRight, ShieldAlert, LifeBuoy, HardDrive,
+  CalendarDays,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -35,7 +36,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   LineChart, FileBarChart, Activity, RefreshCcw, Clock, Megaphone, Bell, MessageCircle, Send, Tag, Star,
   UsersRound, Gauge, History, CalendarPlus, ClipboardCheck, Ruler, Camera, Percent, Bot,
   CalendarCheck, Package, Banknote, QrCode, Monitor, Shield, Zap, BookOpen, HeartPulse, Salad,
-  Flag, Move, Accessibility, ShieldCheck, FileSignature,
+  Flag, Move, Accessibility, ShieldCheck, FileSignature, CalendarDays,
   // An icon name that is not registered here renders with NO icon at all —
   // the map is an allowlist, not a lookup with a fallback. Anything added to
   // nav-config.ts must be added here too.

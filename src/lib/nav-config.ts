@@ -95,6 +95,9 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Dumbbell',
     feature: 'programs',
     items: [
+      // First in the group on purpose: it is the only item here a trainer
+      // opens every day. The rest are authoring and reference.
+      { href: '/pt-os/today',               label: 'Today',                icon: 'CalendarDays' },
       { href: '/pt-os/workout-plans',       label: 'Workout Plans',        icon: 'Dumbbell' },
       { href: '/pt-os/workout-log',         label: 'Workout Log',          icon: 'ClipboardList', matchPrefix: '/pt-os/workout-log' },
       { href: '/pt-os/exercise-library',    label: 'Exercise Library',     icon: 'BookOpen',    feature: 'exercise_library' },

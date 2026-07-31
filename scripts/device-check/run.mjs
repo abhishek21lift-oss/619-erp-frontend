@@ -128,6 +128,14 @@ const ROUTES = [
   ['workout-log', `/pt-os/clients/${IDS.client}/workout-log`],
   ['client-profile', `/pt-os/clients/${IDS.client}`],
 
+  // Today — the screen a trainer opens daily, and the finish sheet at the end
+  // of a session. Neither existed before this phase, so neither had coverage.
+  ['today', '/pt-os/today'],
+  ['session-finish-sheet', `/pt-os/clients/${IDS.client}/workout-log/${IDS.session}`, async (page) => {
+    await page.getByRole('button', { name: /finish workout/i }).first().click();
+    await page.waitForTimeout(500);
+  }],
+
   // Both Quick Actions submenus, opened. These shipped clipped — the card
   // around them hid its overflow, so half of each menu was unreachable — and
   // no check covered them because a closed menu renders nothing. The tile

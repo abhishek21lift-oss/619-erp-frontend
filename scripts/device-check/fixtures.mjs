@@ -245,9 +245,42 @@ const ROUTES = [
   // /api/progress/... — the client namespace is progress.workoutLog but the
   // URL is not, and guessing it from the namespace produced eight screens
   // rendering their empty state on the first run.
+  // Today's roster — the screen a trainer opens daily. Deliberately mixed:
+  // one client mid-session, one not started, one on a rest day, and one long
+  // enough name to test the row.
+  [/^\/api\/pt-os\/workout-log\/today/, () => ({
+    data: {
+      date: '2026-07-30',
+      day_of_week: 'Thursday',
+      clients: [
+        { assignment_id: 'a-1', client_id: 'c-1', client_name: LONG_NAME, client_photo: null,
+          plan_id: 'p-1', plan_name: LONG_PLAN, progress_pct: 42,
+          planned_exercises: 12, is_rest_day: false, session_id: null, session_status: null },
+        { assignment_id: 'a-2', client_id: 'c-2', client_name: 'Rahul Mehta', client_photo: null,
+          plan_id: 'p-1', plan_name: 'Upper / Lower', progress_pct: 18,
+          planned_exercises: 5, is_rest_day: false, session_id: 's-1', session_status: 'in_progress' },
+        { assignment_id: 'a-3', client_id: 'c-3', client_name: 'Deeksha Tomar', client_photo: null,
+          plan_id: 'p-2', plan_name: 'Rehab — Lower Back', progress_pct: 60,
+          planned_exercises: 0, is_rest_day: true, session_id: null, session_status: null },
+        { assignment_id: 'a-4', client_id: 'c-4', client_name: 'Sachin', client_photo: null,
+          plan_id: 'p-1', plan_name: 'Full Body', progress_pct: 90,
+          planned_exercises: 4, is_rest_day: false, session_id: 's-2', session_status: 'completed' },
+      ],
+    },
+  })],
+
   [/^\/api\/pt-os\/workout-log\/sessions\/[^/]+\/planned-day-options$/, () => ({ data: [] })],
   [/^\/api\/pt-os\/workout-log\/sessions\/[^/]+$/, () => ({
-    data: { ...SESSIONS[0], exercises: [] },
+    data: {
+      ...SESSIONS[0],
+      exercises: [],
+      planned: null,
+      summary: {
+        total_sets: 18, total_reps: 164, total_volume: 12480,
+        exercises_completed: 5, exercises_total: 6, avg_rpe: 8.5,
+        planned_sets: 22, completion_pct: 82, prs: 2,
+      },
+    },
   })],
   [/^\/api\/pt-os\/workout-log\/sessions/, () => ({ data: SESSIONS })],
   [/^\/api\/pt-os\/workout-log\/volume-summary/, () => ({
@@ -263,6 +296,7 @@ const ROUTES = [
   })],
   [/^\/api\/pt-os\/workout-log\/previous/, () => ({ data: null })],
   [/^\/api\/pt-os\/workout-log/, () => ({ data: [] })],
+
 
   // The bell in the top bar polls this on every page.
   [/^\/api\/v1\/notifications/, () => ({ data: [], unread: 0 })],

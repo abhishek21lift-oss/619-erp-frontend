@@ -10,7 +10,7 @@ import type {
   ConsentRecord, InformedConsent, InformedConsentActivity, MedicalClearance, ParqDocument,
   ParqDocumentType, ParqForm, ParqFormDetail, ParqGateStatus, WorkoutPreviousExercise,
   WorkoutProgressPoint, WorkoutSession, WorkoutSessionDetail, WorkoutSessionExercise,
-  WorkoutSet, WorkoutVolumePoint,
+  WorkoutSet, WorkoutVolumePoint, TodayRoster,
 } from '../types';
 
 // ── Progress Tracking ─────────────────────────────────────────
@@ -182,6 +182,13 @@ export const progress = {
     },
   },
   workoutLog: {
+    /**
+     * The trainer's roster for one day: who is on an active programme, what
+     * their plan prescribes for that weekday, and whether a session already
+     * exists. Defaults to today when no date is given.
+     */
+    today: (params?: { date?: string }) =>
+      http<{ data: TodayRoster }>(`/api/pt-os/workout-log/today${buildQs(params)}`),
     sessions: {
       list: (params: { client_id: string; limit?: number; offset?: number }) =>
         http<{ data: WorkoutSession[] }>(`/api/pt-os/workout-log/sessions${buildQs(params)}`),

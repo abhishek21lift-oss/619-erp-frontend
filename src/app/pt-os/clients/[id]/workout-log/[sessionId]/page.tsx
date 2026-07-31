@@ -12,6 +12,7 @@ import AppShell from '@/components/AppShell';
 import { Button } from '@/components/ui';
 import FloatInput from '@/components/ui/FloatInput';
 import ExercisePicker from '@/components/pt-os/workout-log/ExercisePicker';
+import SessionSummary from '@/components/pt-os/workout-log/SessionSummary';
 import { api } from '@/lib/api';
 import type { WorkoutSessionDetail, WorkoutSessionExercise, WorkoutSet, WorkoutPreviousExercise } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -38,6 +39,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
   const [headerOpen, setHeaderOpen] = useState(false);
   const [dayOptions, setDayOptions] = useState<string[]>([]);
   const [loadingPlanned, setLoadingPlanned] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const loadSession = useCallback(async () => {
     setLoading(true);
@@ -174,8 +176,14 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
     }
   };
 
-  const handleFinish = async () => {
-    await handleHeaderSave({ status: 'completed' });
+  // Finishing opens the summary rather than completing immediately. The old
+  // one-tap finish threw away everything the session had just produced and
+  // never asked for a trainer note — see components/.../SessionSummary.
+  const handleFinish = () => setSummaryOpen(true);
+
+  const handleConfirmFinish = async (patch: { notes: string | null; duration_minutes: number | null }) => {
+    await handleHeaderSave({ ...patch, status: 'completed' });
+    setSummaryOpen(false);
     toast.success('Workout session completed.');
     router.push(`/pt-os/clients/${clientId}/workout-log`);
   };
@@ -201,7 +209,7 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
       <div className="pt-1">
         <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
           <button onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}
-            className="flex items-center gap-2 text-[12px] font-[650]" style={{ color: '#94a3b8' }}>
+            className="flex h-[44px] items-center gap-2 text-[12px] font-[650]" style={{ color: '#94a3b8' }}>
             <ArrowLeft size={13} /> Workout Log
           </button>
           <span className="rounded-full px-3 py-1 text-[10.5px] font-[700]"
@@ -335,10 +343,17 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
           )}
         </div>
 
-        <Button variant="outline" iconLeft={<Plus size={14} />} onClick={() => setPickerOpen(true)} className="w-full">
+        <Button variant="outline" iconLeft={<Plus size={14} />} onClick={() => setPickerOpen(true)} className="h-[44px] w-full">
           Add Exercise
         </Button>
       </div>
+
+      <SessionSummary
+        session={session}
+        open={summaryOpen}
+        onCancel={() => setSummaryOpen(false)}
+        onFinish={handleConfirmFinish}
+      />
 
       <ExercisePicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={handleAddExercise} />
 
@@ -360,10 +375,10 @@ function SessionLogger({ clientId, sessionId }: { clientId: string; sessionId: s
             ))}
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="flex-1" onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}>
+            <Button variant="outline" className="h-[44px] flex-1" onClick={() => router.push(`/pt-os/clients/${clientId}/workout-log`)}>
               Save & Exit
             </Button>
-            <Button className="flex-1" iconLeft={<Check size={14} />} disabled={session.status === 'completed'}
+            <Button className="h-[44px] flex-1" iconLeft={<Check size={14} />} disabled={session.status === 'completed'}
               onClick={handleFinish} style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
               {session.status === 'completed' ? 'Completed' : 'Finish Workout'}
             </Button>

@@ -807,6 +807,34 @@ export interface WorkoutSessionSummary {
   exercises_completed: number;
   exercises_total: number;
   avg_rpe: number | null;
+  /** Every set laid out, done or not — the denominator for completion. */
+  planned_sets: number;
+  /** null when nothing was planned: a freestyle session is not 0% complete. */
+  completion_pct: number | null;
+  /** Sets that beat a previous best. Counted per SET, not per exercise. */
+  prs: number;
+}
+
+/** One client on a trainer's roster for a given day. */
+export interface TodayClient {
+  assignment_id: string;
+  client_id: string;
+  client_name: string;
+  client_photo: string | null;
+  plan_id: string;
+  plan_name: string;
+  progress_pct: number | null;
+  planned_exercises: number;
+  /** The programme prescribes nothing for this weekday — an answer, not a gap. */
+  is_rest_day: boolean;
+  session_id: string | null;
+  session_status: WorkoutSessionStatus | null;
+}
+
+export interface TodayRoster {
+  date: string;
+  day_of_week: string;
+  clients: TodayClient[];
 }
 
 export type WorkoutSessionStatus = 'in_progress' | 'completed';
