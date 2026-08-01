@@ -38,6 +38,27 @@ describe('buildCsp', () => {
     expect(buildCsp({})).not.toContain('unsafe-eval');
   });
 
+  it('never allows eval in production, whatever else is set', () => {
+    expect(buildCsp({ NODE_ENV: 'production' })).not.toContain('unsafe-eval');
+    expect(buildCsp({ NODE_ENV: 'production' }, { nonce: 'n1' })).not.toContain('unsafe-eval');
+  });
+
+  it('allows eval ONLY when NODE_ENV is explicitly development', () => {
+    // `next dev` compiles modules as eval() strings, so without this the dev
+    // bundle never executes and the app hangs on its loading state. Production
+    // builds emit no eval, so this must never widen the deployed policy.
+    expect(buildCsp({ NODE_ENV: 'development' })).toContain("'unsafe-eval'");
+    expect(buildCsp({ NODE_ENV: 'development' }, { nonce: 'n1' })).toContain("'unsafe-eval'");
+  });
+
+  it('treats an absent or unrecognised NODE_ENV as production, not development', () => {
+    // The safe default: a misconfigured environment should break the dev
+    // server, never silently weaken a deployed policy.
+    for (const env of [{}, { NODE_ENV: '' }, { NODE_ENV: 'staging' }, { NODE_ENV: 'Development' }]) {
+      expect(buildCsp(env)).not.toContain('unsafe-eval');
+    }
+  });
+
   it('denies framing, objects and stray base tags', () => {
     const csp = buildCsp({});
     expect(csp).toContain("frame-ancestors 'none'");
