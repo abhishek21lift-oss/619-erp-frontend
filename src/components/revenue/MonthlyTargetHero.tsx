@@ -152,6 +152,30 @@ function Figure({ label, value, colour, icon }: {
   );
 }
 
+// Hoisted to module scope: defining this inside MonthlyTargetHero would give it
+// a new identity on every render (e.g. every keystroke in the draft input),
+// which makes React unmount/remount the whole subtree — including the input —
+// and dismiss the on-screen keyboard after each character.
+const Shell = ({ children, glow }: { children: React.ReactNode; glow?: string }) => (
+  <m.section
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, ease: EASE_EXPO }}
+    className="relative overflow-hidden rounded-[20px] p-5 sm:p-6"
+    style={{
+      background: 'var(--bg-elevated)',
+      border: '1px solid var(--border)',
+      boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.06)',
+    }}
+  >
+    {glow && (
+      <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full"
+        style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 70%)`, opacity: 0.16, filter: 'blur(48px)' }} />
+    )}
+    <div className="relative">{children}</div>
+  </m.section>
+);
+
 export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () => void }) {
   const { toast } = useToast();
   const [data, setData] = useState<RevenueTarget | null>(null);
@@ -219,27 +243,6 @@ export default function MonthlyTargetHero({ onTargetSet }: { onTargetSet?: () =>
   );
 
   const achieved = useCountUp(data?.achieved ?? 0, Boolean(data?.locked));
-
-  // ── Shell ─────────────────────────────────────────────────────────────────
-  const Shell = ({ children, glow }: { children: React.ReactNode; glow?: string }) => (
-    <m.section
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: EASE_EXPO }}
-      className="relative overflow-hidden rounded-[20px] p-5 sm:p-6"
-      style={{
-        background: 'var(--bg-elevated)',
-        border: '1px solid var(--border)',
-        boxShadow: 'var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.06)',
-      }}
-    >
-      {glow && (
-        <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full"
-          style={{ background: `radial-gradient(circle, ${glow} 0%, transparent 70%)`, opacity: 0.16, filter: 'blur(48px)' }} />
-      )}
-      <div className="relative">{children}</div>
-    </m.section>
-  );
 
   if (loading) {
     return (
