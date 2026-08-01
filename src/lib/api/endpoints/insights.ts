@@ -94,13 +94,7 @@ export const ai = {
     }),
 
   generateWorkout: (params: AiWorkoutParams) =>
-    httpSSE<{
-      data: AiWorkoutPlan; model: string; tier: string; used_fallback: boolean;
-      /** Names the model produced that no library exercise matched. */
-      unmatched_exercises?: string[];
-      /** False when the catalogue could not be read and the plan is unconstrained. */
-      grounded?: boolean;
-    }>('/api/ai/workout/generate', {
+    httpSSE<{ data: AiWorkoutPlan; model: string; tier: string; used_fallback: boolean }>('/api/ai/workout/generate', {
       method: 'POST',
       body: JSON.stringify(params),
     }),
