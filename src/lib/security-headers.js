@@ -59,8 +59,24 @@ function buildCsp(env = process.env, opts = {}) {
   // /theme-init.js). Everything else in the policy is identical, so a
   // violation reported under the nonce policy is unambiguously about inline
   // script and nothing else.
+  // `next dev` compiles modules as eval() strings for HMR and source maps, so
+  // a policy without 'unsafe-eval' stops the dev bundle executing at all — the
+  // app hangs on its loading state with nothing but a CSP violation to show
+  // for it. That is the dev server itself, not a library that could be swapped
+  // out, so the rule above ("find the library that calls eval instead") has no
+  // target to point at here.
+  //
+  // Requires NODE_ENV to say 'development' explicitly — an absent or unknown
+  // value yields the strict policy, so the failure mode of a misconfigured
+  // environment is a broken dev server rather than a silently weakened
+  // production one. `next build` emits no eval, so the production policy is
+  // byte-for-byte what it was. Read from env at call time rather than a
+  // module-level constant so a bundler cannot bake it in at import.
+  const isDev = env.NODE_ENV === 'development';
+  const evalSrc = isDev ? " 'unsafe-eval'" : '';
+
   const scriptSrc = opts.nonce
-    ? `script-src 'self' 'nonce-${opts.nonce}' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com`
+    ? `script-src 'self' 'nonce-${opts.nonce}'${evalSrc} https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com`
     : null;
 
   return [
@@ -80,7 +96,7 @@ function buildCsp(env = process.env, opts = {}) {
     //
     // cdnjs serves SheetJS, which lib/sheet-import.ts injects as a script tag
     // (with SRI) on first use of the spreadsheet importer.
-    scriptSrc || "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com",
+    scriptSrc || `script-src 'self' 'unsafe-inline'${evalSrc} https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com`,
 
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/",
     `img-src 'self' data: blob: https://${supabaseHost} https://lh3.googleusercontent.com`,
