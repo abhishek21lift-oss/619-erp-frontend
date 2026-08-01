@@ -1,19 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, Dumbbell, X, Clock } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Search, Dumbbell, X, Clock, Star, Loader2, CornerDownLeft, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
-
-interface ExerciseLite {
-  id: string;
-  name: string;
-  body_part: string;
-  target_muscle: string;
-  equipment: string | null;
-  muscle_group: string;
-}
+import { cn } from '@/components/ui/cn';
+import type { ExerciseMeta, LibraryExercise } from '@/lib/api';
+import { useVirtualList } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 
 export interface PickedExercise { id: string; name: string; }
 
@@ -21,59 +15,141 @@ interface ExercisePickerProps {
   open: boolean;
   onClose: () => void;
   onSelect: (exercise: PickedExercise) => void;
-  /** Exercise names this client has logged recently — shown as quick-pick chips before any search. */
+  /** Exercise names this client has logged recently — quick-pick chips. */
   recentNames?: string[];
+  /**
+   * Exercise ids already in the programme for this day. They stay visible but
+   * are marked and cannot be added twice — hiding them would make a trainer
+   * wonder why a movement they know exists has vanished from search.
+   */
+  existingIds?: string[];
 }
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 60;
+const ROW_HEIGHT = 56;
+const VIEWPORT = 360;
 
-/** Searchable/filterable picker over the shared exercises library
- *  (src/app/pt-os/exercise-library) — reuses the exact same API rather
- *  than a second exercise data source.
+/**
+ * The Workout Builder's exercise picker, over the same library the Exercise
+ * Library page serves — one API, one ranking, one set of filters.
  *
- *  The chips and the Cancel button are sized in explicit pixels: globals.css
- *  sets `html { font-size: 14px }`, so padding-derived heights land short of a
- *  thumb target. Measured at 390px they were 24px tall, against the 44 the
- *  workout brief asks for. This sheet is opened from the builder on a phone,
- *  mid-session, which is exactly when a 24px chip is unhittable. */
-export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: ExercisePickerProps) {
+ * Opens on the trainer's own recently-programmed exercises, because the
+ * overwhelmingly common action is reaching for something you already use.
+ * Arrow keys and Enter work throughout, so a whole day can be programmed
+ * without the mouse.
+ *
+ * Sizing note (unchanged from the original): globals.css sets
+ * `html { font-size: 14px }`, so padding-derived heights land short of a thumb
+ * target. The chips and Cancel button keep explicit 44px heights — this sheet
+ * opens on a phone, mid-session, where a 24px chip is unhittable.
+ */
+export function ExercisePicker({
+  open, onClose, onSelect, recentNames = [], existingIds = [],
+}: ExercisePickerProps) {
   const { toast } = useToast();
+
   const [search, setSearch] = useState('');
-  const [bodyPart, setBodyPart] = useState('');
-  const [bodyParts, setBodyParts] = useState<string[]>([]);
-  const [exercises, setExercises] = useState<ExerciseLite[]>([]);
+  const [region, setRegion] = useState('');
+  const [equipment, setEquipment] = useState('');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [meta, setMeta] = useState<ExerciseMeta | null>(null);
+  const [exercises, setExercises] = useState<LibraryExercise[]>([]);
+  const [recent, setRecent] = useState<LibraryExercise[]>([]);
   const [loading, setLoading] = useState(false);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [active, setActive] = useState(0);
+
+  const reqId = useRef(0);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const existing = useMemo(() => new Set(existingIds), [existingIds]);
 
   useEffect(() => {
     if (!open) return;
-    api.exercises.meta().then((m) => setBodyParts(m.body_parts || [])).catch(() => {});
+    api.exercises.meta().then(setMeta).catch(() => { /* filters degrade, list still works */ });
+    api.exercises.recent(10).then((r) => setRecent(r.exercises)).catch(() => setRecent([]));
   }, [open]);
 
-  const load = useCallback(() => {
+  useEffect(() => {
+    if (!open) {
+      setSearch(''); setRegion(''); setEquipment('');
+      setFavoritesOnly(false); setActive(0);
+    }
+  }, [open]);
+
+  const load = useCallback(async () => {
+    const id = ++reqId.current;
     setLoading(true);
-    const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: '0' });
-    if (search) params.set('search', search);
-    if (bodyPart) params.set('body_part', bodyPart);
-    api.exercises.list(params.toString())
-      .then((data) => setExercises(data as ExerciseLite[]))
-      .catch(() => toast.error('Failed to load exercises'))
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, bodyPart]);
+    try {
+      const res = await api.exercises.list({
+        limit: PAGE_SIZE,
+        ...(search.trim() ? { q: search.trim() } : {}),
+        ...(region ? { body_region: region } : {}),
+        ...(equipment ? { equipment } : {}),
+        ...(favoritesOnly ? { favorites_only: 'true' } : {}),
+      });
+      if (id === reqId.current) { setExercises(res.exercises); setActive(0); }
+    } catch {
+      if (id === reqId.current) {
+        setExercises([]);
+        toast.error('Failed to load exercises');
+      }
+    } finally {
+      if (id === reqId.current) setLoading(false);
+    }
+  }, [search, region, equipment, favoritesOnly, toast]);
 
   useEffect(() => {
     if (!open) return;
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(load, 250);
-    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+    const t = setTimeout(() => { void load(); }, 220);
+    return () => clearTimeout(t);
   }, [open, load]);
 
-  useEffect(() => {
-    if (!open) { setSearch(''); setBodyPart(''); }
-  }, [open]);
+  const pick = useCallback((ex: LibraryExercise) => {
+    if (existing.has(ex.id)) return;
+    onSelect({ id: ex.id, name: ex.name });
+    // Feeds "recently used" for this trainer. Fire-and-forget: failing to
+    // record a usage stat must never block adding the exercise.
+    void api.exercises.markUsed(ex.id).catch(() => {});
+    onClose();
+  }, [existing, onSelect, onClose]);
 
-  const showRecent = !search && !bodyPart && recentNames.length > 0;
+  const showRecentChips = !search && !region && !equipment && !favoritesOnly && recentNames.length > 0;
+  const showRecentList  = !search && !region && !equipment && !favoritesOnly && recent.length > 0;
+  const rows = showRecentList ? recent : exercises;
+
+  const virtual = useVirtualList(rows, ROW_HEIGHT, VIEWPORT);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActive((i) => Math.min(i + 1, rows.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActive((i) => Math.max(i - 1, 0));
+      } else if (e.key === 'Enter') {
+        const target = rows[active];
+        if (target) { e.preventDefault(); pick(target); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, rows, active, pick]);
+
+  // Keep the highlighted row in view when arrowing beyond the visible window.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const top = active * ROW_HEIGHT;
+    if (top < el.scrollTop) el.scrollTop = top;
+    else if (top + ROW_HEIGHT > el.scrollTop + VIEWPORT) el.scrollTop = top + ROW_HEIGHT - VIEWPORT;
+  }, [active]);
+
+  const regions = useMemo(
+    () => Object.keys(meta?.muscles_by_region || {}),
+    [meta]
+  );
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -88,34 +164,44 @@ export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: Ex
           <input
             type="text" autoFocus placeholder="Search exercises…" value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 rounded-[10px] text-[13px] outline-none"
+            aria-label="Search exercises"
+            className="w-full pl-9 pr-9 py-2.5 rounded-[10px] text-[13px] outline-none"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
+          {loading && (
+            <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin" style={{ color: 'var(--text-disabled)' }} />
+          )}
         </div>
 
-        {bodyParts.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          <Chip active={!region && !equipment && !favoritesOnly} onClick={() => { setRegion(''); setEquipment(''); setFavoritesOnly(false); }}>
+            All
+          </Chip>
+          <Chip active={favoritesOnly} onClick={() => setFavoritesOnly((v) => !v)}>
+            <Star size={11} className="mr-1 inline" fill={favoritesOnly ? 'currentColor' : 'none'} />
+            Favorites
+          </Chip>
+          {regions.map((r) => (
+            <Chip key={r} active={region === r} onClick={() => setRegion(r === region ? '' : r)}>
+              {r}
+            </Chip>
+          ))}
+        </div>
+
+        {meta && meta.equipment.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-1.5">
-            <button
-              onClick={() => setBodyPart('')}
-              className="flex h-[44px] min-w-[44px] items-center justify-center rounded-full px-3.5 text-[11px] font-[650] transition"
-              style={{ background: !bodyPart ? '#0f172a' : 'var(--bg-subtle)', color: !bodyPart ? '#fff' : '#64748b' }}>
-              All
-            </button>
-            {bodyParts.slice(0, 8).map((bp) => (
-              <button
-                key={bp} onClick={() => setBodyPart(bp === bodyPart ? '' : bp)}
-                className="flex h-[44px] items-center rounded-full px-3.5 text-[11px] font-[650] capitalize transition"
-                style={{ background: bodyPart === bp ? '#0f172a' : 'var(--bg-subtle)', color: bodyPart === bp ? '#fff' : '#64748b' }}>
-                {bp}
-              </button>
+            {meta.equipment.slice(0, 7).map((q) => (
+              <Chip key={q.slug} small active={equipment === q.slug} onClick={() => setEquipment(q.slug === equipment ? '' : q.slug)}>
+                {q.name}
+              </Chip>
             ))}
           </div>
         )}
 
-        {showRecent && (
+        {showRecentChips && (
           <div className="mb-3">
             <p className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-[650] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
-              <Clock size={11} /> Recent
+              <Clock size={11} /> This client&apos;s recent
             </p>
             <div className="flex flex-wrap gap-1.5">
               {recentNames.slice(0, 6).map((name) => (
@@ -123,7 +209,8 @@ export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: Ex
                   key={name}
                   onClick={() => { onSelect({ id: '', name }); onClose(); }}
                   className="flex h-[44px] items-center rounded-full px-3.5 text-[12px] font-[650] transition hover:opacity-80"
-                  style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706', border: '1px solid rgba(245,158,11,0.25)' }}>
+                  style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706', border: '1px solid rgba(245,158,11,0.25)' }}
+                >
                   {name}
                 </button>
               ))}
@@ -131,33 +218,87 @@ export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: Ex
           </div>
         )}
 
-        <div className="max-h-[360px] overflow-y-auto space-y-1">
-          {loading && (
+        {showRecentList && (
+          <p className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-[650] uppercase tracking-wider" style={{ color: 'var(--text-disabled)' }}>
+            <Clock size={11} /> You programme often
+          </p>
+        )}
+
+        <div
+          ref={listRef}
+          onScroll={virtual.onScroll}
+          className="overflow-y-auto"
+          style={{ maxHeight: VIEWPORT }}
+        >
+          {loading && rows.length === 0 && (
             <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>Loading…</p>
           )}
-          {!loading && exercises.length === 0 && (
-            <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>No exercises found.</p>
+          {!loading && rows.length === 0 && (
+            <p className="py-8 text-center text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>
+              {search ? `Nothing matches “${search}”.` : 'No exercises found.'}
+            </p>
           )}
-          {!loading && exercises.map((ex) => (
-            <button
-              key={ex.id}
-              onClick={() => { onSelect({ id: ex.id, name: ex.name }); onClose(); }}
-              className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:bg-slate-50"
-            >
-              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[8px]" style={{ background: 'var(--bg-subtle)' }}>
-                <Dumbbell size={14} style={{ color: '#94a3b8' }} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[13px] font-[650] text-gray-900">{ex.name}</span>
-                <span className="block truncate text-[11px] text-slate-400 capitalize">
-                  {ex.target_muscle || ex.muscle_group}{ex.equipment ? ` · ${ex.equipment}` : ''}
-                </span>
-              </span>
-            </button>
-          ))}
+
+          {rows.length > 0 && (
+            <div style={{ height: virtual.totalHeight }}>
+              <div style={{ paddingTop: virtual.padTop, paddingBottom: virtual.padBottom }}>
+                {virtual.slice.map((ex, i) => {
+                  const index = rows.indexOf(ex);
+                  const already = existing.has(ex.id);
+                  return (
+                    <button
+                      key={ex.id}
+                      onClick={() => pick(ex)}
+                      onMouseEnter={() => setActive(index)}
+                      disabled={already}
+                      style={{ height: ROW_HEIGHT }}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-[10px] px-3 text-left transition',
+                        index === active && !already && 'bg-slate-100 dark:bg-white/[0.06]',
+                        already ? 'cursor-not-allowed opacity-45' : 'hover:bg-slate-50 dark:hover:bg-white/[0.04]',
+                      )}
+                    >
+                      <span
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[8px]"
+                        style={{ background: 'var(--bg-subtle)' }}
+                      >
+                        {already
+                          ? <Check size={14} style={{ color: '#10b981' }} />
+                          : <Dumbbell size={14} style={{ color: '#94a3b8' }} />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1.5">
+                          <span className="truncate text-[13px] font-[650] text-[var(--text-primary)]">{ex.name}</span>
+                          {ex.is_favorite && <Star size={9} className="shrink-0 text-amber-500" fill="currentColor" />}
+                          {ex.is_custom && (
+                            <span className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wide text-[var(--brand)]" style={{ background: 'var(--brand-glow, rgba(244,63,94,0.1))' }}>
+                              Custom
+                            </span>
+                          )}
+                        </span>
+                        <span className="block truncate text-[11px] capitalize text-slate-400">
+                          {already
+                            ? 'Already in this day'
+                            : <>
+                                {ex.primary_muscle || ex.target_muscle || ex.muscle_group}
+                                {ex.equipment_name || ex.equipment ? ` · ${ex.equipment_name || ex.equipment}` : ''}
+                                {ex.mechanic ? ` · ${ex.mechanic}` : ''}
+                              </>}
+                        </span>
+                      </span>
+                      {index === active && !already && (
+                        <CornerDownLeft size={12} className="shrink-0 text-slate-300" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="mt-2 flex justify-end">
+        <div className="mt-2 flex items-center justify-between">
+          <span className="hidden text-[10.5px] text-slate-400 sm:block">↑↓ navigate · ↵ add</span>
           <button
             onClick={onClose}
             className="flex h-[44px] items-center gap-1.5 rounded-[10px] px-3.5 text-[12px] font-[650]"
@@ -168,6 +309,32 @@ export function ExercisePicker({ open, onClose, onSelect, recentNames = [] }: Ex
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Chip({
+  active, onClick, children, small,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  small?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'flex items-center justify-center rounded-full font-[650] transition',
+        small ? 'h-[36px] px-3 text-[10.5px]' : 'h-[44px] min-w-[44px] px-3.5 text-[11px]',
+      )}
+      style={{
+        background: active ? '#0f172a' : 'var(--bg-subtle)',
+        color: active ? '#fff' : '#64748b',
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

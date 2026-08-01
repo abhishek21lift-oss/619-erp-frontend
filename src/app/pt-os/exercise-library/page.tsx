@@ -1,555 +1,474 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useSeededSearch } from '@/lib/use-seeded-search';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Dumbbell, Search, Plus, X, ChevronDown, Filter, Image as ImageIcon,
-  Edit3, Trash2, Check, RefreshCw, Info, ChevronLeft, ChevronRight,
+  Dumbbell, Plus, SlidersHorizontal, Search, Command, ChevronLeft, ChevronRight,
+  RefreshCw, AlertCircle, Star, LayoutGrid,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
+import { Badge, Button, EmptyState, Skeleton, cn } from '@/components/ui';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast';
-import { cn } from '@/components/ui/cn';
+import { useSeededSearch } from '@/lib/use-seeded-search';
+import type { LibraryExercise } from '@/lib/api';
 
-interface Exercise {
-  id: string;
-  name: string;
-  muscle_group: string;
-  body_part: string;
-  target_muscle: string;
-  secondary_muscles: string | null;
-  equipment: string | null;
-  difficulty: string;
-  instructions: string | null;
-  gif_url: string | null;
-  exercise_type: string | null;
-  force: string | null;
-  mechanic: string | null;
-  sets_default: number | null;
-  reps_default: number | null;
-  rest_seconds: number | null;
-  source_id: string | null;
-}
+import { ExerciseCard } from '@/components/pt-os/exercise-library/ExerciseCard';
+import { ExerciseFilterRail } from '@/components/pt-os/exercise-library/ExerciseFilterRail';
+import { ExerciseDetailDrawer } from '@/components/pt-os/exercise-library/ExerciseDetailDrawer';
+import { ExerciseEditorDialog } from '@/components/pt-os/exercise-library/ExerciseEditorDialog';
+import { ExerciseCommandPalette } from '@/components/pt-os/exercise-library/ExerciseCommandPalette';
+import { PAGE_SIZE, useExerciseLibrary } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 
-interface Meta {
-  body_parts: string[];
-  equipment_types: string[];
-  exercise_types: string[];
-  difficulties: string[];
-  total: number;
-}
+/**
+ * The Exercise Library.
+ *
+ * Replaces the previous GIF-grid entirely. Three things changed structurally:
+ *
+ *  - Search, filtering, counting and paging all happen in one indexed query on
+ *    the server. The old page pulled up to 1,000 rows and filtered in the
+ *    browser, which is why it got slower as the library grew.
+ *  - No media. Cards carry facts, not pictures, so a screenful is ~24
+ *    exercises you can compare at a glance rather than 6 you have to read.
+ *  - Everything a trainer authors is first-class: custom exercises search,
+ *    filter and programme exactly like the built-in 890.
+ */
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner:     '#059669',
-  intermediate: '#d97706',
-  advanced:     '#dc2626',
-};
-
-const BODY_PART_COLORS: Record<string, string> = {
-  Core:      '#7c3aed',
-  Back:      '#2563eb',
-  Legs:      '#059669',
-  Chest:     '#dc2626',
-  Shoulders: '#d97706',
-  Arms:      '#ea580c',
-  Neck:      '#6b7280',
-  'Full Body': '#4f46e5',
-};
-
-const PAGE_SIZE = 40;
-
-function ExerciseCard({
-  exercise, onClick, onDelete,
-}: { exercise: Exercise; onClick: () => void; onDelete: (e: React.MouseEvent) => void }) {
-  const [imgError, setImgError] = useState(false);
-  const bodyColor = BODY_PART_COLORS[exercise.body_part] || '#6b7280';
-  const diffColor = DIFFICULTY_COLORS[exercise.difficulty] || '#6b7280';
-
-  return (
-    <div
-      onClick={onClick}
-      className="relative group cursor-pointer rounded-xl border overflow-hidden transition-all hover:scale-[1.01]"
-      style={{ background: 'var(--bg-card)', borderColor: '#e5e7eb' }}
-    >
-      {/* GIF / placeholder */}
-      <div
-        className="w-full h-36 flex items-center justify-center overflow-hidden"
-        style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}
-      >
-        {exercise.gif_url && !imgError ? (
-          <img
-            src={exercise.gif_url}
-            alt={exercise.name}
-            className="w-full h-full object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-1 opacity-30">
-            <Dumbbell size={28} />
-            <span style={{ fontSize: 10 }}>No image</span>
-          </div>
-        )}
-      </div>
-
-      {/* Body badge */}
-      <span
-        className="absolute top-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full"
-        style={{ background: bodyColor + '18', color: bodyColor, border: `1px solid ${bodyColor}30` }}
-      >
-        {exercise.body_part}
-      </span>
-
-      {/* Delete button */}
-      <button
-        onClick={onDelete}
-        className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}
-      >
-        <Trash2 size={13} />
-      </button>
-
-      <div className="p-3">
-        <p className="font-semibold text-sm leading-snug line-clamp-2 mb-2" style={{ color: 'var(--text-primary)' }}>
-          {exercise.name}
-        </p>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {exercise.equipment && (
-            <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-              {exercise.equipment}
-            </span>
-          )}
-          <span
-            className="text-xs px-1.5 py-0.5 rounded"
-            style={{ background: diffColor + '15', color: diffColor }}
-          >
-            {exercise.difficulty}
-          </span>
-          {exercise.exercise_type && (
-            <span className="text-xs px-1.5 py-0.5 rounded capitalize" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-              {exercise.exercise_type}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ExerciseModal({ exercise, onClose, onSave }: {
-  exercise: Exercise | null;
-  onClose: () => void;
-  onSave: (updated: Partial<Exercise>) => Promise<void>;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<Partial<Exercise>>({});
-  const [saving, setSaving] = useState(false);
-  const [imgError, setImgError] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (exercise) { setForm(exercise); setEditing(false); setImgError(false); }
-  }, [exercise]);
-
-  if (!exercise) return null;
-
-  const bodyColor = BODY_PART_COLORS[exercise.body_part] || '#6b7280';
-  const diffColor = DIFFICULTY_COLORS[exercise.difficulty] || '#6b7280';
-
-  async function handleSave() {
-    setSaving(true);
-    try { await onSave(form); setEditing(false); }
-    catch { toast.error('Save failed'); }
-    finally { setSaving(false); }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto overscroll-contain rounded-2xl"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: '#e5e7eb' }}>
-          <div className="flex-1 pr-4">
-            {editing ? (
-              <input
-                className="w-full text-xl font-bold rounded-lg px-2 py-1"
-                style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
-                value={form.name ?? ''}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              />
-            ) : (
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{exercise.name}</h2>
-            )}
-            <div className="flex gap-2 mt-2 flex-wrap">
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: bodyColor + '18', color: bodyColor }}>
-                {exercise.body_part}
-              </span>
-              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: diffColor + '15', color: diffColor }}>
-                {exercise.difficulty}
-              </span>
-              {exercise.equipment && (
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                  {exercise.equipment}
-                </span>
-              )}
-              {exercise.exercise_type && (
-                <span className="text-xs px-2 py-0.5 rounded-full capitalize" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                  {exercise.exercise_type}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            {!editing && (
-              <button onClick={() => setEditing(true)} className="p-2 rounded-lg transition-colors" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                <Edit3 size={16} />
-              </button>
-            )}
-            <button onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* GIF */}
-        {exercise.gif_url && !imgError && (
-          <div className="w-full h-56 overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- external user-provided GIF URL, domain unknown */}
-            <img src={exercise.gif_url} alt={exercise.name} className="w-full h-full object-contain" onError={() => setImgError(true)} />
-          </div>
-        )}
-
-        {/* Body */}
-        <div className="p-5 space-y-4">
-          {/* Muscle info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)' }}>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Primary Muscle</p>
-              <p className="font-semibold capitalize text-sm" style={{ color: 'var(--text-primary)' }}>{exercise.target_muscle || '—'}</p>
-            </div>
-            <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)' }}>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Secondary Muscles</p>
-              <p className="text-sm capitalize" style={{ color: 'var(--text-primary)' }}>{exercise.secondary_muscles || '—'}</p>
-            </div>
-            {exercise.force && (
-              <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)' }}>
-                <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Force</p>
-                <p className="font-semibold capitalize text-sm" style={{ color: 'var(--text-primary)' }}>{exercise.force}</p>
-              </div>
-            )}
-            {exercise.mechanic && (
-              <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)' }}>
-                <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Mechanic</p>
-                <p className="font-semibold capitalize text-sm" style={{ color: 'var(--text-primary)' }}>{exercise.mechanic}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Instructions */}
-          {exercise.instructions && (
-            <div>
-              <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Instructions</p>
-              {editing ? (
-                <textarea
-                  className="w-full rounded-lg p-3 text-sm resize-none"
-                  style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db', minHeight: 120 }}
-                  value={form.instructions ?? ''}
-                  onChange={e => setForm(f => ({ ...f, instructions: e.target.value }))}
-                />
-              ) : (
-                <ol className="space-y-2">
-                  {exercise.instructions.split('\n').filter(Boolean).map((step, i) => (
-                    <li key={i} className="flex gap-3 text-sm" style={{ color: 'var(--text-primary)' }}>
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: '#6366f1', color: 'white' }}>
-                        {i + 1}
-                      </span>
-                      <span className="leading-snug">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
-          )}
-
-          {/* Edit actions */}
-          {editing && (
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => { setEditing(false); setForm(exercise); }} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                Cancel
-              </button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-medium" style={{ background: '#6366f1', color: 'white', opacity: saving ? 0.6 : 1 }}>
-                {saving ? 'Saving…' : 'Save Changes'}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AddExerciseModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [form, setForm] = useState({ name: '', body_part: 'Core', difficulty: 'beginner', equipment: '', exercise_type: 'strength', instructions: '' });
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
-
-  async function handleCreate() {
-    if (!form.name.trim()) return toast.error('Name required');
-    setSaving(true);
-    try {
-      await api.exercises.create({ ...form, muscle_group: form.body_part });
-      toast.success('Exercise created');
-      onCreated();
-      onClose();
-    } catch { toast.error('Failed to create exercise'); }
-    finally { setSaving(false); }
-  }
-
-  const field = (label: string, key: keyof typeof form, type: 'text' | 'select' | 'textarea' = 'text', options?: string[]) => (
-    <div>
-      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{label}</label>
-      {type === 'select' ? (
-        <select className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
-          value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}>
-          {options!.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      ) : type === 'textarea' ? (
-        <textarea rows={4} className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
-          value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
-      ) : (
-        <input className="w-full rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
-          value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
-      )}
-    </div>
-  );
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="w-full max-w-md rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: '#e5e7eb' }}>
-          <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Add Exercise</h2>
-          <button onClick={onClose} className="p-2 rounded-lg" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}><X size={16} /></button>
-        </div>
-        <div className="p-5 space-y-4">
-          {field('Exercise Name *', 'name')}
-          {field('Body Part', 'body_part', 'select', ['Core', 'Back', 'Legs', 'Chest', 'Shoulders', 'Arms', 'Full Body'])}
-          {field('Difficulty', 'difficulty', 'select', ['beginner', 'intermediate', 'advanced'])}
-          {field('Equipment', 'equipment')}
-          {field('Type', 'exercise_type', 'select', ['strength', 'cardio', 'stretching', 'plyometrics', 'powerlifting', 'strongman', 'olympic weightlifting'])}
-          {field('Instructions', 'instructions', 'textarea')}
-          <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>Cancel</button>
-            <button onClick={handleCreate} disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ background: '#6366f1', color: 'white', opacity: saving ? 0.6 : 1 }}>
-              {saving ? 'Creating…' : 'Create Exercise'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const ROLES_THAT_CAN_AUTHOR = new Set(['super_admin', 'admin', 'manager', 'trainer']);
 
 export default function ExerciseLibraryPage() {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [meta, setMeta] = useState<Meta | null>(null);
-  const [loading, setLoading] = useState(true);
-  // Seeded from ?q= so a hit from the global search lands on that exercise.
-  const [search, setSearch] = useSeededSearch();
-  const [bodyPart, setBodyPart] = useState('');
-  const [equipment, setEquipment] = useState('');
-  const [exerciseType, setExerciseType] = useState('');
-  const [difficulty, setDifficulty] = useState('');
-  const [page, setPage] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [selected, setSelected] = useState<Exercise | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
-  const { toast } = useToast();
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const load = useCallback(async (pg = 0) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(pg * PAGE_SIZE) });
-      if (search)       params.set('search', search);
-      if (bodyPart)     params.set('body_part', bodyPart);
-      if (equipment)    params.set('equipment', equipment);
-      if (exerciseType) params.set('exercise_type', exerciseType);
-      if (difficulty)   params.set('difficulty', difficulty);
-
-      const [data, countRes] = await Promise.all([
-        api.exercises.list(params.toString()),
-        api.exercises.count(params.toString()),
-      ]);
-      setExercises(data as Exercise[]);
-      setTotal(countRes?.total ?? data.length);
-    } catch { toast.error('Failed to load exercises'); }
-    finally { setLoading(false); }
-  }, [search, bodyPart, equipment, exerciseType, difficulty]);
-
-  const loadMeta = useCallback(async () => {
-    try { setMeta(await api.exercises.meta()); } catch { /* non-fatal */ }
-  }, []);
-
-  useEffect(() => { loadMeta(); }, [loadMeta]);
-
-  useEffect(() => {
-    setPage(0);
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => load(0), search ? 400 : 0);
-    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
-  }, [search, bodyPart, equipment, exerciseType, difficulty]);
-
-  useEffect(() => { load(page); }, [page]);
-
-  async function handleDelete(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!confirm('Delete this exercise?')) return;
-    try {
-      await api.exercises.delete(id);
-      toast.success('Exercise deleted');
-      load(page);
-    } catch { toast.error('Failed to delete'); }
-  }
-
-  async function handleSave(updated: Partial<Exercise>) {
-    if (!selected) return;
-    await api.exercises.update(selected.id, updated);
-    toast.success('Exercise saved');
-    load(page);
-    setSelected(prev => prev ? { ...prev, ...updated } : null);
-  }
-
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const filterActive = !!(bodyPart || equipment || exerciseType || difficulty);
-
   return (
     <Guard>
       <AppShell>
-        <div className="min-h-screen p-4 md:p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Exercise Library</h1>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                {meta?.total ?? total} exercises · {meta?.body_parts.length ?? 7} body parts · {meta?.equipment_types.length ?? 12} equipment types
-              </p>
-            </div>
-            <button
-              onClick={() => setShowAdd(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: '#6366f1', color: 'white' }}
-            >
-              <Plus size={16} /> Add Exercise
-            </button>
-          </div>
-
-          {/* Search + Filters */}
-          <div className="mb-5 space-y-3">
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-              <input
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
-                style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid #d1d5db' }}
-                placeholder="Search exercises…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-              {[
-                { label: 'Body Part', value: bodyPart, setter: setBodyPart, options: meta?.body_parts ?? [] },
-                { label: 'Equipment', value: equipment, setter: setEquipment, options: meta?.equipment_types ?? [] },
-                { label: 'Type', value: exerciseType, setter: setExerciseType, options: meta?.exercise_types ?? [] },
-                { label: 'Difficulty', value: difficulty, setter: setDifficulty, options: meta?.difficulties ?? [] },
-              ].map(({ label, value, setter, options }) => (
-                <div key={label} className="relative">
-                  <select
-                    className="appearance-none pl-3 pr-8 py-2 rounded-xl text-sm font-medium cursor-pointer"
-                    style={{
-                      background: value ? '#6366f1' : '#fff',
-                      color: value ? 'white' : '#374151',
-                      border: `1px solid ${value ? '#6366f1' : '#d1d5db'}`,
-                    }}
-                    value={value}
-                    onChange={e => setter(e.target.value)}
-                  >
-                    <option value="">{label}</option>
-                    {options.map(o => <option key={o} value={o} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{o}</option>)}
-                  </select>
-                  <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: value ? 'white' : '#6b7280' }} />
-                </div>
-              ))}
-
-              {filterActive && (
-                <button
-                  onClick={() => { setBodyPart(''); setEquipment(''); setExerciseType(''); setDifficulty(''); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium"
-                  style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', border: '1px solid rgba(239,68,68,0.2)' }}
-                >
-                  <X size={13} /> Clear filters
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Grid */}
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-              {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                <div key={i} className="rounded-xl h-52 animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
-              ))}
-            </div>
-          ) : exercises.length === 0 ? (
-            <div className="text-center py-20">
-              <Dumbbell size={40} className="mx-auto mb-3 opacity-20" />
-              <p style={{ color: 'var(--text-muted)' }}>No exercises found</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-              {exercises.map(ex => (
-                <ExerciseCard
-                  key={ex.id}
-                  exercise={ex}
-                  onClick={() => setSelected(ex)}
-                  onDelete={e => handleDelete(ex.id, e)}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-3 mt-8">
-              <button
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="p-2 rounded-xl disabled:opacity-30"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Page {page + 1} of {totalPages} · {total} exercises
-              </span>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-                className="p-2 rounded-xl disabled:opacity-30"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Modals */}
-        {selected && <ExerciseModal exercise={selected} onClose={() => setSelected(null)} onSave={handleSave} />}
-        {showAdd && <AddExerciseModal onClose={() => setShowAdd(false)} onCreated={() => load(page)} />}
+        <ExerciseLibrary />
       </AppShell>
     </Guard>
   );
+}
+
+function ExerciseLibrary() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const lib = useExerciseLibrary();
+  const { filters, setFilter, setFilters, reset, meta, items, total, loading, searching, error } = lib;
+
+  const [seededQ, setSeededQ] = useSeededSearch('');
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editing, setEditing] = useState<LibraryExercise | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [railOpen, setRailOpen] = useState(false);
+
+  const canAuthor = ROLES_THAT_CAN_AUTHOR.has(user?.role || '');
+
+  // The global top-nav search hands off via ?q= — carry it into the library's
+  // own query so landing here from a global search shows filtered results.
+  useEffect(() => {
+    if (seededQ && seededQ !== filters.q) setFilter('q', seededQ);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seededQ]);
+
+  // ⌘K anywhere on the page.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  const handleToggleFavorite = useCallback(async (ex: LibraryExercise) => {
+    try {
+      await lib.toggleFavorite(ex);
+    } catch {
+      toast.error('Could not update favorite');
+    }
+  }, [lib, toast]);
+
+  const handleDuplicate = useCallback(async (ex: LibraryExercise) => {
+    try {
+      const res = await api.exercises.duplicate(ex.id);
+      toast.success(`Created "${res.exercise.name}"`);
+      await lib.refetch();
+      setDetailId(res.exercise.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not duplicate exercise');
+    }
+  }, [lib, toast]);
+
+  const handleArchive = useCallback(async (ex: LibraryExercise) => {
+    const archiving = !ex.archived_at;
+    try {
+      await api.exercises.archive(ex.id, archiving);
+      toast.success(archiving ? `"${ex.name}" archived` : `"${ex.name}" restored`);
+      await lib.refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not archive exercise');
+    }
+  }, [lib, toast]);
+
+  const handleDelete = useCallback(async (ex: LibraryExercise) => {
+    const ok = window.confirm(
+      `Delete "${ex.name}"?\n\nIt will be removed from the library. Any workout plan already using it keeps working — the exercise is retired, not erased.`
+    );
+    if (!ok) return;
+    try {
+      const res = await api.exercises.delete(ex.id);
+      lib.removeLocal(ex.id);
+      const refs = res.still_referenced;
+      if (refs && (refs.in_plans > 0 || refs.in_logs > 0)) {
+        toast.info(
+          `"${ex.name}" deleted. It is still referenced by ${refs.in_plans} plan${refs.in_plans === 1 ? '' : 's'} and ${refs.in_logs} logged session${refs.in_logs === 1 ? '' : 's'}, which are unchanged.`
+        );
+      } else {
+        toast.success(`"${ex.name}" deleted`);
+      }
+      if (detailId === ex.id) setDetailId(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete exercise');
+    }
+  }, [lib, toast, detailId]);
+
+  const openCreate = useCallback(() => { setEditing(null); setEditorOpen(true); }, []);
+  const openEdit = useCallback((ex: LibraryExercise) => { setEditing(ex); setEditorOpen(true); }, []);
+
+  const handleSaved = useCallback(async (ex: LibraryExercise, created: boolean) => {
+    await lib.refetch();
+    if (created) setDetailId(ex.id);
+    else lib.upsertLocal(ex);
+  }, [lib]);
+
+  const showingFrom = total === 0 ? 0 : lib.page * PAGE_SIZE + 1;
+  const showingTo   = Math.min((lib.page + 1) * PAGE_SIZE, total);
+
+  const quickChips = useMemo(() => ([
+    { key: 'favorites_only' as const, label: 'Favorites', icon: Star },
+    { key: 'custom_only'    as const, label: 'Custom',    icon: LayoutGrid },
+  ]), []);
+
+  return (
+    <div className="mx-auto w-full max-w-[1600px] px-4 pb-16 pt-5 sm:px-6">
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--brand)]/10 text-[var(--brand)]">
+              <Dumbbell size={18} />
+            </span>
+            Exercise Library
+          </h1>
+          <p className="mt-1 text-[13px] text-[var(--text-muted)]">
+            {meta ? (
+              <>
+                {meta.total.toLocaleString()} exercises
+                {meta.custom_total > 0 && ` · ${meta.custom_total} custom`}
+              </>
+            ) : (
+              'Loading library…'
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => lib.refetch()} aria-label="Refresh library">
+            <RefreshCw size={14} className={cn(loading && 'animate-spin')} />
+          </Button>
+          {canAuthor && (
+            <Button onClick={openCreate}>
+              <span className="flex items-center gap-1.5"><Plus size={15} /> New exercise</span>
+            </Button>
+          )}
+        </div>
+      </header>
+
+      {/* ── Search bar ─────────────────────────────────────────── */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[220px] flex-1">
+          <Search
+            size={15}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+          />
+          <input
+            value={filters.q}
+            onChange={(e) => { setFilter('q', e.target.value); setSeededQ(e.target.value); }}
+            placeholder="Search by name, muscle, equipment…"
+            aria-label="Search exercises"
+            className="w-full rounded-xl border border-slate-200 bg-white/70 py-2.5 pl-10 pr-24 text-[13.5px] text-[var(--text-primary)] outline-none backdrop-blur-xl transition-colors placeholder:text-slate-400 focus:border-[var(--brand)]/50 focus:ring-2 focus:ring-[var(--brand)]/15 dark:border-white/10 dark:bg-white/[0.04] dark:placeholder:text-white/25"
+          />
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10.5px] font-medium text-[var(--text-muted)] transition-colors hover:border-[var(--brand)]/40 hover:text-[var(--brand)] dark:border-white/10 sm:flex"
+          >
+            <Command size={10} /> K
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setRailOpen(true)}
+          className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-[12.5px] font-medium text-[var(--text-primary)] transition-colors hover:border-slate-300 dark:border-white/10 lg:hidden"
+        >
+          <SlidersHorizontal size={14} /> Filters
+          {lib.activeCount > 0 && <Badge tone="brand">{lib.activeCount}</Badge>}
+        </button>
+
+        {quickChips.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setFilter(key, !filters[key])}
+            aria-pressed={filters[key]}
+            className={cn(
+              'flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-[12.5px] font-medium transition-all',
+              filters[key]
+                ? 'border-[var(--brand)]/40 bg-[var(--brand)]/10 text-[var(--brand)]'
+                : 'border-slate-200 text-[var(--text-muted)] hover:border-slate-300 hover:text-[var(--text-primary)] dark:border-white/10',
+            )}
+          >
+            <Icon size={13} /> {label}
+          </button>
+        ))}
+
+        <select
+          value={filters.sort}
+          onChange={(e) => setFilter('sort', e.target.value)}
+          aria-label="Sort exercises"
+          className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 text-[12.5px] font-medium text-[var(--text-primary)] outline-none dark:border-white/10 dark:bg-white/[0.04]"
+        >
+          <option value="name">A → Z</option>
+          <option value="name_desc">Z → A</option>
+          <option value="updated">Recently updated</option>
+          <option value="created">Newest</option>
+        </select>
+      </div>
+
+      <div className="flex gap-6">
+        {/* ── Filter rail ──────────────────────────────────────── */}
+        <div className="hidden w-[248px] shrink-0 lg:block">
+          <div className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl border border-slate-200/80 bg-white/60 p-3 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.03]">
+            <ExerciseFilterRail
+              meta={meta}
+              filters={filters}
+              activeCount={lib.activeCount}
+              onChange={setFilter}
+              onReset={reset}
+            />
+          </div>
+        </div>
+
+        {railOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" onClick={() => setRailOpen(false)} aria-hidden />
+            <div className="absolute bottom-0 left-0 right-0 max-h-[82vh] overflow-y-auto rounded-t-3xl border-t border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0f0f12]">
+              <ExerciseFilterRail
+                meta={meta}
+                filters={filters}
+                activeCount={lib.activeCount}
+                onChange={setFilter}
+                onReset={reset}
+                onClose={() => setRailOpen(false)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ── Results ──────────────────────────────────────────── */}
+        <main className="min-w-0 flex-1">
+          <div className="mb-3 flex items-center justify-between gap-3 text-[12px] text-[var(--text-muted)]">
+            <span aria-live="polite">
+              {loading
+                ? 'Loading…'
+                : total === 0
+                  ? 'No results'
+                  : `Showing ${showingFrom}–${showingTo} of ${total.toLocaleString()}`}
+              {searching && <span className="ml-2 opacity-60">searching…</span>}
+            </span>
+            {lib.activeCount > 0 && (
+              <button
+                type="button"
+                onClick={reset}
+                className="font-medium text-[var(--brand)] hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          {error ? (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 px-6 py-12 text-center">
+              <AlertCircle size={24} className="text-[var(--danger)]" />
+              <div>
+                <p className="text-sm font-medium text-[var(--text-primary)]">Could not load the library</p>
+                <p className="mt-1 text-[12.5px] text-[var(--text-muted)]">{error}</p>
+              </div>
+              <Button variant="secondary" onClick={() => lib.refetch()}>Try again</Button>
+            </div>
+          ) : loading ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/50 p-4 dark:border-white/10 dark:bg-white/[0.03]"
+                >
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <div className="flex gap-1.5">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <EmptyState
+              icon={
+                filters.favorites_only
+                  ? <Star size={22} />
+                  : filters.q
+                    ? <Search size={22} />
+                    : <Dumbbell size={22} />
+              }
+              title={
+                filters.favorites_only
+                  ? 'No favorites yet'
+                  : filters.q
+                    ? `Nothing matches "${filters.q}"`
+                    : 'No exercises match these filters'
+              }
+              description={
+                filters.favorites_only
+                  ? 'Star an exercise to pin it here for quick programming.'
+                  : filters.q
+                    ? 'Try a shorter search, or clear your filters.'
+                    : 'Widen or clear the filters to see more of the library.'
+              }
+              action={
+                lib.activeCount > 0 || filters.q ? (
+                  <Button variant="secondary" onClick={() => { reset(); setFilters((f) => ({ ...f, q: '' })); }}>
+                    Clear search and filters
+                  </Button>
+                ) : canAuthor ? (
+                  <Button onClick={openCreate}>
+                    <span className="flex items-center gap-1.5"><Plus size={14} /> Create the first one</span>
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {items.map((ex) => (
+                  <ExerciseCard
+                    key={ex.id}
+                    exercise={ex}
+                    onOpen={(e) => setDetailId(e.id)}
+                    onToggleFavorite={handleToggleFavorite}
+                    onEdit={canAuthor ? openEdit : undefined}
+                    onDuplicate={canAuthor ? handleDuplicate : undefined}
+                    onArchive={canAuthor ? handleArchive : undefined}
+                    onDelete={canAuthor ? handleDelete : undefined}
+                  />
+                ))}
+              </div>
+
+              {lib.pageCount > 1 && (
+                <nav className="mt-6 flex items-center justify-center gap-1.5" aria-label="Pagination">
+                  <Button
+                    variant="ghost"
+                    onClick={() => lib.setPage(Math.max(0, lib.page - 1))}
+                    disabled={lib.page === 0}
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft size={14} />
+                  </Button>
+
+                  {pageWindow(lib.page, lib.pageCount).map((p, i) =>
+                    p === null ? (
+                      <span key={`gap-${i}`} className="px-1.5 text-[var(--text-muted)]">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => lib.setPage(p)}
+                        aria-current={p === lib.page ? 'page' : undefined}
+                        className={cn(
+                          'min-w-[34px] rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
+                          p === lib.page
+                            ? 'bg-[var(--brand)] text-white'
+                            : 'text-[var(--text-muted)] hover:bg-slate-100 hover:text-[var(--text-primary)] dark:hover:bg-white/10',
+                        )}
+                      >
+                        {p + 1}
+                      </button>
+                    )
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    onClick={() => lib.setPage(Math.min(lib.pageCount - 1, lib.page + 1))}
+                    disabled={lib.page >= lib.pageCount - 1}
+                    aria-label="Next page"
+                  >
+                    <ChevronRight size={14} />
+                  </Button>
+                </nav>
+              )}
+            </>
+          )}
+        </main>
+      </div>
+
+      {/* ── Overlays ───────────────────────────────────────────── */}
+      <ExerciseDetailDrawer
+        exerciseId={detailId}
+        onClose={() => setDetailId(null)}
+        onEdit={(ex) => { setDetailId(null); openEdit(ex); }}
+        onDuplicate={handleDuplicate}
+        onToggleFavorite={handleToggleFavorite}
+        onSelectRelated={(id) => setDetailId(id)}
+      />
+
+      <ExerciseEditorDialog
+        open={editorOpen}
+        exercise={editing}
+        meta={meta}
+        onClose={() => { setEditorOpen(false); setEditing(null); }}
+        onSaved={handleSaved}
+      />
+
+      <ExerciseCommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onSelect={(ex) => setDetailId(ex.id)}
+      />
+    </div>
+  );
+}
+
+/**
+ * Page numbers to render: always the first, last and current ± 1, with gaps
+ * collapsed. Keeps the control a fixed width at 19 pages or 190.
+ */
+function pageWindow(current: number, count: number): (number | null)[] {
+  if (count <= 7) return Array.from({ length: count }, (_, i) => i);
+
+  const pages = new Set<number>([0, count - 1, current]);
+  if (current - 1 > 0) pages.add(current - 1);
+  if (current + 1 < count - 1) pages.add(current + 1);
+
+  const sorted = [...pages].sort((a, b) => a - b);
+  const out: (number | null)[] = [];
+  let prev = -1;
+  for (const p of sorted) {
+    if (prev !== -1 && p - prev > 1) out.push(null);
+    out.push(p);
+    prev = p;
+  }
+  return out;
 }
