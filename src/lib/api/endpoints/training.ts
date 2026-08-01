@@ -5,9 +5,10 @@
 // back into the same `api` object every consumer already imports.
 
 import { http } from '../../http';
-import { buildQs } from '../qs';
+import { buildQs, qsOf } from '../qs';
 import type {
-  DietAssignment, DietTemplate, LibraryExercise, Meal, NutritionLog, ProgressionType,
+  DietAssignment, DietTemplate, ExerciseMeta, ExercisePagination, ExerciseVersion,
+  LibraryExercise, LibraryExerciseDetail, Meal, NutritionLog, ProgressionType,
   WorkoutAssignment, WorkoutAssignmentDetail, WorkoutExerciseInput, WorkoutPlan,
   WorkoutPlanExercise, WorkoutPlanVersion,
 } from '../types';
@@ -141,27 +142,73 @@ export const workouts = {
 };
 
 // ── Exercise Library ─────────────────────────────────────────────
-// Single client-side namespace for /api/workouts/exercises* — the old
-// duplicate api.workouts.exercises pointed at the exact same endpoints.
+// Points at /api/exercises, which owns the premium fields, per-studio
+// visibility, permissions, version history, favourites and full-text search.
+// The old /api/workouts/exercises reads still exist server-side for the
+// mobile client, but nothing in this app should call them.
 export const exercises = {
-  list: (qs?: string) =>
-    http<LibraryExercise[]>(`/api/workouts/exercises${qs ? `?${qs}` : ''}`),
-  meta: () =>
-    http<{ body_parts: string[]; equipment_types: string[]; exercise_types: string[]; difficulties: string[]; total: number }>(
-      '/api/workouts/exercises/meta'
+  list: (params?: Record<string, string | number | undefined>) =>
+    http<{ data: LibraryExercise[]; pagination: ExercisePagination }>(
+      `/api/exercises${qsOf(params ?? {})}`
     ),
-  count: (qs?: string) =>
-    http<{ total: number }>(`/api/workouts/exercises/meta${qs ? `?${qs}` : ''}`),
+  get: (idOrSlug: string) =>
+    http<{ data: LibraryExerciseDetail }>(`/api/exercises/${idOrSlug}`),
+  meta: () => http<ExerciseMeta>('/api/exercises/meta'),
+  favorites: (params?: Record<string, string | number | undefined>) =>
+    http<{ data: LibraryExercise[]; pagination: ExercisePagination }>(
+      `/api/exercises/favorites${qsOf(params ?? {})}`
+    ),
+  recent: (params?: Record<string, string | number | undefined>) =>
+    http<{ data: LibraryExercise[]; pagination: ExercisePagination }>(
+      `/api/exercises/recent${qsOf(params ?? {})}`
+    ),
+  versions: (id: string) =>
+    http<{ data: ExerciseVersion[] }>(`/api/exercises/${id}/versions`),
+
   create: (data: Record<string, unknown>) =>
-    http<{ message: string; exercise: unknown }>('/api/workouts/exercises', {
+    http<{ data: LibraryExercise }>('/api/exercises', {
       method: 'POST', body: JSON.stringify(data),
     }),
   update: (id: string, data: Record<string, unknown>) =>
-    http<{ message: string; exercise: unknown }>(`/api/workouts/exercises/${id}`, {
+    http<{ data: LibraryExercise }>(`/api/exercises/${id}`, {
       method: 'PUT', body: JSON.stringify(data),
     }),
+  duplicate: (id: string, name?: string) =>
+    http<{ data: LibraryExercise }>(`/api/exercises/${id}/duplicate`, {
+      method: 'POST', body: JSON.stringify({ name }),
+    }),
+  archive: (id: string) =>
+    http<{ data: unknown }>(`/api/exercises/${id}/archive`, { method: 'POST', body: '{}' }),
+  restore: (id: string) =>
+    http<{ data: unknown }>(`/api/exercises/${id}/restore`, { method: 'POST', body: '{}' }),
   delete: (id: string) =>
-    http<{ message: string }>(`/api/workouts/exercises/${id}`, { method: 'DELETE' }),
+    http<{ data: unknown }>(`/api/exercises/${id}`, { method: 'DELETE' }),
+
+  /** Live duplicate detection for the creator form. */
+  checkName: (name: string, excludeId?: string) =>
+    http<{ available: boolean; slug: string; existing: { id: string; name: string } | null }>(
+      '/api/exercises/check-name',
+      { method: 'POST', body: JSON.stringify({ name, exclude_id: excludeId }) }
+    ),
+
+  favorite: (id: string, on: boolean) =>
+    http<{ data: { is_favorite: boolean } }>(`/api/exercises/${id}/favorite`, {
+      method: on ? 'PUT' : 'DELETE', ...(on ? { body: '{}' } : {}),
+    }),
+
+  /**
+   * Records that these exercises were just used, so "Recent" reflects real
+   * behaviour. Fire-and-forget: the caller's save must not fail on it.
+   */
+  recordUse: (exerciseIds: string[]) =>
+    http<void>('/api/exercises/record-use', {
+      method: 'POST', body: JSON.stringify({ exercise_ids: exerciseIds }),
+    }).catch(() => undefined),
+
+  setRelations: (id: string, kind: 'regression' | 'progression' | 'alternative', relatedIds: string[]) =>
+    http<{ data: unknown }>(`/api/exercises/${id}/relations`, {
+      method: 'PUT', body: JSON.stringify({ kind, related_ids: relatedIds }),
+    }),
 };
 
 // ── Diet / Nutrition ──────────────────────────────────────────────

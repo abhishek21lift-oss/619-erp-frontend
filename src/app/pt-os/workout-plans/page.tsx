@@ -82,6 +82,7 @@ function Inner() {
   const [activeBodyPart, setActiveBodyPart] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [exercises, setExercises] = useState<LibraryExercise[]>([]);
+  const [exerciseTotal, setExerciseTotal] = useState(0);
   const [bodyParts, setBodyParts] = useState<string[]>([]);
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -108,13 +109,18 @@ function Inner() {
     setDataLoading(true);
     try {
       const [exRes, metaRes, plRes, clRes] = await Promise.all([
-        api.exercises.list(),
+        // A preview strip only — the full library, with every filter and real
+        // pagination, is /pt-os/exercise-library. This page used to fetch the
+        // whole table and render the first 24 with no indication the rest
+        // existed.
+        api.exercises.list({ limit: 24, sort: 'name' }),
         api.exercises.meta(),
         api.workouts.plans.list(presetClientId ? { client_id: presetClientId } : undefined),
         api.pt.clients(),
       ]);
-      setExercises(Array.isArray(exRes) ? exRes : []);
-      setBodyParts(metaRes.body_parts || []);
+      setExercises(exRes.data ?? []);
+      setExerciseTotal(exRes.pagination?.total ?? exRes.data?.length ?? 0);
+      setBodyParts(metaRes.muscle_groups || metaRes.body_parts || []);
       setPlans(Array.isArray(plRes) ? plRes : []);
       const clientArr = Array.isArray(clRes?.data) ? clRes.data : [];
       setClients((clientArr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
@@ -175,7 +181,7 @@ function Inner() {
 
 
   const filteredExercises = exercises.filter((ex) => {
-    if (activeBodyPart !== 'All' && ex.body_part !== activeBodyPart) return false;
+    if (activeBodyPart !== 'All' && ex.muscle_group !== activeBodyPart) return false;
     if (searchQuery) return ex.name.toLowerCase().includes(searchQuery.toLowerCase());
     return true;
   });
@@ -398,7 +404,7 @@ function Inner() {
               ) : (
                 <m.div variants={containerVariants} initial="hidden" animate="visible"
                   className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {filteredExercises.slice(0, 24).map((ex) => (
+                  {filteredExercises.map((ex) => (
                     <m.div key={ex.id} variants={itemVariants}>
                       <ExerciseCard
                         id={ex.id}
@@ -413,6 +419,16 @@ function Inner() {
                       />
                     </m.div>
                   ))}
+                  {exerciseTotal > exercises.length && (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '16px 20px' }}>
+                      <button
+                        onClick={() => router.push('/pt-os/exercise-library')}
+                        style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand)', textDecoration: 'underline' }}
+                      >
+                        Showing {exercises.length} of {exerciseTotal.toLocaleString('en-IN')} — open the full library
+                      </button>
+                    </div>
+                  )}
                   {filteredExercises.length === 0 && (
                     <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', fontSize: 13 }}>
                       No exercises found matching your filters.
