@@ -2386,6 +2386,19 @@ export type AiWorkoutExercise = {
   tempo: string;
   rest_seconds: number;
   notes?: string;
+  /**
+   * The exercise-library row this was resolved to. The generator is given the
+   * studio's real catalogue and its output matched back against it, so a
+   * generated plan can be saved with real ids rather than free text.
+   * `null` means the model named something not in the library — surfaced via
+   * `unmatched` rather than guessed at, since a wrong match would silently
+   * swap one movement for another in a client's programme.
+   */
+  exercise_id?: string | null;
+  /** True when the name came back only via fuzzy match, not verbatim. */
+  matched_exactly?: boolean;
+  /** True when no library row could be matched; needs a human decision. */
+  unmatched?: boolean;
 };
 
 export type AiWorkoutDay = {
