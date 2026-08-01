@@ -1118,7 +1118,6 @@ export interface NutritionLog {
 export interface LibraryExercise {
   id: string;
   name: string;
-  slug: string | null;
   description?: string | null;
   muscle_group: string;
   body_part: string | null;
@@ -1135,86 +1134,6 @@ export interface LibraryExercise {
   reps_default: number | null;
   rest_seconds: number | null;
   source_id: string | null;
-
-  // ── Premium fields ──────────────────────────────────────────────
-  category: string | null;
-  movement_pattern: string | null;
-  plane_of_motion: string | null;
-  coaching_cues: string | null;
-  common_mistakes: string | null;
-  safety_tips: string | null;
-  breathing_tips: string | null;
-  tempo_recommendation: string | null;
-  beginner_notes: string | null;
-  advanced_notes: string | null;
-  contraindications: string | null;
-  trainer_notes: string | null;
-  tags: string[] | null;
-  search_keywords: string[] | null;
-
-  /** NULL = shared platform library (read-only); set = this studio's own. */
-  organization_id: string | null;
-  visibility: 'public' | 'private';
-  archived_at: string | null;
-  is_active: boolean;
-  created_by: string | null;
-  updated_by: string | null;
-  created_at: string;
-  updated_at: string;
-  version: number;
-
-  /** Joined per-user, not stored on the row. */
-  is_favorite?: boolean;
-  last_used_at?: string | null;
-}
-
-/** A related exercise as returned on a detail payload. */
-export interface RelatedExercise {
-  id: string;
-  name: string;
-  slug: string | null;
-  difficulty: string | null;
-  equipment: string | null;
-  kind: 'regression' | 'progression' | 'alternative';
-  sort_order: number;
-}
-
-export interface LibraryExerciseDetail extends LibraryExercise {
-  regressions: RelatedExercise[];
-  progressions: RelatedExercise[];
-  alternatives: RelatedExercise[];
-}
-
-export interface ExerciseVersion {
-  id: string;
-  version: number;
-  snapshot: Partial<LibraryExercise>;
-  changed_by: string | null;
-  changed_by_name: string | null;
-  change_note: string | null;
-  created_at: string;
-}
-
-export interface ExerciseMeta {
-  body_parts: string[] | null;
-  muscle_groups: string[] | null;
-  target_muscles: string[] | null;
-  equipment_types: string[] | null;
-  exercise_types: string[] | null;
-  categories: string[] | null;
-  movement_patterns: string[] | null;
-  difficulties: string[] | null;
-  mechanics: string[] | null;
-  forces: string[] | null;
-  tags: string[];
-  total: number;
-}
-
-export interface ExercisePagination {
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
 }
 
 // ── Workout Plans (templates) ──────────────────────────────────────
@@ -2386,19 +2305,6 @@ export type AiWorkoutExercise = {
   tempo: string;
   rest_seconds: number;
   notes?: string;
-  /**
-   * The exercise-library row this was resolved to. The generator is given the
-   * studio's real catalogue and its output matched back against it, so a
-   * generated plan can be saved with real ids rather than free text.
-   * `null` means the model named something not in the library — surfaced via
-   * `unmatched` rather than guessed at, since a wrong match would silently
-   * swap one movement for another in a client's programme.
-   */
-  exercise_id?: string | null;
-  /** True when the name came back only via fuzzy match, not verbatim. */
-  matched_exactly?: boolean;
-  /** True when no library row could be matched; needs a human decision. */
-  unmatched?: boolean;
 };
 
 export type AiWorkoutDay = {
