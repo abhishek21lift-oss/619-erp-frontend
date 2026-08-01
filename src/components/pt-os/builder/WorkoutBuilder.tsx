@@ -175,6 +175,16 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
     [rows, day],
   );
 
+  /**
+   * What this day already contains, so the picker can refuse to add the same
+   * movement twice. Scoped to the day rather than the whole plan on purpose —
+   * benching on Monday and Thursday is a programme, not a mistake.
+   */
+  const existingExerciseIds = useMemo(
+    () => forDay.map((r) => r.exercise_id).filter((id): id is string => Boolean(id)),
+    [forDay],
+  );
+
   /** How many exercises each day holds — drives the count dots on the tabs. */
   const counts = useMemo(() => {
     const m = new Map<number, number>();
@@ -476,6 +486,7 @@ export default function WorkoutBuilder({ planId, recentNames = [] }: WorkoutBuil
         onClose={() => setPicking(false)}
         onSelect={addExercise}
         recentNames={recentNames}
+        existingIds={existingExerciseIds}
       />
     </div>
   );

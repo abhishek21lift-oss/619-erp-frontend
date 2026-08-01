@@ -1115,6 +1115,31 @@ export interface NutritionLog {
   notes?: string | null;
 }
 
+// ── Exercise Library ───────────────────────────────────────────────
+// One shape for an exercise, everywhere. The fields below the divider are
+// served by /api/exercises; the legacy /api/workouts/exercises reader returns
+// only the ones above it, which is why they are optional rather than split
+// across two interfaces that would drift.
+
+export type ExerciseDifficulty = 'beginner' | 'intermediate' | 'advanced';
+export type ExerciseVisibility = 'public' | 'organization' | 'private';
+export type MuscleRole = 'primary' | 'secondary';
+
+export interface ExerciseMuscleLink {
+  slug: string;
+  name: string;
+  body_region: string;
+  role: MuscleRole;
+}
+
+export interface ExerciseRelation {
+  id: string;
+  name: string;
+  slug: string;
+  difficulty: string;
+  relation_type: 'progression' | 'regression' | 'alternative';
+}
+
 export interface LibraryExercise {
   id: string;
   name: string;
@@ -1126,6 +1151,10 @@ export interface LibraryExercise {
   equipment: string | null;
   difficulty: string;
   instructions: string | null;
+  /**
+   * Retained in the database but never rendered — the library is deliberately
+   * media-free. Present here only so legacy readers type-check.
+   */
   gif_url: string | null;
   exercise_type: string | null;
   force: string | null;
@@ -1134,6 +1163,106 @@ export interface LibraryExercise {
   reps_default: number | null;
   rest_seconds: number | null;
   source_id: string | null;
+
+  // ── served by /api/exercises ────────────────────────────────────
+  slug?: string;
+  primary_muscle?: string | null;
+  primary_muscle_slug?: string | null;
+  body_region?: string | null;
+  equipment_name?: string | null;
+  equipment_slug?: string | null;
+  category_name?: string | null;
+  category_slug?: string | null;
+  movement_pattern?: string | null;
+  plane_of_motion?: string | null;
+
+  coaching_cues?: string[];
+  common_mistakes?: string[];
+  safety_tips?: string[];
+  contraindications?: string[];
+  breathing_tips?: string | null;
+  tempo_recommendation?: string | null;
+  recommended_reps?: string | null;
+  recommended_sets?: string | null;
+  beginner_notes?: string | null;
+  advanced_notes?: string | null;
+  trainer_notes?: string | null;
+
+  tags?: string[];
+  search_keywords?: string | null;
+  visibility?: ExerciseVisibility;
+  is_custom?: boolean;
+  archived_at?: string | null;
+  deleted_at?: string | null;
+  version?: number;
+
+  primary_muscle_id?: string | null;
+  equipment_id?: string | null;
+  category_id?: string | null;
+  organization_id?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+
+  is_favorite?: boolean;
+  can_edit?: boolean;
+  use_count?: number;
+  used_at?: string;
+
+  /** Detail endpoint only. */
+  muscles?: ExerciseMuscleLink[];
+  progressions?: ExerciseRelation[];
+  regressions?: ExerciseRelation[];
+  alternatives?: ExerciseRelation[];
+}
+
+export interface ExerciseFacet {
+  /** Present on lookup-backed facets (muscles, equipment, categories). */
+  id?: string;
+  slug: string;
+  name: string;
+  count?: number;
+  body_region?: string;
+  is_gym_only?: boolean;
+}
+
+export interface ExerciseMeta {
+  muscles: ExerciseFacet[];
+  muscles_by_region: Record<string, ExerciseFacet[]>;
+  equipment: ExerciseFacet[];
+  categories: ExerciseFacet[];
+  difficulties: ExerciseFacet[];
+  movement_patterns: ExerciseFacet[];
+  mechanics: ExerciseFacet[];
+  forces: ExerciseFacet[];
+  total: number;
+  custom_total: number;
+  /**
+   * Complete lookups for the editor's dropdowns. The facet lists above only
+   * contain values some exercise already uses, which is right for filtering
+   * and wrong for authoring.
+   */
+  all_muscles: ExerciseFacet[];
+  all_equipment: ExerciseFacet[];
+  all_categories: ExerciseFacet[];
+}
+
+export interface ExerciseListResult {
+  exercises: LibraryExercise[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+export interface ExerciseVersion {
+  id: string;
+  version: number;
+  snapshot: Record<string, unknown>;
+  change_summary: string | null;
+  created_at: string;
+  changed_by_name: string | null;
 }
 
 // ── Workout Plans (templates) ──────────────────────────────────────

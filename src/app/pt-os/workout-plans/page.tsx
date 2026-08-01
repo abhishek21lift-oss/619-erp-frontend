@@ -113,8 +113,10 @@ function Inner() {
         api.workouts.plans.list(presetClientId ? { client_id: presetClientId } : undefined),
         api.pt.clients(),
       ]);
-      setExercises(Array.isArray(exRes) ? exRes : []);
-      setBodyParts(metaRes.body_parts || []);
+      // /api/exercises returns a paged envelope, and its filter facets are
+      // muscle regions rather than the old free-text body_part strings.
+      setExercises(exRes.exercises || []);
+      setBodyParts(Object.keys(metaRes.muscles_by_region || {}));
       setPlans(Array.isArray(plRes) ? plRes : []);
       const clientArr = Array.isArray(clRes?.data) ? clRes.data : [];
       setClients((clientArr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
@@ -175,7 +177,9 @@ function Inner() {
 
 
   const filteredExercises = exercises.filter((ex) => {
-    if (activeBodyPart !== 'All' && ex.body_part !== activeBodyPart) return false;
+    // body_region is the normalized bucket; body_part is the legacy text the
+    // same rows still carry, so this keeps matching either way.
+    if (activeBodyPart !== 'All' && (ex.body_region ?? ex.body_part) !== activeBodyPart) return false;
     if (searchQuery) return ex.name.toLowerCase().includes(searchQuery.toLowerCase());
     return true;
   });

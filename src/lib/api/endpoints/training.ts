@@ -7,7 +7,8 @@
 import { http } from '../../http';
 import { buildQs } from '../qs';
 import type {
-  DietAssignment, DietTemplate, LibraryExercise, Meal, NutritionLog, ProgressionType,
+  DietAssignment, DietTemplate, ExerciseListResult, ExerciseMeta, ExerciseVersion,
+  LibraryExercise, Meal, NutritionLog, ProgressionType,
   WorkoutAssignment, WorkoutAssignmentDetail, WorkoutExerciseInput, WorkoutPlan,
   WorkoutPlanExercise, WorkoutPlanVersion,
 } from '../types';
@@ -141,27 +142,69 @@ export const workouts = {
 };
 
 // ── Exercise Library ─────────────────────────────────────────────
-// Single client-side namespace for /api/workouts/exercises* — the old
-// duplicate api.workouts.exercises pointed at the exact same endpoints.
+// Points at /api/exercises — the single source of truth. The old
+// /api/workouts/exercises writers are gone; they wrote flat columns and left
+// rows unslugged, unlinked and unsearchable.
 export const exercises = {
-  list: (qs?: string) =>
-    http<LibraryExercise[]>(`/api/workouts/exercises${qs ? `?${qs}` : ''}`),
-  meta: () =>
-    http<{ body_parts: string[]; equipment_types: string[]; exercise_types: string[]; difficulties: string[]; total: number }>(
-      '/api/workouts/exercises/meta'
+  /** Search + filter + paginate. Server does the work; the client just asks. */
+  list: (params?: Record<string, string | number>) =>
+    http<ExerciseListResult>(`/api/exercises${buildQs(params)}`),
+
+  /** Filter rail with live counts, scoped to what the caller may see. */
+  meta: () => http<ExerciseMeta>('/api/exercises/meta'),
+
+  get: (idOrSlug: string) => http<LibraryExercise>(`/api/exercises/${idOrSlug}`),
+
+  favorites: () =>
+    http<{ exercises: LibraryExercise[]; total: number }>('/api/exercises/favorites'),
+
+  recent: (limit = 20) =>
+    http<{ exercises: LibraryExercise[]; total: number }>(`/api/exercises/recent?limit=${limit}`),
+
+  versions: (id: string) =>
+    http<{ versions: ExerciseVersion[]; total: number }>(`/api/exercises/${id}/versions`),
+
+  /** Live duplicate detection for the creator — call while the user types. */
+  checkName: (name: string, excludeId?: string) =>
+    http<{ available: boolean; slug: string; conflict: { id: string; name: string } | null }>(
+      `/api/exercises/check-name${buildQs({ name, ...(excludeId ? { exclude_id: excludeId } : {}) })}`
     ),
-  count: (qs?: string) =>
-    http<{ total: number }>(`/api/workouts/exercises/meta${qs ? `?${qs}` : ''}`),
+
   create: (data: Record<string, unknown>) =>
-    http<{ message: string; exercise: unknown }>('/api/workouts/exercises', {
+    http<{ message: string; exercise: LibraryExercise }>('/api/exercises', {
       method: 'POST', body: JSON.stringify(data),
     }),
+
   update: (id: string, data: Record<string, unknown>) =>
-    http<{ message: string; exercise: unknown }>(`/api/workouts/exercises/${id}`, {
+    http<{ message: string; exercise: LibraryExercise }>(`/api/exercises/${id}`, {
       method: 'PUT', body: JSON.stringify(data),
     }),
+
+  duplicate: (id: string, name?: string) =>
+    http<{ message: string; exercise: LibraryExercise }>(`/api/exercises/${id}/duplicate`, {
+      method: 'POST', body: JSON.stringify(name ? { name } : {}),
+    }),
+
+  /** Hides from pickers without touching any programme already using it. */
+  archive: (id: string, archived = true) =>
+    http<{ message: string }>(`/api/exercises/${id}/archive`, {
+      method: 'POST', body: JSON.stringify({ archived }),
+    }),
+
+  /** Soft delete. Returns how many plans/logs still reference the row. */
   delete: (id: string) =>
-    http<{ message: string }>(`/api/workouts/exercises/${id}`, { method: 'DELETE' }),
+    http<{ message: string; still_referenced: { in_plans: number; in_logs: number } }>(
+      `/api/exercises/${id}`, { method: 'DELETE' }
+    ),
+
+  favorite: (id: string, favorite = true) =>
+    http<{ message: string; is_favorite: boolean }>(`/api/exercises/${id}/favorite`, {
+      method: 'POST', body: JSON.stringify({ favorite }),
+    }),
+
+  /** Called when an exercise is added to a programme, to feed "recent". */
+  markUsed: (id: string) =>
+    http<{ ok: boolean }>(`/api/exercises/${id}/use`, { method: 'POST' }),
 };
 
 // ── Diet / Nutrition ──────────────────────────────────────────────
