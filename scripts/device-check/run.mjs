@@ -156,8 +156,14 @@ const ROUTES = [
   }],
   ['client-profile-checkins-tab', `/pt-os/clients/${IDS.client}`, async (page) => {
     await page.getByRole('tab', { name: /check-ins/i }).first().click();
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(500);
   }],
+  // The same tab with NO check-ins on file — the state most studios see on day
+  // one, and the one that must read as an instruction rather than a fault.
+  ['client-profile-checkins-empty', `/pt-os/clients/${IDS.client}`, async (page) => {
+    await page.getByRole('tab', { name: /check-ins/i }).first().click();
+    await page.waitForTimeout(500);
+  }, [[/\/snapshot$/, 200, JSON.stringify({ data: { alerts: [], goal: { present: false }, prs: [], coach: [], baseline_done: true, recovery: { present: false, weeks: [] } } })]]],
   ['client-profile-ai-tab', `/pt-os/clients/${IDS.client}`, async (page) => {
     await page.getByRole('tab', { name: /ai coach/i }).first().click();
     await page.waitForTimeout(400);

@@ -66,6 +66,7 @@ export default function ClientSnapshot({ clientId, onLoaded }: ClientSnapshotPro
           goal: data.goal && typeof data.goal === 'object' ? data.goal : { present: false },
           prs: Array.isArray(data.prs) ? data.prs : [],
           coach: Array.isArray(data.coach) ? data.coach : [],
+          recovery: data.recovery && typeof data.recovery === 'object' ? data.recovery : { present: false, weeks: [] },
           baseline_done: data.baseline_done === true,
         };
         setSnap(safe);

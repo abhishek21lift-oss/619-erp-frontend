@@ -443,6 +443,27 @@ const SNAPSHOT = {
     { id: 'strength', tone: 'good', text: 'Deadlift is their strongest lift on record at 140 kg \u00d7 3.', because: 'Workout log \u00b7 2026-07-20' },
   ],
   baseline_done: true,
+  // A deliberately PARTIAL week: soreness unanswered, so the panel has to say
+  // "3 of 4" and render one component as "Not asked" rather than as a zero.
+  // A complete fixture would never exercise that branch, and that branch is
+  // the one that stops a sparse check-in reading as a confident score.
+  recovery: {
+    present: true,
+    score: 58,
+    band: 'low',
+    inputs: 3,
+    max_inputs: 4,
+    components: { sleep: 65, stress: 40, energy: 67, soreness: null },
+    as_of: '2026-07-27',
+    trend: 'declining',
+    weeks: [
+      { week: '2026-06-29', score: 82 },
+      { week: '2026-07-06', score: 79 },
+      { week: '2026-07-13', score: 71 },
+      { week: '2026-07-20', score: 64 },
+      { week: '2026-07-27', score: 58 },
+    ],
+  },
 };
 
 const BRIEF = {

@@ -2565,6 +2565,8 @@ export interface CoachInsight {
 
 export interface ClientSnapshot {
   alerts: ClientAlert[];
+  /** Readiness from weekly check-ins; absent until at least one is recorded. */
+  recovery?: ClientRecovery;
   goal: ClientGoalProgress;
   prs: ClientPr[];
   coach: CoachInsight[];
@@ -2580,4 +2582,33 @@ export interface CoachGeneration {
   model: string | null;
   /** Hash of the readings the answer was written from. */
   facts_key: string;
+}
+
+/** One readiness component, 0-100, or null when that question was not answered. */
+export interface RecoveryComponents {
+  sleep: number | null;
+  stress: number | null;
+  energy: number | null;
+  soreness: number | null;
+}
+
+export interface RecoveryWeek { week: string; score: number }
+
+/**
+ * Readiness from weekly check-ins.
+ *
+ * `inputs` of `max_inputs` is deliberately part of the payload: 3 of 4 is a
+ * different claim from 4 of 4, and the UI must be able to say which.
+ */
+export interface ClientRecovery {
+  present: boolean;
+  score?: number | null;
+  band?: 'good' | 'fair' | 'low' | 'poor' | null;
+  inputs?: number;
+  max_inputs?: number;
+  components?: RecoveryComponents;
+  as_of?: string | null;
+  /** Null until three scored weeks exist — two points is a line through noise. */
+  trend?: 'improving' | 'steady' | 'declining' | null;
+  weeks: RecoveryWeek[];
 }

@@ -25,6 +25,8 @@ import ClientSnapshot from '@/components/pt-os/ClientSnapshot';
 import {
   ClientTabs, TabPanel, EmptyPanel, LinkPanel, type TabKey,
 } from '@/components/pt-os/client/ClientTabs';
+import RecoveryPanel from '@/components/pt-os/client/RecoveryPanel';
+import type { ClientRecovery } from '@/lib/api';
 import { printWindowCloseButtonHtml } from '@/lib/printWindowChrome';
 
 interface PtClientDetail {
@@ -264,6 +266,8 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
   const [error, setError] = useState('');
   /** From the snapshot: hides the one-time Baseline Setup tile once onboarded. */
   const [baselineDone, setBaselineDone] = useState(true);
+  /** Readiness, lifted off the snapshot so the Check-ins tab can render it. */
+  const [recovery, setRecovery] = useState<ClientRecovery | undefined>(undefined);
   /** Which section of the workspace is open. Overview is where you land. */
   const [tab, setTab] = useState<TabKey>('overview');
 
@@ -570,7 +574,7 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                     there is nowhere to put the numbers that make it mean
                     something. Activity Mix went entirely — the ratio of
                     payments to check-ins is not a question anybody asks. */}
-                <ClientSnapshot clientId={client.id} onLoaded={(s) => setBaselineDone(s.baseline_done)} />
+                <ClientSnapshot clientId={client.id} onLoaded={(s) => { setBaselineDone(s.baseline_done); setRecovery(s.recovery); }} />
 
                 {/* PT term, as a bar. The one donut worth keeping as a figure,
                     because "days left" is what gets asked, but a bar shows how
@@ -881,12 +885,12 @@ export default function PtClientProfilePage({ params }: { params: Promise<{ id: 
                 </TabPanel>
 
                 <TabPanel id="checkins" active={tab}>
-                  <EmptyPanel
-                    icon={<ClipboardCheck size={20} />}
-                    title="No check-ins recorded yet"
-                    body="Weekly check-ins are where mood, energy, stress, sleep and recovery come from. Without them the recovery picture stays blank — this is the single fastest way to make the profile useful."
-                    actions={[{ label: 'Start a weekly check-in', href: `/pt-os/weekly-checkin?client_id=${client.id}` }]}
-                  />
+                  {/* Real readiness now, not a placeholder: the score, the four
+                      components behind it, how many questions were answered,
+                      and the trend once three weeks exist. It carries its own
+                      empty state, so this tab tells the truth whether or not
+                      anybody has run a check-in. */}
+                  <RecoveryPanel recovery={recovery} clientId={client.id} />
                 </TabPanel>
 
                 <TabPanel id="photos" active={tab}>
