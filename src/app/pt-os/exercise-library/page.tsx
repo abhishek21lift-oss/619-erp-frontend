@@ -5,6 +5,7 @@ import {
   Dumbbell, Plus, SlidersHorizontal, Search, Command, ChevronLeft, ChevronRight,
   RefreshCw, AlertCircle, Star, LayoutGrid,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Badge, Button, EmptyState, Skeleton, cn } from '@/components/ui';
@@ -17,7 +18,6 @@ import type { LibraryExercise } from '@/lib/api';
 import { ExerciseCard } from '@/components/pt-os/exercise-library/ExerciseCard';
 import { ExerciseFilterRail } from '@/components/pt-os/exercise-library/ExerciseFilterRail';
 import { ExerciseDetailDrawer } from '@/components/pt-os/exercise-library/ExerciseDetailDrawer';
-import { ExerciseEditorDialog } from '@/components/pt-os/exercise-library/ExerciseEditorDialog';
 import { ExerciseCommandPalette } from '@/components/pt-os/exercise-library/ExerciseCommandPalette';
 import { PAGE_SIZE, useExerciseLibrary } from '@/components/pt-os/exercise-library/useExerciseLibrary';
 
@@ -56,8 +56,7 @@ function ExerciseLibrary() {
 
   const [seededQ, setSeededQ] = useSeededSearch('');
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editing, setEditing] = useState<LibraryExercise | null>(null);
+  const router = useRouter();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
 
@@ -134,14 +133,12 @@ function ExerciseLibrary() {
     }
   }, [lib, toast, detailId]);
 
-  const openCreate = useCallback(() => { setEditing(null); setEditorOpen(true); }, []);
-  const openEdit = useCallback((ex: LibraryExercise) => { setEditing(ex); setEditorOpen(true); }, []);
-
-  const handleSaved = useCallback(async (ex: LibraryExercise, created: boolean) => {
-    await lib.refetch();
-    if (created) setDetailId(ex.id);
-    else lib.upsertLocal(ex);
-  }, [lib]);
+  // Authoring lives at its own URL, so a half-written exercise survives a
+  // reload and Back does the obvious thing.
+  const openCreate = useCallback(() => { router.push('/pt-os/exercise-library/new'); }, [router]);
+  const openEdit = useCallback((ex: LibraryExercise) => {
+    router.push(`/pt-os/exercise-library/${ex.id}/edit`);
+  }, [router]);
 
   const showingFrom = total === 0 ? 0 : lib.page * PAGE_SIZE + 1;
   const showingTo   = Math.min((lib.page + 1) * PAGE_SIZE, total);
@@ -432,14 +429,6 @@ function ExerciseLibrary() {
         onDuplicate={handleDuplicate}
         onToggleFavorite={handleToggleFavorite}
         onSelectRelated={(id) => setDetailId(id)}
-      />
-
-      <ExerciseEditorDialog
-        open={editorOpen}
-        exercise={editing}
-        meta={meta}
-        onClose={() => { setEditorOpen(false); setEditing(null); }}
-        onSaved={handleSaved}
       />
 
       <ExerciseCommandPalette

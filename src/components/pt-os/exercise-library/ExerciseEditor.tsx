@@ -26,8 +26,7 @@ import type { ExerciseMeta, LibraryExercise } from '@/lib/api';
  *     click through confirmations.
  */
 
-export interface ExerciseEditorDialogProps {
-  open: boolean;
+export interface ExerciseEditorProps {
   /** null = create mode. */
   exercise: LibraryExercise | null;
   meta: ExerciseMeta | null;
@@ -61,7 +60,6 @@ interface FormState {
   advanced_notes: string;
   trainer_notes: string;
   tags: string[];
-  visibility: string;
 }
 
 const BLANK: FormState = {
@@ -71,7 +69,7 @@ const BLANK: FormState = {
   coaching_cues: [], common_mistakes: [], safety_tips: [], contraindications: [],
   breathing_tips: '', tempo_recommendation: '', recommended_sets: '', recommended_reps: '',
   rest_seconds: '', beginner_notes: '', advanced_notes: '', trainer_notes: '',
-  tags: [], visibility: 'organization',
+  tags: [],
 };
 
 const DRAFT_KEY = '619:exercise-draft:v1';
@@ -114,13 +112,12 @@ function fromExercise(ex: LibraryExercise): FormState {
     advanced_notes: ex.advanced_notes || '',
     trainer_notes: ex.trainer_notes || '',
     tags: ex.tags || [],
-    visibility: ex.visibility || 'organization',
   };
 }
 
-export function ExerciseEditorDialog({
-  open, exercise, meta, onClose, onSaved,
-}: ExerciseEditorDialogProps) {
+export function ExerciseEditor({
+  exercise, meta, onClose, onSaved,
+}: ExerciseEditorProps) {
   const { toast } = useToast();
   const isEdit = Boolean(exercise);
 
@@ -141,7 +138,6 @@ export function ExerciseEditorDialog({
 
   // Seed the form. On create, restore an autosaved draft if one survived.
   React.useEffect(() => {
-    if (!open) return;
     setSaved(false);
     setPreview(false);
     setNameCheck({ state: 'idle' });
@@ -167,7 +163,7 @@ export function ExerciseEditorDialog({
     setInitial(BLANK);
     if (draft?.name) toast.info('Restored your unsaved draft');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, exercise, meta]);
+  }, [exercise, meta]);
 
   const dirty = React.useMemo(
     () => JSON.stringify(form) !== JSON.stringify(initial),
@@ -177,17 +173,17 @@ export function ExerciseEditorDialog({
   // Autosave the draft — create mode only. Editing writes through the API, so
   // a local draft there would be a second, staler source of truth.
   React.useEffect(() => {
-    if (!open || isEdit || !dirty) return;
+    if (isEdit || !dirty) return;
     const t = setTimeout(() => {
       try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch { /* quota */ }
     }, 800);
     return () => clearTimeout(t);
-  }, [form, open, isEdit, dirty]);
+  }, [form, isEdit, dirty]);
 
   // Live duplicate detection.
   React.useEffect(() => {
     const name = form.name.trim();
-    if (!open || name.length < 3) { setNameCheck({ state: 'idle' }); return; }
+    if (name.length < 3) { setNameCheck({ state: 'idle' }); return; }
     if (isEdit && name === exercise?.name) { setNameCheck({ state: 'idle' }); return; }
 
     setNameCheck({ state: 'checking' });
@@ -202,7 +198,7 @@ export function ExerciseEditorDialog({
       }
     }, 400);
     return () => clearTimeout(t);
-  }, [form.name, open, isEdit, exercise?.id, exercise?.name]);
+  }, [form.name, isEdit, exercise?.id, exercise?.name]);
 
   const set = React.useCallback(<K extends keyof FormState>(k: K, v: FormState[K]) => {
     setForm((p) => ({ ...p, [k]: v }));
@@ -257,7 +253,6 @@ export function ExerciseEditorDialog({
         advanced_notes: form.advanced_notes.trim() || null,
         trainer_notes: form.trainer_notes.trim() || null,
         tags: form.tags,
-        visibility: form.visibility,
       };
 
       const res = isEdit
@@ -285,7 +280,6 @@ export function ExerciseEditorDialog({
 
   // ⌘S / Ctrl+S saves, Esc closes.
   React.useEffect(() => {
-    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
@@ -297,9 +291,8 @@ export function ExerciseEditorDialog({
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open, handleSave, handleClose, preview]);
+  }, [handleSave, handleClose, preview]);
 
-  if (!open) return null;
 
   const muscles    = meta?.all_muscles || [];
   const equipment  = meta?.all_equipment || [];
@@ -307,19 +300,17 @@ export function ExerciseEditorDialog({
   const slug = slugify(form.name);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
-      <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-[3px] animate-in fade-in duration-200"
-        onClick={handleClose}
-        aria-hidden
-      />
-
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={isEdit ? `Edit ${exercise?.name}` : 'Create exercise'}
-        className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0f172a] sm:rounded-3xl animate-in slide-in-from-bottom-4 duration-250"
-      >
+    // A page, not a floating window. This form is long enough to scroll on a
+    // laptop and much longer than a phone screen, and a modal that tall fights
+    // the page behind it for the scroll: the browser keeps the body scrolled
+    // where it was, the sheet has its own inner scroller, and on iOS the two
+    // hand off unpredictably mid-drag. It also had no URL, so a half-written
+    // exercise could not be linked, reloaded or recovered with Back.
+    <main
+      aria-label={isEdit ? `Edit ${exercise?.name}` : 'Create exercise'}
+      className="mx-auto w-full max-w-3xl px-4 pb-24 pt-4 sm:px-6"
+    >
+      <div className="flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0f172a]">
         <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 dark:border-white/[0.07]">
           <div className="flex min-w-0 items-center gap-3">
             {preview && (
@@ -555,13 +546,6 @@ export function ExerciseEditorDialog({
 
               <Fieldset title="Discovery">
                 <TagField value={form.tags} onChange={(v) => set('tags', v)} />
-                <Field label="Visibility" hint="Custom exercises stay inside your studio unless made public">
-                  <select value={form.visibility} onChange={(e) => set('visibility', e.target.value)} className={inputCls(false)}>
-                    <option value="organization">Studio — everyone in your organization</option>
-                    <option value="private">Private — only me</option>
-                    <option value="public">Public — shared library</option>
-                  </select>
-                </Field>
               </Fieldset>
             </div>
           )}
@@ -590,7 +574,7 @@ export function ExerciseEditorDialog({
           </div>
         </footer>
       </div>
-    </div>
+    </main>
   );
 }
 
