@@ -27,7 +27,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { fmtDate } from '@/lib/format';
-import { BRAND_BLUE_LABEL, BRAND_GLOW, BRAND_GRADIENT, BRAND_TINT_GRADIENT } from '@/lib/brand';
+import {
+  BRAND_BLUE_LABEL, BRAND_GRADIENT, BRAND_HERO_GRADIENT, BRAND_HERO_SHADOW,
+  ON_BRAND_BORDER, ON_BRAND_TEXT,
+} from '@/lib/brand';
 import type { InformedConsent } from '@/lib/api';
 import { statusStyle } from './statusConfig';
 import { FINAL_ACK_FIELDS } from './types';
@@ -179,20 +182,23 @@ export default function ConsentSummary({
       <m.div
         {...enter(0)}
         className="rounded-[20px] px-5 py-5 sm:px-6"
-        style={{ background: BRAND_TINT_GRADIENT, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
+        style={{ background: BRAND_HERO_GRADIENT, boxShadow: BRAND_HERO_SHADOW }}
       >
         <div className="flex items-start gap-3.5">
           <div
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-            style={{ background: BRAND_GRADIENT, boxShadow: BRAND_GLOW }}
+            style={{ border: `1.5px solid ${ON_BRAND_BORDER}` }}
           >
             <FileSignature size={20} color="#fff" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-[700] uppercase tracking-[0.09em]" style={{ color: BRAND_BLUE_LABEL }}>
+            {/* Pure white, like everything else on the banner. See lib/brand:
+                no translucent white clears 4.5:1 at the gradient's bright end,
+                so hierarchy here is size and weight only. */}
+            <p className="text-[11px] font-[700] uppercase tracking-[0.09em]" style={{ color: ON_BRAND_TEXT }}>
               Informed Consent
             </p>
-            <h1 className="mt-0.5 text-[24px] sm:text-[30px] font-[860] leading-[1.1] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>
+            <h1 className="mt-0.5 text-[24px] sm:text-[30px] font-[860] leading-[1.1] tracking-[-0.03em]" style={{ color: ON_BRAND_TEXT }}>
               {clientName}
             </h1>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -206,7 +212,7 @@ export default function ConsentSummary({
               {/* Version and signing date are one span, not two: as separate
                   flex children the separator wraps onto its own line on a
                   narrow phone and reads as a stray bullet. */}
-              <span className="text-[11.5px] font-[650] tabular-nums" style={{ color: 'var(--text-disabled)' }}>
+              <span className="text-[11.5px] font-[600] tabular-nums" style={{ color: ON_BRAND_TEXT }}>
                 Version {record.version}
                 {record.completed_at && ` · Signed ${fmtDate(record.completed_at)}`}
               </span>
