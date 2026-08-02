@@ -45,36 +45,28 @@ describe('the shared PT-OS client picker', () => {
     expect(offenders.map((p) => p.replace(process.cwd() + '/', ''))).toEqual([]);
   });
 
-  it('the list of pages still carrying their own copy only ever shrinks', () => {
-    // Extracting the shared component found that this screen had been copied
-    // eleven times across pt-os, not four. Three were redesigned on request;
-    // the rest are listed here so the debt is a known number rather than a
-    // discovery, and so a twelfth copy fails this test instead of shipping.
-    //
-    // Converting one of these means deleting its name from this list. Adding
-    // a name to it should not happen — use the shared component.
+  it('no pt-os page anywhere still carries a copy of its own', () => {
+    // This screen had been copied eleven times across pt-os. Eight of those
+    // were tracked here as a shrinking list while they were converted one
+    // batch at a time; the list is now empty, so the assertion is simply that
+    // it stays that way. A twelfth copy fails here rather than shipping and
+    // drifting quietly for a release or two.
     const stillLocal = readdirSync(PT_OS, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name)
       .filter((name) => {
         const p = join(PT_OS, name, 'page.tsx');
         return existsSync(p) && /function\s+ClientPicker\b/.test(readFileSync(p, 'utf8'));
-      })
-      .sort();
+      });
 
-    expect(stillLocal).toEqual([
-      // Old chip layout — visibly different from the redesigned pages.
-      'progress-photos',
-      'progress-tracking-setup',
-      'workout-log',
-      // Already drifted toward the avatar-row layout independently, so these
-      // look close but are still separate code.
-      'assessment',
-      'lifestyle-assessment',
-      'mobility-assessment',
-      'nutrition-assessment',
-      'parq',
-    ].sort());
+    expect(stillLocal).toEqual([]);
+  });
+
+  it('covers every pt-os tool that opens on a client choice', () => {
+    // A floor, so converting a page by deleting its picker and forgetting to
+    // render the shared one — which type-checks fine, the page just renders
+    // nothing — does not pass silently.
+    expect(callers().length).toBe(12);
   });
 
   it('every basePath it is given is a route that exists', () => {
@@ -100,5 +92,26 @@ describe('the shared PT-OS client picker', () => {
       }
     }
     expect(mismatched).toEqual([]);
+  });
+
+  it('only Workout Log overrides where picking a client goes', () => {
+    // hrefFor exists for one page: a client's log lives at
+    // /pt-os/clients/[id]/workout-log, a path segment the default
+    // `?client_id=` target cannot express.
+    //
+    // Pinned because hrefFor silently wins over basePath, which means the
+    // assertion above — that a picker returns to its own page — stops being
+    // true for any page that adds one. A new override should be a decision
+    // someone makes on purpose, not a thing that appears in a diff.
+    const overriding = callers()
+      .filter((p) => readFileSync(p, 'utf8').includes('hrefFor='))
+      .map((p) => p.split('/').slice(-2)[0]);
+    expect(overriding).toEqual(['workout-log']);
+  });
+
+  it('the one override points at a route that exists', () => {
+    const src = readFileSync(join(PT_OS, 'workout-log/page.tsx'), 'utf8');
+    expect(src).toMatch(/hrefFor=\{\(id\) => `\/pt-os\/clients\/\$\{id\}\/workout-log`\}/);
+    expect(existsSync(join(process.cwd(), 'src/app/pt-os/clients/[id]/workout-log/page.tsx'))).toBe(true);
   });
 });

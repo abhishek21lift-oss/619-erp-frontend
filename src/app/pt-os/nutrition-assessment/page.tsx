@@ -4,12 +4,13 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, Loader2, Search, AlertCircle,
-  Salad, Plus, X, History,
+  ArrowLeft, ArrowRight, Check, Loader2, AlertCircle, Salad, Plus, X,
+  History,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button } from '@/components/ui';
+import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
 import { useToast } from '@/lib/toast';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
@@ -34,8 +35,6 @@ import NutritionRiskBadges from '@/components/pt-os/nutrition-assessment/Nutriti
 import CoachNotesPanel from '@/components/pt-os/nutrition-assessment/CoachNotesPanel';
 import NutritionComparison from '@/components/pt-os/nutrition-assessment/NutritionComparison';
 import NutritionCard from '@/components/pt-os/nutrition-assessment/NutritionCard';
-
-interface ClientOption { id: string; name: string; }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -117,107 +116,8 @@ function NutritionContent() {
   const { toast } = useToast();
   const clientId = sp.get('client_id') || '';
 
-  if (!clientId) return <ClientPicker />;
+  if (!clientId) return <ClientPicker title="Nutrition Assessment" icon={<Salad size={20} color="#fff" />} basePath="/pt-os/nutrition-assessment" />;
   return <NutritionHub key={clientId} clientId={clientId} router={router} toast={toast} />;
-}
-
-/* ─────────────────────────────────────────────────────── CLIENT PICKER */
-const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #6366f1, #8b5cf6)',
-  'linear-gradient(135deg, #10b981, #34d399)',
-  'linear-gradient(135deg, #f59e0b, #fbbf24)',
-  'linear-gradient(135deg, #ec4899, #f472b6)',
-  'linear-gradient(135deg, #06b6d4, #22d3ee)',
-  'linear-gradient(135deg, #ef4444, #f87171)',
-];
-
-function ClientAvatar({ name }: { name: string }) {
-  const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_GRADIENTS.length;
-  const initials = name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
-  return (
-    <div
-      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[12px] font-[700] text-white"
-      style={{ background: AVATAR_GRADIENTS[idx] }}
-    >
-      {initials || '?'}
-    </div>
-  );
-}
-
-function ClientPicker() {
-  const router = useRouter();
-  const [clients, setClients] = useState<ClientOption[]>([]);
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    setLoadError(false);
-    api.pt.clients().then((r: { data?: unknown[] }) => {
-      const arr = Array.isArray(r?.data) ? r.data : [];
-      setClients((arr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
-    }).catch(() => setLoadError(true)).finally(() => setLoading(false));
-  }, []);
-
-  const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
-
-  return (
-    <div className="mx-auto w-full max-w-3xl pt-3 pb-6">
-      <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
-        style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div
-          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-          style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
-        >
-          <Salad size={20} color="#fff" />
-        </div>
-        <h1 className="text-[20px] sm:text-[26px] font-[860] tracking-[-0.03em] leading-[1.08]" style={{ color: 'var(--text-primary)' }}>
-          Diet &amp; Nutrition Profiling
-        </h1>
-      </m.div>
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="relative min-w-[220px] flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            type="text" placeholder="Search clients..." value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          />
-        </div>
-        {!loading && !loadError && (
-          <span className="flex-shrink-0 text-[12px] font-[600]" style={{ color: 'var(--text-disabled)' }}>
-            {filtered.length} {filtered.length === 1 ? 'client' : 'clients'}
-          </span>
-        )}
-      </div>
-
-      {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" /></div>}
-      {loadError && <p className="text-center py-8 text-[13px]" style={{ color: 'var(--text-muted)' }}>Could not load clients.</p>}
-      {!loading && !loadError && filtered.length === 0 && (
-        <p className="py-8 text-center text-[13px]" style={{ color: 'var(--text-disabled)' }}>No clients found.</p>
-      )}
-      {!loading && !loadError && filtered.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => router.push(`/pt-os/nutrition-assessment?client_id=${c.id}`)}
-              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
-              style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-            >
-              <ClientAvatar name={c.name} />
-              <span className="flex-1 truncate text-[13.5px] font-[650]" style={{ color: 'var(--text-primary)' }}>{c.name}</span>
-              <ArrowRight size={14} className="flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: 'var(--text-disabled)' }} />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 /* ─────────────────────────────────────────────────────── HUB (list + wizard) */

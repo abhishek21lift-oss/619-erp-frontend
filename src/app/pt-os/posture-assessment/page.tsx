@@ -24,8 +24,6 @@ import PostureRiskBadges from '@/components/pt-os/posture-assessment/PostureRisk
 import PostureComparison from '@/components/pt-os/posture-assessment/PostureComparison';
 import PostureCard from '@/components/pt-os/posture-assessment/PostureCard';
 
-interface ClientOption { id: string; name: string; }
-
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function formFromRow(row: Record<string, unknown>): PostureFormData {
