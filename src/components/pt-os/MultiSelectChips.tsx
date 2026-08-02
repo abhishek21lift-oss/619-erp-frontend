@@ -1,9 +1,22 @@
 'use client';
 
+import type React from 'react';
+
 export interface ChipOption {
   value: string;
   label: string;
-  icon?: string;
+  /**
+   * ReactNode, not string, so a caller can pass a real icon element:
+   *   icon: <Beer size={14} />
+   *
+   * It was `string` because every caller passed an emoji, which is
+   * font-dependent, renders differently on every platform and cannot be
+   * themed or recoloured with the chip's selected state. Widening rather than
+   * replacing keeps the assessments still passing emoji compiling untouched —
+   * a string is a ReactNode — so they can be converted on their own schedule
+   * instead of in one sweep.
+   */
+  icon?: React.ReactNode;
 }
 
 interface MultiSelectChipsProps {
@@ -38,7 +51,7 @@ export function MultiSelectChips({ value, onChange, options }: MultiSelectChipsP
               transform: selected ? 'scale(1.03)' : 'scale(1)',
             }}
           >
-            {opt.icon && <span>{opt.icon}</span>}
+            {opt.icon && <span className="inline-flex items-center">{opt.icon}</span>}
             {opt.label}
           </button>
         );

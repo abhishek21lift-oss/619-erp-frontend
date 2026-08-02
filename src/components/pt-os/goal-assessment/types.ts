@@ -1,6 +1,13 @@
 // Shared form shape for the Goal Assessment module — imported by the main
 // page and every step component so they don't depend on each other.
 
+import {
+  Accessibility, Dumbbell, Flame, Footprints, Gem, Heart, Leaf, Moon,
+  PersonStanding, Ruler, Salad, Scale, Stethoscope, Target, Trophy,
+  TrendingDown, Weight, Wind, Zap,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
 export type GoalType =
   | 'fat_loss' | 'muscle_gain' | 'body_recomposition' | 'strength_gain' | 'powerlifting'
   | 'endurance' | 'general_fitness' | 'mobility' | 'marathon_prep' | 'wedding_transformation'
@@ -54,34 +61,44 @@ export interface FormErrors {
   lifestyle?: string;
 }
 
-export const GOAL_TYPE_META: { value: GoalType; label: string; icon: string }[] = [
-  { value: 'fat_loss', label: 'Fat Loss', icon: '🏋️' },
-  { value: 'muscle_gain', label: 'Muscle Gain', icon: '💪' },
-  { value: 'body_recomposition', label: 'Body Recomposition', icon: '⚖️' },
-  { value: 'strength_gain', label: 'Strength Gain', icon: '🔥' },
-  { value: 'powerlifting', label: 'Powerlifting', icon: '🏆' },
-  { value: 'endurance', label: 'Improve Endurance', icon: '🏃' },
-  { value: 'general_fitness', label: 'General Fitness', icon: '❤️' },
-  { value: 'mobility', label: 'Improve Mobility', icon: '🤸' },
-  { value: 'marathon_prep', label: 'Marathon Preparation', icon: '🏃' },
-  { value: 'wedding_transformation', label: 'Wedding Transformation', icon: '👰' },
-  { value: 'medical_fitness', label: 'Medical Fitness', icon: '🩺' },
-  { value: 'senior_fitness', label: 'Senior Fitness', icon: '👵' },
-  { value: 'athletic_performance', label: 'Athletic Performance', icon: '⚡' },
-  { value: 'custom', label: 'Custom Goal', icon: '🎯' },
+/**
+ * Goal and priority metadata.
+ *
+ * `icon` is a Lucide component, not an emoji string. It was 🏋️ / 💪 / ⚖️ and
+ * so on, which renders as a different picture on every platform, ignores the
+ * chip's selected-state colour because emoji carry their own, and cannot be
+ * sized against the label. Storing the component rather than an element keeps
+ * this file .ts — the call sites render `<meta.icon size={18} />`.
+ */
+export const GOAL_TYPE_META: { value: GoalType; label: string; icon: LucideIcon }[] = [
+  { value: 'fat_loss',                 label: 'Fat Loss',                icon: TrendingDown },
+  { value: 'muscle_gain',              label: 'Muscle Gain',             icon: Dumbbell },
+  { value: 'body_recomposition',       label: 'Body Recomposition',      icon: Scale },
+  { value: 'strength_gain',            label: 'Strength Gain',           icon: Flame },
+  { value: 'powerlifting',             label: 'Powerlifting',            icon: Trophy },
+  { value: 'endurance',                label: 'Improve Endurance',       icon: Wind },
+  { value: 'general_fitness',          label: 'General Fitness',         icon: Heart },
+  { value: 'mobility',                 label: 'Improve Mobility',        icon: PersonStanding },
+  // 'endurance' and 'marathon_prep' were both 🏃 — two goals, one picture.
+  { value: 'marathon_prep',            label: 'Marathon Preparation',    icon: Footprints },
+  { value: 'wedding_transformation',   label: 'Wedding Transformation',  icon: Gem },
+  { value: 'medical_fitness',          label: 'Medical Fitness',         icon: Stethoscope },
+  { value: 'senior_fitness',           label: 'Senior Fitness',          icon: Accessibility },
+  { value: 'athletic_performance',     label: 'Athletic Performance',    icon: Zap },
+  { value: 'custom',                   label: 'Custom Goal',             icon: Target },
 ];
 
-export const PRIORITY_META: { value: PriorityGoal; label: string; icon: string }[] = [
-  { value: 'fat_loss', label: 'Fat Loss', icon: '🔥' },
-  { value: 'muscle_gain', label: 'Muscle Gain', icon: '💪' },
-  { value: 'strength', label: 'Strength', icon: '🏋️' },
-  { value: 'health', label: 'Health', icon: '❤️' },
-  { value: 'performance', label: 'Performance', icon: '⚡' },
-  { value: 'lifestyle', label: 'Lifestyle', icon: '😌' },
-  { value: 'endurance', label: 'Endurance', icon: '🏃' },
-  { value: 'posture', label: 'Posture', icon: '📏' },
-  { value: 'nutrition', label: 'Nutrition', icon: '🥗' },
-  { value: 'recovery', label: 'Recovery', icon: '😴' },
+export const PRIORITY_META: { value: PriorityGoal; label: string; icon: LucideIcon }[] = [
+  { value: 'fat_loss',    label: 'Fat Loss',    icon: Flame },
+  { value: 'muscle_gain', label: 'Muscle Gain', icon: Dumbbell },
+  { value: 'strength',    label: 'Strength',    icon: Weight },
+  { value: 'health',      label: 'Health',      icon: Heart },
+  { value: 'performance', label: 'Performance', icon: Zap },
+  { value: 'lifestyle',   label: 'Lifestyle',   icon: Leaf },
+  { value: 'endurance',   label: 'Endurance',   icon: Wind },
+  { value: 'posture',     label: 'Posture',     icon: Ruler },
+  { value: 'nutrition',   label: 'Nutrition',   icon: Salad },
+  { value: 'recovery',    label: 'Recovery',    icon: Moon },
 ];
 
 export const STEPS = [

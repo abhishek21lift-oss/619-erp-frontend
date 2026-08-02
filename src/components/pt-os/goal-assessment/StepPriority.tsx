@@ -40,7 +40,7 @@ export function StepPriority({ form, set, error }: StepPriorityProps) {
                   transform: selected ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
-                <span className="text-[22px]">{p.icon}</span>
+                <p.icon size={21} strokeWidth={1.75} color={selected ? '#D97706' : '#64748b'} />
                 <span className="text-[11.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{p.label}</span>
               </button>
             );
