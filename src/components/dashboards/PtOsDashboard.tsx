@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui';
+import { cn } from '@/components/ui/cn';
 import {
   Users, TrendingUp, Wallet, Percent,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
@@ -460,11 +461,13 @@ function MobileQuickActions() {
 
 // ─── Section 3 — KPI Stat Cards ────────────────────────────────────────────────
 function StatCard({
-  icon, label, value, sub, color, accent, delay = 0, href, trend, pct,
+  icon, label, value, sub, color, accent, delay = 0, href, trend, pct, className,
 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
   color: string; accent: string; delay?: number; href?: string;
   trend?: number[]; pct?: number | null;
+  /** Responsive visibility, for cards that only belong on some screen sizes. */
+  className?: string;
 }) {
   const router = useRouter();
   const max = trend && trend.length > 0 ? Math.max(...trend, 1) : 1;
@@ -474,7 +477,7 @@ function StatCard({
       transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -4, scale: 1.015 }} whileTap={{ scale: 0.97 }}
       onClick={() => href && router.push(href)}
-      className="group relative overflow-hidden rounded-[18px] p-3.5 sm:p-4 cursor-pointer"
+      className={cn('group relative overflow-hidden rounded-[18px] p-3.5 sm:p-4 cursor-pointer', className)}
       style={{
         background: `linear-gradient(155deg, ${color}11 0%, rgba(255,255,255,0.88) 65%)`,
         border: `1px solid ${color}22`,
@@ -1295,16 +1298,23 @@ export default function PtOsDashboard() {
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
-            {/* 3 — KPI grid: 2 cols mobile → 3 tablet → 5 desktop */}
+            {/* 3 — KPI grid: 2 cols mobile → 3 tablet → 4 desktop.
+                Four rather than five on desktop because Commission is hidden
+                there (lg:hidden below) and the row would otherwise sit a card
+                short. Small screens still show all five. */}
             <div>
               <SectionLabel>Key Metrics</SectionLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                 <StatCard icon={<Users size={14} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
                   sub={`${d.expired_clients} expired`} color={C.purple} accent="#a78bfa" delay={0} href="/pt-os/clients" trend={revTrend} pct={revMoM} />
                 <StatCard icon={<Wallet size={14} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
                   color={C.emerald} accent="#34d399" delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} />
+                {/* Phone and tablet only. Still rendered there, so the numbers
+                    stay one tap away on the devices a trainer carries around
+                    the floor; the desktop row is the one being kept lean. */}
                 <StatCard icon={<Percent size={14} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} color={C.rose} accent="#fb7185" delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} />
+                  sub={commRate} color={C.rose} accent="#fb7185" delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM}
+                  className="lg:hidden" />
                 <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
                   sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.cyan} accent="#22d3ee" delay={0.15} href="/pt-os/clients" />
                 <StatCard icon={<Receipt size={14} />} label="Outstanding" value={fmtCompact(d.total_outstanding)}
