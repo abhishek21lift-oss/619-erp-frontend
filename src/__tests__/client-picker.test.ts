@@ -109,6 +109,34 @@ describe('the shared PT-OS client picker', () => {
     expect(overriding).toEqual(['workout-log']);
   });
 
+  it('the hero takes its blue from lib/brand, not a hardcoded hex', () => {
+    // The banner was amber. It is now the blue sampled out of the logo, and
+    // the values live in lib/brand with their provenance — because "the brand
+    // blue" written as a literal in each file is exactly how one screen ends
+    // up a shade off and nobody can say which is correct.
+    const src = readFileSync(join(process.cwd(), SHARED), 'utf8');
+    expect(src).toContain("from '@/lib/brand'");
+    // The two gradients the hero used, matched exactly rather than by hex:
+    // #f59e0b is also one of six client-avatar colours in this same file, and
+    // amber remains correct for warning states elsewhere. A bare hex search
+    // flags both and teaches people to ignore this test.
+    expect(src).not.toContain('linear-gradient(135deg, #F59E0B, #D97706)');
+    expect(src).not.toContain('#fff7ed');
+    // Nor the blue inlined instead of imported.
+    expect(src).not.toMatch(/#0067E0|#0059CE/);
+  });
+
+  it('the consent record hero matches the picker it is reached through', () => {
+    // Both heroes are the same banner by intent. They drifted apart the moment
+    // one of them owned its own copy of the colour.
+    const rec = readFileSync(
+      join(process.cwd(), 'src/components/pt-os/informed-consent/ConsentSummary.tsx'), 'utf8');
+    expect(rec).toContain("from '@/lib/brand'");
+    expect(rec).not.toContain('linear-gradient(135deg, #F59E0B, #D97706)');
+    expect(rec).not.toContain('#fff7ed');
+    expect(rec).not.toContain('#B45309');
+  });
+
   it('the one override points at a route that exists', () => {
     const src = readFileSync(join(PT_OS, 'workout-log/page.tsx'), 'utf8');
     expect(src).toMatch(/hrefFor=\{\(id\) => `\/pt-os\/clients\/\$\{id\}\/workout-log`\}/);

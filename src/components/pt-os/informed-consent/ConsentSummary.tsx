@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { fmtDate } from '@/lib/format';
+import { BRAND_BLUE_LABEL, BRAND_GLOW, BRAND_GRADIENT, BRAND_TINT_GRADIENT } from '@/lib/brand';
 import type { InformedConsent } from '@/lib/api';
 import { statusStyle } from './statusConfig';
 import { FINAL_ACK_FIELDS } from './types';
@@ -172,22 +173,23 @@ export default function ConsentSummary({
         <ArrowLeft size={15} /> All clients
       </Link>
 
-      {/* Identity. Same amber banner as the client picker this page is reached
-          through, so arriving here reads as going deeper, not sideways. */}
+      {/* Identity. Same brand-blue banner as the client picker this page is
+          reached through, so arriving here reads as going deeper, not
+          sideways. Both draw from lib/brand, so they cannot drift apart. */}
       <m.div
         {...enter(0)}
         className="rounded-[20px] px-5 py-5 sm:px-6"
-        style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
+        style={{ background: BRAND_TINT_GRADIENT, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}
       >
         <div className="flex items-start gap-3.5">
           <div
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
+            style={{ background: BRAND_GRADIENT, boxShadow: BRAND_GLOW }}
           >
             <FileSignature size={20} color="#fff" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-[700] uppercase tracking-[0.09em]" style={{ color: '#B45309' }}>
+            <p className="text-[11px] font-[700] uppercase tracking-[0.09em]" style={{ color: BRAND_BLUE_LABEL }}>
               Informed Consent
             </p>
             <h1 className="mt-0.5 text-[24px] sm:text-[30px] font-[860] leading-[1.1] tracking-[-0.03em]" style={{ color: 'var(--text-primary)' }}>
@@ -217,13 +219,13 @@ export default function ConsentSummary({
           Previously Download and Amend competed at the same weight. */}
       <m.div {...enter(1)} className="flex flex-wrap gap-2.5">
         {inProgress ? (
-          <Button onClick={onContinue} style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+          <Button onClick={onContinue} style={{ background: BRAND_GRADIENT, color: '#fff' }}>
             Continue signing
           </Button>
         ) : isRevoked ? (
           // A revoked consent needs replacing, and the banner below says so.
           // Saying it without offering the action is how a dead end is built.
-          <Button iconLeft={<Plus size={14} />} onClick={onAmend} style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+          <Button iconLeft={<Plus size={14} />} onClick={onAmend} style={{ background: BRAND_GRADIENT, color: '#fff' }}>
             Start new consent
           </Button>
         ) : (
@@ -374,7 +376,7 @@ export default function ConsentSummary({
                 href={record.medical_clearance_file_url}
                 target="_blank" rel="noopener noreferrer"
                 className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 text-[12.5px] font-[650]"
-                style={{ color: '#B45309' }}
+                style={{ color: BRAND_BLUE_LABEL }}
               >
                 <FileText size={14} /> Medical clearance document
               </a>

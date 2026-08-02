@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import { AlertCircle, ArrowRight, Search, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
+import { BRAND_GLOW, BRAND_GRADIENT, BRAND_TINT_GRADIENT } from '@/lib/brand';
 import { api } from '@/lib/api';
 
 interface ClientOption { id: string; name: string; }
@@ -89,10 +90,10 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
     <div className="mx-auto w-full max-w-4xl pt-3 pb-6">
       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
-        style={{ background: 'linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+        style={{ background: BRAND_TINT_GRADIENT, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
         <div
           className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-          style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
+          style={{ background: BRAND_GRADIENT, boxShadow: BRAND_GLOW }}
         >
           {icon}
         </div>
@@ -115,7 +116,7 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
           <input
             type="text" placeholder="Search clients..." value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-amber-400"
+            className="w-full rounded-[12px] py-2.5 pl-9 pr-3 text-[13px] outline-none transition-colors focus:border-[#0271EB]"
             style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
         </div>
@@ -163,7 +164,7 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
             <button
               key={c.id}
               onClick={() => router.push(hrefFor ? hrefFor(c.id) : `${basePath}?client_id=${encodeURIComponent(c.id)}`)}
-              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+              className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-[#8CC0FA] hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >
               <ClientAvatar name={c.name} />
