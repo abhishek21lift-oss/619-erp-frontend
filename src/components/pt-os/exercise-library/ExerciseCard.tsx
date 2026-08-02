@@ -107,6 +107,14 @@ export const ExerciseCard = React.memo(function ExerciseCard({
         selected && 'ring-2 ring-[var(--brand)]/50 border-[var(--brand)]/40',
         archived && 'opacity-60',
         dense ? 'p-3 gap-2' : 'p-4 gap-3',
+        // The row menu hangs below this card and over the next one, and the
+        // z-30 it carries cannot get it there on its own: `backdrop-blur-xl`
+        // above makes every card its own stacking context, so that z-index is
+        // resolved *inside* this card and the following sibling — later in DOM
+        // order — paints straight over the top of it. The menu was being cut
+        // off mid-item. Lifting the whole card while its menu is open is what
+        // actually reorders it against its siblings.
+        menuOpen && 'z-50',
       )}
     >
       {/* Region accent rail. The only colour on the card that is not a badge. */}
