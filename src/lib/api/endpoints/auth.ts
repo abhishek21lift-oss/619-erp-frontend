@@ -12,6 +12,14 @@ import type {
 } from '../types';
 
 export const auth = {
+  /** Self-serve trial application. Public — the applicant has no account yet. */
+  registerStudio: (body: {
+    full_name: string; business_name: string; mobile: string; email: string; password: string;
+  }) =>
+    http<{ data: { status: string } }>('/api/registrations', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   login: (email: string, password: string, mfaCode?: string) =>
     http<{ user: User }>('/api/auth/login', {
       method: 'POST',
