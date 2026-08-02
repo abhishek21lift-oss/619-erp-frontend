@@ -12,6 +12,7 @@
 // them off a login they cannot pass would be worse than saying nothing.
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, Building2, CheckCircle2, Clock, Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -33,6 +34,50 @@ function validate(form: Record<Field, string>): Partial<Record<Field, string>> {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Enter a valid email address.';
   if (form.password.length < 8) e.password = 'Use at least 8 characters.';
   return e;
+}
+
+
+/**
+ * The landing page's bar, trimmed for a form.
+ *
+ * Same fixed, blurred, notch-filling treatment — without it the page began at
+ * the status bar and the trial badge sat under the notch. The section links are
+ * dropped: there is nothing on this page to jump to, and "Get Started" would
+ * point at the page you are already on.
+ */
+function SignupNav() {
+  return (
+    <header
+      className="fixed inset-x-0 top-0 z-50"
+      style={{
+        // Floor the reserve at 2.75rem so the bar still clears the status bar
+        // where env(safe-area-inset-top) resolves to 0.
+        paddingTop: 'max(env(safe-area-inset-top), 2.75rem)',
+        background: 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(0,103,224,0.07)',
+      }}
+    >
+      <div className="mx-auto max-w-6xl px-4">
+        <nav className="flex items-center justify-between py-3">
+          <Link href="/" className="inline-flex items-center gap-2.5" aria-label="MY PT STUDIO home">
+            <Image src="/mypt-logo.png" alt="" width={38} height={38} priority
+              className="h-9 w-9 shrink-0 object-contain" />
+            <span className="text-[15px] font-[800] tracking-[-0.02em]">
+              <span style={{ color: '#0067E0' }}>MY PT</span>{' '}
+              <span style={{ color: '#0F172A' }}>STUDIO</span>
+            </span>
+          </Link>
+          <Link href="/login"
+            className="rounded-xl px-3.5 py-2 text-[13.5px] font-[650] transition-colors hover:bg-black/[0.04]"
+            style={{ color: '#0F172A' }}>
+            Sign in
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
 }
 
 export default function StartFreePage() {
@@ -78,7 +123,16 @@ export default function StartFreePage() {
   if (done) return <PendingApproval email={form.email.trim()} />;
 
   return (
-    <main className="min-h-dvh px-4 py-10 sm:px-6" style={{ background: 'linear-gradient(160deg,#F8FAFC,#F1F5F9)' }}>
+    <>
+      <SignupNav />
+      {/* Clears the fixed bar: its own notch reserve plus its content height. */}
+      <main
+        className="min-h-dvh px-4 pb-14 sm:px-6"
+        style={{
+          background: 'linear-gradient(160deg,#F8FAFC,#F1F5F9)',
+          paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 5.5rem)',
+        }}
+      >
       <div className="mx-auto w-full max-w-[440px]">
         <div className="mb-6 text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-[750] uppercase tracking-[0.1em]"
@@ -108,24 +162,27 @@ export default function StartFreePage() {
           <TextField id="full_name" label="Full name" icon={User} autoComplete="name"
             value={form.full_name} onChange={(v) => set('full_name', v)}
             onBlur={() => setTouched((t) => ({ ...t, full_name: true }))}
-            error={touched.full_name ? errors.full_name : undefined} placeholder="Abhishek Katiyar" />
+            error={touched.full_name ? errors.full_name : undefined} />
 
           <TextField id="business_name" label="Business name" icon={Building2} autoComplete="organization"
             value={form.business_name} onChange={(v) => set('business_name', v)}
             onBlur={() => setTouched((t) => ({ ...t, business_name: true }))}
-            error={touched.business_name ? errors.business_name : undefined} placeholder="MY PT STUDIO" />
+            error={touched.business_name ? errors.business_name : undefined}
+            hint="The name your clients know you by." />
 
           <TextField id="mobile" label="Mobile number" icon={Phone} type="tel" autoComplete="tel"
             inputMode="numeric"
             value={form.mobile} onChange={(v) => set('mobile', v)}
             onBlur={() => setTouched((t) => ({ ...t, mobile: true }))}
-            error={touched.mobile ? errors.mobile : undefined} placeholder="98765 43210" />
+            error={touched.mobile ? errors.mobile : undefined}
+            hint="10 digits, no country code needed." />
 
           <TextField id="email" label="Email address" icon={Mail} type="email" autoComplete="email"
             inputMode="email"
             value={form.email} onChange={(v) => set('email', v)}
             onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-            error={touched.email ? errors.email : undefined} placeholder="you@studio.com" />
+            error={touched.email ? errors.email : undefined}
+            hint="Where approval and your login go." />
 
           <TextField id="password" label="Create password" icon={Lock}
             type={showPassword ? 'text' : 'password'} autoComplete="new-password"
@@ -162,7 +219,8 @@ export default function StartFreePage() {
           </p>
         </form>
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 
@@ -175,8 +233,15 @@ export default function StartFreePage() {
  */
 function PendingApproval({ email }: { email: string }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-10"
-      style={{ background: 'linear-gradient(160deg,#F8FAFC,#F1F5F9)' }}>
+    <>
+      <SignupNav />
+      <main
+        className="flex min-h-dvh items-start justify-center px-4 pb-14"
+        style={{
+          background: 'linear-gradient(160deg,#F8FAFC,#F1F5F9)',
+          paddingTop: 'calc(max(env(safe-area-inset-top), 2.75rem) + 6rem)',
+        }}
+      >
       <div className="w-full max-w-[460px] rounded-[22px] p-6 sm:p-8 text-center"
         style={{
           background: 'rgba(255,255,255,0.88)',
@@ -225,7 +290,8 @@ function PendingApproval({ email }: { email: string }) {
           Back to home
         </Link>
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 
