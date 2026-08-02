@@ -15,7 +15,6 @@ import { useToast } from '@/lib/toast';
 import { calc1RM, classifyStrength } from '@/lib/fitness-calculations';
 import type { Gender, FitnessCategory } from '@/lib/fitness-calculations';
 
-interface ClientOption { id: string; name: string; }
 interface StrengthLog {
   id: string; client_id: string; exercise_name: string;
   weight_kg: number; sets_done: number; reps_done: number;

@@ -5,15 +5,14 @@ import type { ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { m } from 'framer-motion';
 import {
-  Flag, Loader2, Search, Users, AlertCircle, Check, X, ChevronRight,
-  Camera, Ruler, Zap, Move, Accessibility, AlertTriangle,
+  Flag, Loader2, AlertCircle, Check, X, ChevronRight, Camera, Ruler, Zap,
+  Move, Accessibility, AlertTriangle,
 } from 'lucide-react';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 import { Button, DonutChart } from '@/components/ui';
+import ClientPicker from '@/components/pt-os/shared/ClientPicker';
 import { api } from '@/lib/api';
-
-interface ClientOption { id: string; name: string; }
 
 interface CompletionItem {
   key: string;
@@ -41,78 +40,8 @@ function ProgressTrackingSetupContent() {
   const sp = useSearchParams();
   const clientId = sp.get('client_id') || '';
 
-  if (!clientId) return <ClientPicker />;
+  if (!clientId) return <ClientPicker title="Progress Tracking Session" icon={<Flag size={20} color="#fff" />} basePath="/pt-os/progress-tracking-setup" />;
   return <BaselineDashboard key={clientId} clientId={clientId} router={router} />;
-}
-
-/* ─────────────────────────────────────────────────────── CLIENT PICKER */
-function ClientPicker() {
-  const router = useRouter();
-  const [clients, setClients] = useState<ClientOption[]>([]);
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    setLoadError(false);
-    api.pt.clients().then((r: { data?: unknown[] }) => {
-      const arr = Array.isArray(r?.data) ? r.data : [];
-      setClients((arr as Record<string, unknown>[]).map((c) => ({ id: String(c.id), name: String(c.name ?? '') })));
-    }).catch(() => setLoadError(true)).finally(() => setLoading(false));
-  }, []);
-
-  const filtered = clients.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
-
-  return (
-    <div className="mx-auto w-full max-w-3xl py-6 sm:py-8">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[24px] p-8 sm:p-10 mb-6"
-        style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', boxShadow: '0 12px 40px rgba(15,23,42,0.25)' }}>
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px]" style={{ background: 'rgba(245,158,11,0.15)' }}>
-            <Flag size={16} color="#F59E0B" />
-          </div>
-          <span className="text-[11px] font-[650] uppercase tracking-[0.08em]" style={{ color: 'rgba(255,255,255,0.5)' }}>Progress Tracking Setup</span>
-        </div>
-        <h1 className="text-[32px] sm:text-[40px] font-[860] tracking-[-0.03em] leading-tight text-white">
-          Create Your Baseline Transformation Record
-        </h1>
-        <p className="mt-3 max-w-xl text-[14px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
-          Select a client to view or build out their complete baseline.
-        </p>
-      </m.div>
-
-      <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
-        <div className="relative mb-3">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-disabled)' }} />
-          <input
-            type="text" placeholder="Search clients..." value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 rounded-[10px] text-[13px] outline-none"
-            style={{ background: 'var(--bg-card)', border: '1px solid #d1d5db', color: 'var(--text-primary)' }}
-          />
-        </div>
-        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" /></div>}
-        {loadError && <p className="text-center py-8 text-[13px]" style={{ color: 'var(--text-muted)' }}>Could not load clients.</p>}
-        {!loading && !loadError && (
-          <div className="flex flex-wrap gap-2 max-h-[360px] overflow-y-auto">
-            {filtered.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => router.push(`/pt-os/progress-tracking-setup?client_id=${c.id}`)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-[13px] font-[600] transition-all"
-                style={{ background: '#F9FAFB', border: '1px solid #e5e7eb', color: '#334155' }}
-              >
-                <Users size={13} /> {c.name}
-              </button>
-            ))}
-            {filtered.length === 0 && <p className="text-[12px]" style={{ color: 'var(--text-disabled)' }}>No clients found.</p>}
-          </div>
-        )}
-      </div>
-    </div>
-  );
 }
 
 /* ─────────────────────────────────────────────────────── DASHBOARD */

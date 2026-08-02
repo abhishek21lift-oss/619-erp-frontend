@@ -58,11 +58,16 @@ interface ClientPickerProps {
   title: string;
   /** The tool's lucide icon, already sized: <FileSignature size={20} color="#fff" />. */
   icon: React.ReactNode;
-  /** Route to push to, gaining ?client_id=… — e.g. '/pt-os/goals'. */
+  /** The page this picker is rendered on — e.g. '/pt-os/goals'. Picking a
+   *  client pushes `${basePath}?client_id=…` unless hrefFor overrides it. */
   basePath: string;
+  /** For the tools whose real screens live somewhere else. Workout Log is the
+   *  landing page for /pt-os/clients/[id]/workout-log, which is a path segment
+   *  and not a query parameter, so it cannot use the default. */
+  hrefFor?: (clientId: string) => string;
 }
 
-export default function ClientPicker({ title, icon, basePath }: ClientPickerProps) {
+export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientPickerProps) {
   const router = useRouter();
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [search, setSearch] = useState('');
@@ -91,7 +96,15 @@ export default function ClientPicker({ title, icon, basePath }: ClientPickerProp
         >
           {icon}
         </div>
-        <h1 className="text-[24px] sm:text-[30px] font-[860] tracking-[-0.03em] leading-none" style={{ color: 'var(--text-primary)' }}>
+        {/* Steps down for the longer tool names so 'Progress Tracking Session'
+            does not run into the icon tile on a phone. Several of the copies
+            this replaced had already been hand-tuned to the smaller size for
+            exactly that reason. leading is set either way, because at the
+            small size the long ones still take two lines. */}
+        <h1
+          className={`${title.length > 18 ? 'text-[20px] sm:text-[26px]' : 'text-[24px] sm:text-[30px]'} font-[860] tracking-[-0.03em] leading-[1.1]`}
+          style={{ color: 'var(--text-primary)' }}
+        >
           {title}
         </h1>
       </m.div>
@@ -149,7 +162,7 @@ export default function ClientPicker({ title, icon, basePath }: ClientPickerProp
           {filtered.map((c) => (
             <button
               key={c.id}
-              onClick={() => router.push(`${basePath}?client_id=${encodeURIComponent(c.id)}`)}
+              onClick={() => router.push(hrefFor ? hrefFor(c.id) : `${basePath}?client_id=${encodeURIComponent(c.id)}`)}
               className="group flex items-center gap-3 rounded-[16px] p-3.5 text-left transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
               style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
             >

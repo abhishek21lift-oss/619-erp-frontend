@@ -35,8 +35,6 @@ import GoalTimeline from '@/components/pt-os/goal-assessment/GoalTimeline';
 import GoalCard from '@/components/pt-os/goal-assessment/GoalCard';
 import GoalProgressTimeline from '@/components/pt-os/goal-assessment/GoalProgressTimeline';
 
-interface ClientOption { id: string; name: string; }
-
 const EASE = [0.16, 1, 0.3, 1] as const;
 const CHALLENGE_VALUES = new Set(CHALLENGE_OPTIONS.map((c) => c.value));
 

@@ -26,7 +26,6 @@ import StepAgreements from '@/components/pt-os/informed-consent/StepAgreements';
 import StepExerciseProgrammeConsent from '@/components/pt-os/informed-consent/StepExerciseProgrammeConsent';
 import StepSignatures from '@/components/pt-os/informed-consent/StepSignatures';
 
-interface ClientOption { id: string; name: string; }
 interface FormErrors { [key: string]: string | undefined; }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
