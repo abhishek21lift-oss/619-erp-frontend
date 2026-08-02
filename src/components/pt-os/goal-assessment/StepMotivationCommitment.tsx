@@ -1,14 +1,21 @@
 'use client';
 
-import { Flame } from 'lucide-react';
+import { Flame, Frown, Laugh, Meh, Smile } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Slider } from '@/components/ui';
 import type { GoalFormData } from './types';
 
-function motivationEmoji(level: number): string {
-  if (level <= 3) return '😐';
-  if (level <= 6) return '🙂';
-  if (level <= 8) return '😃';
-  return '🤩';
+/**
+ * The motivation face. Was 😐 🙂 😃 🤩 — which is four different drawings
+ * depending on the device, and on some platforms 😃 and 🤩 are barely
+ * distinguishable at 26px. Lucide's face set is one drawing style at one
+ * stroke weight, so the four steps actually read as a scale.
+ */
+function motivationFace(level: number): LucideIcon {
+  if (level <= 3) return Frown;
+  if (level <= 6) return Meh;
+  if (level <= 8) return Smile;
+  return Laugh;
 }
 
 function commitmentColor(level: number): string {
@@ -43,7 +50,10 @@ export function StepMotivationCommitment({ form, set }: StepMotivationCommitment
         <div>
           <div className="mb-2 flex items-center justify-between">
             <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Motivation Level</p>
-            <span className="text-[26px]">{motivationEmoji(motivation)}</span>
+            {(() => {
+              const Face = motivationFace(motivation);
+              return <Face size={24} strokeWidth={1.75} style={{ color: commitmentColor(motivation) }} />;
+            })()}
           </div>
           <Slider label="" value={motivation} min={1} max={10} onChange={(v) => set('motivationLevel', String(v))}
             scaleLabels={['1 · Not Motivated', '5 · Moderately Motivated', '10 · Extremely Motivated']} />

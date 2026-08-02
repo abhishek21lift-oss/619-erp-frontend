@@ -41,7 +41,8 @@ export function StepPrimaryGoal({ form, set, error }: StepPrimaryGoalProps) {
                   transform: selected ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
-                <span className="text-[26px]">{g.icon}</span>
+                {/* Inherits the selected colour, which an emoji could not. */}
+                <g.icon size={24} strokeWidth={1.75} color={selected ? '#D97706' : '#64748b'} />
                 <span className="text-[12.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{g.label}</span>
               </button>
             );

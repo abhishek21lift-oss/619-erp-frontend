@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Target } from 'lucide-react';
 import { DonutChart } from '@/components/ui';
 import { calcCompletionPct, calcAchievementStatus, daysRemaining } from '@/lib/goal-calculations';
 import { GOAL_TYPE_META } from './types';
@@ -57,7 +57,9 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-[16px]">{meta?.icon || '🎯'}</span>
+          {/* Target is also the 'custom' goal icon, which is the right
+              fallback for a goal_type this build does not know about. */}
+          {(() => { const Icon = meta?.icon ?? Target; return <Icon size={15} strokeWidth={2} className="flex-shrink-0" style={{ color: '#D97706' }} />; })()}
           <p className="text-[14px] font-[760] text-slate-900 truncate">{label}</p>
           {!goal.is_active && (
             <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]" style={{ background: 'rgba(148,163,184,0.15)', color: '#64748b' }}>Inactive</span>

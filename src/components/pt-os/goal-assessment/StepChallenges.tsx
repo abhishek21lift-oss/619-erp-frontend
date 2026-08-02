@@ -1,22 +1,27 @@
 'use client';
 
-import { HelpCircle } from 'lucide-react';
+import {
+  AlarmClock, BatteryLow, BedDouble, Beer, Building2, CalendarX, Candy,
+  Dumbbell, HelpCircle, Pizza, Users, Wind,
+} from 'lucide-react';
 import FloatInput from '@/components/ui/FloatInput';
 import MultiSelectChips from '@/components/pt-os/MultiSelectChips';
 import type { GoalFormData } from './types';
 
 export const CHALLENGE_OPTIONS = [
-  { value: 'Poor Diet', label: 'Poor Diet', icon: '🍔' },
-  { value: 'Lack of Sleep', label: 'Lack of Sleep', icon: '😴' },
-  { value: 'No Time', label: 'No Time', icon: '⏰' },
-  { value: 'Office Work', label: 'Office Work', icon: '🏢' },
-  { value: 'Alcohol', label: 'Alcohol', icon: '🍺' },
-  { value: 'Sugar Cravings', label: 'Sugar Cravings', icon: '🍬' },
-  { value: 'Lack of Strength', label: 'Lack of Strength', icon: '💪' },
-  { value: 'Low Stamina', label: 'Low Stamina', icon: '🏃' },
-  { value: 'Motivation', label: 'Motivation', icon: '😔' },
-  { value: 'Gym Anxiety', label: 'Gym Anxiety', icon: '🏋️' },
-  { value: 'Inconsistent Routine', label: 'Inconsistent Routine', icon: '📱' },
+  { value: 'Poor Diet',             label: 'Poor Diet',             icon: <Pizza size={14} /> },
+  { value: 'Lack of Sleep',         label: 'Lack of Sleep',         icon: <BedDouble size={14} /> },
+  { value: 'No Time',               label: 'No Time',               icon: <AlarmClock size={14} /> },
+  { value: 'Office Work',           label: 'Office Work',           icon: <Building2 size={14} /> },
+  { value: 'Alcohol',               label: 'Alcohol',               icon: <Beer size={14} /> },
+  { value: 'Sugar Cravings',        label: 'Sugar Cravings',        icon: <Candy size={14} /> },
+  { value: 'Lack of Strength',      label: 'Lack of Strength',      icon: <Dumbbell size={14} /> },
+  { value: 'Low Stamina',           label: 'Low Stamina',           icon: <Wind size={14} /> },
+  { value: 'Motivation',            label: 'Motivation',            icon: <BatteryLow size={14} /> },
+  // Was 🏋️, the same picture as 'Lack of Strength' — this one is about other
+  // people being present, not about the weight.
+  { value: 'Gym Anxiety',           label: 'Gym Anxiety',           icon: <Users size={14} /> },
+  { value: 'Inconsistent Routine',  label: 'Inconsistent Routine',  icon: <CalendarX size={14} /> },
 ];
 
 interface StepChallengesProps {
