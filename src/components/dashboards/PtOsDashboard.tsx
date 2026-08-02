@@ -1236,31 +1236,23 @@ export default function PtOsDashboard() {
     (signal) => http<{ data: OpsData }>('/api/pt-os/dashboard/ops', { signal }).then(r => r.data),
     [],
   );
-  const consents = useAsync<{ status: string }[]>(
-    (signal) => http<{ data: { status: string }[] }>('/api/pt-os/informed-consent', { signal }).then(r => r.data),
-    [],
-  );
-
+  // The Consent Signed KPI was the only consumer of /api/pt-os/informed-consent
+  // here, so the request went with the card rather than being left to load a
+  // list nothing reads. The consent screens fetch it themselves.
   const d = dash.data;
   const o = ops.data;
   const coach = user?.name?.split(' ')[0] || 'Coach';
   const studioName = user?.organization_name || 'PT Studio';
 
   const refreshAll = useCallback(async () => {
-    await Promise.all([dash.refetch(), ops.refetch(), consents.refetch()]);
-  }, [dash.refetch, ops.refetch, consents.refetch]);
-
-  const consentCompleted = consents.data?.filter((c) => c.status === 'completed').length ?? 0;
-  const consentPending = consents.data?.filter((c) => c.status !== 'completed' && c.status !== 'revoked' && c.status !== 'archived').length ?? 0;
-  const consentMissing = d ? Math.max(d.active_pt_clients - consentCompleted - consentPending, 0) : 0;
-  const consentCompletionPct = d && d.active_pt_clients > 0 ? Math.round((consentCompleted / d.active_pt_clients) * 100) : 0;
+    await Promise.all([dash.refetch(), ops.refetch()]);
+  }, [dash.refetch, ops.refetch]);
 
   const revTrend = d?.revenueTrend?.map(x => Number(x.revenue)) ?? [];
   const incTrend = d?.revenueTrend?.map(x => Number(x.incentives)) ?? [];
   const revMoM   = momPct(d?.revenueTrend, 'revenue');
   const incMoM   = momPct(d?.revenueTrend, 'incentives');
 
-  const netRevenue = (d?.total_monthly_pt_revenue ?? 0) - (d?.total_monthly_commission ?? 0);
   const commRate = d?.total_monthly_pt_revenue && d.total_monthly_pt_revenue > 0
     ? `${((d.total_monthly_commission / d.total_monthly_pt_revenue) * 100).toFixed(0)}% rate` : undefined;
   const retentionPct = d && (d.active_pt_clients + d.expired_clients) > 0
@@ -1303,25 +1295,20 @@ export default function PtOsDashboard() {
             {/* 3 — Mobile quick actions (desktop uses the dock) */}
             <MobileQuickActions />
 
-            {/* 3 — KPI grid: 2 cols mobile → 3 tablet → 6 desktop */}
+            {/* 3 — KPI grid: 2 cols mobile → 3 tablet → 5 desktop */}
             <div>
               <SectionLabel>Key Metrics</SectionLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                 <StatCard icon={<Users size={14} />} label="Active Clients" value={d.active_pt_clients.toLocaleString()}
                   sub={`${d.expired_clients} expired`} color={C.purple} accent="#a78bfa" delay={0} href="/pt-os/clients" trend={revTrend} pct={revMoM} />
                 <StatCard icon={<Wallet size={14} />} label="PT Revenue" value={fmtCompact(d.total_monthly_pt_revenue)}
                   color={C.emerald} accent="#34d399" delay={0.05} href="/pt-os/reports" trend={revTrend} pct={revMoM} />
-                <StatCard icon={<TrendingUp size={14} />} label="Net Revenue" value={fmtCompact(netRevenue)}
-                  color={C.blue} accent="#38bdf8" delay={0.10} href="/pt-os/reports"
-                  trend={revTrend.map((r, i) => Math.max(0, r - (incTrend[i] ?? 0)))} pct={revMoM} />
                 <StatCard icon={<Percent size={14} />} label="Commission" value={fmtCompact(d.total_monthly_commission)}
-                  sub={commRate} color={C.rose} accent="#fb7185" delay={0.15} href="/pt-os/commissions" trend={incTrend} pct={incMoM} />
+                  sub={commRate} color={C.rose} accent="#fb7185" delay={0.10} href="/pt-os/commissions" trend={incTrend} pct={incMoM} />
                 <StatCard icon={<Gauge size={14} />} label="Retention" value={retentionPct !== null ? `${retentionPct.toFixed(0)}%` : '—'}
-                  sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.cyan} accent="#22d3ee" delay={0.20} href="/pt-os/clients" />
+                  sub={`${d.active_pt_clients}/${d.active_pt_clients + d.expired_clients}`} color={C.cyan} accent="#22d3ee" delay={0.15} href="/pt-os/clients" />
                 <StatCard icon={<Receipt size={14} />} label="Outstanding" value={fmtCompact(d.total_outstanding)}
-                  sub={`${d.clients_with_balance} client${d.clients_with_balance !== 1 ? 's' : ''}`} color={C.amber} accent="#fbbf24" delay={0.25} href="/pt-os/balance-sheet" />
-                <StatCard icon={<FileSignature size={14} />} label="Consent Signed" value={`${consentCompletionPct}%`}
-                  sub={`${consentPending} pending · ${consentMissing} missing`} color={C.crimson} accent="#f87171" delay={0.30} href="/pt-os/informed-consent" />
+                  sub={`${d.clients_with_balance} client${d.clients_with_balance !== 1 ? 's' : ''}`} color={C.amber} accent="#fbbf24" delay={0.20} href="/pt-os/balance-sheet" />
               </div>
             </div>
 
