@@ -25,6 +25,7 @@ import {
   ShieldCheck, Target, Gauge, Crown,
   CalendarClock, AlertCircle, CheckCircle2, XCircle,
   FileSignature, HeartPulse, Apple, PersonStanding,
+  Accessibility, Dumbbell,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAsync } from '@/lib/use-async';
@@ -395,18 +396,43 @@ function HeroHeader({ d, coach, studioName, loading: _loading, onRefresh: _onRef
   );
 }
 
+/**
+ * The quick actions, in the order a trainer actually works through them: take
+ * the client on, clear them to train (consent, PAR-Q), agree what they are
+ * training FOR, then the assessments — general first, then the specific ones.
+ * Goal Setting sits ahead of the assessments because a goal is the thing the
+ * assessments are measured against.
+ *
+ * ONE list, rendered by both the mobile strip and the desktop dock. They were
+ * two hand-maintained copies, which is precisely how they drift: adding three
+ * actions to the visible mobile list and missing the desktop dock entirely is
+ * an easy mistake to make and an easy one to miss in review, since only one of
+ * the two is on screen at a time.
+ *
+ * Icons are deliberately distinct per row. On a phone this is a horizontally
+ * scrolling strip under 9.5px labels, where the glyph is what gets recognised
+ * at a glance — two rows sharing an icon would be a coin flip.
+ *
+ * `icon` is the component, not an element, so each surface can size it (the
+ * strip uses 16, the dock 17).
+ */
+export const QUICK_ACTIONS = [
+  { label: 'Add Client',           icon: UserPlus,       href: '/pt-os/new-client',           color: C.purple },
+  { label: 'Consent',              icon: FileSignature,  href: '/pt-os/informed-consent',     color: C.blue },
+  { label: 'PAR-Q',                icon: ShieldCheck,    href: '/pt-os/parq',                 color: C.emerald },
+  { label: 'Goal Setting',         icon: Target,         href: '/pt-os/goals',                color: C.maroon },
+  { label: 'Fitness Testing',      icon: Gauge,          href: '/pt-os/assessment',           color: C.amber },
+  { label: 'Lifestyle',            icon: HeartPulse,     href: '/pt-os/lifestyle-assessment', color: C.crimson },
+  { label: 'Nutrition Assessment', icon: Apple,          href: '/pt-os/nutrition-assessment', color: C.cyan },
+  { label: 'Mobility Assessment',  icon: PersonStanding, href: '/pt-os/mobility-assessment',  color: C.rose },
+  { label: 'Posture Assessment',   icon: Accessibility,  href: '/pt-os/posture-assessment',   color: C.blue },
+  { label: 'Strength Tracking',    icon: Dumbbell,       href: '/pt-os/strength-tracking',    color: C.emerald },
+] as const;
+
 // ─── Section 2 — Mobile Quick Actions (visible on mobile only) ─────────────────
 function MobileQuickActions() {
   const router = useRouter();
-  const actions = [
-    { label: 'Add Client',           icon: <UserPlus size={16} />,       href: '/pt-os/new-client',           color: C.purple },
-    { label: 'Consent',              icon: <FileSignature size={16} />,  href: '/pt-os/informed-consent',     color: C.blue },
-    { label: 'PAR-Q',                icon: <ShieldCheck size={16} />,    href: '/pt-os/parq',                 color: C.emerald },
-    { label: 'Fitness Testing',      icon: <Gauge size={16} />,          href: '/pt-os/assessment',           color: C.amber },
-    { label: 'Lifestyle',            icon: <HeartPulse size={16} />,     href: '/pt-os/lifestyle-assessment', color: C.crimson },
-    { label: 'Nutrition Assessment', icon: <Apple size={16} />,          href: '/pt-os/nutrition-assessment', color: C.cyan },
-    { label: 'Mobility Assessment',  icon: <PersonStanding size={16} />, href: '/pt-os/mobility-assessment',  color: C.rose },
-  ];
+  const actions = QUICK_ACTIONS;
   return (
     <div className="lg:hidden -mx-3 px-3">
       <SectionLabel>Quick Actions</SectionLabel>
@@ -420,7 +446,7 @@ function MobileQuickActions() {
             style={{ background: `${a.color}12`, border: `1px solid ${a.color}22`, minWidth: 72 }}>
             <span className="flex h-10 w-10 items-center justify-center rounded-[13px] text-white"
               style={{ background: `linear-gradient(135deg, ${a.color}, ${a.color}cc)`, boxShadow: `0 4px 12px ${a.color}40` }}>
-              {a.icon}
+              <a.icon size={16} />
             </span>
             <span className="text-[9.5px] font-[680] leading-tight text-center whitespace-nowrap" style={{ color: C.ink }}>
               {a.label}
@@ -1137,15 +1163,7 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
 // ─── Desktop Quick Dock ─────────────────────────────────────────────────────────
 function QuickDock() {
   const router = useRouter();
-  const actions = [
-    { label: 'Add Client',           icon: <UserPlus size={17} />,       href: '/pt-os/new-client',           color: C.purple },
-    { label: 'Consent',              icon: <FileSignature size={17} />,  href: '/pt-os/informed-consent',     color: C.blue },
-    { label: 'PAR-Q',                icon: <ShieldCheck size={17} />,    href: '/pt-os/parq',                 color: C.emerald },
-    { label: 'Fitness Testing',      icon: <Gauge size={17} />,          href: '/pt-os/assessment',           color: C.amber },
-    { label: 'Lifestyle',            icon: <HeartPulse size={17} />,     href: '/pt-os/lifestyle-assessment', color: C.crimson },
-    { label: 'Nutrition Assessment', icon: <Apple size={17} />,          href: '/pt-os/nutrition-assessment', color: C.cyan },
-    { label: 'Mobility Assessment',  icon: <PersonStanding size={17} />, href: '/pt-os/mobility-assessment',  color: C.rose },
-  ];
+  const actions = QUICK_ACTIONS;
   return (
     <m.div
       initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
@@ -1161,7 +1179,7 @@ function QuickDock() {
           aria-label={a.label}>
           <span className="flex h-11 w-11 items-center justify-center rounded-[14px] text-white transition-transform duration-200 group-hover:scale-110"
             style={{ background: `linear-gradient(135deg, ${a.color}, ${a.color}cc)`, boxShadow: `0 5px 14px ${a.color}45` }}>
-            {a.icon}
+            <a.icon size={17} />
           </span>
           <span className="text-[9px] font-[650] whitespace-nowrap" style={{ color: C.ink }}>{a.label}</span>
         </button>
