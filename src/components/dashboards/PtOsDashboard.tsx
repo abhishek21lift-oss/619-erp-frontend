@@ -1161,30 +1161,50 @@ function SessionActivity({ ops, loading }: { ops: OpsData | null | undefined; lo
 }
 
 // ─── Desktop Quick Dock ─────────────────────────────────────────────────────────
-function QuickDock() {
+export function QuickDock() {
   const router = useRouter();
   const actions = QUICK_ACTIONS;
   return (
-    <m.div
-      initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.6, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-      className="hidden lg:flex fixed bottom-6 left-1/2 -translate-x-1/2 z-40 items-end gap-1 rounded-[22px] px-3 py-2.5"
-      style={{
-        background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.92)', boxShadow: '0 16px 48px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.7)',
-      }}>
-      {actions.map(a => (
-        <button key={a.label} onClick={() => router.push(a.href)}
-          className="group flex flex-col items-center gap-1 rounded-[14px] px-3 py-2 transition-all duration-200 hover:-translate-y-1"
-          aria-label={a.label}>
-          <span className="flex h-11 w-11 items-center justify-center rounded-[14px] text-white transition-transform duration-200 group-hover:scale-110"
-            style={{ background: `linear-gradient(135deg, ${a.color}, ${a.color}cc)`, boxShadow: `0 5px 14px ${a.color}45` }}>
-            <a.icon size={17} />
-          </span>
-          <span className="text-[9px] font-[650] whitespace-nowrap" style={{ color: C.ink }}>{a.label}</span>
-        </button>
-      ))}
-    </m.div>
+    // Positioning lives on the wrapper, the animation on the child, and they
+    // must not be the same element. They used to be: this was one m.div with
+    // `left-1/2 -translate-x-1/2`, and framer-motion writes `transform` inline
+    // on every animated element — `translateY(0px)` here — which silently
+    // replaced the class's `translateX(-50%)`. The dock's left edge therefore
+    // sat at exactly 50% of the viewport and its full 900px ran off the right
+    // of the screen, at every desktop width. Posture Assessment and Strength
+    // Tracking, being last, were simply never reachable.
+    //
+    // Centering on the viewport would not have been right either: the sidebar
+    // is z-50 against this z-40, so the leading items would have slid under it
+    // instead. The wrapper clears the sidebar the same way the topbar does
+    // (lg:pl-64 xl:pl-72) and centers the dock in the space that is left.
+    //
+    // flex-wrap plus max-w-full is the guarantee: at widths where ten tiles
+    // cannot sit on one line they form a second row rather than overflowing.
+    // Nothing here is ever off-screen again, whatever gets added to
+    // QUICK_ACTIONS next.
+    <div className="hidden lg:flex pointer-events-none fixed inset-x-0 bottom-6 z-40 justify-center px-4 lg:pl-64 xl:pl-72">
+      <m.div
+        initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="pointer-events-auto flex max-w-full flex-wrap items-end justify-center gap-1 rounded-[22px] px-3 py-2.5"
+        style={{
+          background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.92)', boxShadow: '0 16px 48px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.7)',
+        }}>
+        {actions.map(a => (
+          <button key={a.label} onClick={() => router.push(a.href)}
+            className="group flex shrink-0 flex-col items-center gap-1 rounded-[14px] px-3 py-2 transition-all duration-200 hover:-translate-y-1"
+            aria-label={a.label}>
+            <span className="flex h-11 w-11 items-center justify-center rounded-[14px] text-white transition-transform duration-200 group-hover:scale-110"
+              style={{ background: `linear-gradient(135deg, ${a.color}, ${a.color}cc)`, boxShadow: `0 5px 14px ${a.color}45` }}>
+              <a.icon size={17} />
+            </span>
+            <span className="text-[9px] font-[650] whitespace-nowrap" style={{ color: C.ink }}>{a.label}</span>
+          </button>
+        ))}
+      </m.div>
+    </div>
   );
 }
 
