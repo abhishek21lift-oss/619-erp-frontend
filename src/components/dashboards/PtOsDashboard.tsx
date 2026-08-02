@@ -21,12 +21,17 @@ import { PullToRefresh } from '@/components/ui';
 import { cn } from '@/components/ui/cn';
 import { palette, identity, rgba } from '@/lib/palette';
 import {
+  buildCoachInsights, reachable, whatsappLink, telLink,
+  type CoachBirthday, type Urgency,
+} from '@/lib/coach-insights';
+import {
   Users, TrendingUp, Wallet, Percent,
   ChevronRight, Sparkles, ArrowUpRight, ArrowDownRight, Activity,
   UserPlus, CalendarPlus, Receipt,
   ShieldCheck, Target, Gauge, Crown,
   CalendarClock, AlertCircle, CheckCircle2, XCircle,
-  FileSignature, HeartPulse, Apple, PersonStanding,
+  FileSignature, HeartPulse, Apple, PersonStanding, MessageCircle, Phone,
+  AlertTriangle, Clock,
   Accessibility, Dumbbell,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -572,87 +577,246 @@ function ForecastPanel({ d }: { d: DashData }) {
   );
 }
 
-// ─── Section 6 — AI Copilot ────────────────────────────────────────────────────
-type Insight = { tone: 'risk' | 'good' | 'tip'; icon: React.ReactNode; title: string; body: string; href: string };
-
-function buildInsights(d: DashData): Insight[] {
-  const out: Insight[] = [];
-  const h = healthScore(d);
-  const top = [...d.trainers].sort((a, b) => b.monthly_revenue - a.monthly_revenue)[0];
-
-  if (d.clients_with_balance > 0)
-    out.push({ tone: 'risk', icon: <Wallet size={14} />,
-      title: `${fmtCompact(d.total_outstanding)} outstanding`,
-      body: `${d.clients_with_balance} client${d.clients_with_balance > 1 ? 's' : ''} carrying a balance. Collection rate ${(h.growthRaw > 0 ? '↑' : '→')} — follow up to protect cash flow.`,
-      href: '/pt-os/balance-sheet' });
-  if (d.expired_clients > 0)
-    out.push({ tone: 'risk', icon: <ShieldCheck size={14} />,
-      title: `${d.expired_clients} package${d.expired_clients > 1 ? 's' : ''} expired`,
-      body: 'Re-engaging lapsed clients is the cheapest revenue you can win this month.',
-      href: '/pt-os/clients' });
-  if (h.growthRaw !== 0)
-    out.push({ tone: h.growthRaw > 0 ? 'good' : 'risk', icon: <TrendingUp size={14} />,
-      title: `Revenue ${h.growthRaw > 0 ? '↑' : '↓'} ${Math.abs(h.growthRaw).toFixed(0)}% MoM`,
-      body: h.growthRaw > 0 ? 'Momentum is building. Convert active clients to longer packages.' : 'Review renewals due and trainer pipelines.',
-      href: '/pt-os/reports' });
-  if (top?.monthly_revenue > 0)
-    out.push({ tone: 'good', icon: <Crown size={14} />,
-      title: `${top.name} leads at ${fmtCompact(top.monthly_revenue)}`,
-      body: `${top.active_clients} client${top.active_clients !== 1 ? 's' : ''}. Model their approach across the team.`,
-      href: '/pt-os/reports' });
-  if (d.active_pt_clients > 0)
-    out.push({ tone: 'tip', icon: <Target size={14} />,
-      title: `${fmtCompact(d.total_monthly_pt_revenue / d.active_pt_clients)} avg / client`,
-      body: 'Upsell assessments, diet plans, or session packs to lift this without new acquisition.',
-      href: '/pt-os/plans' });
-  return out.slice(0, 4);
-}
-
-function AICopilot({ d }: { d: DashData }) {
+// ─── Section 6 — AI Coach ──────────────────────────────────────────────────────
+//
+// This was the "AI Copilot", and it read as a wall of alerts: six aggregate
+// numbers off the dashboard summary, each rendered as a tinted box with a
+// sentence in it. It could say "3 packages expired" but not whose, so every
+// card was a dead end that dropped you on a list page to start the search
+// again. Colour was the only thing carrying urgency.
+//
+// It now reads the rows rather than the totals — renewals_due, top_dues and
+// birthdays each carry a name and a mobile number — so an insight knows who it
+// is about and can offer to message them. The prioritisation lives in
+// lib/coach-insights.ts, away from the rendering, because the ordering is the
+// part with judgement in it.
+//
+// ── One action at a time ──────────────────────────────────────────────────
+//
+// You cannot WhatsApp five people in one click, and a button that pretends
+// otherwise is worse than one that doesn't. The Suggested Action bar works on
+// the selected insight and walks its cohort one contact at a time, naming who
+// is next and counting down what is left. That is honest about what a tap
+// does, and it is still one tap per client.
+export function AICoach({ d, ops, birthdays, studioName }: {
+  d: DashData;
+  ops: OpsData | null;
+  birthdays: CoachBirthday[];
+  studioName: string;
+}) {
   const router = useRouter();
-  const insights = useMemo(() => buildInsights(d), [d]);
-  const toneStyle = {
-    risk: { color: C.danger, bg: 'rgba(185,28,28,0.07)', border: 'rgba(185,28,28,0.18)' },
-    good: { color: C.success, bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.18)' },
-    tip:  { color: C.primary,    bg: 'rgba(0,103,224,0.07)',  border: 'rgba(0,103,224,0.18)'  },
+  const reduce = useReducedMotion();
+
+  const insights = useMemo(() => buildCoachInsights({
+    dash: d,
+    renewals: ops?.renewals_due?.map((r) => ({
+      id: r.id, name: r.name, mobile: r.mobile,
+      days_left: r.days_left, balance_amount: r.balance_amount,
+    })),
+    dues: ops?.top_dues?.map((t) => ({
+      id: t.id, name: t.name, mobile: t.mobile,
+      balance_amount: t.balance_amount, due_status: t.due_status,
+    })),
+    unscheduled: ops?.today_unscheduled?.map((u) => ({
+      client_id: u.client_id, client_name: u.client_name, plan_name: u.plan_name,
+    })),
+    birthdays,
+    studioName,
+  }), [d, ops, birthdays, studioName]);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Which contact the next tap will reach. Reset whenever the cohort changes,
+  // so switching insight never resumes halfway through a different list.
+  const [cursor, setCursor] = useState(0);
+
+  const selected = insights.find((i) => i.id === selectedId) ?? insights[0] ?? null;
+  const targets = useMemo(() => (selected ? reachable(selected.contacts) : []), [selected]);
+  const next = targets[Math.min(cursor, Math.max(targets.length - 1, 0))] ?? null;
+  const remaining = Math.max(targets.length - cursor, 0);
+
+  const pick = (id: string) => { setSelectedId(id); setCursor(0); };
+
+  const act = (kind: 'whatsapp' | 'call') => {
+    if (!selected || !next) return;
+    const href = kind === 'whatsapp'
+      ? whatsappLink(next, selected.message(next.name))
+      : telLink(next);
+    if (!href) return;
+    // WhatsApp is a different origin; the dialer is a scheme handler. Both want
+    // a new context so the dashboard is still here when the trainer comes back.
+    window.open(href, kind === 'whatsapp' ? '_blank' : '_self', 'noopener,noreferrer');
+    setCursor((c) => Math.min(c + 1, targets.length));
   };
+
+  const TONE: Record<Urgency, { fg: string; bg: string; border: string; label: string; Icon: typeof AlertTriangle }> = {
+    critical: { fg: palette.red[600],     bg: rgba(palette.red[600], 0.08),     border: rgba(palette.red[600], 0.20),     label: 'Urgent',    Icon: AlertTriangle },
+    warning:  { fg: palette.amber[600],   bg: rgba(palette.amber[600], 0.10),   border: rgba(palette.amber[600], 0.22),   label: 'Soon',      Icon: Clock },
+    info:     { fg: palette.blue[500],    bg: rgba(palette.blue[500], 0.08),    border: rgba(palette.blue[500], 0.20),    label: 'Nice to do', Icon: Sparkles },
+  };
+
+  const done = insights.length === 0;
+
   return (
-    <Glass className="p-4 sm:p-5 flex flex-col"
-      style={{ background: 'linear-gradient(155deg, rgba(0,103,224,0.06), rgba(255,255,255,0.76))' }}>
-      <div className="flex items-center gap-2.5 mb-3.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white shrink-0"
-          style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.primary})`, boxShadow: `0 5px 14px ${C.primary}45` }}>
-          <Sparkles size={15} />
+    <Glass className="overflow-hidden p-4 sm:p-5"
+      style={{ background: `linear-gradient(155deg, ${rgba(palette.blue[500], 0.07)}, rgba(255,255,255,0.78))` }}>
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-white"
+          style={{
+            background: `linear-gradient(135deg, ${palette.blue[450]}, ${palette.blue[600]})`,
+            boxShadow: `0 6px 18px ${rgba(palette.blue[500], 0.38)}`,
+          }}>
+          <Sparkles size={17} />
         </span>
-        <div>
-          <h3 className="text-[14px] sm:text-[15px] font-[780] tracking-[-0.01em]" style={{ color: C.ink }}>AI Copilot</h3>
-          <p className="text-[10.5px] font-[500]" style={{ color: C.muted }}>Live business insights</p>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[15px] sm:text-[16px] font-[800] tracking-[-0.015em]" style={{ color: C.ink }}>
+            AI Coach
+          </h3>
+          <p className="text-[11px] font-[600]" style={{ color: C.muted }}>
+            <span aria-hidden>💡</span> Today
+          </p>
         </div>
+        {!done && (
+          <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-[800] tabular-nums"
+            style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
+            {insights.length} to review
+          </span>
+        )}
       </div>
-      <div className="space-y-2">
-        {insights.length === 0
-          ? <div className="flex flex-col items-center py-8 text-center"><ShieldCheck size={24} style={{ color: C.success }} /><p className="mt-2 text-[12px] font-[600]" style={{ color: C.ink }}>All clear — no alerts</p></div>
-          : insights.map((ins, i) => {
-            const t = toneStyle[ins.tone];
-            return (
-              <m.button key={i}
-                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.07, duration: 0.35 }}
-                onClick={() => router.push(ins.href)}
-                className="w-full text-left rounded-[14px] p-3 transition active:scale-[0.985]"
-                style={{ background: t.bg, border: `1px solid ${t.border}` }}>
-                <div className="flex items-start gap-2.5">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] text-white" style={{ background: t.color }}>{ins.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11.5px] font-[740] leading-tight" style={{ color: C.ink }}>{ins.title}</p>
-                    <p className="text-[10px] font-[450] leading-snug mt-0.5" style={{ color: C.muted }}>{ins.body}</p>
+
+      {done ? (
+        <div className="flex flex-col items-center py-9 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-[15px]"
+            style={{ background: rgba(palette.emerald[500], 0.12), color: palette.emerald[600] }}>
+            <ShieldCheck size={22} />
+          </span>
+          <p className="mt-2.5 text-[13px] font-[750]" style={{ color: C.ink }}>Nothing needs you right now</p>
+          <p className="mt-0.5 text-[11.5px]" style={{ color: C.muted }}>
+            No expiries, dues or birthdays in the next seven days.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Insights — radiogroup, because picking one drives the action bar */}
+          <div className="space-y-2" role="radiogroup" aria-label="Coaching insights">
+            {insights.map((ins, i) => {
+              const t = TONE[ins.urgency];
+              const isSel = selected?.id === ins.id;
+              return (
+                <m.button
+                  key={ins.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSel}
+                  onClick={() => pick(ins.id)}
+                  initial={reduce ? false : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: reduce ? 0 : i * 0.04, duration: 0.24, ease: EASE }}
+                  className="w-full rounded-[15px] p-3 text-left transition-[background,border-color,box-shadow] duration-200 active:scale-[0.99]"
+                  style={{
+                    background: isSel ? t.bg : 'rgba(255,255,255,0.55)',
+                    border: `1px solid ${isSel ? t.border : 'rgba(15,23,42,0.07)'}`,
+                    boxShadow: isSel ? `0 6px 18px ${rgba(palette.gray[900], 0.06)}` : 'none',
+                  }}>
+                  <div className="flex items-start gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-white"
+                      style={{ background: t.fg }}>
+                      <t.Icon size={15} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-[12.5px] font-[760] leading-tight" style={{ color: C.ink }}>
+                          {ins.title}
+                        </p>
+                        {/* Urgency in words as well as colour — colour alone is
+                            not a signal for everyone. */}
+                        <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-[800] uppercase tracking-wide"
+                          style={{ background: t.bg, color: t.fg }}>
+                          {t.label}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[10.5px] font-[500] leading-snug" style={{ color: C.muted }}>
+                        {ins.detail}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-[800] tabular-nums"
+                      style={{ background: t.bg, color: t.fg }} aria-label={`${ins.count} affected`}>
+                      {ins.count}
+                    </span>
                   </div>
-                  <ChevronRight size={13} style={{ color: t.color, flexShrink: 0, marginTop: 2 }} />
-                </div>
-              </m.button>
-            );
-          })}
-      </div>
+                </m.button>
+              );
+            })}
+          </div>
+
+          {/* Suggested action */}
+          {selected && (
+            <m.div
+              key={selected.id}
+              initial={reduce ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.26, ease: EASE }}
+              className="mt-4 rounded-[16px] p-3"
+              style={{
+                background: 'rgba(255,255,255,0.62)',
+                border: '1px solid rgba(15,23,42,0.07)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+              }}>
+              <div className="mb-2.5 flex items-baseline justify-between gap-2">
+                <p className="text-[10px] font-[800] uppercase tracking-[0.12em]" style={{ color: C.muted }}>
+                  Suggested action
+                </p>
+                {targets.length > 0 && (
+                  <span className="text-[10.5px] font-[650] tabular-nums" style={{ color: C.muted }} aria-live="polite">
+                    {remaining > 0 ? `${remaining} of ${targets.length} left` : 'All contacted'}
+                  </span>
+                )}
+              </div>
+
+              {targets.length === 0 ? (
+                <>
+                  <p className="mb-2.5 text-[11.5px] leading-snug" style={{ color: C.muted }}>
+                    No mobile number on file for these clients, so there is nobody to message from here.
+                  </p>
+                  <button type="button" onClick={() => router.push(selected.href)}
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[750] transition active:scale-[0.98]"
+                    style={{ background: rgba(palette.blue[500], 0.10), color: palette.blue[600] }}>
+                    Open the list <ChevronRight size={14} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mb-2.5 truncate text-[11.5px] font-[600]" style={{ color: C.ink }}>
+                    {remaining > 0 ? <>Next: <span style={{ color: palette.blue[600] }}>{next?.name}</span></> : 'Everyone on this list has been contacted.'}
+                  </p>
+                  {/* h-11 = 44px: the minimum a thumb can hit reliably. */}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => act('whatsapp')} disabled={remaining === 0}
+                      aria-label={next ? `Send WhatsApp to ${next.name}` : 'Send WhatsApp'}
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[780] text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+                      style={{
+                        background: `linear-gradient(135deg, ${palette.emerald[500]}, ${palette.emerald[600]})`,
+                        boxShadow: remaining === 0 ? 'none' : `0 6px 16px ${rgba(palette.emerald[500], 0.34)}`,
+                      }}>
+                      <MessageCircle size={15} /> Send WhatsApp
+                    </button>
+                    <button type="button" onClick={() => act('call')} disabled={remaining === 0}
+                      aria-label={next ? `Call ${next.name}` : 'Call clients'}
+                      className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[12px] text-[12.5px] font-[780] text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+                      style={{
+                        background: `linear-gradient(135deg, ${palette.blue[450]}, ${palette.blue[600]})`,
+                        boxShadow: remaining === 0 ? 'none' : `0 6px 16px ${rgba(palette.blue[500], 0.34)}`,
+                      }}>
+                      <Phone size={15} /> Call Clients
+                    </button>
+                  </div>
+                </>
+              )}
+            </m.div>
+          )}
+        </>
+      )}
     </Glass>
   );
 }
@@ -1242,6 +1406,13 @@ export default function PtOsDashboard() {
     (signal) => http<{ data: OpsData }>('/api/pt-os/dashboard/ops', { signal }).then(r => r.data),
     [],
   );
+  // Birthdays are their own read: the dashboard summary has no notion of a
+  // date of birth, and the AI Coach needs the names and mobiles, not a count.
+  const birthdays = useAsync<{ data: CoachBirthday[] }>(
+    (signal) => http<{ data: CoachBirthday[] }>('/api/pt-os/clients/birthdays', { signal }),
+    [],
+  );
+
   // The Consent Signed KPI was the only consumer of /api/pt-os/informed-consent
   // here, so the request went with the card rather than being left to load a
   // list nothing reads. The consent screens fetch it themselves.
@@ -1336,8 +1507,8 @@ export default function PtOsDashboard() {
               <RenewalsDue ops={o} loading={ops.loading} />
             </div>
 
-            {/* 5 — AI copilot */}
-            <AICopilot d={d} />
+            {/* 5 — AI Coach */}
+            <AICoach d={d} ops={o} birthdays={birthdays.data?.data ?? []} studioName={studioName} />
 
             {/* 6 — Revenue forecast.
                 The month-by-month revenue bar chart used to sit above this. It
