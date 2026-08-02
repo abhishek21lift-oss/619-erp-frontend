@@ -27,7 +27,7 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
       <div className="p-7 sm:p-10 space-y-6">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <PersonStanding size={20} color="#F59E0B" />
+            <PersonStanding size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Posture Observations</h2>
@@ -53,7 +53,7 @@ export function StepPostureObservations({ form, set }: StepPostureObservationsPr
                 {count > 0 && (
                   <span
                     className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-[800]"
-                    style={{ background: selected ? '#F59E0B' : '#e2e8f0', color: selected ? '#0f172a' : '#64748b' }}
+                    style={{ background: selected ? '#0067E0' : '#e2e8f0', color: selected ? '#0f172a' : '#64748b' }}
                   >
                     {count}
                   </span>

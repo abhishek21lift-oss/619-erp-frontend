@@ -47,7 +47,7 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
       <div className="flex-shrink-0" style={{ width: 64 }}>
         <DonutChart
           data={[
-            { name: 'Complete', value: completion ?? 0, color: '#F59E0B' },
+            { name: 'Complete', value: completion ?? 0, color: '#0067E0' },
             { name: 'Remaining', value: 100 - (completion ?? 0), color: '#f1f5f9' },
           ]}
           centerValue={<span style={{ fontSize: 13 }}>{completion != null ? `${completion}%` : '—'}</span>}
@@ -59,7 +59,7 @@ export function GoalCard({ goal, latestWeight, onClick }: GoalCardProps) {
         <div className="flex items-center gap-2">
           {/* Target is also the 'custom' goal icon, which is the right
               fallback for a goal_type this build does not know about. */}
-          {(() => { const Icon = meta?.icon ?? Target; return <Icon size={15} strokeWidth={2} className="flex-shrink-0" style={{ color: '#D97706' }} />; })()}
+          {(() => { const Icon = meta?.icon ?? Target; return <Icon size={15} strokeWidth={2} className="flex-shrink-0" style={{ color: '#0059CE' }} />; })()}
           <p className="text-[14px] font-[760] text-slate-900 truncate">{label}</p>
           {!goal.is_active && (
             <span className="rounded-full px-2 py-0.5 text-[10px] font-[700]" style={{ background: 'rgba(148,163,184,0.15)', color: '#64748b' }}>Inactive</span>

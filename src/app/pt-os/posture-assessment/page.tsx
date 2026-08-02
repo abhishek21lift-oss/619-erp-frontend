@@ -44,7 +44,7 @@ export default function PtPostureAssessmentPage() {
   return (
     <Guard>
       <AppShell>
-        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>}>
+        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>}>
           <PostureContent />
         </Suspense>
       </AppShell>
@@ -102,7 +102,7 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
   const closeWizard = (refresh: boolean) => { setView('list'); setEditingId(null); if (refresh) loadData(); };
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
   }
   if (loadError) {
     return (
@@ -140,7 +140,7 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
               {clientName}&apos;s Posture
             </h1>
           </div>
-          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+          <Button iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
             New Assessment
           </Button>
         </div>
@@ -152,7 +152,7 @@ function PostureHub({ clientId, toast }: PostureHubProps) {
         {sorted.length === 0 && (
           <div className="rounded-[20px] p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <p className="text-[14px] font-[600] text-slate-500">No posture assessments yet.</p>
-            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}>
+            <Button className="mt-4" iconLeft={<Plus size={14} />} onClick={() => openWizard(null)} style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}>
               Start First Assessment
             </Button>
           </div>
@@ -269,7 +269,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
       <div className="pt-1">
         <div className="mx-auto max-w-3xl py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}>
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}>
               <Accessibility size={18} color="#fff" />
             </div>
             <div>
@@ -326,7 +326,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
               <Button
                 iconLeft={<ArrowRight size={14} />}
                 onClick={handleNext}
-                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
               >
                 {step === 2 ? 'Review' : 'Next'}
               </Button>
@@ -335,7 +335,7 @@ function PostureWizard({ clientId, clientName, editing, toast, onDone }: Posture
                 iconLeft={!saving ? <Check size={14} /> : undefined}
                 loading={saving} disabled={saving}
                 onClick={handleSubmit}
-                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
               >
                 {saving ? 'Saving...' : assessmentId ? 'Update Assessment' : 'Save Assessment'}
               </Button>

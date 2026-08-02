@@ -44,7 +44,7 @@ export function ParqReview({ form, onEditStep, stepLabel }: ParqReviewProps) {
     <div className="space-y-5">
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <ClipboardCheck size={20} color="#F59E0B" />
+          <ClipboardCheck size={20} color="#1CA3F9" />
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Review &amp; Submit</h2>

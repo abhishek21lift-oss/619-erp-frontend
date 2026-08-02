@@ -37,14 +37,14 @@ export function SupplementChecklist({ value, onChange }: SupplementChecklistProp
         const checked = isChecked(name);
         const supp = get(name);
         return (
-          <div key={name} className="rounded-[16px] overflow-hidden transition-all" style={{ border: checked ? '2px solid #F59E0B' : '2px solid rgba(15,23,42,0.08)', background: checked ? 'rgba(245,158,11,0.04)' : 'var(--bg-subtle)' }}>
+          <div key={name} className="rounded-[16px] overflow-hidden transition-all" style={{ border: checked ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)', background: checked ? 'rgba(0,103,224,0.04)' : 'var(--bg-subtle)' }}>
             <button
               type="button" onClick={() => toggle(name)}
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
             >
               <span
                 className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px] transition-all"
-                style={{ background: checked ? '#F59E0B' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}
+                style={{ background: checked ? '#0067E0' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}
               >
                 {checked && <Check size={13} color="#fff" strokeWidth={3} />}
               </span>

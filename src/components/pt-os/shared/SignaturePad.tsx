@@ -127,7 +127,7 @@ export function SignaturePad({ label, onChange, onClear, aspectRatio = 3, disabl
       {label && (
         <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>
           {label}
-          {required && <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>}
+          {required && <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>}
         </p>
       )}
       <div

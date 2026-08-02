@@ -48,7 +48,7 @@ export function StepFlexibility({ form, set, error }: StepFlexibilityProps) {
     <div>
       <div className="flex items-start gap-4 mb-7">
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <Move size={20} color="#F59E0B" />
+          <Move size={20} color="#1CA3F9" />
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Flexibility &amp; Mobility</h2>
@@ -93,7 +93,7 @@ export function StepFlexibility({ form, set, error }: StepFlexibilityProps) {
       )}
 
       {hasAsymmetry && (
-        <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+        <div className="mt-4 flex items-start gap-3 rounded-[16px] p-4" style={{ background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.25)' }}>
           <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
           <p className="text-[13px] font-[640]" style={{ color: '#92400e' }}>
             Left/right asymmetry &gt; 10% detected. Consider a corrective mobility focus.

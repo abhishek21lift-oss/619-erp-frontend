@@ -74,7 +74,7 @@ export default function InformedConsentPage() {
   return (
     <Guard>
       <AppShell>
-        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>}>
+        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>}>
           <InformedConsentContent />
         </Suspense>
       </AppShell>
@@ -139,7 +139,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
   const closeWizard = (refresh: boolean) => { setView('summary'); if (refresh) loadData(); };
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
   }
   if (loadError) {
     return (
@@ -177,7 +177,7 @@ function ConsentHub({ clientId, toast }: ConsentHubProps) {
               <Button
                 iconLeft={<Plus size={14} />}
                 onClick={openWizard}
-                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
               >
                 Start Consent
               </Button>
@@ -359,7 +359,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
   };
 
   if (detailLoading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
   }
 
   if (submitResult) {
@@ -376,7 +376,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
           <div className="flex items-center gap-3">
             <div
               className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-              style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 6px 18px rgba(245,158,11,0.3)' }}
+              style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', boxShadow: '0 6px 18px rgba(0,103,224,0.3)' }}
             >
               <FileSignature size={18} color="#fff" />
             </div>
@@ -415,7 +415,7 @@ function ConsentWizard({ clientId, clientName, record, toast, onDone }: ConsentW
               iconLeft={!(saving || creatingDraft) ? (isLastStep ? <Check size={14} /> : <ArrowRight size={14} />) : undefined}
               loading={saving || creatingDraft} disabled={saving || creatingDraft}
               onClick={handleNext}
-              style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
             >
               {saving ? 'Finishing...' : creatingDraft ? 'Saving...' : isLastStep ? 'Finish' : 'Next'}
             </Button>

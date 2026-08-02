@@ -28,7 +28,7 @@ export function AssessmentInfoCard({
     <div className="mb-5">
       <div className="flex items-start gap-4 mb-6">
         <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]" style={{ background: '#0f172a' }}>
-          <ClipboardList size={18} color="#F59E0B" />
+          <ClipboardList size={18} color="#1CA3F9" />
         </div>
         <div>
           <h2 className="text-[18px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Assessment Information</h2>

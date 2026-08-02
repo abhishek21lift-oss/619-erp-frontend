@@ -25,13 +25,13 @@ export function FitnessRadarChart({ data, height = 280 }: FitnessRadarChartProps
         <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} axisLine={false} />
         <Radar
           name="Score" dataKey="score"
-          stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.35}
+          stroke="#0067E0" fill="#0067E0" fillOpacity={0.35}
           strokeWidth={2} isAnimationActive={false}
         />
         <Tooltip
           contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12 }}
           labelStyle={{ color: '#fff', fontWeight: 700 }}
-          itemStyle={{ color: '#F59E0B' }}
+          itemStyle={{ color: '#0067E0' }}
         />
       </RadarChart>
     </ResponsiveContainer>

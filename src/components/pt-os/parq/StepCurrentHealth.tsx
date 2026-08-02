@@ -25,7 +25,7 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
     <div className="space-y-7">
       <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <HeartPulse size={20} color="#F59E0B" />
+            <HeartPulse size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Current Health</h2>
@@ -63,9 +63,9 @@ export function StepCurrentHealth({ form, set, error, stepLabel }: StepCurrentHe
           <ToggleDetailCard label="Currently Under Treatment" checked={ch.current_treatment} onToggle={(v) => setCh('current_treatment', v)} details={ch.current_treatment_details} onDetailsChange={(v) => setCh('current_treatment_details', v)} detailsLabel="Treatment details" />
         </div>
 
-        <div className="rounded-[16px] overflow-hidden" style={{ border: ch.has_pain ? '2px solid #F59E0B' : '2px solid rgba(15,23,42,0.08)', background: ch.has_pain ? 'rgba(245,158,11,0.04)' : 'var(--bg-subtle)' }}>
+        <div className="rounded-[16px] overflow-hidden" style={{ border: ch.has_pain ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)', background: ch.has_pain ? 'rgba(0,103,224,0.04)' : 'var(--bg-subtle)' }}>
           <button type="button" onClick={() => setCh('has_pain', !ch.has_pain)} className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
-            <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: ch.has_pain ? '#F59E0B' : '#fff', border: ch.has_pain ? 'none' : '1.5px solid #cbd5e1' }} />
+            <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: ch.has_pain ? '#0067E0' : '#fff', border: ch.has_pain ? 'none' : '1.5px solid #cbd5e1' }} />
             <span className="text-[13.5px] font-[700]" style={{ color: ch.has_pain ? '#0f172a' : '#475569' }}>Currently Experiencing Pain</span>
           </button>
           {ch.has_pain && (

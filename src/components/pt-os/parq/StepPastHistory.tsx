@@ -42,7 +42,7 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
     <div className="space-y-7">
       <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <ClipboardList size={20} color="#F59E0B" />
+            <ClipboardList size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Past Medical History</h2>
@@ -57,9 +57,9 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
               <button
                 key={c.key} type="button" onClick={() => toggleBool(c.key)}
                 className="flex items-center gap-2 rounded-[12px] px-3 py-2.5 text-left transition-all"
-                style={{ background: checked ? 'rgba(245,158,11,0.06)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #F59E0B' : '1.5px solid rgba(15,23,42,0.08)' }}
+                style={{ background: checked ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid rgba(15,23,42,0.08)' }}
               >
-                <span className="flex h-4.5 w-4.5 flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: checked ? '#F59E0B' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1', width: 18, height: 18 }}>
+                <span className="flex h-4.5 w-4.5 flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: checked ? '#0067E0' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1', width: 18, height: 18 }}>
                   {checked && <Check size={11} color="#fff" strokeWidth={3} />}
                 </span>
                 <span className="text-[12px] font-[650]" style={{ color: checked ? '#0f172a' : '#475569' }}>{c.label}</span>
@@ -76,9 +76,9 @@ export function StepPastHistory({ form, set, error, stepLabel }: StepPastHistory
         <button
           type="button" onClick={() => toggleBool('previous_physiotherapy')}
           className="flex w-full items-center gap-2.5 rounded-[12px] px-3.5 py-3 text-left transition-all sm:w-auto"
-          style={{ background: ph.previous_physiotherapy ? 'rgba(245,158,11,0.06)' : 'var(--bg-subtle)', border: ph.previous_physiotherapy ? '1.5px solid #F59E0B' : '1.5px solid rgba(15,23,42,0.08)' }}
+          style={{ background: ph.previous_physiotherapy ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)', border: ph.previous_physiotherapy ? '1.5px solid #0067E0' : '1.5px solid rgba(15,23,42,0.08)' }}
         >
-          <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: ph.previous_physiotherapy ? '#F59E0B' : '#fff', border: ph.previous_physiotherapy ? 'none' : '1.5px solid #cbd5e1' }}>
+          <span className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-[5px]" style={{ background: ph.previous_physiotherapy ? '#0067E0' : '#fff', border: ph.previous_physiotherapy ? 'none' : '1.5px solid #cbd5e1' }}>
             {ph.previous_physiotherapy && <Check size={11} color="#fff" strokeWidth={3} />}
           </span>
           <span className="text-[12.5px] font-[650]" style={{ color: ph.previous_physiotherapy ? '#0f172a' : '#475569' }}>Previous Physiotherapy</span>

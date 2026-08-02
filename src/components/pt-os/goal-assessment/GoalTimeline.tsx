@@ -29,7 +29,7 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-7">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Flag size={20} color="#F59E0B" />
+            <Flag size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Goal Timeline</h2>
@@ -45,7 +45,7 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
                   <div
                     className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
                     style={{
-                      background: i === milestones.length - 1 ? '#F59E0B' : i === 0 ? '#0f172a' : '#f1f5f9',
+                      background: i === milestones.length - 1 ? '#0067E0' : i === 0 ? '#0f172a' : '#f1f5f9',
                       color: i === milestones.length - 1 || i === 0 ? '#fff' : '#94a3b8',
                     }}
                   >
@@ -55,7 +55,7 @@ export function GoalTimeline({ targetDate }: GoalTimelineProps) {
                   <span className="text-[10px] font-[600]" style={{ color: '#94a3b8' }}>{fmtDate(m.date)}</span>
                 </div>
                 {i < milestones.length - 1 && (
-                  <div className="h-[2px] w-10 sm:w-16 mx-1.5 mb-6 rounded-full" style={{ background: 'linear-gradient(90deg, #F59E0B, #D97706)' }} />
+                  <div className="h-[2px] w-10 sm:w-16 mx-1.5 mb-6 rounded-full" style={{ background: 'linear-gradient(90deg, #0067E0, #0059CE)' }} />
                 )}
               </div>
             ))}

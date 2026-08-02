@@ -49,7 +49,7 @@ export default function StrengthTrackingPage() {
   return (
     <Guard>
       <AppShell>
-        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>}>
+        <Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>}>
           <StrengthTrackingContent />
         </Suspense>
       </AppShell>
@@ -123,7 +123,7 @@ function StrengthHub({ clientId }: StrengthHubProps) {
   };
 
   if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#F59E0B' }} /></div>;
+    return <div className="flex min-h-[60vh] items-center justify-center"><Loader2 size={28} className="animate-spin" style={{ color: '#0067E0' }} /></div>;
   }
   if (loadError) {
     return (

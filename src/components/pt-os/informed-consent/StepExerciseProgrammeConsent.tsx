@@ -48,7 +48,7 @@ export function StepExerciseProgrammeConsent({ form, set, error }: StepExerciseP
         </span>
         <span className="text-[13px] font-[600] leading-snug" style={{ color: form.exerciseConsentChecked ? '#0f172a' : '#475569' }}>
           {EXERCISE_PROGRAMME_CHECKBOX_LABEL}
-          <span className="ml-0.5 text-[var(--gold,#F59E0B)]" aria-hidden>*</span>
+          <span className="ml-0.5 text-[var(--gold,#0067E0)]" aria-hidden>*</span>
         </span>
       </button>
 
