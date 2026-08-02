@@ -18,6 +18,10 @@ function motivationFace(level: number): LucideIcon {
   return Laugh;
 }
 
+// Red / amber / green, and it stays that way. The brand recolour turned the
+// middle band blue, which broke the scale — a traffic light with a brand
+// colour in it no longer reads as a warning, and this drives the motivation
+// face as well as the bar.
 function commitmentColor(level: number): string {
   if (level <= 3) return '#ef4444';
   if (level <= 7) return '#F59E0B';
@@ -39,7 +43,7 @@ export function StepMotivationCommitment({ form, set }: StepMotivationCommitment
       <div className="p-7 sm:p-10 space-y-8">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Flame size={20} color="#F59E0B" />
+            <Flame size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Motivation &amp; Commitment</h2>

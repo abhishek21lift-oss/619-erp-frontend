@@ -75,7 +75,7 @@ export function StepMealPatternBehaviour({ form, set, error }: StepMealPatternBe
     <div className="space-y-8">
       <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Clock3 size={20} color="#F59E0B" />
+            <Clock3 size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Meal Pattern &amp; Eating Behaviour</h2>

@@ -23,7 +23,7 @@ export function StepDeadline({ form, set, error }: StepDeadlineProps) {
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-7">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <CalendarClock size={20} color="#F59E0B" />
+            <CalendarClock size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Target Deadline</h2>
@@ -37,7 +37,7 @@ export function StepDeadline({ form, set, error }: StepDeadlineProps) {
 
         {days != null && (
           <div className="mt-6 rounded-[16px] p-6 text-center" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
-            <p className="text-[40px] font-[900] leading-none" style={{ color: days < 0 ? '#ef4444' : '#F59E0B' }}>
+            <p className="text-[40px] font-[900] leading-none" style={{ color: days < 0 ? '#ef4444' : '#0067E0' }}>
               {days < 0 ? `${Math.abs(days)} Days Overdue` : `${days} Days Remaining`}
             </p>
             {days >= 0 && (

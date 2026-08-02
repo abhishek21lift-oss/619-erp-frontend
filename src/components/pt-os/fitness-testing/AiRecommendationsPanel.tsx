@@ -45,7 +45,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-6">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Brain size={20} color="#F59E0B" />
+            <Brain size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">AI Recommendations</h2>
@@ -57,7 +57,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
           <button
             type="button" onClick={generate}
             className="flex items-center gap-2 rounded-[13px] px-5 py-3 text-[13px] font-[700] transition-all"
-            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#fff' }}
+            style={{ background: 'linear-gradient(135deg, #0271EB, #0059CE)', color: '#fff' }}
           >
             <Sparkles size={15} /> Generate AI Recommendations
           </button>
@@ -65,7 +65,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
         {loading && (
           <div className="flex items-center gap-3 py-6">
-            <Loader2 size={18} className="animate-spin" style={{ color: '#F59E0B' }} />
+            <Loader2 size={18} className="animate-spin" style={{ color: '#0067E0' }} />
             <span className="text-[13px] font-[600] text-slate-500">Analysing assessment…</span>
           </div>
         )}
@@ -143,7 +143,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
                 {[...analysis.recommendations].sort((a, b) => a.priority - b.priority).map((r, i) => (
                   <div key={i} className="rounded-[14px] p-3.5" style={{ background: 'var(--bg-subtle)' }}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-[800]" style={{ background: '#0f172a', color: '#F59E0B' }}>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-[800]" style={{ background: '#0f172a', color: '#0067E0' }}>
                         {r.priority}
                       </span>
                       <p className="text-[13px] font-[700] text-slate-800">{r.focus_area}</p>
@@ -156,7 +156,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
             )}
 
             {analysis.suggested_next_test_focus && (
-              <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+              <div className="flex items-start gap-3 rounded-[14px] p-4" style={{ background: 'rgba(0,103,224,0.08)', border: '1px solid rgba(0,103,224,0.2)' }}>
                 <Target size={16} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
                 <p className="text-[12.5px] font-[600] text-slate-700">{analysis.suggested_next_test_focus}</p>
               </div>
@@ -164,7 +164,7 @@ export function AiRecommendationsPanel({ assessmentId }: AiRecommendationsPanelP
 
             {analysis.motivation_message && (
               <div className="rounded-[16px] p-5" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)' }}>
-                <Quote size={16} color="#F59E0B" />
+                <Quote size={16} color="#1CA3F9" />
                 <p className="mt-2 text-[13px] italic leading-relaxed text-white/80">{analysis.motivation_message}</p>
               </div>
             )}

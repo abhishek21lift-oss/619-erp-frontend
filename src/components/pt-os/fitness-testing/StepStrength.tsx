@@ -56,7 +56,7 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
     <div>
       <div className="flex items-start gap-4 mb-7">
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-          <Dumbbell size={20} color="#F59E0B" />
+          <Dumbbell size={20} color="#1CA3F9" />
         </div>
         <div>
           <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Muscular Strength</h2>
@@ -67,7 +67,7 @@ export function StepStrength({ form, set, gender, error, isBeginner }: StepStren
       </div>
 
       {isBeginner && (
-        <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)' }}>
+        <div className="mb-6 flex items-start gap-2.5 rounded-[14px] p-4" style={{ background: 'rgba(0,103,224,0.06)', border: '1px solid rgba(0,103,224,0.18)' }}>
           <Info size={15} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
           <p className="text-[12.5px] leading-relaxed" style={{ color: '#92400e' }}>
             This client&apos;s workout experience is set to <strong>Beginner</strong> — 1RM strength tests aren&apos;t required at this stage. Skip ahead with Next, or record a baseline anyway if you&apos;d like one.
@@ -193,9 +193,9 @@ function StrengthTestBlock({
                   onClick={() => onFormula(f)}
                   className="rounded-[10px] px-3.5 py-2 text-[12px] font-[640] capitalize transition-all"
                   style={{
-                    background: formula === f ? '#F59E0B' : '#fff',
+                    background: formula === f ? '#0067E0' : '#fff',
                     color: formula === f ? '#fff' : '#64748b',
-                    border: formula === f ? '1.5px solid #F59E0B' : '1.5px solid #e2e8f0',
+                    border: formula === f ? '1.5px solid #0067E0' : '1.5px solid #e2e8f0',
                   }}
                 >
                   {f}

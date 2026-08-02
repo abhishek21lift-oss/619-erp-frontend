@@ -27,7 +27,7 @@ export function StepConsent({ form, set, error, stepLabel }: StepConsentProps) {
     <div className="space-y-7">
       <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <FileSignature size={20} color="#F59E0B" />
+            <FileSignature size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Digital Consent</h2>
@@ -42,9 +42,9 @@ export function StepConsent({ form, set, error, stepLabel }: StepConsentProps) {
               <button
                 key={f.key} type="button" onClick={() => toggleCheckbox(f.key)}
                 className="flex w-full items-start gap-3 rounded-[14px] px-4 py-3.5 text-left transition-all"
-                style={{ background: checked ? 'rgba(245,158,11,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #F59E0B' : '1.5px solid rgba(15,23,42,0.08)' }}
+                style={{ background: checked ? 'rgba(0,103,224,0.05)' : 'var(--bg-subtle)', border: checked ? '1.5px solid #0067E0' : '1.5px solid rgba(15,23,42,0.08)' }}
               >
-                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#F59E0B' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}>
+                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-[6px]" style={{ background: checked ? '#0067E0' : '#fff', border: checked ? 'none' : '1.5px solid #cbd5e1' }}>
                   {checked && <Check size={13} color="#fff" strokeWidth={3} />}
                 </span>
                 <span className="text-[13px] font-[600] leading-snug" style={{ color: checked ? '#0f172a' : '#475569' }}>{f.label}</span>

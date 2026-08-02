@@ -17,7 +17,7 @@ export function StepPriority({ form, set, error }: StepPriorityProps) {
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-7">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <ListChecks size={20} color="#F59E0B" />
+            <ListChecks size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Priority Goal</h2>
@@ -34,13 +34,13 @@ export function StepPriority({ form, set, error }: StepPriorityProps) {
                 onClick={() => set('priorityGoal', p.value)}
                 className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                 style={{
-                  background: selected ? 'rgba(245,158,11,0.06)' : 'var(--bg-subtle)',
-                  border: selected ? '2px solid #F59E0B' : '2px solid rgba(15,23,42,0.08)',
-                  boxShadow: selected ? '0 4px 16px rgba(245,158,11,0.18)' : 'none',
+                  background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
+                  border: selected ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+                  boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
                   transform: selected ? 'scale(1.02)' : 'scale(1)',
                 }}
               >
-                <p.icon size={21} strokeWidth={1.75} color={selected ? '#D97706' : '#64748b'} />
+                <p.icon size={21} strokeWidth={1.75} color={selected ? '#0059CE' : '#64748b'} />
                 <span className="text-[11.5px] font-[700]" style={{ color: selected ? '#0f172a' : '#475569' }}>{p.label}</span>
               </button>
             );

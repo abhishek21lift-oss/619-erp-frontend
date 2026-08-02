@@ -43,8 +43,8 @@ export function FitnessDashboard({ scores }: FitnessDashboardProps) {
     <div className="rounded-[24px] overflow-hidden" style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 100%)', boxShadow: '0 12px 40px rgba(15,23,42,0.25)' }}>
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-7">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: 'rgba(245,158,11,0.15)' }}>
-            <Gauge size={20} color="#F59E0B" />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: 'rgba(0,103,224,0.15)' }}>
+            <Gauge size={20} color="#0067E0" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-white leading-none">Fitness Dashboard</h2>

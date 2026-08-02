@@ -23,7 +23,7 @@ export function StepTargetWeight({ form, set, currentWeight, error }: StepTarget
       <div className="p-7 sm:p-10">
         <div className="flex items-start gap-4 mb-7">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Scale size={20} color="#F59E0B" />
+            <Scale size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Target Weight</h2>
@@ -46,13 +46,13 @@ export function StepTargetWeight({ form, set, currentWeight, error }: StepTarget
                 <p className="text-[10px] text-white/40 font-[600] uppercase tracking-wider">Current</p>
                 <p className="text-[20px] font-[800] text-white">{currentWeight} kg</p>
               </div>
-              {gap < 0 ? <ArrowDown size={18} color="#F59E0B" /> : gap > 0 ? <ArrowUp size={18} color="#F59E0B" /> : null}
+              {gap < 0 ? <ArrowDown size={18} color="#0067E0" /> : gap > 0 ? <ArrowUp size={18} color="#0067E0" /> : null}
               <div>
                 <p className="text-[10px] text-white/40 font-[600] uppercase tracking-wider">Target</p>
                 <p className="text-[20px] font-[800] text-white">{target} kg</p>
               </div>
-              <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(245,158,11,0.15)' }}>
-                <p className="text-[13px] font-[800]" style={{ color: '#F59E0B' }}>
+              <div className="rounded-full px-3 py-1.5" style={{ background: 'rgba(0,103,224,0.15)' }}>
+                <p className="text-[13px] font-[800]" style={{ color: '#0067E0' }}>
                   {gap === 0 ? 'Maintain' : `Need to ${gap < 0 ? 'Lose' : 'Gain'} ${Math.abs(gap)} kg`}
                 </p>
               </div>

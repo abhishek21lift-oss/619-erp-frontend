@@ -43,9 +43,16 @@
      colour, for the few surfaces that must visibly match the logo. Don't
      substitute one for the other — they are close enough that mixing them
      reads as a bug, and far enough apart to notice. */
-  --logo-blue:        #0060E0;
-  --logo-blue-soft:   rgba(0,96,224,0.10);
-  --logo-blue-soft-h: rgba(0,96,224,0.18);
+  --logo-blue:        #0067E0;
+  --logo-blue-soft:   rgba(0,103,224,0.10);
+  --logo-blue-soft-h: rgba(0,103,224,0.18);
+  /* Gradient ends, and a bright variant for icons on the dark #0f172a step
+     tiles, where the deep blue only reaches 3.4:1 (the amber it replaced was
+     8.3:1). Sampled with the rest — see src/lib/brand.ts, which holds the same
+     values for the TypeScript side and documents how they were measured. */
+  --logo-blue-hi:     #0271EB;
+  --logo-blue-lo:     #0059CE;
+  --logo-blue-on-dark: #1CA3F9;
 
   /* ── Gold (amber) ─────────────────────────────────────────── */
   --gold:          #F59E0B;
@@ -201,8 +208,8 @@
   /* Logo blue — #0060E0 is too dim to read as a glyph on the slate-900
      canvas, so the foreground lifts while the plate stays the logo hue. */
   --logo-blue:        #5CB0FF;
-  --logo-blue-soft:   rgba(0,96,224,0.26);
-  --logo-blue-soft-h: rgba(0,96,224,0.38);
+  --logo-blue-soft:   rgba(0,103,224,0.26);
+  --logo-blue-soft-h: rgba(0,103,224,0.38);
 
   /* Gold (amber) */
   --gold:          #FBBF24;

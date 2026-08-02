@@ -30,7 +30,7 @@ export function StepContext({ form, set }: StepContextProps) {
     <div className="space-y-8">
       <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[16px]" style={{ background: '#0f172a' }}>
-            <Wallet size={20} color="#F59E0B" />
+            <Wallet size={20} color="#1CA3F9" />
           </div>
           <div>
             <h2 className="text-[20px] font-[840] tracking-[-0.03em] text-slate-900 leading-none">Context</h2>
@@ -49,9 +49,9 @@ export function StepContext({ form, set }: StepContextProps) {
                   onClick={() => set('mealPreparer', o.value)}
                   className="flex flex-col items-center gap-2 rounded-[16px] px-3 py-4 text-center transition-all duration-200"
                   style={{
-                    background: selected ? 'rgba(245,158,11,0.06)' : 'var(--bg-subtle)',
-                    border: selected ? '2px solid #F59E0B' : '2px solid rgba(15,23,42,0.08)',
-                    boxShadow: selected ? '0 4px 16px rgba(245,158,11,0.18)' : 'none',
+                    background: selected ? 'rgba(0,103,224,0.06)' : 'var(--bg-subtle)',
+                    border: selected ? '2px solid #0067E0' : '2px solid rgba(15,23,42,0.08)',
+                    boxShadow: selected ? '0 4px 16px rgba(0,103,224,0.18)' : 'none',
                   }}
                 >
                   <span className="text-[20px]">{o.icon}</span>
