@@ -8,6 +8,7 @@ import {
   CheckCircle2, X, RefreshCw, Repeat, User, Train,
   MoreHorizontal, Edit3, Trash2, Copy,
 } from 'lucide-react';
+import { enrolmentState, ENROLMENT_META, type ClientRow } from '@/lib/enrolment';
 import Guard from '@/components/Guard';
 import AppShell from '@/components/AppShell';
 
@@ -218,27 +219,28 @@ function SchedulePageContent() {
   };
 
   /* ── Clients for modal ── */
-  const [modalClients, setModalClients] = useState<{ id: string; name: string }[]>([]);
+  const [modalClients, setModalClients] = useState<ClientRow[]>([]);
   const [modalClientsLoading, setModalClientsLoading] = useState(false);
 
-  const fetchClientsForTrainer = useCallback(async (trainerName: string) => {
-    const trainer = trainerList.find((t) => t.name === trainerName);
-    if (!trainer) { setModalClients([]); return; }
+  // Every client in the studio, not the ones assigned to a trainer.
+  //
+  // This used to call api.pt.clients({ trainer_id }). Only three of the
+  // twenty-two clients have a trainer_id set, and all three of those are
+  // expired — so the booking dialog listed three expired people and hid every
+  // active client. There was no way to book a session for someone currently
+  // training, which is the entire purpose of the screen.
+  const fetchClients = useCallback(async () => {
     try {
       setModalClientsLoading(true);
-      const clientsRes = await api.pt.clients({ trainer_id: trainer.id });
-      const clients = clientsRes.data as any[];
-      setModalClients(
-        Array.isArray(clients)
-          ? clients.map((c: any) => ({ id: c.id, name: c.name ?? c }))
-          : [],
-      );
+      const clientsRes = await api.pt.clients();
+      const clients = clientsRes.data as ClientRow[];
+      setModalClients(Array.isArray(clients) ? clients : []);
     } catch {
       setModalClients([]);
     } finally {
       setModalClientsLoading(false);
     }
-  }, [trainerList]);
+  }, []);
 
   const handleCreateSession = async (data: NewSessionData) => {
     const hasConflict = sessions.some(
@@ -250,9 +252,12 @@ function SchedulePageContent() {
     }
     setConflict(false);
 
-    const trainerObj = trainerList.find((t) => t.name === data.trainer);
+    // The dialog fills this in from the studio's own trainer, so reaching here
+    // means the studio has no trainer record at all — which is a setup problem,
+    // not something to fix by picking one.
+    const trainerObj = trainerList.find((t) => t.name === data.trainer) ?? trainerList[0];
     if (!trainerObj) {
-      toast.error('Select a trainer before booking.');
+      toast.error('This studio has no trainer set up yet, so a session cannot be booked.');
       return;
     }
 
@@ -695,7 +700,7 @@ function SchedulePageContent() {
         trainerOptions={trainerList.map((t) => t.name)}
         clientOptions={modalClients}
         clientOptionsLoading={modalClientsLoading}
-        onTrainerChange={fetchClientsForTrainer}
+        onOpened={fetchClients}
       />
 
       {/* ── SESSION DETAIL PANEL ── */}
@@ -714,41 +719,56 @@ function SchedulePageContent() {
 ──────────────────────────────────────────────────────────────────── */
 function CreateSessionModal({
   open, onClose, onConfirm, conflict, onDismissConflict,
-  trainerOptions, clientOptions, clientOptionsLoading, onTrainerChange,
+  trainerOptions, clientOptions, clientOptionsLoading, onOpened,
 }: {
   open: boolean; onClose: () => void; onConfirm: (data: NewSessionData) => void;
   conflict: boolean; onDismissConflict: () => void;
-  trainerOptions: string[]; clientOptions: { id: string; name: string }[]; clientOptionsLoading: boolean;
-  onTrainerChange: (trainer: string) => void;
+  trainerOptions: string[]; clientOptions: ClientRow[]; clientOptionsLoading: boolean;
+  onOpened: () => void;
 }) {
   const [form, setForm] = useState<NewSessionData>({
     client: '', client_id: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00',
     duration: 60, type: '1-on-1', notes: '', recurring: false,
   });
   const [step, setStep] = useState(1);
+  const [clientSearch, setClientSearch] = useState('');
+
+  // A studio has one trainer: its owner. The dialog used to ask which, from a
+  // list of one, and made it required — so booking took an extra tap that had
+  // no alternative answer. It is now filled in and shown as fact.
+  const defaultTrainer = trainerOptions[0] ?? '';
+
+  useEffect(() => {
+    if (!open) return;
+    onOpened();
+    setForm((f) => (f.trainer === defaultTrainer ? f : { ...f, trainer: defaultTrainer }));
+    // onOpened is a useCallback with no deps; re-running on identity would refetch forever.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultTrainer]);
 
   const handleConfirm = () => {
     if (step === 1) {
-      if (!form.client || !form.trainer || !form.time) return;
+      if (!form.client || !form.time) return;
       setStep(2);
       return;
     }
     onConfirm(form);
     setStep(1);
-    setForm({ client: '', client_id: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
+    setClientSearch('');
+    setForm({ client: '', client_id: '', trainer: defaultTrainer, date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false });
   };
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => { setStep(1); setForm({ client: '', client_id: '', trainer: '', date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false }); }, 200);
+    setTimeout(() => { setStep(1); setClientSearch(''); setForm({ client: '', client_id: '', trainer: defaultTrainer, date: new Date().toISOString().split('T')[0], time: '06:00', duration: 60, type: '1-on-1', notes: '', recurring: false }); }, 200);
   };
 
-  const onTrainerSelect = (t: string) => {
-    setForm((f) => ({ ...f, trainer: t, client: '', client_id: '' }));
-    onTrainerChange(t);
-  };
-
-  const resolvedClients = clientOptions;
+  // Twenty-two names in a two-column grid is a wall. Search narrows it; the
+  // full list is still the default, because most studios have few enough to
+  // scan.
+  const resolvedClients = clientSearch.trim()
+    ? clientOptions.filter((c) => c.name.toLowerCase().includes(clientSearch.trim().toLowerCase()))
+    : clientOptions;
 
   return (
     <PremiumModal
@@ -762,7 +782,7 @@ function CreateSessionModal({
         <div className="flex gap-3 w-full justify-end">
           <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
           {(step === 1 || conflict) ? (
-            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={!form.client || !form.trainer || !form.time}>
+            <Button variant="primary" size="sm" onClick={handleConfirm} disabled={!form.client || !form.time}>
               {step === 1 ? 'Continue' : 'Book Anyway'}
             </Button>
           ) : (
@@ -785,47 +805,75 @@ function CreateSessionModal({
         <div className="space-y-4">
           {/* Client */}
           <div>
-            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Client *</p>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Client *</p>
+              {!clientOptionsLoading && (
+                <span className="text-[11px] font-[600]" style={{ color: 'rgb(148,163,184)' }}>
+                  {resolvedClients.length} of {clientOptions.length}
+                </span>
+              )}
+            </div>
+
+            {clientOptions.length > 6 && (
+              <input
+                type="text"
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                placeholder="Search clients…"
+                className="mb-2 h-[44px] w-full rounded-[10px] px-3 text-[12.5px] outline-none"
+                style={{ background: '#f9fafb', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(15,23,42)' }}
+              />
+            )}
+
             {clientOptionsLoading ? (
               <div className="grid grid-cols-2 gap-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="h-9 rounded-[10px] animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
                 ))}
               </div>
+            ) : resolvedClients.length === 0 ? (
+              <p className="rounded-[10px] px-3 py-3 text-[12px]" style={{ background: '#f9fafb', color: 'rgb(148,163,184)' }}>
+                {clientSearch.trim() ? `No client matches "${clientSearch.trim()}".` : 'No clients yet.'}
+              </p>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {resolvedClients.map((c) => (
-                  <button key={c.id} type="button" onClick={() => setForm((f) => ({ ...f, client: c.name, client_id: c.id }))}
-                    className="rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
-                    style={{
-                      background: form.client === c.name ? 'rgba(220,38,38,0.10)' : '#f9fafb',
-                      border: form.client === c.name ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                      color: form.client === c.name ? '#F59E0B' : 'rgb(100,116,139)',
-                    }}
-                  >
-                    {c.name}
-                  </button>
-                ))}
+              <div className="grid max-h-[220px] grid-cols-2 gap-2 overflow-y-auto">
+                {resolvedClients.map((c) => {
+                  const selected = form.client_id === c.id;
+                  // Booking a session for someone whose package expired, or who
+                  // was never enrolled, is allowed — a trainer may be booking
+                  // the session that renews them. It just must not be a
+                  // surprise, so the state is on the tile rather than found out
+                  // afterwards.
+                  const meta = ENROLMENT_META[enrolmentState(c)];
+                  return (
+                    <button key={c.id} type="button" onClick={() => setForm((f) => ({ ...f, client: c.name, client_id: c.id }))}
+                      className="flex flex-col items-start gap-1 rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
+                      style={{
+                        background: selected ? 'rgba(2,113,235,0.08)' : '#f9fafb',
+                        border: selected ? '1.5px solid rgba(2,113,235,0.45)' : '1.5px solid rgba(15,23,42,0.09)',
+                        color: selected ? '#0059CE' : 'rgb(100,116,139)',
+                      }}
+                    >
+                      <span className="w-full truncate">{c.name}</span>
+                      <span className="rounded-full px-1.5 py-0.5 text-[9.5px] font-[700] uppercase tracking-wide"
+                        style={{ background: meta.bg, color: meta.color }}>
+                        {meta.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Trainer */}
+          {/* Trainer — not a choice. The studio belongs to one trainer, so this
+              is shown as fact rather than asked for. */}
           <div>
-            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Trainer *</p>
-            <div className="grid grid-cols-2 gap-2">
-              {trainerOptions.map((t) => (
-                <button key={t} type="button" onClick={() => onTrainerSelect(t)}
-                  className="rounded-[10px] px-3 py-2.5 text-left text-[12px] font-[600] transition-all"
-                  style={{
-                    background: form.trainer === t ? 'rgba(220,38,38,0.10)' : '#f9fafb',
-                    border: form.trainer === t ? '1.5px solid rgba(220,38,38,0.30)' : '1.5px solid rgba(15,23,42,0.09)',
-                    color: form.trainer === t ? '#F59E0B' : 'rgb(100,116,139)',
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
+            <p className="mb-2 text-[11.5px] font-[620] uppercase tracking-wider" style={{ color: 'rgb(148,163,184)' }}>Trainer</p>
+            <div className="flex items-center gap-2 rounded-[10px] px-3 py-2.5 text-[12px] font-[600]"
+              style={{ background: '#f9fafb', border: '1.5px solid rgba(15,23,42,0.09)', color: 'rgb(71,85,105)' }}>
+              <User size={13} style={{ color: 'rgb(148,163,184)' }} />
+              {defaultTrainer || 'No trainer on this studio'}
             </div>
           </div>
 
