@@ -23,7 +23,7 @@ import { useRouter } from 'next/navigation';
 import { m } from 'framer-motion';
 import { AlertCircle, ArrowRight, Search, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
-import { BRAND_GLOW, BRAND_GRADIENT, BRAND_TINT_GRADIENT } from '@/lib/brand';
+import { BRAND_HERO_GRADIENT, BRAND_HERO_SHADOW, ON_BRAND_BORDER, ON_BRAND_TEXT } from '@/lib/brand';
 import { api } from '@/lib/api';
 
 interface ClientOption { id: string; name: string; }
@@ -90,10 +90,10 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
     <div className="mx-auto w-full max-w-4xl pt-3 pb-6">
       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         className="mb-5 flex items-center gap-3 rounded-[20px] px-5 py-4"
-        style={{ background: BRAND_TINT_GRADIENT, border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)' }}>
+        style={{ background: BRAND_HERO_GRADIENT, boxShadow: BRAND_HERO_SHADOW }}>
         <div
           className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px]"
-          style={{ background: BRAND_GRADIENT, boxShadow: BRAND_GLOW }}
+          style={{ border: `1.5px solid ${ON_BRAND_BORDER}` }}
         >
           {icon}
         </div>
@@ -104,7 +104,7 @@ export default function ClientPicker({ title, icon, basePath, hrefFor }: ClientP
             small size the long ones still take two lines. */}
         <h1
           className={`${title.length > 18 ? 'text-[20px] sm:text-[26px]' : 'text-[24px] sm:text-[30px]'} font-[860] tracking-[-0.03em] leading-[1.1]`}
-          style={{ color: 'var(--text-primary)' }}
+          style={{ color: ON_BRAND_TEXT }}
         >
           {title}
         </h1>

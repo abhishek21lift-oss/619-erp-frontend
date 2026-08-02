@@ -124,6 +124,11 @@ describe('the shared PT-OS client picker', () => {
     expect(src).not.toContain('#fff7ed');
     // Nor the blue inlined instead of imported.
     expect(src).not.toMatch(/#0067E0|#0059CE/);
+    // The hero is a filled blue block, not a pale wash. The wash was the first
+    // attempt at "brand blue" and the reference is a solid banner with white
+    // text — this stops it quietly reverting to the lighter reading.
+    expect(src).toContain('BRAND_HERO_GRADIENT');
+    expect(src).not.toContain('BRAND_TINT_GRADIENT');
   });
 
   it('the consent record hero matches the picker it is reached through', () => {
